@@ -1,0 +1,109 @@
+import arena1Bg from '../assets/images/battlefield-bg.webp'
+import arena2Bg from '../assets/images/battlefield-bg2.webp'
+import arena3Bg from '../assets/images/battlefield-bg3.webp'
+import arena4Bg from '../assets/images/battlefield-bg4.webp'
+import arena5Bg from '../assets/images/battlefield-bg5.webp'
+
+export interface ArenaInfo {
+  id: number
+  name: string
+  minElo: number
+  maxElo: number
+  bgImage: string
+  tagline: string
+  badgeColor: string
+  borderColor: string
+}
+
+export const ARENAS: ArenaInfo[] = [
+  {
+    id: 1,
+    name: 'Arena 1: Jardín Clásico',
+    minElo: 0,
+    maxElo: 1600,
+    bgImage: arena1Bg,
+    tagline: 'Campo de césped tradicional bajo el sol resplandeciente.',
+    badgeColor: '#4ade80',
+    borderColor: '#22c55e',
+  },
+  {
+    id: 2,
+    name: 'Arena 2: Desierto Nocturno',
+    minElo: 1601,
+    maxElo: 2000,
+    bgImage: arena2Bg,
+    tagline: 'Dunas desérticas con cactus bioluminiscentes y luna llena.',
+    badgeColor: '#60a5fa',
+    borderColor: '#3b82f6',
+  },
+  {
+    id: 3,
+    name: 'Arena 3: Rascacielos Cyberpunk',
+    minElo: 2001,
+    maxElo: 3000,
+    bgImage: arena3Bg,
+    tagline: 'Azotea futurista sobre la metrópolis con luces neón.',
+    badgeColor: '#c084fc',
+    borderColor: '#a855f7',
+  },
+  {
+    id: 4,
+    name: 'Arena 4: Coliseo Galáctico',
+    minElo: 3001,
+    maxElo: 4000,
+    bgImage: arena4Bg,
+    tagline: 'Plataforma espacial flotante entre nebulosas y meteoritos.',
+    badgeColor: '#fde047',
+    borderColor: '#eab308',
+  },
+  {
+    id: 5,
+    name: 'Arena 5: Olimpo de Leyendas',
+    minElo: 4001,
+    maxElo: 9999,
+    bgImage: arena5Bg,
+    tagline: 'Palacio sagrado de oro supremo para los reyes de Plant Arena.',
+    badgeColor: '#f43f5e',
+    borderColor: '#ef4444',
+  },
+]
+
+export function getArenaForElo(elo: number): ArenaInfo {
+  const found = ARENAS.find((a) => elo >= a.minElo && elo <= a.maxElo)
+  return found || ARENAS[0]
+}
+
+/**
+ * En Plant Arena los jugadores PUEDEN descender de arena si pierden copas.
+ * El único piso absoluto del sistema es 0 copas (no hay ratings negativos).
+ */
+export function getTrophyGateForElo(_elo?: number): number {
+  return 0
+}
+
+export function getEloDeltasForElo(elo: number): { winElo: number; loseElo: number; surrenderElo: number } {
+  if (elo <= 1600) {
+    return { winElo: 15, loseElo: 5, surrenderElo: 5 }
+  } else if (elo <= 2000) {
+    return { winElo: 18, loseElo: 8, surrenderElo: 8 }
+  } else if (elo <= 3000) {
+    return { winElo: 20, loseElo: 12, surrenderElo: 12 }
+  } else if (elo <= 4000) {
+    return { winElo: 25, loseElo: 20, surrenderElo: 20 }
+  } else {
+    return { winElo: 30, loseElo: 30, surrenderElo: 30 }
+  }
+}
+
+// getGoldRewardForElo se eliminó.
+//
+// Devolvía de 50 a 150 de oro por victoria según el ELO, y no se llamaba desde
+// ningún sitio: era código muerto. Se borra en lugar de conectarse porque el oro
+// entra en el juego por un solo camino, y no es la victoria: lo da el cofre al
+// reclamarlo, según su duración (2h→10, 4h→20, 8h→40, 12h→60), y lo concede el
+// servidor en claim_pack_slot.
+//
+// El motivo es que un oro por victoria tendría que concederlo el servidor, y la
+// partida aún se resuelve en el navegador: una RPC "he ganado, dame oro" sería un
+// grifo sin tope. El cofre hereda los límites que ya existen — 4 huecos, de 2 a
+// 12 h de espera, y el enfriamiento de 2 minutos al concederlo.

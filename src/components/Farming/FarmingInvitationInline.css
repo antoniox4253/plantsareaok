@@ -1,0 +1,42 @@
+.fv4-home-promo-copy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0c3037;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fv4-home-actions > .fv4-action {
+  display: none !important;
+}
+
+.fv4-home-actions > div {
+  margin-top: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.fv4-home-actions > div strong,
+.fv4-home-actions > div small {
+  display: block;
+  text-align: center;
+}
+
+.fv4-home-actions:before {
+  content: 'Explora Genesis Lands, compra tu propia Land o entra a los mundos para alquilar slots y ayudar a otros jugadores.';
+  display: block;
+  padding: 1.1vh 0.8vw;
+  color: #c7d9d6;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.fv4-detail:has(.fv4-home-actions) > h3 {
+  color: #fff0b5;
+}

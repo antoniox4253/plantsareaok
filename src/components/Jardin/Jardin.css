@@ -1,0 +1,1380 @@
+.jardin-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 12px 20px;
+  overflow: hidden;
+  user-select: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #fff;
+}
+
+/* Header */
+.jardin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(12, 20, 35, 0.92);
+  backdrop-filter: blur(10px);
+  border: 2px solid #52b788;
+  border-radius: 16px;
+  padding: 8px 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  margin-bottom: 10px;
+  z-index: 10;
+}
+
+.jardin-back-btn {
+  background: linear-gradient(180deg, #2d6a4f 0%, #1b4332 100%);
+  border: 2px solid #52b788;
+  color: #fff;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+.jardin-back-btn:hover {
+  transform: scale(1.05);
+  background: linear-gradient(180deg, #40916c 0%, #2d6a4f 100%);
+}
+
+.jardin-header__center {
+  text-align: center;
+}
+
+.jardin-title {
+  font-size: 19px;
+  font-weight: 900;
+  color: #74c69d;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 10px rgba(82, 183, 136, 0.4);
+  margin: 0;
+}
+
+.jardin-subtitle {
+  font-size: 11px;
+  color: #b7e4c7;
+}
+
+.jardin-header__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jardin-btn-lottery {
+  background: linear-gradient(180deg, #eab308 0%, #ca8a04 100%);
+  border: 2px solid #fef08a;
+  color: #1a1000;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 0 14px rgba(234, 179, 8, 0.6);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.jardin-btn-lottery:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 22px rgba(234, 179, 8, 0.9);
+  filter: brightness(1.1);
+}
+
+.jardin-btn-shop {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  border: 2px solid #fef08a;
+  color: #1a1000;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jardin-btn-shop:hover {
+  transform: scale(1.05);
+}
+
+.jardin-btn-sec {
+  background: linear-gradient(180deg, #e0a32e 0%, #b87c14 100%);
+  border: 2px solid #ffda79;
+  color: #1a1000;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.jardin-btn-sec:hover {
+  transform: scale(1.05);
+  filter: brightness(1.15);
+}
+
+.jardin-mute-btn {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #74c69d;
+  color: #fff;
+  font-size: 16px;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+}
+
+/* Scroll Area for content */
+.jardin-scroll-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+  z-index: 10;
+}
+
+.jardin-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.jardin-scroll-area::-webkit-scrollbar-thumb {
+  background: #52b788;
+  border-radius: 3px;
+}
+
+/* UNOPENED PACKS INVENTORY SECTION */
+.jardin-packs-section {
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(12px);
+  border: 2px solid #fbbf24;
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+}
+
+.jardin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.jardin-section-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fbbf24;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.jardin-buy-more-btn {
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  border: 1px solid #93c5fd;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.jardin-buy-more-btn:hover {
+  transform: scale(1.04);
+}
+
+.jardin-empty-packs {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed rgba(251, 191, 36, 0.4);
+  border-radius: 14px;
+  padding: 12px 20px;
+}
+
+.jardin-empty-icon {
+  font-size: 32px;
+}
+
+.jardin-empty-info {
+  flex: 1;
+}
+
+.jardin-empty-info strong {
+  font-size: 13px;
+  color: #fbbf24;
+  display: block;
+}
+
+.jardin-empty-info p {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin: 2px 0 0 0;
+}
+
+.jardin-empty-btn {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  border: 1px solid #fef08a;
+  color: #1a1000;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.jardin-packs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.jardin-pack-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid #60a5fa;
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.jardin-pack-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+}
+
+.jardin-pack-card--common {
+  border-color: #4ade80;
+}
+
+.jardin-pack-card--common:hover {
+  box-shadow: 0 0 16px rgba(74, 222, 128, 0.4);
+}
+
+.jardin-pack-card--epic {
+  border-color: #c084fc;
+}
+
+.jardin-pack-card--epic:hover {
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.4);
+}
+
+.jardin-pack-card--legendary {
+  border-color: #fde047;
+  background: linear-gradient(180deg, rgba(45, 35, 15, 0.95) 0%, rgba(20, 25, 40, 0.95) 100%);
+}
+
+.jardin-pack-card--legendary:hover {
+  box-shadow: 0 0 20px rgba(253, 224, 71, 0.5);
+}
+
+/* Floating Stack Badge */
+.jardin-pack-stack-badge {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border: 1.5px solid #fecaca;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.6);
+  z-index: 5;
+  letter-spacing: 0.5px;
+}
+
+.jardin-pack-card__img {
+  width: 65px;
+  height: 65px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+  transition: transform 0.2s ease;
+}
+
+.jardin-pack-card:hover .jardin-pack-card__img {
+  transform: scale(1.08);
+}
+
+.jardin-pack-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+}
+
+.jardin-pack-card__name {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jardin-pack-card__rarity {
+  font-size: 9px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.jardin-pack-controls-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.jardin-pack-qty-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid rgba(251, 191, 36, 0.4);
+  border-radius: 10px;
+  padding: 3px 6px;
+}
+
+.jardin-pack-qty-btn {
+  background: #1e293b;
+  border: 1px solid #475569;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.jardin-pack-qty-btn:hover:not(:disabled) {
+  background: #334155;
+  border-color: #fbbf24;
+  color: #fbbf24;
+  transform: scale(1.1);
+}
+
+.jardin-pack-qty-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.jardin-pack-qty-btn:disabled,
+.jardin-pack-qty-max:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none !important;
+  border-color: #475569;
+}
+
+.jardin-pack-qty-num {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fbbf24;
+  min-width: 22px;
+  text-align: center;
+}
+
+.jardin-pack-qty-max {
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  border: 1px solid #93c5fd;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 3px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.jardin-pack-qty-max:hover:not(:disabled) {
+  background: linear-gradient(180deg, #60a5fa 0%, #1d4ed8 100%);
+  transform: scale(1.08);
+}
+
+.jardin-pack-card__open-btn {
+  width: 100%;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  border: 1.5px solid #fef08a;
+  color: #1a1000;
+  font-weight: 900;
+  font-size: 11.5px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4);
+  letter-spacing: 0.3px;
+}
+
+.jardin-pack-card__open-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 5px 16px rgba(245, 158, 11, 0.7);
+  filter: brightness(1.1);
+}
+
+.jardin-pack-card__open-btn:active {
+  transform: scale(0.96);
+}
+
+/* Streamer / PvP Reward Packs Styling */
+.jardin-pack-card--pvp-reward {
+  background: linear-gradient(135deg, rgba(20, 25, 45, 0.95) 0%, rgba(30, 20, 50, 0.95) 100%);
+  border: 1.5px solid #a855f7;
+  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
+}
+
+.jardin-pack-card--unlocking {
+  border-color: #38bdf8;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
+  animation: pulseUnlocking 2s infinite ease-in-out;
+}
+
+.jardin-pack-card--ready {
+  border-color: #22c55e;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+  animation: pulseReady 1.8s infinite ease-in-out;
+}
+
+@keyframes pulseUnlocking {
+  0%, 100% { box-shadow: 0 0 14px rgba(56, 189, 248, 0.3); }
+  50% { box-shadow: 0 0 22px rgba(56, 189, 248, 0.6); }
+}
+
+@keyframes pulseReady {
+  0%, 100% { box-shadow: 0 0 14px rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(34, 197, 94, 0.8); }
+}
+
+.jardin-pack-stack-badge--streamer {
+  background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+  color: #fff;
+  border-color: #f472b6;
+  font-size: 8.5px;
+  letter-spacing: 0.5px;
+}
+
+.jardin-pack-card__unlock-btn {
+  width: 100%;
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  border: 1.5px solid #bae6fd;
+  color: #032b44;
+  font-weight: 900;
+  font-size: 11.5px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.4);
+  letter-spacing: 0.3px;
+}
+
+.jardin-pack-card__unlock-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 5px 16px rgba(56, 189, 248, 0.7);
+  filter: brightness(1.1);
+}
+
+.jardin-pack-unlocking-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.jardin-pack-timer-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.jardin-pack-timer-clock {
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.jardin-pack-timer-total {
+  color: #94a3b8;
+  font-size: 9.5px;
+}
+
+.jardin-pack-card__accelerate-btn {
+  width: 100%;
+  background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+  border: 1px solid #fde68a;
+  color: #fff;
+  font-weight: 900;
+  font-size: 10.5px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.jardin-pack-card__accelerate-btn:hover {
+  background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.jardin-pack-card__open-btn--ready {
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 100%) !important;
+  border-color: #86efac !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.5) !important;
+}
+
+.jardin-pack-card__open-btn--ready:hover {
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.8) !important;
+}
+
+/* Active Battle Deck Container */
+.jardin-deck-container {
+  background: rgba(18, 28, 45, 0.9);
+  backdrop-filter: blur(12px);
+  border: 2px solid #74c69d;
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+}
+
+.jardin-deck-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.jardin-deck-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffda79;
+  letter-spacing: 0.5px;
+}
+
+.jardin-deck-status {
+  font-size: 11px;
+  font-weight: bold;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid #ff6b6b;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.jardin-deck-status--ready {
+  color: #52e061;
+  background: rgba(82, 224, 97, 0.15);
+  border-color: #52e061;
+}
+
+/* Slots Grid */
+.jardin-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.jardin-slot {
+  position: relative;
+  height: 105px;
+  background: rgba(8, 14, 24, 0.85);
+  border: 2px dashed #40916c;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.jardin-slot:hover {
+  transform: translateY(-2px);
+  border-color: #74c69d;
+  background: rgba(18, 30, 48, 0.95);
+}
+
+.jardin-slot--filled {
+  border: 2px solid #52b788;
+  background: linear-gradient(180deg, rgba(30, 50, 75, 0.9) 0%, rgba(15, 25, 40, 0.9) 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.jardin-slot--active {
+  border-color: #ffda79 !important;
+  box-shadow: 0 0 15px rgba(255, 218, 121, 0.8) !important;
+}
+
+.jardin-slot__num {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #74c69d;
+  opacity: 0.8;
+}
+
+.jardin-slot__remove-btn {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  background: rgba(220, 38, 38, 0.9);
+  border: 1px solid #ff7878;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.15s ease;
+}
+
+.jardin-slot__remove-btn:hover {
+  transform: scale(1.2);
+  background: #ff2222;
+}
+
+.jardin-slot__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+  padding-top: 10px;
+}
+
+.jardin-slot__cost {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #ffd166;
+  border-radius: 8px;
+  padding: 1px 5px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #ffd166;
+}
+
+.jardin-slot__sun {
+  width: 12px;
+  height: 12px;
+}
+
+.jardin-slot__img {
+  max-width: 48px;
+  max-height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.jardin-slot__meta {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.jardin-slot__name {
+  font-size: 9.5px;
+  font-weight: bold;
+  color: #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jardin-slot__lvl {
+  font-size: 8px;
+  font-weight: 900;
+  color: #fbbf24;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #f59e0b;
+  border-radius: 4px;
+  padding: 0 3px;
+  white-space: nowrap;
+}
+
+.jardin-slot__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #40916c;
+}
+
+.jardin-slot__plus {
+  font-size: 22px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.jardin-slot__empty-txt {
+  font-size: 9px;
+  font-weight: 800;
+  color: #52b788;
+  margin-top: 1px;
+}
+
+.jardin-slot__hint {
+  font-size: 9px;
+  font-weight: bold;
+}
+
+/* Action Bar */
+.jardin-action-bar {
+  display: flex;
+  justify-content: center;
+}
+
+.jardin-play-btn {
+  background: linear-gradient(180deg, #52e061 0%, #2b9338 100%);
+  border: 2px solid #a3ffab;
+  color: #062a0a;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 8px 30px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(82, 224, 97, 0.4);
+}
+
+.jardin-play-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(82, 224, 97, 0.7);
+}
+
+.jardin-play-btn:disabled {
+  background: #4a5568;
+  border-color: #718096;
+  color: #a0aec0;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+/* Inventory Catalog Grid */
+.jardin-inventory-container {
+  background: rgba(12, 20, 32, 0.85);
+  backdrop-filter: blur(10px);
+  border: 2px solid #40916c;
+  border-radius: 18px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.jardin-inventory-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #74c69d;
+  margin: 0 0 10px 0;
+  letter-spacing: 0.5px;
+}
+
+.jardin-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.jardin-card {
+  position: relative;
+  min-height: 120px;
+  background: rgba(20, 32, 50, 0.8);
+  border: 2px solid #2d6a4f;
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.jardin-card:hover {
+  transform: translateY(-3px) scale(1.03);
+  border-color: #74c69d;
+  background: rgba(30, 48, 75, 0.9);
+}
+
+.jardin-card--indeck {
+  border-color: #52e061;
+  background: linear-gradient(180deg, rgba(20, 50, 30, 0.85) 0%, rgba(10, 30, 18, 0.9) 100%);
+  box-shadow: 0 0 10px rgba(82, 224, 97, 0.3);
+}
+
+.jardin-card--locked {
+  opacity: 0.65;
+  background: rgba(15, 23, 42, 0.8);
+  border: 2px dashed #475569;
+}
+
+.jardin-card--locked:hover {
+  opacity: 0.9;
+  border-color: #fbbf24;
+}
+
+.jardin-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.jardin-card__cost {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #ffd166;
+  border-radius: 6px;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #ffd166;
+}
+
+.jardin-card__sun {
+  width: 10px;
+  height: 10px;
+}
+
+.jardin-card__badge {
+  font-size: 8px;
+  font-weight: 900;
+  color: #52e061;
+  background: rgba(82, 224, 97, 0.2);
+  border: 1px solid #52e061;
+  padding: 1px 4px;
+  border-radius: 6px;
+}
+
+.jardin-card__badge-locked {
+  font-size: 8px;
+  font-weight: 900;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.2);
+  border: 1px solid #f87171;
+  padding: 1px 4px;
+  border-radius: 6px;
+}
+
+.jardin-card__img {
+  max-width: 48px;
+  max-height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.jardin-card__img--locked {
+  filter: grayscale(1) opacity(0.5);
+}
+
+.jardin-card__name {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jardin-card__cat {
+  font-size: 8px;
+  color: #b7e4c7;
+}
+
+/* CIRCULAR LEVEL BADGE */
+.jardin-level-circle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 1.5px solid #7dd3fc;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(2, 132, 199, 0.6);
+  z-index: 5;
+}
+
+.jardin-level-circle--max {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  border-color: #fef08a;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.8);
+}
+
+/* ROLLED STAT BUFFS CHIPS */
+.jardin-card-rolls-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  justify-content: center;
+  margin: 1px 0;
+}
+
+.jardin-stat-roll-badge {
+  font-size: 7.5px;
+  font-weight: 900;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 1px 4px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.jardin-card-copies-tag {
+  font-size: 8px;
+  font-weight: 800;
+  color: #fde68a;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+.jardin-fuse-btn {
+  width: 100%;
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  border: 1px solid #86efac;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 3px 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 3px;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+  animation: fusePulse 1.5s infinite ease-in-out;
+}
+
+@keyframes fusePulse {
+  0%, 100% { border-color: #86efac; transform: scale(1); }
+  50% { border-color: #fef08a; transform: scale(1.03); }
+}
+
+/* UPGRADE CELEBRATION MODAL */
+.jardin-upgrade-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: modalFadeIn 0.25s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.jardin-upgrade-modal-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 2.5px solid #fbbf24;
+  border-radius: 20px;
+  padding: 24px 28px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 0 40px rgba(251, 191, 36, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.5);
+  animation: cardPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes cardPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.jardin-upgrade-modal-sparkle {
+  font-size: 28px;
+  margin-bottom: 2px;
+}
+
+.jardin-upgrade-modal-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: 1px;
+  margin: 0 0 4px 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.jardin-upgrade-modal-level {
+  font-size: 12px;
+  font-weight: 900;
+  background: #3b82f6;
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+}
+
+.jardin-upgrade-modal-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
+  margin-bottom: 6px;
+}
+
+.jardin-upgrade-modal-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 12px 0;
+}
+
+.jardin-upgrade-modal-rolled-box {
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid;
+  border-radius: 12px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.jardin-upgrade-modal-stat-icon {
+  font-size: 24px;
+}
+
+.jardin-upgrade-modal-stat-val {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.jardin-upgrade-modal-stat-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.jardin-upgrade-modal-desc {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin: 0 0 16px 0;
+}
+
+.jardin-upgrade-modal-btn {
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
+  border: 1.5px solid #86efac;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 8px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.5);
+}
+
+.jardin-upgrade-modal-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.jardin-upgrade-modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jardin-upgrade-modal-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.jardin-fuse-btn--disabled-gold {
+  background: linear-gradient(180deg, #475569 0%, #334155 100%) !important;
+  border: 1px solid #64748b !important;
+  color: #f87171 !important;
+  box-shadow: none !important;
+  animation: none !important;
+  cursor: not-allowed !important;
+}
+
+.jardin-fuse-confirm-card {
+  border-color: #f59e0b !important;
+}
+
+.jardin-fuse-confirm-plant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.jardin-fuse-confirm-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+  margin-bottom: 4px;
+}
+
+.jardin-fuse-confirm-name {
+  font-size: 14px;
+  font-weight: 900;
+  color: #f8fafc;
+}
+
+.jardin-fuse-confirm-level {
+  font-size: 12px;
+  font-weight: 800;
+  color: #86efac;
+  margin-top: 2px;
+}
+
+.jardin-fuse-confirm-reqs {
+  display: flex;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid #fbbf24;
+  border-radius: 12px;
+  padding: 10px 20px;
+  margin-bottom: 18px;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.jardin-fuse-req-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jardin-fuse-req-icon {
+  font-size: 18px;
+}
+
+.jardin-fuse-req-text {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fde047;
+}
+
+.jardin-fuse-confirm-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.jardin-fuse-btn-cancel {
+  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+  border: 1.5px solid #94a3b8;
+  box-shadow: 0 4px 12px rgba(71, 85, 105, 0.4);
+}
+
+.jardin-fuse-btn-confirm {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  border: 1.5px solid #fde047;
+  color: #000;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+}
+
+
+/* ── FARMING INVENTORY ─────────────────────────────────────────────────── */
+.jardin-farming-resources {
+  margin: 14px 0 20px;
+  padding: 12px 16px;
+  border: 1px solid rgba(74, 222, 128, .28);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(7, 38, 24, .88), rgba(35, 20, 8, .84));
+  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 28px rgba(0,0,0,.22);
+}
+.jardin-section-header--farming {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.jardin-farming-subtitle {
+  margin: 3px 0 0;
+  font-size: .74rem;
+  color: #bbf7d0;
+}
+.jardin-farming-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.jardin-farming-card {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(74, 222, 128, 0.25);
+  background: rgba(12, 24, 38, 0.75);
+  text-align: center;
+  color: #f8fafc;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
+}
+.jardin-farming-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: #86efac;
+  background: rgba(18, 34, 52, 0.85);
+}
+.jardin-farming-card__art {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+.jardin-farming-card__art img {
+  position: relative;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,.4));
+}
+.jardin-farming-card__art span {
+  position: absolute;
+  font-size: 1.8rem;
+  z-index: 1;
+}
+.jardin-farming-card strong {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.jardin-farming-card__qty {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #fde047;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.jardin-farming-card small {
+  max-width: 100%;
+  color: #94a3b8;
+  font-size: 0.62rem;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.jardin-farming-toggle-btn {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  color: #86efac;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.jardin-farming-toggle-btn:hover {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: #86efac;
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.jardin-farming-pill {
+  font-size: 9px;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.14);
+  color: #94a3b8;
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+}

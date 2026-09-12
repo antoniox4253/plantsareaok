@@ -1,0 +1,1254 @@
+import { useState, useEffect, useMemo } from 'react'
+import type { PlantCardInstance, PlantId } from '../../types/game'
+import {
+  PLANT_CONFIGS,
+  STAT_LABELS,
+  type PlantStatKey,
+} from '../../utils/gameConstants'
+import background from '../../assets/images/background.webp'
+import { soundManager } from '../../utils/audioManager'
+import type { InventoryPack, PackId } from '../../utils/packDropManager'
+import type { PlayerRewardPack } from '../../utils/freePackManager'
+import { EMPTY_FARMING_INVENTORY, FARMING_ITEM_DEFINITIONS, type FarmingInventory } from '../../utils/pvpRewardManager'
+import LotteryModal from '../Lottery/LotteryModal'
+import TreeModal from './TreeModal'
+import './Jardin.css'
+
+const sunIcon = '/game-assets/greenfoot/sun1.webp'
+const ALL_PLANTS = Object.keys(PLANT_CONFIGS) as PlantId[]
+
+function groupRolls(rolls: PlantStatKey[]) {
+  const map = new Map<PlantStatKey, number>()
+  rolls.forEach((r) => {
+    map.set(r, (map.get(r) || 0) + 1)
+  })
+  return Array.from(map.entries()).map(([stat, count]) => {
+    const meta = STAT_LABELS[stat]
+    const totalPct = count * 15
+    const label = count > 1 ? `${meta.icon} +${totalPct}% ${meta.suffix.replace('+15% ', '').replace('-15% ', '')} (x${count})` : `${meta.icon} ${meta.suffix}`
+    return {
+      stat,
+      count,
+      totalPct,
+      label,
+      color: meta.color,
+      meta,
+    }
+  })
+}
+
+interface JardinProps {
+  activeDeck: PlantId[]
+  unlockedPlants: PlantId[]
+  inventoryPacks: InventoryPack[]
+  playerRewardPacks?: PlayerRewardPack[]
+  userTokens: number
+  userGold?: number
+  farmingItems?: FarmingInventory
+  plantCopies?: Partial<Record<PlantId, number>>
+  plantLevels?: Partial<Record<PlantId, number>>
+  plantStatRolls?: Partial<Record<PlantId, PlantStatKey[]>>
+  plantInstances?: PlantCardInstance[]
+  onUpdateDeck: (newDeck: PlantId[], instanceIds?: string[]) => void
+  onBack: (instanceIds?: string[]) => void
+  onPlay: (instanceIds?: string[]) => void | Promise<void>
+  onOpenCollection: () => void
+  onOpenShop: () => void
+  onOpenPack: (instanceId: string) => void
+  isAdmin?: boolean
+  onOpenAdmin?: () => void
+  onOpenMultiplePacks?: (instanceIds: string[]) => void
+  onStartUnlockRewardPack?: (packId: string) => Promise<{ success: boolean; error?: string }>
+  onInstantUnlockRewardPack?: (packId: string) => Promise<{ success: boolean; goldSpent?: number; error?: string }>
+  onOpenRewardPack?: (packId: string) => void
+  // Asíncrona: la fusión la resuelve fuse_plant en el servidor, que es quien
+  // sortea la stat y descuenta las 5 copias.
+  onFusePlant?: (plantId: PlantId, instanceId?: string) => Promise<{
+    success: boolean
+    newLevel?: number
+    rolledStat?: PlantStatKey
+    rolledStatLabel?: string
+    error?: string
+  }>
+  // Los callbacks de recompensa (onAddTokens, onAddGold, onAddPacks,
+  // onReceivePlant, onDeductTokens) se eliminaron: la lotería era su único
+  // consumidor aquí, y ya no concede nada desde el cliente.
+  /** Recarga saldo e inventario del servidor tras un premio de la lotería. */
+  onRewardsChanged?: () => Promise<void> | void
+}
+
+const FUSION_GOLD_COST = 1000
+const FUSION_COPIES_REQ = 5
+
+export default function Jardin({
+  activeDeck,
+  unlockedPlants,
+  inventoryPacks,
+  playerRewardPacks = [],
+  userTokens,
+  userGold = 0,
+  farmingItems = EMPTY_FARMING_INVENTORY,
+  plantCopies = {},
+  plantLevels = {},
+  plantStatRolls = {},
+  plantInstances = [],
+  onUpdateDeck,
+  onBack,
+  onPlay,
+  onOpenCollection: _onOpenCollection,
+  onOpenShop,
+  onOpenPack,
+  onOpenMultiplePacks,
+  onStartUnlockRewardPack,
+  onInstantUnlockRewardPack,
+  onOpenRewardPack,
+  onFusePlant,
+  isAdmin,
+  onOpenAdmin,
+  onRewardsChanged,
+}: JardinProps) {
+  const [deck, setDeck] = useState<PlantId[]>(activeDeck)
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null)
+  const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
+  const [showLotteryModal, setShowLotteryModal] = useState(false)
+  const [showTreeModal, setShowTreeModal] = useState(false)
+  const [rewardPackAccelerating, setRewardPackAccelerating] = useState<{ packId: string; goldCost: number } | null>(null)
+  const [isAcceleratingReward, setIsAcceleratingReward] = useState(false)
+  const [rewardPackAlert, setRewardPackAlert] = useState<{ title: string; message: string; icon: string } | null>(null)
+  const [upgradeModal, setUpgradeModal] = useState<{
+    plantId: PlantId
+    newLevel: number
+    rolledStat: PlantStatKey
+  } | null>(null)
+  const [fuseCandidate, setFuseCandidate] = useState<{
+    plantId: PlantId
+    instanceId: string
+    level: number
+    name: string
+    icon: string
+  } | null>(null)
+  const [isFusing, setIsFusing] = useState(false)
+  const [fuseAlert, setFuseAlert] = useState<{ title: string; message: string; icon: string } | null>(null)
+
+  const handleConfirmFuse = async () => {
+    if (!fuseCandidate || !onFusePlant || isFusing) return
+    setIsFusing(true)
+    try {
+      soundManager.playSound('plantation', 0.9)
+      const candidate = fuseCandidate
+      const res = await onFusePlant(candidate.plantId, candidate.instanceId)
+      setFuseCandidate(null)
+      if (
+        res?.success === true &&
+        typeof res.newLevel === 'number' &&
+        Number.isInteger(res.newLevel) &&
+        res.newLevel > 0 &&
+        typeof res.rolledStat === 'string' &&
+        res.rolledStat.length > 0
+      ) {
+        setUpgradeModal({
+          plantId: candidate.plantId,
+          newLevel: res.newLevel,
+          rolledStat: res.rolledStat,
+        })
+      } else if (res && !res.success && res.error) {
+        setFuseAlert({
+          title: 'NO SE PUDO MEJORAR',
+          message: res.error,
+          icon: '⚠️',
+        })
+      }
+    } catch (err: any) {
+      setFuseCandidate(null)
+      setFuseAlert({
+        title: 'ERROR AL MEJORAR',
+        message: err?.message || 'Error inesperado al mejorar la planta',
+        icon: '⚠️',
+      })
+    } finally {
+      setIsFusing(false)
+    }
+  }
+
+  const [openQuantities, setOpenQuantities] = useState<Record<string, number>>({})
+  const [isFarmingCollapsed, setIsFarmingCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('plant_arena_jardin_farming_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  const handleToggleFarmingCollapse = () => {
+    setIsFarmingCollapsed((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem('plant_arena_jardin_farming_collapsed', String(next))
+      } catch {}
+      return next
+    })
+  }
+
+  const groupedPacks = useMemo(() => {
+    const map = new Map<PackId, InventoryPack[]>()
+    inventoryPacks.forEach((p) => {
+      if (!map.has(p.packId)) map.set(p.packId, [])
+      map.get(p.packId)!.push(p)
+    })
+    return Array.from(map.entries()).map(([packId, instances]) => ({
+      packId,
+      first: instances[0],
+      count: instances.length,
+      instances,
+    }))
+  }, [inventoryPacks])
+
+  const getQty = (packId: string, maxCount: number) => {
+    const val = openQuantities[packId] ?? 1
+    return Math.max(1, Math.min(maxCount, val))
+  }
+
+  const setQty = (packId: string, val: number, maxCount: number) => {
+    const clamped = Math.max(1, Math.min(maxCount, val))
+    setOpenQuantities((prev) => ({ ...prev, [packId]: clamped }))
+  }
+
+  useEffect(() => {
+    soundManager.playBgm('menu')
+    const unsubscribe = soundManager.subscribe((muted) => setIsMuted(muted))
+    return () => unsubscribe()
+  }, [])
+
+  const isDeckValid = deck.length >= 3 && deck.length <= 6
+
+  // Computes all cards to display: Base cards + separate purchased/upgraded instances
+  const displayedCards = useMemo(() => {
+    const cards: {
+      instanceId: string
+      plantId: PlantId
+      level: number
+      statRolls: PlantStatKey[]
+      isBase: boolean
+      isUnlocked: boolean
+    }[] = []
+
+    ALL_PLANTS.forEach((plantId) => {
+      const hasInstance = plantInstances.some((i) => i.plantId === plantId)
+      const isUnlocked = unlockedPlants.includes(plantId) || hasInstance
+      if (!isUnlocked) {
+        cards.push({
+          instanceId: `locked_${plantId}`,
+          plantId,
+          level: 0,
+          statRolls: [],
+          isBase: true,
+          isUnlocked: false,
+        })
+        return
+      }
+
+      const instances = plantInstances.filter((i) => i.plantId === plantId)
+      if (instances.length > 0) {
+        instances.forEach((inst) => {
+          cards.push({
+            instanceId: inst.instanceId,
+            plantId: inst.plantId,
+            level: inst.level,
+            statRolls: inst.statRolls || [],
+            isBase: inst.isBase ?? false,
+            isUnlocked: true,
+          })
+        })
+      } else {
+        // Fallback base card
+        cards.push({
+          instanceId: `inst_base_${plantId}`,
+          plantId,
+          level: plantLevels[plantId] || 0,
+          statRolls: plantStatRolls[plantId] || [],
+          isBase: true,
+          isUnlocked: true,
+        })
+      }
+    })
+
+    return cards
+  }, [unlockedPlants, plantInstances, plantLevels, plantStatRolls])
+
+  // We track the array of instance IDs currently selected in the deck (up to 6)
+  const [deckInstanceIds, setDeckInstanceIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('plant_arena_active_deck_instances')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const valid = parsed.filter((id) => displayedCards.some((c) => c.instanceId === id && c.isUnlocked))
+          if (valid.length > 0) return valid
+        }
+      }
+    } catch {}
+
+    const result: string[] = []
+    const used = new Set<string>()
+    activeDeck.forEach((pId) => {
+      const inst = displayedCards.find((c) => c.plantId === pId && !used.has(c.instanceId) && c.isUnlocked)
+      if (inst) {
+        result.push(inst.instanceId)
+        used.add(inst.instanceId)
+      }
+    })
+    return result
+  })
+
+  // Synchronize with activeDeck changes and persist
+  useEffect(() => {
+    try {
+      localStorage.setItem('plant_arena_active_deck_instances', JSON.stringify(deckInstanceIds))
+    } catch {}
+  }, [deckInstanceIds])
+
+  useEffect(() => {
+    setDeck(activeDeck)
+  }, [activeDeck])
+
+  const handleRemoveSlotInstance = (slotIdx: number) => {
+    soundManager.playSound('plantation', 0.4)
+    const next = deckInstanceIds.filter((_, idx) => idx !== slotIdx)
+    setDeckInstanceIds(next)
+    const plantIds = next
+      .map((id) => displayedCards.find((c) => c.instanceId === id)?.plantId)
+      .filter(Boolean) as PlantId[]
+    setDeck(plantIds)
+    onUpdateDeck(plantIds, next)
+    setSelectedSlotIndex(null)
+  }
+
+  const handleToggleCardInstance = (card: typeof displayedCards[0]) => {
+    if (!card.isUnlocked) {
+      soundManager.playSound('plantation', 0.2)
+      return
+    }
+
+    soundManager.playSound('plantation', 0.5)
+
+    const inDeck = deckInstanceIds.includes(card.instanceId)
+
+    if (inDeck) {
+      const next = deckInstanceIds.filter((id) => id !== card.instanceId)
+      setDeckInstanceIds(next)
+      const plantIds = next
+        .map((id) => displayedCards.find((c) => c.instanceId === id)?.plantId)
+        .filter(Boolean) as PlantId[]
+      setDeck(plantIds)
+      onUpdateDeck(plantIds, next)
+      setSelectedSlotIndex(null)
+    } else {
+      if (selectedSlotIndex !== null) {
+        const next = [...deckInstanceIds]
+        if (selectedSlotIndex < next.length) {
+          next[selectedSlotIndex] = card.instanceId
+        } else if (next.length < 6) {
+          next.push(card.instanceId)
+        }
+        setDeckInstanceIds(next)
+        const plantIds = next
+          .map((id) => displayedCards.find((c) => c.instanceId === id)?.plantId)
+          .filter(Boolean) as PlantId[]
+        setDeck(plantIds)
+        onUpdateDeck(plantIds, next)
+        setSelectedSlotIndex(null)
+      } else {
+        if (deckInstanceIds.length < 6) {
+          const next = [...deckInstanceIds, card.instanceId]
+          setDeckInstanceIds(next)
+          const plantIds = next
+            .map((id) => displayedCards.find((c) => c.instanceId === id)?.plantId)
+            .filter(Boolean) as PlantId[]
+          setDeck(plantIds)
+          onUpdateDeck(plantIds, next)
+        }
+      }
+    }
+  }
+
+  const handlePlayClick = async () => {
+    const currentPlantIds = deckInstanceIds
+      .map(
+        (id) =>
+          displayedCards.find((c) => c.instanceId === id)?.plantId
+      )
+      .filter(Boolean) as PlantId[]
+
+    if (currentPlantIds.length < 3 || currentPlantIds.length > 6) {
+      return
+    }
+
+    onUpdateDeck(currentPlantIds, deckInstanceIds)
+
+    try {
+      localStorage.setItem(
+        'plant_arena_active_deck',
+        JSON.stringify(currentPlantIds)
+      )
+
+      localStorage.setItem(
+        'plant_arena_active_deck_instances',
+        JSON.stringify(deckInstanceIds)
+      )
+    } catch {}
+
+    // IMPORTANTE:
+    // manda las instancias exactas que el usuario está viendo,
+    // no espera a que React actualice el estado del padre.
+    await onPlay(deckInstanceIds)
+  }
+
+  const handleBack = () => {
+    const currentPlantIds = deckInstanceIds
+      .map(
+        (id) =>
+          displayedCards.find((c) => c.instanceId === id)?.plantId
+      )
+      .filter(Boolean) as PlantId[]
+
+    if (currentPlantIds.length >= 3 && currentPlantIds.length <= 6) {
+      onUpdateDeck(currentPlantIds, deckInstanceIds)
+      try {
+        localStorage.setItem(
+          'plant_arena_active_deck',
+          JSON.stringify(currentPlantIds)
+        )
+        localStorage.setItem(
+          'plant_arena_active_deck_instances',
+          JSON.stringify(deckInstanceIds)
+        )
+      } catch {}
+    }
+    onBack(deckInstanceIds)
+  }
+
+  return (
+    <div
+      className="jardin-screen"
+      style={{ backgroundImage: `url(${background})` }}
+    >
+      <div className="jardin-header">
+        <button type="button" className="jardin-back-btn" onClick={handleBack}>
+          ⬅ VOLVER AL MENÚ
+        </button>
+        <div className="jardin-header__center">
+          <h1 className="jardin-title">🌱 JARDÍN</h1>
+          <span className="jardin-subtitle">
+            Personaliza tu equipo de batalla.
+          </span>
+        </div>
+        <div className="jardin-header__right">
+          <button
+            type="button"
+            className="jardin-btn-lottery"
+            onClick={() => {
+              soundManager.playSound('click', 0.4)
+              setShowLotteryModal(true)
+            }}
+          >
+            🎰 LOTERÍA
+          </button>
+          <button type="button" className="jardin-btn-shop" onClick={onOpenShop}>
+            🛒 TIENDA
+          </button>
+          <button
+            type="button"
+            className="jardin-btn-sec"
+            onClick={() => {
+              soundManager.playSound('click', 0.4)
+              setShowTreeModal(true)
+            }}
+          >
+            🌳 ÁRBOL
+          </button>
+          <button
+            type="button"
+            className="jardin-mute-btn"
+            onClick={() => soundManager.toggleMute()}
+          >
+            {isMuted ? '🔇' : '🔊'}
+          </button>
+        </div>
+      </div>
+
+      <div className="jardin-scroll-area">
+        {(inventoryPacks.length > 0 || (playerRewardPacks && playerRewardPacks.length > 0)) && (
+          <div className="jardin-packs-section">
+            <div className="jardin-section-header">
+              <h3 className="jardin-section-title">
+                📦 SOBRES PENDIENTES POR ABRIR ({inventoryPacks.length + (playerRewardPacks?.length || 0)})
+              </h3>
+              <button type="button" className="jardin-buy-more-btn" onClick={onOpenShop}>
+                + Conseguir más sobres en la Tienda
+              </button>
+            </div>
+
+            <div className="jardin-packs-grid">
+              {/* SOBRES PvP DE RECOMPENSA (STREAMERS) */}
+              {playerRewardPacks && playerRewardPacks.map((pack) => {
+                const elapsedSec = pack.unlockStartedAt ? Math.max(0, (Date.now() - pack.unlockStartedAt) / 1000) : 0
+                const totalSec = (pack.durationHours || 4) * 3600
+                const remainingSec = Math.max(0, totalSec - elapsedSec)
+                const hours = Math.floor(remainingSec / 3600)
+                const mins = Math.floor((remainingSec % 3600) / 60)
+                const secs = Math.floor(remainingSec % 60)
+                const timerStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+                const remainingHours = remainingSec / 3600
+                const goldCost = Math.max(10, Math.ceil(remainingHours * 75))
+
+                const isReady = pack.status === 'ready'
+                const isUnlocking = pack.status === 'unlocking'
+
+                return (
+                  <div
+                    key={pack.id}
+                    className={`jardin-pack-card jardin-pack-card--pvp-reward ${
+                      isReady ? 'jardin-pack-card--ready' : isUnlocking ? 'jardin-pack-card--unlocking' : ''
+                    }`}
+                  >
+                    <span className="jardin-pack-stack-badge jardin-pack-stack-badge--streamer">
+                      🎁 STREAMER
+                    </span>
+                    <img
+                      src="/game-assets/greenfoot/seed_pack_pvp.webp"
+                      alt="Sobre PvP de Recompensa"
+                      className="jardin-pack-card__img"
+                      onError={(e) => {
+                        // Fallback icon if image path differs
+                        ;(e.currentTarget as HTMLImageElement).src = '/game-assets/greenfoot/pack_basic.png'
+                      }}
+                    />
+                    <div className="jardin-pack-card__info">
+                      <span className="jardin-pack-card__rarity">
+                        ⚔️ Arena {pack.arenaLevel}
+                      </span>
+                      <h4 className="jardin-pack-card__name">Sobre PvP Streamer</h4>
+                    </div>
+
+                    <div className="jardin-pack-controls-wrap">
+                      {pack.status === 'pending' && (
+                        <button
+                          type="button"
+                          className="jardin-pack-card__unlock-btn"
+                          onClick={async () => {
+                            soundManager.playSound('click', 0.5)
+                            if (onStartUnlockRewardPack) {
+                              const res = await onStartUnlockRewardPack(pack.id)
+                              if (!res.success && res.error) {
+                                setRewardPackAlert({
+                                  title: 'ERROR AL DESBLOQUEAR',
+                                  message: res.error,
+                                  icon: '⚠️',
+                                })
+                              }
+                            }
+                          }}
+                        >
+                          🔓 DESBLOQUEAR
+                        </button>
+                      )}
+
+                      {isUnlocking && (
+                        <div className="jardin-pack-unlocking-box">
+                          <div className="jardin-pack-timer-display">
+                            <span className="jardin-pack-timer-clock">⏱️ {timerStr}</span>
+                            <span className="jardin-pack-timer-total">⏳ {pack.durationHours}h</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="jardin-pack-card__accelerate-btn"
+                            onClick={() => {
+                              soundManager.playSound('click', 0.5)
+                              setRewardPackAccelerating({ packId: pack.id, goldCost })
+                            }}
+                          >
+                            ⚡ ACELERAR ({goldCost} 💰)
+                          </button>
+                        </div>
+                      )}
+
+                      {isReady && (
+                        <button
+                          type="button"
+                          className="jardin-pack-card__open-btn jardin-pack-card__open-btn--ready"
+                          onClick={() => {
+                            soundManager.playSound('plantation', 0.8)
+                            if (onOpenRewardPack) {
+                              onOpenRewardPack(pack.id)
+                            }
+                          }}
+                        >
+                          ✨ ABRIR SOBRE
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {/* SOBRES REGULARES */}
+              {groupedPacks.map((group) => {
+                const maxCount = group.count
+                const currentQty = getQty(group.packId, maxCount)
+                const rarityClass =
+                  group.first.rarity === 'legendary'
+                    ? 'jardin-pack-card--legendary'
+                    : group.first.rarity === 'epic'
+                    ? 'jardin-pack-card--epic'
+                    : 'jardin-pack-card--common'
+
+                return (
+                  <div key={group.packId} className={`jardin-pack-card ${rarityClass}`}>
+                    {group.count > 1 && (
+                      <span className="jardin-pack-stack-badge">
+                        x{group.count}
+                      </span>
+                    )}
+                    <img
+                      src={group.first.icon}
+                      alt={group.first.name}
+                      className="jardin-pack-card__img"
+                    />
+                    <div className="jardin-pack-card__info">
+                      <span className="jardin-pack-card__rarity">
+                        {group.first.rarity === 'common'
+                          ? '🌱 Verde Mágico'
+                          : group.first.rarity === 'epic'
+                          ? '🔮 Místico Púrpura'
+                          : '👑 Legendario Dorado'}
+                      </span>
+                      <h4 className="jardin-pack-card__name">{group.first.name}</h4>
+                    </div>
+
+                    <div className="jardin-pack-controls-wrap">
+                      <div className="jardin-pack-qty-picker">
+                        <button
+                          type="button"
+                          className="jardin-pack-qty-btn"
+                          disabled={currentQty <= 1}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.4)
+                            setQty(group.packId, currentQty - 1, maxCount)
+                          }}
+                          title="Disminuir cantidad"
+                        >
+                          -
+                        </button>
+                        <span className="jardin-pack-qty-num">{currentQty}</span>
+                        <button
+                          type="button"
+                          className="jardin-pack-qty-btn"
+                          disabled={currentQty >= maxCount}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.4)
+                            setQty(group.packId, currentQty + 1, maxCount)
+                          }}
+                          title="Aumentar cantidad"
+                        >
+                          +
+                        </button>
+                        <button
+                          type="button"
+                          className="jardin-pack-qty-max"
+                          disabled={currentQty >= maxCount}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.4)
+                            setQty(group.packId, maxCount, maxCount)
+                          }}
+                          title="Abrir todos"
+                        >
+                          MÁX
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="jardin-pack-card__open-btn"
+                        onClick={() => {
+                          soundManager.playSound('plantation', 0.8)
+                          if (currentQty === 1) {
+                            onOpenPack(group.instances[0].instanceId)
+                          } else if (onOpenMultiplePacks) {
+                            const ids = group.instances.slice(0, currentQty).map((p) => p.instanceId)
+                            onOpenMultiplePacks(ids)
+                          }
+                        }}
+                      >
+                        {currentQty === 1 ? '✨ ABRIR SOBRE' : `✨ ABRIR (${currentQty})`}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="jardin-farming-resources">
+          <div
+            className="jardin-section-header jardin-section-header--farming"
+            onClick={handleToggleFarmingCollapse}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+            title={isFarmingCollapsed ? 'Clic para expandir recursos de farming' : 'Clic para minimizar recursos de farming'}
+          >
+            <div>
+              <h3 className="jardin-section-title">
+                🌾 RECURSOS DE FARMING {isFarmingCollapsed && <span className="jardin-farming-pill">MINIMIZADO</span>}
+              </h3>
+              <p className="jardin-farming-subtitle">
+                Inventario autoritativo de Supabase · los recursos PvP aparecen aquí al abrir sobres.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="jardin-farming-toggle-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleToggleFarmingCollapse()
+              }}
+              title={isFarmingCollapsed ? 'Expandir recursos de farming' : 'Minimizar recursos de farming'}
+            >
+              {isFarmingCollapsed ? '➕ MOSTRAR' : '➖ MINIMIZAR'}
+            </button>
+          </div>
+          {!isFarmingCollapsed && (
+            <div className="jardin-farming-grid">
+              {(Object.entries(FARMING_ITEM_DEFINITIONS) as Array<[keyof FarmingInventory, (typeof FARMING_ITEM_DEFINITIONS)[keyof typeof FARMING_ITEM_DEFINITIONS]]>).map(([itemId, def]) => (
+                <div key={itemId} className={`jardin-farming-card jardin-farming-card--${itemId}`}>
+                  <div className="jardin-farming-card__art">
+                    <img
+                      src={def.icon}
+                      alt={def.label}
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    />
+                    <span>{def.fallback}</span>
+                  </div>
+                  <strong>{def.label}</strong>
+                  <span className="jardin-farming-card__qty">x{Number(farmingItems[itemId] || 0).toLocaleString()}</span>
+                  <small>{def.description}</small>
+                </div>
+              ))}
+              <div className="jardin-farming-card jardin-farming-card--gold">
+                <div className="jardin-farming-card__art">
+                  <img
+                    src="/game-assets/farming/gold_coin.webp"
+                    alt="Oro"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
+                  />
+                  <span>💰</span>
+                </div>
+                <strong>Monedas de Oro</strong>
+                <span className="jardin-farming-card__qty">x{userGold.toLocaleString()}</span>
+                <small>Sirve para acelerar, fusionar y futuros crafts de farming.</small>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ACTIVE BATTLE DECK (3 TO 6 SLOTS) */}
+        <div className="jardin-deck-container">
+          <div className="jardin-deck-header">
+            <span className="jardin-deck-title">
+              ⚔️ MAZO DE BATALLA DE MI JARDÍN ({deckInstanceIds.length}/6 PLANTAS)
+            </span>
+            <span
+              className={`jardin-deck-status ${
+                isDeckValid ? 'jardin-deck-status--ready' : ''
+              }`}
+            >
+              {isDeckValid
+                ? `✅ LISTO PARA COMBATE (${deckInstanceIds.length}/6 PLANTAS)`
+                : `⚠️ MÍNIMO 3 PLANTAS REQUERIDAS (TIENES ${deckInstanceIds.length})`}
+            </span>
+          </div>
+
+          <div className="jardin-slots-grid">
+            {Array.from({ length: 6 }).map((_, slotIdx) => {
+              const instanceId = deckInstanceIds[slotIdx]
+              const card = displayedCards.find((c) => c.instanceId === instanceId)
+              const config = card ? PLANT_CONFIGS[card.plantId] : null
+              const isSelected = selectedSlotIndex === slotIdx
+
+              return (
+                <button
+                  key={slotIdx}
+                  type="button"
+                  className={`jardin-slot ${config ? 'jardin-slot--filled' : 'jardin-slot--empty'} ${
+                    isSelected ? 'jardin-slot--active' : ''
+                  }`}
+                  onClick={() => {
+                    soundManager.playSound('plantation', 0.4)
+                    setSelectedSlotIndex(isSelected ? null : slotIdx)
+                  }}
+                >
+                  <span className="jardin-slot__num">SLOT {slotIdx + 1}</span>
+
+                  {config && card ? (
+                    <div className="jardin-slot__content">
+                      <span
+                        className="jardin-slot__remove-btn"
+                        title="Quitar esta planta del mazo"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveSlotInstance(slotIdx)
+                        }}
+                      >
+                        ✖
+                      </span>
+                      <div className="jardin-slot__cost">
+                        <img src={sunIcon} alt="Sol" className="jardin-slot__sun" />
+                        <span>{config.cost}</span>
+                      </div>
+                      <img src={config.icon} alt={config.name} className="jardin-slot__img" />
+                      <span className="jardin-slot__name">
+                        {config.name} {card.level > 0 ? `(L${card.level})` : ''}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="jardin-slot__placeholder">
+                      <span className="jardin-slot__plus">+</span>
+                      <span className="jardin-slot__hint">ELIGE PLANTA</span>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="jardin-action-bar">
+            <button
+              type="button"
+              className="jardin-play-btn"
+              disabled={!isDeckValid}
+              onClick={handlePlayClick}
+            >
+              🎮 IR A BATALLA CON ESTE EQUIPO ({deckInstanceIds.length} PLANTAS)
+            </button>
+          </div>
+        </div>
+
+        {/* INVENTORY CATALOG GRID (UNLOCKED VS LOCKED) */}
+        <div className="jardin-inventory-container">
+          <h2 className="jardin-inventory-title">
+            🌱 PLANTAS DESBLOQUEADAS Y DISPONIBLES EN TU JARDÍN ({displayedCards.filter((c) => c.isUnlocked).length} ACTIVAS)
+          </h2>
+          <div className="jardin-inventory-grid">
+            {displayedCards.map((card) => {
+              const { instanceId, plantId, level, statRolls, isUnlocked } = card
+              const config = PLANT_CONFIGS[plantId]
+              const inDeck = deckInstanceIds.includes(instanceId)
+              const copies = plantCopies[plantId] || 0
+              const isLegendary = plantId === 'threepeater' || plantId === 'iceberglettuce'
+              const maxLvl = isLegendary ? 3 : 5
+              const groupedBuffs = groupRolls(statRolls)
+              const isMaxLevel = level >= maxLvl
+              const hasCopies = copies >= FUSION_COPIES_REQ
+              const hasGold = (userGold ?? 0) >= FUSION_GOLD_COST
+
+              return (
+                <div
+                  key={instanceId}
+                  role="button"
+                  tabIndex={0}
+                  className={`jardin-card ${
+                    !isUnlocked
+                      ? 'jardin-card--locked'
+                      : inDeck
+                      ? 'jardin-card--indeck'
+                      : 'jardin-card--unlocked'
+                  }`}
+                  onClick={() => handleToggleCardInstance(card)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleToggleCardInstance(card)
+                    }
+                  }}
+                >
+                  {/* CIRCULAR LEVEL BADGE (ONLY NUMBER) */}
+                  {isUnlocked && level > 0 && (
+                    <div
+                      className={`jardin-level-circle ${level === maxLvl ? 'jardin-level-circle--max' : ''}`}
+                      title={`Nivel ${level}`}
+                    >
+                      {level}
+                    </div>
+                  )}
+
+                  <div className="jardin-card__header">
+                    <div className="jardin-card__cost">
+                      <img src={sunIcon} alt="Sol" className="jardin-card__sun" />
+                      <span>{config.cost}</span>
+                    </div>
+                    {inDeck && <span className="jardin-card__badge">EN MAZO ✓</span>}
+                    {isUnlocked && !inDeck && (
+                      <span className="jardin-card__badge" style={{ color: '#60a5fa', borderColor: '#60a5fa' }}>
+                        OBTENIDA ✓
+                      </span>
+                    )}
+                    {!isUnlocked && <span className="jardin-card__badge-locked">🔒 BLOQUEADA</span>}
+                  </div>
+
+                  <img
+                    src={config.icon}
+                    alt={config.name}
+                    className={`jardin-card__img ${!isUnlocked ? 'jardin-card__img--locked' : ''}`}
+                  />
+
+                  <span className="jardin-card__name">{config.name}</span>
+                  <span className="jardin-card__cat">
+                    {!isUnlocked
+                      ? '🔒 Bloqueada'
+                      : config.category === 'producer'
+                      ? '☀️ Productora'
+                      : config.category === 'ranged'
+                      ? '🏹 Atacante'
+                      : config.category === 'defensive'
+                      ? '🛡️ Tanque'
+                      : '🥊 Mele'}
+                  </span>
+
+                  {groupedBuffs.length > 0 && (
+                    <div className="jardin-card-rolls-wrap">
+                      {groupedBuffs.map((b, idx) => (
+                        <span
+                          key={idx}
+                          className="jardin-stat-roll-badge"
+                          style={{ color: b.color, borderColor: b.color }}
+                        >
+                          {b.label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {isUnlocked && (
+                    <div className="jardin-card-copies-tag">
+                      COPIAS: {copies}/{FUSION_COPIES_REQ} · 💰 {FUSION_GOLD_COST} {isMaxLevel ? '(MÁX)' : ''}
+                    </div>
+                  )}
+
+                  {isUnlocked && !isMaxLevel && (
+                    <>
+                      {hasCopies && hasGold && (
+                        <button
+                          type="button"
+                          className="jardin-fuse-btn"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setFuseCandidate({
+                              plantId,
+                              instanceId,
+                              level,
+                              name: config.name,
+                              icon: config.icon,
+                            })
+                          }}
+                        >
+                          🔥 MEJORAR (5/5 + {FUSION_GOLD_COST}💰) ➔ LVL {level + 1}
+                        </button>
+                      )}
+                      {hasCopies && !hasGold && (
+                        <button
+                          type="button"
+                          className="jardin-fuse-btn jardin-fuse-btn--disabled-gold"
+                          disabled
+                          onClick={(e) => e.stopPropagation()}
+                          title={`Oro insuficiente para mejorar (requiere ${FUSION_GOLD_COST} Oro)`}
+                        >
+                          ⚠️ ORO INSUFICIENTE ({FUSION_GOLD_COST}💰)
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* CONFIRMACIÓN DE FUSIÓN / MEJORA */}
+      {fuseCandidate && (
+        <div
+          className="jardin-upgrade-modal-overlay"
+          onClick={() => {
+            if (!isFusing) setFuseCandidate(null)
+          }}
+        >
+          <div className="jardin-upgrade-modal-card jardin-fuse-confirm-card" onClick={(e) => e.stopPropagation()}>
+            <div className="jardin-upgrade-modal-sparkle">✨ ⬆️ ✨</div>
+            <h3 className="jardin-upgrade-modal-title">¿Deseas mejorar esta planta?</h3>
+
+            <div className="jardin-fuse-confirm-plant">
+              <img src={fuseCandidate.icon} alt={fuseCandidate.name} className="jardin-fuse-confirm-img" />
+              <span className="jardin-fuse-confirm-name">{fuseCandidate.name}</span>
+              <span className="jardin-fuse-confirm-level">
+                Nivel {fuseCandidate.level} ➔ Nivel {fuseCandidate.level + 1}
+              </span>
+            </div>
+
+            <div className="jardin-fuse-confirm-reqs">
+              <div className="jardin-fuse-req-item">
+                <span className="jardin-fuse-req-icon">🧩</span>
+                <span className="jardin-fuse-req-text">5 copias</span>
+              </div>
+              <div className="jardin-fuse-req-item">
+                <span className="jardin-fuse-req-icon">💰</span>
+                <span className="jardin-fuse-req-text">{FUSION_GOLD_COST} Oro</span>
+              </div>
+            </div>
+
+            <div className="jardin-fuse-confirm-actions">
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-cancel"
+                disabled={isFusing}
+                onClick={() => setFuseCandidate(null)}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-confirm"
+                disabled={isFusing}
+                onClick={handleConfirmFuse}
+              >
+                {isFusing ? 'MEJORANDO...' : 'MEJORAR'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DIÁLOGO DE ERROR / AVISO */}
+      {fuseAlert && (
+        <div className="jardin-upgrade-modal-overlay" onClick={() => setFuseAlert(null)}>
+          <div className="jardin-upgrade-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="jardin-upgrade-modal-sparkle">{fuseAlert.icon}</div>
+            <h3 className="jardin-upgrade-modal-title">{fuseAlert.title}</h3>
+            <p className="jardin-upgrade-modal-desc">{fuseAlert.message}</p>
+            <button
+              type="button"
+              className="jardin-upgrade-modal-btn"
+              onClick={() => setFuseAlert(null)}
+            >
+              ENTENDIDO
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* UPGRADE CELEBRATION MODAL */}
+      {upgradeModal && (
+        <div className="jardin-upgrade-modal-overlay" onClick={() => setUpgradeModal(null)}>
+          <div className="jardin-upgrade-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="jardin-upgrade-modal-sparkle">✨ 🎲 ✨</div>
+            <h3 className="jardin-upgrade-modal-title">¡MEJORA EXITOSA!</h3>
+            <span className="jardin-upgrade-modal-level">NIVEL {upgradeModal.newLevel}</span>
+
+            <img
+              src={PLANT_CONFIGS[upgradeModal.plantId].icon}
+              alt={PLANT_CONFIGS[upgradeModal.plantId].name}
+              className="jardin-upgrade-modal-img"
+            />
+            <h4 className="jardin-upgrade-modal-name">{PLANT_CONFIGS[upgradeModal.plantId].name}</h4>
+
+            <div
+              className="jardin-upgrade-modal-rolled-box"
+              style={{ borderColor: STAT_LABELS[upgradeModal.rolledStat].color }}
+            >
+              <span className="jardin-upgrade-modal-stat-icon">
+                {STAT_LABELS[upgradeModal.rolledStat].icon}
+              </span>
+              <span
+                className="jardin-upgrade-modal-stat-val"
+                style={{ color: STAT_LABELS[upgradeModal.rolledStat].color }}
+              >
+                {STAT_LABELS[upgradeModal.rolledStat].suffix}
+              </span>
+              <span className="jardin-upgrade-modal-stat-name">
+                {STAT_LABELS[upgradeModal.rolledStat].label}
+              </span>
+            </div>
+
+            <p className="jardin-upgrade-modal-desc">
+              ¡Esta planta acaba de obtener un <strong>+15% aleatorio</strong> en este atributo! Cada planta mejorará de forma única.
+            </p>
+
+            <button
+              type="button"
+              className="jardin-upgrade-modal-btn"
+              onClick={() => setUpgradeModal(null)}
+            >
+              ¡ENTENDIDO! 🚀
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* LOTTERY POPUP MODAL */}
+      {showLotteryModal && (
+        <LotteryModal
+          isOpen={showLotteryModal}
+          onClose={() => setShowLotteryModal(false)}
+          userTokens={userTokens}
+          userGold={userGold}
+          isAdmin={isAdmin}
+          onOpenAdmin={onOpenAdmin}
+          onRewardsChanged={onRewardsChanged}
+        />
+      )}
+
+      {/* MOTHER TREE UPGRADE MODAL */}
+      {showTreeModal && (
+        <TreeModal
+          isOpen={showTreeModal}
+          onClose={() => setShowTreeModal(false)}
+          userTokens={userTokens}
+          userGold={userGold}
+          farmingItems={farmingItems}
+          onRewardsChanged={onRewardsChanged}
+        />
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN PARA ACELERAR SOBRE PvP CON ORO */}
+      {rewardPackAccelerating && (() => {
+        const hasEnoughGold = (userGold ?? 0) >= rewardPackAccelerating.goldCost
+        const missingGold = rewardPackAccelerating.goldCost - (userGold ?? 0)
+
+        return (
+          <div
+            className="main-menu-dialog-backdrop"
+            onClick={() => {
+              if (!isAcceleratingReward) setRewardPackAccelerating(null)
+            }}
+          >
+            <div className="main-menu-dialog-card" onClick={(e) => e.stopPropagation()}>
+              <div className="main-menu-dialog-header">
+                <div className="main-menu-dialog-icon">⚡</div>
+                <h3 className="main-menu-dialog-title">ACELERAR DESBLOQUEO</h3>
+                <button
+                  type="button"
+                  className="main-menu-dialog-close"
+                  onClick={() => {
+                    if (!isAcceleratingReward) setRewardPackAccelerating(null)
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Vista previa del sobre */}
+              <div className="game-dialog-pack-preview">
+                <img
+                  src="/game-assets/greenfoot/seed_pack_pvp.webp"
+                  alt="Sobre PvP"
+                  className="game-dialog-pack-img"
+                />
+                <div className="game-dialog-pack-meta">
+                  <span className="game-dialog-pack-tag">SOBRE PvP</span>
+                  <span className="game-dialog-pack-name">Sobre de Recompensas</span>
+                  <span className="game-dialog-pack-timer">⚡ Desbloqueo Inmediato</span>
+                </div>
+              </div>
+
+              {/* Comparación de Oro */}
+              <div className="game-dialog-gold-box">
+                <div className="game-dialog-gold-row">
+                  <span className="game-dialog-gold-label">Costo en Oro:</span>
+                  <strong className="game-dialog-gold-val game-dialog-gold-val--cost">
+                    {rewardPackAccelerating.goldCost} 💰
+                  </strong>
+                </div>
+                <div className="game-dialog-gold-row">
+                  <span className="game-dialog-gold-label">Tu saldo actual:</span>
+                  <strong className="game-dialog-gold-val">{userGold ?? 0} 💰</strong>
+                </div>
+                {!hasEnoughGold && (
+                  <div className="game-dialog-gold-warning">
+                    ⚠️ Te faltan {missingGold} de Oro para desbloquear este sobre.
+                  </div>
+                )}
+              </div>
+
+              <div className="main-menu-dialog-actions">
+                <button
+                  type="button"
+                  className="main-menu-dialog-btn main-menu-dialog-btn--cancel"
+                  disabled={isAcceleratingReward}
+                  onClick={() => setRewardPackAccelerating(null)}
+                >
+                  CANCELAR
+                </button>
+                <button
+                  type="button"
+                  className={`main-menu-dialog-btn main-menu-dialog-btn--confirm ${!hasEnoughGold ? 'main-menu-dialog-btn--disabled' : ''}`}
+                  disabled={isAcceleratingReward || !hasEnoughGold}
+                  onClick={async () => {
+                    if (!hasEnoughGold) {
+                      setRewardPackAlert({
+                        title: 'ORO INSUFICIENTE',
+                        message: `Necesitas ${rewardPackAccelerating.goldCost} de oro para acelerar este sobre.`,
+                        icon: '💰',
+                      })
+                      setRewardPackAccelerating(null)
+                      return
+                    }
+                    setIsAcceleratingReward(true)
+                    try {
+                      soundManager.playSound('plantation', 0.9)
+                      if (onInstantUnlockRewardPack) {
+                        const res = await onInstantUnlockRewardPack(rewardPackAccelerating.packId)
+                        if (!res.success && res.error) {
+                          setRewardPackAlert({
+                            title: 'ERROR AL ACELERAR',
+                            message: res.error,
+                            icon: '⚠️',
+                          })
+                        }
+                      }
+                    } finally {
+                      setIsAcceleratingReward(false)
+                      setRewardPackAccelerating(null)
+                    }
+                  }}
+                >
+                  {isAcceleratingReward
+                    ? 'ACELERANDO...'
+                    : hasEnoughGold
+                    ? `PAGAR ${rewardPackAccelerating.goldCost} 💰`
+                    : 'ORO INSUFICIENTE'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* MODAL DE ALERTA DE SOBRES PvP */}
+      {rewardPackAlert && (
+        <div className="main-menu-dialog-backdrop" onClick={() => setRewardPackAlert(null)}>
+          <div className="main-menu-dialog-card" onClick={(e) => e.stopPropagation()}>
+            <div className="main-menu-dialog-icon">{rewardPackAlert.icon}</div>
+            <h3 className="main-menu-dialog-title">{rewardPackAlert.title}</h3>
+            <p className="main-menu-dialog-msg">{rewardPackAlert.message}</p>
+            <div className="main-menu-dialog-actions">
+              <button
+                type="button"
+                className="main-menu-dialog-btn"
+                onClick={() => setRewardPackAlert(null)}
+              >
+                ENTENDIDO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
