@@ -62,13 +62,23 @@ const SIN_MEJORAS: MejorasDeCarta = { statRolls: [], level: 0 }
 export function leerMazo(bruto: unknown): CartaDeMazo[] | null {
   if (!Array.isArray(bruto)) return null
   const cartas: CartaDeMazo[] = []
+  let slotIdx = 0
   for (const c of bruto) {
+    if (typeof c === 'string') {
+      cartas.push({
+        plantId: c,
+        slot: slotIdx++,
+        level: 0,
+        statRolls: [],
+      })
+      continue
+    }
     if (!c || typeof c !== 'object') continue
     const carta = c as Record<string, unknown>
     if (typeof carta.plantId !== 'string') continue
     cartas.push({
       plantId: carta.plantId,
-      slot: typeof carta.slot === 'number' ? carta.slot : null,
+      slot: typeof carta.slot === 'number' ? carta.slot : slotIdx++,
       level: typeof carta.level === 'number' ? carta.level : null,
       statRolls: Array.isArray(carta.statRolls)
         ? carta.statRolls.filter((r): r is string => typeof r === 'string')

@@ -1928,12 +1928,47 @@ export const SupabaseService = {
     try {
       const { data, error } = await (supabase.rpc as any)('get_clan_ranking')
       if (error) {
+        // Si la función RPC no existe aún en la base de datos (código PGRST202 / 404),
+        // consultar directamente la tabla 'clans' para que el ranking funcione de inmediato sin errores
+        const isMissingRpc = error.code === 'PGRST202' || error.message?.includes('get_clan_ranking') || error.status === 404
+        if (isMissingRpc) {
+          try {
+            const { data: clansTableData } = await supabase
+              .from('clans')
+              .select('*')
+              .order('damage_dealt', { ascending: false })
+              .limit(10)
+            if (Array.isArray(clansTableData) && clansTableData.length > 0) {
+              return clansTableData.map((c: any, idx: number) => ({
+                rank: idx + 1,
+                id: c.id,
+                name: c.name,
+                tag: c.tag,
+                badge: c.badge || '🛡️',
+                description: c.description || '',
+                leader_name: c.leader_name || c.leader || 'Líder',
+                member_count: Array.isArray(c.members) ? c.members.length : (Number(c.member_count) || 1),
+                damage_dealt: Number(c.damage_dealt) || 0,
+                daily_damage_dealt: Number(c.daily_damage_dealt) || 0,
+                wins: Number(c.wins) || 0,
+                losses: Number(c.losses) || 0,
+                vault_gems: Number(c.vault_gems) || Number(c.vault_usd) || 0,
+                is_user_clan: false,
+              }))
+            }
+          } catch {
+            // Ignorar y continuar
+          }
+          return []
+        }
         logError('getClanRanking', error)
         return []
       }
       return Array.isArray(data) ? data : []
     } catch (e: any) {
-      logError('getClanRanking', e)
+      if (e?.code !== 'PGRST202') {
+        logError('getClanRanking', e)
+      }
       return []
     }
   },
@@ -1991,12 +2026,19 @@ export const SupabaseService = {
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
       if (error) {
+        // Si la tabla no existe en la base de datos (código PGRST205), no emitir error rojo a consola
+        const isTableMissing = error.code === 'PGRST205' || error.message?.includes('player_pending_rewards') || error.status === 404
+        if (isTableMissing) {
+          return []
+        }
         logError('getMyPendingRewards', error)
         return []
       }
       return data || []
     } catch (e: any) {
-      logError('getMyPendingRewards', e)
+      if (e?.code !== 'PGRST205') {
+        logError('getMyPendingRewards', e)
+      }
       return []
     }
   },
@@ -4259,24 +4301,34 @@ export const SupabaseService = {
       logError('getGlobalTransactions:exception', e)
     }
 
-    // Fallback resiliente: consultar directamente marketplace_listings cerrados
+    // Fallback resiliente: consultar directamente marketplace_listings cerrados y transactions
     try {
-      const { data: soldListings } = await supabase
-        .from('marketplace_listings')
-        .select('id, price_gems, closed_at, buyer_id, seller_id, plant_instance_id')
-        .eq('status', 'sold')
-        .not('closed_at', 'is', null)
-        .order('closed_at', { ascending: false })
-        .limit(limite)
+      const [soldListingsRes, directTxRes] = await Promise.all([
+        supabase
+          .from('marketplace_listings')
+          .select('id, price_gems, closed_at, buyer_id, seller_id, plant_instance_id')
+          .eq('status', 'sold')
+          .not('closed_at', 'is', null)
+          .order('closed_at', { ascending: false })
+          .limit(limite),
+        supabase
+          .from('transactions')
+          .select('id, user_id, type, amount_gems, amount_usd, description, status, created_at')
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(limite),
+      ])
 
-      if (!soldListings || soldListings.length === 0) return []
+      const soldListings = soldListingsRes.data || []
+      const directTxs = directTxRes.data || []
+
+      if (soldListings.length === 0 && directTxs.length === 0) return []
 
       const userIds = Array.from(
-        new Set(
-          soldListings
-            .flatMap((l: any) => [l.buyer_id, l.seller_id])
-            .filter(Boolean)
-        )
+        new Set([
+          ...soldListings.flatMap((l: any) => [l.buyer_id, l.seller_id]),
+          ...directTxs.map((t: any) => t.user_id),
+        ].filter(Boolean))
       )
       const instanceIds = Array.from(
         new Set(
@@ -4298,13 +4350,15 @@ export const SupabaseService = {
       const profilesMap = new Map((profilesRes.data || []).map((p: any) => [p.id, p.username]))
       const plantsMap = new Map((plantsRes.data || []).map((pi: any) => [pi.id, pi]))
 
-      return soldListings.map((l: any) => {
+      const results: GlobalTransactionItem[] = []
+
+      for (const l of soldListings) {
         const buyerName = profilesMap.get(l.buyer_id) || 'Jugador'
         const sellerName = profilesMap.get(l.seller_id) || 'Vendedor'
         const plant = plantsMap.get(l.plant_instance_id)
-        return {
+        results.push({
           id: l.id,
-          type: 'marketplace_sale' as const,
+          type: 'marketplace_sale',
           createdAt: l.closed_at,
           userName: buyerName,
           targetUserName: sellerName,
@@ -4316,8 +4370,59 @@ export const SupabaseService = {
           amountGems: Number(l.price_gems || 0),
           amountUsd: null,
           status: 'completed',
+        })
+      }
+
+      for (const t of directTxs) {
+        const uName = profilesMap.get(t.user_id) || 'Jugador'
+        const desc = t.description || ''
+        const typeStr = (t.type || '').toLowerCase()
+
+        let txType: string = typeStr
+        let title = 'Transacción'
+
+        if (typeStr === 'shop_energy' || desc.toLowerCase().includes('energía') || desc.toLowerCase().includes('energia')) {
+          txType = 'shop_energy'
+          title = 'Recarga de Energía'
+        } else if (typeStr === 'shop_gold' || desc.toLowerCase().includes('oro') || desc.toLowerCase().includes('gold')) {
+          txType = 'shop_gold'
+          title = 'Compra de Oro'
+        } else if (typeStr === 'shop_pack' || desc.toLowerCase().includes('sobre') || desc.toLowerCase().includes('semilla')) {
+          txType = 'shop_pack'
+          title = 'Compra de Sobres'
+        } else if (desc.toLowerCase().includes('pase vip')) {
+          txType = 'shop_pass'
+          title = 'Pase VIP'
+        } else if (typeStr.startsWith('shop')) {
+          txType = 'shop_purchase'
+          title = 'Compra en Tienda'
+        } else if (typeStr === 'withdrawal') {
+          txType = 'withdrawal'
+          title = 'Retiro BNB Chain'
+        } else if (typeStr.includes('ruleta') || desc.toLowerCase().includes('ruleta')) {
+          txType = typeStr === 'spend' ? 'lottery_spin' : 'lottery_win'
+          title = txType === 'lottery_spin' ? 'Giro en Ruleta' : 'Premio de Ruleta'
         }
-      })
+
+        results.push({
+          id: t.id,
+          type: txType as any,
+          createdAt: t.created_at,
+          userName: uName,
+          targetUserName: null,
+          title,
+          description: desc || title,
+          itemId: null,
+          itemLevel: 0,
+          itemRarity: 'common',
+          amountGems: t.amount_gems != null ? Number(t.amount_gems) : null,
+          amountUsd: t.amount_usd != null ? Number(t.amount_usd) : null,
+          status: t.status || 'completed',
+        })
+      }
+
+      results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      return results.slice(0, limite)
     } catch (err) {
       logError('getGlobalTransactions:fallback_error', err)
       return []

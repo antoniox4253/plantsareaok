@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { PlantId } from '../../types/game'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { soundManager } from '../../utils/audioManager'
@@ -26,6 +26,13 @@ export default function TournamentDeckBuilder({
     return ['sunflower', 'peashooter', 'wallnut', 'chomper', 'repeater']
   })
   const [isSaving, setIsSaving] = useState(false)
+
+  // Sincronizar selectedDeck cuando se abre el modal o se actualiza currentDeck desde el servidor
+  useEffect(() => {
+    if (isOpen && currentDeck && currentDeck.length >= 5) {
+      setSelectedDeck(currentDeck.slice(0, 5))
+    }
+  }, [isOpen, currentDeck])
 
   if (!isOpen) return null
 

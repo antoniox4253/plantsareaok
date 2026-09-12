@@ -357,7 +357,19 @@ export default function Marketplace({
     if (txFilter === 'all') return transactions
     if (txFilter === 'marketplace') return transactions.filter((t) => t.type === 'marketplace_sale')
     if (txFilter === 'withdrawal') return transactions.filter((t) => t.type === 'withdrawal')
-    if (txFilter === 'shop') return transactions.filter((t) => t.type === 'shop_pack' || t.type === 'shop_gold')
+    if (txFilter === 'shop')
+      return transactions.filter(
+        (t) =>
+          t.type === 'shop_pack' ||
+          t.type === 'shop_gold' ||
+          t.type === 'shop_energy' ||
+          t.type === 'shop_purchase' ||
+          t.type === 'shop_pass' ||
+          t.type.startsWith('shop') ||
+          t.description?.toLowerCase().includes('tienda') ||
+          t.description?.toLowerCase().includes('sobre') ||
+          t.description?.toLowerCase().includes('pase vip')
+      )
     if (txFilter === 'reward') return transactions.filter((t) => t.type === 'lottery_win' || t.type === 'lottery_spin' || t.type === 'reward_code' || t.type === 'tournament_reward' || t.type === 'tournament_reentry' || t.type === 'referral_reward')
     return transactions
   }, [transactions, txFilter])
@@ -1376,7 +1388,22 @@ export default function Marketplace({
               className={`market-tx-filter-chip ${txFilter === 'shop' ? 'market-tx-filter-chip--active' : ''}`}
               onClick={() => setTxFilter('shop')}
             >
-              🎒 TIENDA & ORO ({transactions.filter((t) => t.type === 'shop_pack' || t.type === 'shop_gold').length})
+              🎒 TIENDA & ORO (
+              {
+                transactions.filter(
+                  (t) =>
+                    t.type === 'shop_pack' ||
+                    t.type === 'shop_gold' ||
+                    t.type === 'shop_energy' ||
+                    t.type === 'shop_purchase' ||
+                    t.type === 'shop_pass' ||
+                    t.type.startsWith('shop') ||
+                    t.description?.toLowerCase().includes('tienda') ||
+                    t.description?.toLowerCase().includes('sobre') ||
+                    t.description?.toLowerCase().includes('pase vip')
+                ).length
+              }
+              )
             </button>
             <button
               type="button"
@@ -1405,10 +1432,24 @@ export default function Marketplace({
 
                 const isPack =
                   tx.type === 'shop_pack' ||
-                  (tx.type === 'shop_gold' &&
+                  (tx.type !== 'shop_energy' &&
+                    tx.type !== 'shop_pass' &&
                     (tx.description?.toLowerCase().includes('sobre') ||
                       tx.description?.toLowerCase().includes('semilla') ||
-                      tx.description?.toLowerCase().includes('pack')))
+                      (tx.description?.toLowerCase().includes('pack') && !tx.description?.toLowerCase().includes('energ'))))
+
+                const isEnergy =
+                  tx.type === 'shop_energy' ||
+                  tx.description?.toLowerCase().includes('energía') ||
+                  tx.description?.toLowerCase().includes('energia')
+
+                const isPass =
+                  tx.type === 'shop_pass' ||
+                  tx.description?.toLowerCase().includes('pase vip')
+
+                const isGold =
+                  tx.type === 'shop_gold' ||
+                  (!isPack && !isEnergy && !isPass && (tx.description?.toLowerCase().includes('oro') || tx.description?.toLowerCase().includes('gold')))
 
                 const cleanDesc = (() => {
                   const desc = tx.description?.trim() || ''
@@ -1433,15 +1474,28 @@ export default function Marketplace({
                   return title
                 })()
 
+                const cardClassModifier = isPack
+                  ? 'shop_pack'
+                  : isEnergy
+                  ? 'shop_energy'
+                  : isPass
+                  ? 'shop_pass'
+                  : isGold
+                  ? 'shop_gold'
+                  : tx.type
+
                 return (
-                  <div key={tx.id} className={`market-tx-card market-tx-card--${isPack ? 'shop_pack' : tx.type}`}>
+                  <div key={tx.id} className={`market-tx-card market-tx-card--${cardClassModifier}`}>
                     {/* Left: Type badge & timestamp */}
                     <div className="market-tx-card__left">
-                      <span className={`market-tx-badge market-tx-badge--${isPack ? 'shop_pack' : tx.type}`}>
+                      <span className={`market-tx-badge market-tx-badge--${cardClassModifier}`}>
                         {tx.type === 'marketplace_sale' && '🛒 MERCADO P2P'}
                         {tx.type === 'withdrawal' && '💳 RETIRO BNB CHAIN'}
                         {isPack && '🎒 TIENDA · SOBRE'}
-                        {!isPack && tx.type === 'shop_gold' && '💰 TIENDA · ORO'}
+                        {isEnergy && '⚡ TIENDA · ENERGÍA'}
+                        {isPass && '👑 TIENDA · PASE VIP'}
+                        {isGold && '💰 TIENDA · ORO'}
+                        {!isPack && !isEnergy && !isPass && !isGold && tx.type.startsWith('shop') && '🛒 TIENDA'}
                         {tx.type === 'lottery_spin' && '🎡 GIRO DE RULETA'}
                         {tx.type === 'lottery_win' && (tx.amountGems && tx.amountGems >= 50 ? '🎰 JACKPOT RULETA' : '🎁 PREMIO DE RULETA')}
                         {tx.type === 'reward_code' && '🎁 CÓDIGO ESPECIAL'}
@@ -1489,7 +1543,11 @@ export default function Marketplace({
                             <span className="market-tx-action-text">
                               {isPack
                                 ? 'compró sobre en Tienda'
-                                : tx.type === 'shop_gold'
+                                : isEnergy
+                                ? 'recargó energía en Tienda'
+                                : isPass
+                                ? 'activó Pase VIP en Tienda'
+                                : isGold
                                 ? 'compró oro en Tienda'
                                 : tx.type.startsWith('shop')
                                 ? 'compró en Tienda'

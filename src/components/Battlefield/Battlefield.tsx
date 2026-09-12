@@ -62,15 +62,21 @@ interface BaseTowerProps {
   /** El nick del dueño de este árbol. Sin él se usa la etiqueta genérica. */
   nombre?: string | null
   level?: number
+  sideBadge?: React.ReactNode
 }
 
 const motherTreeImg = '/game-assets/greenfoot/mothertree_whitebg.webp'
 
-function BaseTower({ team, hp, maxHp, sunBank, nombre, level }: BaseTowerProps) {
+function BaseTower({ team, hp, maxHp, sunBank, nombre, level, sideBadge }: BaseTowerProps) {
   const hpPct = Math.max(0, Math.min(100, (hp / maxHp) * 100))
 
   return (
     <div className={`base base--${team}`}>
+      {sideBadge && (
+        <div className={`base__side-badge base__side-badge--${team}`}>
+          {sideBadge}
+        </div>
+      )}
       <div className="base__top">
         <div className="base__hp">
           <div
@@ -1135,34 +1141,65 @@ export default function Battlefield({
         const oppName = tournamentOpponent?.name || 'Rival de Torneo'
         const isVictory = gameStatus === 'victory'
 
-        void tournamentService.submitMatchResult(tourneyId, isVictory, oppName).then((res) => {
-          if (res.success && res.wins !== undefined && res.losses !== undefined) {
-            setTournamentResult((prev) => {
-              const base = prev || TournamentManager.getSession(tourneyId) || {
-                tournamentId: tourneyId,
-                tournamentName: 'Torneo',
-                registered: true,
-                startTimeMs: 0,
-                endTimeMs: 0,
-                userWins: 0,
-                userLosses: 0,
-                maxLosses: 3,
-                isEliminated: false,
-                leaderboard: [],
-              }
-              return {
-                ...base,
-                userWins: res.wins ?? base.userWins,
-                userLosses: res.losses ?? base.userLosses,
-                isEliminated: Boolean(res.is_eliminated),
-              }
-            })
-          }
-        })
+        if (!roomId) {
+          // Partida sin sala (offline/fallback): liquidar mediante RPC submit_tournament_match_result
+          void tournamentService.submitMatchResult(tourneyId, isVictory, oppName).then((res) => {
+            if (res.success && res.wins !== undefined && res.losses !== undefined) {
+              setTournamentResult((prev) => {
+                const base = prev || TournamentManager.getSession(tourneyId) || {
+                  tournamentId: tourneyId,
+                  tournamentName: 'Torneo',
+                  registered: true,
+                  startTimeMs: 0,
+                  endTimeMs: 0,
+                  userWins: 0,
+                  userLosses: 0,
+                  maxLosses: 3,
+                  isEliminated: false,
+                  leaderboard: [],
+                }
+                return {
+                  ...base,
+                  userWins: res.wins ?? base.userWins,
+                  userLosses: res.losses ?? base.userLosses,
+                  isEliminated: Boolean(res.is_eliminated),
+                }
+              })
+            }
+          })
 
-        const resolved = TournamentManager.resolveMatch(tourneyId, isVictory)
-        if (resolved) {
-          setTournamentResult(resolved)
+          const resolved = TournamentManager.resolveMatch(tourneyId, isVictory)
+          if (resolved) {
+            setTournamentResult(resolved)
+          }
+        } else {
+          // Partida multijugador con sala: el servidor (_settle_room) ya liquidó e incrementó
+          // victorias/derrotas de forma autoritativa. Obtenemos el registro actualizado sin doble conteo.
+          void tournamentService.getTournamentDetails(tourneyId).then((details) => {
+            if (details?.my_participation) {
+              const p = details.my_participation
+              setTournamentResult((prev) => {
+                const base = prev || TournamentManager.getSession(tourneyId) || {
+                  tournamentId: tourneyId,
+                  tournamentName: details.tournament?.title || 'Torneo',
+                  registered: true,
+                  startTimeMs: 0,
+                  endTimeMs: 0,
+                  userWins: 0,
+                  userLosses: 0,
+                  maxLosses: 3,
+                  isEliminated: false,
+                  leaderboard: [],
+                }
+                return {
+                  ...base,
+                  userWins: p.wins ?? base.userWins,
+                  userLosses: p.losses ?? base.userLosses,
+                  isEliminated: Boolean(p.is_eliminated),
+                }
+              })
+            }
+          })
         }
       }
 
@@ -1344,49 +1381,6 @@ export default function Battlefield({
         }
       }}
     >
-      {/* Top Controls Bar (Colosseum / Tournament / Friendly Pill) */}
-      {(matchMode === 'colosseum' || matchMode === 'tournament' || matchMode === 'friendly') && (
-        <div className="battlefield-top-controls">
-          {matchMode === 'colosseum' && (
-            <div className="battlefield-colosseum-header-pill">
-              <span className="battlefield-colosseum-icon">🏛️</span>
-              <span>COLISEO</span>
-              <span>•</span>
-              <span style={{ color: '#38bdf8' }}>Sala: {colosseumConfig?.betGems || 0.5} 💎</span>
-              <span>•</span>
-              <span style={{ color: '#fbbf24' }}>Pozo: {((colosseumConfig?.betGems || 0.5) * 2).toFixed(1)} 💎</span>
-            </div>
-          )}
-          {matchMode === 'tournament' && (
-            <div className="battlefield-colosseum-header-pill" style={{ borderColor: '#a855f7', boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)' }}>
-              <span className="battlefield-colosseum-icon">🎪</span>
-              <span>TORNEO EN VIVO</span>
-              <span>•</span>
-              <span style={{ color: '#d8b4fe' }}>vs {tournamentOpponent?.name || 'Rival'}</span>
-            </div>
-          )}
-          {matchMode === 'friendly' && (
-            <div className="battlefield-colosseum-header-pill" style={{ borderColor: '#34d399', boxShadow: '0 0 15px rgba(52, 211, 153, 0.4)' }}>
-              <span className="battlefield-colosseum-icon">🤝</span>
-              <span>DUELO AMISTOSO</span>
-              {friendlyBetGems !== undefined && friendlyBetGems > 0 ? (
-                <>
-                  <span>•</span>
-                  <span style={{ color: '#38bdf8' }}>Apuesta: {friendlyBetGems} 💎</span>
-                  <span>•</span>
-                  <span style={{ color: '#fbbf24' }}>Pozo: {friendlyBetGems * 2} 💎</span>
-                </>
-              ) : (
-                <>
-                  <span>•</span>
-                  <span style={{ color: '#a7f3d0' }}>Partida Gratuita</span>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Practice / Sandbox Mode Bar */}
       {isPracticeMode && (
         <div className="practice-bar">
@@ -1425,6 +1419,49 @@ export default function Battlefield({
         maxHp={INITIAL_BASE_HP}
         sunBank={roomId ? undefined : p2SunBank}
         nombre={nombres?.rival}
+        sideBadge={
+          matchMode === 'tournament' ? (
+            <div
+              className="battlefield-colosseum-header-pill"
+              style={{
+                borderColor: '#a855f7',
+                boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)',
+                background: 'rgba(15, 23, 42, 0.92)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span className="battlefield-colosseum-icon">🎪</span>
+              <span>TORNEO EN VIVO</span>
+            </div>
+          ) : matchMode === 'colosseum' ? (
+            <div className="battlefield-colosseum-header-pill" style={{ whiteSpace: 'nowrap' }}>
+              <span className="battlefield-colosseum-icon">🏛️</span>
+              <span>COLISEO</span>
+              <span>•</span>
+              <span style={{ color: '#38bdf8' }}>Sala: {colosseumConfig?.betGems || 0.5} 💎</span>
+              <span>•</span>
+              <span style={{ color: '#fbbf24' }}>Pozo: {((colosseumConfig?.betGems || 0.5) * 2).toFixed(1)} 💎</span>
+            </div>
+          ) : matchMode === 'friendly' ? (
+            <div
+              className="battlefield-colosseum-header-pill"
+              style={{
+                borderColor: '#34d399',
+                boxShadow: '0 0 15px rgba(52, 211, 153, 0.4)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span className="battlefield-colosseum-icon">🤝</span>
+              <span>DUELO AMISTOSO</span>
+              {friendlyBetGems !== undefined && friendlyBetGems > 0 ? (
+                <>
+                  <span>•</span>
+                  <span style={{ color: '#38bdf8' }}>{friendlyBetGems} 💎</span>
+                </>
+              ) : null}
+            </div>
+          ) : undefined
+        }
       />
 
       {/* DIAGNÓSTICO DEL PVP
@@ -1717,6 +1754,7 @@ export default function Battlefield({
         const laneConfig = LANES_CONFIG[plant.lane]
         const hpPct = (plant.hp / plant.maxHp) * 100
         const isShovelTarget = selectedCard === 'shovel' && !plant.isWalking
+        const isFrozen = plant.frozenUntil ? tick < plant.frozenUntil : false
 
         return (
           <div
@@ -1725,6 +1763,8 @@ export default function Battlefield({
               isShovelTarget ? 'plant-unit--shovel-target' : ''
             } ${
               plant.isWalking ? 'plant-unit--walking' : ''
+            } ${
+              isFrozen ? 'plant-unit--frozen' : ''
             } ${
               plant.plantId === 'garlic'
                 ? plant.isSmashing
@@ -1811,7 +1851,9 @@ export default function Battlefield({
                 <img
                   className={`plant-unit__sprite ${
                     plant.plantId === 'melonpult' ? 'plant-unit__sprite--melon' : ''
-                  } ${plant.spriteOverride?.includes('burst') ? 'plant-unit__sprite--burst' : ''}`}
+                  } ${plant.spriteOverride?.includes('burst') ? 'plant-unit__sprite--burst' : ''} ${
+                    isFrozen ? 'plant-unit__sprite--frozen' : ''
+                  }`}
                   src={plant.spriteOverride || config.sprite}
                   alt={config.name}
                 />
@@ -1832,6 +1874,7 @@ export default function Battlefield({
             {plant.plantId === 'squash' && plant.isArmed && (
               <div className="potato-armed-badge">🚨 ¡ARMADA!</div>
             )}
+            {isFrozen && <div className="frozen-ice-badge">🧊 CONGELADO</div>}
             {plant.plantId === 'iceberglettuce' && plant.spriteOverride?.includes('burst') && (
               <div className="iceberg-burst-fx">⚡ ❄️ ¡RÁFAGA HELADA!</div>
             )}
@@ -1925,11 +1968,16 @@ export default function Battlefield({
             <img
               className={`enemy-unit__sprite ${
                 enemy.plantId === 'melonpult' ? 'enemy-unit__sprite--melon' : ''
-              } ${isFrozen ? 'enemy-unit__sprite--frozen' : ''}`}
-              src={config.sprite}
+              } ${enemy.spriteOverride?.includes('burst') ? 'plant-unit__sprite--burst' : ''} ${
+                isFrozen ? 'enemy-unit__sprite--frozen' : ''
+              }`}
+              src={enemy.spriteOverride || config.sprite}
               alt={config.name}
             />
             {isFrozen && <div className="frozen-ice-badge">🧊 CONGELADO</div>}
+            {enemy.plantId === 'iceberglettuce' && enemy.spriteOverride?.includes('burst') && (
+              <div className="iceberg-burst-fx">⚡ ❄️ ¡RÁFAGA HELADA!</div>
+            )}
           </div>
         )
       })}

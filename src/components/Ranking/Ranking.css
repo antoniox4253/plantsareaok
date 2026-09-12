@@ -2002,12 +2002,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 10px;
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
   border: 1.5px solid rgba(239, 68, 68, 0.4);
   border-radius: 12px;
-  padding: 8px 14px;
-  margin-bottom: 8px;
+  padding: 6px 12px;
+  margin-bottom: 6px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
   box-sizing: border-box;
@@ -2023,7 +2023,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 3px;
   flex-wrap: wrap;
 }
 
@@ -2054,94 +2053,363 @@
   font-size: 11.5px;
 }
 
-.clan-hero-desc {
-  font-size: 10.5px;
-  color: #cbd5e1;
-  margin: 0;
-  line-height: 1.35;
-  opacity: 0.9;
-}
-
-.clan-hero-rewards-grid {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.clan-all-rewards-btn {
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+  border: 1.5px solid #fbbf24;
+  color: #fbbf24;
+  font-weight: 800;
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
 }
 
-.clan-reward-pill {
+.clan-all-rewards-btn:hover {
+  background: #fbbf24;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+/* CLAN TRIO SHOWCASE (DISTRIBUCIÓN 3 CLANES IDÉNTICA EN DESKTOP Y MÓVIL) */
+.clan-showcase-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 4px 8px;
-  min-width: 82px;
-  text-align: center;
-  transition: transform 0.15s ease;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  gap: 8px;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
-.clan-reward-pill:hover {
+.clan-trio-showcase {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 12px;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+.clan-trio-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(10px);
+  box-sizing: border-box;
+  text-align: center;
+  cursor: pointer;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.clan-trio-card:hover {
   transform: translateY(-2px);
 }
 
-.clan-reward-pill__rank {
-  font-size: 10px;
-  font-weight: 900;
-  white-space: nowrap;
+.clan-trio-card--champ {
+  border: 2px solid #fbbf24;
+  background: radial-gradient(ellipse at 50% 15%, rgba(65, 45, 10, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+  animation: gold-aura-pulse 2.8s infinite ease-in-out;
+  transform: scale(1.02);
+  z-index: 2;
 }
 
-.clan-reward-pill__val {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #facc15;
-  margin: 1px 0;
-  display: inline-flex;
+.clan-trio-card--champ:hover {
+  transform: scale(1.03) translateY(-2px);
+}
+
+.clan-trio-avatar-wrapper {
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
+  margin: 4px 0;
+  width: 100%;
 }
 
-.clan-reward-pill small {
-  font-size: 8px;
-  color: #94a3b8;
-  white-space: nowrap;
+.clan-trio-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  margin: 4px 0;
+  flex-wrap: wrap;
 }
 
-.clan-reward-pill--top1 {
+.clan-trio-damage {
+  font-weight: 900;
+}
+
+.clan-trio-record {
+  font-weight: 800;
+}
+
+/* BOTÓN INTERACTIVO PARA VER BOTÍN SIN SATURAR LA PANTALLA */
+.podium-v2-prize-cta {
+  width: 100%;
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+  border: 1.5px solid #94a3b8;
+  color: #f1f5f9;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  margin-top: auto;
+}
+
+.podium-v2-prize-cta:hover {
   border-color: #fbbf24;
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%);
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
+  color: #fbbf24;
+  transform: translateY(-1px);
 }
 
-.clan-reward-pill--top1 .clan-reward-pill__rank {
+.podium-v2-prize-cta--gold {
+  background: linear-gradient(180deg, #b45309 0%, #78350f 100%);
+  border: 1.5px solid #fbbf24;
+  color: #fef08a;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+.podium-v2-prize-cta--gold:hover {
+  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.7);
+}
+
+/* SI HUBIERA MÁS DE 3 CLANES */
+.clan-more-toggle-wrap {
+  width: 100%;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.clan-more-toggle-btn {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.clan-more-toggle-btn:hover {
+  color: #fff;
+  border-color: #fbbf24;
+}
+
+.clan-more-table-wrap {
+  max-height: 130px;
+  overflow-y: auto;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+/* MODAL DETALLES DEL CLAN Y BOTÍN */
+.clan-detail-modal {
+  max-width: 440px !important;
+}
+
+.clan-modal-header-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.clan-modal-badge {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.clan-modal-rank-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 5px;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+.clan-modal-rank-tag--1 {
+  background: #fbbf24;
+  color: #0f172a;
+}
+
+.clan-modal-rank-tag--2 {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+.clan-modal-rank-tag--3 {
+  background: #fb923c;
+  color: #0f172a;
+}
+
+.clan-modal-prize-box {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1.5px solid rgba(251, 191, 36, 0.4);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: inset 0 0 15px rgba(251, 191, 36, 0.1);
+}
+
+.clan-modal-prize-heading {
+  font-size: 11px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.clan-modal-reward-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clan-modal-reward-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.clan-modal-reward-card--highlight {
+  border-color: #fbbf24;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%);
+}
+
+.clan-modal-reward-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.clan-modal-reward-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.clan-modal-reward-text strong {
+  font-size: 12px;
   color: #fde047;
 }
 
-.clan-reward-pill--top2 {
-  border-color: #94a3b8;
+.clan-modal-reward-text small {
+  font-size: 9.5px;
+  color: #94a3b8;
 }
 
-.clan-reward-pill--top2 .clan-reward-pill__rank {
-  color: #e2e8f0;
+.clan-modal-stats-section {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
 }
 
-.clan-reward-pill--top3 {
-  border-color: #d97706;
+.clan-modal-stats-title {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
 }
 
-.clan-reward-pill--top3 .clan-reward-pill__rank {
-  color: #fb923c;
+.clan-modal-leader-info {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 8px;
+  text-align: center;
 }
 
-.clan-reward-pill--top4 {
-  border-color: #475569;
+.clan-modal-leader-info strong {
+  color: #fbbf24;
 }
 
-.clan-reward-pill--top4 .clan-reward-pill__rank {
-  color: #a855f7;
+/* TABLA GENERAL DE BOTÍN */
+.clan-all-prizes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clan-prize-tier-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.clan-prize-tier-row--gold {
+  border-color: #fbbf24;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.2) 0%, rgba(30, 41, 59, 0.6) 100%);
+}
+
+.clan-prize-tier-row--silver {
+  border-color: #cbd5e1;
+}
+
+.clan-prize-tier-row--bronze {
+  border-color: #fb923c;
+}
+
+.clan-prize-tier-rank {
+  font-weight: 900;
+  font-size: 11.5px;
+  min-width: 72px;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.clan-prize-tier-detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.clan-prize-tier-detail strong {
+  font-size: 11.5px;
+  color: #facc15;
+}
+
+.clan-prize-tier-detail small {
+  font-size: 9.5px;
+  color: #94a3b8;
 }
 
 /* FLASH PVP PACK NOTIFICATION (TEMPORIZADOR ESTRICTO 5 MIN, NO EXPIRA) */
@@ -2506,38 +2774,19 @@
     padding-right: 2px;
   }
 
-  /* Banner de Clanes se apila de forma ordenada */
+  /* Banner de Clanes en móvil: compacto horizontal */
   .clan-ranking-hero-banner {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 8px 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 4px 8px;
+    margin-bottom: 4px;
   }
 
-  .clan-hero-rewards-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
-    width: 100%;
-  }
-
-  .clan-reward-pill {
-    min-width: 0;
-    width: 100%;
-    padding: 4px 2px;
-    border-radius: 6px;
-  }
-
-  .clan-reward-pill__rank {
+  .clan-all-rewards-btn {
     font-size: 9.5px;
-  }
-
-  .clan-reward-pill__val {
-    font-size: 9px;
-  }
-
-  .clan-reward-pill small {
-    font-size: 7.5px;
+    padding: 3px 8px;
   }
 
   /* Layout de 2 columnas pasa a 1 columna vertical en móvil */
@@ -2567,76 +2816,76 @@
     gap: 8px;
   }
 
-  /* Tarjeta Podio #1 Oro en móvil */
-  .podium-card-v2--gold {
-    padding: 8px 12px;
-    border-radius: 12px;
-    width: 100%;
-    box-sizing: border-box;
+  /* TRIO DE CLANES: DISTRIBUCIÓN HORIZONTAL IDÉNTICA EN MÓVIL (3 COLUMNAS) */
+  .clan-showcase-wrapper {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
   }
 
-  .podium-v2-laurel-svg {
-    width: 105px !important;
-    height: 70px !important;
+  .clan-trio-showcase {
+    display: grid !important;
+    grid-template-columns: 1fr 1.15fr 1fr !important;
+    gap: 5px !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+
+  .clan-trio-card {
+    padding: 6px 4px !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .clan-trio-avatar-wrapper {
+    margin: 2px 0 !important;
+  }
+
+  .clan-trio-card--champ .podium-v2-laurel-svg {
+    width: 75px !important;
+    height: 48px !important;
   }
 
   .clan-podium-badge-box {
-    width: 54px;
-    height: 54px;
-    font-size: 26px;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 18px !important;
   }
 
-  .podium-v2-username {
-    font-size: 13px;
+  .clan-trio-card .podium-v2-username {
+    font-size: 10px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
   }
 
-  .podium-v2-prize-box {
-    padding: 4px 10px;
-    margin: 3px 0;
-    font-size: 10.5px;
+  .clan-trio-card .clan-tag-pill {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
   }
 
-  .podium-v2-stats-row {
-    gap: 8px;
-    font-size: 10px;
-    padding-top: 3px;
+  .clan-trio-card .clan-podium-meta {
+    font-size: 9px !important;
+    gap: 2px !important;
+    margin: 1px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
-  /* Podio #2 y #3 en móvil */
-  .podium-v2-bottom-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    width: 100%;
+  .clan-trio-stats-row {
+    font-size: 9px !important;
+    gap: 4px !important;
+    margin: 2px 0 !important;
   }
 
-  .podium-card-v2--silver,
-  .podium-card-v2--bronze {
-    padding: 6px 8px;
-    border-radius: 10px;
-  }
-
-  .clan-podium-badge-mini {
-    width: 34px;
-    height: 34px;
-    font-size: 17px;
-    margin-bottom: 2px;
-  }
-
-  .podium-v2-sub-rank {
-    font-size: 9px;
-  }
-
-  .podium-v2-sub-username {
-    font-size: 10.5px;
-  }
-
-  .podium-v2-sub-prize {
-    font-size: 8.5px;
-  }
-
-  .podium-v2-sub-stats {
-    font-size: 9px;
+  .podium-v2-prize-cta {
+    font-size: 8.5px !important;
+    padding: 4px 2px !important;
+    border-radius: 6px !important;
   }
 
   /* Tabla de Clanes adaptada a pantallas móviles */

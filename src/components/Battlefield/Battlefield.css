@@ -107,6 +107,25 @@
   right: 0;
 }
 
+.base__side-badge {
+  position: absolute;
+  top: 14px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.base__side-badge--p2 {
+  right: calc(100% + 12px);
+  white-space: nowrap;
+}
+
+.base__side-badge--p1 {
+  left: calc(100% + 12px);
+  white-space: nowrap;
+}
+
 .base__top {
   display: flex;
   flex-direction: column;
@@ -938,8 +957,9 @@
   z-index: 50;
 }
 
-/* Frozen Enemy Unit FX */
-.enemy-unit--frozen {
+/* Frozen Unit FX (Both Ally & Enemy) */
+.enemy-unit--frozen,
+.plant-unit--frozen {
   filter: hue-rotate(180deg) saturate(1.8) contrast(1.2);
 }
 
@@ -948,9 +968,19 @@
   animation: frozenEnemyShiver 0.2s ease-in-out infinite alternate !important;
 }
 
+.plant-unit__sprite--frozen {
+  filter: drop-shadow(0 0 14px #00b4d8) brightness(1.2);
+  animation: frozenPlantShiver 0.2s ease-in-out infinite alternate !important;
+}
+
 @keyframes frozenEnemyShiver {
   0% { transform: scaleX(-1) translateX(-1px); }
   100% { transform: scaleX(-1) translateX(1px); }
+}
+
+@keyframes frozenPlantShiver {
+  0% { transform: scaleX(1) translateX(-1px); }
+  100% { transform: scaleX(1) translateX(1px); }
 }
 
 .enemy-unit__sprite--melon.enemy-unit__sprite--frozen {
