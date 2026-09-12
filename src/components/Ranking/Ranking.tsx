@@ -1696,23 +1696,23 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
               {/* COMPACT TOP BAR: REPARTO DIARIO Y BOTÓN DE BOTÍN */}
               <div className="clan-ranking-hero-banner">
                 <div className="clan-hero-left">
-                  <div className="clan-hero-title-row">
-                    <span className="clan-hero-badge">🛡️ GUERRA DE CLANES</span>
-                    <span className="clan-hero-timer">
-                      ⏰ Reparto Diario: <strong>{utcCountdown || '00:00:00'}</strong> (00:00 UTC)
-                    </span>
-                  </div>
+                  <span className="clan-hero-badge">🛡️ GUERRA DE CLANES</span>
                 </div>
-                <button
-                  type="button"
-                  className="clan-all-rewards-btn"
-                  onClick={() => {
-                    soundManager.playSound('click', 0.4)
-                    setShowAllRewardsModal(true)
-                  }}
-                >
-                  🎁 Ver Botín Diario
-                </button>
+                <div className="clan-hero-right">
+                  <span className="clan-hero-timer">
+                    ⏰ Reparto Diario: <strong>{utcCountdown || '00:00:00'}</strong> (00:00 UTC)
+                  </span>
+                  <button
+                    type="button"
+                    className="clan-all-rewards-btn"
+                    onClick={() => {
+                      soundManager.playSound('click', 0.4)
+                      setShowAllRewardsModal(true)
+                    }}
+                  >
+                    🎁 Ver Botín Diario
+                  </button>
+                </div>
               </div>
 
               {/* PVP PACK NOTIFICATION CON TEMPORIZADOR ESTRICTO DE 5 MINUTOS (NO EXPIRA) */}
@@ -1823,26 +1823,10 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           <span>👥 {clanLeaderboard[1].memberCount}/15</span>
                         </div>
 
-                        <div className="clan-trio-stats-row">
-                          <div className="clan-trio-damage" style={{ color: '#ef4444' }}>
-                            ⚔️ {clanLeaderboard[1].damageDealt.toLocaleString()}
-                          </div>
-                          <div className="clan-trio-record" style={{ color: '#22c55e' }}>
-                            🏆 {clanLeaderboard[1].wins}V - {clanLeaderboard[1].losses}D
-                          </div>
+                        <div className="clan-card-damage-highlight clan-card-damage-highlight--silver">
+                          <span className="clan-damage-lbl">⚔️ Daño Infligido</span>
+                          <strong className="clan-damage-val">{clanLeaderboard[1].damageDealt.toLocaleString()}</strong>
                         </div>
-
-                        <button
-                          type="button"
-                          className="podium-v2-prize-cta"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            soundManager.playSound('click', 0.4)
-                            setSelectedClanReward(clanLeaderboard[1])
-                          }}
-                        >
-                          🎁 Botín: 200 💰 👆
-                        </button>
                       </div>
                     ) : (
                       <div className="podium-card-v2 podium-card-v2--placeholder clan-trio-card">
@@ -1895,26 +1879,10 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           <span>👥 {clanLeaderboard[0].memberCount}/15</span>
                         </div>
 
-                        <div className="clan-trio-stats-row">
-                          <div className="clan-trio-damage" style={{ color: '#ef4444' }}>
-                            ⚔️ {clanLeaderboard[0].damageDealt.toLocaleString()}
-                          </div>
-                          <div className="clan-trio-record" style={{ color: '#22c55e' }}>
-                            🏆 {clanLeaderboard[0].wins}V - {clanLeaderboard[0].losses}D
-                          </div>
+                        <div className="clan-card-damage-highlight clan-card-damage-highlight--champ">
+                          <span className="clan-damage-lbl">⚔️ Daño Infligido</span>
+                          <strong className="clan-damage-val">{clanLeaderboard[0].damageDealt.toLocaleString()}</strong>
                         </div>
-
-                        <button
-                          type="button"
-                          className="podium-v2-prize-cta podium-v2-prize-cta--gold"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            soundManager.playSound('click', 0.5)
-                            setSelectedClanReward(clanLeaderboard[0])
-                          }}
-                        >
-                          🎁 Botín: 500 💰 + ⚔️ Pack 👆
-                        </button>
                       </div>
                     ) : (
                       <div className="podium-card-v2 podium-card-v2--placeholder clan-trio-card">
@@ -1951,26 +1919,10 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           <span>👥 {clanLeaderboard[2].memberCount}/15</span>
                         </div>
 
-                        <div className="clan-trio-stats-row">
-                          <div className="clan-trio-damage" style={{ color: '#ef4444' }}>
-                            ⚔️ {clanLeaderboard[2].damageDealt.toLocaleString()}
-                          </div>
-                          <div className="clan-trio-record" style={{ color: '#22c55e' }}>
-                            🏆 {clanLeaderboard[2].wins}V - {clanLeaderboard[2].losses}D
-                          </div>
+                        <div className="clan-card-damage-highlight clan-card-damage-highlight--bronze">
+                          <span className="clan-damage-lbl">⚔️ Daño Infligido</span>
+                          <strong className="clan-damage-val">{clanLeaderboard[2].damageDealt.toLocaleString()}</strong>
                         </div>
-
-                        <button
-                          type="button"
-                          className="podium-v2-prize-cta"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            soundManager.playSound('click', 0.4)
-                            setSelectedClanReward(clanLeaderboard[2])
-                          }}
-                        >
-                          🎁 Botín: 100 💰 👆
-                        </button>
                       </div>
                     ) : (
                       <div className="podium-card-v2 podium-card-v2--placeholder clan-trio-card">
@@ -2055,16 +2007,14 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                       <span className="clan-tag-pill clan-tag-pill--sm">{myClanRankEntry.tag}</span>
                     </div>
                     <div className="clan-user-status-right">
-                      <span>⚔️ <strong>{myClanRankEntry.damageDealt.toLocaleString()}</strong> Daño</span>
-                      <span className="clan-status-sep">|</span>
-                      <span>🏆 <strong>{myClanRankEntry.wins}</strong>V / <strong>{myClanRankEntry.losses}</strong>D</span>
+                      <span>⚔️ <strong>{myClanRankEntry.damageDealt.toLocaleString()}</strong> Daño de Guerra</span>
                       <span className="clan-status-sep">|</span>
                       <span
                         className="clan-status-prize"
                         style={{ cursor: 'pointer' }}
                         onClick={() => setSelectedClanReward(myClanRankEntry)}
                       >
-                        🎁 Botín: <strong>{ClanManager.getDailyRewardsForRank(myClanRankEntry.rank).badge}</strong> 👆
+                        🎁 Botín Diario: <strong>{ClanManager.getDailyRewardsForRank(myClanRankEntry.rank).badge}</strong> 👆
                       </span>
                     </div>
                   </div>

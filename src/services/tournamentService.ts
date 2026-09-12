@@ -117,14 +117,33 @@ export const tournamentService = {
 
       if (error) {
         console.warn('register_tournament_participant remote fallback:', error.message)
+        if (
+          error.message?.includes('REGISTRATION_CLOSED_15MIN_LIMIT') ||
+          error.message?.includes('15 minutos')
+        ) {
+          return {
+            success: false,
+            error: 'El plazo de tolerancia de 15 minutos tras el inicio del torneo ha expirado. Ya no se permiten nuevos registros.',
+          }
+        }
         return this._registerLocalParticipant(tournamentId, deck)
       }
 
       return {
         success: Boolean(data?.success),
         participant_id: data?.participant_id,
+        error: data?.error,
       }
-    } catch {
+    } catch (err: any) {
+      if (
+        err?.message?.includes('REGISTRATION_CLOSED_15MIN_LIMIT') ||
+        err?.message?.includes('15 minutos')
+      ) {
+        return {
+          success: false,
+          error: 'El plazo de tolerancia de 15 minutos tras el inicio del torneo ha expirado. Ya no se permiten nuevos registros.',
+        }
+      }
       return this._registerLocalParticipant(tournamentId, deck)
     }
   },
@@ -565,6 +584,17 @@ export const tournamentService = {
   },
 
   _registerLocalParticipant(tournamentId: string, deck?: PlantId[]) {
+    const tourn = memoryTournaments.get(tournamentId)
+    if (tourn && tourn.start_time) {
+      const startMs = new Date(tourn.start_time).getTime()
+      if (Date.now() > startMs + 15 * 60 * 1000) {
+        return {
+          success: false,
+          error: 'El plazo de tolerancia de 15 minutos tras el inicio del torneo ha expirado. Ya no se permiten nuevos registros.',
+        }
+      }
+    }
+
     const part = {
       registered: true,
       deck: deck || ['sunflower', 'peashooter', 'wallnut', 'chomper', 'repeater'],

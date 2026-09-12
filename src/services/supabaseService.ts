@@ -4285,7 +4285,7 @@ export const SupabaseService = {
    * Ventas de mercado P2P (quién compró a quién), retiros validados (>= $10),
    * compras de sobres/oro en tienda y premios.
    */
-  async getGlobalTransactions(limite = 60): Promise<GlobalTransactionItem[]> {
+  async getGlobalTransactions(limite = 120): Promise<GlobalTransactionItem[]> {
     if (!isSupabaseConfigured()) return []
     try {
       const { data, error } = await (supabase.rpc as any)('get_global_transactions', {
@@ -4393,15 +4393,36 @@ export const SupabaseService = {
         } else if (desc.toLowerCase().includes('pase vip')) {
           txType = 'shop_pass'
           title = 'Pase VIP'
+        } else if (typeStr === 'tournament_entry_fee' || typeStr === 'tournament_entry' || desc.toLowerCase().includes('entrada a torneo') || desc.toLowerCase().includes('inscripción a torneo')) {
+          txType = 'tournament_entry_fee'
+          title = 'Inscripción a Torneo'
+        } else if (typeStr === 'tournament_reentry' || desc.toLowerCase().includes('reentrada a torneo')) {
+          txType = 'tournament_reentry'
+          title = 'Reentrada a Torneo'
+        } else if (typeStr === 'tournament_reward' || desc.toLowerCase().includes('premio de torneo')) {
+          txType = 'tournament_reward'
+          title = 'Premio de Torneo'
+        } else if (typeStr.startsWith('tournament') || desc.toLowerCase().includes('torneo')) {
+          txType = 'tournament'
+          title = 'Torneo Oficial'
         } else if (typeStr.startsWith('shop')) {
           txType = 'shop_purchase'
           title = 'Compra en Tienda'
         } else if (typeStr === 'withdrawal') {
           txType = 'withdrawal'
           title = 'Retiro BNB Chain'
+        } else if (typeStr === 'deposit' || desc.toLowerCase().includes('depósito') || desc.toLowerCase().includes('deposito')) {
+          txType = 'deposit'
+          title = 'Depósito de Gemas'
         } else if (typeStr.includes('ruleta') || desc.toLowerCase().includes('ruleta')) {
           txType = typeStr === 'spend' ? 'lottery_spin' : 'lottery_win'
           title = txType === 'lottery_spin' ? 'Giro en Ruleta' : 'Premio de Ruleta'
+        } else if (typeStr.includes('referral') || desc.toLowerCase().includes('referido')) {
+          txType = 'referral_reward'
+          title = 'Ganancias de Referidos'
+        } else if (typeStr.includes('reward_code') || desc.toLowerCase().includes('código')) {
+          txType = 'reward_code'
+          title = 'Código de Recompensa'
         }
 
         results.push({

@@ -155,7 +155,7 @@ export default function Marketplace({
   const [listings, setListings] = useState<OfertaDelMercado[]>([])
   const [transactions, setTransactions] = useState<GlobalTransactionItem[]>([])
   const [txLoading, setTxLoading] = useState(false)
-  const [txFilter, setTxFilter] = useState<'all' | 'marketplace' | 'withdrawal' | 'shop' | 'reward'>('all')
+  const [txFilter, setTxFilter] = useState<'all' | 'marketplace' | 'withdrawal' | 'shop' | 'reward' | 'tournament'>('all')
   /** La comisión la manda el servidor: así el número no vive duplicado aquí. */
   const [comisionPct, setComisionPct] = useState<number>(10)
   const [cargando, setCargando] = useState(true)
@@ -333,7 +333,7 @@ export default function Marketplace({
   const refreshTransactions = async () => {
     setTxLoading(true)
     try {
-      const data = await marketplaceService.getGlobalTransactions(60)
+      const data = await marketplaceService.getGlobalTransactions(120)
       setTransactions(data || [])
     } catch (e) {
       console.warn('Error cargando transacciones globales:', e)
@@ -365,12 +365,35 @@ export default function Marketplace({
           t.type === 'shop_energy' ||
           t.type === 'shop_purchase' ||
           t.type === 'shop_pass' ||
+          t.type === 'deposit' ||
           t.type.startsWith('shop') ||
           t.description?.toLowerCase().includes('tienda') ||
           t.description?.toLowerCase().includes('sobre') ||
+          t.description?.toLowerCase().includes('oro') ||
+          t.description?.toLowerCase().includes('energía') ||
+          t.description?.toLowerCase().includes('energia') ||
           t.description?.toLowerCase().includes('pase vip')
       )
-    if (txFilter === 'reward') return transactions.filter((t) => t.type === 'lottery_win' || t.type === 'lottery_spin' || t.type === 'reward_code' || t.type === 'tournament_reward' || t.type === 'tournament_reentry' || t.type === 'referral_reward')
+    if (txFilter === 'tournament')
+      return transactions.filter(
+        (t) =>
+          t.type === 'tournament_entry_fee' ||
+          t.type === 'tournament_reentry' ||
+          t.type === 'tournament_reward' ||
+          t.type.startsWith('tournament') ||
+          t.description?.toLowerCase().includes('torneo')
+      )
+    if (txFilter === 'reward')
+      return transactions.filter(
+        (t) =>
+          t.type === 'lottery_win' ||
+          t.type === 'lottery_spin' ||
+          t.type === 'reward_code' ||
+          t.type === 'tournament_reward' ||
+          t.type === 'tournament_reentry' ||
+          t.type === 'tournament_entry_fee' ||
+          t.type === 'referral_reward'
+      )
     return transactions
   }, [transactions, txFilter])
 
@@ -1378,10 +1401,21 @@ export default function Marketplace({
             </button>
             <button
               type="button"
-              className={`market-tx-filter-chip ${txFilter === 'withdrawal' ? 'market-tx-filter-chip--active' : ''}`}
-              onClick={() => setTxFilter('withdrawal')}
+              className={`market-tx-filter-chip ${txFilter === 'tournament' ? 'market-tx-filter-chip--active' : ''}`}
+              onClick={() => setTxFilter('tournament')}
             >
-              💳 RETIROS VALIDADOS ({transactions.filter((t) => t.type === 'withdrawal').length})
+              🏆 TORNEOS (
+              {
+                transactions.filter(
+                  (t) =>
+                    t.type === 'tournament_entry_fee' ||
+                    t.type === 'tournament_reentry' ||
+                    t.type === 'tournament_reward' ||
+                    t.type.startsWith('tournament') ||
+                    t.description?.toLowerCase().includes('torneo')
+                ).length
+              }
+              )
             </button>
             <button
               type="button"
@@ -1397,9 +1431,13 @@ export default function Marketplace({
                     t.type === 'shop_energy' ||
                     t.type === 'shop_purchase' ||
                     t.type === 'shop_pass' ||
+                    t.type === 'deposit' ||
                     t.type.startsWith('shop') ||
                     t.description?.toLowerCase().includes('tienda') ||
                     t.description?.toLowerCase().includes('sobre') ||
+                    t.description?.toLowerCase().includes('oro') ||
+                    t.description?.toLowerCase().includes('energía') ||
+                    t.description?.toLowerCase().includes('energia') ||
                     t.description?.toLowerCase().includes('pase vip')
                 ).length
               }
@@ -1407,10 +1445,25 @@ export default function Marketplace({
             </button>
             <button
               type="button"
+              className={`market-tx-filter-chip ${txFilter === 'withdrawal' ? 'market-tx-filter-chip--active' : ''}`}
+              onClick={() => setTxFilter('withdrawal')}
+            >
+              💳 RETIROS VALIDADOS ({transactions.filter((t) => t.type === 'withdrawal').length})
+            </button>
+            <button
+              type="button"
               className={`market-tx-filter-chip ${txFilter === 'reward' ? 'market-tx-filter-chip--active' : ''}`}
               onClick={() => setTxFilter('reward')}
             >
-              🎁 PREMIOS & REFERIDOS ({transactions.filter((t) => t.type === 'lottery_win' || t.type === 'lottery_spin' || t.type === 'reward_code' || t.type === 'tournament_reward' || t.type === 'referral_reward').length})
+              🎁 PREMIOS & RULETA ({
+                transactions.filter(
+                  (t) =>
+                    t.type === 'lottery_win' ||
+                    t.type === 'lottery_spin' ||
+                    t.type === 'reward_code' ||
+                    t.type === 'referral_reward'
+                ).length
+              })
             </button>
           </div>
 
@@ -1430,9 +1483,36 @@ export default function Marketplace({
                 const plantIcon = plantDef?.packetActive || plantDef?.icon
                 const rInfo = tx.itemId && PLANT_CONFIGS[tx.itemId as PlantId] ? getPlantRarityAndMinPrice(tx.itemId as PlantId) : null
 
+                const isTournamentFee =
+                  tx.type === 'tournament_entry_fee' ||
+                  tx.type === 'tournament_entry' ||
+                  (tx.type !== 'tournament_reward' &&
+                    tx.type !== 'tournament_reentry' &&
+                    (tx.description?.toLowerCase().includes('entrada a torneo') ||
+                      tx.description?.toLowerCase().includes('inscripción a torneo')))
+
+                const isTournamentReentry =
+                  tx.type === 'tournament_reentry' ||
+                  tx.description?.toLowerCase().includes('reingreso a torneo') ||
+                  tx.description?.toLowerCase().includes('reentrada a torneo')
+
+                const isTournamentReward =
+                  tx.type === 'tournament_reward' ||
+                  tx.description?.toLowerCase().includes('premio torneo') ||
+                  tx.description?.toLowerCase().includes('premio por puesto')
+
+                const isDeposit =
+                  tx.type === 'deposit' ||
+                  tx.description?.toLowerCase().includes('recarga de gemas') ||
+                  tx.description?.toLowerCase().includes('compra de gemas')
+
                 const isPack =
                   tx.type === 'shop_pack' ||
-                  (tx.type !== 'shop_energy' &&
+                  (!isTournamentFee &&
+                    !isTournamentReentry &&
+                    !isTournamentReward &&
+                    !isDeposit &&
+                    tx.type !== 'shop_energy' &&
                     tx.type !== 'shop_pass' &&
                     (tx.description?.toLowerCase().includes('sobre') ||
                       tx.description?.toLowerCase().includes('semilla') ||
@@ -1449,7 +1529,14 @@ export default function Marketplace({
 
                 const isGold =
                   tx.type === 'shop_gold' ||
-                  (!isPack && !isEnergy && !isPass && (tx.description?.toLowerCase().includes('oro') || tx.description?.toLowerCase().includes('gold')))
+                  (!isTournamentFee &&
+                    !isTournamentReentry &&
+                    !isTournamentReward &&
+                    !isDeposit &&
+                    !isPack &&
+                    !isEnergy &&
+                    !isPass &&
+                    (tx.description?.toLowerCase().includes('oro') || tx.description?.toLowerCase().includes('gold')))
 
                 const cleanDesc = (() => {
                   const desc = tx.description?.trim() || ''
@@ -1474,7 +1561,13 @@ export default function Marketplace({
                   return title
                 })()
 
-                const cardClassModifier = isPack
+                const cardClassModifier = isTournamentFee
+                  ? 'tournament_entry_fee'
+                  : isTournamentReentry
+                  ? 'tournament_reentry'
+                  : isTournamentReward
+                  ? 'tournament_reward'
+                  : isPack
                   ? 'shop_pack'
                   : isEnergy
                   ? 'shop_energy'
@@ -1482,6 +1575,8 @@ export default function Marketplace({
                   ? 'shop_pass'
                   : isGold
                   ? 'shop_gold'
+                  : isDeposit
+                  ? 'deposit'
                   : tx.type
 
                 return (
@@ -1491,16 +1586,18 @@ export default function Marketplace({
                       <span className={`market-tx-badge market-tx-badge--${cardClassModifier}`}>
                         {tx.type === 'marketplace_sale' && '🛒 MERCADO P2P'}
                         {tx.type === 'withdrawal' && '💳 RETIRO BNB CHAIN'}
+                        {isDeposit && '💎 RECARGA GEMAS'}
+                        {isTournamentFee && '🏆 ENTRADA TORNEO'}
+                        {isTournamentReentry && '🔄 REENTRADA TORNEO'}
+                        {isTournamentReward && '🏆 PREMIO TORNEO'}
                         {isPack && '🎒 TIENDA · SOBRE'}
                         {isEnergy && '⚡ TIENDA · ENERGÍA'}
                         {isPass && '👑 TIENDA · PASE VIP'}
                         {isGold && '💰 TIENDA · ORO'}
-                        {!isPack && !isEnergy && !isPass && !isGold && tx.type.startsWith('shop') && '🛒 TIENDA'}
+                        {!isPack && !isEnergy && !isPass && !isGold && !isDeposit && !isTournamentFee && !isTournamentReentry && !isTournamentReward && tx.type.startsWith('shop') && '🛒 TIENDA'}
                         {tx.type === 'lottery_spin' && '🎡 GIRO DE RULETA'}
                         {tx.type === 'lottery_win' && (tx.amountGems && tx.amountGems >= 50 ? '🎰 JACKPOT RULETA' : '🎁 PREMIO DE RULETA')}
                         {tx.type === 'reward_code' && '🎁 CÓDIGO ESPECIAL'}
-                        {tx.type === 'tournament_reward' && '🏆 PREMIO TORNEO'}
-                        {tx.type === 'tournament_reentry' && '🔄 REENTRADA TORNEO'}
                         {tx.type === 'referral_reward' && '👥 GANANCIAS REFERIDOS'}
                       </span>
                       <span className="market-tx-time">{formatTxTime(tx.createdAt)}</span>
@@ -1541,7 +1638,13 @@ export default function Marketplace({
                           <div className="market-tx-users-flow">
                             <span className="market-tx-user-name">{tx.userName}</span>
                             <span className="market-tx-action-text">
-                              {isPack
+                              {isTournamentFee
+                                ? 'pagó entrada al Torneo Oficial'
+                                : isTournamentReentry
+                                ? 'pagó reentrada al Torneo Oficial'
+                                : isTournamentReward
+                                ? 'ganó premio en Torneo Oficial'
+                                : isPack
                                 ? 'compró sobre en Tienda'
                                 : isEnergy
                                 ? 'recargó energía en Tienda'
@@ -1549,6 +1652,8 @@ export default function Marketplace({
                                 ? 'activó Pase VIP en Tienda'
                                 : isGold
                                 ? 'compró oro en Tienda'
+                                : isDeposit
+                                ? 'recargó gemas oficiales'
                                 : tx.type.startsWith('shop')
                                 ? 'compró en Tienda'
                                 : tx.type === 'lottery_spin'
@@ -1557,10 +1662,6 @@ export default function Marketplace({
                                 ? 'probó suerte en la Ruleta'
                                 : tx.type === 'reward_code'
                                 ? 'canjeó código promocional'
-                                : tx.type === 'tournament_reward'
-                                ? 'ganó premio en Torneo Oficial'
-                                : tx.type === 'tournament_reentry'
-                                ? 'reingresó al Torneo Oficial'
                                 : tx.type === 'referral_reward'
                                 ? 'cobró ganancias de referidos'
                                 : 'recibió recompensa'}
@@ -1579,13 +1680,19 @@ export default function Marketplace({
                             -{(tx.amountGems || (tx.amountUsd ? Math.round(tx.amountUsd * 100) : 0)).toLocaleString()} 💎
                           </span>
                         </div>
+                      ) : isTournamentFee || isTournamentReentry ? (
+                        <div className="market-tx-amount-box market-tx-amount-box--gems">
+                          <span className="market-tx-amount-num" style={{ color: '#fb923c', fontWeight: 'bold' }}>
+                            -{Math.abs(tx.amountGems || 0).toLocaleString()} 💎
+                          </span>
+                        </div>
                       ) : tx.type === 'lottery_spin' || tx.description.toLowerCase().includes('giro en ruleta') || tx.description.toLowerCase().includes('giro adicional') ? (
                         <div className="market-tx-amount-box market-tx-amount-box--gems">
                           <span className="market-tx-amount-num" style={{ color: '#f87171', fontWeight: 'bold' }}>
                             -{Math.abs(tx.amountGems || 10).toLocaleString()} 💎
                           </span>
                         </div>
-                      ) : (tx.type === 'lottery_win' || tx.description.toLowerCase().includes('premio de ruleta')) && tx.amountGems && tx.amountGems > 0 ? (
+                      ) : (isTournamentReward || tx.type === 'lottery_win' || tx.description.toLowerCase().includes('premio de ruleta') || isDeposit) && tx.amountGems && tx.amountGems > 0 ? (
                         <div className="market-tx-amount-box market-tx-amount-box--gems">
                           <span className="market-tx-amount-num" style={{ color: '#4ade80', fontWeight: 'bold' }}>
                             +{tx.amountGems.toLocaleString()} 💎

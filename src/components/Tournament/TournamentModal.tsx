@@ -211,6 +211,14 @@ export default function TournamentModal({
   const isScheduled = selectedTourney ? currentTime < startMs : false
   const isEnded = selectedTourney ? currentTime >= endMs || selectedTourney.status === 'ended' : false
 
+  // Tolerancia estricta de 15 minutos tras el inicio del torneo para inscripciones tardías
+  const isStarted = isLive || (startMs > 0 && currentTime >= startMs)
+  const lateRegDeadlineMs = startMs > 0 ? startMs + 15 * 60 * 1000 : 0
+  const isLateRegistrationClosed = isStarted && lateRegDeadlineMs > 0 && currentTime > lateRegDeadlineMs
+  const lateRegRemainingSec = isStarted && lateRegDeadlineMs > 0 && currentTime <= lateRegDeadlineMs
+    ? Math.max(0, Math.floor((lateRegDeadlineMs - currentTime) / 1000))
+    : 0
+
   const formatCountdown = (targetMs: number) => {
     const diffSecs = Math.max(0, Math.floor((targetMs - currentTime) / 1000))
     const days = Math.floor(diffSecs / 86400)
@@ -229,6 +237,10 @@ export default function TournamentModal({
   // Registration handler (Free entry or Gems)
   const handleRegister = async () => {
     if (!selectedTourney) return
+    if (isLateRegistrationClosed) {
+      alert('El torneo ya comenzó y el plazo de tolerancia de 15 minutos para registros tardíos ha expirado. Ya no se permiten nuevas inscripciones en este torneo.')
+      return
+    }
     const fee = selectedTourney.entry_fee_gems || 0
     if (fee > 0 && userTokens < fee) {
       alert(`No tienes suficientes Gemas (${fee} 💎 requeridas) para inscribirte. Tu saldo actual es: ${userTokens} 💎.`)
@@ -614,21 +626,67 @@ export default function TournamentModal({
 
                 {!myPart?.registered ? (
                   <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                    <p style={{ color: '#cbd5e1', fontSize: '0.9rem', marginBottom: 12 }}>
-                      {selectedTourney.entry_fee_gems > 0
-                        ? `Costo de Inscripción: ${selectedTourney.entry_fee_gems} Gemas. Tu saldo: ${userTokens.toFixed(2)} 💎. ¡15 cartas desbloqueadas para competir!`
-                        : '¡La entrada es completamente gratis! Inscríbete para armar tu mazo con todas las cartas desbloqueadas y competir.'}
-                    </p>
-                    <button
-                      type="button"
-                      className="tourney-btn-create"
-                      style={{ margin: '0 auto', padding: '10px 24px', fontSize: '0.95rem' }}
-                      onClick={handleRegister}
-                    >
-                      {selectedTourney.entry_fee_gems > 0
-                        ? `🎟️ Inscribirme al Torneo (${selectedTourney.entry_fee_gems} 💎)`
-                        : '📝 Inscribirme Gratis al Torneo'}
-                    </button>
+                    {isLateRegistrationClosed ? (
+                      <div
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.35)',
+                          borderRadius: 12,
+                          padding: '16px 20px',
+                          maxWidth: 520,
+                          margin: '0 auto',
+                        }}
+                      >
+                        <div style={{ fontSize: '1.8rem', marginBottom: 6 }}>🔒</div>
+                        <h4 style={{ color: '#f87171', margin: '0 0 6px 0', fontSize: '1.02rem', fontWeight: 700 }}>
+                          Inscripciones Cerradas
+                        </h4>
+                        <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: 0, lineHeight: 1.45 }}>
+                          El torneo ya comenzó y venció el plazo de tolerancia de 15 minutos para registros tardíos. 
+                          No se admiten nuevas inscripciones para evitar ventajas y uso de multicuentas en los últimos minutos.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        {isStarted && lateRegRemainingSec > 0 && (
+                          <div
+                            style={{
+                              background: 'rgba(234, 179, 8, 0.15)',
+                              border: '1px solid rgba(234, 179, 8, 0.4)',
+                              borderRadius: 8,
+                              padding: '8px 14px',
+                              marginBottom: 12,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              color: '#fde047',
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                            }}
+                          >
+                            <span>⏱️</span>
+                            <span>
+                              Plazo de tolerancia activo: te quedan {Math.floor(lateRegRemainingSec / 60)}m {(lateRegRemainingSec % 60).toString().padStart(2, '0')}s para inscribirte.
+                            </span>
+                          </div>
+                        )}
+                        <p style={{ color: '#cbd5e1', fontSize: '0.9rem', marginBottom: 12 }}>
+                          {selectedTourney.entry_fee_gems > 0
+                            ? `Costo de Inscripción: ${selectedTourney.entry_fee_gems} Gemas. Tu saldo: ${userTokens.toFixed(2)} 💎. ¡15 cartas desbloqueadas para competir!`
+                            : '¡La entrada es completamente gratis! Inscríbete para armar tu mazo con todas las cartas desbloqueadas y competir.'}
+                        </p>
+                        <button
+                          type="button"
+                          className="tourney-btn-create"
+                          style={{ margin: '0 auto', padding: '10px 24px', fontSize: '0.95rem' }}
+                          onClick={handleRegister}
+                        >
+                          {selectedTourney.entry_fee_gems > 0
+                            ? `🎟️ Inscribirme al Torneo (${selectedTourney.entry_fee_gems} 💎)`
+                            : '📝 Inscribirme Gratis al Torneo'}
+                        </button>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <>

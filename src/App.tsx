@@ -844,6 +844,19 @@ function App() {
   const handlePlayNormal = async (
     instanceIdsOverride?: string[]
   ) => {
+    // Validación preventiva estricta en cliente para Ranked Competitivo (>= 1602 copas)
+    if (userElo >= 1602 && playerEnergy <= 0) {
+      soundManager.playSound('defeat', 0.5)
+      setActiveAppAlert({
+        title: 'ENERGÍA AGOTADA',
+        message: `⚡ Has agotado tus ${maxPlayerEnergy} partidas competitivas de hoy. Tu energía se recarga automáticamente a las 00:00 UTC, o puedes recargar ahora en la Tienda.`,
+        icon: '⚡',
+        actionLabel: 'IR A TIENDA',
+        onAction: () => handleOpenShop('energy'),
+      })
+      return
+    }
+
     // El mazo se guarda ANTES de entrar a matchmaking.
     // Así game_rooms.p1_deck / p2_deck reciben exactamente
     // las cartas que el jugador tiene seleccionadas.
