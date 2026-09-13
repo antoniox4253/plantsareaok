@@ -743,7 +743,7 @@ export interface ResultadoSimulacionAsync {
   baseP1: number
   baseP2: number
   p1Ilegal: boolean
-  motivo: 'simulation' | 'forfeit_p1' | 'no_result'
+  motivo: 'simulation' | 'forfeit_p1' | 'draw' | 'no_result'
   reason?: InconsistenciaHistorialP1
   inconsistencySeq?: number
   inconsistencyTick?: number
@@ -864,7 +864,7 @@ export interface RunAsyncTimelineResult {
   state: GameState
   controller: AsyncOpponentController
   p1Ilegal: boolean
-  motivo: 'simulation' | 'forfeit_p1' | 'no_result'
+  motivo: 'simulation' | 'forfeit_p1' | 'draw' | 'no_result'
   winner: 1 | 2 | null
 }
 
@@ -1280,7 +1280,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
   }
 
   let winner: 1 | 2 | null = null
-  let motivo: 'simulation' | 'forfeit_p1' | 'no_result' = 'no_result'
+  let motivo: 'simulation' | 'forfeit_p1' | 'draw' | 'no_result' = 'no_result'
 
   if (p1Ilegal) {
     winner = 2
@@ -1291,6 +1291,9 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
   } else if (state.status === 'defeat') {
     winner = 2
     motivo = 'simulation'
+  } else if (state.status === 'draw') {
+    winner = null
+    motivo = 'draw'
   } else {
     motivo = 'no_result'
   }
@@ -1334,6 +1337,56 @@ export function simulateAsyncMatch(
     p1BaseHp,
     p2BaseHp,
   })
+
+  // Si la simulación estricta resolvió limpiamente con ganador o empate:
+  if (res.ok && (res.winner === 1 || res.winner === 2 || res.motivo === 'draw')) {
+    return {
+      ok: res.ok,
+      ganador: res.winner,
+      tics: res.state.tick,
+      baseP1: res.state.p1BaseHp,
+      baseP2: res.state.p2BaseHp,
+      p1Ilegal: res.p1Ilegal,
+      motivo: res.motivo,
+      reason: res.reason,
+      inconsistencySeq: res.inconsistencySeq,
+      inconsistencyTick: res.inconsistencyTick,
+      details: res.details,
+      telemetria: res.controller.stats,
+    }
+  }
+
+  // Si falló por inconsistencia transitoria de timeline (e.g. jitter de red de 200ms entre sol y planta, doble clic):
+  // Ejecutar pase de recuperación tolerante para no penalizar una victoria humana legítima
+  if (!res.ok && (res.reason === 'TIMELINE_INCONSISTENT' || (res.reason as string) === 'INSUFFICIENT_SUN')) {
+    const resTolerant = runAsyncTimeline({
+      seed,
+      p1Deck: p1DeckRaw,
+      asyncDeck: asyncDeckRaw,
+      p1Actions,
+      asyncActions: asyncActionsRaw,
+      maxTicks,
+      validateP1: false,
+      strictAuthoritativeHistory: false,
+      stopOnGameOver: true,
+      engineVersion,
+      p1BaseHp,
+      p2BaseHp,
+    })
+
+    if (resTolerant.ok && (resTolerant.winner === 1 || resTolerant.winner === 2 || resTolerant.motivo === 'draw')) {
+      return {
+        ok: true,
+        ganador: resTolerant.winner,
+        tics: resTolerant.state.tick,
+        baseP1: resTolerant.state.p1BaseHp,
+        baseP2: resTolerant.state.p2BaseHp,
+        p1Ilegal: false,
+        motivo: resTolerant.motivo,
+        telemetria: resTolerant.controller.stats,
+      }
+    }
+  }
 
   return {
     ok: res.ok,

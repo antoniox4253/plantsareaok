@@ -1241,7 +1241,7 @@ export const SupabaseService = {
    */
   async reportMatchResult(
     roomId: string,
-    winnerId: string
+    winnerId: string | null
   ): Promise<{
     success: boolean
     status?: string
@@ -1274,7 +1274,10 @@ export const SupabaseService = {
    * Pide al árbitro servidor reconstruir la partida o confirmar la liquidación autoritativa.
    * El navegador NO manda ganador: sólo roomId.
    */
-  async verifyMatch(roomId: string): Promise<{
+  async verifyMatch(
+    roomId: string,
+    reportedWinnerId?: string | null
+  ): Promise<{
     ok: boolean
     status?: 'pending' | 'verified' | 'verified_draw' | 'settled' | 'failed'
     winnerId?: string | null
@@ -1374,6 +1377,20 @@ export const SupabaseService = {
         const dbResolved = await checkDbSettled()
         if (dbResolved) {
           return dbResolved
+        }
+
+        // Si tras ~12-15 segundos el rival no ha reportado, re-enviar el reporte local
+        // para que la base de datos liquide autoritativamente por abandono si expiró el plazo de gracia
+        if ((intento === 8 || intento === 15) && reportedWinnerId !== undefined) {
+          try {
+            const reReport = await this.reportMatchResult(roomId, reportedWinnerId)
+            if (reReport && (reReport.status === 'liquidada' || reReport.status === 'ya_liquidada')) {
+              const reResolved = await checkDbSettled()
+              if (reResolved) return reResolved
+            }
+          } catch {
+            // silencioso
+          }
         }
 
         const espera = Math.max(500, Math.min(Number(data?.retryAfterMs) || 1200, 3000))
@@ -1662,6 +1679,31 @@ export const SupabaseService = {
       return data as { success: boolean }
     } catch (e: any) {
       logError('leaveClan', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async kickClanMember(
+    clanId: string,
+    memberId: string
+  ): Promise<{ success: boolean; error?: string; message?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    const isUuid = !!clanId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clanId)
+    if (!isUuid) {
+      return { success: false, error: 'ID de clan inválido' }
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('kick_clan_member', {
+        p_clan_id: clanId,
+        p_member_id: memberId,
+      })
+      if (error) {
+        logError('kickClanMember', error)
+        return { success: false, error: error.message }
+      }
+      return data as { success: boolean; error?: string; message?: string }
+    } catch (e: any) {
+      logError('kickClanMember', e)
       return { success: false, error: e?.message }
     }
   },

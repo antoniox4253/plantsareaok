@@ -1772,7 +1772,7 @@ export function useGameEngine() {
    */
   const terminarPorOrdenDelServidor = useCallback((resultado: 'victory' | 'defeat') => {
     const state = stateRef.current
-    if (state.status !== 'playing') return
+    if (state.status === resultado) return
     state.status = resultado
     soundManager.playSound(resultado === 'victory' ? 'level_select' : 'defeat', 0.7)
     forceRender()

@@ -612,24 +612,29 @@ export default function Clan({
   }
 
   // Execute Kick Action
-  const handleExecuteKick = () => {
+  const handleExecuteKick = async () => {
     if (!userClan || !selectedMemberToKick || !kickValidation?.canKick) return
     soundManager.playSound('surrender', 0.6)
-    const res = ClanManager.kickMember(userClan.id, selectedMemberToKick.id)
-    if (res.success) {
-      refreshClanData()
-      setShowKickModal(false)
-      showModalAlert(
-        'MIEMBRO EXPULSADO',
-        `El jugador "${selectedMemberToKick.name}" ha sido expulsado del clan por infringir el reglamento de guerra.\nLa vacante ha quedado liberada.`,
-        '👢',
-        'success'
-      )
-      setSelectedMemberToKick(null)
-      setKickValidation(null)
-    } else {
-      showModalAlert('ERROR AL EXPULSAR', res.error || 'No se pudo expulsar al miembro.', '❌', 'error')
+
+    if (ClanManager.isValidUuid(userClan.id)) {
+      const serverRes = await supabaseService.kickClanMember(userClan.id, selectedMemberToKick.id)
+      if (!serverRes.success) {
+        showModalAlert('ERROR AL EXPULSAR', serverRes.message || serverRes.error || 'No se pudo expulsar al miembro en el servidor.', '❌', 'error')
+        return
+      }
     }
+
+    const res = ClanManager.kickMember(userClan.id, selectedMemberToKick.id)
+    await refreshClanData()
+    setShowKickModal(false)
+    showModalAlert(
+      'MIEMBRO EXPULSADO',
+      `El jugador "${selectedMemberToKick.name}" ha sido expulsado del clan.\nLa vacante ha quedado liberada.`,
+      '👢',
+      'success'
+    )
+    setSelectedMemberToKick(null)
+    setKickValidation(null)
   }
 
   // SEND DIRECT INVITATION (Solo Líder)
@@ -880,6 +885,20 @@ export default function Clan({
             return
           }
 
+          if (res.joined === false) {
+            // Clan en modo solicitud: no deducir gemas aún ni asumir membresía
+            soundManager.playSound('plantation', 0.8)
+            showModalAlert(
+              '¡SOLICITUD ENVIADA!',
+              `Tu solicitud de ingreso ha sido enviada al Líder de "${clan.name}".\nEl cobro de 200 Gemas 💎 se efectuará únicamente si el Líder aprueba tu solicitud.`,
+              '📨',
+              'success'
+            )
+            await refreshClanData()
+            return
+          }
+
+          // Ingreso inmediato confirmado por el servidor
           onDeductTokens(200.0)
           if (onRefreshUserData) void onRefreshUserData()
 

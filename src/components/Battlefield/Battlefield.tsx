@@ -998,7 +998,12 @@ export default function Battlefield({
       if (roomId && (opponentId || isAsyncMatch) && currentUserId) {
         const capturedGeneration = sessionGenerationRef.current
         const capturedRoomId = roomId
-        const ganadorQueVioMiCliente = gameStatus === 'victory' ? currentUserId : (opponentId ?? '00000000-0000-0000-0000-000000000000')
+        const ganadorQueVioMiCliente: string | null =
+          gameStatus === 'victory'
+            ? currentUserId
+            : gameStatus === 'defeat'
+            ? (opponentId ?? null)
+            : null
 
         setResultadoServidor({ success: true, status: 'verificando' })
 
@@ -1072,7 +1077,7 @@ export default function Battlefield({
             return
           }
 
-          const verificacion = await battleService.verifyMatch(capturedRoomId)
+          const verificacion = await battleService.verifyMatch(capturedRoomId, ganadorQueVioMiCliente)
 
           if (capturedGeneration !== sessionGenerationRef.current || capturedRoomId !== roomIdRef.current) {
             return
@@ -1203,36 +1208,36 @@ export default function Battlefield({
         }
       }
 
-      // Ranked sin roomId = entrenamiento/bot (el cliente calcula ELO local).
-      // Ranked con roomId = el servidor calcula ELO autoritativo, pero el cofre de victoria se sincroniza inmediatamente.
-      // Strategic Test Match está 100% aislado (sin ELO, sin cofres, sin settlement).
-      // Torneos y Amistosos están 100% aislados (sin ELO de ranked, sin cofres de ranked).
-      if (gameStatus === 'victory') {
-        if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly') {
-          void (async () => {
-            const res = await onBattleComplete(true)
-            if (res) {
-              setBattleSummaryResult((prev) => ({
-                ...prev,
-                eloChange: prev?.eloChange ?? res.winElo,
-                newElo: prev?.newElo ?? res.newElo,
-                packResult: res.packResult,
-              }))
-            }
-          })()
-        }
-      } else if (gameStatus === 'defeat') {
-        if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly') {
-          void (async () => {
-            const res = await onBattleComplete(false)
-            if (res) {
-              setBattleSummaryResult((prev) => ({
-                ...prev,
-                eloChange: prev?.eloChange ?? -(res.loseElo || 8),
-                newElo: prev?.newElo ?? res.newElo,
-              }))
-            }
-          })()
+      // Partida local sin roomId = entrenamiento / bot / PvE (el cliente calcula ELO local y sobre).
+      // Partida con roomId = el servidor liquida autoritativamente arriba; no ejecutar aquí para no duplicar ni otorgar sobres en derrotas.
+      if (!roomId) {
+        if (gameStatus === 'victory') {
+          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly') {
+            void (async () => {
+              const res = await onBattleComplete(true)
+              if (res) {
+                setBattleSummaryResult((prev) => ({
+                  ...prev,
+                  eloChange: prev?.eloChange ?? res.winElo,
+                  newElo: prev?.newElo ?? res.newElo,
+                  packResult: res.packResult,
+                }))
+              }
+            })()
+          }
+        } else if (gameStatus === 'defeat') {
+          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly') {
+            void (async () => {
+              const res = await onBattleComplete(false)
+              if (res) {
+                setBattleSummaryResult((prev) => ({
+                  ...prev,
+                  eloChange: prev?.eloChange ?? -(res.loseElo || 8),
+                  newElo: prev?.newElo ?? res.newElo,
+                }))
+              }
+            })()
+          }
         }
       }
     }
@@ -2052,37 +2057,58 @@ export default function Battlefield({
       )}
 
       {/* Victory / Defeat Modal */}
-      {matchMode !== 'strategic_test' && (gameStatus === 'victory' || gameStatus === 'defeat') && (
-        <div
-          className="game-overlay"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
+      {matchMode !== 'strategic_test' && (gameStatus === 'victory' || gameStatus === 'defeat') && (() => {
+        const esDerrotaServidor = Boolean(
+          resultadoServidor?.status === 'liquidada' && (
+            (typeof resultadoServidor.eloDelta === 'number' && resultadoServidor.eloDelta < 0) ||
+            (typeof resultadoServidor.eloLost === 'number' && resultadoServidor.eloLost > 0)
+          )
+        )
+        const esVictoriaServidor = Boolean(
+          resultadoServidor?.status === 'liquidada' && (
+            (typeof resultadoServidor.eloDelta === 'number' && resultadoServidor.eloDelta >= 0) ||
+            (typeof resultadoServidor.eloGained === 'number' && resultadoServidor.eloGained > 0)
+          )
+        )
+        const esVictoriaFinal = roomId
+          ? (esVictoriaServidor || (!esDerrotaServidor && gameStatus === 'victory'))
+          : (gameStatus === 'victory')
+
+        return (
           <div
-            className={`game-card ${
-              esperandoConfirmacionServidor
-                ? 'game-card--loading'
-                : resultadoEmpatado
-                ? 'game-card--draw'
-                : resultadoEnRevision
-                ? 'game-card--draw'
-                : gameStatus === 'victory'
-                ? 'game-card--victory'
-                : 'game-card--defeat'
-            }`}
+            className="game-overlay"
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            <h2 className="game-card__title">
-              {resultadoEnRevision
-                ? '🛡️ COMBATE EN ARBITRAJE'
-                : resultadoEmpatado
-                ? '🤝 ¡EMPATE TÁCTICO!'
-                : gameStatus === 'victory'
-                ? '🏆 ¡VICTORIA!'
-                : battleSummaryResult?.isSurrendered
-                ? '🏳️ ¡TE HAS RENDIDO!'
-                : '💀 ¡DERROTA!'}
-            </h2>
+            <div
+              className={`game-card ${
+                esperandoConfirmacionServidor
+                  ? 'game-card--loading'
+                  : resultadoEmpatado
+                  ? 'game-card--draw'
+                  : resultadoEnRevision
+                  ? 'game-card--draw'
+                  : esDerrotaServidor
+                  ? 'game-card--defeat'
+                  : esVictoriaFinal
+                  ? 'game-card--victory'
+                  : 'game-card--defeat'
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="game-card__title">
+                {resultadoEnRevision
+                  ? '🛡️ COMBATE EN ARBITRAJE'
+                  : resultadoEmpatado
+                  ? '🤝 ¡EMPATE TÁCTICO!'
+                  : esDerrotaServidor
+                  ? '💀 ¡DERROTA!'
+                  : esVictoriaFinal
+                  ? '🏆 ¡VICTORIA!'
+                  : battleSummaryResult?.isSurrendered
+                  ? '🏳️ ¡TE HAS RENDIDO!'
+                  : '💀 ¡DERROTA!'}
+              </h2>
 
             {/* PARTIDA REAL: RESULTADO AUTORITATIVO DEL SERVIDOR */}
             {roomId && (
@@ -2199,7 +2225,7 @@ export default function Battlefield({
                 </div>
 
                 {/* VICTORY FREE PACK REWARD DISPLAY */}
-                {gameStatus === 'victory' && (
+                {esVictoriaFinal && (
                   <div className="victory-pack-reward">
                     {battleSummaryResult?.packResult?.awarded ? (
                       <div className="victory-pack-reward__box">
@@ -2339,7 +2365,7 @@ export default function Battlefield({
               </>
           </div>
         </div>
-      )}
+      )})()}
 
       {/* Strategic Playtest Post-Match Evaluation Modal */}
       {matchMode === 'strategic_test' && currentPlaytestLog && (

@@ -222,4 +222,18 @@ describe('ClanManager & Gem Valuations', () => {
     // Invitations list is now empty for this player
     expect(ClanManager.getMyClanInvitations('GuerreroAmigo').length).toBe(0)
   })
+
+  it('Fase 4: Migración 148 define reward_shares, reward_percentage y kick_clan_member RPC', () => {
+    const { readFileSync } = require('fs')
+    const { join } = require('path')
+    const migPath = join(process.cwd(), 'supabase', 'migrations', '148-fix-clan-details-columns-and-kick-rpc.sql')
+    const sql = readFileSync(migPath, 'utf8')
+
+    expect(sql).toMatch(/ALTER TABLE public\.clans\s+ADD COLUMN IF NOT EXISTS reward_shares/i)
+    expect(sql).toMatch(/ALTER TABLE public\.clan_members\s+ADD COLUMN IF NOT EXISTS reward_percentage/i)
+    expect(sql).toMatch(/FUNCTION public\.get_my_clan_details/i)
+    expect(sql).toMatch(/FUNCTION public\.kick_clan_member/i)
+    expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION public\.kick_clan_member/i)
+  })
 })
+
