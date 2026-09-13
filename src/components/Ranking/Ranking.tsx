@@ -308,7 +308,6 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
   const [flashClaimNotice, setFlashClaimNotice] = useState<string | null>(null)
   const [selectedClanReward, setSelectedClanReward] = useState<ClanRankingEntry | null>(null)
   const [showAllRewardsModal, setShowAllRewardsModal] = useState<boolean>(false)
-  const [showRemainingClans, setShowRemainingClans] = useState<boolean>(false)
 
   const loadLeaderboard = useCallback(() => {
     const myId = userProfile?.id

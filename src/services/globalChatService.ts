@@ -23,7 +23,7 @@ export const globalChatService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('global_chat_messages')
         .select('*')
         .order('created_at', { ascending: false })
@@ -85,7 +85,7 @@ export const globalChatService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('global_chat_messages')
         .insert([
           {
