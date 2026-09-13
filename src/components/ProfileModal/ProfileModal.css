@@ -1080,6 +1080,17 @@
   border: 1px solid #a855f7;
 }
 
+.crypto-bonus-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.25);
+  color: #fef08a;
+  border: 1px solid #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+}
+
 .crypto-treasury-address-box {
   display: flex;
   flex-direction: column;

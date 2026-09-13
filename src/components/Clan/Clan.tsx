@@ -5,7 +5,6 @@ import {
   type ClanData,
   type ClanMember,
   type ClanDonationRequest,
-  type ClanWarLog,
   type ClanDepositLog,
   type KickValidationResult,
 } from '../../utils/clanManager'
@@ -282,7 +281,6 @@ export default function Clan({
       if (updated && ClanManager.isValidUuid(updated.id)) {
         setDonationRequests(ClanManager.getDonationRequests(updated.id))
         setVaultDeposits(ClanManager.getVaultDeposits(updated.id))
-        setWarLogs(ClanManager.getWarLogs())
         if (updated.settings) {
           setClanPrivacy(updated.settings.privacy)
           setClanMinElo(updated.settings.minElo)
@@ -1187,6 +1185,7 @@ export default function Clan({
       'CANCELAR'
     )
   }
+  void _handleExecuteRaid
 
   // CLAIM 15/15 FULL CLAN BONUS (2 GREEN PACKS)
   const handleClaimFullBonus = () => {

@@ -19,10 +19,11 @@ interface ProfileModalProps {
   userTokens: number
   hasVipPass: boolean
   unlockedPlants?: PlantId[]
+  initialTab?: ProfileTab
   onClose: () => void
 }
 
-type ProfileTab = 'profile' | 'deposit' | 'withdraw' | 'referrals' | 'history'
+export type ProfileTab = 'profile' | 'deposit' | 'withdraw' | 'referrals' | 'history'
 
 export default function ProfileModal({
   isOpen,
@@ -30,10 +31,17 @@ export default function ProfileModal({
   userTokens,
   hasVipPass,
   unlockedPlants,
+  initialTab,
   onClose,
 }: ProfileModalProps) {
   const [profile, setProfile] = useState<PlayerProfile>(() => UserManager.getProfile())
-  const [activeTab, setActiveTab] = useState<ProfileTab>('profile')
+  const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab || 'profile')
+
+  useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab)
+    }
+  }, [isOpen, initialTab])
   const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [isEditingNick, setIsEditingNick] = useState(false)
   const [nickInput, setNickInput] = useState(profile.name)
@@ -879,6 +887,7 @@ export default function ProfileModal({
                 <span className="crypto-network-badge">🟡 RED: BNB Smart Chain (BEP20)</span>
                 <span className="crypto-token-badge">💵 TOKEN: USDT</span>
                 <span className="crypto-rate-badge">💎 1 USDT = 100 GEMAS</span>
+                <span className="crypto-bonus-badge">🔥 +15% BONO EXTRA</span>
               </div>
 
               <div className="crypto-treasury-address-box">

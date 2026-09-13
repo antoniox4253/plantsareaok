@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import { runAsyncTimeline } from './asyncOpponent'
-import { createBattleState, type GameState } from './simulate'
 
 describe('Fase 2: Resolución Definitiva de Partidas en Arbitraje y Empate Técnico', () => {
   it('1. runAsyncTimeline ante estado draw retorna motivo: draw sin lanzar error ni no_result', () => {
@@ -27,13 +26,13 @@ describe('Fase 2: Resolución Definitiva de Partidas en Arbitraje y Empate Técn
     })
 
     // Forzar status draw para verificar el mapeo de motivo
-    res.state.status = 'draw'
+    ;(res.state as any).status = 'draw'
 
     // Corroborar que la lógica de resolución mapea status draw a motivo draw
     let winner: 1 | 2 | null = null
     let motivo: 'simulation' | 'forfeit_p1' | 'draw' | 'no_result' = 'no_result'
 
-    if (res.state.status === 'draw') {
+    if ((res.state as any).status === 'draw') {
       winner = null
       motivo = 'draw'
     }

@@ -184,6 +184,133 @@
   }
 }
 
+/* ── HEADER PROMOCIONAL: 15% EXTRA EN DEPÓSITO ──────────────────────────── */
+.promo-deposit-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: linear-gradient(135deg, rgba(20, 83, 45, 0.88) 0%, rgba(120, 53, 15, 0.88) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.65);
+  border-radius: 10px;
+  padding: 5px 9px;
+  margin-top: 3px;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.28), inset 0 0 8px rgba(251, 191, 36, 0.15);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: promoGlowPulse 2.8s infinite alternate ease-in-out;
+  max-width: 320px;
+  width: 100%;
+}
+
+.promo-deposit-header:hover {
+  transform: translateY(-1.5px) scale(1.02);
+  border-color: #fde047;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5), inset 0 0 12px rgba(251, 191, 36, 0.3);
+  background: linear-gradient(135deg, rgba(22, 101, 52, 0.95) 0%, rgba(146, 64, 14, 0.95) 100%);
+}
+
+.promo-deposit-header:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.promo-deposit-header__row1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.promo-deposit-header__badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.promo-deposit-header__fire {
+  font-size: 11px;
+  filter: drop-shadow(0 0 4px #f59e0b);
+  animation: fireBounce 1.5s infinite ease-in-out;
+}
+
+.promo-deposit-header__title {
+  color: #fef08a;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 8px rgba(250, 204, 21, 0.5);
+  white-space: nowrap;
+}
+
+.promo-deposit-header__timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  color: #fde047;
+  font-size: 9.5px;
+  font-weight: 900;
+  font-family: 'Courier New', Courier, monospace;
+  padding: 1.5px 5px;
+  border-radius: 5px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.25);
+  white-space: nowrap;
+}
+
+.promo-deposit-header__row2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.promo-deposit-header__subtitle {
+  color: #a7f3d0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.promo-deposit-header__cta {
+  color: #fbbf24;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.promo-deposit-header:hover .promo-deposit-header__cta {
+  color: #ffffff;
+  text-shadow: 0 0 6px #f59e0b;
+}
+
+@keyframes promoGlowPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.2), inset 0 0 6px rgba(251, 191, 36, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.42), inset 0 0 10px rgba(251, 191, 36, 0.22);
+  }
+}
+
+@keyframes fireBounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-1.5px) scale(1.15);
+  }
+}
+
 .topbar__right-wrap {
   display: flex;
   flex-direction: column;

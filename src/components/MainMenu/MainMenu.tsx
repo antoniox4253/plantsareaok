@@ -23,7 +23,7 @@ import { toggleFullscreen } from '../../utils/fullscreen'
 import { BATTLE_PASS_LEVELS } from '../../utils/battlePassManager'
 import { SeasonManager } from '../../utils/seasonManager'
 import { UserManager, type PlayerProfile } from '../../utils/userManager'
-import ProfileModal from '../ProfileModal/ProfileModal'
+import ProfileModal, { type ProfileTab } from '../ProfileModal/ProfileModal'
 import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
 import ColosseumModal from '../Colosseum/ColosseumModal'
 import TournamentModal from '../Tournament/TournamentModal'
@@ -124,11 +124,67 @@ export default function MainMenu({
 }: MainMenuProps) {
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => UserManager.getProfile())
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>('profile')
   const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false)
   const [isColosseumModalOpen, setIsColosseumModalOpen] = useState(false)
   const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false)
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
   const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
+
+  // ── TEMPORIZADOR DE 8 HORAS: PROMOCIÓN +15% EN DEPÓSITOS ───────────────────
+  const [promoTimeLeft, setPromoTimeLeft] = useState<string>('08:00:00')
+
+  useEffect(() => {
+    const PROMO_DURATION_MS = 8 * 60 * 60 * 1000
+    const STORAGE_KEY = 'plantarena_deposit_promo_end'
+
+    const getOrInitEndTime = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        const now = Date.now()
+        if (stored) {
+          const parsed = parseInt(stored, 10)
+          if (!isNaN(parsed) && parsed > now) {
+            return parsed
+          }
+        }
+        const nextEnd = now + PROMO_DURATION_MS
+        localStorage.setItem(STORAGE_KEY, String(nextEnd))
+        return nextEnd
+      } catch {
+        return Date.now() + PROMO_DURATION_MS
+      }
+    }
+
+    let endTime = getOrInitEndTime()
+
+    const updateTimer = () => {
+      const now = Date.now()
+      let diff = endTime - now
+
+      if (diff <= 0) {
+        endTime = now + PROMO_DURATION_MS
+        try {
+          localStorage.setItem(STORAGE_KEY, String(endTime))
+        } catch {
+          // ignorar errores de almacenamiento
+        }
+        diff = PROMO_DURATION_MS
+      }
+
+      const totalSec = Math.floor(diff / 1000)
+      const h = Math.floor(totalSec / 3600)
+      const m = Math.floor((totalSec % 3600) / 60)
+      const s = totalSec % 60
+
+      const pad = (n: number) => n.toString().padStart(2, '0')
+      setPromoTimeLeft(`${pad(h)}:${pad(m)}:${pad(s)}`)
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleToggleGlobalChat = () => {
     setIsGlobalChatOpen((prev) => {
@@ -340,6 +396,7 @@ export default function MainMenu({
               className={`card card--player ${hasVipPass ? 'card--player-vip' : ''}`}
               onClick={() => {
                 soundManager.playSound('click', 0.5)
+                setProfileInitialTab('profile')
                 setIsProfileModalOpen(true)
               }}
               title="Ver y editar perfil, depositar, retirar y referidos"
@@ -382,6 +439,29 @@ export default function MainMenu({
               <span className="online-users-dot" />
               <span className="online-users-count">{onlineUsersCount}</span>
               <span className="online-users-label">en línea</span>
+            </div>
+
+            {/* HEADER PROMOCIONAL: 15% ADICIONAL EN CADA DEPÓSITO */}
+            <div
+              className="promo-deposit-header"
+              onClick={() => {
+                soundManager.playSound('click', 0.5)
+                setProfileInitialTab('deposit')
+                setIsProfileModalOpen(true)
+              }}
+              title="¡Promoción Activa! 15% adicional en cada depósito en gemas. Clic para depositar USDT BEP20"
+            >
+              <div className="promo-deposit-header__row1">
+                <div className="promo-deposit-header__badge-wrap">
+                  <span className="promo-deposit-header__fire">🔥</span>
+                  <span className="promo-deposit-header__title">15% ADICIONAL EN CADA DEPÓSITO</span>
+                </div>
+                <span className="promo-deposit-header__timer">⏳ {promoTimeLeft}</span>
+              </div>
+              <div className="promo-deposit-header__row2">
+                <span className="promo-deposit-header__subtitle">Más gemas, mejor estrategia</span>
+                <span className="promo-deposit-header__cta">DEPOSITAR ➔</span>
+              </div>
             </div>
           </div>
 
@@ -437,6 +517,7 @@ export default function MainMenu({
               style={{ cursor: 'pointer' }}
               onClick={() => {
                 soundManager.playSound('click', 0.5)
+                setProfileInitialTab('deposit')
                 setIsProfileModalOpen(true)
               }}
             >
@@ -890,6 +971,7 @@ export default function MainMenu({
         userTokens={userTokens}
         hasVipPass={hasVipPass}
         unlockedPlants={unlockedPlants}
+        initialTab={profileInitialTab}
         onClose={() => setIsProfileModalOpen(false)}
       />
 
