@@ -389,9 +389,6 @@ export default function Marketplace({
           t.type === 'lottery_win' ||
           t.type === 'lottery_spin' ||
           t.type === 'reward_code' ||
-          t.type === 'tournament_reward' ||
-          t.type === 'tournament_reentry' ||
-          t.type === 'tournament_entry_fee' ||
           t.type === 'referral_reward'
       )
     return transactions
@@ -1686,13 +1683,13 @@ export default function Marketplace({
                             -{Math.abs(tx.amountGems || 0).toLocaleString()} 💎
                           </span>
                         </div>
-                      ) : tx.type === 'lottery_spin' || tx.description.toLowerCase().includes('giro en ruleta') || tx.description.toLowerCase().includes('giro adicional') ? (
+                      ) : tx.type === 'lottery_spin' || tx.description?.toLowerCase().includes('giro en ruleta') || tx.description?.toLowerCase().includes('giro adicional') ? (
                         <div className="market-tx-amount-box market-tx-amount-box--gems">
                           <span className="market-tx-amount-num" style={{ color: '#f87171', fontWeight: 'bold' }}>
                             -{Math.abs(tx.amountGems || 10).toLocaleString()} 💎
                           </span>
                         </div>
-                      ) : (isTournamentReward || tx.type === 'lottery_win' || tx.description.toLowerCase().includes('premio de ruleta') || isDeposit) && tx.amountGems && tx.amountGems > 0 ? (
+                      ) : (isTournamentReward || tx.type === 'lottery_win' || tx.description?.toLowerCase().includes('premio de ruleta') || isDeposit) && tx.amountGems && tx.amountGems > 0 ? (
                         <div className="market-tx-amount-box market-tx-amount-box--gems">
                           <span className="market-tx-amount-num" style={{ color: '#4ade80', fontWeight: 'bold' }}>
                             +{tx.amountGems.toLocaleString()} 💎
@@ -1709,25 +1706,25 @@ export default function Marketplace({
                           <span
                             className="market-tx-amount-tag"
                             style={{
-                              color: tx.description.includes('Agua') ? '#38bdf8' :
-                                     tx.description.includes('Oro') ? '#facc15' :
-                                     tx.description.includes('Fertilizante') ? '#4ade80' :
-                                     tx.description.includes('Pala') ? '#fb923c' :
-                                     tx.description.includes('Wall-nut') ? '#fbbf24' :
-                                     tx.description.includes('Sobre') ? '#c084fc' :
-                                     tx.description.includes('Sigue') ? '#94a3b8' : '#94a3b8',
+                              color: tx.description?.includes('Agua') ? '#38bdf8' :
+                                     tx.description?.includes('Oro') ? '#facc15' :
+                                     tx.description?.includes('Fertilizante') ? '#4ade80' :
+                                     tx.description?.includes('Pala') ? '#fb923c' :
+                                     tx.description?.includes('Wall-nut') ? '#fbbf24' :
+                                     tx.description?.includes('Sobre') ? '#c084fc' :
+                                     tx.description?.includes('Sigue') ? '#94a3b8' : '#94a3b8',
                               fontSize: '11px',
                               fontWeight: 'bold',
                               letterSpacing: '0.5px',
                             }}
                           >
-                            {tx.description.includes('Agua') ? '💧 2x AGUA' :
-                             tx.description.includes('Oro') ? '💰 ORO' :
-                             tx.description.includes('Fertilizante') ? '🌱 FERTILIZANTE' :
-                             tx.description.includes('Pala') ? '⛏️ PALA' :
-                             tx.description.includes('Wall-nut') ? '🥜 WALL-NUT' :
-                             tx.description.includes('Sobre') ? '👑 SOBRE' :
-                             tx.description.includes('Sigue') ? '🍀 SUERTE' : 'OFICIAL'}
+                            {tx.description?.includes('Agua') ? '💧 2x AGUA' :
+                             tx.description?.includes('Oro') ? '💰 ORO' :
+                             tx.description?.includes('Fertilizante') ? '🌱 FERTILIZANTE' :
+                             tx.description?.includes('Pala') ? '⛏️ PALA' :
+                             tx.description?.includes('Wall-nut') ? '🥜 WALL-NUT' :
+                             tx.description?.includes('Sobre') ? '👑 SOBRE' :
+                             tx.description?.includes('Sigue') ? '🍀 SUERTE' : 'OFICIAL'}
                           </span>
                         </div>
                       )}

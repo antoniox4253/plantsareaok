@@ -27,6 +27,7 @@ import ProfileModal from '../ProfileModal/ProfileModal'
 import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
 import ColosseumModal from '../Colosseum/ColosseumModal'
 import TournamentModal from '../Tournament/TournamentModal'
+import GlobalChat from '../GlobalChat/GlobalChat'
 import { tournamentService } from '../../services/tournamentService'
 import type { ColosseumBetAmount, PlantId, TournamentModel } from '../../types/game'
 import './MainMenu.css'
@@ -125,6 +126,19 @@ export default function MainMenu({
   const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false)
   const [isColosseumModalOpen, setIsColosseumModalOpen] = useState(false)
   const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false)
+  const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
+  const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
+
+  const handleToggleGlobalChat = () => {
+    setIsGlobalChatOpen((prev) => {
+      const next = !prev
+      if (next) {
+        setGlobalChatUnreadCount(0)
+      }
+      return next
+    })
+    soundManager.playSound('click', 0.5)
+  }
 
   useEffect(() => {
     if (reopenTournamentModal) {
