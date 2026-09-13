@@ -31,6 +31,7 @@ export interface PartidaEncontrada {
   roomId: string
   /** Verdadero si se reincorpora a una partida que ya estaba en curso. */
   reanudada: boolean
+  tournamentId?: string
 }
 
 export interface EstadoCola {

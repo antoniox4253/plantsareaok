@@ -10,7 +10,6 @@ import type { PlantId } from '../../types/game'
 import { getMostPlantedPlant } from '../../utils/plantUsageTracker'
 import { supabase } from '../../lib/supabaseClient'
 import { ClanManager, type ClanRankingEntry } from '../../utils/clanManager'
-import GoldIcon from '../Common/GoldIcon'
 import './Ranking.css'
 
 import type { Database } from '../../types/database.types'
@@ -301,10 +300,6 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
   const [clanLeaderboard, setClanLeaderboard] = useState<ClanRankingEntry[]>([])
   const [isLoadingClans, setIsLoadingClans] = useState<boolean>(false)
   const [clansError, setClansError] = useState<string | null>(null)
-  const [clansSearch, setClansSearch] = useState<string>('')
-  const [clansPage, setClansPage] = useState<number>(1)
-  const [clansPageSize, setClansPageSize] = useState<number | 'all'>(20)
-  const clansTableRef = useRef<HTMLDivElement>(null)
 
   // Recompensas pendientes y contador regresivo UTC
   const [utcCountdown, setUtcCountdown] = useState<string>('')
@@ -492,42 +487,6 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
   const myClanRankEntry = useMemo(() => {
     return clanLeaderboard.find((c) => c.isUserClan) || null
   }, [clanLeaderboard])
-
-  const filteredClanList = useMemo(() => {
-    let list = [...clanLeaderboard]
-    const query = clansSearch.trim().toLowerCase()
-    if (query) {
-      list = list.filter(
-        (c) =>
-          c.name.toLowerCase().includes(query) ||
-          c.tag.toLowerCase().includes(query) ||
-          c.leader.toLowerCase().includes(query)
-      )
-    } else {
-      list = list.slice(3) // Primeros 3 al podio
-    }
-    return list
-  }, [clanLeaderboard, clansSearch])
-
-  const totalClanCount = filteredClanList.length
-  const totalClanPages = clansPageSize === 'all' ? 1 : Math.ceil(totalClanCount / clansPageSize)
-  const currentClanPage = Math.min(Math.max(1, clansPage), Math.max(1, totalClanPages))
-
-  const paginatedClanList = useMemo(() => {
-    if (clansPageSize === 'all') return filteredClanList
-    const start = (currentClanPage - 1) * clansPageSize
-    return filteredClanList.slice(start, start + clansPageSize)
-  }, [filteredClanList, clansPageSize, currentClanPage])
-
-  const clanStartIdx = totalClanCount === 0 ? 0 : (currentClanPage - 1) * (clansPageSize === 'all' ? totalClanCount : clansPageSize) + 1
-  const clanEndIdx = clansPageSize === 'all' ? totalClanCount : Math.min(clanStartIdx + clansPageSize - 1, totalClanCount)
-
-  const handleClanPageChange = (newPage: number) => {
-    setClansPage(newPage)
-    if (clansTableRef.current) {
-      clansTableRef.current.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }
 
   // Reclamar Flash Pack PvP de 5 minutos
   const handleClaimFlashPack = async (rewardId: string) => {

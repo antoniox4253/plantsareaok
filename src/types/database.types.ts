@@ -830,6 +830,46 @@ export interface Database {
           },
         ]
       }
+      transactions: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          amount_gems: number | null
+          amount_usd: number | null
+          description: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          amount_gems?: number | null
+          amount_usd?: number | null
+          description?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          amount_gems?: number | null
+          amount_usd?: number | null
+          description?: string | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'transactions_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       /**

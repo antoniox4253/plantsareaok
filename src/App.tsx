@@ -628,7 +628,7 @@ function App() {
       setPartidaAsincrona(esTorneo ? false : Boolean(sala.isAsyncMatch))
       setBattleMatchMode(esTorneo ? 'tournament' : (sala.mode as 'ranked' | 'friendly' | 'colosseum' | 'tournament'))
       if (esTorneo) {
-        const tId = (sala as any).tournament_id || (sala as any).tournamentId || encontrada.tournamentId || tournamentOpponent?.tournamentId || 'tourney_official_1'
+        const tId = (sala as any).tournament_id || (sala as any).tournamentId || (encontrada as any)?.tournamentId || tournamentOpponent?.tournamentId || 'tourney_official_1'
         setTournamentOpponent((prev) => ({
           name: suNick || prev?.name || 'Rival de Torneo',
           tournamentId: tId,

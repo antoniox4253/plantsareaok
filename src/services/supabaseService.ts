@@ -4319,8 +4319,8 @@ export const SupabaseService = {
           .limit(limite),
       ])
 
-      const soldListings = soldListingsRes.data || []
-      const directTxs = directTxRes.data || []
+      const soldListings = (soldListingsRes.data || []) as any[]
+      const directTxs = ((directTxRes as any)?.data || []) as any[]
 
       if (soldListings.length === 0 && directTxs.length === 0) return []
 
@@ -4359,7 +4359,7 @@ export const SupabaseService = {
         results.push({
           id: l.id,
           type: 'marketplace_sale',
-          createdAt: l.closed_at,
+          createdAt: l.closed_at || new Date().toISOString(),
           userName: buyerName,
           targetUserName: sellerName,
           title: 'Compra en Mercado P2P',
@@ -4428,7 +4428,7 @@ export const SupabaseService = {
         results.push({
           id: t.id,
           type: txType as any,
-          createdAt: t.created_at,
+          createdAt: t.created_at || new Date().toISOString(),
           userName: uName,
           targetUserName: null,
           title,
