@@ -943,6 +943,15 @@
   pointer-events: none;
 }
 
+.banner-button--chat img {
+  filter: hue-rotate(185deg) saturate(1.35) brightness(1.1);
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.banner-button--chat:hover img {
+  filter: hue-rotate(185deg) saturate(1.7) brightness(1.25) drop-shadow(0 0 10px rgba(56, 189, 248, 0.7));
+}
+
 .icon-button {
   display: flex;
   align-items: center;
