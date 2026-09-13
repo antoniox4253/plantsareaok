@@ -545,6 +545,7 @@ export const SupabaseService = {
         p_use_ticket: opts.useTicket ?? false,
         p_room_code: opts.roomCode ?? opts.tournamentId ?? null,
         p_engine_version: 'auth-v2',
+        p_tournament_id: opts.tournamentId ?? null,
       })
       if (error) {
         logError('enterMatchmaking', error)
@@ -1927,44 +1928,76 @@ export const SupabaseService = {
     if (!isSupabaseConfigured()) return []
     try {
       const { data, error } = await (supabase.rpc as any)('get_clan_ranking')
-      if (error) {
-        // Si la función RPC no existe aún en la base de datos (código PGRST202 / 404),
-        // consultar directamente la tabla 'clans' para que el ranking funcione de inmediato sin errores
-        const isMissingRpc = error.code === 'PGRST202' || error.message?.includes('get_clan_ranking') || error.status === 404
-        if (isMissingRpc) {
-          try {
-            const { data: clansTableData } = await supabase
-              .from('clans')
-              .select('*')
-              .order('damage_dealt', { ascending: false })
-              .limit(10)
-            if (Array.isArray(clansTableData) && clansTableData.length > 0) {
-              return clansTableData.map((c: any, idx: number) => ({
-                rank: idx + 1,
-                id: c.id,
-                name: c.name,
-                tag: c.tag,
-                badge: c.badge || '🛡️',
-                description: c.description || '',
-                leader_name: c.leader_name || c.leader || 'Líder',
-                member_count: Array.isArray(c.members) ? c.members.length : (Number(c.member_count) || 1),
-                damage_dealt: Number(c.damage_dealt) || 0,
-                daily_damage_dealt: Number(c.daily_damage_dealt) || 0,
-                wins: Number(c.wins) || 0,
-                losses: Number(c.losses) || 0,
-                vault_gems: Number(c.vault_gems) || Number(c.vault_usd) || 0,
-                is_user_clan: false,
-              }))
-            }
-          } catch {
-            // Ignorar y continuar
-          }
-          return []
-        }
-        logError('getClanRanking', error)
-        return []
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data
       }
-      return Array.isArray(data) ? data : []
+
+      // Si la RPC da error o devuelve un array vacío, hacer fallback a getClansList()
+      // garantizando que la vista de ranking nunca quede desconectada si existen clanes.
+      try {
+        const fallbackList = await this.getClansList()
+        if (Array.isArray(fallbackList) && fallbackList.length > 0) {
+          const sorted = [...fallbackList].sort((a, b) => {
+            const dmgA = Number(a.damage_dealt ?? (Number(a.wins || 0) * 420))
+            const dmgB = Number(b.damage_dealt ?? (Number(b.wins || 0) * 420))
+            if (dmgB !== dmgA) return dmgB - dmgA
+            return Number(b.wins || 0) - Number(a.wins || 0)
+          })
+
+          return sorted.map((c: any, idx: number) => ({
+            rank: idx + 1,
+            id: c.id,
+            name: c.name,
+            tag: c.tag,
+            badge: c.badge || '🛡️',
+            description: c.description || '',
+            leader_name: c.leader || c.leader_name || 'Líder',
+            leader_id: c.leader_id,
+            member_count: Number(c.member_count) || (Array.isArray(c.members) ? c.members.length : 1),
+            damage_dealt: Number(c.damage_dealt) || (Number(c.wins || 0) * 420),
+            daily_damage_dealt: Number(c.daily_damage_dealt) || Math.floor((Number(c.damage_dealt) || (Number(c.wins || 0) * 420)) * 0.35),
+            wins: Number(c.wins) || 0,
+            losses: Number(c.losses) || 0,
+            vault_gems: Number(c.vaultGems || c.vault_gems || 0),
+            is_user_clan: false,
+          }))
+        }
+      } catch {
+        // Fallback a consulta directa de tabla clans
+      }
+
+      try {
+        const { data: clansTableData } = await supabase
+          .from('clans')
+          .select('*')
+          .order('damage_dealt', { ascending: false })
+          .limit(50)
+        if (Array.isArray(clansTableData) && clansTableData.length > 0) {
+          return clansTableData.map((c: any, idx: number) => ({
+            rank: idx + 1,
+            id: c.id,
+            name: c.name,
+            tag: c.tag,
+            badge: c.badge || '🛡️',
+            description: c.description || '',
+            leader_name: c.leader_name || c.leader || 'Líder',
+            member_count: Array.isArray(c.members) ? c.members.length : (Number(c.member_count) || 1),
+            damage_dealt: Number(c.damage_dealt) || (Number(c.wins || 0) * 420),
+            daily_damage_dealt: Number(c.daily_damage_dealt) || 0,
+            wins: Number(c.wins) || 0,
+            losses: Number(c.losses) || 0,
+            vault_gems: Number(c.vault_gems) || Number(c.vault_usd) || 0,
+            is_user_clan: false,
+          }))
+        }
+      } catch {
+        // Ignorar
+      }
+
+      if (error && error.code !== 'PGRST202') {
+        logError('getClanRanking', error)
+      }
+      return []
     } catch (e: any) {
       if (e?.code !== 'PGRST202') {
         logError('getClanRanking', e)

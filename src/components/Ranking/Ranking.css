@@ -1646,30 +1646,41 @@
 }
 
 /* RESPONSIVE DESIGN (PC & MOBILE) */
-/* ONLY stack vertically in true mobile portrait orientation */
+/* PRESERVAR DISTRIBUCIÓN DE PANTALLA GRANDE (2 COLUMNAS: PODIO IZQUIERDA + TABLA DERECHA) EN MÓVILES */
 @media (max-width: 600px) and (orientation: portrait) {
   .leaderboard-split-layout {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    gap: 12px;
-    padding-bottom: 20px;
+    display: grid !important;
+    grid-template-columns: minmax(155px, 205px) 1fr !important;
+    gap: 6px !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
   }
 
   .leaderboard-podium-col {
-    height: auto;
-    overflow: visible;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    gap: 6px !important;
+    padding-right: 2px !important;
   }
 
   .leaderboard-table-col {
-    height: auto;
-    overflow: visible;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 6px 8px !important;
+    gap: 6px !important;
   }
 
   .lb-table-wrap {
-    max-height: 360px;
-    overflow-x: auto;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }
 
@@ -2817,54 +2828,90 @@
     border-radius: 8px;
   }
 
-  /* El contenedor permite scroll vertical fluido si el contenido sobrepasa la pantalla */
+  /* PRESERVAR ESTRICTAMENTE LA MISMA DISTRIBUCIÓN DE PANTALLA GRANDE (2 COLUMNAS: PODIO IZQUIERDA + TABLA DERECHA) */
   .leaderboard-container {
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    padding-right: 2px;
+    overflow: hidden !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
 
-  /* Banner de Clanes en móvil: compacto horizontal */
-  .clan-ranking-hero-banner {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding: 4px 8px;
-    margin-bottom: 4px;
-  }
-
-  .clan-all-rewards-btn {
-    font-size: 9.5px;
-    padding: 3px 8px;
-  }
-
-  /* Layout de 2 columnas pasa a 1 columna vertical en móvil */
   .leaderboard-split-layout {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-    gap: 10px;
-    width: 100%;
+    display: grid !important;
+    grid-template-columns: minmax(165px, 220px) 1fr !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    gap: 8px !important;
+    width: 100% !important;
   }
 
   .leaderboard-podium-col {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-    gap: 8px;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
+    padding-right: 2px !important;
   }
 
   .leaderboard-table-col {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-    gap: 8px;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    gap: 6px !important;
+    padding: 8px 10px !important;
+  }
+
+  /* Compactación armónica del podio en pantallas móviles manteniendo su diseño */
+  .podium-card-v2 {
+    padding: 6px 6px !important;
+    border-radius: 10px !important;
+  }
+
+  .podium-v2-avatar-wrapper {
+    width: 70px !important;
+    height: 50px !important;
+    margin: 2px 0 !important;
+  }
+
+  .podium-v2-laurel-svg {
+    width: 80px !important;
+    height: 52px !important;
+  }
+
+  .podium-v2-avatar-img--gold {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .podium-v2-sub-avatar {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .podium-v2-username {
+    font-size: 11px !important;
+    max-width: 130px !important;
+  }
+
+  .podium-v2-sub-username {
+    font-size: 9.5px !important;
+    max-width: 80px !important;
+  }
+
+  .podium-v2-prize-cta {
+    font-size: 8px !important;
+    padding: 2px 4px !important;
+    margin-top: 3px !important;
+  }
+
+  .podium-v2-bottom-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px !important;
   }
 
   /* TRIO DE CLANES: DISTRIBUCIÓN HORIZONTAL IDÉNTICA EN MÓVIL (3 COLUMNAS) */

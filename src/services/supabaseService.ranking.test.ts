@@ -117,6 +117,7 @@ describe('SupabaseService Ranking & Match Clock Hardening', () => {
       p_use_ticket: false,
       p_room_code: null,
       p_engine_version: 'auth-v2',
+      p_tournament_id: null,
     })
     expect(res).toEqual({ matched: false, searching: true })
   })

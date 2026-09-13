@@ -440,7 +440,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
     const userClanId = userClan?.id || null
 
     SupabaseService.getClanRanking()
-      .then((data) => {
+      .then(async (data) => {
         if (Array.isArray(data) && data.length > 0) {
           const mapped: ClanRankingEntry[] = data.map((c: any, idx: number) => ({
             rank: c.rank || idx + 1,
@@ -459,13 +459,79 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
             isUserClan: Boolean(c.is_user_clan || (userClanId && c.id === userClanId)),
           }))
           setClanLeaderboard(mapped)
+          setIsLoadingClans(false)
         } else {
+          // Fallback de contingencia a getClansList() para asegurar que nunca quede desconectado
+          try {
+            const rawList = await SupabaseService.getClansList()
+            if (Array.isArray(rawList) && rawList.length > 0) {
+              const sorted = [...rawList].sort((a, b) => {
+                const dmgA = Number(a.damage_dealt ?? (Number(a.wins || 0) * 420))
+                const dmgB = Number(b.damage_dealt ?? (Number(b.wins || 0) * 420))
+                if (dmgB !== dmgA) return dmgB - dmgA
+                return Number(b.wins || 0) - Number(a.wins || 0)
+              })
+              const mapped: ClanRankingEntry[] = sorted.map((c: any, idx: number) => ({
+                rank: idx + 1,
+                id: c.id,
+                name: c.name,
+                tag: c.tag,
+                badge: c.badge || '🛡️',
+                description: c.description,
+                leader: c.leader || c.leader_name || 'Líder',
+                memberCount: Number(c.member_count) || (Array.isArray(c.members) ? c.members.length : 1),
+                damageDealt: Number(c.damage_dealt) || (Number(c.wins || 0) * 420),
+                dailyDamageDealt: Number(c.daily_damage_dealt) || Math.floor((Number(c.damage_dealt) || (Number(c.wins || 0) * 420)) * 0.35),
+                wins: Number(c.wins) || 0,
+                losses: Number(c.losses) || 0,
+                vaultGems: Number(c.vaultGems || c.vault_gems || 0),
+                isUserClan: Boolean(userClanId && c.id === userClanId),
+              }))
+              setClanLeaderboard(mapped)
+              setIsLoadingClans(false)
+              return
+            }
+          } catch {
+            // Continuar al caché local
+          }
           const localRanking = ClanManager.getClansRanking(userClanId)
           setClanLeaderboard(localRanking)
+          setIsLoadingClans(false)
         }
-        setIsLoadingClans(false)
       })
-      .catch(() => {
+      .catch(async () => {
+        try {
+          const rawList = await SupabaseService.getClansList()
+          if (Array.isArray(rawList) && rawList.length > 0) {
+            const sorted = [...rawList].sort((a, b) => {
+              const dmgA = Number(a.damage_dealt ?? (Number(a.wins || 0) * 420))
+              const dmgB = Number(b.damage_dealt ?? (Number(b.wins || 0) * 420))
+              if (dmgB !== dmgA) return dmgB - dmgA
+              return Number(b.wins || 0) - Number(a.wins || 0)
+            })
+            const mapped: ClanRankingEntry[] = sorted.map((c: any, idx: number) => ({
+              rank: idx + 1,
+              id: c.id,
+              name: c.name,
+              tag: c.tag,
+              badge: c.badge || '🛡️',
+              description: c.description,
+              leader: c.leader || c.leader_name || 'Líder',
+              memberCount: Number(c.member_count) || (Array.isArray(c.members) ? c.members.length : 1),
+              damageDealt: Number(c.damage_dealt) || (Number(c.wins || 0) * 420),
+              dailyDamageDealt: Number(c.daily_damage_dealt) || Math.floor((Number(c.damage_dealt) || (Number(c.wins || 0) * 420)) * 0.35),
+              wins: Number(c.wins) || 0,
+              losses: Number(c.losses) || 0,
+              vaultGems: Number(c.vaultGems || c.vault_gems || 0),
+              isUserClan: Boolean(userClanId && c.id === userClanId),
+            }))
+            setClanLeaderboard(mapped)
+            setIsLoadingClans(false)
+            return
+          }
+        } catch {
+          // Continuar al caché local
+        }
         const localRanking = ClanManager.getClansRanking(userClanId)
         setClanLeaderboard(localRanking)
         setIsLoadingClans(false)
