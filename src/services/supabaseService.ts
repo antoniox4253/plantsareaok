@@ -4324,7 +4324,7 @@ export const SupabaseService = {
       const { data, error } = await (supabase.rpc as any)('get_global_transactions', {
         p_limit: limite,
       })
-      if (!error && Array.isArray(data) && data.length > 0) {
+      if (!error && Array.isArray(data)) {
         return data as GlobalTransactionItem[]
       }
       if (error) {

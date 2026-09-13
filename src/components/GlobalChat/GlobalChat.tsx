@@ -27,7 +27,9 @@ export default function GlobalChat({
   onlineUsersCount = 25,
   onNewUnreadMessage,
 }: GlobalChatProps) {
-  const [messages, setMessages] = useState<GlobalChatMessage[]>([])
+  const [messages, setMessages] = useState<GlobalChatMessage[]>(() =>
+    globalChatService.getLocalMessages()
+  )
   const [inputText, setInputText] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [cooldownSeconds, setCooldownSeconds] = useState(0)

@@ -733,21 +733,6 @@ export default function MainMenu({
           <img src={arena} alt="" />
           <span>MIS PARTIDAS</span>
         </button>
-        {/* CHAT GLOBAL MINIMIZABLE */}
-        <button
-          className="banner-button banner-button--chat"
-          type="button"
-          onClick={handleToggleGlobalChat}
-          title="Abrir / Minimizar Chat Global"
-        >
-          <img src={arena} alt="" />
-          <span>CHAT GLOBAL</span>
-          {globalChatUnreadCount > 0 && !isGlobalChatOpen && (
-            <span className="global-chat-unread-badge">
-              {globalChatUnreadCount > 99 ? '99+' : globalChatUnreadCount}
-            </span>
-          )}
-        </button>
       </div>
 
       <div className="footer">
@@ -958,6 +943,25 @@ export default function MainMenu({
         }}
       />
 
+      {/* BOTÓN FLOTANTE EMOTE CHAT GLOBAL */}
+      {!isGlobalChatOpen && (
+        <div className="global-chat-floating-btn-wrapper">
+          <button
+            type="button"
+            className="global-chat-toggle-btn"
+            onClick={handleToggleGlobalChat}
+            title="Abrir Chat Global"
+          >
+            <span className="global-chat-icon">💬</span>
+            {globalChatUnreadCount > 0 && (
+              <span className="global-chat-badge">
+                {globalChatUnreadCount > 99 ? '99+' : globalChatUnreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* CHAT GLOBAL MINIMIZABLE */}
       <GlobalChat
         isOpen={isGlobalChatOpen}
@@ -966,7 +970,7 @@ export default function MainMenu({
           name: playerProfile.name || userProfile?.username || 'Guerrero',
           hasVipPass: Boolean(hasVipPass),
           avatarId: playerProfile.avatar || userProfile?.avatar_id || 'peashooter',
-          id: UserManager.getProfile().name,
+          id: userProfile?.id,
         }}
         onlineUsersCount={onlineUsersCount}
         onNewUnreadMessage={() => {

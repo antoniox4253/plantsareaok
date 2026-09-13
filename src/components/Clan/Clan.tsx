@@ -15,6 +15,7 @@ import { SeasonManager } from '../../utils/seasonManager'
 import { UserManager } from '../../utils/userManager'
 import { supabaseService } from '../../services/supabaseService'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
+import { clanChatService, type ClanChatMessage } from '../../services/clanChatService'
 import './Clan.css'
 
 interface ClanProps {
@@ -112,29 +113,13 @@ export default function Clan({
   const [vaultDeposits, setVaultDeposits] = useState<ClanDepositLog[]>([])
   const [warLogs, setWarLogs] = useState<ClanWarLog[]>([])
 
-  // Floating Clan Chat State
+  // Floating Clan Chat State & Realtime
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatInput, setChatInput] = useState('')
-  const [chatMessages, setChatMessages] = useState<
-    Array<{ id: string; sender: string; role: string; text: string; time: string }>
-  >([])
-
-  const handleSendChatMessage = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!chatInput.trim()) return
-    const now = new Date()
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-    const newMsg = {
-      id: `chat-${Date.now()}`,
-      sender: playerName,
-      role: userClan?.leader === playerName ? 'Líder' : 'Miembro',
-      text: chatInput.trim(),
-      time: timeStr,
-    }
-    setChatMessages((prev) => [...prev, newMsg])
-    setChatInput('')
-    soundManager.playSound('click', 0.5)
-  }
+  const [chatMessages, setChatMessages] = useState<ClanChatMessage[]>(() => {
+    const c = ClanManager.getUserClan()
+    return c?.id ? clanChatService.getLocalMessages(c.id) : []
+  })
 
   const playerName = UserManager.getProfile().name || 'Guerrero'
   const isLeader = Boolean(
@@ -142,6 +127,62 @@ export default function Clan({
     (userClan.leader === playerName ||
      userClan.members.find((m) => m.name === playerName)?.role === 'Líder')
   )
+
+  useEffect(() => {
+    if (!userClan?.id) return
+    let isMounted = true
+
+    const local = clanChatService.getLocalMessages(userClan.id)
+    if (local.length > 0) {
+      setChatMessages(local)
+    }
+
+    clanChatService.fetchRecentMessages(userClan.id).then((history) => {
+      if (isMounted && history.length > 0) {
+        setChatMessages(history)
+      }
+    })
+
+    const unsubscribe = clanChatService.subscribeToClanChat(userClan.id, (newMsg) => {
+      if (!isMounted) return
+      setChatMessages((prev) => {
+        if (prev.some((m) => m.id === newMsg.id)) return prev
+        return [...prev, newMsg]
+      })
+    })
+
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
+  }, [userClan?.id])
+
+  const handleSendChatMessage = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!chatInput.trim() || !userClan?.id) return
+    const text = chatInput.trim()
+    setChatInput('')
+    soundManager.playSound('click', 0.5)
+
+    const role = isLeader
+      ? 'Líder'
+      : userClan.members.find((m) => m.name === playerName)?.role || 'Miembro'
+
+    const res = await clanChatService.sendMessage({
+      clanId: userClan.id,
+      sender: playerName,
+      role,
+      text,
+      hasVip: hasVipPass,
+    })
+
+    if (res?.messageObj) {
+      setChatMessages((prev) => {
+        if (prev.some((m) => m.id === res.messageObj.id)) return prev
+        return [...prev, res.messageObj]
+      })
+    }
+  }
 
   const showModalAlert = (
     title: string,

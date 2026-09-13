@@ -555,9 +555,19 @@ function App() {
           onAction: () => handleOpenShop('energy'),
         })
       } else {
+        const rawErr = estadoCola.error || ''
+        const isDbErr =
+          rawErr.includes('elo_rating') ||
+          rawErr.includes('does not exist') ||
+          rawErr.includes('column') ||
+          rawErr.includes('PGRST')
+        const userFriendlyMsg = isDbErr
+          ? 'El servicio de emparejamiento se está sincronizando. Por favor intenta buscar partida nuevamente en unos momentos.'
+          : rawErr
+
         setActiveAppAlert({
           title: 'ERROR EN EMPAREJAMIENTO',
-          message: estadoCola.error,
+          message: userFriendlyMsg,
           icon: '⚠️',
         })
       }

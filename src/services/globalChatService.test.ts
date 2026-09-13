@@ -2,9 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { globalChatService } from './globalChatService'
 import * as supabaseClientModule from '../lib/supabaseClient'
 
+let memoryStore: Record<string, string> = {}
+const mockLocalStorage = {
+  getItem: (key: string) => memoryStore[key] || null,
+  setItem: (key: string, val: string) => {
+    memoryStore[key] = String(val)
+  },
+  removeItem: (key: string) => {
+    delete memoryStore[key]
+  },
+  clear: () => {
+    memoryStore = {}
+  },
+}
+vi.stubGlobal('localStorage', mockLocalStorage)
+vi.stubGlobal('window', { localStorage: mockLocalStorage })
+
 describe('globalChatService', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockLocalStorage.clear()
+    globalChatService._resetCooldownForTesting()
   })
 
   it('rechaza mensajes vacíos o con solo espacios en blanco', async () => {
@@ -79,5 +97,24 @@ describe('globalChatService', () => {
     const res = await globalChatService.fetchRecentMessages(10)
     expect(res).toBeDefined()
     expect(res.length).toBe(2)
+  })
+
+  it('mantiene la persistencia de la conversación tras reinicio/recarga de página', async () => {
+    vi.spyOn(supabaseClientModule, 'isSupabaseConfigured').mockReturnValue(false)
+
+    // Enviar mensaje
+    await globalChatService.sendMessage({
+      username: 'GuerreroPersistente',
+      message: 'Mensaje que debe sobrevivir a recarga',
+    })
+
+    // Simular recarga de página: getLocalMessages y fetchRecentMessages leen del storage
+    const localMsgs = globalChatService.getLocalMessages()
+    expect(localMsgs.length).toBe(1)
+    expect(localMsgs[0].message).toBe('Mensaje que debe sobrevivir a recarga')
+
+    const fetched = await globalChatService.fetchRecentMessages(20)
+    expect(fetched.length).toBe(1)
+    expect(fetched[0].username).toBe('GuerreroPersistente')
   })
 })

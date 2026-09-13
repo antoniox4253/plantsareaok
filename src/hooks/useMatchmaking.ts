@@ -141,14 +141,21 @@ export function useMatchmaking() {
         if (!vivoRef.current) return
 
         if (claimRes.error) {
-          pararSondeo()
-          buscandoRef.current = false
-          claimingRef.current = false
-          setEstado({
-            ...ESTADO_INICIAL,
-            error: claimRes.error,
-          })
-          return
+          // Errores autoritativos estrictos que sí deben detener la cola
+          if (claimRes.error === 'sin_energia' || claimRes.error === 'client_update_required' || claimRes.error === 'mazo_invalido') {
+            pararSondeo()
+            buscandoRef.current = false
+            claimingRef.current = false
+            setEstado({
+              ...ESTADO_INICIAL,
+              error: claimRes.error,
+            })
+            return
+          }
+
+          // Para errores transitorios de bot o base de datos (ej. tiempo_insuficiente, no_seed_available, etc.):
+          // NO abortar la búsqueda de rival humano. Mantener al usuario buscando en cola para no perderlo.
+          console.warn('[Matchmaking] Rival semilla temporalmente no disponible:', claimRes.error)
         }
 
         if (claimRes.matched && claimRes.roomId) {
