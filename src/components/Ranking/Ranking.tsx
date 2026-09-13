@@ -1743,12 +1743,12 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                 </div>
               ) : (
                 <div className="leaderboard-split-layout">
-                  {/* COLUMNA IZQUIERDA: PODIO DE CLANES (#1 TOP, #2 & #3 BOTTOM) */}
-                  <div className="leaderboard-podium-col">
+                  {/* COLUMNA IZQUIERDA: PODIO DE CLANES (#1 TOP CAMPEÓN) */}
+                  <div className="leaderboard-podium-col clan-podium-col">
                     {/* #1 GOLD (Campeón de Clanes) */}
                     {clanLeaderboard[0] ? (
                       <div
-                        className={`podium-card-v2 podium-card-v2--gold ${clanLeaderboard[0].isUserClan ? 'podium-card-v2--user' : ''}`}
+                        className={`podium-card-v2 podium-card-v2--gold clan-podium-card-single ${clanLeaderboard[0].isUserClan ? 'podium-card-v2--user' : ''}`}
                         onClick={() => {
                           soundManager.playSound('click', 0.5)
                           setSelectedClanReward(clanLeaderboard[0])
@@ -1809,107 +1809,10 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                         </div>
                       </div>
                     ) : (
-                      <div className="podium-card-v2 podium-card-v2--placeholder">
+                      <div className="podium-card-v2 podium-card-v2--placeholder clan-podium-card-single">
                         <span>🥇 #1 Vacante</span>
                       </div>
                     )}
-
-                    {/* Bottom Row: #2 Silver & #3 Bronze */}
-                    <div className="podium-v2-bottom-row">
-                      {/* #2 Silver */}
-                      {clanLeaderboard[1] ? (
-                        <div
-                          className={`podium-card-v2 podium-card-v2--silver ${clanLeaderboard[1].isUserClan ? 'podium-card-v2--user' : ''}`}
-                          onClick={() => {
-                            soundManager.playSound('click', 0.4)
-                            setSelectedClanReward(clanLeaderboard[1])
-                          }}
-                        >
-                          <div className="podium-v2-top">
-                            <span className="podium-v2-rank-silver">🥈 #2</span>
-                          </div>
-
-                          <div className="podium-v2-avatar-wrapper">
-                            <div className="clan-podium-badge-box clan-podium-badge-box--silver">
-                              {clanLeaderboard[1].badge}
-                            </div>
-                          </div>
-
-                          <div className="podium-v2-user-row">
-                            <span className="podium-v2-sub-username">{clanLeaderboard[1].name}</span>
-                            <span className="clan-tag-pill clan-tag-pill--sm">{clanLeaderboard[1].tag}</span>
-                          </div>
-
-                          <div className="clan-podium-meta">
-                            <span>👥 {clanLeaderboard[1].memberCount}/15</span>
-                          </div>
-
-                          <div className="clan-card-damage-highlight clan-card-damage-highlight--silver">
-                            <strong className="clan-damage-val">{clanLeaderboard[1].damageDealt.toLocaleString()}</strong>
-                          </div>
-
-                          <div className="clan-podium-gem-prize clan-podium-gem-prize--silver">
-                            <span className="clan-gem-sparkle">💎</span>
-                            <strong className="clan-gem-amount">+3,000 Gemas</strong>
-                          </div>
-
-                          <div className="podium-v2-prize-cta">
-                            🎁 <strong>{ClanManager.getDailyRewardsForRank(2).badge}</strong>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="podium-card-v2 podium-card-v2--placeholder">
-                          <span>🥈 #2 Vacante</span>
-                        </div>
-                      )}
-
-                      {/* #3 Bronze */}
-                      {clanLeaderboard[2] ? (
-                        <div
-                          className={`podium-card-v2 podium-card-v2--bronze ${clanLeaderboard[2].isUserClan ? 'podium-card-v2--user' : ''}`}
-                          onClick={() => {
-                            soundManager.playSound('click', 0.4)
-                            setSelectedClanReward(clanLeaderboard[2])
-                          }}
-                        >
-                          <div className="podium-v2-top">
-                            <span className="podium-v2-rank-bronze">🥉 #3</span>
-                          </div>
-
-                          <div className="podium-v2-avatar-wrapper">
-                            <div className="clan-podium-badge-box clan-podium-badge-box--bronze">
-                              {clanLeaderboard[2].badge}
-                            </div>
-                          </div>
-
-                          <div className="podium-v2-user-row">
-                            <span className="podium-v2-sub-username">{clanLeaderboard[2].name}</span>
-                            <span className="clan-tag-pill clan-tag-pill--sm">{clanLeaderboard[2].tag}</span>
-                          </div>
-
-                          <div className="clan-podium-meta">
-                            <span>👥 {clanLeaderboard[2].memberCount}/15</span>
-                          </div>
-
-                          <div className="clan-card-damage-highlight clan-card-damage-highlight--bronze">
-                            <strong className="clan-damage-val">{clanLeaderboard[2].damageDealt.toLocaleString()}</strong>
-                          </div>
-
-                          <div className="clan-podium-gem-prize clan-podium-gem-prize--bronze">
-                            <span className="clan-gem-sparkle">💎</span>
-                            <strong className="clan-gem-amount">+1,500 Gemas</strong>
-                          </div>
-
-                          <div className="podium-v2-prize-cta">
-                            🎁 <strong>{ClanManager.getDailyRewardsForRank(3).badge}</strong>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="podium-card-v2 podium-card-v2--placeholder">
-                          <span>🥉 #3 Vacante</span>
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   {/* COLUMNA DERECHA: HEADER GUERRA + TABLA DE CLANES + BARRA TU CLAN */}
@@ -2325,7 +2228,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
       {/* MODAL: TABLA COMPLETA DE RECOMPENSAS (TEMPORADA EN GEMAS + BOTÍN DIARIO) */}
       {showAllRewardsModal && (
         <div className="lb-modal-backdrop" onClick={() => setShowAllRewardsModal(false)}>
-          <div className="lb-inspect-modal clan-detail-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="lb-inspect-modal clan-detail-modal clan-rewards-all-modal" onClick={(e) => e.stopPropagation()}>
             <div className="lb-modal-header">
               <h3 className="lb-modal-title">💎 PREMIOS DE TEMPORADA & BOTÍN DIARIO</h3>
               <button
@@ -2337,88 +2240,94 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
               </button>
             </div>
 
-            <div className="lb-modal-body">
-              {/* TABLA DE PREMIOS EN GEMAS DE LA TEMPORADA */}
-              <div className="clan-modal-season-heading" style={{ marginBottom: '6px' }}>
-                💎 PREMIOS EN GEMAS AL FINALIZAR LA TEMPORADA
-              </div>
-              <p style={{ fontSize: '11px', color: '#cbd5e1', margin: '0 0 10px 0', lineHeight: 1.4 }}>
-                Los 5 clanes con mayor daño infligido en guerras reciben un pozo masivo de gemas depositado en sus arcas:
-              </p>
+            <div className="lb-modal-body clan-all-rewards-modal-body">
+              <div className="clan-rewards-grid-2col">
+                {/* COLUMNA 1: PREMIOS EN GEMAS DE LA TEMPORADA */}
+                <div className="clan-rewards-modal-column">
+                  <div className="clan-modal-season-heading">
+                    💎 PREMIOS EN GEMAS AL FINALIZAR LA TEMPORADA
+                  </div>
+                  <p className="clan-modal-subdesc">
+                    Los 5 clanes con mayor daño infligido en guerras reciben un pozo masivo de gemas depositado en sus arcas:
+                  </p>
 
-              <div className="clan-all-prizes-list" style={{ marginBottom: '16px' }}>
-                <div className="clan-prize-tier-row clan-prize-tier-row--gold">
-                  <div className="clan-prize-tier-rank">🥇 TOP 1</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong style={{ color: '#38bdf8' }}>💎 5,000 Gemas</strong>
-                    <small>Para las arcas del Clan Campeón</small>
+                  <div className="clan-all-prizes-list">
+                    <div className="clan-prize-tier-row clan-prize-tier-row--gold">
+                      <div className="clan-prize-tier-rank">🥇 TOP 1</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong style={{ color: '#38bdf8' }}>💎 5,000 Gemas</strong>
+                        <small>Para las arcas del Clan Campeón</small>
+                      </div>
+                    </div>
+                    <div className="clan-prize-tier-row clan-prize-tier-row--silver">
+                      <div className="clan-prize-tier-rank">🥈 TOP 2</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong style={{ color: '#38bdf8' }}>💎 3,000 Gemas</strong>
+                        <small>Para las arcas del Clan Sub-campeón</small>
+                      </div>
+                    </div>
+                    <div className="clan-prize-tier-row clan-prize-tier-row--bronze">
+                      <div className="clan-prize-tier-rank">🥉 TOP 3</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong style={{ color: '#38bdf8' }}>💎 1,500 Gemas</strong>
+                        <small>Para las arcas del 3er Lugar</small>
+                      </div>
+                    </div>
+                    <div className="clan-prize-tier-row">
+                      <div className="clan-prize-tier-rank">🎖️ TOP 4</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong style={{ color: '#38bdf8' }}>💎 1,000 Gemas</strong>
+                        <small>Para las arcas del 4to Lugar</small>
+                      </div>
+                    </div>
+                    <div className="clan-prize-tier-row">
+                      <div className="clan-prize-tier-rank">🎖️ TOP 5</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong style={{ color: '#38bdf8' }}>💎 500 Gemas</strong>
+                        <small>Para las arcas del 5to Lugar</small>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="clan-prize-tier-row clan-prize-tier-row--silver">
-                  <div className="clan-prize-tier-rank">🥈 TOP 2</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong style={{ color: '#38bdf8' }}>💎 3,000 Gemas</strong>
-                    <small>Para las arcas del Clan Sub-campeón</small>
-                  </div>
-                </div>
-                <div className="clan-prize-tier-row clan-prize-tier-row--bronze">
-                  <div className="clan-prize-tier-rank">🥉 TOP 3</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong style={{ color: '#38bdf8' }}>💎 1,500 Gemas</strong>
-                    <small>Para las arcas del 3er Lugar</small>
-                  </div>
-                </div>
-                <div className="clan-prize-tier-row">
-                  <div className="clan-prize-tier-rank">🎖️ TOP 4</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong style={{ color: '#38bdf8' }}>💎 1,000 Gemas</strong>
-                    <small>Para las arcas del 4to Lugar</small>
-                  </div>
-                </div>
-                <div className="clan-prize-tier-row">
-                  <div className="clan-prize-tier-rank">🎖️ TOP 5</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong style={{ color: '#38bdf8' }}>💎 500 Gemas</strong>
-                    <small>Para las arcas del 5to Lugar</small>
-                  </div>
-                </div>
-              </div>
 
-              {/* BOTÍN DIARIO A LAS 00:00 UTC */}
-              <div className="clan-modal-prize-heading" style={{ marginBottom: '6px' }}>
-                🎁 BOTÍN DIARIO A CADA INTEGRANTE (00:00 UTC)
-              </div>
-              <p style={{ fontSize: '11px', color: '#cbd5e1', margin: '0 0 10px 0', lineHeight: 1.4 }}>
-                Todos los días a las <strong>00:00 UTC</strong>, los clanes activos en la tabla reciben botín según el daño acumulado:
-              </p>
+                {/* COLUMNA 2: BOTÍN DIARIO A CADA INTEGRANTE */}
+                <div className="clan-rewards-modal-column">
+                  <div className="clan-modal-prize-heading">
+                    🎁 BOTÍN DIARIO A CADA INTEGRANTE (00:00 UTC)
+                  </div>
+                  <p className="clan-modal-subdesc">
+                    Todos los días a las <strong>00:00 UTC</strong>, los clanes activos en la tabla reciben botín según el daño acumulado:
+                  </p>
 
-              <div className="clan-all-prizes-list">
-                <div className="clan-prize-tier-row clan-prize-tier-row--gold">
-                  <div className="clan-prize-tier-rank">🥇 TOP 1</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong>500 Oro c/u + ⚔️ Pack PvP Campeón</strong>
-                    <small>Pack exclusivo con temporizador estricto de 5 minutos</small>
-                  </div>
-                </div>
-                <div className="clan-prize-tier-row clan-prize-tier-row--silver">
-                  <div className="clan-prize-tier-rank">🥈 TOP 2</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong>200 Oro c/u</strong>
-                    <small>Para todos los miembros del clan</small>
-                  </div>
-                </div>
-                <div className="clan-prize-tier-row clan-prize-tier-row--bronze">
-                  <div className="clan-prize-tier-rank">🥉 TOP 3</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong>100 Oro c/u</strong>
-                    <small>Para todos los miembros del clan</small>
-                  </div>
-                </div>
-                <div className="clan-prize-tier-row">
-                  <div className="clan-prize-tier-rank">🎖️ TOP 4-10</div>
-                  <div className="clan-prize-tier-detail">
-                    <strong>50 Oro c/u</strong>
-                    <small>Para todos los miembros del clan</small>
+                  <div className="clan-all-prizes-list">
+                    <div className="clan-prize-tier-row clan-prize-tier-row--gold">
+                      <div className="clan-prize-tier-rank">🥇 TOP 1</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong>500 Oro c/u + ⚔️ Pack PvP Campeón</strong>
+                        <small>Pack exclusivo con temporizador estricto de 5 minutos</small>
+                      </div>
+                    </div>
+                    <div className="clan-prize-tier-row clan-prize-tier-row--silver">
+                      <div className="clan-prize-tier-rank">🥈 TOP 2</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong>200 Oro c/u</strong>
+                        <small>Para todos los miembros del clan</small>
+                      </div>
+                    </div>
+                    <div className="clan-prize-tier-row clan-prize-tier-row--bronze">
+                      <div className="clan-prize-tier-rank">🥉 TOP 3</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong>100 Oro c/u</strong>
+                        <small>Para todos los miembros del clan</small>
+                      </div>
+                    </div>
+                    <div className="clan-prize-tier-row">
+                      <div className="clan-prize-tier-rank">🎖️ TOP 4-10</div>
+                      <div className="clan-prize-tier-detail">
+                        <strong>50 Oro c/u</strong>
+                        <small>Para todos los miembros del clan</small>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
