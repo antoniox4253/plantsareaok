@@ -40,13 +40,13 @@ describe('BLINDAJE AUTORITATIVO DE TORNEOS — CERO BOTS, CERO DESCUENTO ELO Y 3
     expect(m130Sql).toContain("'eloDelta', 0")
   })
 
-  it('1.6. SQL Audit Migración 140: enter_matchmaking no accede a campo inexistente v_tourn_part.lives_remaining', () => {
-    const m140Path = path.resolve(__dirname, '../../supabase/migrations/140-fix-tournament-lives-remaining-field-error.sql')
-    const m140Sql = fs.readFileSync(m140Path, 'utf-8')
-    const functionBody = m140Sql.split('CREATE OR REPLACE FUNCTION')[1] || ''
+  it('1.6. SQL Audit Migración 143: enter_matchmaking no accede a campo inexistente v_tourn_part.lives_remaining', () => {
+    const m143Path = path.resolve(__dirname, '../../supabase/migrations/143-fix-tournament-lives-remaining-field-error.sql')
+    const m143Sql = fs.readFileSync(m143Path, 'utf-8')
+    const functionBody = m143Sql.split('CREATE OR REPLACE FUNCTION')[1] || ''
     expect(functionBody).not.toContain('v_tourn_part.lives_remaining')
     expect(functionBody).toContain('v_tourn_part.is_eliminated OR v_tourn_part.losses >= COALESCE(v_tourn.max_losses, 3)')
-    expect(m140Sql).toContain('ADD COLUMN IF NOT EXISTS lives_remaining INTEGER DEFAULT 3')
+    expect(m143Sql).toContain('ADD COLUMN IF NOT EXISTS lives_remaining INTEGER DEFAULT 3')
   })
 
   it('2.1. Simulacion Logica de 3 Vidas: 3 derrotas eliminan al participante y bloquean matchmaking', () => {
