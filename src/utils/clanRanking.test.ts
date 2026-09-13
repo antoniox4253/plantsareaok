@@ -46,6 +46,37 @@ describe('Clan Damage Ranking & Daily Rewards', () => {
     expect(top11.hasPvpPack).toBe(false)
   })
 
+  it('calcula los premios en gemas de fin de temporada para el Top 5 de clanes', () => {
+    // Top 1: 5,000 gemas
+    const top1Gems = ClanManager.getSeasonGemRewardsForRank(1)
+    expect(top1Gems.gems).toBe(5000)
+    expect(top1Gems.badge).toContain('5,000')
+
+    // Top 2: 3,000 gemas
+    const top2Gems = ClanManager.getSeasonGemRewardsForRank(2)
+    expect(top2Gems.gems).toBe(3000)
+    expect(top2Gems.badge).toContain('3,000')
+
+    // Top 3: 1,500 gemas
+    const top3Gems = ClanManager.getSeasonGemRewardsForRank(3)
+    expect(top3Gems.gems).toBe(1500)
+    expect(top3Gems.badge).toContain('1,500')
+
+    // Top 4: 1,000 gemas
+    const top4Gems = ClanManager.getSeasonGemRewardsForRank(4)
+    expect(top4Gems.gems).toBe(1000)
+    expect(top4Gems.badge).toContain('1,000')
+
+    // Top 5: 500 gemas
+    const top5Gems = ClanManager.getSeasonGemRewardsForRank(5)
+    expect(top5Gems.gems).toBe(500)
+    expect(top5Gems.badge).toContain('500')
+
+    // Top 6 en adelante: 0 gemas
+    const top6Gems = ClanManager.getSeasonGemRewardsForRank(6)
+    expect(top6Gems.gems).toBe(0)
+  })
+
   it('valida el temporizador estricto de 5 minutos para abrir el Pack PvP (no expira, solo recién se puede abrir)', () => {
     const now = Date.now()
     // 1. Pack recién emitido con cuenta regresiva de 5 minutos (faltan 4 minutos)

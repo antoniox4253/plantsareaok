@@ -1122,6 +1122,52 @@ export class ClanManager {
   }
 
   /**
+   * Recompensas en Gemas al Cierre de Temporada de Clanes (Top 5 por daño)
+   */
+  static getSeasonGemRewardsForRank(rank: number): { gems: number; badge: string; text: string } {
+    if (rank === 1) {
+      return {
+        gems: 5000,
+        badge: '💎 5,000 Gemas',
+        text: '5,000 Gemas de Temporada',
+      }
+    }
+    if (rank === 2) {
+      return {
+        gems: 3000,
+        badge: '💎 3,000 Gemas',
+        text: '3,000 Gemas de Temporada',
+      }
+    }
+    if (rank === 3) {
+      return {
+        gems: 1500,
+        badge: '💎 1,500 Gemas',
+        text: '1,500 Gemas de Temporada',
+      }
+    }
+    if (rank === 4) {
+      return {
+        gems: 1000,
+        badge: '💎 1,000 Gemas',
+        text: '1,000 Gemas de Temporada',
+      }
+    }
+    if (rank === 5) {
+      return {
+        gems: 500,
+        badge: '💎 500 Gemas',
+        text: '500 Gemas de Temporada',
+      }
+    }
+    return {
+      gems: 0,
+      badge: '',
+      text: 'Sin gemas de temporada',
+    }
+  }
+
+  /**
    * Duración estricta del temporizador de desbloqueo del Pack PvP (5 minutos en ms)
    */
   static readonly PVP_PACK_UNLOCK_DURATION_MS = 5 * 60 * 1000

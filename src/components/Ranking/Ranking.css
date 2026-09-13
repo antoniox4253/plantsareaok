@@ -2569,30 +2569,50 @@
 
 /* PODIUM CLAN ELEMENTS */
 .clan-podium-badge-box {
-  width: 76px;
-  height: 76px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 38px;
+  font-size: 26px;
   z-index: 2;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  margin: 0 auto;
 }
 
 .clan-podium-badge-box--gold {
   background: radial-gradient(circle, #fde047 0%, #b45309 100%);
   border: 3px solid #fef08a;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.6);
+}
+
+.clan-podium-badge-box--silver {
+  width: 38px;
+  height: 38px;
+  font-size: 20px;
+  background: radial-gradient(circle, #e2e8f0 0%, #475569 100%);
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+.clan-podium-badge-box--bronze {
+  width: 38px;
+  height: 38px;
+  font-size: 20px;
+  background: radial-gradient(circle, #fdba74 0%, #7c2d12 100%);
+  border: 2px solid #fed7aa;
+  box-shadow: 0 0 12px rgba(234, 88, 12, 0.5);
 }
 
 .clan-podium-badge-mini {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 22px;
   margin: 0 auto 4px auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
@@ -2605,6 +2625,192 @@
 .clan-podium-badge-mini--bronze {
   background: radial-gradient(circle, #fdba74 0%, #7c2d12 100%);
   border: 2px solid #fed7aa;
+}
+
+/* CLAN PODIUM SEASON GEM PRIZES (DESTACADO EN LOS DIVS DE CADA PUESTO) */
+.clan-podium-gem-prize {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin: 3px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.clan-podium-gem-prize--gold {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(245, 158, 11, 0.25) 100%);
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+}
+
+.clan-podium-gem-prize--silver {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(148, 163, 184, 0.2) 100%);
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+}
+
+.clan-podium-gem-prize--bronze {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%);
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+}
+
+.clan-gem-sparkle {
+  font-size: 13px;
+  filter: drop-shadow(0 0 4px #38bdf8);
+}
+
+.clan-gem-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.clan-gem-label {
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #7dd3fc;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.clan-gem-amount {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #38bdf8;
+  text-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+  white-space: nowrap;
+}
+
+/* CLAN TABLE REWARDS STACK */
+.clan-table-rewards-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.clan-table-gem-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #38bdf8;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(3, 105, 161, 0.25) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.6);
+  border-radius: 4px;
+  padding: 1px 5px;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.3);
+  white-space: nowrap;
+}
+
+.clan-table-gem-badge--rank1 {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(14, 165, 233, 0.35) 100%);
+  border-color: #facc15;
+  color: #fef08a;
+  text-shadow: 0 0 6px rgba(250, 204, 21, 0.6);
+}
+
+.clan-table-gem-badge--rank2 {
+  border-color: #cbd5e1;
+  color: #e2e8f0;
+}
+
+.clan-table-gem-badge--rank3 {
+  border-color: #fdba74;
+  color: #fed7aa;
+}
+
+/* CLAN USER BAR GEMS HIGHLIGHT */
+.clan-status-gem-highlight strong {
+  color: #38bdf8 !important;
+  text-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+}
+
+/* MODAL SEASON GEM BOX */
+.clan-modal-season-box {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.5);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.2);
+}
+
+.clan-modal-season-heading {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.clan-modal-season-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clan-modal-season-icon {
+  font-size: 26px;
+  filter: drop-shadow(0 0 6px #38bdf8);
+  flex-shrink: 0;
+}
+
+.clan-modal-season-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.clan-modal-season-amount {
+  font-size: 14px;
+  font-weight: 900;
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+
+.clan-modal-season-info small {
+  font-size: 10px;
+  color: #cbd5e1;
+  margin-top: 1px;
+}
+
+/* CLAN TABLE COLUMN (RIGHT SIDE OF 2-COLUMN SPLIT LAYOUT) */
+.clan-table-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.clan-table-col .clan-ranking-hero-banner {
+  margin-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.clan-table-col .lb-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.clan-table-col .clan-user-status-bar {
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .clan-tag-pill {
@@ -3039,6 +3245,29 @@
   .lb-reward-badge {
     padding: 2px 4px;
     font-size: 8.5px;
+  }
+
+  .clan-podium-gem-prize {
+    padding: 2px 3px !important;
+    gap: 3px !important;
+    margin: 1px 0 !important;
+  }
+
+  .clan-gem-sparkle {
+    font-size: 10px !important;
+  }
+
+  .clan-gem-label {
+    font-size: 6.5px !important;
+  }
+
+  .clan-gem-amount {
+    font-size: 9px !important;
+  }
+
+  .clan-table-gem-badge {
+    font-size: 8px !important;
+    padding: 1px 3px !important;
   }
 
   /* Barra de usuario en móvil */
