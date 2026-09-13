@@ -53,6 +53,17 @@ describe('Migración 142: Blindaje Total de Columnas ELO y Resiliencia de Empare
     expect(m142Sql).toContain("NOTIFY pgrst, 'reload schema'")
   })
 
+  it('1.8. SQL Audit: Asegura display_name y avatar_id en ranked_async_opponents', () => {
+    expect(m142Sql).toContain('ADD COLUMN IF NOT EXISTS display_name TEXT DEFAULT')
+    expect(m142Sql).toContain('ADD COLUMN IF NOT EXISTS avatar_id TEXT DEFAULT')
+  })
+
+  it('1.9. SQL Audit: Erradica accesos a v_candidate.display_name para evitar record has no field', () => {
+    expect(m142Sql).not.toContain('v_candidate.display_name')
+    expect(m142Sql).not.toContain('v_candidate.avatar_id')
+    expect(m142Sql).toContain('DROP FUNCTION IF EXISTS public.claim_ranked_async_opponent(UUID, INTEGER)')
+  })
+
   it('2. Resiliencia Frontend: Errores transitorios o de bot en claimRankedAsyncOpponent no abortan la cola de jugadores humanos', () => {
     // Simulación de la lógica implementada en useMatchmaking.ts
     function procesarRespuestaClaim(

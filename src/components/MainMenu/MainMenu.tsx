@@ -34,6 +34,7 @@ import './MainMenu.css'
 
 interface MainMenuProps {
   userProfile?: {
+    id?: string
     username?: string
     avatar_id?: string
     elo_rating?: number
