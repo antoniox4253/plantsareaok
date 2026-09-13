@@ -331,7 +331,16 @@ export default function ProfileModal({
           registeredWallet: res.wallet,
         }))
         setIsEditingRegisteredWallet(false)
-        showFeedback('¡Wallet personal vinculada con éxito para depósitos automáticos!', 'success')
+        if (res.reconciled_deposits_count && res.reconciled_deposits_count > 0) {
+          showFeedback(
+            `🎉 ¡Wallet vinculada y ${res.reconciled_deposits_count} depósito(s) previo(s) conciliado(s)! (+${Number(res.reconciled_gems_total).toFixed(2)} 💎)`,
+            'success'
+          )
+          window.dispatchEvent(new Event('refresh_user_balance'))
+          window.dispatchEvent(new Event('player_profile_updated'))
+        } else {
+          showFeedback('¡Wallet personal vinculada con éxito para depósitos automáticos!', 'success')
+        }
       } else {
         showFeedback(res.message || 'Error al vincular wallet.', 'error')
       }
@@ -357,7 +366,32 @@ export default function ProfileModal({
   const handleCheckBlockchainDeposits = async (isAutoPoll = false, customTxHash?: string) => {
     try {
       if (!isAutoPoll) setIsCheckingDeposits(true)
-      const res = await accountService.triggerDepositCheck(customTxHash)
+      const cleanTx = customTxHash?.trim()
+
+      // Si el usuario proporcionó un TxHash manual, intentar primero conciliar si ya estaba detectado en unmatched
+      if (cleanTx) {
+        const claimRes = await accountService.claimUnmatchedDeposit(cleanTx)
+        if (claimRes.success && claimRes.status === 'credited') {
+          soundManager.playSound('victory', 0.9)
+          showFeedback(claimRes.message || `🎉 ¡Depósito verificado! +${claimRes.amountGems} Gemas acreditadas.`, 'success')
+          window.dispatchEvent(new Event('refresh_user_balance'))
+          window.dispatchEvent(new Event('player_profile_updated'))
+          setManualTxHashInput('')
+          setShowManualTxInput(false)
+
+          const hist = await accountService.getFinancialHistory()
+          if (hist.success) {
+            setFinancialHistory({ deposits: hist.deposits, withdrawals: hist.withdrawals })
+          }
+          return
+        } else if (!claimRes.success && (claimRes.error === 'WALLET_MISMATCH' || claimRes.error === 'ALREADY_RESOLVED')) {
+          soundManager.playSound('error', 0.5)
+          showFeedback(claimRes.message || 'Error al validar depósito.', 'error')
+          return
+        }
+      }
+
+      const res = await accountService.triggerDepositCheck(cleanTx)
 
       // Consultar historial actualizado
       const hist = await accountService.getFinancialHistory()

@@ -4030,8 +4030,15 @@ export const SupabaseService = {
 
   // ── DEPÓSITOS Y RETIROS USDT BEP20 (BNB SMART CHAIN) ─────────────────────────
 
-  /** Registra la wallet personal/self-custody del usuario para depósitos automáticos */
-  async registerDepositWallet(walletAddress: string): Promise<{ success: boolean; wallet?: any; error?: string; message?: string }> {
+  /** Registra la wallet personal/self-custody del usuario para depósitos automáticos y concilia depósitos huérfanos previos */
+  async registerDepositWallet(walletAddress: string): Promise<{
+    success: boolean
+    wallet?: any
+    reconciled_deposits_count?: number
+    reconciled_gems_total?: number
+    error?: string
+    message?: string
+  }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'NO_SUPABASE' }
     try {
       const { data, error } = await (supabase.rpc as any)('register_deposit_wallet', {
@@ -4044,6 +4051,34 @@ export const SupabaseService = {
       return data ?? { success: false }
     } catch (e: any) {
       logError('registerDepositWallet', e)
+      return { success: false, error: 'EXCEPTION', message: e?.message }
+    }
+  },
+
+  /** Reclama y concilia un depósito en estado unmatched proporcionando su Tx Hash */
+  async claimUnmatchedDeposit(txHash: string): Promise<{
+    success: boolean
+    status?: string
+    amountGems?: number
+    baseGems?: number
+    bonusGems?: number
+    retirableGems?: number
+    lockedGems?: number
+    error?: string
+    message?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'NO_SUPABASE' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('claim_unmatched_deposit', {
+        p_tx_hash: txHash,
+      })
+      if (error) {
+        logError('claimUnmatchedDeposit', error)
+        return { success: false, error: error.code || 'RPC_ERROR', message: error.message }
+      }
+      return data ?? { success: false }
+    } catch (e: any) {
+      logError('claimUnmatchedDeposit', e)
       return { success: false, error: 'EXCEPTION', message: e?.message }
     }
   },

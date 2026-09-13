@@ -72,6 +72,7 @@ export default function Clan({
 
   // Mini Sub-tabs state
   const [donationSubTab, setDonationSubTab] = useState<'seeds' | 'deposits'>('seeds')
+  const [vaultRankingFilter, setVaultRankingFilter] = useState<'gems' | 'gold'>('gems')
 
   // Modals
   const [showDepositModal, setShowDepositModal] = useState(false)
@@ -1027,10 +1028,19 @@ export default function Clan({
   // DEPOSIT GOLD TO CLAN VAULT
   const handleDepositGold = async () => {
     if (!userClan) return
+    if (goldDepositAmount <= 0) {
+      showModalAlert(
+        'CANTIDAD INVÁLIDA',
+        'Por favor, ingresa una cantidad de oro mayor a 0 para donar al tesoro del clan.',
+        '⚠️',
+        'warning'
+      )
+      return
+    }
     if ((userGold ?? 0) < goldDepositAmount) {
       showModalAlert(
-        'ORO INSUFICIENTE',
-        `No tienes suficiente oro para donar ${goldDepositAmount.toLocaleString()} 🪙. Tu saldo actual es de ${(userGold ?? 0).toLocaleString()} 🪙.`,
+        'SALDO INSUFICIENTE',
+        `No tienes suficiente oro para donar ${goldDepositAmount.toLocaleString()} 🪙. Tu saldo actual es de ${(userGold ?? 0).toLocaleString()} 🪙 (te faltan ${(goldDepositAmount - (userGold ?? 0)).toLocaleString()} 🪙).`,
         '🪙',
         'warning'
       )
@@ -1657,19 +1667,6 @@ export default function Clan({
           </button>
         )}
 
-        {/* Realtime / Refresh Button */}
-        <button
-          type="button"
-          className={`clan-refresh-btn ${isRefreshing ? 'clan-refresh-btn--spinning' : ''}`}
-          onClick={() => {
-            soundManager.playSound('click', 0.4)
-            void refreshClanData(false, true)
-          }}
-          title="Actualizar datos e ingresos del clan en tiempo real"
-        >
-          🔄
-        </button>
-
         {/* Vault & Actions */}
         <div className="clan-topbar-right">
           <div className={`clan-vault-display ${isDefeated ? 'clan-vault-display--defeated' : ''}`}>
@@ -1825,24 +1822,13 @@ export default function Clan({
             </div>
           )}
 
-          {/* Barra de herramientas para el Líder: Invitar Jugador y Actualizar */}
+          {/* Barra de herramientas para el Líder: Invitar Jugador */}
           {isLeader ? (
             <div className="clan-members-toolbar">
               <span className="clan-members-toolbar__hint">
                 👥 Administra los miembros de tu clan o invita jugadores directamente por nombre de usuario.
               </span>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className={`clan-refresh-btn ${isRefreshing ? 'clan-refresh-btn--spinning' : ''}`}
-                  onClick={() => {
-                    soundManager.playSound('click', 0.4)
-                    void refreshClanData(false, true)
-                  }}
-                  title="Actualizar lista de miembros ahora"
-                >
-                  🔄
-                </button>
                 <button
                   type="button"
                   className="clan-invite-open-btn"
@@ -1858,21 +1844,10 @@ export default function Clan({
               </div>
             </div>
           ) : (
-            <div className="clan-members-toolbar" style={{ justifyContent: 'space-between' }}>
+            <div className="clan-members-toolbar">
               <span className="clan-members-toolbar__hint">
                 👥 Miembros del clan ({userClan.members.length}/15). Los nuevos ingresos se sincronizan en tiempo real.
               </span>
-              <button
-                type="button"
-                className={`clan-refresh-btn ${isRefreshing ? 'clan-refresh-btn--spinning' : ''}`}
-                onClick={() => {
-                  soundManager.playSound('click', 0.4)
-                  void refreshClanData(false, true)
-                }}
-                title="Actualizar lista de miembros ahora"
-              >
-                🔄
-              </button>
             </div>
           )}
 
@@ -1991,14 +1966,16 @@ export default function Clan({
       {activeTab === 'wars' && (
         <div className="clan-coming-soon-pane">
           <div className="clan-coming-soon-card clan-coming-soon-card--raids">
-            <span className="clan-coming-soon-badge">⏳ MUY PRONTO</span>
-            <div className="clan-coming-soon-icon">⚔️</div>
-            <h3>MODO ASALTOS DE CLAN</h3>
-            <p className="clan-coming-soon-desc">
-              ¡El nuevo sistema competitivo de Asaltos de Clan está en desarrollo!
-              Próximamente tu clan podrá coordinar ataques tácticos contra bases enemigas,
-              saquear botines protegidos y defender el Tesoro del Clan con escudos y muros fortificados.
-            </p>
+            <div className="clan-coming-soon-left">
+              <span className="clan-coming-soon-badge">⏳ MUY PRONTO</span>
+              <div className="clan-coming-soon-icon">⚔️</div>
+              <h3>MODO ASALTOS DE CLAN</h3>
+              <p className="clan-coming-soon-desc">
+                ¡El nuevo sistema competitivo de Asaltos de Clan está en desarrollo!
+                Próximamente tu clan podrá coordinar ataques tácticos contra bases enemigas,
+                saquear botines protegidos y defender el Tesoro del Clan con escudos y muros fortificados.
+              </p>
+            </div>
             <div className="clan-coming-soon-features">
               <div className="clan-cs-feat">
                 <span className="clan-cs-feat-icon">🛡️</span>
@@ -2030,14 +2007,16 @@ export default function Clan({
       {activeTab === 'fortress' && isLeader && (
         <div className="clan-coming-soon-pane">
           <div className="clan-coming-soon-card clan-coming-soon-card--fortress">
-            <span className="clan-coming-soon-badge">⏳ MUY PRONTO</span>
-            <div className="clan-coming-soon-icon">🏰</div>
-            <h3>FORTALEZA DEL CLAN</h3>
-            <p className="clan-coming-soon-desc">
-              Cuartel general exclusivo para el Líder del clan. Muy pronto podrás
-              gestionar el bastión defensivo, acelerar reparaciones, desplegar escudos
-              y desbloquear bonificaciones colectivas utilizando el Tesoro de Oro y Gemas.
-            </p>
+            <div className="clan-coming-soon-left">
+              <span className="clan-coming-soon-badge">⏳ MUY PRONTO</span>
+              <div className="clan-coming-soon-icon">🏰</div>
+              <h3>FORTALEZA DEL CLAN</h3>
+              <p className="clan-coming-soon-desc">
+                Cuartel general exclusivo para el Líder del clan. Muy pronto podrás
+                gestionar el bastión defensivo, acelerar reparaciones, desplegar escudos
+                y desbloquear bonificaciones colectivas utilizando el Tesoro de Oro y Gemas.
+              </p>
+            </div>
             <div className="clan-coming-soon-features">
               <div className="clan-cs-feat">
                 <span className="clan-cs-feat-icon">🛡️</span>
@@ -2094,9 +2073,9 @@ export default function Clan({
             name,
             gems: depositorGems[name] || 0,
             gold: depositorGold[name] || 0,
-            score: (depositorGems[name] || 0) * 100 + (depositorGold[name] || 0),
           }))
-          .sort((a, b) => b.score - a.score)
+          .filter((d) => (vaultRankingFilter === 'gold' ? d.gold > 0 : d.gems > 0))
+          .sort((a, b) => (vaultRankingFilter === 'gold' ? b.gold - a.gold : b.gems - a.gems))
           .slice(0, 5)
 
         return (
@@ -2211,20 +2190,38 @@ export default function Clan({
               <div className="clan-donation-subpane">
                 {/* Vault summary banner */}
                 <div className="clan-deposits-summary-row">
-                  <div className="clan-deposit-stat-card">
+                  <div
+                    className={`clan-deposit-stat-card ${vaultRankingFilter === 'gems' ? 'clan-deposit-stat-card--active' : ''}`}
+                    onClick={() => {
+                      soundManager.playSound('click', 0.4)
+                      setVaultRankingFilter('gems')
+                    }}
+                    title="Haz clic para ver el ranking de mayores aportantes de Gemas"
+                  >
                     <span className="clan-deposit-stat-icon">💎</span>
                     <div>
                       <span className="clan-deposit-stat-val">{Number(userClan.vaultGems ?? userClan.vaultUsd).toFixed(0)} Gemas</span>
-                      <span className="clan-deposit-stat-lbl">Tesoro en Gemas</span>
+                      <span className="clan-deposit-stat-lbl">
+                        Tesoro en Gemas {vaultRankingFilter === 'gems' && <strong style={{ color: '#38bdf8' }}>• (Ranking Activo)</strong>}
+                      </span>
                     </div>
                   </div>
-                  <div className="clan-deposit-stat-card">
+                  <div
+                    className={`clan-deposit-stat-card ${vaultRankingFilter === 'gold' ? 'clan-deposit-stat-card--active-gold' : ''}`}
+                    onClick={() => {
+                      soundManager.playSound('click', 0.4)
+                      setVaultRankingFilter('gold')
+                    }}
+                    title="Haz clic para ver el ranking de mayores aportantes de Oro"
+                  >
                     <span className="clan-deposit-stat-icon">🪙</span>
                     <div>
                       <span className="clan-deposit-stat-val" style={{ color: '#fbbf24' }}>
                         {Number(userClan.vaultGold || 0).toLocaleString()} Oro
                       </span>
-                      <span className="clan-deposit-stat-lbl">Tesoro en Oro</span>
+                      <span className="clan-deposit-stat-lbl">
+                        Tesoro en Oro {vaultRankingFilter === 'gold' && <strong style={{ color: '#fbbf24' }}>• (Ranking Activo)</strong>}
+                      </span>
                     </div>
                   </div>
                   <div className="clan-deposits-cta-group">
@@ -2255,25 +2252,37 @@ export default function Clan({
                 <div className="clan-deposits-dual-layout">
                   {/* Left: Top Donators Podium */}
                   <div className="clan-top-depositors-box">
-                    <h5>🏆 MAYORES APORTANTES DEL TESORO</h5>
+                    <h5>
+                      {vaultRankingFilter === 'gold' ? '🏆 MAYORES APORTANTES DE ORO 🪙' : '🏆 MAYORES APORTANTES DE GEMAS 💎'}
+                    </h5>
                     <div className="clan-top-depositors-list">
-                      {topDepositors.map((dep, index) => {
-                        const rankMedal = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`
-                        const isMe = dep.name === playerName
-                        return (
-                          <div key={dep.name} className={`clan-depositor-rank-row ${isMe ? 'clan-depositor-rank-row--me' : ''}`}>
-                            <span className="clan-dep-medal">{rankMedal}</span>
-                            <span className="clan-dep-name">
-                              {dep.name} {isMe && <small>(Tú)</small>}
-                            </span>
-                            <div className="clan-dep-amounts-wrap">
-                              {dep.gems > 0 && <span className="clan-dep-amount">{dep.gems.toFixed(0)} 💎</span>}
-                              {dep.gold > 0 && <span className="clan-dep-amount clan-dep-amount--gold">{dep.gold.toLocaleString()} 🪙</span>}
-                              {dep.gems === 0 && dep.gold === 0 && <span className="clan-dep-amount">0 💎</span>}
+                      {topDepositors.length === 0 ? (
+                        <div style={{ padding: '16px 8px', color: '#94a3b8', fontSize: '11px', textAlign: 'center' }}>
+                          {vaultRankingFilter === 'gold'
+                            ? '🪙 Aún no hay aportes de Oro registrados. ¡Sé el primero en donar!'
+                            : '💎 Aún no hay aportes de Gemas registrados.'}
+                        </div>
+                      ) : (
+                        topDepositors.map((dep, index) => {
+                          const rankMedal = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`
+                          const isMe = dep.name === playerName
+                          return (
+                            <div key={dep.name} className={`clan-depositor-rank-row ${isMe ? 'clan-depositor-rank-row--me' : ''}`}>
+                              <span className="clan-dep-medal">{rankMedal}</span>
+                              <span className="clan-dep-name">
+                                {dep.name} {isMe && <small>(Tú)</small>}
+                              </span>
+                              <div className="clan-dep-amounts-wrap">
+                                {vaultRankingFilter === 'gold' ? (
+                                  <span className="clan-dep-amount clan-dep-amount--gold">{dep.gold.toLocaleString()} 🪙</span>
+                                ) : (
+                                  <span className="clan-dep-amount">{dep.gems.toFixed(0)} 💎</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )
-                      })}
+                          )
+                        })
+                      )}
                     </div>
                   </div>
 
@@ -2476,6 +2485,34 @@ export default function Clan({
               ))}
             </div>
 
+            {/* Custom Gold Amount Input */}
+            <div className="clan-custom-gold-input-wrap">
+              <label className="clan-custom-gold-label">O ingresa la cantidad exacta a donar:</label>
+              <div className="clan-custom-gold-field">
+                <span className="clan-custom-gold-icon">🪙</span>
+                <input
+                  type="number"
+                  min="1"
+                  max={userGold ?? 0}
+                  value={goldDepositAmount || ''}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10)
+                    setGoldDepositAmount(isNaN(val) ? 0 : Math.max(0, val))
+                  }}
+                  className="clan-custom-gold-input"
+                  placeholder="Ej. 100"
+                />
+                <button
+                  type="button"
+                  className="clan-custom-gold-max-btn"
+                  onClick={() => setGoldDepositAmount(Math.max(0, userGold ?? 0))}
+                  title="Donar todo el oro disponible"
+                >
+                  MÁX
+                </button>
+              </div>
+            </div>
+
             <div className="clan-modal-actions">
               <button type="button" className="clan-cancel-btn" onClick={() => setShowGoldDepositModal(false)}>
                 CANCELAR
@@ -2483,7 +2520,6 @@ export default function Clan({
               <button
                 type="button"
                 className="clan-confirm-btn clan-confirm-btn--gold"
-                disabled={(userGold ?? 0) < goldDepositAmount}
                 onClick={handleDepositGold}
               >
                 CONFIRMAR DONACIÓN ({goldDepositAmount.toLocaleString()} 🪙)
