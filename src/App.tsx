@@ -191,6 +191,7 @@ function App() {
     refreshFromServer,
     userTokens,
     userGold,
+    deductGold,
     farmingItems,
     addGold,
     buyGoldPackage,
@@ -1080,9 +1081,13 @@ function App() {
   }
 
   const handleOpenRewardPack = async (packId: string) => {
-    const drop = await openRewardPack(packId)
-    if (drop) {
-      setActiveOpeningResult(drop)
+    const res = await openRewardPack(packId)
+    if (res) {
+      if (res.drops && Array.isArray(res.drops)) {
+        setActivePvpRewardDrops(res.drops)
+      } else {
+        setActiveOpeningResult(res)
+      }
     }
   }
 
@@ -1482,10 +1487,12 @@ function App() {
             <Clan
               userElo={userElo}
               userTokens={userTokens}
+              userGold={userGold}
               hasVipPass={hasVipPass}
               plantCopies={plantCopies}
               onDeductTokens={deductUserTokens}
               onAddTokens={addUserTokens}
+              onDeductGold={deductGold}
               onDonatePlant={donatePlantCopy}
               onAddPacks={addPacksToInventory}
               onBackToMenu={() => setScreen('menu')}

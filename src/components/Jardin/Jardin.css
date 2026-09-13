@@ -453,6 +453,12 @@
   box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);
 }
 
+.jardin-pack-card--clan-champion {
+  background: linear-gradient(135deg, rgba(35, 25, 10, 0.95) 0%, rgba(55, 38, 12, 0.95) 100%);
+  border: 2px solid #fbbf24;
+  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
+}
+
 .jardin-pack-card--unlocking {
   border-color: #38bdf8;
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
@@ -480,6 +486,15 @@
   color: #fff;
   border-color: #f472b6;
   font-size: 8.5px;
+  letter-spacing: 0.5px;
+}
+
+.jardin-pack-stack-badge--champion {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  color: #0f172a;
+  border-color: #fde68a;
+  font-size: 8.5px;
+  font-weight: 900;
   letter-spacing: 0.5px;
 }
 

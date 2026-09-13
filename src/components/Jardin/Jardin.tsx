@@ -129,6 +129,12 @@ export default function Jardin({
   } | null>(null)
   const [isFusing, setIsFusing] = useState(false)
   const [fuseAlert, setFuseAlert] = useState<{ title: string; message: string; icon: string } | null>(null)
+  const [now, setNow] = useState(Date.now())
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   const handleConfirmFuse = async () => {
     if (!fuseCandidate || !onFusePlant || isFusing) return
@@ -489,49 +495,59 @@ export default function Jardin({
             </div>
 
             <div className="jardin-packs-grid">
-              {/* SOBRES PvP DE RECOMPENSA (STREAMERS) */}
+              {/* SOBRES DE RECOMPENSA (STREAMERS / CAMPEÓN DE CLANES) */}
               {playerRewardPacks && playerRewardPacks.map((pack) => {
-                const elapsedSec = pack.unlockStartedAt ? Math.max(0, (Date.now() - pack.unlockStartedAt) / 1000) : 0
-                const totalSec = (pack.durationHours || 4) * 3600
+                const isClanChampion = pack.source === 'clan_champion'
+                const totalSec = isClanChampion ? 300 : (pack.durationHours || 4) * 3600
+                const elapsedSec = pack.unlockStartedAt ? Math.max(0, (now - pack.unlockStartedAt) / 1000) : 0
                 const remainingSec = Math.max(0, totalSec - elapsedSec)
                 const hours = Math.floor(remainingSec / 3600)
                 const mins = Math.floor((remainingSec % 3600) / 60)
                 const secs = Math.floor(remainingSec % 60)
-                const timerStr = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+                const timerStr = isClanChampion
+                  ? `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+                  : `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
                 const remainingHours = remainingSec / 3600
-                const goldCost = Math.max(10, Math.ceil(remainingHours * 75))
+                const goldCost = isClanChampion
+                  ? Math.max(5, Math.ceil(remainingSec / 60) * 10)
+                  : Math.max(10, Math.ceil(remainingHours * 75))
 
-                const isReady = pack.status === 'ready'
-                const isUnlocking = pack.status === 'unlocking'
+                const isReady = pack.status === 'ready' || (isClanChampion && remainingSec <= 0)
+                const isUnlocking = (pack.status === 'unlocking' || isClanChampion) && remainingSec > 0
 
                 return (
                   <div
                     key={pack.id}
-                    className={`jardin-pack-card jardin-pack-card--pvp-reward ${
-                      isReady ? 'jardin-pack-card--ready' : isUnlocking ? 'jardin-pack-card--unlocking' : ''
-                    }`}
+                    className={`jardin-pack-card ${
+                      isClanChampion ? 'jardin-pack-card--clan-champion' : 'jardin-pack-card--pvp-reward'
+                    } ${isReady ? 'jardin-pack-card--ready' : isUnlocking ? 'jardin-pack-card--unlocking' : ''}`}
                   >
-                    <span className="jardin-pack-stack-badge jardin-pack-stack-badge--streamer">
-                      🎁 STREAMER
+                    <span
+                      className={`jardin-pack-stack-badge ${
+                        isClanChampion ? 'jardin-pack-stack-badge--champion' : 'jardin-pack-stack-badge--streamer'
+                      }`}
+                    >
+                      {isClanChampion ? '👑 TOP 1 CLANES' : '🎁 STREAMER'}
                     </span>
                     <img
-                      src="/game-assets/greenfoot/seed_pack_pvp.webp"
-                      alt="Sobre PvP de Recompensa"
+                      src={isClanChampion ? '/game-assets/greenfoot/pack_legendary.png' : '/game-assets/greenfoot/seed_pack_pvp.webp'}
+                      alt={isClanChampion ? 'Sobre Campeón de Clanes' : 'Sobre PvP de Recompensa'}
                       className="jardin-pack-card__img"
                       onError={(e) => {
-                        // Fallback icon if image path differs
                         ;(e.currentTarget as HTMLImageElement).src = '/game-assets/greenfoot/pack_basic.png'
                       }}
                     />
                     <div className="jardin-pack-card__info">
                       <span className="jardin-pack-card__rarity">
-                        ⚔️ Arena {pack.arenaLevel}
+                        {isClanChampion ? '🏆 Recompensa Diaria' : `⚔️ Arena ${pack.arenaLevel}`}
                       </span>
-                      <h4 className="jardin-pack-card__name">Sobre PvP Streamer</h4>
+                      <h4 className="jardin-pack-card__name">
+                        {isClanChampion ? 'Sobre Campeón de Clanes' : 'Sobre PvP Streamer'}
+                      </h4>
                     </div>
 
                     <div className="jardin-pack-controls-wrap">
-                      {pack.status === 'pending' && (
+                      {!isClanChampion && pack.status === 'pending' && (
                         <button
                           type="button"
                           className="jardin-pack-card__unlock-btn"
@@ -557,7 +573,9 @@ export default function Jardin({
                         <div className="jardin-pack-unlocking-box">
                           <div className="jardin-pack-timer-display">
                             <span className="jardin-pack-timer-clock">⏱️ {timerStr}</span>
-                            <span className="jardin-pack-timer-total">⏳ {pack.durationHours}h</span>
+                            <span className="jardin-pack-timer-total">
+                              {isClanChampion ? '⏳ 5 min' : `⏳ ${pack.durationHours}h`}
+                            </span>
                           </div>
                           <button
                             type="button"
@@ -583,7 +601,7 @@ export default function Jardin({
                             }
                           }}
                         >
-                          ✨ ABRIR SOBRE
+                          {isClanChampion ? '✨ ABRIR PACK CAMPEÓN' : '✨ ABRIR SOBRE'}
                         </button>
                       )}
                     </div>

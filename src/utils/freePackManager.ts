@@ -8,6 +8,7 @@ export interface FreePackSlot {
 
 export interface PlayerRewardPack {
   id: string
+  source?: string
   status: 'pending' | 'unlocking' | 'ready'
   durationHours?: number
   arenaLevel: number

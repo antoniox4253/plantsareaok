@@ -1433,19 +1433,26 @@ export function useInventory() {
     return { success: true, goldSpent: res.goldSpent }
   }
 
-  /** Reclama y abre un sobre PvP de recompensa listo. */
-  const openRewardPack = async (packId: string): Promise<PackDropResult | null> => {
+  /** Reclama y abre un sobre PvP de recompensa o Sobre Campeón listo. */
+  const openRewardPack = async (packId: string): Promise<any> => {
     const res = await inventoryService.claimRewardPack(packId)
-    if (!res.success || !res.plantId) return null
+    if (!res.success) return null
+
+    // Revalidación en segundo plano para no demorar la animación
+    void refreshFromServer()
+
+    // Si viene arreglo estructurado de drops (ej. Sobre Campeón de Clanes: recursos + fragmentos/planta)
+    if (Array.isArray(res.drops) && res.drops.length > 0) {
+      return { drops: res.drops }
+    }
+
+    if (!res.plantId) return null
 
     // Validar estrictamente que un sobre PvP nunca entregue una carta no permitida
     if (!isAllowedPvpPlant(res.plantId)) {
       console.error(`[PVP_PACK_SECURITY] Bloqueado intento de drop ilegal en sobre de recompensa PvP: ${res.plantId}`)
       return null
     }
-
-    // Revalidación en segundo plano para no demorar la animación de la carta
-    void refreshFromServer()
 
     return {
       plantId: res.plantId as PlantId,

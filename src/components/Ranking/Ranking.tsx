@@ -2133,81 +2133,86 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
               </button>
             </div>
 
-            <div className="lb-modal-body">
-              {/* PREMIO DE TEMPORADA EN GEMAS (TOP 5) */}
-              {ClanManager.getSeasonGemRewardsForRank(selectedClanReward.rank).gems > 0 && (
-                <div className="clan-modal-season-box">
-                  <div className="clan-modal-season-heading">
-                    💎 PREMIO DE FIN DE TEMPORADA (TOP {selectedClanReward.rank})
-                  </div>
-                  <div className="clan-modal-season-card">
-                    <span className="clan-modal-season-icon">💎</span>
-                    <div className="clan-modal-season-info">
-                      <strong className="clan-modal-season-amount">
-                        +{ClanManager.getSeasonGemRewardsForRank(selectedClanReward.rank).gems.toLocaleString()} Gemas
-                      </strong>
-                      <small>Premio directo para las arcas del clan y distribución entre miembros al cerrar la temporada</small>
+            <div className="lb-modal-body clan-detail-modal__body">
+              {/* COLUMNA IZQUIERDA: BOTÍN Y RECOMPENSAS */}
+              <div className="clan-detail-modal__col clan-detail-modal__col--rewards">
+                {/* PREMIO DE TEMPORADA EN GEMAS (TOP 5) */}
+                {ClanManager.getSeasonGemRewardsForRank(selectedClanReward.rank).gems > 0 && (
+                  <div className="clan-modal-season-box">
+                    <div className="clan-modal-season-heading">
+                      💎 PREMIO DE FIN DE TEMPORADA (TOP {selectedClanReward.rank})
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* SECCIÓN PREMIOS: QUÉ GANA CADA UNO */}
-              <div className="clan-modal-prize-box">
-                <div className="clan-modal-prize-heading">
-                  🎁 ¿QUÉ GANA CADA MIEMBRO A LAS 00:00 UTC?
-                </div>
-                <div className="clan-modal-reward-cards">
-                  <div className="clan-modal-reward-card">
-                    <span className="clan-modal-reward-icon">💰</span>
-                    <div className="clan-modal-reward-text">
-                      <strong>{ClanManager.getDailyRewardsForRank(selectedClanReward.rank).goldPerMember} Oro</strong>
-                      <small>Para cada integrante del clan</small>
-                    </div>
-                  </div>
-                  {selectedClanReward.rank === 1 && (
-                    <div className="clan-modal-reward-card clan-modal-reward-card--highlight">
-                      <span className="clan-modal-reward-icon">⚔️</span>
-                      <div className="clan-modal-reward-text">
-                        <strong>Pack PvP Campeón Exclusivo</strong>
-                        <small>Sobre especial de cartas (listo en 5 min)</small>
+                    <div className="clan-modal-season-card">
+                      <span className="clan-modal-season-icon">💎</span>
+                      <div className="clan-modal-season-info">
+                        <strong className="clan-modal-season-amount">
+                          +{ClanManager.getSeasonGemRewardsForRank(selectedClanReward.rank).gems.toLocaleString()} Gemas
+                        </strong>
+                        <small>Premio directo para las arcas del clan y distribución entre miembros al cerrar la temporada</small>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {/* SECCIÓN PREMIOS: QUÉ GANA CADA UNO */}
+                <div className="clan-modal-prize-box">
+                  <div className="clan-modal-prize-heading">
+                    🎁 ¿QUÉ GANA CADA MIEMBRO A LAS 00:00 UTC?
+                  </div>
+                  <div className="clan-modal-reward-cards">
+                    <div className="clan-modal-reward-card">
+                      <span className="clan-modal-reward-icon">💰</span>
+                      <div className="clan-modal-reward-text">
+                        <strong>{ClanManager.getDailyRewardsForRank(selectedClanReward.rank).goldPerMember} Oro</strong>
+                        <small>Para cada integrante del clan</small>
+                      </div>
+                    </div>
+                    {selectedClanReward.rank === 1 && (
+                      <div className="clan-modal-reward-card clan-modal-reward-card--highlight">
+                        <span className="clan-modal-reward-icon">👑</span>
+                        <div className="clan-modal-reward-text">
+                          <strong>Sobre Campeón (Directo al Jardín)</strong>
+                          <small>Listo en 5 min · 2 Drops (Agua/Abono + Frag. Herramientas o Planta)</small>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* SECCIÓN RENDIMIENTO EN GUERRA */}
-              <div className="clan-modal-stats-section">
-                <div className="clan-modal-stats-title">⚔️ RENDIMIENTO EN GUERRA DE CLANES</div>
-                <div className="lb-modal-stats-grid">
-                  <div className="lb-stat-card">
-                    <span className="lb-stat-label">Daño Total</span>
-                    <strong className="lb-stat-value" style={{ color: '#ef4444' }}>
-                      ⚔️ {selectedClanReward.damageDealt.toLocaleString()}
-                    </strong>
+              {/* COLUMNA DERECHA: RENDIMIENTO EN GUERRA */}
+              <div className="clan-detail-modal__col clan-detail-modal__col--stats">
+                <div className="clan-modal-stats-section">
+                  <div className="clan-modal-stats-title">⚔️ RENDIMIENTO EN GUERRA DE CLANES</div>
+                  <div className="lb-modal-stats-grid">
+                    <div className="lb-stat-card">
+                      <span className="lb-stat-label">Daño Total</span>
+                      <strong className="lb-stat-value" style={{ color: '#ef4444' }}>
+                        ⚔️ {selectedClanReward.damageDealt.toLocaleString()}
+                      </strong>
+                    </div>
+                    <div className="lb-stat-card">
+                      <span className="lb-stat-label">Daño Hoy</span>
+                      <strong className="lb-stat-value" style={{ color: '#f59e0b' }}>
+                        💥 +{selectedClanReward.dailyDamageDealt.toLocaleString()}
+                      </strong>
+                    </div>
+                    <div className="lb-stat-card">
+                      <span className="lb-stat-label">Victorias / Derrotas</span>
+                      <strong className="lb-stat-value" style={{ color: '#22c55e' }}>
+                        🏆 {selectedClanReward.wins}V - {selectedClanReward.losses}D
+                      </strong>
+                    </div>
+                    <div className="lb-stat-card">
+                      <span className="lb-stat-label">Miembros</span>
+                      <strong className="lb-stat-value">
+                        👥 {selectedClanReward.memberCount}/15
+                      </strong>
+                    </div>
                   </div>
-                  <div className="lb-stat-card">
-                    <span className="lb-stat-label">Daño Hoy</span>
-                    <strong className="lb-stat-value" style={{ color: '#f59e0b' }}>
-                      💥 +{selectedClanReward.dailyDamageDealt.toLocaleString()}
-                    </strong>
+                  <div className="clan-modal-leader-info">
+                    👑 Líder del Clan: <strong>{selectedClanReward.leader}</strong>
                   </div>
-                  <div className="lb-stat-card">
-                    <span className="lb-stat-label">Victorias / Derrotas</span>
-                    <strong className="lb-stat-value" style={{ color: '#22c55e' }}>
-                      🏆 {selectedClanReward.wins}V - {selectedClanReward.losses}D
-                    </strong>
-                  </div>
-                  <div className="lb-stat-card">
-                    <span className="lb-stat-label">Miembros</span>
-                    <strong className="lb-stat-value">
-                      👥 {selectedClanReward.memberCount}/15
-                    </strong>
-                  </div>
-                </div>
-                <div className="clan-modal-leader-info">
-                  👑 Líder del Clan: <strong>{selectedClanReward.leader}</strong>
                 </div>
               </div>
             </div>

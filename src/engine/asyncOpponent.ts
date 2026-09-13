@@ -1291,7 +1291,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
   } else if (state.status === 'defeat') {
     winner = 2
     motivo = 'simulation'
-  } else if (state.status === 'draw') {
+  } else if ((state.status as any) === 'draw') {
     winner = null
     motivo = 'draw'
   } else {

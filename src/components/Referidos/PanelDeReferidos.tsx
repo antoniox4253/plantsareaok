@@ -214,6 +214,8 @@ export default function PanelDeReferidos() {
       })
       decir(`¡Cobro exitoso! +${r.oro} 💰 de oro acreditados por ${r.amigos} amigo(s).`)
       window.dispatchEvent(new Event('refresh_user_balance'))
+      window.dispatchEvent(new Event('player_profile_updated'))
+      window.dispatchEvent(new Event('refresh_user_inventory'))
       void cargar()
     } else {
       decir(
@@ -292,6 +294,10 @@ export default function PanelDeReferidos() {
 
   const validosTemporada = datos.validosTemporada ?? datos.validos
   const gemasDeposito = Number(datos.gemasDepositoPorCobrar ?? 0)
+  const oroACobrar =
+    Number(datos.oroPorCobrar ?? 0) > 0
+      ? Number(datos.oroPorCobrar)
+      : Number(datos.amigosSinCobrar ?? 0) * (Number(datos.oroPorAmigo ?? 0) || 100)
 
   return (
     <div className="ref-panel">
@@ -411,21 +417,21 @@ export default function PanelDeReferidos() {
             </strong>
             <small>
               {datos.amigosSinCobrar > 0
-                ? `${datos.amigosSinCobrar} amigo(s) en 1,100+ copas listos para cobrar (+${datos.oroPorCobrar} 💰)`
+                ? `${datos.amigosSinCobrar} amigo(s) en 1,100+ copas listos para cobrar (+${oroACobrar} 💰)`
                 : 'Todo el oro acumulado ha sido cobrado.'}
             </small>
           </div>
           <button
             type="button"
             className="ref-btn ref-btn--principal"
-            disabled={datos.oroPorCobrar <= 0 || ocupado === 'oro'}
+            disabled={oroACobrar <= 0 || ocupado === 'oro'}
             onClick={() => void cobrarOro()}
           >
             {ocupado === 'oro' ? (
               '⏳ Cobrando...'
             ) : (
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                Cobrar {datos.oroPorCobrar} <GoldIcon size={15} /> Oro
+                Cobrar {oroACobrar} <GoldIcon size={15} /> Oro
               </span>
             )}
           </button>

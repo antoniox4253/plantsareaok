@@ -49,8 +49,12 @@ export interface ClanDepositLog {
   clanId: string
   depositorName: string
   amountUsd: number
+  amountGems?: number
+  amountGold?: number
+  currency?: 'gems' | 'gold'
   timestamp: number
-  reason: 'deposit' | 'fund' | 'join' | 'repair'
+  reason: 'deposit' | 'fund' | 'join' | 'repair' | 'deposit_gold'
+  action?: string
 }
 
 export interface ClanWarLog {
@@ -96,6 +100,7 @@ export interface ClanData {
   members: ClanMember[]
   vaultUsd: number
   vaultGems?: number
+  vaultGold?: number
   status: 'active' | 'defeated' // Active by default, Defeated only if depleted in war
   shieldUntil?: number // 24h shield timestamp
   wins: number

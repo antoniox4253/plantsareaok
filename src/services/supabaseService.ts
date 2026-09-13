@@ -1609,6 +1609,24 @@ export const SupabaseService = {
     }
   },
 
+  /** Aporte voluntario de Oro al Tesoro del Clan validado por backend */
+  async depositGoldToClanVault(amountGold: number): Promise<{ success: boolean; clan_id?: string; vault_gold?: number; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('deposit_gold_to_clan_vault', {
+        p_amount: amountGold,
+      })
+      if (error) {
+        logError('depositGoldToClanVault', error)
+        return { success: false, error: error.message }
+      }
+      return data as { success: boolean; clan_id?: string; vault_gold?: number }
+    } catch (e: any) {
+      logError('depositGoldToClanVault', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   async getAllClans(): Promise<ClanRow[]> {
     if (!isSupabaseConfigured()) return []
     try {
@@ -3893,6 +3911,14 @@ export const SupabaseService = {
         logError('myReferrals', error)
         return null
       }
+      if (data) {
+        const sinCobrar = Number(data.amigosSinCobrar ?? 0)
+        const porAmigo = Number(data.oroPorAmigo ?? 100) || 100
+        data.oroPorAmigo = porAmigo
+        if (sinCobrar > 0 && Number(data.oroPorCobrar ?? 0) <= 0) {
+          data.oroPorCobrar = sinCobrar * porAmigo
+        }
+      }
       return data
     } catch (e) {
       logError('myReferrals', e)
@@ -3907,7 +3933,11 @@ export const SupabaseService = {
       const { data, error } = await (supabase.rpc as any)('claim_referral_gold')
       if (error) {
         logError('claimReferralGold', error)
-        return { ok: false, motivo: error.message }
+        const msg = error.message || ''
+        if (msg.includes('amount_gold') || msg.includes('transactions')) {
+          return { ok: false, motivo: 'Error en la base de datos al registrar transacción de oro. Aplica la migración 149 en Supabase.' }
+        }
+        return { ok: false, motivo: msg }
       }
       return data ?? { ok: false }
     } catch (e: any) {
@@ -4271,6 +4301,7 @@ export const SupabaseService = {
       }
       return (data as any[]).map((row) => ({
         id: String(row.id),
+        source: row.source ? String(row.source) : undefined,
         status: row.status,
         durationHours: row.durationHours ? Number(row.durationHours) : undefined,
         arenaLevel: Number(row.arenaLevel || 1),
@@ -4330,9 +4361,11 @@ export const SupabaseService = {
     }
   },
 
-  /** Reclama y abre un sobre PvP de recompensa listo. Entrega carta + oro. */
+  /** Reclama y abre un sobre PvP o Campeón de recompensa listo. */
   async claimRewardPack(packId: string): Promise<{
     success: boolean
+    source?: string
+    drops?: any[]
     plantId?: string
     rarity?: string
     isNew?: boolean

@@ -153,4 +153,47 @@ describe('Sistema de Referidos - Auditoría y Reglas Canónicas', () => {
       expect(sql).toContain('admin_close_referral_season()')
     })
   })
+
+  describe('6. Auditoría de la Migración SQL 149 (Reparación Definitiva de Cobro de Oro)', () => {
+    const migration149Path = path.resolve(
+      __dirname,
+      '../../../supabase/migrations/149-fix-referral-gold-claim.sql'
+    )
+
+    it('el archivo de migración 149 existe', () => {
+      expect(fs.existsSync(migration149Path)).toBe(true)
+    })
+
+    it('repara claim_referral_gold garantizando acreditación de oro a profiles', () => {
+      const sql = fs.readFileSync(migration149Path, 'utf8')
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public.claim_referral_gold()')
+      expect(sql).toContain('gold_balance = COALESCE(gold_balance, 0) + v_total_oro')
+      expect(sql).toContain('v_total_oro := v_count * v_oro_por_amigo')
+    })
+
+    it('asegura la columna amount_gold en public.transactions de forma idempotente', () => {
+      const sql = fs.readFileSync(migration149Path, 'utf8')
+      expect(sql).toContain('ALTER TABLE public.transactions ADD COLUMN amount_gold')
+    })
+
+    it('sella preventivamente referidos que ya alcanzaron 1100 copas', () => {
+      const sql = fs.readFileSync(migration149Path, 'utf8')
+      expect(sql).toContain('UPDATE public.referrals r')
+      expect(sql).toContain('SET valid_at = NOW()')
+      expect(sql).toContain('COALESCE(p.elo_rating, 1000) >= v_umbral')
+    })
+
+    it('registra transactions de forma tolerante sin romper la entrega de oro si falla la tabla secundaria', () => {
+      const sql = fs.readFileSync(migration149Path, 'utf8')
+      expect(sql).toContain('referral_reward')
+      expect(sql).toContain('EXCEPTION WHEN OTHERS THEN')
+    })
+
+    it('actualiza my_referrals con fallback garantizado para oro por amigo', () => {
+      const sql = fs.readFileSync(migration149Path, 'utf8')
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public.my_referrals()')
+      expect(sql).toContain('v_oro_por_amigo := COALESCE(v_oro_por_amigo, 100);')
+    })
+  })
 })
+

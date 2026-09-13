@@ -95,4 +95,22 @@ describe('clanChatService', () => {
     expect(msgsAlpha.some((m) => m.text.includes('Beta'))).toBe(false)
     expect(msgsBeta.some((m) => m.text.includes('Alpha'))).toBe(false)
   })
+
+  it('no borra ni trunca mensajes a 80 y retiene más de 100 mensajes persistentes', async () => {
+    for (let i = 1; i <= 120; i++) {
+      clanChatService.saveLocalMessage('clan-persistent', {
+        id: `msg-${i}`,
+        clanId: 'clan-persistent',
+        sender: `Usuario-${i}`,
+        role: 'Miembro',
+        text: `Consulta o mensaje #${i}`,
+        time: '12:00',
+      })
+    }
+
+    const messages = clanChatService.getLocalMessages('clan-persistent')
+    expect(messages.length).toBe(120)
+    expect(messages[0].id).toBe('msg-1')
+    expect(messages[119].id).toBe('msg-120')
+  })
 })

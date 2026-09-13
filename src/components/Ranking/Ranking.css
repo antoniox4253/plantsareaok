@@ -2296,7 +2296,88 @@
 
 /* MODAL DETALLES DEL CLAN Y BOTÍN */
 .clan-detail-modal {
-  max-width: 440px !important;
+  max-width: 760px !important;
+  width: 95% !important;
+}
+
+.clan-detail-modal__body {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 16px;
+  padding: 16px;
+  align-items: stretch;
+}
+
+.clan-detail-modal__col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.clan-detail-modal__col--stats .clan-modal-stats-section {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.clan-modal-season-box {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.1);
+}
+
+.clan-modal-season-heading {
+  font-size: 11px;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.clan-modal-season-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.clan-modal-season-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.clan-modal-season-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.clan-modal-season-amount {
+  font-size: 13px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.clan-modal-season-info small {
+  font-size: 9.5px;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+@media (max-width: 680px) {
+  .clan-detail-modal {
+    max-width: 440px !important;
+  }
+  .clan-detail-modal__body {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .clan-modal-header-info {
