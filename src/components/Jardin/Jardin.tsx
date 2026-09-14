@@ -1047,13 +1047,13 @@ export default function Jardin({
                     </div>
                   )}
 
-                  {/* DECISIÓN AL ALCANZAR 5 COPIAS: GERMINAR O FUSIONAR */}
-                  {isUnlocked && hasCopies && (
+                  {/* BOTONES DE DECISIÓN: GERMINAR O FUSIONAR */}
+                  {isUnlocked && (
                     <div className="jardin-card-decision-row">
                       {canSproutThisCard && (
                         <button
                           type="button"
-                          className="jardin-sprout-btn"
+                          className={`jardin-sprout-btn ${hasCopies ? 'jardin-sprout-btn--pulse' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation()
                             setSproutCandidate({
@@ -1066,7 +1066,7 @@ export default function Jardin({
                               childNumber: nextChildNum,
                             })
                           }}
-                          title={`Germinar Cría #${nextChildNum} de esta carta`}
+                          title={hasCopies ? `Germinar Cría #${nextChildNum} de esta carta` : `Requiere 5 copias para germinar (${copies}/5)`}
                         >
                           🌱 GERMINAR
                         </button>
@@ -1075,7 +1075,7 @@ export default function Jardin({
                       {!isMaxLevel && (
                         <button
                           type="button"
-                          className="jardin-fuse-btn"
+                          className={`jardin-fuse-btn ${hasCopies ? 'jardin-fuse-btn--pulse' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation()
                             setFuseCandidate({
@@ -1086,7 +1086,7 @@ export default function Jardin({
                               icon: config.icon,
                             })
                           }}
-                          title={`Fusionar y mejorar a Nivel ${level + 1}`}
+                          title={hasCopies ? `Fusionar y mejorar a Nivel ${level + 1}` : `Requiere 5 copias para fusionar (${copies}/5)`}
                         >
                           🔥 FUSIONAR
                         </button>
@@ -1148,9 +1148,11 @@ export default function Jardin({
               </div>
             </div>
 
-            {(userGold ?? 0) < FUSION_GOLD_COST && (
+            {((userGold ?? 0) < FUSION_GOLD_COST || (plantCopies[fuseCandidate.plantId] || 0) < 5) && (
               <div style={{ color: '#f87171', fontSize: '11px', fontWeight: 800, marginTop: '10px', textAlign: 'center' }}>
-                ⚠️ Oro insuficiente para fusionar (requiere {FUSION_GOLD_COST} Oro).
+                {(plantCopies[fuseCandidate.plantId] || 0) < 5
+                  ? `⚠️ Copias insuficientes: necesitas 5 copias de ${fuseCandidate.name} (tienes ${plantCopies[fuseCandidate.plantId] || 0}/5).`
+                  : `⚠️ Oro insuficiente para fusionar (requiere ${FUSION_GOLD_COST} Oro).`}
               </div>
             )}
 
@@ -1231,7 +1233,9 @@ export default function Jardin({
               (farmingItems?.fertilizer ?? 0) < sproutCandidate.fertCost ||
               (plantCopies[sproutCandidate.plantId] || 0) < 5) && (
               <div style={{ color: '#f87171', fontSize: '11px', fontWeight: 800, marginTop: '10px', textAlign: 'center' }}>
-                ⚠️ No tienes suficientes materiales o copias para germinar esta carta.
+                {(plantCopies[sproutCandidate.plantId] || 0) < 5
+                  ? `⚠️ Copias insuficientes: necesitas 5 copias de ${sproutCandidate.name} (tienes ${plantCopies[sproutCandidate.plantId] || 0}/5).`
+                  : `⚠️ Recursos insuficientes: necesitas ${sproutCandidate.waterCost} Aguas y ${sproutCandidate.fertCost} Fertilizantes.`}
               </div>
             )}
 

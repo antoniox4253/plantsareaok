@@ -1041,8 +1041,12 @@
   border-radius: 6px;
   cursor: pointer;
   margin-top: 3px;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+.jardin-fuse-btn--pulse {
   animation: fusePulse 1.5s infinite ease-in-out;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.7);
 }
 
 @keyframes fusePulse {
@@ -1061,8 +1065,12 @@
   border-radius: 6px;
   cursor: pointer;
   margin-top: 3px;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.jardin-sprout-btn--pulse {
   animation: sproutPulse 1.5s infinite ease-in-out;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
 }
 
 @keyframes sproutPulse {
