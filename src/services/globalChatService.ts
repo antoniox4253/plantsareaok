@@ -21,6 +21,34 @@ const getStorage = () => {
   return null
 }
 
+export function areMessagesEqual(a: GlobalChatMessage, b: GlobalChatMessage): boolean {
+  if (a.id && b.id && a.id === b.id) return true
+  if (
+    a.username === b.username &&
+    a.message === b.message &&
+    Math.abs(new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) < 5000
+  ) {
+    return true
+  }
+  return false
+}
+
+export function deduplicateMessages(messages: GlobalChatMessage[]): GlobalChatMessage[] {
+  const result: GlobalChatMessage[] = []
+  for (const msg of messages) {
+    const existingIdx = result.findIndex((m) => areMessagesEqual(m, msg))
+    if (existingIdx >= 0) {
+      // Si el existente es local provisional y el nuevo es oficial de la base de datos, preferir el oficial
+      if (result[existingIdx].id.startsWith('local-') && !msg.id.startsWith('local-')) {
+        result[existingIdx] = msg
+      }
+    } else {
+      result.push(msg)
+    }
+  }
+  return result
+}
+
 export const globalChatService = {
   /** Reset del cooldown para suites de test */
   _resetCooldownForTesting() {
@@ -28,42 +56,55 @@ export const globalChatService = {
   },
 
   /**
-   * Obtiene los mensajes guardados localmente para renderizado instantáneo.
+   * Obtiene los mensajes guardados localmente para renderizado instantáneo, deduplicados.
    */
   getLocalMessages(): GlobalChatMessage[] {
     try {
       const storage = getStorage()
       const raw = storage?.getItem(LOCAL_STORAGE_GLOBAL_CHAT_KEY)
-      return raw ? JSON.parse(raw) : []
+      if (!raw) return []
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? deduplicateMessages(parsed) : []
     } catch {
       return []
     }
   },
 
   /**
-   * Guarda un mensaje en el caché local persistente.
+   * Guarda un mensaje en el caché local persistente evitando duplicados.
    */
   saveLocalMessage(msg: GlobalChatMessage) {
     try {
       const storage = getStorage()
       if (!storage) return
       const current = this.getLocalMessages()
-      if (current.some((m) => m.id === msg.id)) return
-      const updated = [...current, msg].slice(-80)
+      const existingIdx = current.findIndex((m) => areMessagesEqual(m, msg))
+      let updated: GlobalChatMessage[]
+      if (existingIdx >= 0) {
+        if (current[existingIdx].id.startsWith('local-') && !msg.id.startsWith('local-')) {
+          updated = [...current]
+          updated[existingIdx] = msg
+        } else {
+          return
+        }
+      } else {
+        updated = [...current, msg].slice(-80)
+      }
       storage.setItem(LOCAL_STORAGE_GLOBAL_CHAT_KEY, JSON.stringify(updated))
     } catch {}
   },
 
   /**
-   * Guarda una lista completa de mensajes en caché local.
+   * Guarda una lista completa de mensajes en caché local sin duplicados.
    */
   saveAllLocalMessages(messages: GlobalChatMessage[]) {
     try {
       const storage = getStorage()
       if (!storage) return
+      const deduped = deduplicateMessages(messages).slice(-80)
       storage.setItem(
         LOCAL_STORAGE_GLOBAL_CHAT_KEY,
-        JSON.stringify(messages.slice(-80))
+        JSON.stringify(deduped)
       )
     } catch {}
   },
@@ -94,17 +135,21 @@ export const globalChatService = {
 
       const remote = (data as GlobalChatMessage[]).reverse()
 
-      // Unificar mensajes locales y remotos sin duplicados
-      const mergedMap = new Map<string, GlobalChatMessage>()
-      for (const m of local) mergedMap.set(m.id, m)
-      for (const m of remote) mergedMap.set(m.id, m)
+      // Unificar mensajes: primero remotos oficiales de Supabase
+      const mergedList: GlobalChatMessage[] = [...remote]
+      // Agregar locales solo si no existen ya en remote
+      for (const loc of local) {
+        if (!mergedList.some((rem) => areMessagesEqual(rem, loc))) {
+          mergedList.push(loc)
+        }
+      }
 
-      const merged = Array.from(mergedMap.values())
+      const sorted = deduplicateMessages(mergedList)
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
         .slice(-80)
 
-      this.saveAllLocalMessages(merged)
-      return merged
+      this.saveAllLocalMessages(sorted)
+      return sorted
     } catch (err) {
       console.warn('[globalChatService] Excepción al obtener historial de chat:', err)
       return local
@@ -163,9 +208,8 @@ export const globalChatService = {
       created_at: new Date().toISOString(),
     }
 
-    this.saveLocalMessage(localMessage)
-
     if (!isSupabaseConfigured()) {
+      this.saveLocalMessage(localMessage)
       return { success: true, messageObj: localMessage }
     }
 
@@ -186,6 +230,7 @@ export const globalChatService = {
 
       if (error) {
         console.warn('[globalChatService] Error al insertar en Supabase, usando broadcast fallback:', error.message)
+        this.saveLocalMessage(localMessage)
         // Fallback a broadcast por WebSocket
         const channel = supabase.channel('global-chat-channel')
         await channel.send({
@@ -201,6 +246,7 @@ export const globalChatService = {
       return { success: true, messageObj: finalMsg }
     } catch (err) {
       console.warn('[globalChatService] Excepción al enviar mensaje:', err)
+      this.saveLocalMessage(localMessage)
       return { success: true, messageObj: localMessage }
     }
   },
@@ -245,7 +291,11 @@ export const globalChatService = {
       .subscribe()
 
     return () => {
-      void channel.unsubscribe()
+      try {
+        void supabase.removeChannel(channel)
+      } catch (err) {
+        console.warn('[globalChatService] Error al remover canal global:', err)
+      }
     }
   },
 }

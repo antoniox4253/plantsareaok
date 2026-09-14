@@ -953,7 +953,6 @@ export default function Jardin({
               const groupedBuffs = groupRolls(statRolls)
               const isMaxLevel = level >= maxLvl
               const hasCopies = copies >= FUSION_COPIES_REQ
-              const hasGold = (userGold ?? 0) >= FUSION_GOLD_COST
 
               const instancesOfThisPlant = plantInstances.filter((i) => i.plantId === plantId)
               const instanceIndex = instancesOfThisPlant.findIndex((i) => i.instanceId === instanceId)
@@ -965,9 +964,6 @@ export default function Jardin({
               const nextChildNum = currentSprouts + 1
               const sproutWaterCost = nextChildNum === 1 ? 10 : 12
               const sproutFertCost = nextChildNum === 1 ? 5 : 7
-              const userWater = farmingItems?.water ?? 0
-              const userFert = farmingItems?.fertilizer ?? 0
-              const hasFarmingItemsForSprout = userWater >= sproutWaterCost && userFert >= sproutFertCost
 
               return (
                 <div

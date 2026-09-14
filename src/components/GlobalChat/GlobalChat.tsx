@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   globalChatService,
+  areMessagesEqual,
   type GlobalChatMessage,
 } from '../../services/globalChatService'
 import { soundManager } from '../../utils/audioManager'
@@ -35,12 +36,31 @@ export default function GlobalChat({
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const isOpenRef = useRef(isOpen)
+  const onNewUnreadMessageRef = useRef(onNewUnreadMessage)
 
   useEffect(() => {
     isOpenRef.current = isOpen
   }, [isOpen])
 
-  // Carga inicial del historial de mensajes
+  useEffect(() => {
+    onNewUnreadMessageRef.current = onNewUnreadMessage
+  }, [onNewUnreadMessage])
+
+  // Helper para insertar o actualizar mensajes sin duplicar en la interfaz
+  const addOrUpdateMessage = (prev: GlobalChatMessage[], newMsg: GlobalChatMessage) => {
+    const existingIdx = prev.findIndex((m) => areMessagesEqual(m, newMsg))
+    if (existingIdx >= 0) {
+      if (prev[existingIdx].id.startsWith('local-') && !newMsg.id.startsWith('local-')) {
+        const updated = [...prev]
+        updated[existingIdx] = newMsg
+        return updated
+      }
+      return prev
+    }
+    return [...prev, newMsg]
+  }
+
+  // Carga inicial del historial de mensajes y suscripción Realtime única
   useEffect(() => {
     let isMounted = true
     globalChatService.fetchRecentMessages(40).then((history) => {
@@ -53,18 +73,12 @@ export default function GlobalChat({
     const unsubscribe = globalChatService.subscribeToGlobalChat((newMsg) => {
       if (!isMounted) return
 
-      setMessages((prev) => {
-        // Evitar duplicados por id
-        if (prev.some((m) => m.id === newMsg.id)) {
-          return prev
-        }
-        return [...prev, newMsg]
-      })
+      setMessages((prev) => addOrUpdateMessage(prev, newMsg))
 
       // Notificar si está minimizado o cerrado
       if (!isOpenRef.current) {
-        if (onNewUnreadMessage) {
-          onNewUnreadMessage()
+        if (onNewUnreadMessageRef.current) {
+          onNewUnreadMessageRef.current()
         }
       } else {
         soundManager.playSound('click', 0.25)
@@ -75,7 +89,7 @@ export default function GlobalChat({
       isMounted = false
       unsubscribe()
     }
-  }, [onNewUnreadMessage])
+  }, [])
 
   // Auto-scroll al final al recibir o enviar mensajes si la ventana está abierta
   useEffect(() => {
@@ -114,10 +128,7 @@ export default function GlobalChat({
       setCooldownSeconds(2)
       soundManager.playSound('click', 0.4)
       if (result.messageObj) {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === result.messageObj!.id)) return prev
-          return [...prev, result.messageObj!]
-        })
+        setMessages((prev) => addOrUpdateMessage(prev, result.messageObj!))
       }
     } else if (result.error) {
       // Cooldown o error

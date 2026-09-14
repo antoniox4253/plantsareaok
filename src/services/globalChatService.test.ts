@@ -117,4 +117,36 @@ describe('globalChatService', () => {
     expect(fetched.length).toBe(1)
     expect(fetched[0].username).toBe('GuerreroPersistente')
   })
+
+  it('deduplica mensajes idénticos y reemplaza id provisional por id oficial de Supabase', async () => {
+    vi.spyOn(supabaseClientModule, 'isSupabaseConfigured').mockReturnValue(false)
+
+    const nowIso = new Date().toISOString()
+    const provisionalMsg = {
+      id: 'local-12345',
+      username: 'Navi',
+      message: 'hola mundo',
+      has_vip: false,
+      created_at: nowIso,
+    }
+    const officialMsg = {
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      username: 'Navi',
+      message: 'hola mundo',
+      has_vip: false,
+      created_at: nowIso,
+    }
+
+    // Guardar primero el provisional
+    globalChatService.saveLocalMessage(provisionalMsg)
+    expect(globalChatService.getLocalMessages().length).toBe(1)
+    expect(globalChatService.getLocalMessages()[0].id).toBe('local-12345')
+
+    // Cuando llega el oficial por WebSocket o confirmación de BD
+    globalChatService.saveLocalMessage(officialMsg)
+    const list = globalChatService.getLocalMessages()
+    // No debe haber 2 mensajes sino 1 solo y con el ID oficial
+    expect(list.length).toBe(1)
+    expect(list[0].id).toBe('550e8400-e29b-41d4-a716-446655440000')
+  })
 })
