@@ -83,10 +83,22 @@ interface OfertaDelMercado {
   plantId?: PlantId
   nivel: number
   statRolls: PlantStatKey[]
+  germinationsCount?: number
   precio: number
   vendedor: string | null
   esMia: boolean
   desde: string
+}
+
+function getSproutTooltip(count: number): string {
+  if (count <= 0) return '🌱0: Sin germinaciones gastadas (puede dar 2 crías)'
+  if (count === 1) return '🌱1: Ya gastó 1 germinación (le queda 1 cría disponible)'
+  return '🌱2: Ya no puede germinar (límite de 2 alcanzado)'
+}
+
+function getFusionTooltip(level: number): string {
+  if (level <= 0) return '⭐0: Fusión Nivel 0 (Sin fusiones)'
+  return `⭐${level}: Fusión Nivel ${level}`
 }
 
 interface MarketModalDialog {
@@ -115,6 +127,7 @@ export type SellableMarketItem =
       inDeck: boolean
       name: string
       icon: string
+      germinationsCount?: number
     }
   | {
       kind: 'farming'
@@ -204,6 +217,7 @@ export default function Marketplace({
           inDeck,
           name: pConfig?.name || inst.plantId,
           icon: pConfig?.packetActive || pConfig?.icon || '',
+          germinationsCount: inst.germinationsCount ?? 0,
         })
       })
     } else {
@@ -225,6 +239,7 @@ export default function Marketplace({
           inDeck: Boolean(activeDeck?.includes(pId)),
           name: pConfig?.name || pId,
           icon: pConfig?.packetActive || pConfig?.icon || '',
+          germinationsCount: 0,
         })
       })
     }
@@ -469,7 +484,7 @@ export default function Marketplace({
       : (item.plantId && PLANT_CONFIGS[item.plantId as PlantId]?.name || item.plantId || 'Carta')
     const detalle = isFarming
       ? (qty > 1 ? `el lote completo de ${qty}x "${nombre}"` : `1x "${nombre}"`)
-      : `"${nombre}" (Nivel ${item.nivel})`
+      : `"${nombre}" (⭐${item.nivel} · 🌱${item.germinationsCount ?? 0})`
 
     const split = calculateMarketplaceSplit(item.precio, comisionPct)
 
@@ -624,7 +639,7 @@ export default function Marketplace({
 
     showModalConfirm(
       '⚠️ ¿VENDER TU CARTA DE PLANTA?',
-      `Vas a poner en venta tu carta jugable "${selectedItem.name}" (Nivel ${selectedItem.level}) por ${sellPriceGems} 💎.\n\n` +
+      `Vas a poner en venta tu carta jugable "${selectedItem.name}" (⭐${selectedItem.level} · 🌱${selectedItem.germinationsCount ?? 0}) por ${sellPriceGems} 💎.\n\n` +
         `❌ ¡ATENCIÓN! NO estás vendiendo copias sueltas. Venderás esta carta de tu Jardín.\n\n` +
         copyWarning +
         `• Al comprador se le descuenta el 100% (${sellPriceGems} 💎).\n` +
@@ -642,7 +657,7 @@ export default function Marketplace({
         soundManager.playSound('plantation', 0.9)
         showModalAlert(
           '¡OFERTA PUBLICADA EN EL MERCADO!',
-          `"${selectedItem.name}" (Nivel ${selectedItem.level}) está en venta por ${sellPriceGems} 💎.\nRecibirás el 90% neto (${split.neto} 💎) cuando se venda.`,
+          `"${selectedItem.name}" (⭐${selectedItem.level} · 🌱${selectedItem.germinationsCount ?? 0}) está en venta por ${sellPriceGems} 💎.\nRecibirás el 90% neto (${split.neto} 💎) cuando se venda.`,
           '🏷️',
           'success'
         )
@@ -826,9 +841,32 @@ export default function Marketplace({
                 <div key={item.id} className="market-item-card">
                   {/* Card Header */}
                   <div className="market-item-card__header">
-                    <span className="market-item-level-tag">
-                      {isFarming ? `🌾 LOTE x${itemQty}` : (item.nivel > 0 ? `⭐ LVL ${item.nivel}` : '🌱 BASE')}
-                    </span>
+                    {isFarming ? (
+                      <span className="market-item-level-tag">
+                        🌾 LOTE x{itemQty}
+                      </span>
+                    ) : (
+                      <div className="market-item-tags-row">
+                        <span
+                          className="market-item-level-tag"
+                          title={getFusionTooltip(item.nivel)}
+                        >
+                          ⭐{item.nivel}
+                        </span>
+                        <span
+                          className={`market-item-sprouts-tag market-item-sprouts-tag--${
+                            (item.germinationsCount ?? 0) >= 2
+                              ? 'max'
+                              : (item.germinationsCount ?? 0) === 1
+                              ? 'mid'
+                              : 'fresh'
+                          }`}
+                          title={getSproutTooltip(item.germinationsCount ?? 0)}
+                        >
+                          🌱{item.germinationsCount ?? 0}
+                        </span>
+                      </div>
+                    )}
                     <span className="market-item-rarity-badge" style={{ color: rInfo.color, borderColor: rInfo.color }}>
                       {rInfo.rarity}
                     </span>
@@ -1030,9 +1068,26 @@ export default function Marketplace({
                         />
                         <div className="market-garden-card-item__info">
                           <div className="market-garden-card-item__header">
-                            <span className="market-item-level-tag">
-                              {item.level > 0 ? `⭐ LVL ${item.level}` : '🌱 BASE'}
-                            </span>
+                            <div className="market-item-tags-row">
+                              <span
+                                className="market-item-level-tag"
+                                title={getFusionTooltip(item.level)}
+                              >
+                                ⭐{item.level}
+                              </span>
+                              <span
+                                className={`market-item-sprouts-tag market-item-sprouts-tag--${
+                                  (item.germinationsCount ?? 0) >= 2
+                                    ? 'max'
+                                    : (item.germinationsCount ?? 0) === 1
+                                    ? 'mid'
+                                    : 'fresh'
+                                }`}
+                                title={getSproutTooltip(item.germinationsCount ?? 0)}
+                              >
+                                🌱{item.germinationsCount ?? 0}
+                              </span>
+                            </div>
                             <span
                               className="market-rarity-pill"
                               style={{ color: item.rarityColor, borderColor: item.rarityColor }}
@@ -1071,11 +1126,32 @@ export default function Marketplace({
               {selectedItem && (
                 <form className="market-sell-preview-card" onSubmit={handleCreateListing}>
                   <div className="market-sell-preview-header">
-                    <span className="market-item-level-tag">
-                      {selectedItem.kind === 'farming'
-                        ? `🌾 DISP (${selectedItem.availableQty})`
-                        : (selectedItem.level > 0 ? `⭐ LVL ${selectedItem.level}` : '🌱 BASE')}
-                    </span>
+                    {selectedItem.kind === 'farming' ? (
+                      <span className="market-item-level-tag">
+                        🌾 DISP ({selectedItem.availableQty})
+                      </span>
+                    ) : (
+                      <div className="market-item-tags-row">
+                        <span
+                          className="market-item-level-tag"
+                          title={getFusionTooltip(selectedItem.level)}
+                        >
+                          ⭐{selectedItem.level}
+                        </span>
+                        <span
+                          className={`market-item-sprouts-tag market-item-sprouts-tag--${
+                            (selectedItem.germinationsCount ?? 0) >= 2
+                              ? 'max'
+                              : (selectedItem.germinationsCount ?? 0) === 1
+                              ? 'mid'
+                              : 'fresh'
+                          }`}
+                          title={getSproutTooltip(selectedItem.germinationsCount ?? 0)}
+                        >
+                          🌱{selectedItem.germinationsCount ?? 0}
+                        </span>
+                      </div>
+                    )}
                     <span
                       className="market-rarity-pill"
                       style={{ color: selectedItem.rarityColor, borderColor: selectedItem.rarityColor }}

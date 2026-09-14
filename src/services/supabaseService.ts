@@ -1521,6 +1521,7 @@ export const SupabaseService = {
       vendedor: string | null
       esMia: boolean
       desde: string
+      germinationsCount?: number
     }>
   } | null> {
     if (!isSupabaseConfigured()) return null

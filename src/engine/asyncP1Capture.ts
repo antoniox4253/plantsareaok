@@ -132,6 +132,28 @@ export function ejecutarCapturaPlantP1(
 
   let canonicalAction: AccionP1RankedEstricta | undefined = undefined
 
+  const config = getScaledPlantConfig(card, rolls)
+  if (!config) {
+    return { ok: false, reason: 'INVALID_PLANT_DATA', details: 'Configuración no encontrada para la planta' }
+  }
+
+  // Prevenir colocación duplicada o concurrente en casillas estáticas ya ocupadas
+  const isWalkingUnit = config.category === 'melee' || !!config.moveSpeed || card === 'chomper'
+  if (!isWalkingUnit) {
+    const isOccupiedByPlant = state.plants.some(
+      (p) => p.lane === lane && p.col === col && !p.isWalking && p.hp > 0
+    )
+    const isPendingSprout = state.pending.some(
+      (p) => p.kind === 'own_plant' && p.lane === lane && p.col === col
+    )
+    const isTargetPending = targetPending.some(
+      (a) => a.kind === 'plant' && a.lane === lane && a.col === col
+    )
+    if (isOccupiedByPlant || isPendingSprout || isTargetPending) {
+      return { ok: true, enTic, seq, duplicated: true }
+    }
+  }
+
   if (isAsyncMatch) {
     if (inconsistenciaActual) {
       return {
@@ -174,11 +196,6 @@ export function ejecutarCapturaPlantP1(
       statRolls: rolls,
       level: cardLevel,
     }
-  }
-
-  const config = getScaledPlantConfig(card, rolls)
-  if (!config) {
-    return { ok: false, reason: 'INVALID_PLANT_DATA', details: 'Configuración no encontrada para la planta' }
   }
 
   state.pending.push({

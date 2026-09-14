@@ -2590,6 +2590,86 @@ describe('Rival Semilla Ranked V1 — Suite de Tests', () => {
     expect(historial.length).toBe(1)
   })
 
+  // 92b. Captura productiva PLANT en casilla ocupada por planta viva o pendiente retorna duplicated sin registrar acción ni duplicar planta
+  it('92b. Captura productiva ejecutarCapturaPlantP1 en casilla ocupada descarta la acción redundante sin cobrar ni duplicar', () => {
+    const state = createBattleState(92922, false, true)
+    state.tick = 100
+    state.sunBank = 300
+    state.pending = []
+    const historial: AccionP1Simulacion[] = []
+
+    // 1. Primera plantación válida
+    const res1 = ejecutarCapturaPlantP1({
+      isAsyncMatch: true,
+      card: 'sunflower',
+      slotIdx: 0,
+      lane: 1,
+      col: 2,
+      state,
+      seq: 1,
+      enTic: 106,
+      historial,
+      inconsistenciaActual: null,
+    })
+    expect(res1.ok).toBe(true)
+    expect(state.pending.length).toBe(1)
+    expect(historial.length).toBe(1)
+    expect(state.sunBank).toBe(250) // Cobró 50
+
+    // 2. Intento de segunda plantación en la misma casilla antes de brotar (en vuelo en pending)
+    const res2 = ejecutarCapturaPlantP1({
+      isAsyncMatch: true,
+      card: 'sunflower',
+      slotIdx: 0,
+      lane: 1,
+      col: 2,
+      state,
+      seq: 2,
+      enTic: 108,
+      historial,
+      inconsistenciaActual: null,
+    })
+    expect(res2.ok).toBe(true)
+    expect((res2 as any).duplicated).toBe(true)
+    expect(state.pending.length).toBe(1) // No se duplicó
+    expect(historial.length).toBe(1) // No se mandó a la base de datos
+    expect(state.sunBank).toBe(250) // No cobró de nuevo
+
+    // 3. Simular que la planta brotó en el campo
+    state.plants.push({
+      id: 'planta-viva-1',
+      plantId: 'sunflower',
+      lane: 1,
+      col: 2,
+      x: 35,
+      hp: 300,
+      maxHp: 300,
+      isWalking: false,
+      state: 'idle',
+      lastActionTime: 106,
+    })
+    state.pending = []
+
+    // 4. Intento de plantar sobre la planta ya viva
+    const res3 = ejecutarCapturaPlantP1({
+      isAsyncMatch: true,
+      card: 'repeater',
+      slotIdx: 1,
+      lane: 1,
+      col: 2,
+      state,
+      seq: 3,
+      enTic: 120,
+      historial,
+      inconsistenciaActual: null,
+    })
+    expect(res3.ok).toBe(true)
+    expect((res3 as any).duplicated).toBe(true)
+    expect(state.pending.length).toBe(0)
+    expect(historial.length).toBe(1)
+    expect(state.sunBank).toBe(250)
+  })
+
   // 93. Captura productiva DIG sin seq aborta sin encolar own_dig
   it('93. Captura productiva ejecutarCapturaDigP1 sin seq aborta sin encolar own_dig', () => {
     const state = createBattleState(9393, false, true)

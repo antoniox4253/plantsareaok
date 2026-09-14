@@ -1661,14 +1661,16 @@ export default function Battlefield({
                     // Igual que al plantar: sólo se registra si aquí de verdad
                     // se excavó algo. Registrar un pico que no quitó nada haría
                     // que el rival borrara una planta que en tu pantalla sigue.
-                    const seq = roomId ? ++ordenRef.current : undefined
-                    const casilla = digPlant({ lane: lane.id, col }, seq)
+                    const nextSeq = roomId ? ordenRef.current + 1 : undefined
+                    const casilla = digPlant({ lane: lane.id, col }, nextSeq)
                     if (casilla) {
+                      if (roomId && typeof nextSeq === 'number') ordenRef.current = nextSeq
+                      setSelectedCard(null, null)
                       lastCellPlantTimeRef.current.delete(`${casilla.lane}-${casilla.col}`)
                       if (typeof navigator !== 'undefined' && navigator.vibrate) {
                         try { navigator.vibrate(15) } catch {}
                       }
-                      registrarExcavacion(casilla.lane, casilla.col, casilla.tick, seq)
+                      registrarExcavacion(casilla.lane, casilla.col, casilla.tick, nextSeq)
                     }
                   } else {
                     const carta = selectedCard
@@ -1705,9 +1707,11 @@ export default function Battlefield({
                         : (carta ? effectiveDeck.indexOf(carta) : 0)
                       resolvedSlot = slot >= 0 ? slot : 0
                     }
-                    const seq = roomId ? ++ordenRef.current : undefined
-                    const enTic = placePlant(lane.id, col, carta, resolvedSlot, seq)
+                    const nextSeq = roomId ? ordenRef.current + 1 : undefined
+                    const enTic = placePlant(lane.id, col, carta, resolvedSlot, nextSeq)
                     if (enTic !== null) {
+                      if (roomId && typeof nextSeq === 'number') ordenRef.current = nextSeq
+                      setSelectedCard(null, null)
                       if (!isWalkingPlantCard) {
                         lastCellPlantTimeRef.current.set(cellKey, Date.now())
                       }
@@ -1715,7 +1719,7 @@ export default function Battlefield({
                       if (typeof navigator !== 'undefined' && navigator.vibrate) {
                         try { navigator.vibrate(15) } catch {}
                       }
-                      registrarPlantacion(carta, lane.id, col, enTic, resolvedSlot, seq)
+                      registrarPlantacion(carta, lane.id, col, enTic, resolvedSlot, nextSeq)
                     }
                   }
                 }
