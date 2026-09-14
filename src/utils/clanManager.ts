@@ -1124,6 +1124,7 @@ export class ClanManager {
       }
     }
     return {
+      goldPool: 0,
       goldPerMember: 0,
       hasPvpPack: false,
       badge: 'Sin botín',
