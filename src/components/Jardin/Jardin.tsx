@@ -1051,9 +1051,32 @@ export default function Jardin({
                     </div>
                   )}
 
-                  {isUnlocked && !isMaxLevel && (
-                    <>
-                      {hasCopies && hasGold && (
+                  {/* DECISIÓN AL ALCANZAR 5 COPIAS: GERMINAR O FUSIONAR */}
+                  {isUnlocked && hasCopies && (
+                    <div className="jardin-card-decision-row">
+                      {canSproutThisCard && (
+                        <button
+                          type="button"
+                          className="jardin-sprout-btn"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSproutCandidate({
+                              instanceId,
+                              plantId,
+                              name: displayName,
+                              icon: config.icon,
+                              waterCost: sproutWaterCost,
+                              fertCost: sproutFertCost,
+                              childNumber: nextChildNum,
+                            })
+                          }}
+                          title={`Germinar Cría #${nextChildNum} de esta carta`}
+                        >
+                          🌱 GERMINAR
+                        </button>
+                      )}
+
+                      {!isMaxLevel && (
                         <button
                           type="button"
                           className="jardin-fuse-btn"
@@ -1067,51 +1090,12 @@ export default function Jardin({
                               icon: config.icon,
                             })
                           }}
+                          title={`Fusionar y mejorar a Nivel ${level + 1}`}
                         >
-                          🔥 MEJORAR (5/5 + {FUSION_GOLD_COST}💰) ➔ LVL {level + 1}
+                          🔥 FUSIONAR
                         </button>
                       )}
-                      {hasCopies && !hasGold && (
-                        <button
-                          type="button"
-                          className="jardin-fuse-btn jardin-fuse-btn--disabled-gold"
-                          disabled
-                          onClick={(e) => e.stopPropagation()}
-                          title={`Oro insuficiente para mejorar (requiere ${FUSION_GOLD_COST} Oro)`}
-                        >
-                          ⚠️ ORO INSUFICIENTE ({FUSION_GOLD_COST}💰)
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {/* BOTÓN GERMINAR CRÍA DE ESTA CARTA (CADA CARTA PUEDE GERMINAR HASTA 2 CRÍAS) */}
-                  {isUnlocked && canSproutThisCard && (
-                    <button
-                      type="button"
-                      className={`jardin-sprout-btn ${!hasCopies || !hasFarmingItemsForSprout ? 'jardin-sprout-btn--disabled' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSproutCandidate({
-                          instanceId,
-                          plantId,
-                          name: displayName,
-                          icon: config.icon,
-                          waterCost: sproutWaterCost,
-                          fertCost: sproutFertCost,
-                          childNumber: nextChildNum,
-                        })
-                      }}
-                      title={
-                        !hasCopies
-                          ? `Requiere 5 copias para germinar una cría (${copies}/5)`
-                          : !hasFarmingItemsForSprout
-                          ? `Requiere ${sproutWaterCost} Aguas y ${sproutFertCost} Fertilizantes (tienes ${userWater}💧 / ${userFert}🧪)`
-                          : `Germinar Cría #${nextChildNum} de esta carta (${displayName})`
-                      }
-                    >
-                      🌱 GERMINAR CRÍA #{nextChildNum} ({sproutWaterCost}💧 {sproutFertCost}🧪)
-                    </button>
+                    </div>
                   )}
 
                   {isUnlocked && !canSproutThisCard && (
@@ -1136,7 +1120,7 @@ export default function Jardin({
         >
           <div className="jardin-upgrade-modal-card jardin-fuse-confirm-card" onClick={(e) => e.stopPropagation()}>
             <div className="jardin-upgrade-modal-sparkle">✨ ⬆️ ✨</div>
-            <h3 className="jardin-upgrade-modal-title">¿Deseas mejorar esta planta?</h3>
+            <h3 className="jardin-upgrade-modal-title">¿Deseas fusionar esta planta?</h3>
 
             <div className="jardin-fuse-confirm-plant">
               <img src={fuseCandidate.icon} alt={fuseCandidate.name} className="jardin-fuse-confirm-img" />
@@ -1146,16 +1130,33 @@ export default function Jardin({
               </span>
             </div>
 
+            <p style={{ fontSize: '11px', color: '#94a3b8', margin: '8px 0 14px', lineHeight: 1.4, textAlign: 'center' }}>
+              Subirá +1 Nivel y obtendrá una mejora permanente de +15% en una estadística al azar.
+            </p>
+
             <div className="jardin-fuse-confirm-reqs">
               <div className="jardin-fuse-req-item">
                 <span className="jardin-fuse-req-icon">🧩</span>
-                <span className="jardin-fuse-req-text">5 copias</span>
+                <span className="jardin-fuse-req-text">
+                  5 copias (tienes {plantCopies[fuseCandidate.plantId] || 0}/5)
+                </span>
               </div>
               <div className="jardin-fuse-req-item">
                 <span className="jardin-fuse-req-icon">💰</span>
-                <span className="jardin-fuse-req-text">{FUSION_GOLD_COST} Oro</span>
+                <span
+                  className="jardin-fuse-req-text"
+                  style={{ color: (userGold ?? 0) >= FUSION_GOLD_COST ? '#fde047' : '#f87171' }}
+                >
+                  {FUSION_GOLD_COST} Oro (tienes {userGold ?? 0}💰)
+                </span>
               </div>
             </div>
+
+            {(userGold ?? 0) < FUSION_GOLD_COST && (
+              <div style={{ color: '#f87171', fontSize: '11px', fontWeight: 800, marginTop: '10px', textAlign: 'center' }}>
+                ⚠️ Oro insuficiente para fusionar (requiere {FUSION_GOLD_COST} Oro).
+              </div>
+            )}
 
             <div className="jardin-fuse-confirm-actions">
               <button
@@ -1169,10 +1170,10 @@ export default function Jardin({
               <button
                 type="button"
                 className="jardin-upgrade-modal-btn jardin-fuse-btn-confirm"
-                disabled={isFusing}
+                disabled={isFusing || (userGold ?? 0) < FUSION_GOLD_COST || (plantCopies[fuseCandidate.plantId] || 0) < 5}
                 onClick={handleConfirmFuse}
               >
-                {isFusing ? 'MEJORANDO...' : 'MEJORAR'}
+                {isFusing ? 'FUSIONANDO...' : '🔥 FUSIONAR'}
               </button>
             </div>
           </div>

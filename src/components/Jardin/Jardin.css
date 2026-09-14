@@ -1013,6 +1013,23 @@
   margin-top: 2px;
 }
 
+.jardin-card-decision-row {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  margin-top: 3px;
+}
+
+.jardin-card-decision-row .jardin-sprout-btn,
+.jardin-card-decision-row .jardin-fuse-btn {
+  flex: 1;
+  margin-top: 0;
+  padding: 4px 1px;
+  font-size: 7.5px;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
 .jardin-fuse-btn {
   width: 100%;
   background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
