@@ -54,11 +54,16 @@ export default function ProfileModal({
     tokenContract?: string
     network?: string
     rate?: string
+    bonusPercent?: number
+    bonusActive?: boolean
+    bonusExpiresAt?: string | null
   }>({
     treasuryWallet: '0x721622D8cad39621C731eC286D1EA859365A51b8',
     tokenContract: '0x55d398326f99059fF775485246999027B3197955',
     network: 'BNB Smart Chain (BEP20)',
     rate: '1 USDT = 100 GEMAS',
+    bonusPercent: 15,
+    bonusActive: true,
   })
   const [personalWalletInput, setPersonalWalletInput] = useState('')
   const [isRegisteringWallet, setIsRegisteringWallet] = useState(false)
@@ -151,6 +156,9 @@ export default function ProfileModal({
           tokenContract: info.tokenContract,
           network: info.network,
           rate: info.rate,
+          bonusPercent: info.bonusPercent,
+          bonusActive: info.bonusActive,
+          bonusExpiresAt: info.bonusExpiresAt,
         })
         if (info.registeredWallet?.address) {
           setPersonalWalletInput(info.registeredWallet.address)
@@ -921,7 +929,9 @@ export default function ProfileModal({
                 <span className="crypto-network-badge">🟡 RED: BNB Smart Chain (BEP20)</span>
                 <span className="crypto-token-badge">💵 TOKEN: USDT</span>
                 <span className="crypto-rate-badge">💎 1 USDT = 100 GEMAS</span>
-                <span className="crypto-bonus-badge">🔥 +15% BONO EXTRA</span>
+                {depositInfo.bonusActive && Number(depositInfo.bonusPercent ?? 0) > 0 && (
+                  <span className="crypto-bonus-badge">🔥 +{depositInfo.bonusPercent}% BONO EXTRA</span>
+                )}
               </div>
 
               <div className="crypto-treasury-address-box">

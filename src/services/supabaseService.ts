@@ -4083,7 +4083,7 @@ export const SupabaseService = {
     }
   },
 
-  /** Obtiene la información de depósito: wallet oficial del juego, contrato USDT y wallet registrada */
+  /** Obtiene la información de depósito: wallet oficial del juego, contrato USDT, wallet registrada y estado del bono temporal */
   async getDepositInfo(): Promise<{
     success: boolean
     registeredWallet?: { id: string; address: string; normalized: string; status: string; createdAt: string } | null
@@ -4091,6 +4091,9 @@ export const SupabaseService = {
     tokenContract?: string
     network?: string
     rate?: string
+    bonusPercent?: number
+    bonusActive?: boolean
+    bonusExpiresAt?: string | null
     error?: string
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'NO_SUPABASE' }
