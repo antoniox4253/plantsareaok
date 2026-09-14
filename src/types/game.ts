@@ -183,6 +183,7 @@ export interface PlantCardInstance {
   statRolls: import('../utils/gameConstants').PlantStatKey[]
   isBase?: boolean
   obtainedAt?: number
+  germinationsCount?: number
 }
 
 export type ColosseumBetAmount = 50 | 100 | 200

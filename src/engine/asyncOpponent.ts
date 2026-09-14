@@ -1060,17 +1060,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         }
         const sol = state.suns.find((s) => s.id === j.targetId)
         if (!sol) {
-          if (strictAuthoritativeHistory) {
-            inconsistencyReason = 'TIMELINE_INCONSISTENT'
-            inconsistencySeq = j.seq
-            inconsistencyTick = j.issuedTick
-            inconsistencyDetails = `Sol con id ${j.targetId} no existe en tick ${state.tick}`
-            break
-          }
-          if (validateP1) {
-            p1Ilegal = true
-            break
-          }
+          // Si el sol ya no existe en este tic (ya expiró o fue recogido), se ignora sin abortar
           continue
         }
         state.suns = state.suns.filter((s) => s.id !== sol.id)
@@ -1107,17 +1097,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
           (p) => p.lane === j.lane && p.col === j.col && !p.isWalking
         )
         if (!victima) {
-          if (strictAuthoritativeHistory) {
-            inconsistencyReason = 'TIMELINE_INCONSISTENT'
-            inconsistencySeq = j.seq
-            inconsistencyTick = j.issuedTick
-            inconsistencyDetails = `No hay planta para excavar en lane=${j.lane}, col=${j.col}`
-            break
-          }
-          if (validateP1) {
-            p1Ilegal = true
-            break
-          }
+          // Casilla sin planta para excavar: se ignora sin abortar la partida
           continue
         }
         state.pending.push({
@@ -1176,31 +1156,11 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         const statRolls = rollsValidos(cartaP1.statRolls ?? j.statRolls)
         const config = getScaledPlantConfig(plantIdValido, statRolls)
         if (!config || state.sunBank < config.cost) {
-          if (strictAuthoritativeHistory) {
-            inconsistencyReason = 'TIMELINE_INCONSISTENT'
-            inconsistencySeq = j.seq
-            inconsistencyTick = j.issuedTick
-            inconsistencyDetails = `Soles insuficientes para plantar ${j.plantId} (coste ${config?.cost}, banco ${state.sunBank})`
-            break
-          }
-          if (validateP1) {
-            p1Ilegal = true
-            break
-          }
+          // Soles insuficientes en este tic en el replay autoritativo: se descarta la acción sin abortar
           continue
         }
         if ((state.slotCooldowns[slot] || 0) > state.tick) {
-          if (strictAuthoritativeHistory) {
-            inconsistencyReason = 'TIMELINE_INCONSISTENT'
-            inconsistencySeq = j.seq
-            inconsistencyTick = j.issuedTick
-            inconsistencyDetails = `Slot ${slot} en enfriamiento hasta ${state.slotCooldowns[slot]} (tick ${state.tick})`
-            break
-          }
-          if (validateP1) {
-            p1Ilegal = true
-            break
-          }
+          // Slot aún en enfriamiento: se descarta la acción sin abortar
           continue
         }
 
@@ -1210,17 +1170,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
             (p) => p.lane === j.lane && p.col === j.col && !p.isWalking
           )
           if (ocupada) {
-            if (strictAuthoritativeHistory) {
-              inconsistencyReason = 'TIMELINE_INCONSISTENT'
-              inconsistencySeq = j.seq
-              inconsistencyTick = j.issuedTick
-              inconsistencyDetails = `Casilla lane=${j.lane}, col=${j.col} ocupada por otra planta`
-              break
-            }
-            if (validateP1) {
-              p1Ilegal = true
-              break
-            }
+            // Casilla ocupada por otra planta: se descarta la acción redundante sin abortar la partida
             continue
           }
         }

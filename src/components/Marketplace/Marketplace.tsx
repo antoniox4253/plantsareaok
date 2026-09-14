@@ -615,11 +615,18 @@ export default function Marketplace({
       return
     }
 
+    const sameSpeciesCount = (plantInstances || []).filter((i) => i.plantId === selectedItem.plantId).length
+    const isLastInstance = sameSpeciesCount <= 1
+
+    const copyWarning = isLastInstance
+      ? `🔥 ¡ADVERTENCIA CRÍTICA! Esta es tu ÚNICA carta de "${selectedItem.name}". Al ponerla en venta, se quemarán tus copias acumuladas de esta planta para mantener el juego justo y prevenir exploits.\n\n`
+      : `ℹ️ Posees ${sameSpeciesCount} cartas de "${selectedItem.name}". Al vender esta, conservarás tus otras cartas y tus copias acumuladas se mantendrán intactas en tu cuenta.\n\n`
+
     showModalConfirm(
       '⚠️ ¿VENDER TU CARTA DE PLANTA?',
       `Vas a poner en venta tu carta jugable "${selectedItem.name}" (Nivel ${selectedItem.level}) por ${sellPriceGems} 💎.\n\n` +
-        `❌ ¡ATENCIÓN! NO estás vendiendo copias. Las copias NO se venden en el mercado (las copias solo sirven para FUSIÓN y mejoras de nivel +15% stats).\n\n` +
-        `⚠️ Venderás tu PLANTA ÚNICA: se retirará de tu Jardín. Si otro jugador la compra, dejará de pertenecerte (solo podrás tener otra si la compras a otro jugador).\n\n` +
+        `❌ ¡ATENCIÓN! NO estás vendiendo copias sueltas. Venderás esta carta de tu Jardín.\n\n` +
+        copyWarning +
         `• Al comprador se le descuenta el 100% (${sellPriceGems} 💎).\n` +
         `• La comisión retenida por el juego es del ${split.comisionPct}% (${split.comision} 💎).\n` +
         `• Recibirás el 90% neto (${split.neto} 💎) al concretarse la venta.\n\n` +

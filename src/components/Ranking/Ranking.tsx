@@ -2154,17 +2154,17 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                   </div>
                 )}
 
-                {/* SECCIÓN PREMIOS: QUÉ GANA CADA UNO */}
+                {/* SECCIÓN PREMIOS: QUÉ GANA EL CLAN */}
                 <div className="clan-modal-prize-box">
                   <div className="clan-modal-prize-heading">
-                    🎁 ¿QUÉ GANA CADA MIEMBRO A LAS 00:00 UTC?
+                    🎁 BOTÍN DIARIO A LAS 00:00 UTC
                   </div>
                   <div className="clan-modal-reward-cards">
                     <div className="clan-modal-reward-card">
                       <span className="clan-modal-reward-icon">💰</span>
                       <div className="clan-modal-reward-text">
-                        <strong>{ClanManager.getDailyRewardsForRank(selectedClanReward.rank).goldPerMember} Oro</strong>
-                        <small>Para cada integrante del clan</small>
+                        <strong>Pozo de {ClanManager.getDailyRewardsForRank(selectedClanReward.rank).goldPool} Oro 💰</strong>
+                        <small>El pozo de oro se reparte entre los integrantes del clan</small>
                       </div>
                     </div>
                     {selectedClanReward.rank === 1 && (
@@ -2298,39 +2298,39 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                 {/* COLUMNA 2: BOTÍN DIARIO A CADA INTEGRANTE */}
                 <div className="clan-rewards-modal-column">
                   <div className="clan-modal-prize-heading">
-                    🎁 BOTÍN DIARIO A CADA INTEGRANTE (00:00 UTC)
+                    🎁 BOTÍN DIARIO DE CLANES (00:00 UTC)
                   </div>
                   <p className="clan-modal-subdesc">
-                    Todos los días a las <strong>00:00 UTC</strong>, los clanes activos en la tabla reciben botín según el daño acumulado:
+                    Todos los días a las <strong>00:00 UTC</strong>, los clanes activos reciben un <strong>pozo de oro que se reparte equitativamente entre los integrantes del clan</strong> según el daño acumulado:
                   </p>
 
                   <div className="clan-all-prizes-list">
                     <div className="clan-prize-tier-row clan-prize-tier-row--gold">
                       <div className="clan-prize-tier-rank">🥇 TOP 1</div>
                       <div className="clan-prize-tier-detail">
-                        <strong>500 Oro c/u + ⚔️ Pack PvP Campeón</strong>
-                        <small>Pack exclusivo con temporizador estricto de 5 minutos</small>
+                        <strong>Pozo de 500 Oro + ⚔️ Pack PvP Campeón</strong>
+                        <small style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>El pozo de oro se reparte entre los integrantes del clan</small>
                       </div>
                     </div>
                     <div className="clan-prize-tier-row clan-prize-tier-row--silver">
                       <div className="clan-prize-tier-rank">🥈 TOP 2</div>
                       <div className="clan-prize-tier-detail">
-                        <strong>200 Oro c/u</strong>
-                        <small>Para todos los miembros del clan</small>
+                        <strong>Pozo de 200 Oro</strong>
+                        <small style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>El pozo de oro se reparte entre los integrantes del clan</small>
                       </div>
                     </div>
                     <div className="clan-prize-tier-row clan-prize-tier-row--bronze">
                       <div className="clan-prize-tier-rank">🥉 TOP 3</div>
                       <div className="clan-prize-tier-detail">
-                        <strong>100 Oro c/u</strong>
-                        <small>Para todos los miembros del clan</small>
+                        <strong>Pozo de 100 Oro</strong>
+                        <small style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>El pozo de oro se reparte entre los integrantes del clan</small>
                       </div>
                     </div>
                     <div className="clan-prize-tier-row">
                       <div className="clan-prize-tier-rank">🎖️ TOP 4-10</div>
                       <div className="clan-prize-tier-detail">
-                        <strong>50 Oro c/u</strong>
-                        <small>Para todos los miembros del clan</small>
+                        <strong>Pozo de 50 Oro</strong>
+                        <small style={{ display: 'block', color: '#94a3b8', fontSize: '10px' }}>El pozo de oro se reparte entre los integrantes del clan</small>
                       </div>
                     </div>
                   </div>

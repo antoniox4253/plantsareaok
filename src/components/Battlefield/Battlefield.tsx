@@ -366,6 +366,7 @@ export default function Battlefield({
   const [clockSyncError, setClockSyncError] = useState<string | null>(null)
   const matchClockGenRef = useRef<number>(0)
   const startedGensRef = useRef<Set<number>>(new Set())
+  const lastCellPlantTimeRef = useRef<Map<string, number>>(new Map())
 
   const syncAndStartMatchClock = useCallback((targetRoomId: string) => {
     matchClockGenRef.current += 1
@@ -1663,6 +1664,7 @@ export default function Battlefield({
                     const seq = roomId ? ++ordenRef.current : undefined
                     const casilla = digPlant({ lane: lane.id, col }, seq)
                     if (casilla) {
+                      lastCellPlantTimeRef.current.delete(`${casilla.lane}-${casilla.col}`)
                       if (typeof navigator !== 'undefined' && navigator.vibrate) {
                         try { navigator.vibrate(15) } catch {}
                       }
@@ -1670,6 +1672,14 @@ export default function Battlefield({
                     }
                   } else {
                     const carta = selectedCard
+                    const cellKey = `${lane.id}-${col}`
+                    if (!isWalkingPlantCard) {
+                      const lastTime = lastCellPlantTimeRef.current.get(cellKey) || 0
+                      if (Date.now() - lastTime < 750) {
+                        return
+                      }
+                    }
+
                     let resolvedSlot = 0
                     if (mazoMioParsed && mazoMioParsed.length > 0) {
                       if (
@@ -1698,6 +1708,9 @@ export default function Battlefield({
                     const seq = roomId ? ++ordenRef.current : undefined
                     const enTic = placePlant(lane.id, col, carta, resolvedSlot, seq)
                     if (enTic !== null) {
+                      if (!isWalkingPlantCard) {
+                        lastCellPlantTimeRef.current.set(cellKey, Date.now())
+                      }
                       recordPlantPlacement(carta)
                       if (typeof navigator !== 'undefined' && navigator.vibrate) {
                         try { navigator.vibrate(15) } catch {}
@@ -2071,7 +2084,7 @@ export default function Battlefield({
           )
         )
         const esVictoriaFinal = roomId
-          ? (esVictoriaServidor || (!esDerrotaServidor && gameStatus === 'victory'))
+          ? (esVictoriaServidor || (!esperandoConfirmacionServidor && !esDerrotaServidor && gameStatus === 'victory'))
           : (gameStatus === 'victory')
 
         return (
@@ -2097,7 +2110,9 @@ export default function Battlefield({
               onClick={(e) => e.stopPropagation()}
             >
               <h2 className="game-card__title">
-                {resultadoEnRevision
+                {esperandoConfirmacionServidor
+                  ? '⚔️ VALIDANDO COMBATE...'
+                  : resultadoEnRevision
                   ? '🛡️ COMBATE EN ARBITRAJE'
                   : resultadoEmpatado
                   ? '🤝 ¡EMPATE TÁCTICO!'

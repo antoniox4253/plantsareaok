@@ -513,6 +513,35 @@ export function useInventory() {
     return await fusePlantOnServer(target.instanceId)
   }
 
+  const sproutPlantInstance = async (
+    plantId: PlantId,
+    instanceId?: string
+  ): Promise<{
+    success: boolean
+    instanceId?: string
+    plantId?: string
+    childNumber?: number
+    copiesRemaining?: number
+    waterSpent?: number
+    fertilizerSpent?: number
+    error?: string
+  }> => {
+    const res = await inventoryService.sproutPlantInstance(instanceId, plantId)
+    if (!res.success) return { success: false, error: res.error }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('refresh_user_inventory'))
+    }
+    return {
+      success: true,
+      instanceId: res.instanceId,
+      plantId: res.plantId,
+      childNumber: res.childNumber,
+      copiesRemaining: res.copiesRemaining,
+      waterSpent: res.waterSpent,
+      fertilizerSpent: res.fertilizerSpent,
+    }
+  }
+
   /**
    * Arranca en false, no en lo que diga localStorage.
    *
@@ -1000,6 +1029,7 @@ export function useInventory() {
         level: i.level,
         statRolls: (i.statRolls || []) as PlantStatKey[],
         isBase: i.isBase,
+        germinationsCount: i.germinationsCount ?? 0,
         obtainedAt: i.obtainedAt,
       }))
     )
@@ -1500,6 +1530,7 @@ export function useInventory() {
     openPackByType,
     openMultiplePacksByInstanceIds,
     fuseAndUpgradePlant,
+    sproutPlantInstance,
     buyVipPass,
     claimPassReward,
     claimAllPassRewards,

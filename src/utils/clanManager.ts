@@ -1085,37 +1085,41 @@ export class ClanManager {
   /**
    * Cálculo de Recompensas Diarias por puesto (Top 10 a las 00:00 UTC)
    */
-  static getDailyRewardsForRank(rank: number): { goldPerMember: number; hasPvpPack: boolean; badge: string; text: string } {
+  static getDailyRewardsForRank(rank: number): { goldPool: number; goldPerMember: number; hasPvpPack: boolean; badge: string; text: string } {
     if (rank === 1) {
       return {
+        goldPool: 500,
         goldPerMember: 500,
         hasPvpPack: true,
-        badge: '500 💰 + ⚔️ Pack PvP',
-        text: '500 Oro / miembro + ⚔️ Pack PvP Campeón',
+        badge: '500 💰 Oro + ⚔️ Pack PvP',
+        text: 'Pozo de 500 Oro a repartir + ⚔️ Pack PvP Campeón',
       }
     }
     if (rank === 2) {
       return {
+        goldPool: 200,
         goldPerMember: 200,
         hasPvpPack: false,
         badge: '200 💰 Oro',
-        text: '200 Oro / miembro',
+        text: 'Pozo de 200 Oro a repartir entre integrantes',
       }
     }
     if (rank === 3) {
       return {
+        goldPool: 100,
         goldPerMember: 100,
         hasPvpPack: false,
         badge: '100 💰 Oro',
-        text: '100 Oro / miembro',
+        text: 'Pozo de 100 Oro a repartir entre integrantes',
       }
     }
     if (rank >= 4 && rank <= 10) {
       return {
+        goldPool: 50,
         goldPerMember: 50,
         hasPvpPack: false,
         badge: '50 💰 Oro',
-        text: '50 Oro / miembro',
+        text: 'Pozo de 50 Oro a repartir entre integrantes',
       }
     }
     return {

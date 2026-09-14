@@ -216,6 +216,7 @@ function App() {
     instantUnlockRewardPack,
     openRewardPack,
     fuseAndUpgradePlant,
+    sproutPlantInstance,
     buyVipPass,
     claimPassReward,
     claimAllPassRewards,
@@ -1354,6 +1355,7 @@ function App() {
             onInstantUnlockRewardPack={instantUnlockRewardPack}
             onOpenRewardPack={handleOpenRewardPack}
             onFusePlant={fuseAndUpgradePlant}
+            onSproutPlant={sproutPlantInstance}
             isAdmin={isAdmin}
             onOpenAdmin={() => setIsAdminPanelOpen(true)}
             onRewardsChanged={refreshFromServer}

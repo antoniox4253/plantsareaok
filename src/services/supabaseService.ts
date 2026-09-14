@@ -3300,6 +3300,7 @@ export const SupabaseService = {
       isInDeck: boolean
       deckSlot: number | null
       isListed: boolean
+      germinationsCount?: number
       obtainedAt: number
     }[]
     copies: Record<string, number>
@@ -3800,6 +3801,37 @@ export const SupabaseService = {
       return data
     } catch (e: any) {
       logError('fusePlant', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Germina una nueva instancia de planta (hasta 2 crías por carta): 5 copias + recursos de cultivo. */
+  async sproutPlantInstance(instanceId?: string, plantId?: string): Promise<{
+    success: boolean
+    instanceId?: string
+    parentInstanceId?: string
+    plantId?: string
+    childNumber?: number
+    copiesRemaining?: number
+    waterSpent?: number
+    fertilizerSpent?: number
+    remainingWater?: number
+    remainingFertilizer?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('sprout_plant_instance', {
+        p_instance_id: instanceId || null,
+        p_plant_id: plantId || null,
+      })
+      if (error) {
+        logError('sproutPlantInstance', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('sproutPlantInstance', e)
       return { success: false, error: e?.message }
     }
   },

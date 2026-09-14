@@ -17,6 +17,7 @@ export const inventoryService = {
   buyVipPass: SupabaseService.buyVipPass.bind(SupabaseService),
   openPack: SupabaseService.openPack.bind(SupabaseService),
   fusePlant: SupabaseService.fusePlant.bind(SupabaseService),
+  sproutPlantInstance: SupabaseService.sproutPlantInstance.bind(SupabaseService),
   awardVictoryChest: SupabaseService.awardVictoryChest.bind(SupabaseService),
   claimPackSlot: SupabaseService.claimPackSlot.bind(SupabaseService),
   instantUnlockPackSlot: SupabaseService.instantUnlockPackSlot.bind(SupabaseService),

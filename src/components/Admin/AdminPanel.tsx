@@ -155,10 +155,10 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     if (
       !confirm(
         '¿Estás seguro de ejecutar y confirmar el reparto diario de clanes (00:00 UTC) para el Top 10?\n\n' +
-          '• Top 1: 500 Oro para CADA miembro + 1x Pack PvP (límite 5 min)\n' +
-          '• Top 2: 200 Oro para CADA miembro\n' +
-          '• Top 3: 100 Oro para CADA miembro\n' +
-          '• Top 4-10: 50 Oro para CADA miembro\n\n' +
+          '• Top 1: Pozo de 500 Oro a repartir entre integrantes + 1x Pack PvP (límite 5 min)\n' +
+          '• Top 2: Pozo de 200 Oro a repartir entre integrantes\n' +
+          '• Top 3: Pozo de 100 Oro a repartir entre integrantes\n' +
+          '• Top 4-10: Pozo de 50 Oro a repartir entre integrantes\n\n' +
           'Se acreditará inmediatamente el oro a los perfiles y se reiniciará el daño diario.'
       )
     )
@@ -2454,7 +2454,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             <div className="admin-alert-banner" style={{ borderColor: '#ef4444' }}>
               🛡️ <strong>Gestión Autoritativa de Recompensas de Clanes (Daño a Clanes Rivales)</strong>
               <br />
-              • <strong>Diaria (00:00 UTC) Top 10:</strong> Top 1 (500 💰 c/u + ⚔️ Pack PvP Campeón), Top 2 (200 💰 c/u), Top 3 (100 💰 c/u), Top 4-10 (50 💰 c/u).
+              • <strong>Diaria (00:00 UTC) Top 10:</strong> Top 1: 500 💰 para el clan + ⚔️ Pack PvP Campeón, Top 2: 200 💰 para el clan, Top 3: 100 💰 para el clan, Top 4-10: 50 💰 para el clan.
               <br />
               • <strong>Fin de Temporada:</strong> Reparto de Pozo en Gemas 💎 a los 5 clanes con mayor daño acumulado de temporada.
             </div>

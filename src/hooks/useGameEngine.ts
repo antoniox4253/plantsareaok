@@ -1044,11 +1044,12 @@ export function useGameEngine() {
         if (slotIdx === null && (state.cooldowns[card] || 0) > state.tick) return null
       }
 
-      // Check cell occupancy for static plants
+      // Check cell occupancy for static plants (both already sprouted and pending in flight)
       const isWalkingUnit = config.category === 'melee' || !!config.moveSpeed || card === 'chomper'
       if (!isWalkingUnit) {
         const existing = state.plants.find((p) => p.lane === lane && p.col === col && !p.isWalking)
-        if (existing) return null
+        const pendingSprout = state.pending.find((p) => p.kind === 'own_plant' && p.lane === lane && p.col === col)
+        if (existing || pendingSprout) return null
       }
 
       // ── LO QUE SE PLANTA VA A LA COLA, NO AL CAMPO ─────────────────────────

@@ -1033,6 +1033,47 @@
   50% { border-color: #fef08a; transform: scale(1.03); }
 }
 
+.jardin-sprout-btn {
+  width: 100%;
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  border: 1px solid #38bdf8;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 3px 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 3px;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  animation: sproutPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes sproutPulse {
+  0%, 100% { border-color: #38bdf8; transform: scale(1); }
+  50% { border-color: #7dd3fc; transform: scale(1.02); }
+}
+
+.jardin-sprout-btn--disabled {
+  background: #334155;
+  border-color: #64748b;
+  color: #94a3b8;
+  animation: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.jardin-card-max-instances-tag {
+  font-size: 7px;
+  font-weight: 800;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 1px 3px;
+  border-radius: 4px;
+  margin-top: 3px;
+  text-align: center;
+}
+
 /* UPGRADE CELEBRATION MODAL */
 .jardin-upgrade-modal-overlay {
   position: fixed;

@@ -70,6 +70,16 @@ interface JardinProps {
     rolledStatLabel?: string
     error?: string
   }>
+  onSproutPlant?: (plantId: PlantId, instanceId?: string) => Promise<{
+    success: boolean
+    instanceId?: string
+    plantId?: string
+    childNumber?: number
+    copiesRemaining?: number
+    waterSpent?: number
+    fertilizerSpent?: number
+    error?: string
+  }>
   // Los callbacks de recompensa (onAddTokens, onAddGold, onAddPacks,
   // onReceivePlant, onDeductTokens) se eliminaron: la lotería era su único
   // consumidor aquí, y ya no concede nada desde el cliente.
@@ -103,6 +113,7 @@ export default function Jardin({
   onInstantUnlockRewardPack,
   onOpenRewardPack,
   onFusePlant,
+  onSproutPlant,
   isAdmin,
   onOpenAdmin,
   onRewardsChanged,
@@ -176,6 +187,50 @@ export default function Jardin({
     }
   }
 
+  const [sproutCandidate, setSproutCandidate] = useState<{
+    instanceId: string
+    plantId: PlantId
+    name: string
+    icon: string
+    waterCost: number
+    fertCost: number
+    childNumber: number
+  } | null>(null)
+  const [isSprouting, setIsSprouting] = useState(false)
+
+  const handleConfirmSprout = async () => {
+    if (!sproutCandidate || !onSproutPlant || isSprouting) return
+    setIsSprouting(true)
+    try {
+      soundManager.playSound('plantation', 0.9)
+      const candidate = sproutCandidate
+      const res = await onSproutPlant(candidate.plantId, candidate.instanceId)
+      setSproutCandidate(null)
+      if (res?.success) {
+        setFuseAlert({
+          title: '¡NUEVA PLANTA GERMINADA!',
+          message: `Has germinado con éxito la Cría #${candidate.childNumber} de ${candidate.name}. ¡Ya está disponible en tu Jardín como una carta independiente!`,
+          icon: '🌱',
+        })
+      } else if (res && !res.success && res.error) {
+        setFuseAlert({
+          title: 'NO SE PUDO GERMINAR',
+          message: res.error,
+          icon: '⚠️',
+        })
+      }
+    } catch (err: any) {
+      setSproutCandidate(null)
+      setFuseAlert({
+        title: 'ERROR AL GERMINAR',
+        message: err?.message || 'Error inesperado al germinar la planta',
+        icon: '⚠️',
+      })
+    } finally {
+      setIsSprouting(false)
+    }
+  }
+
   const [openQuantities, setOpenQuantities] = useState<Record<string, number>>({})
   const [isFarmingCollapsed, setIsFarmingCollapsed] = useState<boolean>(() => {
     try {
@@ -236,6 +291,7 @@ export default function Jardin({
       statRolls: PlantStatKey[]
       isBase: boolean
       isUnlocked: boolean
+      germinationsCount: number
     }[] = []
 
     ALL_PLANTS.forEach((plantId) => {
@@ -249,6 +305,7 @@ export default function Jardin({
           statRolls: [],
           isBase: true,
           isUnlocked: false,
+          germinationsCount: 0,
         })
         return
       }
@@ -263,6 +320,7 @@ export default function Jardin({
             statRolls: inst.statRolls || [],
             isBase: inst.isBase ?? false,
             isUnlocked: true,
+            germinationsCount: inst.germinationsCount ?? 0,
           })
         })
       } else {
@@ -274,6 +332,7 @@ export default function Jardin({
           statRolls: plantStatRolls[plantId] || [],
           isBase: true,
           isUnlocked: true,
+          germinationsCount: 0,
         })
       }
     })
@@ -349,13 +408,34 @@ export default function Jardin({
       onUpdateDeck(plantIds, next)
       setSelectedSlotIndex(null)
     } else {
+      // Verificar si ya hay otra instancia de la misma especie en el mazo
+      const existingSameSpeciesIndex = deckInstanceIds.findIndex((id) => {
+        const c = displayedCards.find((cardItem) => cardItem.instanceId === id)
+        return c?.plantId === card.plantId
+      })
+
       if (selectedSlotIndex !== null) {
-        const next = [...deckInstanceIds]
+        let next = [...deckInstanceIds]
+        // Si la misma especie ya estaba en otro slot distinto, removerla para que no haya duplicados
+        if (existingSameSpeciesIndex !== -1 && existingSameSpeciesIndex !== selectedSlotIndex) {
+          next = next.filter((_, idx) => idx !== existingSameSpeciesIndex)
+        }
         if (selectedSlotIndex < next.length) {
           next[selectedSlotIndex] = card.instanceId
         } else if (next.length < 6) {
           next.push(card.instanceId)
         }
+        setDeckInstanceIds(next)
+        const plantIds = next
+          .map((id) => displayedCards.find((c) => c.instanceId === id)?.plantId)
+          .filter(Boolean) as PlantId[]
+        setDeck(plantIds)
+        onUpdateDeck(plantIds, next)
+        setSelectedSlotIndex(null)
+      } else if (existingSameSpeciesIndex !== -1) {
+        // Si ya está esa especie en el mazo, reemplazarla en su slot por esta nueva instancia
+        const next = [...deckInstanceIds]
+        next[existingSameSpeciesIndex] = card.instanceId
         setDeckInstanceIds(next)
         const plantIds = next
           .map((id) => displayedCards.find((c) => c.instanceId === id)?.plantId)
@@ -823,9 +903,16 @@ export default function Jardin({
                         <span>{config.cost}</span>
                       </div>
                       <img src={config.icon} alt={config.name} className="jardin-slot__img" />
-                      <span className="jardin-slot__name">
-                        {config.name} {card.level > 0 ? `(L${card.level})` : ''}
-                      </span>
+                      {(() => {
+                        const instancesOfThis = plantInstances.filter((i) => i.plantId === card.plantId)
+                        const idxInOwned = instancesOfThis.findIndex((i) => i.instanceId === card.instanceId)
+                        const slotNumPrefix = instancesOfThis.length > 1 && idxInOwned !== -1 ? ` #${idxInOwned + 1}` : ''
+                        return (
+                          <span className="jardin-slot__name">
+                            {config.name}{slotNumPrefix} {card.level > 0 ? `(L${card.level})` : ''}
+                          </span>
+                        )
+                      })()}
                     </div>
                   ) : (
                     <div className="jardin-slot__placeholder">
@@ -867,6 +954,20 @@ export default function Jardin({
               const isMaxLevel = level >= maxLvl
               const hasCopies = copies >= FUSION_COPIES_REQ
               const hasGold = (userGold ?? 0) >= FUSION_GOLD_COST
+
+              const instancesOfThisPlant = plantInstances.filter((i) => i.plantId === plantId)
+              const instanceIndex = instancesOfThisPlant.findIndex((i) => i.instanceId === instanceId)
+              const instanceNum = instanceIndex !== -1 ? instanceIndex + 1 : 1
+              const displayName = instancesOfThisPlant.length > 1 ? `${config.name} #${instanceNum}` : config.name
+
+              const currentSprouts = card.germinationsCount ?? 0
+              const canSproutThisCard = currentSprouts < 2
+              const nextChildNum = currentSprouts + 1
+              const sproutWaterCost = nextChildNum === 1 ? 10 : 12
+              const sproutFertCost = nextChildNum === 1 ? 5 : 7
+              const userWater = farmingItems?.water ?? 0
+              const userFert = farmingItems?.fertilizer ?? 0
+              const hasFarmingItemsForSprout = userWater >= sproutWaterCost && userFert >= sproutFertCost
 
               return (
                 <div
@@ -917,7 +1018,7 @@ export default function Jardin({
                     className={`jardin-card__img ${!isUnlocked ? 'jardin-card__img--locked' : ''}`}
                   />
 
-                  <span className="jardin-card__name">{config.name}</span>
+                  <span className="jardin-card__name">{displayName}</span>
                   <span className="jardin-card__cat">
                     {!isUnlocked
                       ? '🔒 Bloqueada'
@@ -962,7 +1063,7 @@ export default function Jardin({
                               plantId,
                               instanceId,
                               level,
-                              name: config.name,
+                              name: displayName,
                               icon: config.icon,
                             })
                           }}
@@ -982,6 +1083,41 @@ export default function Jardin({
                         </button>
                       )}
                     </>
+                  )}
+
+                  {/* BOTÓN GERMINAR CRÍA DE ESTA CARTA (CADA CARTA PUEDE GERMINAR HASTA 2 CRÍAS) */}
+                  {isUnlocked && canSproutThisCard && (
+                    <button
+                      type="button"
+                      className={`jardin-sprout-btn ${!hasCopies || !hasFarmingItemsForSprout ? 'jardin-sprout-btn--disabled' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSproutCandidate({
+                          instanceId,
+                          plantId,
+                          name: displayName,
+                          icon: config.icon,
+                          waterCost: sproutWaterCost,
+                          fertCost: sproutFertCost,
+                          childNumber: nextChildNum,
+                        })
+                      }}
+                      title={
+                        !hasCopies
+                          ? `Requiere 5 copias para germinar una cría (${copies}/5)`
+                          : !hasFarmingItemsForSprout
+                          ? `Requiere ${sproutWaterCost} Aguas y ${sproutFertCost} Fertilizantes (tienes ${userWater}💧 / ${userFert}🧪)`
+                          : `Germinar Cría #${nextChildNum} de esta carta (${displayName})`
+                      }
+                    >
+                      🌱 GERMINAR CRÍA #{nextChildNum} ({sproutWaterCost}💧 {sproutFertCost}🧪)
+                    </button>
+                  )}
+
+                  {isUnlocked && !canSproutThisCard && (
+                    <div className="jardin-card-max-instances-tag">
+                      🌱 GERMINADA (2/2)
+                    </div>
                   )}
                 </div>
               )
@@ -1037,6 +1173,96 @@ export default function Jardin({
                 onClick={handleConfirmFuse}
               >
                 {isFusing ? 'MEJORANDO...' : 'MEJORAR'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRMACIÓN DE GERMINACIÓN / NUEVA INSTANCIA */}
+      {sproutCandidate && (
+        <div
+          className="jardin-upgrade-modal-overlay"
+          onClick={() => {
+            if (!isSprouting) setSproutCandidate(null)
+          }}
+        >
+          <div className="jardin-upgrade-modal-card jardin-fuse-confirm-card" onClick={(e) => e.stopPropagation()}>
+            <div className="jardin-upgrade-modal-sparkle">🌱 ✨ 🌿</div>
+            <h3 className="jardin-upgrade-modal-title">¿Germinar cría de planta?</h3>
+
+            <div className="jardin-fuse-confirm-plant">
+              <img src={sproutCandidate.icon} alt={sproutCandidate.name} className="jardin-fuse-confirm-img" />
+              <span className="jardin-fuse-confirm-name">{sproutCandidate.name}</span>
+              <span className="jardin-fuse-confirm-level" style={{ color: '#38bdf8' }}>
+                Germinar Cría #{sproutCandidate.childNumber} (de 2 posibles para esta carta)
+              </span>
+            </div>
+
+            <p style={{ fontSize: '11px', color: '#94a3b8', margin: '8px 0 14px', lineHeight: 1.4, textAlign: 'center' }}>
+              Esta carta generará su cría #{sproutCandidate.childNumber} (cada carta puede germinar un máximo de 2 crías). La nueva planta empezará en Nivel 0 con stats independientes. Podrás usarla en tu mazo (reemplazando la actual), mejorarla por separado o venderla en el Marketplace.
+            </p>
+
+            <div className="jardin-fuse-confirm-reqs">
+              <div className="jardin-fuse-req-item">
+                <span className="jardin-fuse-req-icon">🧩</span>
+                <span className="jardin-fuse-req-text">
+                  5 copias (tienes {plantCopies[sproutCandidate.plantId] || 0}/5)
+                </span>
+              </div>
+              <div className="jardin-fuse-req-item">
+                <span className="jardin-fuse-req-icon">💧</span>
+                <span
+                  className="jardin-fuse-req-text"
+                  style={{ color: (farmingItems?.water ?? 0) >= sproutCandidate.waterCost ? '#38bdf8' : '#f87171' }}
+                >
+                  {sproutCandidate.waterCost} Aguas (tienes {farmingItems?.water ?? 0})
+                </span>
+              </div>
+              <div className="jardin-fuse-req-item">
+                <span className="jardin-fuse-req-icon">🧪</span>
+                <span
+                  className="jardin-fuse-req-text"
+                  style={{ color: (farmingItems?.fertilizer ?? 0) >= sproutCandidate.fertCost ? '#a3e635' : '#f87171' }}
+                >
+                  {sproutCandidate.fertCost} Fertilizantes (tienes {farmingItems?.fertilizer ?? 0})
+                </span>
+              </div>
+            </div>
+
+            {((farmingItems?.water ?? 0) < sproutCandidate.waterCost ||
+              (farmingItems?.fertilizer ?? 0) < sproutCandidate.fertCost ||
+              (plantCopies[sproutCandidate.plantId] || 0) < 5) && (
+              <div style={{ color: '#f87171', fontSize: '11px', fontWeight: 800, marginTop: '10px', textAlign: 'center' }}>
+                ⚠️ No tienes suficientes materiales o copias para germinar esta carta.
+              </div>
+            )}
+
+            <div className="jardin-fuse-confirm-actions">
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-cancel"
+                disabled={isSprouting}
+                onClick={() => setSproutCandidate(null)}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-confirm"
+                style={{
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  borderColor: '#38bdf8',
+                }}
+                disabled={
+                  isSprouting ||
+                  (farmingItems?.water ?? 0) < sproutCandidate.waterCost ||
+                  (farmingItems?.fertilizer ?? 0) < sproutCandidate.fertCost ||
+                  (plantCopies[sproutCandidate.plantId] || 0) < 5
+                }
+                onClick={handleConfirmSprout}
+              >
+                {isSprouting ? 'GERMINANDO...' : '🌱 GERMINAR'}
               </button>
             </div>
           </div>
