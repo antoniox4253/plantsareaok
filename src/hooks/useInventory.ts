@@ -802,24 +802,40 @@ export function useInventory() {
   const donatePlantCopy = (plantId: PlantId): boolean => {
     const current = plantCopies[plantId] || 0
     if (current <= 0) return false
-    setPlantCopies((prev) => ({
-      ...prev,
-      [plantId]: prev[plantId] - 1,
-    }))
+    setPlantCopies((prev) => {
+      const next = {
+        ...prev,
+        [plantId]: Math.max(0, (prev[plantId] || 0) - 1),
+      }
+      try {
+        localStorage.setItem(STORAGE_KEYS.PLANT_COPIES, JSON.stringify(next))
+      } catch {}
+      return next
+    })
     return true
   }
 
   const receivePlantCopy = (plantId: PlantId) => {
     setUnlockedPlants((prev) => {
       if (!prev.includes(plantId)) {
-        return [...prev, plantId]
+        const next = [...prev, plantId]
+        try {
+          localStorage.setItem(STORAGE_KEYS.UNLOCKED_PLANTS, JSON.stringify(next))
+        } catch {}
+        return next
       }
       return prev
     })
-    setPlantCopies((prev) => ({
-      ...prev,
-      [plantId]: (prev[plantId] || 0) + 1,
-    }))
+    setPlantCopies((prev) => {
+      const next = {
+        ...prev,
+        [plantId]: Math.min(5, (prev[plantId] || 0) + 1),
+      }
+      try {
+        localStorage.setItem(STORAGE_KEYS.PLANT_COPIES, JSON.stringify(next))
+      } catch {}
+      return next
+    })
   }
 
   // RECEIVE A FULL PLANT CARD INSTANCE (FROM MARKETPLACE OR CHEST)

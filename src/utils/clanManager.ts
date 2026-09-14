@@ -40,6 +40,7 @@ export interface ClanDonationRequest {
   plantName: string
   plantIcon: string
   copiesRequested: number // Always 1
+  copiesReceived?: number // Up to 3
   donors: { donorId: string; donorName: string }[] // Max 3 donors
   createdAt: number
 }

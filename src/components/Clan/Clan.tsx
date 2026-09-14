@@ -360,6 +360,7 @@ export default function Clan({
             plantName: PLANT_CONFIGS[d.plantId as PlantId]?.name || d.plantId,
             plantIcon: PLANT_CONFIGS[d.plantId as PlantId]?.packetActive || PLANT_CONFIGS[d.plantId as PlantId]?.icon || '',
             copiesRequested: d.copiesRequested || 1,
+            copiesReceived: typeof d.copiesReceived === 'number' ? d.copiesReceived : (d.donors || []).length,
             donors: (d.donors || []).map((dn: any) => ({ donorId: dn.donorId, donorName: dn.donorName })),
             createdAt: new Date(d.createdAt).getTime(),
           })))
@@ -1088,6 +1089,15 @@ export default function Clan({
           showModalAlert('LÍMITE DIARIO', 'Solo puedes realizar una solicitud de semilla cada 24 horas.', '⏳', 'warning')
           return
         }
+        if (res.error === 'MAX_COPIES_REACHED') {
+          showModalAlert(
+            'LÍMITE DE COPIAS ALCANZADO',
+            `Ya posees el tope máximo de 5 copias de ${plantInfo.name}. ¡Puedes germinarla en el jardín o solicitar otra planta!`,
+            '🌱',
+            'warning'
+          )
+          return
+        }
         showModalAlert('ERROR', res.error || 'No se pudo crear la solicitud.', '❌', 'error')
         return
       }
@@ -1135,6 +1145,19 @@ export default function Clan({
         try {
           const res = await supabaseService.donateClanPlantCopy(req.id)
           if (!res.success) {
+            if (res.error === 'REQUESTER_ALREADY_MAX_COPIES') {
+              showModalAlert(
+                'LÍMITE ALCANZADO',
+                `${req.requesterName} ya alcanzó el tope máximo de 5 copias de ${req.plantName}. No puede recibir más copias por ahora.`,
+                '⚠️',
+                'warning'
+              )
+              return
+            }
+            if (res.error === 'NOT_ENOUGH_COPIES') {
+              showModalAlert('SIN COPIAS', `No tienes suficientes copias de ${req.plantName} en tu inventario.`, '⚠️', 'warning')
+              return
+            }
             showModalAlert('ERROR AL DONAR', res.error || 'No se pudo completar la donación en el servidor.', '❌', 'error')
             return
           }
@@ -2135,7 +2158,7 @@ export default function Clan({
                     </div>
                   ) : (
                     donationRequests.map((req) => {
-                      const donorCount = req.donors.length
+                      const donorCount = Math.max(req.donors.length, req.copiesReceived || 0)
                       const isMax = donorCount >= 3
                       const hasDonated = req.donors.some((d) => d.donorName === playerName)
                       const isMe = req.requesterName === playerName
@@ -2543,26 +2566,41 @@ export default function Clan({
                   const p = PLANT_CONFIGS[plantId]
                   const isSelected = selectedRequestPlant === plantId
                   const packetImg = p.packetActive || p.icon
+                  const copies = plantCopies[plantId] || 0
+                  const isMax = copies >= 5
                   return (
                     <button
                       key={plantId}
                       type="button"
-                      className={`clan-plant-picker-card ${isSelected ? 'clan-plant-picker-card--active' : ''}`}
+                      className={`clan-plant-picker-card ${isSelected ? 'clan-plant-picker-card--active' : ''} ${isMax ? 'clan-plant-picker-card--max' : ''}`}
                       onClick={() => setSelectedRequestPlant(plantId)}
                     >
                       <img src={packetImg} alt={p.name} />
                       <span>{p.name}</span>
-                      <small>{plantCopies[plantId] || 0} copias</small>
+                      <small style={{ color: isMax ? '#f59e0b' : undefined, fontWeight: isMax ? 'bold' : 'normal' }}>
+                        {copies}/5 copias {isMax ? '⭐ (MÁX)' : ''}
+                      </small>
                     </button>
                   )
                 })}
             </div>
 
+            {(plantCopies[selectedRequestPlant] || 0) >= 5 && (
+              <p style={{ color: '#f59e0b', fontSize: '0.82rem', marginTop: '8px', textAlign: 'center' }}>
+                ⚠️ Ya posees el tope de 5 copias de esta planta. ¡Germínala en el jardín para liberar espacio o selecciona otra!
+              </p>
+            )}
+
             <div className="clan-modal-actions">
               <button type="button" className="clan-cancel-btn" onClick={() => setShowRequestSeedModal(false)}>
                 CANCELAR
               </button>
-              <button type="button" className="clan-confirm-btn" onClick={handleCreateRequest}>
+              <button
+                type="button"
+                className="clan-confirm-btn"
+                disabled={(plantCopies[selectedRequestPlant] || 0) >= 5}
+                onClick={handleCreateRequest}
+              >
                 PUBLICAR SOLICITUD
               </button>
             </div>
