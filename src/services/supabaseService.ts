@@ -297,26 +297,72 @@ export const SupabaseService = {
       throw new Error('Supabase no está configurado')
     }
     try {
-      // De la VISTA leaderboard con orden determinista rank_position y estadísticas W/L autoritativas
-      let query = supabase
-        .from('leaderboard')
-        .select(LEADERBOARD_COLUMNS)
-        .order('rank_position', { ascending: true })
+      // Si se especifica un límite menor o igual a 1000, consulta directa simple
+      if (typeof limit === 'number' && limit > 0 && limit <= 1000) {
+        let query = supabase
+          .from('leaderboard')
+          .select(LEADERBOARD_COLUMNS)
+          .order('rank_position', { ascending: true })
 
-      if (typeof limit === 'number' && limit > 0) {
-        query = query.limit(limit)
+        if (typeof (query as any).limit === 'function') {
+          query = (query as any).limit(limit)
+        }
+
+        const { data, error } = await query
+        if (error) {
+          logError('getGlobalLeaderboard', error)
+          throw new Error(error.message || 'Error al obtener la tabla de clasificación')
+        }
+        if (!Array.isArray(data)) {
+          throw new Error('Respuesta de clasificación inválida: no es un array')
+        }
+        return data.map((row) => parseLeaderboardRow(row))
       }
 
-      const { data, error } = await query
-      if (error) {
-        logError('getGlobalLeaderboard', error)
-        throw new Error(error.message || 'Error al obtener la tabla de clasificación')
+      // Si no hay limit o limit > 1000, paginamos por rangos para superar el tope
+      // de 1000 filas por defecto de PostgREST y mostrar todas las páginas de la clasificación.
+      const allRows: any[] = []
+      const chunkSize = 1000
+      let from = 0
+      let hasMore = true
+
+      while (hasMore) {
+        const to = from + chunkSize - 1
+        const baseQuery = supabase
+          .from('leaderboard')
+          .select(LEADERBOARD_COLUMNS)
+          .order('rank_position', { ascending: true })
+
+        const queryPromise =
+          typeof (baseQuery as any).range === 'function'
+            ? (baseQuery as any).range(from, to)
+            : baseQuery
+
+        const { data, error } = await queryPromise
+        if (error) {
+          logError('getGlobalLeaderboard', error)
+          throw new Error(error.message || 'Error al obtener la tabla de clasificación')
+        }
+        if (!Array.isArray(data) || data.length === 0) {
+          hasMore = false
+          break
+        }
+
+        allRows.push(...data)
+
+        if (typeof limit === 'number' && limit > 0 && allRows.length >= limit) {
+          allRows.length = limit
+          break
+        }
+
+        if (data.length < chunkSize || typeof (baseQuery as any).range !== 'function') {
+          hasMore = false
+        } else {
+          from += chunkSize
+        }
       }
-      if (!Array.isArray(data)) {
-        throw new Error('Respuesta de clasificación inválida: no es un array')
-      }
-      // Validar cada fila estrictamente con parseLeaderboardRow (frontera única)
-      return data.map((row) => parseLeaderboardRow(row))
+
+      return allRows.map((row) => parseLeaderboardRow(row))
     } catch (e: any) {
       logError('getGlobalLeaderboard', e)
       throw e
@@ -1296,6 +1342,7 @@ export const SupabaseService = {
       eloBefore?: number
       eloAfter?: number
       opponentElo?: number
+      vipGoldBonus?: number
       rawElo?: any
       [k: string]: unknown
     }
@@ -3287,6 +3334,30 @@ export const SupabaseService = {
     } catch (e: any) {
       logError('awardVictoryChest', e)
       return { awarded: false, reason: e?.message }
+    }
+  },
+
+  /**
+   * Reclama el bono aleatorio de 5, 10 o 15 de Oro por victoria exclusivo para usuarios VIP.
+   */
+  async claimVipVictoryGold(): Promise<{
+    success: boolean
+    goldBonus?: number
+    newGoldBalance?: number
+    error?: string
+    reason?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'sin_supabase' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('claim_vip_victory_gold')
+      if (error) {
+        logError('claimVipVictoryGold', error)
+        return { success: false, error: error.message }
+      }
+      return data || { success: false, error: 'sin_respuesta' }
+    } catch (e: any) {
+      logError('claimVipVictoryGold', e)
+      return { success: false, error: e?.message }
     }
   },
 

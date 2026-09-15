@@ -221,6 +221,7 @@ function App() {
     claimPassReward,
     claimAllPassRewards,
     awardVictoryPack,
+    awardVipVictoryGold,
     startUnlockingSlot,
     fastUnlockSlot,
     openSlotPack,
@@ -1113,7 +1114,20 @@ function App() {
       const newElo = userElo + deltas.winElo
       setUserElo(newElo)
       const packResult = await awardVictoryPack(newElo)
-      return { winElo: deltas.winElo, newElo, packResult }
+
+      let vipGoldBonus: number | undefined
+      if (hasVipPass) {
+        try {
+          const bonus = await awardVipVictoryGold()
+          if (bonus > 0) {
+            vipGoldBonus = bonus
+          }
+        } catch (e) {
+          console.warn('[handleBattleComplete] Error obteniendo bono VIP de oro:', e)
+        }
+      }
+
+      return { winElo: deltas.winElo, newElo, packResult, vipGoldBonus }
     } else {
       const gate = getTrophyGateForElo(userElo)
       const newElo = Math.max(gate, userElo - deltas.loseElo)

@@ -83,6 +83,50 @@ describe('SupabaseService Ranking & Match Clock Hardening', () => {
     expect(rows).toEqual([])
   })
 
+  it('getGlobalLeaderboard concatena múltiples lotes si hay más de 1000 filas', async () => {
+    vi.spyOn(supabaseClientModule, 'isSupabaseConfigured').mockReturnValue(true)
+
+    const fakeRow = (id: number) => ({
+      id: `user-${id}`,
+      username: `Player_${id}`,
+      avatar_id: null,
+      country: null,
+      elo_rating: 1000,
+      ranked_wins: 0,
+      ranked_losses: 0,
+      ranked_draws: 0,
+      ranked_games: 0,
+      ranked_win_rate: 0,
+      rank_position: id,
+      colosseum_current_streak: 0,
+      colosseum_max_streak: 0,
+      created_at: new Date().toISOString(),
+    })
+
+    const batch1 = Array.from({ length: 1000 }, (_, i) => fakeRow(i + 1))
+    const batch2 = Array.from({ length: 107 }, (_, i) => fakeRow(1001 + i))
+
+    vi.spyOn(supabaseClientModule.supabase, 'from').mockReturnValue({
+      select: () => ({
+        order: () => ({
+          range: vi.fn().mockImplementation(async (from: number, _to: number) => {
+            if (from === 0) {
+              return { data: batch1, error: null }
+            } else if (from === 1000) {
+              return { data: batch2, error: null }
+            }
+            return { data: [], error: null }
+          }),
+        }),
+      }),
+    } as any)
+
+    const rows = await SupabaseService.getGlobalLeaderboard()
+    expect(rows.length).toBe(1107)
+    expect(rows[0].id).toBe('user-1')
+    expect(rows[1106].id).toBe('user-1107')
+  })
+
   it('startMatchClock lanza error si falla la RPC (fail-closed, NO devuelve null silencioso)', async () => {
     vi.spyOn(supabaseClientModule, 'isSupabaseConfigured').mockReturnValue(true)
     vi.spyOn(supabaseClientModule.supabase, 'rpc').mockResolvedValue({

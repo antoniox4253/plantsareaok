@@ -15,7 +15,6 @@ import { UserManager } from '../../utils/userManager'
 import { supabaseService } from '../../services/supabaseService'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import { clanChatService, type ClanChatMessage } from '../../services/clanChatService'
-import monedaImg from '../../assets/ico/moneda.webp'
 import GoldIcon from '../Common/GoldIcon'
 import './Clan.css'
 

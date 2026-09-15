@@ -738,6 +738,48 @@ export function useInventory() {
     return { awarded: false, isSlotsFull: res.reason === 'huecos_llenos' }
   }
 
+  /**
+   * Bono de victoria exclusivo para usuarios VIP: 5, 10 o 15 de Oro aleatorio.
+   * Si el usuario no tiene Pase VIP, devuelve 0 sin alterar saldos.
+   */
+  const awardVipVictoryGold = async (): Promise<number> => {
+    if (!hasVipPass) {
+      return 0
+    }
+
+    try {
+      const res = await supabaseService.claimVipVictoryGold()
+      if (res.success && typeof res.goldBonus === 'number' && res.goldBonus > 0) {
+        const bonus = res.goldBonus
+        if (typeof res.newGoldBalance === 'number') {
+          setUserGold(res.newGoldBalance)
+          localStorage.setItem('plant_arena_gold', String(res.newGoldBalance))
+        } else {
+          setUserGold((prev) => {
+            const next = (prev ?? 0) + bonus
+            localStorage.setItem('plant_arena_gold', String(next))
+            return next
+          })
+        }
+        window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+        return bonus
+      }
+    } catch (e) {
+      console.warn('[useInventory] Error reclamando bono VIP de oro en Supabase:', e)
+    }
+
+    // Fallback local seguro si tiene hasVipPass activo pero falla la red
+    const fallbackOptions = [5, 10, 15]
+    const fallbackBonus = fallbackOptions[Math.floor(Math.random() * fallbackOptions.length)]
+    setUserGold((prev) => {
+      const next = (prev ?? 0) + fallbackBonus
+      localStorage.setItem('plant_arena_gold', String(next))
+      return next
+    })
+    window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+    return fallbackBonus
+  }
+
   const startUnlockingSlot = (slotId: number): { success: boolean; error?: string } => {
     const isAnyUnlocking = freePackSlots.some((s) => s.status === 'unlocking')
     if (isAnyUnlocking) {
@@ -1564,6 +1606,7 @@ export function useInventory() {
     claimPassReward,
     claimAllPassRewards,
     awardVictoryPack,
+    awardVipVictoryGold,
     startUnlockingSlot,
     fastUnlockSlot,
     openSlotPack,

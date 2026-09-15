@@ -38,6 +38,7 @@ import { StrategicPlaytestPostMatch } from '../StrategicPlaytest/StrategicPlayte
 import type { StrategicPlaytestConfig } from '../../engine/strategicPlaytest'
 import { recordPlantPlacement } from '../../utils/plantUsageTracker'
 import { trackGameOver, trackGameStart } from '../../utils/analytics'
+import GoldIcon from '../Common/GoldIcon'
 import './Battlefield.css'
 
 /** Un segundo antes de que el sol se recoja solo: momento de avisar. */
@@ -335,6 +336,7 @@ export default function Battlefield({
     eloGained?: number
     eloLost?: number
     payout?: number
+    vipGoldBonus?: number
     error?: string
   } | null>(null)
 
@@ -359,6 +361,7 @@ export default function Battlefield({
     eloChange?: number
     newElo?: number
     packResult?: { awarded: boolean; durationHours?: 2 | 4 | 8 | 12; arenaLevel?: number; isSlotsFull?: boolean }
+    vipGoldBonus?: number
     isSurrendered?: boolean
   } | null>(null)
 
@@ -1052,6 +1055,7 @@ export default function Battlefield({
               eloGained,
               eloLost,
               payout: reportRes.payout ?? 0,
+              vipGoldBonus: (reportRes as any)?.vipGoldBonus,
             })
 
             if (typeof eloAfter === 'number' && onServerEloUpdated && matchMode !== 'tournament' && matchMode !== 'friendly') {
@@ -1061,10 +1065,11 @@ export default function Battlefield({
             if (yoGane && onBattleComplete && matchMode !== 'tournament' && matchMode !== 'friendly') {
               try {
                 const res = await onBattleComplete(true)
-                if (res?.packResult) {
+                if (res) {
                   setBattleSummaryResult((prev) => ({
                     ...prev,
                     packResult: res.packResult,
+                    vipGoldBonus: prev?.vipGoldBonus ?? res.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
                   }))
                 }
               } catch (e) {
@@ -1112,6 +1117,7 @@ export default function Battlefield({
             eloGained: liq.eloGained,
             eloLost: liq.eloLost,
             payout: finalPayout,
+            vipGoldBonus: verificacion.settlement?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
             error: liq.error,
           })
 
@@ -1122,10 +1128,11 @@ export default function Battlefield({
           if (liq.statusServidor === 'liquidada' && liq.resultadoFinal === 'victory' && onBattleComplete && matchMode !== 'tournament' && matchMode !== 'friendly') {
             try {
               const res = await onBattleComplete(true)
-              if (res?.packResult) {
+              if (res) {
                 setBattleSummaryResult((prev) => ({
                   ...prev,
                   packResult: res.packResult,
+                  vipGoldBonus: prev?.vipGoldBonus ?? res.vipGoldBonus ?? verificacion.settlement?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
                 }))
               }
             } catch (e) {
@@ -1226,6 +1233,7 @@ export default function Battlefield({
                   eloChange: prev?.eloChange ?? res.winElo,
                   newElo: prev?.newElo ?? res.newElo,
                   packResult: res.packResult,
+                  vipGoldBonus: res.vipGoldBonus,
                 }))
               }
             })()
@@ -2246,6 +2254,21 @@ export default function Battlefield({
                   <p>🌱 Plantas Enemigas Eliminadas: {stats.enemyPlantsDefeated}</p>
                   <p>🌻 Plantas Colocadas: {stats.plantsPlaced}</p>
                 </div>
+
+                {/* VIP VICTORY GOLD BONUS BADGE (Exclusivo victorias con Pase VIP) */}
+                {esVictoriaFinal && Boolean((resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus) && ((resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus) || 0) > 0) && (
+                  <div className="victory-vip-gold-box">
+                    <div className="victory-vip-gold-badge">
+                      <span className="victory-vip-gold-badge__crown">👑</span>
+                      <span className="victory-vip-gold-badge__title">BONUS VIP:</span>
+                      <span className="victory-vip-gold-badge__val">
+                        +{resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus}
+                      </span>
+                      <GoldIcon size={18} />
+                      <span className="victory-vip-gold-badge__lbl">Oro</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* VICTORY FREE PACK REWARD DISPLAY */}
                 {esVictoriaFinal && (
