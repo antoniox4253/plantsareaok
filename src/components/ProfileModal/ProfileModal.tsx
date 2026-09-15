@@ -62,8 +62,8 @@ export default function ProfileModal({
     tokenContract: '0x55d398326f99059fF775485246999027B3197955',
     network: 'BNB Smart Chain (BEP20)',
     rate: '1 USDT = 100 GEMAS',
-    bonusPercent: 15,
-    bonusActive: true,
+    bonusPercent: 0,
+    bonusActive: false,
   })
   const [personalWalletInput, setPersonalWalletInput] = useState('')
   const [isRegisteringWallet, setIsRegisteringWallet] = useState(false)

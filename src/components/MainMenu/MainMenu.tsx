@@ -131,60 +131,6 @@ export default function MainMenu({
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
   const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
 
-  // ── TEMPORIZADOR DE 8 HORAS: PROMOCIÓN +15% EN DEPÓSITOS ───────────────────
-  const [promoTimeLeft, setPromoTimeLeft] = useState<string>('08:00:00')
-
-  useEffect(() => {
-    const PROMO_DURATION_MS = 8 * 60 * 60 * 1000
-    const STORAGE_KEY = 'plantarena_deposit_promo_end'
-
-    const getOrInitEndTime = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY)
-        const now = Date.now()
-        if (stored) {
-          const parsed = parseInt(stored, 10)
-          if (!isNaN(parsed) && parsed > now) {
-            return parsed
-          }
-        }
-        const nextEnd = now + PROMO_DURATION_MS
-        localStorage.setItem(STORAGE_KEY, String(nextEnd))
-        return nextEnd
-      } catch {
-        return Date.now() + PROMO_DURATION_MS
-      }
-    }
-
-    let endTime = getOrInitEndTime()
-
-    const updateTimer = () => {
-      const now = Date.now()
-      let diff = endTime - now
-
-      if (diff <= 0) {
-        endTime = now + PROMO_DURATION_MS
-        try {
-          localStorage.setItem(STORAGE_KEY, String(endTime))
-        } catch {
-          // ignorar errores de almacenamiento
-        }
-        diff = PROMO_DURATION_MS
-      }
-
-      const totalSec = Math.floor(diff / 1000)
-      const h = Math.floor(totalSec / 3600)
-      const m = Math.floor((totalSec % 3600) / 60)
-      const s = totalSec % 60
-
-      const pad = (n: number) => n.toString().padStart(2, '0')
-      setPromoTimeLeft(`${pad(h)}:${pad(m)}:${pad(s)}`)
-    }
-
-    updateTimer()
-    const interval = setInterval(updateTimer, 1000)
-    return () => clearInterval(interval)
-  }, [])
 
   const handleToggleGlobalChat = () => {
     setIsGlobalChatOpen((prev) => {
@@ -441,28 +387,6 @@ export default function MainMenu({
               <span className="online-users-label">en línea</span>
             </div>
 
-            {/* HEADER PROMOCIONAL: 15% ADICIONAL EN CADA DEPÓSITO */}
-            <div
-              className="promo-deposit-header"
-              onClick={() => {
-                soundManager.playSound('click', 0.5)
-                setProfileInitialTab('deposit')
-                setIsProfileModalOpen(true)
-              }}
-              title="¡Promoción Activa! 15% adicional en cada depósito en gemas. Clic para depositar USDT BEP20"
-            >
-              <div className="promo-deposit-header__row1">
-                <div className="promo-deposit-header__badge-wrap">
-                  <span className="promo-deposit-header__fire">🔥</span>
-                  <span className="promo-deposit-header__title">15% ADICIONAL EN CADA DEPÓSITO</span>
-                </div>
-                <span className="promo-deposit-header__timer">⏳ {promoTimeLeft}</span>
-              </div>
-              <div className="promo-deposit-header__row2">
-                <span className="promo-deposit-header__subtitle">Más gemas, mejor estrategia</span>
-                <span className="promo-deposit-header__cta">DEPOSITAR ➔</span>
-              </div>
-            </div>
           </div>
 
           {/* COMPACT VIP BATTLE PASS WIDGET - VISIBLE FOR ALL PLAYERS */}
