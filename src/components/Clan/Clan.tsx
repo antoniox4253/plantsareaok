@@ -55,7 +55,7 @@ export default function Clan({
   onAddTokens,
   onDeductGold,
   onDonatePlant,
-  onAddPacks,
+  onAddPacks: _onAddPacks,
   onBackToMenu,
   onRefreshUserData,
 }: ClanProps) {
@@ -131,6 +131,34 @@ export default function Clan({
     (userClan.leader === playerName ||
      userClan.members.find((m) => m.name === playerName)?.role === 'Líder')
   )
+
+  const [isClaimingFullBonus, setIsClaimingFullBonus] = useState(false)
+  const [hasClaimedRemoteBonus, setHasClaimedRemoteBonus] = useState(false)
+
+  // Sincronizar estado autoritativo del bono de clan desde el perfil del usuario
+  useEffect(() => {
+    let mounted = true
+    const checkClaimStatus = async () => {
+      if (!isSupabaseConfigured()) return
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('has_claimed_clan_full_bonus')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (mounted && (prof as any)?.has_claimed_clan_full_bonus) {
+          setHasClaimedRemoteBonus(true)
+        }
+      } catch {}
+    }
+    void checkClaimStatus()
+    return () => {
+      mounted = false
+    }
+  }, [userClan?.id])
 
   React.useEffect(() => {
     if (isChatOpen) {
@@ -1221,24 +1249,42 @@ export default function Clan({
   }
   void _handleExecuteRaid
 
-  // CLAIM 15/15 FULL CLAN BONUS (2 GREEN PACKS)
-  const handleClaimFullBonus = () => {
-    if (!userClan) return
+  // CLAIM 15/15 FULL CLAN BONUS (2 GREEN PACKS CON CANDADOS ANTI-TRAMPAS)
+  const handleClaimFullBonus = async () => {
+    if (!userClan || isClaimingFullBonus) return
     if (userClan.members.length < 15) {
       showModalAlert('CLAN INCOMPLETO', `El clan aún tiene ${userClan.members.length}/15 miembros. Invita a más compañeros para llenarlo.`, '⚠️', 'warning')
       return
     }
-    if (ClanManager.hasClaimedFullClanBonus(playerName)) {
-      showModalAlert('YA RECLAMADO', 'Ya has reclamado tu Bono de Clan Lleno en esta cuenta. Solo se otorga 1 vez por jugador para evitar trampas.', '⚠️', 'warning')
+    if (hasClaimedRemoteBonus || ClanManager.hasClaimedFullClanBonus(playerName)) {
+      showModalAlert('YA RECLAMADO', 'Ya has reclamado tu Bono de Clan Lleno en esta cuenta. Solo se otorga 1 vez por jugador de forma definitiva.', '⚠️', 'warning')
       return
     }
 
-    const success = ClanManager.claimFullClanBonus(userClan.id, playerName)
-    if (success) {
-      onAddPacks('basic', 2)
-      soundManager.playSound('victory', 1)
-      showModalAlert('¡BONO RECLAMADO!', '¡Se han añadido 2 Sobres Pack Verde Básico a tu inventario!', '🎁', 'success')
-      refreshClanData()
+    try {
+      setIsClaimingFullBonus(true)
+      const res = await supabaseService.claimClanFullBonus()
+      setIsClaimingFullBonus(false)
+
+      if (res.success) {
+        setHasClaimedRemoteBonus(true)
+        ClanManager.claimFullClanBonus(userClan.id, playerName)
+        soundManager.playSound('victory', 1)
+        showModalAlert('¡BONO RECLAMADO!', res.message || '¡Se han añadido 2 Sobres Pack Verde Básico a tu inventario!', '🎁', 'success')
+        window.dispatchEvent(new Event('refresh_user_balance'))
+        window.dispatchEvent(new Event('player_profile_updated'))
+        if (onRefreshUserData) void onRefreshUserData()
+        refreshClanData()
+      } else {
+        soundManager.playSound('error', 0.5)
+        const errorTitle = res.error === 'ALREADY_CLAIMED' ? 'YA RECLAMADO' :
+                           res.error === 'TENURE_REQUIRED' ? 'ANTIGÜEDAD REQUERIDA' :
+                           res.error === 'CLAN_NOT_FULL' ? 'CLAN INCOMPLETO' : 'ERROR DE RECLAMO'
+        showModalAlert(errorTitle, res.message || res.error || 'No se pudo reclamar el bono.', '⚠️', 'warning')
+      }
+    } catch (e: any) {
+      setIsClaimingFullBonus(false)
+      showModalAlert('ERROR', e?.message || 'Error de conexión con el servidor.', '❌', 'error')
     }
   }
 
@@ -2375,7 +2421,7 @@ export default function Clan({
               </p>
               <div className="clan-reward-status-row">
                 <span>Progreso: <strong>{userClan.members.length}/15 Miembros</strong></span>
-                {ClanManager.hasClaimedFullClanBonus(playerName) && (
+                {(hasClaimedRemoteBonus || ClanManager.hasClaimedFullClanBonus(playerName)) && (
                   <span className="clan-claimed-badge">✓ YA RECLAMADO EN ESTA CUENTA</span>
                 )}
               </div>
@@ -2383,10 +2429,14 @@ export default function Clan({
             <button
               type="button"
               className="clan-claim-reward-btn"
-              disabled={userClan.members.length < 15 || ClanManager.hasClaimedFullClanBonus(playerName)}
+              disabled={userClan.members.length < 15 || hasClaimedRemoteBonus || ClanManager.hasClaimedFullClanBonus(playerName) || isClaimingFullBonus}
               onClick={handleClaimFullBonus}
             >
-              {ClanManager.hasClaimedFullClanBonus(playerName) ? '✅ YA COBRADO' : '✨ RECLAMAR 2 SOBRES'}
+              {(hasClaimedRemoteBonus || ClanManager.hasClaimedFullClanBonus(playerName))
+                ? '✅ YA COBRADO'
+                : isClaimingFullBonus
+                ? '⏳ RECLAMANDO...'
+                : '✨ RECLAMAR 2 SOBRES'}
             </button>
           </div>
 

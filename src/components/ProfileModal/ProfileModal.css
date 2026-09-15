@@ -1036,6 +1036,224 @@
   font-weight: 700;
 }
 
+/* ── TARJETA DE DEPÓSITO WEB3 METAMASK (1 CLIC) ────────────────────────── */
+.crypto-metamask-card {
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid #f97316;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.15), inset 0 0 20px rgba(249, 115, 22, 0.05);
+  margin-bottom: 12px;
+}
+
+.crypto-metamask-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(249, 115, 22, 0.25);
+  padding-bottom: 8px;
+}
+
+.crypto-metamask-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crypto-metamask-fox {
+  font-size: 20px;
+}
+
+.crypto-metamask-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fed7aa;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.crypto-metamask-speed-badge {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid #22c55e;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.crypto-metamask-desc {
+  font-size: 10.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.crypto-amount-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.crypto-preset-btn {
+  flex: 1;
+  min-width: 52px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1.5px solid #475569;
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 8px 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.crypto-preset-btn:hover {
+  border-color: #f97316;
+  transform: translateY(-1px);
+}
+
+.crypto-preset-btn--active {
+  border-color: #f97316 !important;
+  background: rgba(249, 115, 22, 0.25) !important;
+  color: #fed7aa !important;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.35);
+}
+
+.crypto-custom-amount-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.crypto-custom-amount-wrap span {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f97316;
+}
+
+.crypto-custom-amount-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  outline: none;
+}
+
+.crypto-calc-preview {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crypto-calc-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crypto-calc-usdt {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.crypto-calc-gems {
+  font-size: 13px;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 0.02em;
+}
+
+.crypto-calc-sub-row {
+  font-size: 9.5px;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+}
+
+.crypto-metamask-action-btn {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
+  border: 1px solid #fdba74;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.crypto-metamask-action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.6);
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+}
+
+.crypto-metamask-action-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.crypto-wallet-status-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.crypto-wallet-status-footer code {
+  color: #fed7aa;
+}
+
+.crypto-fallback-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 14px 0 8px 0;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.crypto-fallback-divider::before,
+.crypto-fallback-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px dashed #334155;
+}
+
+.crypto-fallback-divider:not(:empty)::before {
+  margin-right: 0.6em;
+}
+
+.crypto-fallback-divider:not(:empty)::after {
+  margin-left: 0.6em;
+}
+
 .crypto-treasury-card {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
   border: 1.5px solid #fbbf24;

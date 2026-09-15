@@ -1877,19 +1877,273 @@
    GOLD MODAL POPUP
    ========================================================= */
 
+/* =========================================================
+   GOLD MODAL POPUP (HORIZONTAL & FULLY RESPONSIVE)
+   ========================================================= */
+
+.clan-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: clanFadeIn 0.2s ease;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
 .market-gold-modal-card {
   background: linear-gradient(150deg, #1e293b 0%, #0f172a 100%);
   border: 2px solid #fbbf24;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 480px;
-  padding: 24px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(251, 191, 36, 0.2);
+  border-radius: 18px;
+  width: min(760px, 96vw);
+  max-height: 92vh;
+  padding: 16px 20px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(251, 191, 36, 0.25);
   display: flex;
   flex-direction: column;
-  align-items: center;
   box-sizing: border-box;
   animation: clanDialogPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+.market-gold-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 12px;
+}
+
+.market-gold-modal-title-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.market-gold-modal-icon-ring {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  border: 1.5px solid #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.market-gold-modal-icon-ring img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.market-gold-modal-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #fbbf24;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.market-gold-modal-subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.market-gold-modal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.market-gold-modal-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #cbd5e1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.market-gold-modal-close-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #fca5a5;
+  transform: scale(1.05);
+}
+
+.market-gold-modal-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.market-gold-modal-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  align-items: start;
+}
+
+.market-gold-modal-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.market-gold-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.market-gold-modal-actions .clan-dialog-btn {
+  flex: 1;
+  max-width: 220px;
+  height: 38px;
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  border: none;
+}
+
+.market-gold-modal-actions .clan-dialog-btn--cancel {
+  background: rgba(51, 65, 85, 0.85);
+  border: 1.5px solid #64748b;
+  color: #e2e8f0;
+}
+
+.market-gold-modal-actions .clan-dialog-btn--cancel:hover {
+  background: rgba(71, 85, 105, 0.95);
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.market-gold-modal-actions .clan-dialog-btn--confirm {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: 1.5px solid #fde68a;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+}
+
+.market-gold-modal-actions .clan-dialog-btn--confirm:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+}
+
+.market-gold-modal-actions .clan-dialog-btn--confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+  box-shadow: none;
+}
+
+/* Landscape mobile optimization (height < 520px) */
+@media (max-height: 520px) {
+  .market-gold-modal-card {
+    padding: 10px 14px;
+    max-height: 96vh;
+    border-radius: 14px;
+  }
+  .market-gold-modal-header {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+  }
+  .market-gold-modal-icon-ring {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+  }
+  .market-gold-modal-icon-ring img {
+    width: 18px;
+    height: 18px;
+  }
+  .market-gold-modal-title {
+    font-size: 13px;
+  }
+  .market-gold-modal-subtitle {
+    display: none;
+  }
+  .market-gold-modal-form {
+    gap: 8px;
+  }
+  .market-gold-modal-columns {
+    gap: 10px;
+  }
+  .market-gold-modal-col {
+    gap: 6px;
+  }
+  .market-gold-input-row {
+    padding: 3px 10px;
+  }
+  .market-gold-input {
+    font-size: 14px;
+    padding: 2px 0;
+  }
+  .market-gold-summary-card {
+    padding: 6px 10px;
+    gap: 3px;
+  }
+  .market-gold-summary-row {
+    font-size: 10.5px;
+  }
+  .market-gold-modal-actions {
+    margin-top: 2px;
+  }
+  .market-gold-modal-actions .clan-dialog-btn {
+    height: 32px;
+    font-size: 11px;
+  }
+}
+
+/* Portrait mobile optimization (width < 640px and height >= 520px) */
+@media (max-width: 640px) and (min-height: 521px) {
+  .market-gold-modal-card {
+    padding: 14px 14px;
+    width: 95vw;
+  }
+  .market-gold-modal-columns {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .market-gold-modal-subtitle {
+    display: none;
+  }
+  .market-gold-modal-actions .clan-dialog-btn {
+    max-width: none;
+  }
 }
 
 

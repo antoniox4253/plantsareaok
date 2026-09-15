@@ -10,6 +10,7 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import type { PlantId } from '../../types/game'
 import { accountService } from '../../services/accountService'
+import { Web3DepositService, DEFAULT_TREASURY_WALLET } from '../../services/web3DepositService'
 import PanelDeReferidos from '../Referidos/PanelDeReferidos'
 import './ProfileModal.css'
 
@@ -46,6 +47,7 @@ export default function ProfileModal({
   const [isEditingNick, setIsEditingNick] = useState(false)
   const [nickInput, setNickInput] = useState(profile.name)
   const [isCompressing, setIsCompressing] = useState(false)
+  const userIdentifier = profile.referralCode || profile.name || 'player'
 
   // ── ESTADO DE DEPÓSITO BEP20 ───────────────────────────────────────────────
   const [depositInfo, setDepositInfo] = useState<{
@@ -72,6 +74,17 @@ export default function ProfileModal({
   const [isEditingRegisteredWallet, setIsEditingRegisteredWallet] = useState(false)
   const [manualTxHashInput, setManualTxHashInput] = useState('')
   const [showManualTxInput, setShowManualTxInput] = useState(false)
+
+  // ── ESTADO METAMASK WEB3 (1 CLIC) ──────────────────────────────────────────
+  const [metaMaskAmount, setMetaMaskAmount] = useState<number>(5)
+  const [customMetaMaskInput, setCustomMetaMaskInput] = useState<string>('')
+  const [metaMaskStep, setMetaMaskStep] = useState<
+    'idle' | 'connecting' | 'confirming' | 'verifying' | 'success'
+  >('idle')
+  const [metaMaskAccount, setMetaMaskAccount] = useState<string | null>(null)
+  const [metaMaskUsdtBalance, setMetaMaskUsdtBalance] = useState<number | null>(null)
+  const [showManualTransferSection, setShowManualTransferSection] = useState<boolean>(false)
+  const isMetaMaskAvailable = Web3DepositService.isMetaMaskAvailable()
 
   // ── ESTADO DE RETIRO BEP20 (5% COMISIÓN) ──────────────────────────────────
   const [withdrawGems, setWithdrawGems] = useState<number>(1000)
@@ -370,18 +383,25 @@ export default function ProfileModal({
     }
   }
 
-  // ── COMPROBAR DEPÓSITOS EN BLOCKCHAIN (CON DETECCIÓN Y NOTIFICACIÓN REALTIME) ─
+  // ── COMPROBAR DEPÓSITOS EN BLOCKCHAIN (CON VERIFICACIÓN INSTANTÁNEA POR HASH) ─
   const handleCheckBlockchainDeposits = async (isAutoPoll = false, customTxHash?: string) => {
     try {
       if (!isAutoPoll) setIsCheckingDeposits(true)
       const cleanTx = customTxHash?.trim()
 
-      // Si el usuario proporcionó un TxHash manual, intentar primero conciliar si ya estaba detectado en unmatched
+      // Si el usuario proporcionó un TxHash manual, verificar directamente con el backend y la blockchain
       if (cleanTx) {
-        const claimRes = await accountService.claimUnmatchedDeposit(cleanTx)
-        if (claimRes.success && claimRes.status === 'credited') {
+        const verifyRes = await accountService.verifyAndCreditTxHash(
+          cleanTx,
+          depositInfo.registeredWallet?.address,
+          userIdentifier
+        )
+        if (verifyRes.success) {
           soundManager.playSound('victory', 0.9)
-          showFeedback(claimRes.message || `🎉 ¡Depósito verificado! +${claimRes.amountGems} Gemas acreditadas.`, 'success')
+          showFeedback(
+            verifyRes.message || `🎉 ¡Depósito verificado! +${verifyRes.amountGems} Gemas acreditadas.`,
+            'success'
+          )
           window.dispatchEvent(new Event('refresh_user_balance'))
           window.dispatchEvent(new Event('player_profile_updated'))
           setManualTxHashInput('')
@@ -392,14 +412,14 @@ export default function ProfileModal({
             setFinancialHistory({ deposits: hist.deposits, withdrawals: hist.withdrawals })
           }
           return
-        } else if (!claimRes.success && (claimRes.error === 'WALLET_MISMATCH' || claimRes.error === 'ALREADY_RESOLVED')) {
+        } else {
           soundManager.playSound('error', 0.5)
-          showFeedback(claimRes.message || 'Error al validar depósito.', 'error')
+          showFeedback(verifyRes.message || 'No se pudo verificar la transacción aún.', 'error')
           return
         }
       }
 
-      const res = await accountService.triggerDepositCheck(cleanTx)
+      const res = await accountService.triggerDepositCheck()
 
       // Consultar historial actualizado
       const hist = await accountService.getFinancialHistory()
@@ -412,14 +432,15 @@ export default function ProfileModal({
         )
 
         if (newlyCredited.length > 0) {
-          // Registrar como conocidos
           newlyCredited.forEach((d: any) => knownDepositIdsRef.current.add(d.id))
           const totalNewGems = newlyCredited.reduce((acc: number, d: any) => acc + Number(d.amount_gems), 0)
 
           soundManager.playSound('victory', 0.9)
-          showFeedback(`🎉 ¡DEPÓSITO RECIBIDO! +${totalNewGems.toFixed(2)} Gemas 💎 acreditadas a tu saldo en tiempo real.`, 'success')
+          showFeedback(
+            `🎉 ¡DEPÓSITO RECIBIDO! +${totalNewGems.toFixed(2)} Gemas 💎 acreditadas a tu saldo en tiempo real.`,
+            'success'
+          )
 
-          // Disparar sincronización global de saldo en toda la aplicación
           window.dispatchEvent(new Event('refresh_user_balance'))
           window.dispatchEvent(new Event('player_profile_updated'))
         } else if (!isAutoPoll) {
@@ -435,6 +456,132 @@ export default function ProfileModal({
       if (!isAutoPoll) setIsCheckingDeposits(false)
     }
   }
+
+  // ── DEPÓSITO NATIVO CON METAMASK (1 CLIC) ──────────────────────────────────
+  const handleMetaMaskDeposit = async () => {
+    const finalAmount = customMetaMaskInput ? Number(customMetaMaskInput) : metaMaskAmount
+    if (!finalAmount || isNaN(finalAmount) || finalAmount < 1) {
+      showFeedback('El monto mínimo de depósito es 1 USDT.', 'warning')
+      return
+    }
+
+    try {
+      setMetaMaskStep('connecting')
+      soundManager.playSound('click', 0.5)
+
+      // 1. Conectar wallet
+      const sender = await Web3DepositService.connectWallet()
+      setMetaMaskAccount(sender)
+
+      // Auto-vincular la wallet en el juego en segundo plano
+      void accountService.registerDepositWallet(sender).then((res) => {
+        if (res.success && res.wallet) {
+          setDepositInfo((prev) => ({ ...prev, registeredWallet: res.wallet }))
+        }
+      })
+
+      // 2. Asegurar red BNB Smart Chain (BEP20)
+      await Web3DepositService.ensureBscNetwork()
+
+      // 3. Consultar balance de USDT en MetaMask
+      const bal = await Web3DepositService.getUsdtBalance(sender)
+      setMetaMaskUsdtBalance(bal)
+      if (bal > 0 && bal < finalAmount) {
+        setMetaMaskStep('idle')
+        showFeedback(`Saldo insuficiente de USDT en MetaMask (${bal.toFixed(2)} USDT disponibles).`, 'error')
+        return
+      }
+
+      // 4. Solicitar transferencia nativa en MetaMask
+      setMetaMaskStep('confirming')
+      const targetTreasury = depositInfo.treasuryWallet || DEFAULT_TREASURY_WALLET
+      const res = await Web3DepositService.depositUsdt(finalAmount, targetTreasury)
+
+      if (!res.success) {
+        setMetaMaskStep('idle')
+        if (res.userCancelled) {
+          showFeedback('Operación cancelada en MetaMask.', 'warning')
+        } else {
+          showFeedback(res.error || 'Error al enviar la transacción.', 'error')
+        }
+        return
+      }
+
+      const txHash = res.txHash!
+      // Guardar hash en localStorage de inmediato para blindar contra caídas de red
+      accountService.savePendingDepositTx(userIdentifier, txHash, finalAmount)
+
+      // 5. Verificación inmediata (polling on-demand a blockchain)
+      setMetaMaskStep('verifying')
+
+      let verified = false
+      for (let attempt = 1; attempt <= 4; attempt++) {
+        const verifyRes = await accountService.verifyAndCreditTxHash(txHash, sender, userIdentifier)
+        if (verifyRes.success) {
+          verified = true
+          setMetaMaskStep('success')
+          soundManager.playSound('victory', 1.0)
+          showFeedback(
+            `🎉 ¡DEPÓSITO EXITOSO! +${verifyRes.amountGems || finalAmount * 100} Gemas 💎 acreditadas a tu cuenta.`,
+            'success'
+          )
+          window.dispatchEvent(new Event('refresh_user_balance'))
+          window.dispatchEvent(new Event('player_profile_updated'))
+
+          const hist = await accountService.getFinancialHistory()
+          if (hist.success) {
+            setFinancialHistory({ deposits: hist.deposits, withdrawals: hist.withdrawals })
+          }
+          break
+        }
+        await new Promise((r) => setTimeout(r, 2500))
+      }
+
+      if (!verified) {
+        setMetaMaskStep('idle')
+        showFeedback(
+          'La transferencia fue enviada a la blockchain. Se acreditará automáticamente en breves instantes.',
+          'warning'
+        )
+      } else {
+        setTimeout(() => setMetaMaskStep('idle'), 3500)
+      }
+    } catch (err: any) {
+      setMetaMaskStep('idle')
+      showFeedback(err?.message || 'Error al interactuar con MetaMask.', 'error')
+    }
+  }
+
+  // ── RESCATAR DEPÓSITOS PENDIENTES DE LOCALSTORAGE AL ABRIR EL MODAL ────────
+  useEffect(() => {
+    if (!isOpen || !userIdentifier) return
+    const pending = accountService.getPendingDepositTxs(userIdentifier)
+    if (pending.length > 0) {
+      pending.forEach((p) => {
+        void accountService.verifyAndCreditTxHash(p.txHash, undefined, userIdentifier).then((res) => {
+          if (res.success && res.status === 'credited') {
+            soundManager.playSound('victory', 0.9)
+            showFeedback(`🎉 ¡Depósito recuperado! +${res.amountGems} Gemas 💎 acreditadas.`, 'success')
+            window.dispatchEvent(new Event('refresh_user_balance'))
+            window.dispatchEvent(new Event('player_profile_updated'))
+          }
+        })
+      })
+    }
+  }, [isOpen, userIdentifier])
+
+  // ── LEER CUENTA ACTIVA DE METAMASK AL ENTRAR A LA PESTAÑA DE DEPÓSITO ──────
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'deposit') return
+    if (Web3DepositService.isMetaMaskAvailable()) {
+      void Web3DepositService.getActiveAccount().then((acc) => {
+        if (acc) {
+          setMetaMaskAccount(acc)
+          void Web3DepositService.getUsdtBalance(acc).then((b) => setMetaMaskUsdtBalance(b))
+        }
+      })
+    }
+  }, [isOpen, activeTab])
 
   // ── AUTO-POLLING EN TIEMPO REAL CUANDO ESTÁ EN LA PESTAÑA DE DEPÓSITO ───────
   useEffect(() => {
@@ -843,197 +990,342 @@ export default function ProfileModal({
         )}
 
         {/* TAB 2: DEPOSITAR USDT BEP20 */}
-        {activeTab === 'deposit' && (
-          <div className="profile-tab-body">
-            <div className="profile-section-title">
-              <span>💰 DEPÓSITO AUTOMÁTICO DE USDT (BEP20)</span>
-              <small>Conversión oficial: <strong>1 USDT = 100 Gemas 💎</strong> (BNB Smart Chain)</small>
-            </div>
+        {activeTab === 'deposit' && (() => {
+          const activeAmountUsdt = customMetaMaskInput ? (Number(customMetaMaskInput) || 0) : metaMaskAmount
+          const previewBaseGems = Math.round(activeAmountUsdt * 100)
+          const previewBonusPct = depositInfo.bonusActive ? Number(depositInfo.bonusPercent || 0) : 0
+          const previewBonusGems = Math.round(previewBaseGems * (previewBonusPct / 100))
+          const previewTotalGems = previewBaseGems + previewBonusGems
+          const previewRetirableGems = Math.round(previewBaseGems * 0.5)
+          const previewLockedGems = (previewBaseGems - previewRetirableGems) + previewBonusGems
 
-            {/* PASO 1: VINCULAR WALLET PERSONAL */}
-            {(!depositInfo.registeredWallet || isEditingRegisteredWallet) ? (
-              <form onSubmit={handleRegisterPersonalWallet} className="crypto-wallet-register-box">
-                <div className="crypto-step-badge">1️⃣ PASO 1: REGISTRA TU WALLET PERSONAL (SELF-CUSTODY)</div>
-                <p className="crypto-step-desc">
-                  Para acreditar tus depósitos automáticamente, introduce la dirección pública de tu wallet personal
-                  (<strong>MetaMask, Trust Wallet, Rabby, SafePal</strong>, etc.).
+          return (
+            <div className="profile-tab-body">
+              <div className="profile-section-title">
+                <span>💰 DEPÓSITO DE USDT (BNB SMART CHAIN)</span>
+                <small>Tasa oficial: <strong>1 USDT = 100 Gemas 💎</strong> (Red BSC BEP-20)</small>
+              </div>
+
+              {/* ── 1. BOTÓN NATIVO WEB3 CON METAMASK (1 CLIC) ──────────────── */}
+              <div className="crypto-metamask-card">
+                <div className="crypto-metamask-header">
+                  <div className="crypto-metamask-title-wrap">
+                    <span className="crypto-metamask-fox">🦊</span>
+                    <span className="crypto-metamask-title">Depósito Rápido con MetaMask</span>
+                  </div>
+                  <span className="crypto-metamask-speed-badge">⚡ Acreditación Instantánea (3s)</span>
+                </div>
+
+                <p className="crypto-metamask-desc">
+                  Selecciona el monto y paga directamente desde MetaMask en 1 clic. El sistema detecta la confirmación en la blockchain y acredita tus gemas al instante sin esperas.
                 </p>
-                <div className="crypto-input-group">
+
+                {/* SELECTOR DE MONTOS RÁPIDOS */}
+                <div className="crypto-amount-presets">
+                  {[1, 5, 10, 20, 50].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      className={`crypto-preset-btn ${
+                        !customMetaMaskInput && metaMaskAmount === preset ? 'crypto-preset-btn--active' : ''
+                      }`}
+                      onClick={() => {
+                        setMetaMaskAmount(preset)
+                        setCustomMetaMaskInput('')
+                        soundManager.playSound('click', 0.5)
+                      }}
+                    >
+                      ${preset} USDT
+                    </button>
+                  ))}
+                </div>
+
+                {/* MONTO PERSONALIZADO */}
+                <div className="crypto-custom-amount-wrap">
+                  <span>Otro Monto:</span>
                   <input
-                    type="text"
-                    placeholder="0x... (Tu dirección pública BEP20)"
-                    value={personalWalletInput}
-                    onChange={(e) => setPersonalWalletInput(e.target.value)}
-                    className="crypto-wallet-input"
-                    required
+                    type="number"
+                    min="1"
+                    step="0.5"
+                    placeholder="Monto en USDT..."
+                    value={customMetaMaskInput}
+                    onChange={(e) => setCustomMetaMaskInput(e.target.value)}
+                    className="crypto-custom-amount-input"
                   />
-                  <button
-                    type="submit"
-                    className="crypto-register-btn"
-                    disabled={isRegisteringWallet}
-                  >
-                    {isRegisteringWallet ? '⏳ Vinculando...' : '🔗 VINCULAR WALLET'}
-                  </button>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>USDT</span>
                 </div>
-                {isEditingRegisteredWallet && (
-                  <button
-                    type="button"
-                    className="crypto-cancel-link-btn"
-                    onClick={() => setIsEditingRegisteredWallet(false)}
-                  >
-                    Cancelar y conservar wallet actual
-                  </button>
-                )}
-              </form>
-            ) : (
-              <div className="crypto-registered-wallet-pill">
-                <div className="crypto-registered-info">
-                  <span className="crypto-registered-tag">✅ WALLET PERSONAL VINCULADA:</span>
-                  <code className="crypto-registered-addr">{depositInfo.registeredWallet.address}</code>
+
+                {/* PREVIEW DINÁMICO DE GEMAS */}
+                <div className="crypto-calc-preview">
+                  <div className="crypto-calc-main-row">
+                    <span className="crypto-calc-usdt">
+                      Recibes por ${activeAmountUsdt > 0 ? activeAmountUsdt : 0} USDT:
+                    </span>
+                    <span className="crypto-calc-gems">
+                      +{previewTotalGems.toLocaleString()} Gemas 💎
+                      {previewBonusGems > 0 && (
+                        <small style={{ color: '#fef08a', fontSize: '10px', marginLeft: '4px' }}>
+                          (+{previewBonusPct}% BONO 🔥)
+                        </small>
+                      )}
+                    </span>
+                  </div>
+                  <div className="crypto-calc-sub-row">
+                    <span>50% Retirable: {previewRetirableGems.toLocaleString()} 💎</span>
+                    <span>50% Bloqueado/Juego: {previewLockedGems.toLocaleString()} 💎</span>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  className="crypto-change-wallet-btn"
-                  onClick={() => setIsEditingRegisteredWallet(true)}
-                  title="Cambiar Wallet Personal"
-                >
-                  ✏️ Cambiar
-                </button>
-              </div>
-            )}
 
-            {/* ADVERTENCIA MUY VISIBLE SOBRE BINANCE Y EXCHANGES */}
-            <div className="crypto-exchange-warning-box">
-              <div className="crypto-warning-icon">⚠️</div>
-              <div className="crypto-warning-content">
-                <strong>REGLA FUNDAMENTAL DE DEPÓSITOS:</strong>
-                <p>
-                  Los depósitos se acreditan automáticamente <strong>ÚNICAMENTE</strong> cuando el USDT se transfiere desde la wallet personal registrada en tu cuenta.
-                </p>
-                <div className="crypto-flow-pill">
-                  <span>BINANCE / EXCHANGE</span>
-                  <span>➔</span>
-                  <span>TU WALLET PERSONAL</span>
-                  <span>➔</span>
-                  <strong>PLANT ARENA (GEMAS)</strong>
-                </div>
-                <small>❌ NO envíes directamente desde Binance u otro exchange a la wallet de Plant Arena.</small>
-              </div>
-            </div>
-
-            {/* PASO 2: ENVIAR USDT A LA DIRECCIÓN OFICIAL DE PLANT ARENA */}
-            <div className="crypto-treasury-card">
-              <div className="crypto-step-badge">2️⃣ PASO 2: ENVÍA USDT (BEP20) A ESTA DIRECCIÓN</div>
-
-              <div className="crypto-treasury-meta-row">
-                <span className="crypto-network-badge">🟡 RED: BNB Smart Chain (BEP20)</span>
-                <span className="crypto-token-badge">💵 TOKEN: USDT</span>
-                <span className="crypto-rate-badge">💎 1 USDT = 100 GEMAS</span>
-                {depositInfo.bonusActive && Number(depositInfo.bonusPercent ?? 0) > 0 && (
-                  <span className="crypto-bonus-badge">🔥 +{depositInfo.bonusPercent}% BONO EXTRA</span>
-                )}
-              </div>
-
-              <div className="crypto-treasury-address-box">
-                <span className="crypto-treasury-lbl">Dirección Oficial de Depósito de Plant Arena:</span>
-                <div className="crypto-address-copy-row">
-                  <code className="crypto-address-text">{depositInfo.treasuryWallet}</code>
+                {/* BOTÓN PRINCIPAL DE PAGO METAMASK */}
+                {isMetaMaskAvailable ? (
                   <button
                     type="button"
-                    className="crypto-copy-btn"
-                    onClick={handleCopyTreasury}
+                    className="crypto-metamask-action-btn"
+                    disabled={metaMaskStep !== 'idle' || activeAmountUsdt < 1}
+                    onClick={handleMetaMaskDeposit}
                   >
-                    {copiedTreasury ? '✓ ¡COPIADO!' : '📋 COPIAR'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="crypto-detector-status-bar">
-                <span className="crypto-detector-pulse">🟢 Cron Automático 24/7 Activo</span>
-                <button
-                  type="button"
-                  className="crypto-refresh-blockchain-btn"
-                  onClick={() => handleCheckBlockchainDeposits(false)}
-                  disabled={isCheckingDeposits}
-                >
-                  {isCheckingDeposits ? '⏳ Escaneando...' : '🔄 Comprobar Blockchain Ahora'}
-                </button>
-              </div>
-
-              {/* Opción rápida de verificación directa por Hash de transacción */}
-              <div style={{ marginTop: '10px', textAlign: 'center' }}>
-                {!showManualTxInput ? (
-                  <button
-                    type="button"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#94a3b8',
-                      fontSize: '11px',
-                      cursor: 'pointer',
-                      textDecoration: 'underline',
-                    }}
-                    onClick={() => setShowManualTxInput(true)}
-                  >
-                    ¿Ya enviaste y tienes el Hash de la transacción? Verificar por Hash
+                    {metaMaskStep === 'connecting' && '🦊 Conectando MetaMask...'}
+                    {metaMaskStep === 'confirming' && '📝 Confirma en MetaMask...'}
+                    {metaMaskStep === 'verifying' && '⏳ Verificando en Blockchain (3s)...'}
+                    {metaMaskStep === 'success' && '✅ ¡DEPÓSITO ACREDITADO! 🎉'}
+                    {metaMaskStep === 'idle' && (
+                      <>
+                        <span>⚡</span>
+                        <span>Depositar {activeAmountUsdt > 0 ? `${activeAmountUsdt} USDT` : ''} con MetaMask</span>
+                      </>
+                    )}
                   </button>
                 ) : (
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                    <input
-                      type="text"
-                      placeholder="0x... (Hash de la transacción)"
-                      value={manualTxHashInput}
-                      onChange={(e) => setManualTxHashInput(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: '6px 10px',
-                        background: 'rgba(0,0,0,0.4)',
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontSize: '11px',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      disabled={isCheckingDeposits || !manualTxHashInput.trim()}
-                      onClick={() => {
-                        handleCheckBlockchainDeposits(false, manualTxHashInput.trim())
-                      }}
-                      style={{
-                        padding: '6px 12px',
-                        background: '#3b82f6',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontWeight: 'bold',
-                        fontSize: '11px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {isCheckingDeposits ? '⏳' : 'Verificar'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowManualTxInput(false)}
-                      style={{
-                        padding: '6px 8px',
-                        background: 'rgba(255,255,255,0.1)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: '#ccc',
-                        fontSize: '11px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      ✕
-                    </button>
+                  <div style={{
+                    background: 'rgba(234, 88, 12, 0.15)',
+                    border: '1px solid #f97316',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    textAlign: 'center',
+                    fontSize: '11px',
+                    color: '#fed7aa',
+                  }}>
+                    🦊 <strong>MetaMask no detectado en este navegador.</strong>
+                    <br />
+                    Si estás en celular, abre Plant Arena dentro del navegador de <strong>MetaMask App</strong> o utiliza la opción de transferencia manual abajo.
+                  </div>
+                )}
+
+                {/* INFORMACIÓN DE LA WALLET CONECTADA */}
+                {metaMaskAccount && (
+                  <div className="crypto-wallet-status-footer">
+                    <span>MetaMask Conectado: <code>{metaMaskAccount.slice(0, 6)}...{metaMaskAccount.slice(-4)}</code></span>
+                    {metaMaskUsdtBalance !== null && (
+                      <span>Saldo USDT: <strong>{metaMaskUsdtBalance.toFixed(2)} USDT</strong></span>
+                    )}
                   </div>
                 )}
               </div>
+
+              {/* ── 2. DIVIDER PARA OPCIÓN MANUAL ───────────────────────────── */}
+              <div className="crypto-fallback-divider">O bien transferencia manual</div>
+
+              {/* TOGGLE PARA MOSTRAR TRANSFERENCIA MANUAL */}
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowManualTransferSection((prev) => !prev)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  {showManualTransferSection ? '▲ Ocultar transferencia manual' : '▼ Ver dirección de depósito manual / Otras wallets'}
+                </button>
+              </div>
+
+              {/* CONTENIDO MANUAL COLLAPSIBLE */}
+              {showManualTransferSection && (
+                <>
+                  {/* PASO 1: VINCULAR WALLET PERSONAL */}
+                  {(!depositInfo.registeredWallet || isEditingRegisteredWallet) ? (
+                    <form onSubmit={handleRegisterPersonalWallet} className="crypto-wallet-register-box">
+                      <div className="crypto-step-badge">1️⃣ PASO 1: REGISTRA TU WALLET PERSONAL (SELF-CUSTODY)</div>
+                      <p className="crypto-step-desc">
+                        Introduce la dirección pública de tu wallet personal
+                        (<strong>MetaMask, Trust Wallet, Rabby, SafePal</strong>, etc.).
+                      </p>
+                      <div className="crypto-input-group">
+                        <input
+                          type="text"
+                          placeholder="0x... (Tu dirección pública BEP20)"
+                          value={personalWalletInput}
+                          onChange={(e) => setPersonalWalletInput(e.target.value)}
+                          className="crypto-wallet-input"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          className="crypto-register-btn"
+                          disabled={isRegisteringWallet}
+                        >
+                          {isRegisteringWallet ? '⏳ Vinculando...' : '🔗 VINCULAR WALLET'}
+                        </button>
+                      </div>
+                      {isEditingRegisteredWallet && (
+                        <button
+                          type="button"
+                          className="crypto-cancel-link-btn"
+                          onClick={() => setIsEditingRegisteredWallet(false)}
+                        >
+                          Cancelar y conservar wallet actual
+                        </button>
+                      )}
+                    </form>
+                  ) : (
+                    <div className="crypto-registered-wallet-pill">
+                      <div className="crypto-registered-info">
+                        <span className="crypto-registered-tag">✅ WALLET PERSONAL VINCULADA:</span>
+                        <code className="crypto-registered-addr">{depositInfo.registeredWallet.address}</code>
+                      </div>
+                      <button
+                        type="button"
+                        className="crypto-change-wallet-btn"
+                        onClick={() => setIsEditingRegisteredWallet(true)}
+                        title="Cambiar Wallet Personal"
+                      >
+                        ✏️ Cambiar
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ADVERTENCIA SOBRE BINANCE Y EXCHANGES */}
+                  <div className="crypto-exchange-warning-box">
+                    <div className="crypto-warning-icon">⚠️</div>
+                    <div className="crypto-warning-content">
+                      <strong>TRANSFERENCIA MANUAL:</strong>
+                      <p>
+                        Si transfieres manualmente, envía únicamente desde tu wallet personal registrada.
+                      </p>
+                      <small>❌ NO envíes directamente desde Binance u otro exchange a la wallet de Plant Arena.</small>
+                    </div>
+                  </div>
+
+                  {/* DIRECCIÓN OFICIAL DE TESORERÍA */}
+                  <div className="crypto-treasury-card">
+                    <div className="crypto-step-badge">2️⃣ ENVÍA USDT (BEP20) A ESTA DIRECCIÓN</div>
+
+                    <div className="crypto-treasury-meta-row">
+                      <span className="crypto-network-badge">🟡 RED: BNB Smart Chain (BEP20)</span>
+                      <span className="crypto-token-badge">💵 TOKEN: USDT</span>
+                      <span className="crypto-rate-badge">💎 1 USDT = 100 GEMAS</span>
+                      {depositInfo.bonusActive && Number(depositInfo.bonusPercent ?? 0) > 0 && (
+                        <span className="crypto-bonus-badge">🔥 +{depositInfo.bonusPercent}% BONO EXTRA</span>
+                      )}
+                    </div>
+
+                    <div className="crypto-treasury-address-box">
+                      <span className="crypto-treasury-lbl">Dirección Oficial de Depósito de Plant Arena:</span>
+                      <div className="crypto-address-copy-row">
+                        <code className="crypto-address-text">{depositInfo.treasuryWallet}</code>
+                        <button
+                          type="button"
+                          className="crypto-copy-btn"
+                          onClick={handleCopyTreasury}
+                        >
+                          {copiedTreasury ? '✓ ¡COPIADO!' : '📋 COPIAR'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="crypto-detector-status-bar">
+                      <span className="crypto-detector-pulse">🟢 Detección Blockchain Activa</span>
+                      <button
+                        type="button"
+                        className="crypto-refresh-blockchain-btn"
+                        onClick={() => handleCheckBlockchainDeposits(false)}
+                        disabled={isCheckingDeposits}
+                      >
+                        {isCheckingDeposits ? '⏳ Escaneando...' : '🔄 Comprobar Blockchain Ahora'}
+                      </button>
+                    </div>
+
+                    {/* Opción rápida de verificación directa por Hash de transacción */}
+                    <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                      {!showManualTxInput ? (
+                        <button
+                          type="button"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#94a3b8',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                          }}
+                          onClick={() => setShowManualTxInput(true)}
+                        >
+                          ¿Ya enviaste y tienes el Hash de la transacción? Verificar por Hash
+                        </button>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                          <input
+                            type="text"
+                            placeholder="0x... (Hash de la transacción de 66 caracteres)"
+                            value={manualTxHashInput}
+                            onChange={(e) => setManualTxHashInput(e.target.value)}
+                            style={{
+                              flex: 1,
+                              padding: '6px 10px',
+                              background: 'rgba(0,0,0,0.4)',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                              borderRadius: '6px',
+                              color: '#fff',
+                              fontSize: '11px',
+                            }}
+                          />
+                          <button
+                            type="button"
+                            disabled={isCheckingDeposits || !manualTxHashInput.trim()}
+                            onClick={() => {
+                              handleCheckBlockchainDeposits(false, manualTxHashInput.trim())
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#3b82f6',
+                              border: 'none',
+                              borderRadius: '6px',
+                              color: '#fff',
+                              fontWeight: 'bold',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {isCheckingDeposits ? '⏳' : 'Verificar'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowManualTxInput(false)}
+                            style={{
+                              padding: '6px 8px',
+                              background: 'rgba(255,255,255,0.1)',
+                              border: 'none',
+                              borderRadius: '6px',
+                              color: '#ccc',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* TAB 3: RETIRAR USDT BEP20 (5% COMISIÓN) */}
         {activeTab === 'withdraw' && (

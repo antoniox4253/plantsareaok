@@ -29,6 +29,8 @@ export interface Database {
           colosseum_max_streak: number
           has_vip_pass: boolean
           vip_pass_expires_at?: string | null
+          has_claimed_clan_full_bonus?: boolean
+          claimed_clan_full_bonus_at?: string | null
           claimed_vip_levels: number[]
           is_admin: boolean
           exclude_from_ranking?: boolean

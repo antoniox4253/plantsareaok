@@ -1675,6 +1675,36 @@ export const SupabaseService = {
     }
   },
 
+  /** Reclama los 2 sobres básicos por clan lleno (15/15) con candados autoritativos anti-trampas */
+  async claimClanFullBonus(): Promise<{
+    success: boolean
+    error?: string
+    message?: string
+    packs_granted?: number
+    pack_id?: string
+    hours_remaining?: number
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('claim_clan_full_reward')
+      if (error) {
+        logError('claimClanFullBonus', error)
+        return { success: false, error: error.message }
+      }
+      return data as {
+        success: boolean
+        error?: string
+        message?: string
+        packs_granted?: number
+        pack_id?: string
+        hours_remaining?: number
+      }
+    } catch (e: any) {
+      logError('claimClanFullBonus', e)
+      return { success: false, error: e?.message || 'Error al reclamar bono de clan' }
+    }
+  },
+
   async getAllClans(): Promise<ClanRow[]> {
     if (!isSupabaseConfigured()) return []
     try {
@@ -4327,12 +4357,12 @@ export const SupabaseService = {
   },
 
   /** Dispara la verificación de nuevos depósitos en blockchain (opcionalmente por txHash) */
-  async triggerDepositCheck(txHash?: string): Promise<{ success: boolean; transfersFound?: number; processed?: any[]; error?: string }> {
+  async triggerDepositCheck(txHash?: string): Promise<{ success: boolean; verifiedByHash?: boolean; transfersFound?: number; processed?: any[]; error?: string }> {
     if (!isSupabaseConfigured()) return { success: false }
     try {
       const { data, error } = await supabase.functions.invoke('crypto-deposit-detector', {
         method: 'POST',
-        body: txHash ? { txHash } : {},
+        body: txHash ? { txHash: txHash.trim().toLowerCase() } : {},
       })
       if (error) {
         return { success: false, error: error.message }
@@ -4340,6 +4370,124 @@ export const SupabaseService = {
       return data ?? { success: true }
     } catch (e: any) {
       return { success: false, error: e?.message }
+    }
+  },
+
+  /** Guarda un hash pendiente en localStorage para no perder transacciones si el usuario recarga o cierra pestaña */
+  savePendingDepositTx(userId: string, txHash: string, amountUsdt?: number): void {
+    if (typeof window === 'undefined' || !userId || !txHash) return
+    try {
+      const key = `plantarena_pending_deposits_${userId}`
+      const existing: Array<{ txHash: string; amountUsdt?: number; timestamp: number }> = JSON.parse(
+        localStorage.getItem(key) || '[]'
+      )
+      const cleanHash = txHash.trim().toLowerCase()
+      if (!existing.some((item) => item.txHash.toLowerCase() === cleanHash)) {
+        existing.push({ txHash: cleanHash, amountUsdt, timestamp: Date.now() })
+        localStorage.setItem(key, JSON.stringify(existing))
+      }
+    } catch (e) {
+      console.warn('[supabaseService] Error saving pending deposit tx:', e)
+    }
+  },
+
+  /** Obtiene todos los hashes de depósitos pendientes de verificación del usuario */
+  getPendingDepositTxs(userId: string): Array<{ txHash: string; amountUsdt?: number; timestamp: number }> {
+    if (typeof window === 'undefined' || !userId) return []
+    try {
+      const key = `plantarena_pending_deposits_${userId}`
+      return JSON.parse(localStorage.getItem(key) || '[]')
+    } catch {
+      return []
+    }
+  },
+
+  /** Elimina un hash pendiente una vez verificado exitosamente */
+  removePendingDepositTx(userId: string, txHash: string): void {
+    if (typeof window === 'undefined' || !userId || !txHash) return
+    try {
+      const key = `plantarena_pending_deposits_${userId}`
+      const existing: Array<{ txHash: string; amountUsdt?: number; timestamp: number }> = JSON.parse(
+        localStorage.getItem(key) || '[]'
+      )
+      const cleanHash = txHash.trim().toLowerCase()
+      const filtered = existing.filter((item) => item.txHash.toLowerCase() !== cleanHash)
+      localStorage.setItem(key, JSON.stringify(filtered))
+    } catch (e) {
+      console.warn('[supabaseService] Error removing pending deposit tx:', e)
+    }
+  },
+
+  /**
+   * Verificación completa e instantánea de depósito:
+   * 1. Vincula la wallet si no estaba vinculada.
+   * 2. Invoca el detector blockchain con el TxHash.
+   * 3. Reconcilia de forma atómica en Supabase.
+   */
+  async verifyAndCreditTxHash(
+    txHash: string,
+    userWallet?: string,
+    userId?: string
+  ): Promise<{
+    success: boolean
+    status?: string
+    amountGems?: number
+    error?: string
+    message?: string
+  }> {
+    const cleanHash = txHash.trim().toLowerCase()
+    if (!cleanHash.startsWith('0x') || cleanHash.length !== 66) {
+      return { success: false, error: 'INVALID_TX_HASH', message: 'Formato de Hash inválido (debe tener 66 caracteres iniciando con 0x).' }
+    }
+
+    // 1. Si se provee la wallet del usuario, auto-registrarla primero
+    if (userWallet && userWallet.startsWith('0x')) {
+      await this.registerDepositWallet(userWallet).catch(() => {})
+    }
+
+    // 2. Invocar detector blockchain con el TxHash
+    const checkRes = await this.triggerDepositCheck(cleanHash)
+
+    // Si el detector procesó y acreditó la transacción
+    if (checkRes.success && checkRes.processed && checkRes.processed.length > 0) {
+      const proc = checkRes.processed[0]
+      if (proc.result && proc.result.success) {
+        if (userId) this.removePendingDepositTx(userId, cleanHash)
+        return {
+          success: true,
+          status: proc.result.status || 'credited',
+          amountGems: proc.result.amountGems || (proc.amountUsdt ? proc.amountUsdt * 100 : 0),
+          message: proc.result.status === 'already_credited' ? 'Este depósito ya había sido acreditado.' : '¡Depósito verificado exitosamente!',
+        }
+      }
+    }
+
+    // 3. Fallback: intentar reclamo directo por hash
+    const claimRes = await this.claimUnmatchedDeposit(cleanHash)
+    if (claimRes.success) {
+      if (userId) this.removePendingDepositTx(userId, cleanHash)
+      return {
+        success: true,
+        status: claimRes.status || 'credited',
+        amountGems: claimRes.amountGems,
+        message: claimRes.message || '¡Depósito verificado exitosamente!',
+      }
+    }
+
+    // Si la transacción ya estaba acreditada
+    if (claimRes.status === 'already_credited') {
+      if (userId) this.removePendingDepositTx(userId, cleanHash)
+      return {
+        success: true,
+        status: 'already_credited',
+        message: 'Este depósito ya se encuentra acreditado en tu cuenta.',
+      }
+    }
+
+    return {
+      success: false,
+      error: claimRes.error || checkRes.error || 'TX_NOT_CONFIRMED',
+      message: claimRes.message || 'La transacción aún no se ha confirmado en la blockchain. Por favor espera unos segundos e intenta nuevamente.',
     }
   },
 

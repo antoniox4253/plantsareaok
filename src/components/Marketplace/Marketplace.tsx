@@ -2437,96 +2437,123 @@ export default function Marketplace({
       )}
 
 
-      {/* MODAL DE VENTA DIRECTA DE ORO */}
+      {/* MODAL DE VENTA DIRECTA DE ORO (HORIZONTAL Y ADAPTABLE) */}
       {isGoldModalOpen && (
         <div className="clan-dialog-backdrop" onClick={() => setIsGoldModalOpen(false)}>
           <div className="market-gold-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="clan-dialog-icon-ring" style={{ borderColor: '#fbbf24', background: 'rgba(245, 158, 11, 0.15)' }}>
-              <img src={monedaImg} alt="Oro" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+            {/* CABECERA HORIZONTAL COMPACTA */}
+            <div className="market-gold-modal-header">
+              <div className="market-gold-modal-title-box">
+                <div className="market-gold-modal-icon-ring">
+                  <img src={monedaImg} alt="Oro" />
+                </div>
+                <div>
+                  <h3 className="market-gold-modal-title">VENDER ORO POR GEMAS</h3>
+                  <p className="market-gold-modal-subtitle">
+                    Pon en venta tus Monedas de Oro a cambio de Gemas 💎 en el mercado P2P
+                  </p>
+                </div>
+              </div>
+
+              <div className="market-gold-modal-header-right">
+                <div className="market-gold-balance-pill">
+                  💰 Saldo: <strong>{userGold.toLocaleString('en-US')} Oro</strong>
+                </div>
+                <button
+                  type="button"
+                  className="market-gold-modal-close-btn"
+                  onClick={() => setIsGoldModalOpen(false)}
+                  title="Cerrar"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-            <h3 className="clan-dialog-title" style={{ color: '#fbbf24' }}>VENDER ORO POR GEMAS</h3>
-            <p className="clan-dialog-msg" style={{ marginBottom: '12px' }}>
-              Pon en venta tus Monedas de Oro a cambio de Gemas 💎 en el mercado P2P.
-            </p>
 
-            <div className="market-gold-balance-pill" style={{ marginBottom: '14px' }}>
-              💰 Saldo disponible: <strong>{userGold.toLocaleString('en-US')} Oro</strong>
-            </div>
-
-            <form onSubmit={handleCreateGoldListing} style={{ width: '100%' }}>
-              <div className="market-gold-field-group">
-                <label>
-                  Cantidad de Oro a Vender:
-                  <span className="market-gold-min-tag">Mínimo: 100 Oro</span>
-                </label>
-                <div className="market-gold-input-row">
-                  <span className="market-gold-input-prefix"><GoldIcon size={18} /></span>
-                  <input
-                    type="number"
-                    step="100"
-                    min={100}
-                    max={userGold}
-                    value={goldSellQty}
-                    onChange={(e) => setGoldSellQty(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                    className="market-gold-input"
-                    required
-                  />
-                  <span className="market-gold-input-suffix">Oro</span>
+            {/* FORMULARIO EN 2 COLUMNAS HORIZONTALES */}
+            <form onSubmit={handleCreateGoldListing} className="market-gold-modal-form">
+              <div className="market-gold-modal-columns">
+                {/* COLUMNA 1: CANTIDAD DE ORO */}
+                <div className="market-gold-modal-col">
+                  <div className="market-gold-field-group">
+                    <label>
+                      <span>Cantidad de Oro a Vender:</span>
+                      <span className="market-gold-min-tag">Mín: 100</span>
+                    </label>
+                    <div className="market-gold-input-row">
+                      <span className="market-gold-input-prefix"><GoldIcon size={18} /></span>
+                      <input
+                        type="number"
+                        step="100"
+                        min={100}
+                        max={userGold}
+                        value={goldSellQty}
+                        onChange={(e) => setGoldSellQty(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="market-gold-input"
+                        required
+                      />
+                      <span className="market-gold-input-suffix">Oro</span>
+                    </div>
+                    <div className="market-price-shortcuts" style={{ marginTop: '6px' }}>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(500)}>500</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(1000)}>1,000</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(5000)}>5,000</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(10000)}>10,000</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(userGold)}>MÁX ({userGold.toLocaleString('en-US')})</button>
+                    </div>
+                  </div>
                 </div>
-                <div className="market-price-shortcuts" style={{ marginTop: '6px' }}>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(500)}>500</button>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(1000)}>1,000</button>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(5000)}>5,000</button>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(10000)}>10,000</button>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(userGold)}>MÁX ({userGold.toLocaleString('en-US')})</button>
+
+                {/* COLUMNA 2: PRECIO EN GEMAS Y RESUMEN EN VIVO */}
+                <div className="market-gold-modal-col">
+                  <div className="market-gold-field-group">
+                    <label>
+                      <span>Precio Total en Gemas:</span>
+                      <span className="market-gold-min-tag">Mín: 1 💎</span>
+                    </label>
+                    <div className="market-gold-input-row">
+                      <span className="market-gold-input-prefix">💎</span>
+                      <input
+                        type="number"
+                        step="1"
+                        min={1}
+                        max={99999}
+                        value={goldSellPriceGems}
+                        onChange={(e) => setGoldSellPriceGems(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        className="market-gold-input"
+                        required
+                      />
+                      <span className="market-gold-input-suffix">Gemas</span>
+                    </div>
+                    <div className="market-price-shortcuts" style={{ marginTop: '6px' }}>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(5)}>5 💎</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(10)}>10 💎</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(25)}>25 💎</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(50)}>50 💎</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(100)}>100 💎</button>
+                    </div>
+                  </div>
+
+                  {/* Resumen en vivo */}
+                  <div className="market-gold-summary-card">
+                    <div className="market-gold-summary-row">
+                      <span>Tasa calculada:</span>
+                      <strong>≈ {goldSellPriceGems > 0 ? Math.round(goldSellQty / goldSellPriceGems).toLocaleString('en-US') : 0} Oro / 💎</strong>
+                    </div>
+                    <div className="market-gold-summary-row">
+                      <span>Comisión retenida ({comisionPct}%):</span>
+                      <span style={{ color: '#ef4444' }}>-{calculateMarketplaceSplit(goldSellPriceGems, comisionPct).comision} 💎</span>
+                    </div>
+                    <div className="market-gold-summary-row market-gold-summary-row--total">
+                      <span>Recibirás neto al venderse:</span>
+                      <strong style={{ color: '#4ade80', fontSize: '14px' }}>{calculateMarketplaceSplit(goldSellPriceGems, comisionPct).neto} 💎</strong>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="market-gold-field-group" style={{ marginTop: '12px' }}>
-                <label>
-                  Precio Total en Gemas:
-                  <span className="market-gold-min-tag">Mínimo: 1 💎</span>
-                </label>
-                <div className="market-gold-input-row">
-                  <span className="market-gold-input-prefix">💎</span>
-                  <input
-                    type="number"
-                    step="1"
-                    min={1}
-                    max={99999}
-                    value={goldSellPriceGems}
-                    onChange={(e) => setGoldSellPriceGems(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    className="market-gold-input"
-                    required
-                  />
-                  <span className="market-gold-input-suffix">Gemas</span>
-                </div>
-                <div className="market-price-shortcuts" style={{ marginTop: '6px' }}>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(5)}>5 💎</button>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(10)}>10 💎</button>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(25)}>25 💎</button>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(50)}>50 💎</button>
-                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(100)}>100 💎</button>
-                </div>
-              </div>
-
-              {/* Resumen en vivo */}
-              <div className="market-gold-summary-card" style={{ margin: '14px 0 16px 0' }}>
-                <div className="market-gold-summary-row">
-                  <span>Tasa calculada:</span>
-                  <strong>≈ {goldSellPriceGems > 0 ? Math.round(goldSellQty / goldSellPriceGems).toLocaleString('en-US') : 0} Oro / 💎</strong>
-                </div>
-                <div className="market-gold-summary-row">
-                  <span>Comisión retenida ({comisionPct}%):</span>
-                  <span style={{ color: '#ef4444' }}>-{calculateMarketplaceSplit(goldSellPriceGems, comisionPct).comision} 💎</span>
-                </div>
-                <div className="market-gold-summary-row market-gold-summary-row--total">
-                  <span>Recibirás neto al venderse:</span>
-                  <strong style={{ color: '#4ade80', fontSize: '15px' }}>{calculateMarketplaceSplit(goldSellPriceGems, comisionPct).neto} 💎</strong>
-                </div>
-              </div>
-
-              <div className="clan-dialog-actions">
+              {/* ACCIONES */}
+              <div className="market-gold-modal-actions">
                 <button
                   type="button"
                   className="clan-dialog-btn clan-dialog-btn--cancel"
