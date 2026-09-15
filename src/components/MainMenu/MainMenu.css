@@ -45,7 +45,7 @@
 
 .topbar__left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -54,6 +54,12 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 5px;
+}
+
+.topbar__player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .profile-sub-row {

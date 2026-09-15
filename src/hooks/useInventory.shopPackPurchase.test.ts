@@ -104,4 +104,42 @@ describe('Compra de Sobres en la Tienda - Lógica Autoritativa de Cobro', () => 
     const isBlocked = userTokens < totalCost
     expect(isBlocked).toBe(true)
   })
+
+  it('7. PACK_DEFINITIONS define 300, 1000 y 2500 de oro para los sobres básico, épico y legendario', () => {
+    expect(PACK_DEFINITIONS.basic.goldReward).toBe(300)
+    expect(PACK_DEFINITIONS.epic.goldReward).toBe(1000)
+    expect(PACK_DEFINITIONS.legendary.goldReward).toBe(2500)
+  })
+
+  it('8. SupabaseService.buyPacks procesa goldAdded devuelto por el backend', async () => {
+    vi.spyOn(supabaseClientModule, 'isSupabaseConfigured').mockReturnValue(true)
+
+    vi.spyOn(supabaseClientModule.supabase, 'rpc' as any).mockResolvedValue({
+      data: {
+        success: true,
+        packIds: ['uuid-pack-basic-1', 'uuid-pack-basic-2'],
+        spent: 600,
+        goldAdded: 600,
+        quantity: 2,
+      },
+      error: null,
+    } as any)
+
+    const res = await SupabaseService.buyPacks('basic', 2)
+
+    expect(res.success).toBe(true)
+    expect(res.spent).toBe(600)
+    expect(res.goldAdded).toBe(600)
+    expect(res.packIds?.length).toBe(2)
+  })
+
+  it('9. Acreditación de oro: el saldo previo suma goldAdded correctamente', () => {
+    const initialGold = 500
+    const res = { success: true, spent: 1000, goldAdded: 1000, packIds: ['pack-epic-1'] }
+
+    const goldAdded = typeof res.goldAdded === 'number' ? res.goldAdded : 0
+    const nextGold = initialGold + goldAdded
+
+    expect(nextGold).toBe(1500)
+  })
 })

@@ -1153,7 +1153,7 @@ export function useInventory() {
   const buyPack = async (
     packId: PackId,
     qty: number = 1
-  ): Promise<{ success: boolean; packs?: InventoryPack[]; error?: string }> => {
+  ): Promise<{ success: boolean; packs?: InventoryPack[]; goldAdded?: number; error?: string }> => {
     const res = await inventoryService.buyPacks(packId, qty)
     if (!res.success) return { success: false, error: res.error }
 
@@ -1164,6 +1164,19 @@ export function useInventory() {
         const next = Math.max(0, prev - spentGems)
         try {
           localStorage.setItem(STORAGE_KEYS.TOKENS, next.toString())
+        } catch {}
+        return next
+      })
+      window.dispatchEvent(new Event('refresh_user_balance'))
+    }
+
+    // Acreditación de oro autoritativo entregado por el pack
+    const goldAdded = typeof res.goldAdded === 'number' ? res.goldAdded : 0
+    if (goldAdded > 0) {
+      setUserGold((prev) => {
+        const next = Math.max(0, prev + goldAdded)
+        try {
+          localStorage.setItem(STORAGE_KEYS.GOLD, next.toString())
         } catch {}
         return next
       })
@@ -1186,7 +1199,7 @@ export function useInventory() {
       rarity: def.rarity,
       purchasedAt: Date.now(),
     }))
-    return { success: true, packs }
+    return { success: true, packs, goldAdded }
   }
 
   /** Compra oro por ID de paquete. La cantidad y el precio salen de la base. */

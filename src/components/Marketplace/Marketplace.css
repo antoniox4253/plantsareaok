@@ -1318,3 +1318,603 @@
   }
 }
 
+/* =========================================================
+   CATEGORY CARDS & BROWSE REORGANIZATION
+   ========================================================= */
+
+.market-browse-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.market-categories-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px 4px 20px 4px;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.market-categories-hero {
+  text-align: center;
+  padding: 12px 16px 8px 16px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.1) 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.market-categories-hero__title {
+  font-size: 17px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.8px;
+  margin: 0 0 6px 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.market-categories-hero__subtitle {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0 auto;
+  max-width: 650px;
+  line-height: 1.45;
+}
+
+.market-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 860px) {
+  .market-categories-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.market-category-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 18px 18px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 2px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.market-category-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Category specific border glows */
+.market-category-card--plants:hover {
+  border-color: #4ade80;
+  box-shadow: 0 12px 30px rgba(74, 222, 128, 0.22);
+}
+
+.market-category-card--farming:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.22);
+}
+
+.market-category-card--gold:hover {
+  border-color: #fbbf24;
+  box-shadow: 0 12px 30px rgba(251, 191, 36, 0.25);
+}
+
+.market-category-card__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  letter-spacing: 0.3px;
+}
+
+.market-category-card__badge--gold {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.market-category-card__icon-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.24s ease;
+}
+
+.market-category-card:hover .market-category-card__icon-circle {
+  transform: scale(1.08);
+}
+
+.market-category-card__icon-circle--plants {
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.25) 0%, rgba(34, 197, 94, 0.05) 100%);
+  border: 2px solid #4ade80;
+}
+
+.market-category-card__icon-circle--farming {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(14, 165, 233, 0.05) 100%);
+  border: 2px solid #38bdf8;
+}
+
+.market-category-card__icon-circle--gold {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, rgba(217, 119, 6, 0.08) 100%);
+  border: 2px solid #fbbf24;
+}
+
+.market-category-card__emoji {
+  font-size: 38px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+}
+
+.market-category-card__title {
+  font-size: 17px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.4px;
+}
+
+.market-category-card__desc {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #94a3b8;
+  margin: 0 0 18px 0;
+  min-height: 34px;
+}
+
+.market-category-card__footer-action {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 6px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  transition: all 0.2s ease;
+}
+
+.market-category-card:hover .market-category-card__footer-action {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  transform: translateX(2px);
+}
+
+.market-category-card--plants .market-category-card__footer-action {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.25);
+}
+
+.market-category-card--plants:hover .market-category-card__footer-action {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: #4ade80;
+}
+
+.market-category-card--gold .market-category-card__footer-action {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.market-category-card--gold:hover .market-category-card__footer-action {
+  background: rgba(251, 191, 36, 0.22);
+  border-color: #fbbf24;
+}
+
+.market-category-card__arrow {
+  font-size: 13px;
+  transition: transform 0.2s ease;
+}
+
+.market-category-card:hover .market-category-card__arrow {
+  transform: translateX(3px);
+}
+
+/* =========================================================
+   SUBCATEGORY VIEW (INSIDE BROWSE)
+   ========================================================= */
+
+.market-subcategory-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.market-subcategory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.market-subcategory-back-btn {
+  background: rgba(51, 65, 85, 0.8);
+  border: 1.5px solid #64748b;
+  color: #f1f5f9;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.market-subcategory-back-btn:hover {
+  background: rgba(71, 85, 105, 1);
+  border-color: #38bdf8;
+  transform: scale(1.03);
+}
+
+.market-subcategory-title-wrap {
+  flex: 1;
+  text-align: center;
+}
+
+.market-subcategory-title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.6px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.market-subcategory-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.market-sub-action-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: 1.5px solid #34d399;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 6px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+  transition: all 0.15s ease;
+}
+
+.market-sub-action-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 5px 14px rgba(16, 185, 129, 0.45);
+}
+
+.market-sub-action-btn--gold {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-color: #fbbf24;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.4);
+}
+
+.market-sub-action-btn--gold:hover {
+  box-shadow: 0 5px 14px rgba(245, 158, 11, 0.55);
+}
+
+/* =========================================================
+   GOLD TRADING CARD STYLES
+   ========================================================= */
+
+.market-item-card--gold {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.8) 0%, rgba(20, 24, 38, 0.95) 100%);
+}
+
+.market-item-card--gold:hover {
+  border-color: #fbbf24;
+  box-shadow: 0 8px 22px rgba(251, 191, 36, 0.25);
+}
+
+.market-item-level-tag--gold {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.market-item-rarity-badge--gold {
+  color: #fbbf24;
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  font-weight: 900;
+  letter-spacing: 0.6px;
+}
+
+.market-item-card__img-wrap--gold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.market-gold-icon-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(251, 191, 36, 0.45));
+}
+
+.market-gold-item-title {
+  color: #fbbf24;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.market-stat-pill--gold {
+  color: #fde68a;
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.3);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   SELL CATEGORY SELECTOR & GOLD SELL FORM
+   ========================================================= */
+
+.market-sell-category-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.market-sell-cat-btn {
+  flex: 1;
+  min-width: 160px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1.5px solid rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.market-sell-cat-btn:hover {
+  background: rgba(51, 65, 85, 0.85);
+  border-color: #94a3b8;
+}
+
+.market-sell-cat-btn--active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(30, 41, 59, 0.9) 100%);
+  border-color: #10b981;
+  color: #4ade80;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.market-sell-cat-btn--gold.market-sell-cat-btn--active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(30, 41, 59, 0.9) 100%);
+  border-color: #f59e0b;
+  color: #fbbf24;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.market-gold-sell-pane {
+  width: 100%;
+  max-width: 650px;
+  margin: 10px auto;
+}
+
+.market-gold-sell-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid rgba(251, 191, 36, 0.35);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
+}
+
+.market-gold-sell-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.market-gold-sell-icon-wrap {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, rgba(15, 23, 42, 0.2) 100%);
+  border: 2px solid #fbbf24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.market-gold-icon-img-large {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.market-gold-sell-title-emoji {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 20px;
+}
+
+.market-gold-sell-header h3 {
+  font-size: 15px;
+  font-weight: 900;
+  color: #fbbf24;
+  margin: 0 0 4px 0;
+  letter-spacing: 0.5px;
+}
+
+.market-gold-sell-header p {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0 0 8px 0;
+  line-height: 1.35;
+}
+
+.market-gold-balance-pill {
+  display: inline-block;
+  font-size: 11.5px;
+  color: #fde68a;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.market-gold-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.market-gold-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.market-gold-field-group label {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.market-gold-min-tag {
+  font-size: 10.5px;
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.market-gold-input-row {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 6px 14px;
+  gap: 8px;
+  transition: border-color 0.2s ease;
+}
+
+.market-gold-input-row:focus-within {
+  border-color: #fbbf24;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
+}
+
+.market-gold-input-prefix {
+  font-size: 18px;
+}
+
+.market-gold-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffffff;
+  text-align: right;
+  padding: 4px 0;
+}
+
+.market-gold-input-suffix {
+  font-size: 12px;
+  font-weight: 800;
+  color: #94a3b8;
+  min-width: 40px;
+}
+
+.market-gold-summary-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.market-gold-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: #cbd5e1;
+}
+
+.market-gold-summary-row--total {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+/* =========================================================
+   GOLD MODAL POPUP
+   ========================================================= */
+
+.market-gold-modal-card {
+  background: linear-gradient(150deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 480px;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(251, 191, 36, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  animation: clanDialogPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+

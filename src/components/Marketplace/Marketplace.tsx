@@ -15,6 +15,8 @@ import { isSupabaseConfigured } from '../../lib/supabaseClient'
 import type { PlantId, PlantCardInstance } from '../../types/game'
 import { PLANT_CONFIGS, STAT_LABELS, VIP_PASS_PRECIO_GEMAS, type PlantStatKey } from '../../utils/gameConstants'
 import { evaluateMarketplaceAccess, calculateMarketplaceSplit } from '../../utils/marketplaceAccess'
+import monedaImg from '../../assets/ico/moneda.webp'
+import GoldIcon from '../Common/GoldIcon'
 import './Marketplace.css'
 
 function formatTxTime(dateStr?: string): string {
@@ -37,6 +39,7 @@ interface MarketplaceProps {
   /** Ya no se usa para cobrar: el saldo lo mueve el servidor. Se deja para
    *  poder avisar de saldo insuficiente antes de llamar. */
   userTokens: number
+  userGold?: number
   userElo?: number
   hasVipPass: boolean
   farmingItems?: FarmingInventory
@@ -77,7 +80,7 @@ interface MarketplaceProps {
  */
 interface OfertaDelMercado {
   id: string
-  itemType?: 'plant' | 'farming'
+  itemType?: 'plant' | 'farming' | 'gold'
   itemId?: string
   quantity?: number
   plantId?: PlantId
@@ -145,6 +148,7 @@ export type SellableMarketItem =
 
 export default function Marketplace({
   userTokens,
+  userGold = 0,
   userElo,
   hasVipPass,
   farmingItems,
@@ -165,6 +169,11 @@ export default function Marketplace({
   onBackToMenu,
 }: MarketplaceProps) {
   const [activeTab, setActiveTab] = useState<'browse' | 'sell' | 'transactions'>('browse')
+  const [selectedCategory, setSelectedCategory] = useState<'plants' | 'farming' | 'gold' | null>(null)
+  const [sellCategory, setSellCategory] = useState<'plants' | 'farming' | 'gold'>('plants')
+  const [goldSellQty, setGoldSellQty] = useState<number>(1000)
+  const [goldSellPriceGems, setGoldSellPriceGems] = useState<number>(10)
+  const [isGoldModalOpen, setIsGoldModalOpen] = useState<boolean>(false)
   const [listings, setListings] = useState<OfertaDelMercado[]>([])
   const [transactions, setTransactions] = useState<GlobalTransactionItem[]>([])
   const [txLoading, setTxLoading] = useState(false)
@@ -280,6 +289,33 @@ export default function Marketplace({
     return items
   }, [plantInstances, unlockedPlants, plantLevels, plantStatRolls, activeDeck, activeDeckInstances, farmingItems])
 
+  const plantOffers = useMemo(() => {
+    return listings.filter((item) => {
+      if (item.itemType === 'gold' || item.itemId === 'gold') return false
+      if (item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId])) return false
+      return Boolean(item.plantId || item.itemType === 'plant' || (!item.itemType && !item.itemId))
+    })
+  }, [listings])
+
+  const farmingOffers = useMemo(() => {
+    return listings.filter((item) => {
+      if (item.itemType === 'gold' || item.itemId === 'gold') return false
+      return item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId])
+    })
+  }, [listings])
+
+  const goldOffers = useMemo(() => {
+    return listings.filter((item) => item.itemType === 'gold' || item.itemId === 'gold')
+  }, [listings])
+
+  const sellablePlants = useMemo(() => sellableItems.filter((c) => c.kind === 'plant'), [sellableItems])
+  const sellableFarming = useMemo(() => sellableItems.filter((c) => c.kind === 'farming'), [sellableItems])
+
+  const displayedSellableItems = useMemo(() => {
+    if (sellCategory === 'farming') return sellableFarming
+    return sellablePlants
+  }, [sellCategory, sellablePlants, sellableFarming])
+
   const [selectedItemId, setSelectedItemId] = useState<string>(() => {
     return sellableItems[0]?.id || ''
   })
@@ -287,10 +323,18 @@ export default function Marketplace({
   const [sellQuantity, setSellQuantity] = useState<number>(1)
 
   useEffect(() => {
-    if (sellableItems.length > 0 && (!selectedItemId || !sellableItems.some((c) => c.id === selectedItemId))) {
+    if (sellCategory === 'plants' && sellablePlants.length > 0) {
+      if (!sellablePlants.some((c) => c.id === selectedItemId)) {
+        setSelectedItemId(sellablePlants[0].id)
+      }
+    } else if (sellCategory === 'farming' && sellableFarming.length > 0) {
+      if (!sellableFarming.some((c) => c.id === selectedItemId)) {
+        setSelectedItemId(sellableFarming[0].id)
+      }
+    } else if (sellableItems.length > 0 && (!selectedItemId || !sellableItems.some((c) => c.id === selectedItemId))) {
       setSelectedItemId(sellableItems[0].id)
     }
-  }, [sellableItems, selectedItemId])
+  }, [sellCategory, sellablePlants, sellableFarming, sellableItems, selectedItemId])
 
   useEffect(() => {
     setSellQuantity(1)
@@ -477,24 +521,34 @@ export default function Marketplace({
       return
     }
 
-    const isFarming = item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId])
+    const isGold = item.itemType === 'gold' || item.itemId === 'gold'
+    const isFarming = !isGold && (item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId]))
     const qty = Math.max(1, Number(item.quantity) || 1)
-    const nombre = isFarming
+    const nombre = isGold
+      ? 'Monedas de Oro'
+      : isFarming
       ? (FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId]?.label || item.itemId || 'Recurso')
       : (item.plantId && PLANT_CONFIGS[item.plantId as PlantId]?.name || item.plantId || 'Carta')
-    const detalle = isFarming
+    const detalle = isGold
+      ? `${qty.toLocaleString('en-US')} Monedas de Oro`
+      : isFarming
       ? (qty > 1 ? `el lote completo de ${qty}x "${nombre}"` : `1x "${nombre}"`)
       : `"${nombre}" (⭐${item.nivel} · 🌱${item.germinationsCount ?? 0})`
 
     const split = calculateMarketplaceSplit(item.precio, comisionPct)
 
     showModalConfirm(
-      'CONFIRMAR COMPRA',
-      `¿Deseas comprar ${detalle} por un total de ${item.precio} 💎?\n\n` +
-        `• Se descontará el 100% (${item.precio} 💎) de tu saldo de gemas.\n` +
-        `• El vendedor recibirá el 90% neto (${split.neto} 💎) y el juego retiene el ${split.comisionPct}% (${split.comision} 💎) de comisión.\n` +
-        (isFarming && qty > 1 ? `• Recibirás las ${qty} unidades juntas en tu inventario de cultivo.` : ''),
-      '🛒',
+      isGold ? 'COMPRAR ORO P2P' : 'CONFIRMAR COMPRA',
+      isGold
+        ? `¿Deseas comprar ${detalle} por un total de ${item.precio} 💎?\n\n` +
+          `• Se descontará el 100% (${item.precio} 💎) de tu saldo de gemas.\n` +
+          `• El vendedor recibirá el 90% neto (${split.neto} 💎) y el juego retiene el ${split.comisionPct}% (${split.comision} 💎) de comisión.\n` +
+          `• Recibirás las ${qty.toLocaleString('en-US')} Monedas de Oro inmediatamente en tu saldo.`
+        : `¿Deseas comprar ${detalle} por un total de ${item.precio} 💎?\n\n` +
+          `• Se descontará el 100% (${item.precio} 💎) de tu saldo de gemas.\n` +
+          `• El vendedor recibirá el 90% neto (${split.neto} 💎) y el juego retiene el ${split.comisionPct}% (${split.comision} 💎) de comisión.\n` +
+          (isFarming && qty > 1 ? `• Recibirás las ${qty} unidades juntas en tu inventario de cultivo.` : ''),
+      isGold ? '💰' : '🛒',
       async () => {
         const r = await marketplaceService.buyMarketplaceCard(item.id)
         if (!r.success) {
@@ -519,7 +573,7 @@ export default function Marketplace({
 
         showModalAlert(
           '¡COMPRA EXITOSA!',
-          `Has adquirido ${detalle} por ${item.precio} 💎.\nSe descontaron ${item.precio} 💎 de tu saldo y ya está en tu ${isFarming ? 'inventario de cultivo' : 'Jardín'}.`,
+          `Has adquirido ${detalle} por ${item.precio} 💎.\nSe descontaron ${item.precio} 💎 de tu saldo y ya está acreditado en tu ${isGold ? 'balance de Oro' : isFarming ? 'inventario de cultivo' : 'Jardín'}.`,
           '🎉',
           'success'
         )
@@ -673,16 +727,23 @@ export default function Marketplace({
 
   // RETIRAR MI OFERTA
   const handleCancelListing = (item: OfertaDelMercado) => {
-    const isFarming = item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId])
+    const isGold = item.itemType === 'gold' || item.itemId === 'gold'
+    const isFarming = !isGold && (item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId]))
     const qty = Math.max(1, Number(item.quantity) || 1)
-    const nombre = isFarming
+    const nombre = isGold
+      ? 'Monedas de Oro'
+      : isFarming
       ? (FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId]?.label || item.itemId || 'Recurso')
       : (item.plantId && PLANT_CONFIGS[item.plantId as PlantId]?.name || item.plantId || 'Carta')
-    const detalle = isFarming && qty > 1 ? `el lote de ${qty}x "${nombre}"` : `"${nombre}"`
+    const detalle = isGold
+      ? `${qty.toLocaleString('en-US')} Monedas de Oro`
+      : isFarming && qty > 1
+      ? `el lote de ${qty}x "${nombre}"`
+      : `"${nombre}"`
 
     showModalConfirm(
       'RETIRAR OFERTA DEL MERCADO',
-      `¿Deseas retirar ${detalle} del mercado y recuperar ${isFarming ? 'los recursos en tu inventario' : 'la planta en tu Jardín'}?`,
+      `¿Deseas retirar ${detalle} del mercado y recuperar ${isGold ? 'el oro en tu cuenta' : isFarming ? 'los recursos en tu inventario' : 'la planta en tu Jardín'}?`,
       '📦',
       async () => {
         const r = await marketplaceService.cancelMarketplaceListing(item.id)
@@ -693,16 +754,93 @@ export default function Marketplace({
         soundManager.playSound('plantation', 0.8)
         showModalAlert(
           'OFERTA RETIRADA',
-          `${detalle} ha vuelto a tu ${isFarming ? 'inventario de cultivo' : 'Jardín'}.`,
+          `${detalle} ha vuelto a tu ${isGold ? 'saldo de oro' : isFarming ? 'inventario de cultivo' : 'Jardín'}.`,
           '📦',
           'info'
         )
         await refreshListings()
+        window.dispatchEvent(new Event('refresh_user_balance'))
         window.dispatchEvent(new Event('refresh_user_inventory'))
         onServerChange?.()
       },
       'RETIRAR Y RECUPERAR',
       'MANTENER EN VENTA'
+    )
+  }
+
+  // PUBLICAR ORO EN EL MERCADO P2P
+  const handleCreateGoldListing = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!canSell) {
+      showModalConfirm(
+        'VENTAS BLOQUEADAS',
+        `Todos los jugadores pueden comprar en el mercado libremente.\n\nPara poner en venta oro o recursos necesitas el Pase PvP o alcanzar 1,350 Copas en la Arena.\n\nTus copas actuales: ${copasActuales} / 1,350.\n\n¿Deseas activar tu Pase PvP (${VIP_PASS_PRECIO_GEMAS} 💎) ahora?`,
+        '🔒',
+        () => {
+          handleDirectBuyVip()
+        },
+        `ACTIVAR PASE PVP (${VIP_PASS_PRECIO_GEMAS} 💎)`,
+        'CANCELAR'
+      )
+      return
+    }
+
+    const qty = Math.floor(goldSellQty)
+    const price = Math.floor(goldSellPriceGems)
+
+    if (qty < 100) {
+      showModalAlert('CANTIDAD MÍNIMA', 'Debes vender al menos 100 Monedas de Oro.', '⚠️', 'warning')
+      return
+    }
+
+    if (qty > userGold) {
+      showModalAlert(
+        'ORO INSUFICIENTE',
+        `No posees suficiente oro. Tienes ${userGold.toLocaleString('en-US')} de Oro disponible en tu cuenta.`,
+        '⚠️',
+        'warning'
+      )
+      return
+    }
+
+    if (price < 1) {
+      showModalAlert('PRECIO MÍNIMO', 'El precio total en gemas debe ser de al menos 1 💎.', '⚠️', 'warning')
+      return
+    }
+
+    const split = calculateMarketplaceSplit(price, comisionPct)
+
+    showModalConfirm(
+      'PUBLICAR ORO EN EL MERCADO',
+      `¿Confirmas poner en venta ${qty.toLocaleString('en-US')} Monedas de Oro por un precio total de ${price} 💎 gemas?\n\n` +
+        `• El comprador pagará ${price} 💎 por el lote de ${qty.toLocaleString('en-US')} monedas de oro.\n` +
+        `• Comisión del mercado: ${split.comisionPct}% (${split.comision} 💎).\n` +
+        `• Recibirás el 90% neto: ${split.neto} 💎 cuando se compre tu oferta.\n\n` +
+        `⚠️ Las ${qty.toLocaleString('en-US')} monedas de oro se descontarán de tu saldo de inmediato y quedarán en depósito seguro hasta que se vendan o retires la oferta.`,
+      '💰',
+      async () => {
+        const r = await marketplaceService.listMarketplaceItem('gold', 'gold', price, qty)
+        if (!r.success) {
+          showModalAlert('NO SE PUDO PUBLICAR', r.error || 'Inténtalo de nuevo.', '⚠️', 'error')
+          return
+        }
+
+        soundManager.playSound('plantation', 0.9)
+        showModalAlert(
+          '¡OFERTA DE ORO PUBLICADA!',
+          `${qty.toLocaleString('en-US')} Monedas de Oro puestas en venta por ${price} 💎 en total.\nRecibirás ${split.neto} 💎 netos al concretarse la venta.`,
+          '💰',
+          'success'
+        )
+        setIsGoldModalOpen(false)
+        setActiveTab('browse')
+        setSelectedCategory('gold')
+        await refreshListings()
+        window.dispatchEvent(new Event('refresh_user_balance'))
+        onServerChange?.()
+      },
+      `SÍ, VENDER ORO (${price} 💎)`,
+      'CANCELAR'
     )
   }
 
@@ -722,6 +860,237 @@ export default function Marketplace({
       },
       `ACTIVAR (${VIP_PASS_PRECIO_GEMAS} 💎)`,
       'CANCELAR'
+    )
+  }
+
+  const renderPlantOfferCard = (item: OfertaDelMercado) => {
+    const isMine = item.esMia
+    const plantDef = item.plantId ? PLANT_CONFIGS[item.plantId as PlantId] : undefined
+    const itemIcon = plantDef?.packetActive || plantDef?.icon
+    const rInfo = item.plantId ? getPlantRarityAndMinPrice(item.plantId as PlantId) : { rarity: 'COMÚN' as PlantRarity, minPrice: 100, color: '#94a3b8' }
+    const itemName = plantDef?.name || item.plantId || 'Carta de Planta'
+
+    return (
+      <div key={item.id} className="market-item-card">
+        {/* Card Header */}
+        <div className="market-item-card__header">
+          <div className="market-item-tags-row">
+            <span
+              className="market-item-level-tag"
+              title={getFusionTooltip(item.nivel)}
+            >
+              ⭐{item.nivel}
+            </span>
+            <span
+              className={`market-item-sprouts-tag market-item-sprouts-tag--${
+                (item.germinationsCount ?? 0) >= 2
+                  ? 'max'
+                  : (item.germinationsCount ?? 0) === 1
+                  ? 'mid'
+                  : 'fresh'
+              }`}
+              title={getSproutTooltip(item.germinationsCount ?? 0)}
+            >
+              🌱{item.germinationsCount ?? 0}
+            </span>
+          </div>
+          <span className="market-item-rarity-badge" style={{ color: rInfo.color, borderColor: rInfo.color }}>
+            {rInfo.rarity}
+          </span>
+          <span className="market-item-seller">👤 {isMine ? 'TÚ' : item.vendedor ?? 'Jugador'}</span>
+        </div>
+
+        {/* Image and Name */}
+        <div className="market-item-card__img-wrap">
+          <img src={itemIcon} alt={itemName} className="market-item-icon" />
+        </div>
+        <h4 className="market-item-name">{itemName}</h4>
+
+        {/* Stat Rolls Pills */}
+        <div className="market-item-stats-box">
+          {item.statRolls && item.statRolls.length > 0 ? (
+            formatStatRolls(item.statRolls)
+          ) : (
+            <span className="market-stat-pill market-stat-pill--none">Stats estándar de fábrica</span>
+          )}
+        </div>
+
+        {/* Price and Action Button */}
+        <div className="market-item-card__footer">
+          <div className="market-item-price-box">
+            <span className="market-price-label">PRECIO</span>
+            <span className="market-price-val">{item.precio} 💎</span>
+          </div>
+
+          {isMine ? (
+            <button
+              type="button"
+              className="market-cancel-btn"
+              onClick={() => handleCancelListing(item)}
+            >
+              RETIRAR
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="market-buy-btn"
+              onClick={() => handleBuyListing(item)}
+            >
+              COMPRAR
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const renderFarmingOfferCard = (item: OfertaDelMercado) => {
+    const isMine = item.esMia
+    const farmingDef = item.itemId ? FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId] : undefined
+    const itemIcon = farmingDef?.icon
+    const rInfo = { rarity: 'FARMING', minPrice: 10, color: '#4ade80' }
+    const itemName = farmingDef?.label || item.itemId || 'Recurso'
+    const itemQty = Math.max(1, Number(item.quantity) || 1)
+
+    return (
+      <div key={item.id} className="market-item-card">
+        {/* Card Header */}
+        <div className="market-item-card__header">
+          <span className="market-item-level-tag">
+            🌾 LOTE x{itemQty}
+          </span>
+          <span className="market-item-rarity-badge" style={{ color: rInfo.color, borderColor: rInfo.color }}>
+            {rInfo.rarity}
+          </span>
+          <span className="market-item-seller">👤 {isMine ? 'TÚ' : item.vendedor ?? 'Jugador'}</span>
+        </div>
+
+        {/* Image and Name */}
+        <div className="market-item-card__img-wrap">
+          {itemIcon ? (
+            <img
+              src={itemIcon}
+              alt={itemName}
+              className="market-item-icon"
+              onError={(e) => {
+                const target = e.currentTarget
+                target.style.display = 'none'
+                if (target.parentElement) {
+                  const span = document.createElement('span')
+                  span.textContent = farmingDef?.fallback || '🌾'
+                  span.style.fontSize = '3.5rem'
+                  target.parentElement.appendChild(span)
+                }
+              }}
+            />
+          ) : (
+            <span style={{ fontSize: '3.5rem' }}>{farmingDef?.fallback || '🌾'}</span>
+          )}
+        </div>
+        <h4 className="market-item-name">
+          {itemQty > 1 ? `${itemQty}x ${itemName}` : itemName}
+        </h4>
+
+        {/* Farming Description */}
+        <div className="market-item-stats-box">
+          <span className="market-stat-pill market-stat-pill--none">
+            {farmingDef?.description || 'Recurso de cultivo.'}
+          </span>
+        </div>
+
+        {/* Price and Action Button */}
+        <div className="market-item-card__footer">
+          <div className="market-item-price-box">
+            <span className="market-price-label">{itemQty > 1 ? 'TOTAL LOTE' : 'PRECIO'}</span>
+            <span className="market-price-val">{item.precio} 💎</span>
+          </div>
+
+          {isMine ? (
+            <button
+              type="button"
+              className="market-cancel-btn"
+              onClick={() => handleCancelListing(item)}
+            >
+              RETIRAR
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="market-buy-btn"
+              onClick={() => handleBuyListing(item)}
+            >
+              COMPRAR
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const renderGoldOfferCard = (item: OfertaDelMercado) => {
+    const isMine = item.esMia
+    const goldQty = Math.max(1, Number(item.quantity) || 1)
+    const ratePerGem = item.precio > 0 ? Math.round(goldQty / item.precio) : 0
+
+    return (
+      <div key={item.id} className="market-item-card market-item-card--gold">
+        {/* Card Header */}
+        <div className="market-item-card__header">
+          <span className="market-item-level-tag market-item-level-tag--gold" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <GoldIcon size={14} /> LOTE DE ORO
+          </span>
+          <span className="market-item-rarity-badge market-item-rarity-badge--gold">
+            ORO P2P
+          </span>
+          <span className="market-item-seller">👤 {isMine ? 'TÚ' : item.vendedor ?? 'Jugador'}</span>
+        </div>
+
+        {/* Image and Amount */}
+        <div className="market-item-card__img-wrap market-item-card__img-wrap--gold">
+          <img
+            src={monedaImg}
+            alt="Oro"
+            className="market-gold-icon-img"
+          />
+        </div>
+
+        <h4 className="market-item-name market-gold-item-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <GoldIcon size={20} /> {goldQty.toLocaleString('en-US')} ORO
+        </h4>
+
+        {/* Stat Rolls / Conversion Rate */}
+        <div className="market-item-stats-box">
+          <span className="market-stat-pill market-stat-pill--gold">
+            Tasa: ≈ {ratePerGem.toLocaleString('en-US')} Oro por cada 1 💎
+          </span>
+        </div>
+
+        {/* Price and Action Button */}
+        <div className="market-item-card__footer">
+          <div className="market-item-price-box">
+            <span className="market-price-label">PRECIO TOTAL</span>
+            <span className="market-price-val">{item.precio} 💎</span>
+          </div>
+
+          {isMine ? (
+            <button
+              type="button"
+              className="market-cancel-btn"
+              onClick={() => handleCancelListing(item)}
+            >
+              RETIRAR
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="market-buy-btn"
+              onClick={() => handleBuyListing(item)}
+            >
+              COMPRAR
+            </button>
+          )}
+        </div>
+      </div>
     )
   }
 
@@ -810,7 +1179,7 @@ export default function Marketplace({
 
       {/* TAB 1: BROWSE LISTINGS */}
       {activeTab === 'browse' && (
-        <div className="market-listings-grid">
+        <div className="market-browse-container">
           {sinServidor ? (
             <div className="market-empty-state">
               <span>
@@ -820,167 +1189,419 @@ export default function Marketplace({
             </div>
           ) : cargando ? (
             <div className="market-empty-state"><span>Cargando ofertas…</span></div>
-          ) : listings.length === 0 ? (
-            <div className="market-empty-state">
-              <span>🛒 No hay ofertas en el mercado en este momento. ¡Sé el primero en vender una carta!</span>
-            </div>
-          ) : (
-            listings.map((item) => {
-              const isMine = item.esMia
-              const isFarming = item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId])
-              const farmingDef = isFarming && item.itemId ? FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId] : undefined
-              const plantDef = !isFarming && item.plantId ? PLANT_CONFIGS[item.plantId as PlantId] : undefined
-              const itemIcon = isFarming ? farmingDef?.icon : (plantDef?.packetActive || plantDef?.icon)
-              const rInfo = !isFarming && item.plantId
-                ? getPlantRarityAndMinPrice(item.plantId as PlantId)
-                : { rarity: 'FARMING', minPrice: 10, color: '#4ade80' }
-              const itemName = isFarming ? (farmingDef?.label || item.itemId || 'Recurso') : (plantDef?.name || item.plantId || 'Carta')
-              const itemQty = Math.max(1, Number(item.quantity) || 1)
+          ) : selectedCategory === null ? (
+            /* SELECCIÓN PRINCIPAL DE LAS 3 CATEGORÍAS */
+            <div className="market-categories-wrapper">
+              <div className="market-categories-hero">
+                <h3 className="market-categories-hero__title">MERCADO P2P DE LA COMUNIDAD</h3>
+                <p className="market-categories-hero__subtitle">
+                  Elige una categoría para explorar ofertas de otros jugadores o publica tus cartas, recursos y oro de forma 100% segura.
+                </p>
+              </div>
 
-              return (
-                <div key={item.id} className="market-item-card">
-                  {/* Card Header */}
-                  <div className="market-item-card__header">
-                    {isFarming ? (
-                      <span className="market-item-level-tag">
-                        🌾 LOTE x{itemQty}
-                      </span>
-                    ) : (
-                      <div className="market-item-tags-row">
-                        <span
-                          className="market-item-level-tag"
-                          title={getFusionTooltip(item.nivel)}
-                        >
-                          ⭐{item.nivel}
-                        </span>
-                        <span
-                          className={`market-item-sprouts-tag market-item-sprouts-tag--${
-                            (item.germinationsCount ?? 0) >= 2
-                              ? 'max'
-                              : (item.germinationsCount ?? 0) === 1
-                              ? 'mid'
-                              : 'fresh'
-                          }`}
-                          title={getSproutTooltip(item.germinationsCount ?? 0)}
-                        >
-                          🌱{item.germinationsCount ?? 0}
-                        </span>
-                      </div>
-                    )}
-                    <span className="market-item-rarity-badge" style={{ color: rInfo.color, borderColor: rInfo.color }}>
-                      {rInfo.rarity}
-                    </span>
-                    <span className="market-item-seller">👤 {isMine ? 'TÚ' : item.vendedor ?? 'Jugador'}</span>
+              <div className="market-categories-grid">
+                {/* 1. PLANTAS */}
+                <div
+                  className="market-category-card market-category-card--plants"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.5)
+                    setSelectedCategory('plants')
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') setSelectedCategory('plants')
+                  }}
+                >
+                  <div className="market-category-card__badge">
+                    {plantOffers.length} {plantOffers.length === 1 ? 'oferta' : 'ofertas'}
                   </div>
-
-                  {/* Image and Name */}
-                  <div className="market-item-card__img-wrap">
-                    {isFarming && itemIcon ? (
-                      <img
-                        src={itemIcon}
-                        alt={itemName}
-                        className="market-item-icon"
-                        onError={(e) => {
-                          const target = e.currentTarget
-                          target.style.display = 'none'
-                          if (target.parentElement) {
-                            const span = document.createElement('span')
-                            span.textContent = farmingDef?.fallback || '🌾'
-                            span.style.fontSize = '3.5rem'
-                            target.parentElement.appendChild(span)
-                          }
-                        }}
-                      />
-                    ) : (
-                      <img src={itemIcon} alt={itemName} className="market-item-icon" />
-                    )}
+                  <div className="market-category-card__icon-circle market-category-card__icon-circle--plants">
+                    <span className="market-category-card__emoji">🌿</span>
                   </div>
-                  <h4 className="market-item-name">
-                    {isFarming && itemQty > 1 ? `${itemQty}x ${itemName}` : itemName}
-                  </h4>
-
-                  {/* Stat Rolls Pills or Farming Description */}
-                  <div className="market-item-stats-box">
-                    {isFarming ? (
-                      <span className="market-stat-pill market-stat-pill--none">
-                        {farmingDef?.description || 'Recurso de cultivo.'}
-                      </span>
-                    ) : item.statRolls && item.statRolls.length > 0 ? (
-                      formatStatRolls(item.statRolls)
-                    ) : (
-                      <span className="market-stat-pill market-stat-pill--none">Stats estándar de fábrica</span>
-                    )}
-                  </div>
-
-                  {/* Price and Action Button */}
-                  <div className="market-item-card__footer">
-                    <div className="market-item-price-box">
-                      <span className="market-price-label">{isFarming && itemQty > 1 ? 'TOTAL LOTE' : 'PRECIO'}</span>
-                      <span className="market-price-val">{item.precio} 💎</span>
-                    </div>
-
-                    {isMine ? (
-                      <button
-                        type="button"
-                        className="market-cancel-btn"
-                        onClick={() => handleCancelListing(item)}
-                      >
-                        RETIRAR
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="market-buy-btn"
-                        onClick={() => handleBuyListing(item)}
-                      >
-                        COMPRAR
-                      </button>
-                    )}
+                  <h4 className="market-category-card__title">Cartas de Plantas</h4>
+                  <p className="market-category-card__desc">
+                    Cartas jugables para combate con fusiones ⭐ y germinaciones 🌱 de otros entrenadores.
+                  </p>
+                  <div className="market-category-card__footer-action">
+                    <span>EXPLORAR PLANTAS</span>
+                    <span className="market-category-card__arrow">→</span>
                   </div>
                 </div>
-              )
-            })
+
+                {/* 2. RECURSOS */}
+                <div
+                  className="market-category-card market-category-card--farming"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.5)
+                    setSelectedCategory('farming')
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') setSelectedCategory('farming')
+                  }}
+                >
+                  <div className="market-category-card__badge">
+                    {farmingOffers.length} {farmingOffers.length === 1 ? 'oferta' : 'ofertas'}
+                  </div>
+                  <div className="market-category-card__icon-circle market-category-card__icon-circle--farming">
+                    <span className="market-category-card__emoji">🌾</span>
+                  </div>
+                  <h4 className="market-category-card__title">Recursos de Cultivo</h4>
+                  <p className="market-category-card__desc">
+                    Lotes de agua 💧, fertilizantes 🌱 y fragmentos de herramientas para tu granja.
+                  </p>
+                  <div className="market-category-card__footer-action">
+                    <span>EXPLORAR RECURSOS</span>
+                    <span className="market-category-card__arrow">→</span>
+                  </div>
+                </div>
+
+                {/* 3. ORO */}
+                <div
+                  className="market-category-card market-category-card--gold"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.5)
+                    setSelectedCategory('gold')
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') setSelectedCategory('gold')
+                  }}
+                >
+                  <div className="market-category-card__badge market-category-card__badge--gold">
+                    {goldOffers.length} {goldOffers.length === 1 ? 'oferta' : 'ofertas'}
+                  </div>
+                  <div className="market-category-card__icon-circle market-category-card__icon-circle--gold">
+                    <img src={monedaImg} alt="Oro" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
+                  </div>
+                  <h4 className="market-category-card__title">
+                    <GoldIcon size={18} /> Comercio de Oro
+                  </h4>
+                  <p className="market-category-card__desc">
+                    Venta directa de Monedas de Oro por Gemas 💎. Vende tu oro o adquiere oro a precios competitivos.
+                  </p>
+                  <div className="market-category-card__footer-action">
+                    <span>COMERCIAR ORO</span>
+                    <span className="market-category-card__arrow">→</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* SUB-INTERFAZ DE CATEGORÍA SELECCIONADA */
+            <div className="market-subcategory-container">
+              <div className="market-subcategory-header">
+                <button
+                  type="button"
+                  className="market-subcategory-back-btn"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setSelectedCategory(null)
+                  }}
+                >
+                  ← Volver a Categorías
+                </button>
+
+                <div className="market-subcategory-title-wrap">
+                  <h3 className="market-subcategory-title">
+                    {selectedCategory === 'plants' && `🌿 MERCADO DE PLANTAS (${plantOffers.length})`}
+                    {selectedCategory === 'farming' && `🌾 RECURSOS DE CULTIVO (${farmingOffers.length})`}
+                    {selectedCategory === 'gold' && (
+                      <>
+                        <GoldIcon size={20} /> COMERCIO DE ORO POR GEMAS ({goldOffers.length})
+                      </>
+                    )}
+                  </h3>
+                </div>
+
+                <div className="market-subcategory-actions">
+                  {selectedCategory === 'plants' && (
+                    <button
+                      type="button"
+                      className="market-sub-action-btn"
+                      onClick={() => {
+                        soundManager.playSound('click', 0.4)
+                        setActiveTab('sell')
+                        setSellCategory('plants')
+                      }}
+                    >
+                      ➕ Vender Planta
+                    </button>
+                  )}
+                  {selectedCategory === 'farming' && (
+                    <button
+                      type="button"
+                      className="market-sub-action-btn"
+                      onClick={() => {
+                        soundManager.playSound('click', 0.4)
+                        setActiveTab('sell')
+                        setSellCategory('farming')
+                      }}
+                    >
+                      ➕ Vender Recurso
+                    </button>
+                  )}
+                  {selectedCategory === 'gold' && (
+                    <button
+                      type="button"
+                      className="market-sub-action-btn market-sub-action-btn--gold"
+                      onClick={() => {
+                        soundManager.playSound('click', 0.4)
+                        setIsGoldModalOpen(true)
+                      }}
+                    >
+                      <GoldIcon size={16} /> Vender mi Oro
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* LISTA DE OFERTAS DE LA CATEGORÍA */}
+              {selectedCategory === 'plants' && (
+                plantOffers.length === 0 ? (
+                  <div className="market-empty-state">
+                    <span>🌿 No hay plantas en venta en este momento. ¡Sé el primero en publicar una carta!</span>
+                  </div>
+                ) : (
+                  <div className="market-listings-grid">
+                    {plantOffers.map(renderPlantOfferCard)}
+                  </div>
+                )
+              )}
+
+              {selectedCategory === 'farming' && (
+                farmingOffers.length === 0 ? (
+                  <div className="market-empty-state">
+                    <span>🌾 No hay recursos de cultivo en venta en este momento. ¡Sé el primero en vender un lote!</span>
+                  </div>
+                ) : (
+                  <div className="market-listings-grid">
+                    {farmingOffers.map(renderFarmingOfferCard)}
+                  </div>
+                )
+              )}
+
+              {selectedCategory === 'gold' && (
+                goldOffers.length === 0 ? (
+                  <div className="market-empty-state">
+                    <span><GoldIcon size={18} /> No hay ofertas de oro activas en este momento. ¡Sé el primero en vender tu oro por gemas!</span>
+                  </div>
+                ) : (
+                  <div className="market-listings-grid">
+                    {goldOffers.map(renderGoldOfferCard)}
+                  </div>
+                )
+              )}
+            </div>
           )}
         </div>
       )}
 
-      {/* TAB 2: SELL MY PLANT OR FARMING ITEM */}
+      {/* TAB 2: SELL MY PLANT, FARMING ITEM, OR GOLD */}
       {activeTab === 'sell' && canSell && (
         <div className="market-sell-pane">
-          {/* BANNER INFORMATIVO: COPIAS VS PLANTAS JUGABLES */}
-          <div className="market-sell-info-banner">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '1.2rem' }}>💡</span>
-              <strong style={{ color: '#fbbf24', fontSize: '11px', letterSpacing: '0.5px' }}>
-                INFORMACIÓN IMPORTANTE SOBRE LA VENTA DE PLANTAS
-              </strong>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.45', color: '#cbd5e1' }}>
-              <li>
-                <strong>Vendes tu planta jugable, NO copias:</strong> Las copias NO se venden en el mercado. Las copias solo se consiguen en sobres/recompensas y se usan exclusivamente para <strong>Fusión y mejoras (+15% stats)</strong>.
-              </li>
-              <li>
-                <strong>Se retira de tu Mazo y Jardín:</strong> Mientras tu planta esté publicada o si otro jugador la compra, no podrás usarla en batallas.
-              </li>
-              <li>
-                <strong>Mínimo 3 plantas requeridas:</strong> Debes conservar al menos 3 cartas de plantas en tu inventario para poder combatir en la Arena.
-              </li>
-            </ul>
+          {/* SELECTOR DE CATEGORÍA PARA VENDER */}
+          <div className="market-sell-category-selector">
+            <button
+              type="button"
+              className={`market-sell-cat-btn ${sellCategory === 'plants' ? 'market-sell-cat-btn--active' : ''}`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setSellCategory('plants')
+              }}
+            >
+              🌿 Cartas de Plantas ({sellablePlants.length})
+            </button>
+            <button
+              type="button"
+              className={`market-sell-cat-btn ${sellCategory === 'farming' ? 'market-sell-cat-btn--active' : ''}`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setSellCategory('farming')
+              }}
+            >
+              🌾 Recursos de Cultivo ({sellableFarming.length})
+            </button>
+            <button
+              type="button"
+              className={`market-sell-cat-btn market-sell-cat-btn--gold ${sellCategory === 'gold' ? 'market-sell-cat-btn--active' : ''}`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setSellCategory('gold')
+              }}
+            >
+              <GoldIcon size={16} /> Vender Oro ({userGold.toLocaleString('en-US')} disponible)
+            </button>
           </div>
 
-          <div className="market-sell-form-grid">
-            {/* Column 1: Select Item to Sell */}
-            <div className="market-sell-column">
-              <label className="market-sell-label">
-                1. Elige la Carta o Ítem a Vender ({sellableItems.length} disponibles)
-              </label>
-              <div className="market-garden-cards-list">
-                {sellableItems.length === 0 ? (
-                  <div className="market-empty-state">
-                    <span>No tienes cartas ni ítems de farming disponibles para vender.</span>
+          {sellCategory === 'gold' ? (
+            /* VENTA DE ORO DIRECTA */
+            <div className="market-gold-sell-pane">
+              <div className="market-gold-sell-card">
+                <div className="market-gold-sell-header">
+                  <div className="market-gold-sell-icon-wrap">
+                    <img
+                      src={monedaImg}
+                      alt="Oro"
+                      className="market-gold-icon-img-large"
+                    />
                   </div>
-                ) : (
-                  sellableItems.map((item) => {
+                  <div>
+                    <h3>COMERCIO P2P: VENDER ORO POR GEMAS</h3>
+                    <p>Define la cantidad de Oro que deseas vender y el precio total en Gemas 💎 que deseas recibir.</p>
+                    <div className="market-gold-balance-pill">
+                      💰 Saldo disponible: <strong>{userGold.toLocaleString('en-US')} Oro</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={handleCreateGoldListing} className="market-gold-form">
+                  <div className="market-gold-field-group">
+                    <label>
+                      1. Cantidad de Oro a Vender:
+                      <span className="market-gold-min-tag">Mínimo: 100 Oro</span>
+                    </label>
+                    <div className="market-gold-input-row">
+                      <span className="market-gold-input-prefix"><GoldIcon size={18} /></span>
+                      <input
+                        type="number"
+                        step="100"
+                        min={100}
+                        max={userGold}
+                        value={goldSellQty}
+                        onChange={(e) => setGoldSellQty(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="market-gold-input"
+                        required
+                      />
+                      <span className="market-gold-input-suffix">Oro</span>
+                    </div>
+                    <div className="market-price-shortcuts" style={{ marginTop: '8px' }}>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(500)}>500</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(1000)}>1,000</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(5000)}>5,000</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(10000)}>10,000</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(userGold)}>MÁX ({userGold.toLocaleString('en-US')})</button>
+                    </div>
+                  </div>
+
+                  <div className="market-gold-field-group" style={{ marginTop: '14px' }}>
+                    <label>
+                      2. Precio Total en Gemas 💎:
+                      <span className="market-gold-min-tag">Mínimo: 1 💎</span>
+                    </label>
+                    <div className="market-gold-input-row">
+                      <span className="market-gold-input-prefix">💎</span>
+                      <input
+                        type="number"
+                        step="1"
+                        min={1}
+                        max={99999}
+                        value={goldSellPriceGems}
+                        onChange={(e) => setGoldSellPriceGems(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        className="market-gold-input"
+                        required
+                      />
+                      <span className="market-gold-input-suffix">Gemas</span>
+                    </div>
+                    <div className="market-price-shortcuts" style={{ marginTop: '8px' }}>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(5)}>5 💎</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(10)}>10 💎</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(25)}>25 💎</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(50)}>50 💎</button>
+                      <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(100)}>100 💎</button>
+                    </div>
+                  </div>
+
+                  <div className="market-gold-summary-card" style={{ marginTop: '16px' }}>
+                    <div className="market-gold-summary-row">
+                      <span>Tasa calculada:</span>
+                      <strong>≈ {goldSellPriceGems > 0 ? Math.round(goldSellQty / goldSellPriceGems).toLocaleString('en-US') : 0} Oro por 1 💎</strong>
+                    </div>
+                    <div className="market-gold-summary-row">
+                      <span>Comisión de Mercado ({comisionPct}%):</span>
+                      <span style={{ color: '#ef4444' }}>-{calculateMarketplaceSplit(goldSellPriceGems, comisionPct).comision} 💎</span>
+                    </div>
+                    <div className="market-gold-summary-row market-gold-summary-row--total">
+                      <span>Recibirás neto al venderse:</span>
+                      <strong style={{ color: '#4ade80', fontSize: '15px' }}>{calculateMarketplaceSplit(goldSellPriceGems, comisionPct).neto} 💎</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={goldSellQty < 100 || goldSellQty > userGold || goldSellPriceGems < 1}
+                    className="market-publish-btn"
+                    style={{ marginTop: '16px' }}
+                  >
+                    {goldSellQty > userGold ? (
+                      '🛑 ORO INSUFICIENTE EN TU CUENTA'
+                    ) : (
+                      <>
+                        <GoldIcon size={18} /> PUBLICAR {goldSellQty.toLocaleString('en-US')} ORO POR {goldSellPriceGems} 💎 (NETO {calculateMarketplaceSplit(goldSellPriceGems, comisionPct).neto} 💎)
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* BANNER INFORMATIVO */}
+              {sellCategory === 'plants' ? (
+                <div className="market-sell-info-banner">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '1.2rem' }}>💡</span>
+                    <strong style={{ color: '#fbbf24', fontSize: '11px', letterSpacing: '0.5px' }}>
+                      INFORMACIÓN IMPORTANTE SOBRE LA VENTA DE PLANTAS
+                    </strong>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.45', color: '#cbd5e1' }}>
+                    <li>
+                      <strong>Vendes tu planta jugable, NO copias:</strong> Las copias NO se venden en el mercado. Las copias solo se consiguen en sobres/recompensas y se usan exclusivamente para <strong>Fusión y mejoras (+15% stats)</strong>.
+                    </li>
+                    <li>
+                      <strong>Se retira de tu Mazo y Jardín:</strong> Mientras tu planta esté publicada o si otro jugador la compra, no podrás usarla en batallas.
+                    </li>
+                    <li>
+                      <strong>Mínimo 3 plantas requeridas:</strong> Debes conservar al menos 3 cartas de plantas en tu inventario para poder combatir en la Arena.
+                    </li>
+                  </ul>
+                </div>
+              ) : (
+                <div className="market-sell-info-banner" style={{ borderColor: '#38bdf8', background: 'rgba(14, 165, 233, 0.1)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '1.2rem' }}>🌾</span>
+                    <strong style={{ color: '#38bdf8', fontSize: '11px', letterSpacing: '0.5px' }}>
+                      VENTA DE RECURSOS DE CULTIVO EN LOTES
+                    </strong>
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.45', color: '#cbd5e1' }}>
+                    <li>
+                      <strong>Venta por Lote Completo:</strong> El comprador pagará el precio fijado y recibirá todas las unidades del lote.
+                    </li>
+                    <li>
+                      <strong>Depósito seguro:</strong> Los recursos se descuentan de tu inventario mientras estén en venta y se te devuelven si retiras la oferta.
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              <div className="market-sell-form-grid">
+                {/* Column 1: Select Item to Sell */}
+                <div className="market-sell-column">
+                  <label className="market-sell-label">
+                    1. Elige la Carta o Ítem a Vender ({displayedSellableItems.length} disponibles)
+                  </label>
+                  <div className="market-garden-cards-list">
+                    {displayedSellableItems.length === 0 ? (
+                      <div className="market-empty-state">
+                        <span>No tienes {sellCategory === 'plants' ? 'cartas de plantas' : 'recursos de cultivo'} disponibles para vender.</span>
+                      </div>
+                    ) : (
+                      displayedSellableItems.map((item) => {
                     const isSelected = selectedItemId === item.id
 
                     if (item.kind === 'farming') {
@@ -1398,6 +2019,8 @@ export default function Marketplace({
               )}
             </div>
           </div>
+          </>
+          )}
         </div>
       )}
 
@@ -1820,6 +2443,119 @@ export default function Marketplace({
         </div>
       )}
 
+
+      {/* MODAL DE VENTA DIRECTA DE ORO */}
+      {isGoldModalOpen && (
+        <div className="clan-dialog-backdrop" onClick={() => setIsGoldModalOpen(false)}>
+          <div className="market-gold-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="clan-dialog-icon-ring" style={{ borderColor: '#fbbf24', background: 'rgba(245, 158, 11, 0.15)' }}>
+              <img src={monedaImg} alt="Oro" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+            </div>
+            <h3 className="clan-dialog-title" style={{ color: '#fbbf24' }}>VENDER ORO POR GEMAS</h3>
+            <p className="clan-dialog-msg" style={{ marginBottom: '12px' }}>
+              Pon en venta tus Monedas de Oro a cambio de Gemas 💎 en el mercado P2P.
+            </p>
+
+            <div className="market-gold-balance-pill" style={{ marginBottom: '14px' }}>
+              💰 Saldo disponible: <strong>{userGold.toLocaleString('en-US')} Oro</strong>
+            </div>
+
+            <form onSubmit={handleCreateGoldListing} style={{ width: '100%' }}>
+              <div className="market-gold-field-group">
+                <label>
+                  Cantidad de Oro a Vender:
+                  <span className="market-gold-min-tag">Mínimo: 100 Oro</span>
+                </label>
+                <div className="market-gold-input-row">
+                  <span className="market-gold-input-prefix"><GoldIcon size={18} /></span>
+                  <input
+                    type="number"
+                    step="100"
+                    min={100}
+                    max={userGold}
+                    value={goldSellQty}
+                    onChange={(e) => setGoldSellQty(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    className="market-gold-input"
+                    required
+                  />
+                  <span className="market-gold-input-suffix">Oro</span>
+                </div>
+                <div className="market-price-shortcuts" style={{ marginTop: '6px' }}>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(500)}>500</button>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(1000)}>1,000</button>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(5000)}>5,000</button>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(10000)}>10,000</button>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellQty(userGold)}>MÁX ({userGold.toLocaleString('en-US')})</button>
+                </div>
+              </div>
+
+              <div className="market-gold-field-group" style={{ marginTop: '12px' }}>
+                <label>
+                  Precio Total en Gemas:
+                  <span className="market-gold-min-tag">Mínimo: 1 💎</span>
+                </label>
+                <div className="market-gold-input-row">
+                  <span className="market-gold-input-prefix">💎</span>
+                  <input
+                    type="number"
+                    step="1"
+                    min={1}
+                    max={99999}
+                    value={goldSellPriceGems}
+                    onChange={(e) => setGoldSellPriceGems(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    className="market-gold-input"
+                    required
+                  />
+                  <span className="market-gold-input-suffix">Gemas</span>
+                </div>
+                <div className="market-price-shortcuts" style={{ marginTop: '6px' }}>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(5)}>5 💎</button>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(10)}>10 💎</button>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(25)}>25 💎</button>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(50)}>50 💎</button>
+                  <button type="button" className="market-shortcut-btn" onClick={() => setGoldSellPriceGems(100)}>100 💎</button>
+                </div>
+              </div>
+
+              {/* Resumen en vivo */}
+              <div className="market-gold-summary-card" style={{ margin: '14px 0 16px 0' }}>
+                <div className="market-gold-summary-row">
+                  <span>Tasa calculada:</span>
+                  <strong>≈ {goldSellPriceGems > 0 ? Math.round(goldSellQty / goldSellPriceGems).toLocaleString('en-US') : 0} Oro / 💎</strong>
+                </div>
+                <div className="market-gold-summary-row">
+                  <span>Comisión retenida ({comisionPct}%):</span>
+                  <span style={{ color: '#ef4444' }}>-{calculateMarketplaceSplit(goldSellPriceGems, comisionPct).comision} 💎</span>
+                </div>
+                <div className="market-gold-summary-row market-gold-summary-row--total">
+                  <span>Recibirás neto al venderse:</span>
+                  <strong style={{ color: '#4ade80', fontSize: '15px' }}>{calculateMarketplaceSplit(goldSellPriceGems, comisionPct).neto} 💎</strong>
+                </div>
+              </div>
+
+              <div className="clan-dialog-actions">
+                <button
+                  type="button"
+                  className="clan-dialog-btn clan-dialog-btn--cancel"
+                  onClick={() => setIsGoldModalOpen(false)}
+                >
+                  CANCELAR
+                </button>
+                <button
+                  type="submit"
+                  disabled={goldSellQty < 100 || goldSellQty > userGold || goldSellPriceGems < 1}
+                  className="clan-dialog-btn clan-dialog-btn--confirm"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+                >
+                  {goldSellQty > userGold
+                    ? 'ORO INSUFICIENTE'
+                    : `PUBLICAR (${goldSellPriceGems} 💎)`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* CUSTOM IN-GAME POPUP DIALOG */}
       {activeDialog && (

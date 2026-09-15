@@ -1451,9 +1451,9 @@ export const SupabaseService = {
     }
   },
 
-  /** Publica tanto plantas como ítems de farming en el marketplace autoritativo */
+  /** Publica tanto plantas, ítems de farming u oro en el marketplace autoritativo */
   async listMarketplaceItem(
-    itemType: 'plant' | 'farming',
+    itemType: 'plant' | 'farming' | 'gold',
     targetId: string,
     priceGems: number,
     quantity = 1
@@ -1511,7 +1511,7 @@ export const SupabaseService = {
     comisionPct: number
     ofertas: Array<{
       id: string
-      itemType?: 'plant' | 'farming'
+      itemType?: 'plant' | 'farming' | 'gold'
       itemId?: string
       quantity?: number
       plantId?: any
@@ -3327,6 +3327,8 @@ export const SupabaseService = {
     success: boolean
     packIds?: string[]
     spent?: number
+    goldAdded?: number
+    quantity?: number
     error?: string
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }

@@ -1519,6 +1519,7 @@ function App() {
           >
             <Marketplace
               userTokens={userTokens}
+              userGold={userGold}
               userElo={userElo}
               hasVipPass={hasVipPass}
               plantCopies={plantCopies}

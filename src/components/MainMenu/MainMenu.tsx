@@ -338,29 +338,69 @@ export default function MainMenu({
       <div className="topbar">
         <div className="topbar__left">
           <div className="topbar__player-col">
-            <div
-              className={`card card--player ${hasVipPass ? 'card--player-vip' : ''}`}
-              onClick={() => {
-                soundManager.playSound('click', 0.5)
-                setProfileInitialTab('profile')
-                setIsProfileModalOpen(true)
-              }}
-              title="Ver y editar perfil, depositar, retirar y referidos"
-              style={{ cursor: 'pointer' }}
-            >
-              <div className={`card__player-avatar-circle ${hasVipPass ? 'card__player-avatar-circle--vip' : ''}`}>
-                <img
-                  src={playerProfile.avatar}
-                  alt={userProfile?.username || playerProfile.name}
-                  onError={(e) => {
-                    e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.webp'
-                  }}
-                />
+            <div className="topbar__player-row">
+              <div
+                className={`card card--player ${hasVipPass ? 'card--player-vip' : ''}`}
+                onClick={() => {
+                  soundManager.playSound('click', 0.5)
+                  setProfileInitialTab('profile')
+                  setIsProfileModalOpen(true)
+                }}
+                title="Ver y editar perfil, depositar, retirar y referidos"
+                style={{ cursor: 'pointer' }}
+              >
+                <div className={`card__player-avatar-circle ${hasVipPass ? 'card__player-avatar-circle--vip' : ''}`}>
+                  <img
+                    src={playerProfile.avatar}
+                    alt={userProfile?.username || playerProfile.name}
+                    onError={(e) => {
+                      e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.webp'
+                    }}
+                  />
+                </div>
+                <span className={`card__title ${hasVipPass ? 'card__title--vip-gold' : ''}`}>
+                  {hasVipPass && <span className="nick-vip-crown">👑 </span>}
+                  {userProfile?.username || playerProfile.name}
+                </span>
               </div>
-              <span className={`card__title ${hasVipPass ? 'card__title--vip-gold' : ''}`}>
-                {hasVipPass && <span className="nick-vip-crown">👑 </span>}
-                {userProfile?.username || playerProfile.name}
-              </span>
+
+              {/* COMPACT VIP BATTLE PASS WIDGET - AL COSTADO DEL PERFIL */}
+              <div
+                className={`card card--pass-widget ${
+                  hasVipPass ? 'card--pass-widget-active' : 'card--pass-widget-locked'
+                }`}
+                onClick={onOpenBattlePass}
+                title={
+                  hasVipPass
+                    ? 'Ver Pase de Batalla VIP (Activo)'
+                    : 'Pase VIP (Bloqueado) — Clic para ver niveles y comprar'
+                }
+              >
+                <span className="pass-widget__crown">{hasVipPass ? '👑' : '🔒'}</span>
+                <div className="pass-widget__info">
+                  <span className="pass-widget__title">PASE VIP</span>
+                  <span className="pass-widget__level-txt">
+                    NIVEL {highestLevelReached}/20
+                  </span>
+                  <div className="pass-widget__progress-wrap">
+                    <div
+                      className="pass-widget__progress-bar"
+                      style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                {hasVipPass && claimableCount > 0 && (
+                  <span className="pass-widget__claim-badge">
+                    ✨ {claimableCount}
+                  </span>
+                )}
+                {!hasVipPass && (
+                  <span className="pass-widget__buy-badge">
+                    COMPRAR
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="profile-sub-row">
@@ -387,44 +427,6 @@ export default function MainMenu({
               <span className="online-users-label">en línea</span>
             </div>
 
-          </div>
-
-          {/* COMPACT VIP BATTLE PASS WIDGET - VISIBLE FOR ALL PLAYERS */}
-          <div
-            className={`card card--pass-widget ${
-              hasVipPass ? 'card--pass-widget-active' : 'card--pass-widget-locked'
-            }`}
-            onClick={onOpenBattlePass}
-            title={
-              hasVipPass
-                ? 'Ver Pase de Batalla VIP (Activo)'
-                : 'Pase VIP (Bloqueado) — Clic para ver niveles y comprar'
-            }
-          >
-            <span className="pass-widget__crown">{hasVipPass ? '👑' : '🔒'}</span>
-            <div className="pass-widget__info">
-              <span className="pass-widget__title">PASE VIP</span>
-              <span className="pass-widget__level-txt">
-                NIVEL {highestLevelReached}/20
-              </span>
-              <div className="pass-widget__progress-wrap">
-                <div
-                  className="pass-widget__progress-bar"
-                  style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            {hasVipPass && claimableCount > 0 && (
-              <span className="pass-widget__claim-badge">
-                ✨ {claimableCount}
-              </span>
-            )}
-            {!hasVipPass && (
-              <span className="pass-widget__buy-badge">
-                COMPRAR
-              </span>
-            )}
           </div>
         </div>
 

@@ -15,6 +15,8 @@ import { UserManager } from '../../utils/userManager'
 import { supabaseService } from '../../services/supabaseService'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import { clanChatService, type ClanChatMessage } from '../../services/clanChatService'
+import monedaImg from '../../assets/ico/moneda.webp'
+import GoldIcon from '../Common/GoldIcon'
 import './Clan.css'
 
 interface ClanProps {
@@ -1041,8 +1043,8 @@ export default function Clan({
     if ((userGold ?? 0) < goldDepositAmount) {
       showModalAlert(
         'SALDO INSUFICIENTE',
-        `No tienes suficiente oro para donar ${goldDepositAmount.toLocaleString()} 🪙. Tu saldo actual es de ${(userGold ?? 0).toLocaleString()} 🪙 (te faltan ${(goldDepositAmount - (userGold ?? 0)).toLocaleString()} 🪙).`,
-        '🪙',
+        `No tienes suficiente oro para donar ${goldDepositAmount.toLocaleString()} de Oro. Tu saldo actual es de ${(userGold ?? 0).toLocaleString()} Oro (te faltan ${(goldDepositAmount - (userGold ?? 0)).toLocaleString()} Oro).`,
+        '💰',
         'warning'
       )
       return
@@ -1061,7 +1063,7 @@ export default function Clan({
       soundManager.playSound('plantation', 0.9)
       showModalAlert(
         '¡DONACIÓN DE ORO EXITOSA!',
-        `¡Has aportado ${goldDepositAmount.toLocaleString()} 🪙 al Tesoro del Clan!\n\nEste oro queda registrado en la contabilidad del clan para financiar futuras acciones, mejoras defensivas y búsqueda de partidas.`,
+        `¡Has aportado ${goldDepositAmount.toLocaleString()} de Oro al Tesoro del Clan!\n\nEste oro queda registrado en la contabilidad del clan para financiar futuras acciones, mejoras defensivas y búsqueda de partidas.`,
         '💰',
         'success'
       )
@@ -1697,7 +1699,7 @@ export default function Clan({
             <div className="clan-vault-amounts-row">
               <span className="clan-vault-amount">{currentVaultGems.toFixed(0)} 💎</span>
               <span className="clan-vault-amount clan-vault-amount--gold">
-                {Number(userClan.vaultGold || 0).toLocaleString()} 🪙
+                {Number(userClan.vaultGold || 0).toLocaleString()} <GoldIcon size={14} />
               </span>
             </div>
           </div>
@@ -2237,7 +2239,9 @@ export default function Clan({
                     }}
                     title="Haz clic para ver el ranking de mayores aportantes de Oro"
                   >
-                    <span className="clan-deposit-stat-icon">🪙</span>
+                    <span className="clan-deposit-stat-icon">
+                      <GoldIcon size={24} />
+                    </span>
                     <div>
                       <span className="clan-deposit-stat-val" style={{ color: '#fbbf24' }}>
                         {Number(userClan.vaultGold || 0).toLocaleString()} Oro
@@ -2276,13 +2280,13 @@ export default function Clan({
                   {/* Left: Top Donators Podium */}
                   <div className="clan-top-depositors-box">
                     <h5>
-                      {vaultRankingFilter === 'gold' ? '🏆 MAYORES APORTANTES DE ORO 🪙' : '🏆 MAYORES APORTANTES DE GEMAS 💎'}
+                      {vaultRankingFilter === 'gold' ? '🏆 MAYORES APORTANTES DE ORO 💰' : '🏆 MAYORES APORTANTES DE GEMAS 💎'}
                     </h5>
                     <div className="clan-top-depositors-list">
                       {topDepositors.length === 0 ? (
                         <div style={{ padding: '16px 8px', color: '#94a3b8', fontSize: '11px', textAlign: 'center' }}>
                           {vaultRankingFilter === 'gold'
-                            ? '🪙 Aún no hay aportes de Oro registrados. ¡Sé el primero en donar!'
+                            ? '💰 Aún no hay aportes de Oro registrados. ¡Sé el primero en donar!'
                             : '💎 Aún no hay aportes de Gemas registrados.'}
                         </div>
                       ) : (
@@ -2297,7 +2301,9 @@ export default function Clan({
                               </span>
                               <div className="clan-dep-amounts-wrap">
                                 {vaultRankingFilter === 'gold' ? (
-                                  <span className="clan-dep-amount clan-dep-amount--gold">{dep.gold.toLocaleString()} 🪙</span>
+                                  <span className="clan-dep-amount clan-dep-amount--gold">
+                                    {dep.gold.toLocaleString()} <GoldIcon size={14} />
+                                  </span>
                                 ) : (
                                   <span className="clan-dep-amount">{dep.gems.toFixed(0)} 💎</span>
                                 )}
@@ -2327,7 +2333,7 @@ export default function Clan({
 
                         return (
                           <div key={dep.id} className={`clan-deposit-feed-item ${isGold ? 'clan-deposit-feed-item--gold' : ''}`}>
-                            <div className="clan-deposit-feed-icon">{isGold ? '🪙' : '💎'}</div>
+                            <div className="clan-deposit-feed-icon">{isGold ? <GoldIcon size={18} /> : '💎'}</div>
                             <div className="clan-deposit-feed-info">
                               <div className="clan-deposit-feed-top">
                                 <strong>{dep.depositorName} {isMe && '(Tú)'}</strong>
@@ -2338,9 +2344,11 @@ export default function Clan({
                               <span className="clan-deposit-feed-time">{timeText}</span>
                             </div>
                             <div className={`clan-deposit-feed-amount ${isGold ? 'clan-deposit-feed-amount--gold' : ''}`}>
-                              {isGold
-                                ? `+${(dep.amountGold || dep.amountUsd || 0).toLocaleString()} 🪙`
-                                : `+${(dep.amountGems || dep.amountUsd || 0).toFixed(0)} 💎`}
+                              {isGold ? (
+                                <>+{(dep.amountGold || dep.amountUsd || 0).toLocaleString()} <GoldIcon size={14} /></>
+                              ) : (
+                                `+${(dep.amountGems || dep.amountUsd || 0).toFixed(0)} 💎`
+                              )}
                             </div>
                           </div>
                         )
@@ -2490,8 +2498,8 @@ export default function Clan({
               Aporta Oro al Tesoro del Clan para futuras acciones colectivas: búsqueda de partidas,
               aceleración de reparaciones, activación de escudos y mejoras comunitarias.
               <br />
-              <strong style={{ color: '#fbbf24' }}>
-                🪙 Tu Saldo Disponible: {(userGold ?? 0).toLocaleString()} Oro
+              <strong style={{ color: '#fbbf24', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <GoldIcon size={16} /> Tu Saldo Disponible: {(userGold ?? 0).toLocaleString()} Oro
               </strong>
             </p>
 
@@ -2503,7 +2511,7 @@ export default function Clan({
                   className={`clan-deposit-opt ${goldDepositAmount === amt ? 'clan-deposit-opt--active clan-deposit-opt--gold' : ''}`}
                   onClick={() => setGoldDepositAmount(amt)}
                 >
-                  {amt.toLocaleString()} 🪙 Oro
+                  {amt.toLocaleString()} <GoldIcon size={13} /> Oro
                 </button>
               ))}
             </div>
@@ -2512,7 +2520,9 @@ export default function Clan({
             <div className="clan-custom-gold-input-wrap">
               <label className="clan-custom-gold-label">O ingresa la cantidad exacta a donar:</label>
               <div className="clan-custom-gold-field">
-                <span className="clan-custom-gold-icon">🪙</span>
+                <span className="clan-custom-gold-icon">
+                  <GoldIcon size={18} />
+                </span>
                 <input
                   type="number"
                   min="1"
@@ -2545,7 +2555,7 @@ export default function Clan({
                 className="clan-confirm-btn clan-confirm-btn--gold"
                 onClick={handleDepositGold}
               >
-                CONFIRMAR DONACIÓN ({goldDepositAmount.toLocaleString()} 🪙)
+                CONFIRMAR DONACIÓN ({goldDepositAmount.toLocaleString()} ORO)
               </button>
             </div>
           </div>

@@ -23,6 +23,7 @@ export interface PackDefinition {
   priceGems: number
   priceUsd?: number
   cardCount: number
+  goldReward: number
   icon: string
   rarity: 'common' | 'epic' | 'legendary'
 }
@@ -33,6 +34,7 @@ export const PACK_DEFINITIONS: Record<PackId, PackDefinition> = {
     priceGems: 300,
     priceUsd: 300,
     cardCount: 3,
+    goldReward: 300,
     icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp',
     rarity: 'common',
   },
@@ -41,6 +43,7 @@ export const PACK_DEFINITIONS: Record<PackId, PackDefinition> = {
     priceGems: 1000,
     priceUsd: 1000,
     cardCount: 4,
+    goldReward: 1000,
     icon: '/game-assets/greenfoot/seed_pack_epic_whitebg.webp',
     rarity: 'epic',
   },
@@ -49,6 +52,7 @@ export const PACK_DEFINITIONS: Record<PackId, PackDefinition> = {
     priceGems: 2500,
     priceUsd: 2500,
     cardCount: 4,
+    goldReward: 2500,
     icon: '/game-assets/greenfoot/seed_pack_legendary_whitebg.webp',
     rarity: 'legendary',
   },

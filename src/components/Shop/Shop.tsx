@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import background from '../../assets/images/background.webp'
 import monedaImg from '../../assets/ico/moneda.webp'
+import GoldIcon from '../Common/GoldIcon'
 import type { PlantCardInstance, PlantId } from '../../types/game'
 import {
   PACK_DEFINITIONS,
@@ -222,7 +223,7 @@ export interface ShopProps {
   plantInstances?: PlantCardInstance[]
   farmingItems?: FarmingInventory
   onBack: () => void
-  onBuyPack: (packId: PackId, qty?: number) => Promise<{ success: boolean; packs?: InventoryPack[]; error?: string }>
+  onBuyPack: (packId: PackId, qty?: number) => Promise<{ success: boolean; packs?: InventoryPack[]; goldAdded?: number; error?: string }>
   onBuyGold?: (packageId: string) => Promise<{ success: boolean; goldAdded?: number; error?: string }>
   onBuyEnergyPack?: (packId: string) => Promise<{ success: boolean; energyAdded?: number; spentGems?: number; error?: string }>
   onAddGold?: (amount: number) => void
@@ -291,6 +292,7 @@ export default function Shop({
   }, [activeTab])
 
   const [purchasedPacksList, setPurchasedPacksList] = useState<InventoryPack[]>([])
+  const [purchasedGoldBonus, setPurchasedGoldBonus] = useState<number>(0)
   const [themedAlert, setThemedAlert] = useState<{ title: string; message: string; icon: string } | null>(null)
   const [selectedPackDetails, setSelectedPackDetails] = useState<PackId | null>(null)
   const [goldSlideIndex, setGoldSlideIndex] = useState<number>(0)
@@ -373,10 +375,13 @@ export default function Shop({
       if (bought.length > 0) {
         soundManager.playSound('plantation', 0.8)
         setPurchasedPacksList(bought)
+        const goldRewardCalculated = res.goldAdded ?? (PACK_DEFINITIONS[packId].goldReward * qty)
+        setPurchasedGoldBonus(goldRewardCalculated)
         trackEvent('purchase_pack', {
           pack_id: packId,
           quantity: qty,
           total_cost: totalCost,
+          gold_added: goldRewardCalculated,
           currency: 'GEMS',
         })
       }
@@ -635,6 +640,9 @@ export default function Shop({
                   <h4 className="shop-pack-name">Sobre Básico</h4>
                   <div className="shop-pack-pricing-col">
                     <span className="shop-pack-price-tag">{packPrice('basic').toLocaleString('en-US')} 💎 Gemas</span>
+                    <span className="shop-pack-gold-bonus-tag" style={{ color: '#fbbf24', fontSize: '12px', fontWeight: 'bold' }}>
+                      🎁 +300 <GoldIcon size={14} /> Oro de Regalo
+                    </span>
                   </div>
                 </div>
 
@@ -679,6 +687,9 @@ export default function Shop({
                   <h4 className="shop-pack-name">Sobre Épico</h4>
                   <div className="shop-pack-pricing-col">
                     <span className="shop-pack-price-tag shop-pack-price-tag--epic">{packPrice('epic').toLocaleString('en-US')} 💎 Gemas</span>
+                    <span className="shop-pack-gold-bonus-tag" style={{ color: '#fbbf24', fontSize: '12px', fontWeight: 'bold' }}>
+                      🎁 +1,000 <GoldIcon size={14} /> Oro de Regalo
+                    </span>
                   </div>
                 </div>
 
@@ -723,6 +734,9 @@ export default function Shop({
                   <h4 className="shop-pack-name">Sobre Legendario</h4>
                   <div className="shop-pack-pricing-col">
                     <span className="shop-pack-price-tag shop-pack-price-tag--legendary">{packPrice('legendary').toLocaleString('en-US')} 💎 Gemas</span>
+                    <span className="shop-pack-gold-bonus-tag" style={{ color: '#fbbf24', fontSize: '12px', fontWeight: 'bold' }}>
+                      🎁 +2,500 <GoldIcon size={14} /> Oro de Regalo
+                    </span>
                   </div>
                 </div>
 
@@ -1212,6 +1226,7 @@ export default function Shop({
           <div className="shop-tab-pane" style={{ padding: 0, height: '100%' }}>
             <Marketplace
               userTokens={userTokens}
+              userGold={userGold}
               userElo={userElo}
               hasVipPass={hasVipPass}
               plantCopies={plantCopies as Record<PlantId, number>}
@@ -1236,6 +1251,11 @@ export default function Shop({
               <h3>🎉 ¡COMPRA EXITOSA!</h3>
               <p style={{ color: '#e2e8f0', fontSize: '13px', marginBottom: '16px' }}>
                 Has adquirido <strong>{purchasedPacksList.length} {purchasedPacksList.length === 1 ? 'Sobre de Semillas' : 'Sobres de Semillas'} ({purchasedPacksList[0].name})</strong>.<br />
+                {purchasedGoldBonus > 0 && (
+                  <span style={{ color: '#fbbf24', fontWeight: 'bold', display: 'block', margin: '8px 0', fontSize: '14px' }}>
+                    💰 ¡+{purchasedGoldBonus.toLocaleString('en-US')} Monedas de Oro acreditadas a tu cuenta!
+                  </span>
+                )}
                 Se han guardado en tu inventario de <strong>"Mi Jardín"</strong>.
               </p>
 
@@ -1247,6 +1267,7 @@ export default function Shop({
                   onClick={() => {
                     const instIds = purchasedPacksList.map((p) => p.instanceId)
                     setPurchasedPacksList([])
+                    setPurchasedGoldBonus(0)
                     if (instIds.length === 1) {
                       onOpenPackImmediately(instIds[0])
                     } else if (onOpenMultiplePacks) {
@@ -1262,6 +1283,7 @@ export default function Shop({
                   type="button"
                   onClick={() => {
                     setPurchasedPacksList([])
+                    setPurchasedGoldBonus(0)
                     onOpenJardin()
                   }}
                 >
@@ -1272,7 +1294,10 @@ export default function Shop({
                   className="shop-result-btn"
                   style={{ background: 'linear-gradient(180deg, #475569 0%, #1e293b 100%)', borderColor: '#94a3b8' }}
                   type="button"
-                  onClick={() => setPurchasedPacksList([])}
+                  onClick={() => {
+                    setPurchasedPacksList([])
+                    setPurchasedGoldBonus(0)
+                  }}
                 >
                   🛒 SEGUIR COMPRANDO
                 </button>
@@ -1355,9 +1380,15 @@ export default function Shop({
               </div>
 
               <p className="shop-pack-details-desc">
-                {selectedPackDetails === 'basic'
-                  ? 'Contiene 3 cartas.'
-                  : 'Contiene 4 cartas.'}
+                {selectedPackDetails === 'basic' && (
+                  <>Contiene 3 cartas al abrir + 300 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
+                )}
+                {selectedPackDetails === 'epic' && (
+                  <>Contiene 4 cartas al abrir + 1,000 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
+                )}
+                {selectedPackDetails === 'legendary' && (
+                  <>Contiene 4 cartas al abrir + 2,500 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
+                )}
               </p>
 
               <div className="shop-pack-details-odds">
