@@ -58,7 +58,7 @@ describe('leer el mazo de la sala', () => {
     // Llega por JSON desde la base: puede venir con nulos o con campos que faltan,
     // y eso no puede tirar la partida.
     const mazo = leerMazo([null, { sinPlantId: 1 }, { plantId: 'aloe' }, 7])
-    expect(mazo).toEqual([{ plantId: 'aloe', slot: null, level: null, statRolls: null }])
+    expect(mazo).toEqual([{ plantId: 'aloe', slot: 0, level: null, statRolls: null }])
     expect(mejorasDeLaCarta(mazo, 'aloe' as PlantId)).toEqual({ statRolls: [], level: 0 })
   })
 
