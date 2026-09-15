@@ -1334,52 +1334,23 @@
 .market-categories-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 10px 4px 20px 4px;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 4px 10px 4px;
   width: 100%;
   max-width: 1080px;
+  height: 100%;
   margin: 0 auto;
   box-sizing: border-box;
-}
-
-.market-categories-hero {
-  text-align: center;
-  padding: 12px 16px 8px 16px;
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.1) 100%);
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.market-categories-hero__title {
-  font-size: 17px;
-  font-weight: 900;
-  color: #f8fafc;
-  letter-spacing: 0.8px;
-  margin: 0 0 6px 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
-}
-
-.market-categories-hero__subtitle {
-  font-size: 12px;
-  color: #94a3b8;
-  margin: 0 auto;
-  max-width: 650px;
-  line-height: 1.45;
+  flex: 1;
 }
 
 .market-categories-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 14px;
   width: 100%;
   box-sizing: border-box;
-}
-
-@media (max-width: 860px) {
-  .market-categories-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
 }
 
 .market-category-card {
@@ -1388,45 +1359,45 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 24px 18px 18px 18px;
-  border-radius: 20px;
+  padding: 16px 12px 14px 12px;
+  border-radius: 18px;
   cursor: pointer;
   background: linear-gradient(160deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
   border: 2px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
   transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
 .market-category-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
 }
 
 /* Category specific border glows */
 .market-category-card--plants:hover {
   border-color: #4ade80;
-  box-shadow: 0 12px 30px rgba(74, 222, 128, 0.22);
+  box-shadow: 0 10px 26px rgba(74, 222, 128, 0.22);
 }
 
 .market-category-card--farming:hover {
   border-color: #38bdf8;
-  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.22);
+  box-shadow: 0 10px 26px rgba(56, 189, 248, 0.22);
 }
 
 .market-category-card--gold:hover {
   border-color: #fbbf24;
-  box-shadow: 0 12px 30px rgba(251, 191, 36, 0.25);
+  box-shadow: 0 10px 26px rgba(251, 191, 36, 0.25);
 }
 
 .market-category-card__badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 10px;
+  top: 10px;
+  right: 10px;
+  font-size: 9.5px;
   font-weight: 800;
-  padding: 3px 10px;
-  border-radius: 20px;
+  padding: 2px 8px;
+  border-radius: 16px;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #e2e8f0;
@@ -1440,14 +1411,14 @@
 }
 
 .market-category-card__icon-circle {
-  width: 72px;
-  height: 72px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   transition: transform 0.24s ease;
 }
 
@@ -1471,38 +1442,42 @@
 }
 
 .market-category-card__emoji {
-  font-size: 38px;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  font-size: 30px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .market-category-card__title {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 900;
   color: #ffffff;
-  margin: 0 0 8px 0;
-  letter-spacing: 0.4px;
+  margin: 0 0 6px 0;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .market-category-card__desc {
-  font-size: 11.5px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.38;
   color: #94a3b8;
-  margin: 0 0 18px 0;
-  min-height: 34px;
+  margin: 0 0 14px 0;
+  min-height: 30px;
 }
 
 .market-category-card__footer-action {
   margin-top: auto;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 10.5px;
   font-weight: 900;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   color: #38bdf8;
   background: rgba(56, 189, 248, 0.1);
-  padding: 6px 16px;
-  border-radius: 12px;
+  padding: 5px 14px;
+  border-radius: 10px;
   border: 1px solid rgba(56, 189, 248, 0.25);
   transition: all 0.2s ease;
 }
@@ -1536,7 +1511,7 @@
 }
 
 .market-category-card__arrow {
-  font-size: 13px;
+  font-size: 12px;
   transition: transform 0.2s ease;
 }
 

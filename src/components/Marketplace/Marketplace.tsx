@@ -1192,13 +1192,6 @@ export default function Marketplace({
           ) : selectedCategory === null ? (
             /* SELECCIÓN PRINCIPAL DE LAS 3 CATEGORÍAS */
             <div className="market-categories-wrapper">
-              <div className="market-categories-hero">
-                <h3 className="market-categories-hero__title">MERCADO P2P DE LA COMUNIDAD</h3>
-                <p className="market-categories-hero__subtitle">
-                  Elige una categoría para explorar ofertas de otros jugadores o publica tus cartas, recursos y oro de forma 100% segura.
-                </p>
-              </div>
-
               <div className="market-categories-grid">
                 {/* 1. PLANTAS */}
                 <div
@@ -1275,7 +1268,7 @@ export default function Marketplace({
                     {goldOffers.length} {goldOffers.length === 1 ? 'oferta' : 'ofertas'}
                   </div>
                   <div className="market-category-card__icon-circle market-category-card__icon-circle--gold">
-                    <img src={monedaImg} alt="Oro" style={{ width: '44px', height: '44px', objectFit: 'contain' }} />
+                    <img src={monedaImg} alt="Oro" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
                   </div>
                   <h4 className="market-category-card__title">
                     <GoldIcon size={18} /> Comercio de Oro
