@@ -90,6 +90,24 @@ interface JardinProps {
 const FUSION_GOLD_COST = 1000
 const FUSION_COPIES_REQ = 5
 
+export const PLANT_ELIGIBLE_STATS_LABELS: Record<string, string[]> = {
+  sunflower: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
+  peashooter: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
+  wallnut: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
+  chomper: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%', '🏃 Vel. Movimiento +15%'],
+  bonkchoy: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%', '🏃 Vel. Movimiento +15%'],
+  garlic: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '🏃 Vel. Movimiento +15%'],
+  melonpult: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
+  repeater: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
+  squash: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%'],
+  twinsunflower: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
+  jalapeno: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%'],
+  aloe: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
+  tallnut: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
+  iceberglettuce: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
+  threepeater: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
+}
+
 export default function Jardin({
   activeDeck,
   unlockedPlants,
@@ -949,6 +967,7 @@ export default function Jardin({
               const inDeck = deckInstanceIds.includes(instanceId)
               const copies = plantCopies[plantId] || 0
               const isLegendary = plantId === 'threepeater' || plantId === 'iceberglettuce'
+              const isEpic = plantId === 'aloe' || plantId === 'tallnut'
               const maxLvl = isLegendary ? 3 : 5
               const groupedBuffs = groupRolls(statRolls)
               const isMaxLevel = level >= maxLvl
@@ -962,8 +981,16 @@ export default function Jardin({
               const currentSprouts = card.germinationsCount ?? 0
               const canSproutThisCard = currentSprouts < 2
               const nextChildNum = currentSprouts + 1
-              const sproutWaterCost = nextChildNum === 1 ? 10 : 12
-              const sproutFertCost = nextChildNum === 1 ? 5 : 7
+
+              let sproutWaterCost = nextChildNum === 1 ? 10 : 12
+              let sproutFertCost = nextChildNum === 1 ? 5 : 7
+              if (isLegendary) {
+                sproutWaterCost = nextChildNum === 1 ? 120 : 140
+                sproutFertCost = nextChildNum === 1 ? 60 : 70
+              } else if (isEpic) {
+                sproutWaterCost = nextChildNum === 1 ? 50 : 60
+                sproutFertCost = nextChildNum === 1 ? 30 : 35
+              }
 
               return (
                 <div
@@ -1066,7 +1093,7 @@ export default function Jardin({
                               childNumber: nextChildNum,
                             })
                           }}
-                          title={hasCopies ? `Germinar Cría #${nextChildNum} de esta carta` : `Requiere 5 copias para germinar (${copies}/5)`}
+                          title={hasCopies ? `Germinar Cría #${nextChildNum} de esta carta (${sproutWaterCost}💧, ${sproutFertCost}🧪, 5🧩)` : `Requiere 5 copias para germinar (${copies}/5)`}
                         >
                           🌱 GERMINAR
                         </button>
@@ -1086,7 +1113,7 @@ export default function Jardin({
                               icon: config.icon,
                             })
                           }}
-                          title={hasCopies ? `Fusionar y mejorar a Nivel ${level + 1}` : `Requiere 5 copias para fusionar (${copies}/5)`}
+                          title={hasCopies ? `Fusionar y mejorar a Nivel ${level + 1} (1,000💰 + 5🧩)` : `Requiere 5 copias para fusionar (${copies}/5)`}
                         >
                           🔥 FUSIONAR
                         </button>
@@ -1126,9 +1153,30 @@ export default function Jardin({
               </span>
             </div>
 
-            <p style={{ fontSize: '11px', color: '#94a3b8', margin: '8px 0 14px', lineHeight: 1.4, textAlign: 'center' }}>
-              Subirá +1 Nivel y obtendrá una mejora permanente de +15% en una estadística al azar.
+            <p style={{ fontSize: '11px', color: '#94a3b8', margin: '8px 0 6px', lineHeight: 1.4, textAlign: 'center' }}>
+              Subirá +1 Nivel y obtendrá una mejora permanente de <strong>+15%</strong> en una de las siguientes estadísticas posibles:
             </p>
+
+            {PLANT_ELIGIBLE_STATS_LABELS[fuseCandidate.plantId] && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center', marginBottom: '12px', maxWidth: '340px' }}>
+                {PLANT_ELIGIBLE_STATS_LABELS[fuseCandidate.plantId].map((label, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      background: 'rgba(234, 179, 8, 0.12)',
+                      color: '#facc15',
+                      border: '1px solid rgba(234, 179, 8, 0.35)',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="jardin-fuse-confirm-reqs">
               <div className="jardin-fuse-req-item">

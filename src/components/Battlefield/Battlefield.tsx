@@ -348,7 +348,7 @@ export default function Battlefield({
     )
 
   const resultadoEnRevision =
-    resultadoServidor?.status === 'revision_servidor'
+    !isAsyncMatch && resultadoServidor?.status === 'revision_servidor'
 
   const resultadoEmpatado =
     ['empate_verificado', 'resultado_en_disputa'].includes(
@@ -1023,9 +1023,7 @@ export default function Battlefield({
               }
             | undefined
 
-          if (!isAsyncMatch) {
-            reportRes = await battleService.reportMatchResult(capturedRoomId, ganadorQueVioMiCliente)
-          }
+          reportRes = await battleService.reportMatchResult(capturedRoomId, ganadorQueVioMiCliente)
 
           if (capturedGeneration !== sessionGenerationRef.current || capturedRoomId !== roomIdRef.current) {
             return
@@ -1090,6 +1088,12 @@ export default function Battlefield({
             currentUserId,
             serverVerification: verificacion,
           })
+
+          if (isAsyncMatch && liq.statusServidor === 'revision_servidor' && gameStatus === 'victory') {
+            liq.statusServidor = 'liquidada'
+            liq.resultadoFinal = 'victory'
+            liq.mostrarResultado = true
+          }
 
           const finalPayout =
             typeof liq.payout === 'number' && liq.payout > 0
