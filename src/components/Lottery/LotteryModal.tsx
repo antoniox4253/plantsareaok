@@ -52,17 +52,6 @@ const DEFAULT_WHEEL_SECTORS: WheelSector[] = [
     rarity: 'jackpot',
   },
   {
-    id: 'item_water',
-    label: '3x Agua 💧',
-    icon: '💧',
-    color: '#0284c7',
-    textColor: '#ffffff',
-    type: 'item',
-    itemId: 'water',
-    itemQty: 3,
-    rarity: 'common',
-  },
-  {
     id: 'pack_basic',
     label: 'Sobre Básico 👑',
     icon: '👑',
@@ -72,6 +61,46 @@ const DEFAULT_WHEEL_SECTORS: WheelSector[] = [
     packId: 'basic',
     packQty: 1,
     rarity: 'jackpot',
+  },
+  {
+    id: 'jackpot_10',
+    label: '10 Gemas 💎',
+    icon: '💎',
+    color: '#06b6d4',
+    textColor: '#ffffff',
+    type: 'token',
+    valueUsd: 10.0,
+    rarity: 'epic',
+  },
+  {
+    id: 'gold_150',
+    label: '150 Oro 💰',
+    icon: '💰',
+    color: '#d97706',
+    textColor: '#ffffff',
+    type: 'gold',
+    goldAmount: 150,
+    rarity: 'rare',
+  },
+  {
+    id: 'gold_100',
+    label: '100 Oro 💰',
+    icon: '💰',
+    color: '#f59e0b',
+    textColor: '#ffffff',
+    type: 'gold',
+    goldAmount: 100,
+    rarity: 'rare',
+  },
+  {
+    id: 'gold_50',
+    label: '50 Oro 💰',
+    icon: '💰',
+    color: '#fbbf24',
+    textColor: '#ffffff',
+    type: 'gold',
+    goldAmount: 50,
+    rarity: 'common',
   },
   {
     id: 'item_fertilizer',
@@ -85,43 +114,12 @@ const DEFAULT_WHEEL_SECTORS: WheelSector[] = [
     rarity: 'common',
   },
   {
-    id: 'jackpot_10',
-    label: '10 Gemas 💎',
-    icon: '💎',
-    color: '#06b6d4',
+    id: 'none_1',
+    label: 'Sigue Intentando 🍀',
+    icon: '💨',
+    color: '#475569',
     textColor: '#ffffff',
-    type: 'token',
-    valueUsd: 10.0,
-    rarity: 'epic',
-  },
-  {
-    id: 'gold_250',
-    label: '250 Oro 💰',
-    icon: '💰',
-    color: '#d97706',
-    textColor: '#ffffff',
-    type: 'gold',
-    goldAmount: 250,
-    rarity: 'rare',
-  },
-  {
-    id: 'jackpot_5',
-    label: '5 Gemas 💎',
-    icon: '💎',
-    color: '#ec4899',
-    textColor: '#ffffff',
-    type: 'token',
-    valueUsd: 5.0,
-    rarity: 'rare',
-  },
-  {
-    id: 'gold_100',
-    label: '100 Oro 💰',
-    icon: '💰',
-    color: '#f59e0b',
-    textColor: '#ffffff',
-    type: 'gold',
-    goldAmount: 100,
+    type: 'none',
     rarity: 'common',
   },
 ]
@@ -484,13 +482,13 @@ export default function LotteryModal({
 
       const standardOrder = [
         'jackpot_500',
-        'item_water',
         'pack_basic',
-        'item_fertilizer',
         'jackpot_10',
-        'gold_250',
-        'jackpot_5',
+        'gold_150',
         'gold_100',
+        'gold_50',
+        'item_fertilizer',
+        'none_1',
       ]
 
       const mapped: WheelSector[] = dbSectors.map((row) => {
@@ -971,20 +969,20 @@ export default function LotteryModal({
                     <div className="lottery-prize-tag lottery-prize-tag--legendary">
                       💎 10 Gemas (Giro Extra)
                     </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--epic">
-                      💎 5 Gemas (Reembolso 50%)
-                    </div>
                     <div className="lottery-prize-tag lottery-prize-tag--gold">
-                      💰 250 Monedas de Oro
+                      💰 150 Monedas de Oro
                     </div>
                     <div className="lottery-prize-tag lottery-prize-tag--gold">
                       💰 100 Monedas de Oro
                     </div>
+                    <div className="lottery-prize-tag lottery-prize-tag--gold">
+                      💰 50 Monedas de Oro
+                    </div>
                     <div className="lottery-prize-tag lottery-prize-tag--rare">
                       🌿 Fertilizante de Cultivo
                     </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--rare">
-                      💧 3x Agua para Parcelas
+                    <div className="lottery-prize-tag lottery-prize-tag--epic">
+                      🍀 Sigue Intentando
                     </div>
                   </div>
 
