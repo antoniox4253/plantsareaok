@@ -437,6 +437,8 @@ export function getScaledPlantConfig(
       damage: (scaled.damage ?? 65) + 15,
       sprite: '/game-assets/greenfoot/bonkchoy_champion.png',
       icon: '/game-assets/greenfoot/bonkchoy_champion.png',
+      packetActive: '/game-assets/greenfoot/bonkchoy_champion.png',
+      packetDisabled: '/game-assets/greenfoot/bonkchoy_champion.png',
     }
   }
 

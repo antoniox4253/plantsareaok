@@ -77,7 +77,7 @@ Para agregar nuevos ítems equipables exclusivos a diferentes plantas (ej. Cintu
 - En `src/utils/gameConstants.ts` (`getScaledPlantConfig`):
   - Validar `plantId === '<planta_objetivo>' && equippedItem === '<item_id>'`.
   - Sumar las bonificaciones después de procesar las tiradas de fusión (ej. `scaled.maxHp + X`, `(scaled.damage ?? base) + Y`).
-  - Asignar el nuevo aspecto visual: `sprite: '...'` e `icon: '...'`.
+  - Asignar el nuevo aspecto visual: `sprite: '...'`, `icon: '...'`, `packetActive: '...'` y `packetDisabled: '...'`.
   - Las fusiones y subidas de nivel NUNCA deben sobrescribir o borrar el ítem equipado.
 
 ---
@@ -117,17 +117,19 @@ Para agregar nuevos ítems equipables exclusivos a diferentes plantas (ej. Cintu
 - `src/components/Battlefield/PlantHand.tsx`:
   - Recibir `deckCards={mazoMioParsed}` desde el campo de batalla.
   - `getSlotCardLevelData` debe resolver `equippedItem`.
-  - Si la carta tiene ítem equipado, mostrar una insignia destacada (ej. `.plant-hand__equipped-item-badge`) en la esquina del paquete de semillas.
+  - **Asset del Paquete de Semillas**: La imagen del paquete en mano debe consultar `scaledConfig.packetActive` / `packetDisabled` (o fallback a `scaledConfig.icon || scaledConfig.sprite`) en lugar del `config` estático desequipado.
+  - Si la carta tiene ítem equipado, mostrar una insignia destacada (ej. `.plant-hand__equipped-item-badge`) en la esquina del paquete de semillas y las clases de realce visual `.plant-hand__packet-wrap--equipped` / `.plant-hand__packet-img--equipped`.
   - En el tooltip de hover, mostrar el nombre especial de la planta y el desglose de stats del ítem.
 
 ---
 
 ### 7. Checklist Rápido para Nuevos Ítems
 1. `supabase`: RPCs `equip_plant_item` y `unequip_plant_item` con regla de exclusividad; verificar `_active_deck`.
-2. `gameConstants.ts`: Estadísticas aditivas + `sprite` + `icon` en `getScaledPlantConfig`.
+2. `gameConstants.ts`: Estadísticas aditivas + `sprite` + `icon` + `packetActive` + `packetDisabled` en `getScaledPlantConfig`.
 3. `pvpRewardManager.ts`: Tipo de ítem + `EMPTY_FARMING_INVENTORY` + definición con icono.
 4. `marketplaceManager.ts` & `Marketplace.tsx`: Precio mínimo y orden en catálogo de venta.
 5. `FarmingPreview.tsx`: Inicialización en `0` para build.
 6. `Jardin.tsx`: Handler de click en recursos, modal de confirmación y botón en carta.
-7. `championBelt.test.ts`: Pruebas de stats, fusiones, exclusividad y serialización de mazo.
+7. `PlantHand.tsx`: Usar `scaledConfig` para `packetActive` / `packetDisabled` y badge de ítem.
+8. `championBelt.test.ts`: Pruebas de stats, fusiones, exclusividad y serialización de mazo.
 

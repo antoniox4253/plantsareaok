@@ -30,6 +30,8 @@ describe('Sistema de Cinturón de Campeón (Bonk Choy)', () => {
     expect(equipped.damage).toBe((baseConfig.damage ?? 0) + 15)
     expect(equipped.sprite).toBe('/game-assets/greenfoot/bonkchoy_champion.png')
     expect(equipped.icon).toBe('/game-assets/greenfoot/bonkchoy_champion.png')
+    expect(equipped.packetActive).toBe('/game-assets/greenfoot/bonkchoy_champion.png')
+    expect(equipped.packetDisabled).toBe('/game-assets/greenfoot/bonkchoy_champion.png')
   })
 
   it('El cinturón de campeón se suma acumulativamente a las fusiones de Bonk Choy', () => {

@@ -318,7 +318,9 @@ export default function PlantHand({
             const canAfford = sunBank >= config.cost
             const isDisabled = !canAfford || isOnCooldown
 
-            const packetSrc = isDisabled ? config.packetDisabled : config.packetActive
+            const activePacket = scaledConfig.packetActive || scaledConfig.icon || config.packetActive
+            const disabledPacket = scaledConfig.packetDisabled || scaledConfig.icon || config.packetDisabled
+            const packetSrc = isDisabled ? disabledPacket : activePacket
 
             return (
               <button
@@ -367,11 +369,11 @@ export default function PlantHand({
                 <span className="plant-hand__hotkey-badge">{vIdx + 1}</span>
 
                 {/* Card Seed Packet */}
-                <div className="plant-hand__packet-wrap">
+                <div className={`plant-hand__packet-wrap ${cardData.equippedItem ? 'plant-hand__packet-wrap--equipped' : ''}`}>
                   <img
-                    className="plant-hand__packet-img"
+                    className={`plant-hand__packet-img ${cardData.equippedItem ? 'plant-hand__packet-img--equipped' : ''}`}
                     src={packetSrc}
-                    alt={config.name}
+                    alt={scaledConfig.name}
                     draggable={false}
                     onDragStart={(e) => e.preventDefault()}
                   />
