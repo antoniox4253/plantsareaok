@@ -1171,13 +1171,13 @@ export default function Shop({
         {activeTab === 'energy' && (
           <div className="shop-tab-pane shop-energy-pane">
             {/* FILA 1: RECARGAS CON GEMAS */}
-            <div className="shop-energy-row-section">
-              <div className="shop-energy-row-header">
-                <div className="shop-energy-row-title-box">
-                  <span className="shop-energy-row-icon">💎</span>
-                  <span className="shop-energy-row-title">RECARGAS CON GEMAS</span>
+            <div className="shop-energy-group">
+              <div className="shop-energy-group-header">
+                <div className="shop-energy-group-title-box">
+                  <span className="shop-energy-group-icon">💎</span>
+                  <span className="shop-energy-group-title">RECARGAS CON GEMAS</span>
                 </div>
-                <div className="shop-energy-row-balance">
+                <div className="shop-energy-group-balance">
                   <span>Tu Saldo:</span>
                   <strong className="shop-energy-balance-gems">{userTokens.toLocaleString()} 💎</strong>
                 </div>
@@ -1188,28 +1188,37 @@ export default function Shop({
                   <div
                     key={pkg.id}
                     className={`shop-energy-card ${pkg.popular ? 'shop-energy-card--popular' : ''} ${pkg.bestValue ? 'shop-energy-card--best' : ''}`}
+                    onClick={() => handleBuyEnergy(pkg)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleBuyEnergy(pkg)
+                      }
+                    }}
                   >
                     {pkg.badge && <div className="shop-energy-badge-ribbon">{pkg.badge}</div>}
 
-                    <div className="shop-energy-card-icon-box">
-                      <span className="shop-energy-card-icon">⚡</span>
-                      <span className="shop-energy-card-qty">{pkg.isFullRefill ? 'MAX' : `+${pkg.energyAmount}`}</span>
+                    <div className="shop-energy-card-hero">
+                      <span className="shop-energy-card-bolt">⚡</span>
+                      <span className="shop-energy-card-amount">
+                        {pkg.isFullRefill ? 'MAX' : `+${pkg.energyAmount}`}
+                      </span>
                     </div>
 
-                    <h3 className="shop-energy-card-name">{pkg.name}</h3>
-                    <p className="shop-energy-card-desc">{pkg.description}</p>
-
-                    <div className="shop-energy-card-price-tag">
-                      <span className="shop-energy-gem">💎</span>
-                      <span className="shop-energy-price-num">{pkg.price.toLocaleString()} Gemas</span>
-                    </div>
+                    <div className="shop-energy-card-name">{pkg.name}</div>
 
                     <button
                       type="button"
-                      className="shop-energy-card-buy-btn"
-                      onClick={() => handleBuyEnergy(pkg)}
+                      className="shop-energy-card-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleBuyEnergy(pkg)
+                      }}
                     >
-                      ⚡ {pkg.isFullRefill ? 'REC. COMPLETA' : 'RECARGAR'}
+                      <span className="shop-energy-btn-icon">💎</span>
+                      <span className="shop-energy-btn-price">{pkg.price.toLocaleString()} Gemas</span>
                     </button>
                   </div>
                 ))}
@@ -1217,13 +1226,13 @@ export default function Shop({
             </div>
 
             {/* FILA 2: RECARGAS CON ORO */}
-            <div className="shop-energy-row-section shop-energy-row-section--gold">
-              <div className="shop-energy-row-header shop-energy-row-header--gold">
-                <div className="shop-energy-row-title-box">
-                  <span className="shop-energy-row-icon">💰</span>
-                  <span className="shop-energy-row-title">RECARGAS CON ORO</span>
+            <div className="shop-energy-group shop-energy-group--gold">
+              <div className="shop-energy-group-header shop-energy-group-header--gold">
+                <div className="shop-energy-group-title-box">
+                  <span className="shop-energy-group-icon">💰</span>
+                  <span className="shop-energy-group-title">RECARGAS CON ORO</span>
                 </div>
-                <div className="shop-energy-row-balance">
+                <div className="shop-energy-group-balance">
                   <span>Tu Saldo:</span>
                   <strong className="shop-energy-balance-gold">{userGold.toLocaleString()} 💰</strong>
                 </div>
@@ -1234,28 +1243,41 @@ export default function Shop({
                   <div
                     key={pkg.id}
                     className={`shop-energy-card shop-energy-card--gold ${pkg.popular ? 'shop-energy-card--popular' : ''} ${pkg.bestValue ? 'shop-energy-card--best' : ''}`}
+                    onClick={() => handleBuyEnergy(pkg)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleBuyEnergy(pkg)
+                      }
+                    }}
                   >
-                    {pkg.badge && <div className="shop-energy-badge-ribbon">{pkg.badge}</div>}
+                    {pkg.badge && (
+                      <div className="shop-energy-badge-ribbon shop-energy-badge-ribbon--gold">
+                        {pkg.badge}
+                      </div>
+                    )}
 
-                    <div className="shop-energy-card-icon-box shop-energy-card-icon-box--gold">
-                      <span className="shop-energy-card-icon">⚡</span>
-                      <span className="shop-energy-card-qty shop-energy-card-qty--gold">+{pkg.energyAmount}</span>
+                    <div className="shop-energy-card-hero">
+                      <span className="shop-energy-card-bolt shop-energy-card-bolt--gold">⚡</span>
+                      <span className="shop-energy-card-amount shop-energy-card-amount--gold">
+                        +{pkg.energyAmount}
+                      </span>
                     </div>
 
-                    <h3 className="shop-energy-card-name">{pkg.name}</h3>
-                    <p className="shop-energy-card-desc">{pkg.description}</p>
-
-                    <div className="shop-energy-card-price-tag shop-energy-card-price-tag--gold">
-                      <span className="shop-energy-gem">💰</span>
-                      <span className="shop-energy-price-num shop-energy-price-num--gold">{pkg.price.toLocaleString()} Oro</span>
-                    </div>
+                    <div className="shop-energy-card-name">{pkg.name}</div>
 
                     <button
                       type="button"
-                      className="shop-energy-card-buy-btn shop-energy-card-buy-btn--gold"
-                      onClick={() => handleBuyEnergy(pkg)}
+                      className="shop-energy-card-btn shop-energy-card-btn--gold"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleBuyEnergy(pkg)
+                      }}
                     >
-                      ⚡ RECARGAR
+                      <span className="shop-energy-btn-icon">💰</span>
+                      <span className="shop-energy-btn-price">{pkg.price.toLocaleString()} Oro</span>
                     </button>
                   </div>
                 ))}

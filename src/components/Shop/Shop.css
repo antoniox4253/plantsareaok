@@ -2294,241 +2294,162 @@
 }
 
 /* ==========================================================================
-   ENERGY MANAGEMENT TAB STYLES (⚡ ENERGÍAS)
+   ENERGY MANAGEMENT TAB STYLES (⚡ ENERGÍAS - ZERO SCROLL COMPACT RPG)
    ========================================================================== */
 .shop-energy-pane {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  width: 100%;
-  max-width: 980px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-.shop-energy-row-section {
-  display: flex;
-  flex-direction: column;
+  justify-content: space-evenly;
   gap: 8px;
   width: 100%;
+  max-width: 960px;
+  height: 100%;
+  max-height: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 4px 6px;
+}
+
+.shop-energy-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
   box-sizing: border-box;
 }
 
-.shop-energy-row-header {
+.shop-energy-group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 10px;
-  padding: 6px 14px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 8px;
+  padding: 3px 12px;
   box-sizing: border-box;
 }
 
-.shop-energy-row-header--gold {
-  border-color: rgba(245, 158, 11, 0.35);
-  background: rgba(24, 18, 5, 0.7);
+.shop-energy-group-header--gold {
+  background: rgba(30, 20, 5, 0.8);
+  border-color: rgba(245, 158, 11, 0.45);
 }
 
-.shop-energy-row-title-box {
+.shop-energy-group-title-box {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.shop-energy-row-icon {
-  font-size: 16px;
+.shop-energy-group-icon {
+  font-size: 14px;
 }
 
-.shop-energy-row-title {
-  font-size: 13px;
+.shop-energy-group-title {
+  font-size: 11.5px;
   font-weight: 900;
   color: #38bdf8;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
-.shop-energy-row-header--gold .shop-energy-row-title {
+.shop-energy-group-header--gold .shop-energy-group-title {
   color: #fbbf24;
 }
 
-.shop-energy-row-balance {
+.shop-energy-group-balance {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 5px;
+  font-size: 11px;
   color: #94a3b8;
 }
 
 .shop-energy-balance-gems {
   color: #67e8f9;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .shop-energy-balance-gold {
   color: #fde047;
-  font-size: 13px;
-}
-
-.shop-energy-status-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 58, 138, 0.6) 100%);
-  border: 1.5px solid #38bdf8;
-  border-radius: 14px;
-  padding: 10px 16px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 14px rgba(56, 189, 248, 0.2);
-  box-sizing: border-box;
-}
-
-.shop-energy-status-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.shop-energy-status-bolt {
-  font-size: 26px;
-  filter: drop-shadow(0 0 8px #38bdf8);
-  animation: energyBoltPulse 2s infinite ease-in-out;
-}
-
-@keyframes energyBoltPulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px #38bdf8); }
-  50% { transform: scale(1.12); filter: drop-shadow(0 0 16px #60a5fa); }
-}
-
-.shop-energy-status-details {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.shop-energy-status-heading {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 900;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
-.shop-energy-status-val {
-  color: #38bdf8;
-  font-size: 16px;
-  font-weight: 900;
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
-}
-
-.shop-energy-vip-pill {
-  font-size: 9.5px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #1a1000;
-  padding: 2px 7px;
-  border-radius: 999px;
-  border: 1px solid #fde047;
-  letter-spacing: 0.3px;
-}
-
-.shop-energy-status-subtext {
-  font-size: 11px;
-  color: #94a3b8;
-  margin: 0;
-  line-height: 1.3;
-}
-
-.shop-energy-status-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-  gap: 2px;
-  border-left: 1px solid rgba(255, 255, 255, 0.15);
-  padding-left: 14px;
-  flex-shrink: 0;
-}
-
-.shop-energy-reset-label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #cbd5e1;
-}
-
-.shop-energy-reset-time {
-  font-size: 13px;
-  font-weight: 900;
-  color: #4ade80;
-}
-
-.shop-energy-reset-note {
-  font-size: 9px;
-  color: #94a3b8;
-  font-style: italic;
-}
-
-/* Grid de Tarjetas de Energía */
+/* Grid de 3 columnas de tarjetas de energía */
 .shop-energy-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   box-sizing: border-box;
 }
 
+/* Tarjeta RPG compacta y clickeable */
 .shop-energy-card {
   position: relative;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 30, 50, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(15, 30, 50, 0.98) 100%);
   border: 1.5px solid #334155;
-  border-radius: 14px;
-  padding: 16px 10px 12px 10px;
+  border-radius: 12px;
+  padding: 10px 8px 8px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 7px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.18s ease-in-out;
   box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
 }
 
 .shop-energy-card:hover {
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-2px);
   border-color: #38bdf8;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.3);
 }
 
 .shop-energy-card--popular {
   border-color: #f59e0b;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.2);
 }
 
 .shop-energy-card--popular:hover {
   border-color: #fbbf24;
-  box-shadow: 0 10px 24px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
 }
 
 .shop-energy-card--best {
   border-color: #a855f7;
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.2);
 }
 
 .shop-energy-card--best:hover {
   border-color: #c084fc;
-  box-shadow: 0 10px 24px rgba(168, 85, 247, 0.35);
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.35);
+}
+
+/* Tarjeta Dorada para ORO */
+.shop-energy-card--gold {
+  background: linear-gradient(180deg, rgba(28, 22, 10, 0.96) 0%, rgba(44, 32, 10, 0.98) 100%);
+  border-color: #854d0e;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 8px rgba(245, 158, 11, 0.15);
+}
+
+.shop-energy-card--gold:hover {
+  transform: translateY(-2px);
+  border-color: #fbbf24;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), 0 0 14px rgba(251, 191, 36, 0.4);
 }
 
 .shop-energy-badge-ribbon {
   position: absolute;
-  top: -9px;
+  top: -7px;
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: #ffffff;
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 900;
-  padding: 2px 10px;
+  padding: 1px 8px;
   border-radius: 999px;
   border: 1px solid #93c5fd;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -2546,268 +2467,193 @@
 
 .shop-energy-card--best .shop-energy-badge-ribbon {
   background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
-  color: #ffffff;
   border-color: #e9d5ff;
-}
-
-.shop-energy-card-icon-box {
-  position: relative;
-  width: 54px;
-  height: 54px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(15, 23, 42, 0) 70%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2px;
-}
-
-.shop-energy-card-icon {
-  font-size: 28px;
-  filter: drop-shadow(0 0 8px #38bdf8);
-}
-
-.shop-energy-card-qty {
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  background: #38bdf8;
-  color: #032b43;
-  font-size: 11px;
-  font-weight: 900;
-  padding: 1px 6px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-  border: 1.5px solid #ffffff;
-}
-
-.shop-energy-card-name {
-  font-size: 14px;
-  font-weight: 900;
   color: #ffffff;
-  margin: 0;
 }
 
-.shop-energy-card-desc {
-  font-size: 10.5px;
-  color: #94a3b8;
-  line-height: 1.25;
-  margin: 0;
-  min-height: 28px;
+.shop-energy-badge-ribbon--gold {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  border-color: #fde047;
+  color: #fff;
 }
 
-.shop-energy-card-price-tag {
+/* Hero Central de la Tarjeta */
+.shop-energy-card-hero {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 5px 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  width: 100%;
-  box-sizing: border-box;
+  margin-top: 1px;
 }
 
-.shop-energy-gem {
-  font-size: 14px;
+.shop-energy-card-bolt {
+  font-size: 20px;
+  filter: drop-shadow(0 0 6px #38bdf8);
+  line-height: 1;
 }
 
-.shop-energy-price-num {
-  font-size: 13.5px;
+.shop-energy-card-bolt--gold {
+  filter: drop-shadow(0 0 6px #fbbf24);
+}
+
+.shop-energy-card-amount {
+  font-size: 19px;
   font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.shop-energy-card-amount--gold {
   color: #fbbf24;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(245, 158, 11, 0.4);
 }
 
-.shop-energy-price-usd {
-  font-size: 10px;
-  font-weight: 700;
-  color: #94a3b8;
+.shop-energy-card-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #cbd5e1;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-.shop-energy-card-buy-btn {
+.shop-energy-card--gold .shop-energy-card-name {
+  color: #fef08a;
+}
+
+/* Botón de Compra Directo a 1 Click */
+.shop-energy-card-btn {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
   border: 1.5px solid #38bdf8;
   color: #ffffff;
   font-weight: 900;
-  font-size: 12px;
-  padding: 7px 10px;
-  border-radius: 10px;
+  font-size: 11.5px;
+  padding: 5px 6px;
+  border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
-  transition: all 0.2s ease;
-  letter-spacing: 0.5px;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35);
+  transition: all 0.15s ease;
+  margin-top: auto;
+  box-sizing: border-box;
 }
 
-.shop-energy-card-buy-btn:hover {
-  transform: translateY(-2px);
+.shop-energy-card-btn:hover {
   background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
   border-color: #ffffff;
-  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.5);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.5);
+  transform: scale(1.02);
 }
 
-/* Variantes temáticas doradas para recargas con Oro */
-.shop-energy-card--gold {
-  border-color: #78350f;
-  background: linear-gradient(180deg, rgba(24, 20, 14, 0.95) 0%, rgba(38, 28, 10, 0.98) 100%);
+.shop-energy-card-btn:active {
+  transform: scale(0.97);
 }
 
-.shop-energy-card--gold:hover {
-  border-color: #f59e0b;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.35);
-}
-
-.shop-energy-card-icon-box--gold {
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.3) 0%, rgba(20, 20, 15, 0) 70%);
-}
-
-.shop-energy-card-qty--gold {
-  background: #f59e0b;
-  color: #1a1000;
-}
-
-.shop-energy-card-price-tag--gold {
-  border-color: rgba(245, 158, 11, 0.3);
-  background: rgba(30, 20, 0, 0.5);
-}
-
-.shop-energy-price-num--gold {
-  color: #fde047;
-}
-
-.shop-energy-card-buy-btn--gold {
+.shop-energy-card-btn--gold {
   background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
   border-color: #fbbf24;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(217, 119, 6, 0.4);
 }
 
-.shop-energy-card-buy-btn--gold:hover {
+.shop-energy-card-btn--gold:hover {
   background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-  border-color: #ffffff;
-  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+  border-color: #fef08a;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.6);
 }
 
+.shop-energy-btn-icon {
+  font-size: 12px;
+}
+
+.shop-energy-btn-price {
+  font-weight: 900;
+  letter-spacing: 0.3px;
+}
+
+/* ==========================================================================
+   RESPONSIVE MOBILE RULES FOR ENERGY (ZERO SCROLL FIT)
+   ========================================================================== */
 @media (max-width: 768px) {
   .shop-energy-pane {
-    gap: 8px;
-    padding: 0 2px;
+    gap: 4px;
+    padding: 0;
+    justify-content: space-evenly;
   }
 
-  .shop-energy-status-card {
-    padding: 8px 10px;
-    gap: 8px;
+  .shop-energy-group {
+    gap: 3px;
   }
 
-  .shop-energy-status-bolt {
-    font-size: 20px;
+  .shop-energy-group-header {
+    padding: 2px 8px;
+    border-radius: 6px;
   }
 
-  .shop-energy-status-heading {
-    font-size: 12px;
-    gap: 5px;
-  }
-
-  .shop-energy-status-val {
-    font-size: 13.5px;
-  }
-
-  .shop-energy-vip-pill {
-    font-size: 8px;
-    padding: 1px 5px;
-  }
-
-  .shop-energy-status-subtext {
-    font-size: 9.5px;
-    line-height: 1.2;
-  }
-
-  .shop-energy-status-right {
-    padding-left: 8px;
-  }
-
-  .shop-energy-reset-label {
-    font-size: 8.5px;
-  }
-
-  .shop-energy-reset-time {
+  .shop-energy-group-icon {
     font-size: 11px;
   }
 
-  .shop-energy-reset-note {
-    font-size: 7.5px;
+  .shop-energy-group-title {
+    font-size: 10px;
+    letter-spacing: 0.3px;
   }
 
-  /* Mantener estructura de 3 columnas idéntica a desktop */
+  .shop-energy-group-balance {
+    font-size: 9px;
+  }
+
+  .shop-energy-balance-gems,
+  .shop-energy-balance-gold {
+    font-size: 10px;
+  }
+
   .shop-energy-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    gap: 5px;
   }
 
   .shop-energy-card {
-    padding: 12px 4px 8px 4px;
-    gap: 4px;
-    border-radius: 10px;
+    padding: 7px 3px 5px 3px;
+    gap: 2px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   }
 
   .shop-energy-badge-ribbon {
-    font-size: 6.5px;
-    padding: 1px 5px;
-    top: -7px;
-  }
-
-  .shop-energy-card-icon-box {
-    width: 38px;
-    height: 38px;
-  }
-
-  .shop-energy-card-icon {
-    font-size: 18px;
-  }
-
-  .shop-energy-card-qty {
-    font-size: 9px;
+    font-size: 6px;
     padding: 0 4px;
-    right: -2px;
-    bottom: -2px;
+    top: -5px;
+  }
+
+  .shop-energy-card-bolt {
+    font-size: 14px;
+  }
+
+  .shop-energy-card-amount {
+    font-size: 13.5px;
   }
 
   .shop-energy-card-name {
-    font-size: 10.5px;
+    font-size: 9px;
   }
 
-  .shop-energy-card-desc {
-    font-size: 8px;
-    line-height: 1.15;
-    min-height: 20px;
-  }
-
-  .shop-energy-card-price-tag {
+  .shop-energy-card-btn {
     padding: 3px 2px;
-    gap: 2px;
+    font-size: 9px;
     border-radius: 6px;
-    flex-wrap: wrap;
+    gap: 3px;
   }
 
-  .shop-energy-gem {
+  .shop-energy-btn-icon {
     font-size: 10px;
-  }
-
-  .shop-energy-price-num {
-    font-size: 10px;
-  }
-
-  .shop-energy-price-usd {
-    font-size: 8px;
-  }
-
-  .shop-energy-card-buy-btn {
-    padding: 5px 2px;
-    font-size: 9.5px;
-    border-radius: 6px;
   }
 }
-
-
-
-
