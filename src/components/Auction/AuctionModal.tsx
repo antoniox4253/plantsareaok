@@ -223,43 +223,52 @@ export const AuctionModal: React.FC<AuctionModalProps> = ({
         </div>
 
         {/* LAYOUT HORIZONTAL DE 2 COLUMNAS */}
-        <div className="auction-horizontal-body">
-          {/* COLUMNA IZQUIERDA: PUJAS, TEMPORIZADOR Y RANKING */}
-          <div className="auction-col-left">
-            {/* 1. Temporizador de 30 horas */}
-            <div className="auction-timer-banner">
-              <div className="auction-timer-label">
-                <span>⏱️</span>
-                <span>{isExpired ? 'TIEMPO FINALIZADO' : 'TIEMPO RESTANTE (30H):'}</span>
-              </div>
-              <div className={`auction-timer-digits ${isExpired ? 'auction-timer-digits--expired' : ''}`}>
-                {formatCountdown}
-              </div>
-            </div>
-
-            {/* 2. Tarjeta del Líder Actual */}
-            <div className="auction-leader-card">
-              <div className="auction-current-bid-info">
-                <span className="auction-bid-tag">
-                  {auction?.highestBidderId ? 'Última Puja Más Alta' : 'Precio Inicial'}
-                </span>
-                <div className="auction-bid-amount-wrap">
-                  <span className="auction-bid-amount">
-                    {auction ? auction.currentBid.toLocaleString() : 500}
-                  </span>
-                  <span className="auction-bid-gem-icon">💎</span>
+        {isLoading && !auction ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: '#e9d5ff', fontSize: '1.1rem', fontWeight: 700 }}>
+            ⏳ Sincronizando datos de la Subasta en Vivo...
+          </div>
+        ) : (
+          <div className="auction-horizontal-body">
+            {/* COLUMNA IZQUIERDA: PUJAS, TEMPORIZADOR Y RANKING */}
+            <div className="auction-col-left">
+              {/* 1. Temporizador de 30 horas */}
+              <div className="auction-timer-banner">
+                <div className="auction-timer-label">
+                  <span>⏱️</span>
+                  <span>{isExpired ? 'TIEMPO FINALIZADO' : 'TIEMPO RESTANTE (30H):'}</span>
+                </div>
+                <div className={`auction-timer-digits ${isExpired ? 'auction-timer-digits--expired' : ''}`}>
+                  {formatCountdown}
                 </div>
               </div>
 
-              <div className="auction-leader-user">
-                <span className="auction-leader-user-tag">
-                  {auction?.highestBidderId ? '👑 MÁXIMO POSTOR' : 'ESTADO INICIAL'}
-                </span>
-                <span className="auction-leader-name">
-                  {auction?.highestBidderName ? `@${auction.highestBidderName}` : 'Sin ofertas aún'}
-                </span>
+              {/* 2. Tarjeta del Líder Actual */}
+              <div className="auction-leader-card">
+                <div className="auction-current-bid-info">
+                  <span className="auction-bid-tag">
+                    {auction?.highestBidderId ? 'Última Puja Más Alta' : 'Precio Inicial'}
+                  </span>
+                  <div className="auction-bid-amount-wrap">
+                    <span className="auction-bid-amount">
+                      {auction ? auction.currentBid.toLocaleString() : 500}
+                    </span>
+                    <span className="auction-bid-gem-icon">💎</span>
+                  </div>
+                </div>
+
+                <div className="auction-leader-user">
+                  <span className="auction-leader-user-tag">
+                    {auction?.highestBidderId ? (isHighestBidder ? '👑 ¡ERES EL LÍDER!' : '👑 MÁXIMO POSTOR') : 'ESTADO INICIAL'}
+                  </span>
+                  <span className="auction-leader-name">
+                    {auction?.highestBidderName
+                      ? `@${auction.highestBidderName}`
+                      : isHighestBidder && username
+                      ? `@${username}`
+                      : 'Sin ofertas aún'}
+                  </span>
+                </div>
               </div>
-            </div>
 
             {/* 3. Consola para Pujar o Reclamar Carta */}
             <div className="auction-bid-console">
@@ -416,6 +425,7 @@ export const AuctionModal: React.FC<AuctionModalProps> = ({
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   )

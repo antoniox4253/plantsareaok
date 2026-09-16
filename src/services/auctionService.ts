@@ -1,4 +1,4 @@
-import { supabaseService } from './supabaseService'
+import { supabase } from '../lib/supabaseClient'
 
 export interface AuctionBid {
   id: string
@@ -53,8 +53,7 @@ class AuctionService {
    */
   async getActiveAuction(): Promise<ActiveAuctionData | null> {
     try {
-      const client = supabaseService.getClient()
-      const { data, error } = await client.rpc('get_active_auction')
+      const { data, error } = await (supabase.rpc as any)('get_active_auction')
 
       if (error) {
         console.error('[AuctionService] Error al obtener subasta activa:', error)
@@ -73,8 +72,7 @@ class AuctionService {
    */
   async placeBid(auctionId: string, bidAmount: number): Promise<BidResult> {
     try {
-      const client = supabaseService.getClient()
-      const { data, error } = await client.rpc('place_auction_bid', {
+      const { data, error } = await (supabase.rpc as any)('place_auction_bid', {
         p_auction_id: auctionId,
         p_bid_amount: bidAmount,
       })
@@ -94,8 +92,7 @@ class AuctionService {
    */
   async claimReward(auctionId: string): Promise<ClaimResult> {
     try {
-      const client = supabaseService.getClient()
-      const { data, error } = await client.rpc('claim_auction_reward', {
+      const { data, error } = await (supabase.rpc as any)('claim_auction_reward', {
         p_auction_id: auctionId,
       })
 
@@ -114,8 +111,7 @@ class AuctionService {
    */
   subscribeToAuctionChanges(onUpdate: () => void): () => void {
     try {
-      const client = supabaseService.getClient()
-      const channel = client
+      const channel = supabase
         .channel('auction-live-updates')
         .on(
           'postgres_changes',
@@ -130,7 +126,7 @@ class AuctionService {
         .subscribe()
 
       return () => {
-        client.removeChannel(channel)
+        supabase.removeChannel(channel)
       }
     } catch (err) {
       console.warn('[AuctionService] No se pudo inicializar suscripción Realtime:', err)
