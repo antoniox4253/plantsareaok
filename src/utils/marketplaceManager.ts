@@ -25,6 +25,7 @@ export const FARMING_ITEM_MIN_PRICES: Record<FarmingItemId, number> = {
   scarecrow_fragment: 10,
   shovel: 10,
   scarecrow: 10,
+  champion_belt: 10,
 }
 
 export function getFarmingItemMinPrice(_itemId: FarmingItemId): number {

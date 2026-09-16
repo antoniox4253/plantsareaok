@@ -8,6 +8,7 @@ export type FarmingItemId =
   | 'pesticide'
   | 'shovel'
   | 'scarecrow'
+  | 'champion_belt'
 
 export interface FarmingInventory {
   water: number
@@ -17,6 +18,7 @@ export interface FarmingInventory {
   pesticide: number
   shovel: number
   scarecrow: number
+  champion_belt: number
 }
 
 export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
@@ -27,6 +29,7 @@ export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
   pesticide: 0,
   shovel: 0,
   scarecrow: 0,
+  champion_belt: 0,
 }
 
 export const FARMING_ITEM_DEFINITIONS: Record<
@@ -74,6 +77,12 @@ export const FARMING_ITEM_DEFINITIONS: Record<
     description: 'Se equipa a un slot y reduce la aparición de cuervos.',
     icon: '/game-assets/farming/scarecrow.webp',
     fallback: '🌾',
+  },
+  champion_belt: {
+    label: 'Cinturón de Campeón',
+    description: 'Cinturón exclusivo de Bonk Choy. Al equiparse otorga +150 HP y +15 de Daño.',
+    icon: '/game-assets/farming/champion_belt.png',
+    fallback: '🥊',
   },
 }
 

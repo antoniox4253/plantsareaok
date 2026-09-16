@@ -984,6 +984,7 @@ export function useGameEngine() {
 
       let rolls: PlantStatKey[]
       let cardLevel: number
+      let cardEquippedItem: string | null = null
 
       if (mazoMioRef.current) {
         // ── EN 1C1, LAS MEJORAS SALEN DEL MAZO DE LA SALA ─────────────────────
@@ -1000,6 +1001,7 @@ export function useGameEngine() {
         const mejoras = mejorasDeLaCartaEnSlot(mazoMioRef.current, card, slotIdx)
         rolls = mejoras.statRolls
         cardLevel = mejoras.level
+        cardEquippedItem = mejoras.equippedItem || null
       } else {
         // En solitario y en prácticas: las del navegador, que es lo que hay y no
         // hay nadie con quien coincidir.
@@ -1018,6 +1020,12 @@ export function useGameEngine() {
             if (found) {
               rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
               cardLevel = found.level || 0
+              cardEquippedItem = found.equippedItem || null
+            }
+          } else {
+            const found = parsedInstances.find((i) => i.plantId === card && i.equippedItem)
+            if (found) {
+              cardEquippedItem = found.equippedItem || null
             }
           }
         } catch {}
@@ -1032,7 +1040,7 @@ export function useGameEngine() {
         }
       }
 
-      const config = getScaledPlantConfig(card, rolls)
+      const config = getScaledPlantConfig(card, rolls, cardEquippedItem)
       if (!config) return null
 
       if (state.sunBank < config.cost) return null
@@ -1086,6 +1094,7 @@ export function useGameEngine() {
         col,
         rolls,
         cardLevel,
+        equippedItem: cardEquippedItem,
         state,
         seq,
         enTic,
@@ -1205,6 +1214,7 @@ export function useGameEngine() {
         col: accion.col ?? null,
         statRolls: mejoras?.statRolls,
         level: mejoras?.level,
+        equippedItem: mejoras?.equippedItem,
       })
 
       // TARDE: su tic ya pasó. No se aplica más tarde — se rehace la partida con
@@ -1239,6 +1249,7 @@ export function useGameEngine() {
         col: accion.col,
         statRolls: mejoras?.statRolls,
         level: mejoras?.level,
+        equippedItem: mejoras?.equippedItem,
       })
     },
     []

@@ -77,6 +77,7 @@ export interface PlantEntity {
   spriteOverride?: string
   frozenUntil?: number
   isHealingFx?: boolean
+  equippedItem?: string | null
 }
 
 export type EnemyPlantType =
@@ -184,6 +185,7 @@ export interface PlantCardInstance {
   isBase?: boolean
   obtainedAt?: number
   germinationsCount?: number
+  equippedItem?: string | null
 }
 
 export type ColosseumBetAmount = 50 | 100 | 200

@@ -96,6 +96,7 @@ export interface ParametrosCapturaPlantP1 {
   col: number
   rolls?: PlantStatKey[]
   cardLevel?: number
+  equippedItem?: string | null
   state: GameState
   seq?: number
   enTic: number
@@ -123,6 +124,7 @@ export function ejecutarCapturaPlantP1(
     col,
     rolls,
     cardLevel,
+    equippedItem,
     state,
     seq,
     enTic,
@@ -132,7 +134,7 @@ export function ejecutarCapturaPlantP1(
 
   let canonicalAction: AccionP1RankedEstricta | undefined = undefined
 
-  const config = getScaledPlantConfig(card, rolls)
+  const config = getScaledPlantConfig(card, rolls, equippedItem)
   if (!config) {
     return { ok: false, reason: 'INVALID_PLANT_DATA', details: 'Configuración no encontrada para la planta' }
   }
@@ -206,6 +208,7 @@ export function ejecutarCapturaPlantP1(
     col,
     statRolls: rolls,
     level: cardLevel,
+    equippedItem,
   })
 
   state.sunBank -= config.cost

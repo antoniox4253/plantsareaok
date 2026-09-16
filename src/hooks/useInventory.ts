@@ -542,6 +542,37 @@ export function useInventory() {
     }
   }
 
+  const equipItem = async (
+    instanceId: string,
+    itemId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const res = await inventoryService.equipPlantItem(instanceId, itemId)
+    if (!res.success) return { success: false, error: res.error }
+    setPlantInstances((prev) =>
+      prev.map((inst) => (inst.instanceId === instanceId ? { ...inst, equippedItem: itemId } : inst))
+    )
+    await refreshFromServer().catch(() => {})
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('refresh_user_inventory'))
+    }
+    return { success: true }
+  }
+
+  const unequipItem = async (
+    instanceId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const res = await inventoryService.unequipPlantItem(instanceId)
+    if (!res.success) return { success: false, error: res.error }
+    setPlantInstances((prev) =>
+      prev.map((inst) => (inst.instanceId === instanceId ? { ...inst, equippedItem: null } : inst))
+    )
+    await refreshFromServer().catch(() => {})
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('refresh_user_inventory'))
+    }
+    return { success: true }
+  }
+
   /**
    * Arranca en false, no en lo que diga localStorage.
    *
@@ -1088,6 +1119,7 @@ export function useInventory() {
         statRolls: (i.statRolls || []) as PlantStatKey[],
         isBase: i.isBase,
         germinationsCount: i.germinationsCount ?? 0,
+        equippedItem: (i as any).equippedItem || null,
         obtainedAt: i.obtainedAt,
       }))
     )
@@ -1602,6 +1634,8 @@ export function useInventory() {
     openMultiplePacksByInstanceIds,
     fuseAndUpgradePlant,
     sproutPlantInstance,
+    equipItem,
+    unequipItem,
     buyVipPass,
     claimPassReward,
     claimAllPassRewards,

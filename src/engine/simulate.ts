@@ -110,9 +110,10 @@ export function crearPlantaDelRival(
   lane: number,
   col: number | undefined,
   statRolls: PlantStatKey[] = [],
-  level = 0
+  level = 0,
+  equippedItem?: string | null
 ): PlantEntity {
-  const config = getScaledPlantConfig(plantId, statRolls)
+  const config = getScaledPlantConfig(plantId, statRolls, equippedItem)
   const camina = config.category === 'melee' || !!config.moveSpeed || plantId === 'chomper'
 
   // ── LA COLUMNA SE ESPEJA ───────────────────────────────────────────────────
@@ -150,6 +151,8 @@ export function crearPlantaDelRival(
     isWalking: camina,
     state: camina ? 'walking' : 'idle',
     lastActionTime: state.tick,
+    spriteOverride: config.sprite !== PLANT_CONFIGS[plantId]?.sprite ? config.sprite : undefined,
+    equippedItem: equippedItem ?? undefined,
   }
   return entidad
 }
@@ -167,9 +170,10 @@ export function crearPlantaPropia(
   lane: number,
   col: number | undefined,
   statRolls: PlantStatKey[] = [],
-  level = 0
+  level = 0,
+  equippedItem?: string | null
 ): PlantEntity {
-  const config = getScaledPlantConfig(plantId, statRolls)
+  const config = getScaledPlantConfig(plantId, statRolls, equippedItem)
   const camina = config.category === 'melee' || !!config.moveSpeed || plantId === 'chomper'
   const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
 
@@ -191,6 +195,8 @@ export function crearPlantaPropia(
     isWalking: camina,
     state: camina ? 'walking' : 'idle',
     lastActionTime: state.tick,
+    spriteOverride: config.sprite !== PLANT_CONFIGS[plantId]?.sprite ? config.sprite : undefined,
+    equippedItem: equippedItem ?? undefined,
   }
 }
 
@@ -323,6 +329,7 @@ export type PendingAction =
       col?: number
       statRolls?: PlantStatKey[]
       level?: number
+      equippedItem?: string | null
     }
   /**
    * Una planta MÍA que llega del registro, no de un clic.
@@ -361,6 +368,7 @@ export type PendingAction =
       col?: number
       statRolls?: PlantStatKey[]
       level?: number
+      equippedItem?: string | null
     }
 
 export interface GameState {
@@ -1071,7 +1079,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
                 accion.lane,
                 accion.col,
                 accion.statRolls ?? [],
-                accion.level ?? 0
+                accion.level ?? 0,
+                accion.equippedItem
               )
             )
           }
@@ -1115,7 +1124,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
                 accion.lane,
                 accion.col,
                 accion.statRolls ?? [],
-                accion.level ?? 0
+                accion.level ?? 0,
+                accion.equippedItem
               )
             )
           }

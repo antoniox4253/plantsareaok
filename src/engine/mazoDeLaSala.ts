@@ -41,15 +41,17 @@ export interface CartaDeMazo {
   slot?: number | null
   level?: number | null
   statRolls?: string[] | null
+  equippedItem?: string | null
 }
 
 /** Las mejoras con las que hay que plantar una carta. */
 export interface MejorasDeCarta {
   statRolls: PlantStatKey[]
   level: number
+  equippedItem?: string | null
 }
 
-const SIN_MEJORAS: MejorasDeCarta = { statRolls: [], level: 0 }
+const SIN_MEJORAS: MejorasDeCarta = { statRolls: [], level: 0, equippedItem: null }
 
 /**
  * Convierte lo que llega por JSON en un mazo utilizable, o null si no hay mazo.
@@ -83,6 +85,7 @@ export function leerMazo(bruto: unknown): CartaDeMazo[] | null {
       statRolls: Array.isArray(carta.statRolls)
         ? carta.statRolls.filter((r): r is string => typeof r === 'string')
         : null,
+      equippedItem: typeof carta.equippedItem === 'string' ? carta.equippedItem : null,
     })
   }
   return cartas
@@ -119,7 +122,8 @@ export function mejorasDeLaCartaEnSlot(
 
   const statRolls = (carta.statRolls ?? []) as PlantStatKey[]
   const level = statRolls.length > 0 ? statRolls.length : carta.level ?? 0
-  return { statRolls, level }
+  const equippedItem = carta.equippedItem || null
+  return { statRolls, level, equippedItem }
 }
 
 /** Compatibilidad para código que todavía no conoce el slot. */

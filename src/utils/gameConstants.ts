@@ -355,77 +355,92 @@ export function getFusionGoldCost(plantId: PlantId, level: number): number {
 
 export function getScaledPlantConfig(
   plantId: PlantId,
-  levelOrRolls: number | PlantStatKey[] = 0
+  levelOrRolls: number | PlantStatKey[] = 0,
+  equippedItem?: string | null
 ): PlantConfig {
   const base = PLANT_CONFIGS[plantId]
   if (!base) return base
 
+  let scaled: PlantConfig
+
   if (Array.isArray(levelOrRolls)) {
-    if (levelOrRolls.length === 0) return base
+    if (levelOrRolls.length === 0) {
+      scaled = base
+    } else {
+      let hpMultiplier = 1
+      let dmgMultiplier = 1
+      let attackSpeedMultiplier = 1
+      let moveSpeedMultiplier = 1
+      let cooldownMultiplier = 1
+      let extraDamage = 0
 
-    let hpMultiplier = 1
-    let dmgMultiplier = 1
-    let attackSpeedMultiplier = 1
-    let moveSpeedMultiplier = 1
-    let cooldownMultiplier = 1
-    let extraDamage = 0
-
-    levelOrRolls.forEach((stat) => {
-      // Jalapeño e Iceberg Lettuce son de 1 solo uso y no escalan vida
-      if (stat === 'hp' && plantId !== 'jalapeno' && plantId !== 'iceberglettuce') {
-        hpMultiplier += 0.15
-      }
-      if (stat === 'damage') {
-        if (plantId === 'jalapeno') {
-          extraDamage += 150
-        } else {
-          dmgMultiplier += 0.15
+      levelOrRolls.forEach((stat) => {
+        // Jalapeño e Iceberg Lettuce son de 1 solo uso y no escalan vida
+        if (stat === 'hp' && plantId !== 'jalapeno' && plantId !== 'iceberglettuce') {
+          hpMultiplier += 0.15
         }
+        if (stat === 'damage') {
+          if (plantId === 'jalapeno') {
+            extraDamage += 150
+          } else {
+            dmgMultiplier += 0.15
+          }
+        }
+        if (stat === 'attackSpeed') attackSpeedMultiplier *= 0.85 // 15% faster delay
+        if (stat === 'moveSpeed') moveSpeedMultiplier += 0.15
+        if (stat === 'cooldown') cooldownMultiplier *= 0.85 // 15% faster cooldown
+      })
+
+      const finalDamage =
+        base.damage !== undefined
+          ? Math.round(base.damage * dmgMultiplier) + extraDamage
+          : undefined
+
+      scaled = {
+        ...base,
+        maxHp: plantId === 'jalapeno' || plantId === 'iceberglettuce' ? base.maxHp : Math.round(base.maxHp * hpMultiplier),
+        damage: finalDamage,
+        attackSpeedMs:
+          base.attackSpeedMs !== undefined
+            ? Math.round(base.attackSpeedMs * attackSpeedMultiplier)
+            : undefined,
+        moveSpeed:
+          base.moveSpeed !== undefined
+            ? Number((base.moveSpeed * moveSpeedMultiplier).toFixed(2))
+            : undefined,
+        cooldownMs: Math.round(base.cooldownMs * cooldownMultiplier),
       }
-      if (stat === 'attackSpeed') attackSpeedMultiplier *= 0.85 // 15% faster delay
-      if (stat === 'moveSpeed') moveSpeedMultiplier += 0.15
-      if (stat === 'cooldown') cooldownMultiplier *= 0.85 // 15% faster cooldown
-    })
-
-    const finalDamage =
-      base.damage !== undefined
-        ? Math.round(base.damage * dmgMultiplier) + extraDamage
-        : undefined
-
-    return {
-      ...base,
-      maxHp: plantId === 'jalapeno' || plantId === 'iceberglettuce' ? base.maxHp : Math.round(base.maxHp * hpMultiplier),
-      damage: finalDamage,
-      attackSpeedMs:
-        base.attackSpeedMs !== undefined
-          ? Math.round(base.attackSpeedMs * attackSpeedMultiplier)
-          : undefined,
-      moveSpeed:
-        base.moveSpeed !== undefined
-          ? Number((base.moveSpeed * moveSpeedMultiplier).toFixed(2))
-          : undefined,
-      cooldownMs: Math.round(base.cooldownMs * cooldownMultiplier),
     }
-  }
-
-  // Fallback for number level
-  if (levelOrRolls <= 0) return base
-  if (plantId === 'jalapeno') {
-    return {
+  } else if (levelOrRolls <= 0) {
+    scaled = base
+  } else if (plantId === 'jalapeno') {
+    scaled = {
       ...base,
       damage: (base.damage ?? 1000) + levelOrRolls * 150,
     }
-  }
-  if (plantId === 'iceberglettuce') {
-    return base
+  } else if (plantId === 'iceberglettuce') {
+    scaled = base
+  } else {
+    const scale = 1 + levelOrRolls * 0.15
+    scaled = {
+      ...base,
+      maxHp: Math.round(base.maxHp * scale),
+      damage: base.damage !== undefined ? Math.round(base.damage * scale) : undefined,
+    }
   }
 
-  const scale = 1 + levelOrRolls * 0.15
-  return {
-    ...base,
-    maxHp: Math.round(base.maxHp * scale),
-    damage: base.damage !== undefined ? Math.round(base.damage * scale) : undefined,
+  // ── BONIFICACIÓN EXCLUSIVA DE ÍTEM: CINTURÓN DE CAMPEÓN EN BONK CHOY ──────────
+  if (plantId === 'bonkchoy' && equippedItem === 'champion_belt') {
+    return {
+      ...scaled,
+      maxHp: scaled.maxHp + 150,
+      damage: (scaled.damage ?? 65) + 15,
+      sprite: '/game-assets/greenfoot/bonkchoy_champion.png',
+      icon: '/game-assets/greenfoot/bonkchoy_champion.png',
+    }
   }
+
+  return scaled
 }
 
 /**

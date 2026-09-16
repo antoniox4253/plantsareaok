@@ -18,6 +18,8 @@ export const inventoryService = {
   openPack: SupabaseService.openPack.bind(SupabaseService),
   fusePlant: SupabaseService.fusePlant.bind(SupabaseService),
   sproutPlantInstance: SupabaseService.sproutPlantInstance.bind(SupabaseService),
+  equipPlantItem: SupabaseService.equipPlantItem.bind(SupabaseService),
+  unequipPlantItem: SupabaseService.unequipPlantItem.bind(SupabaseService),
   awardVictoryChest: SupabaseService.awardVictoryChest.bind(SupabaseService),
   claimPackSlot: SupabaseService.claimPackSlot.bind(SupabaseService),
   instantUnlockPackSlot: SupabaseService.instantUnlockPackSlot.bind(SupabaseService),

@@ -3964,6 +3964,54 @@ export const SupabaseService = {
     }
   },
 
+  /** Equipa un ítem autoritativo a una carta (ej. Cinturón de Campeón a Bonk Choy). */
+  async equipPlantItem(instanceId: string, itemId: string): Promise<{
+    success: boolean
+    instanceId?: string
+    equippedItem?: string
+    previousItem?: string
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('equip_plant_item', {
+        p_instance_id: instanceId,
+        p_item_id: itemId,
+      })
+      if (error) {
+        logError('equipPlantItem', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('equipPlantItem', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Desequipa el ítem de una carta y lo reintegra al inventario de recursos. */
+  async unequipPlantItem(instanceId: string): Promise<{
+    success: boolean
+    instanceId?: string
+    unequippedItem?: string
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('unequip_plant_item', {
+        p_instance_id: instanceId,
+      })
+      if (error) {
+        logError('unequipPlantItem', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('unequipPlantItem', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   // ---------------------------------------------------------------------------
   // PACK SLOTS (CHESTS) PERSISTENCE
   // ---------------------------------------------------------------------------

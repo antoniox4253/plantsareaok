@@ -263,6 +263,7 @@ export default function Marketplace({
         'scarecrow_fragment',
         'shovel',
         'scarecrow',
+        'champion_belt',
       ]
       order.forEach((fId) => {
         const qty = Number(farmingItems[fId] || 0)

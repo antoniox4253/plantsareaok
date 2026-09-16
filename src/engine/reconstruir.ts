@@ -62,6 +62,7 @@ export interface AccionRegistrada {
    */
   statRolls?: PlantStatKey[]
   level?: number
+  equippedItem?: string | null
 }
 
 /**
@@ -163,6 +164,7 @@ function sembrar(
       col: a.col ?? undefined,
       statRolls: a.statRolls,
       level: a.level,
+      equippedItem: a.equippedItem,
     }
     estado.pending.push(
       a.mia ? { ...comun, kind: 'own_plant' } : { ...comun, kind: 'rival_plant' }
