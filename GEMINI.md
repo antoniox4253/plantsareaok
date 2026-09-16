@@ -36,3 +36,50 @@ node scripts/db.mjs -f supabase/migrations/149-fix-referral-gold-claim.sql
   - 10 amigos válidos: 1 Sobre Básico (`claim_referral_season_milestone('sobre_10')`).
   - 35 amigos válidos: 500 Gemas (`claim_referral_season_milestone('gemas_35')`).
 - **Ranking de Temporada**: Top 1 al 5 reciben premios automáticos al cierre de temporada (`_cerrar_temporada_de_referidos()`).
+
+---
+
+## 🥊 Sistema de Ítems Equipables para Plantas (Protocolo y Arquitectura)
+
+Para agregar nuevos ítems equipables exclusivos a diferentes plantas, se DEBE seguir rigurosamente este protocolo para evitar errores de compilación, sobrecarga de RPC o divergencias en partidas:
+
+### 1. Base de Datos (Supabase PostgreSQL)
+- **Cero sobrecarga de firmas**: NUNCA crear simultáneamente funciones RPC con firmas `(UUID, TEXT)` y `(TEXT, TEXT)`. PostgREST fallará con `Could not choose the best candidate function`. La firma autoritativa es SIEMPRE `p_instance_id TEXT` y resuelve internamente el UUID o el identificador virtual `inst_base_<plantId>`.
+- Las RPCs autoritativas son:
+  - `public.equip_plant_item(p_instance_id TEXT, p_item_id TEXT)`
+  - `public.unequip_plant_item(p_instance_id TEXT)`
+- Cada ítem valida en SQL su regla de exclusividad (`IF p_item_id = '...' AND v_plant.plant_id <> '...' THEN RAISE...`).
+
+### 2. Tipos e Inventario
+- `src/types/game.ts`: `PlantCardInstance.equippedItem` y `PlantEntity.equippedItem`.
+- `src/utils/pvpRewardManager.ts`:
+  - Registrar el nuevo ID en el tipo `FarmingItemId` y en la interfaz `FarmingInventory`.
+  - Inicializar en `0` dentro de `EMPTY_FARMING_INVENTORY`.
+  - Agregar metadata e icono en `FARMING_ITEM_DEFINITIONS`.
+- `src/components/Farming/FarmingPreview.tsx`:
+  - Agregar el ítem con valor `0` en `DEMO_INVENTORY` para evitar errores en `npm run build`.
+- `src/utils/marketplaceManager.ts`:
+  - Registrar el precio mínimo de venta en `FARMING_ITEM_MIN_PRICES`.
+- `src/components/Marketplace/Marketplace.tsx`:
+  - Añadir el nuevo ítem a la lista de `order` en Recursos de Cultivo.
+
+### 3. Estadísticas y Fusiones (Aditivas)
+- En `src/utils/gameConstants.ts` (`getScaledPlantConfig`):
+  - Validar `plantId === '<planta_objetivo>' && equippedItem === '<item_id>'`.
+  - Sumar las bonificaciones después de procesar las tiradas de fusión (ej. `scaled.maxHp + X`, `(scaled.damage ?? base) + Y`).
+  - Asignar el nuevo aspecto visual: `sprite: '...'` e `icon: '...'`.
+  - Las fusiones y subidas de nivel NUNCA deben sobrescribir o borrar el ítem equipado.
+
+### 4. Reglas de Visibilidad e Interacción en Jardín (Jardin.tsx)
+- **Ocultamiento si no está desbloqueado**: El ítem en la sección "Recursos de Cultivo" sólo se renderiza si el jugador tiene cantidad `> 0` o si ya lo tiene equipado en alguna planta. Si el jugador nunca lo ha obtenido, permanece invisible.
+- **Tarjeta interactiva clickeable**:
+  - Al hacer clic en la tarjeta del ítem en Recursos de Cultivo, se valida si el jugador posee la planta correspondiente. Si no la tiene, se muestra alerta explicativa.
+  - Si la tiene, se abre el modal de confirmación con vista previa del aspecto de combate y botón directo de `EQUIPAR` o `DESEQUIPAR`.
+- **Botón en la carta**: En la cuadrícula de cartas del Jardín, el botón `EQUIPAR` sólo se muestra si el jugador posee unidades en sus recursos. Si no tiene ninguna disponible y no está equipada, la fila se oculta.
+
+### 5. Propagación en el Motor de Batalla y Reconstrucción
+- `src/engine/mazoDeLaSala.ts`: `CartaDeMazo` y `MejorasDeCarta` deben incluir `equippedItem`.
+- `src/engine/simulate.ts`: `crearPlantaPropia` y `crearPlantaDelRival` deben propagar `equippedItem` y asignar `spriteOverride` al asset de campeón.
+- `src/engine/reconstruir.ts`: `AccionRegistrada` debe conservar `equippedItem` para que las reconstrucciones en tiempo real no degraden la planta.
+- `src/hooks/useGameEngine.ts`: propagar `cardEquippedItem` a `ejecutarCapturaPlantP1` y a `encolarAccionDelRival` para el rival.
+
