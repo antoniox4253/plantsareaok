@@ -11,7 +11,13 @@ import {
 import { soundManager } from '../../utils/audioManager'
 import { shopService } from '../../services/shopService'
 import Marketplace from '../Marketplace/Marketplace'
-import { VIP_PASS_PRECIO_GEMAS, ENERGY_PACKAGES, type EnergyPackage, type PlantStatKey } from '../../utils/gameConstants'
+import {
+  VIP_PASS_PRECIO_GEMAS,
+  ENERGY_PACKAGES_GEMS,
+  ENERGY_PACKAGES_GOLD,
+  type EnergyPackage,
+  type PlantStatKey,
+} from '../../utils/gameConstants'
 import type { FarmingInventory } from '../../utils/pvpRewardManager'
 import { navigateAndTrack, trackEvent } from '../../utils/analytics'
 import './Shop.css'
@@ -225,7 +231,7 @@ export interface ShopProps {
   onBack: () => void
   onBuyPack: (packId: PackId, qty?: number) => Promise<{ success: boolean; packs?: InventoryPack[]; goldAdded?: number; error?: string }>
   onBuyGold?: (packageId: string) => Promise<{ success: boolean; goldAdded?: number; error?: string }>
-  onBuyEnergyPack?: (packId: string) => Promise<{ success: boolean; energyAdded?: number; spentGems?: number; error?: string }>
+  onBuyEnergyPack?: (packId: string) => Promise<{ success: boolean; energyAdded?: number; spentGems?: number; spentGold?: number; error?: string }>
   onAddGold?: (amount: number) => void
   onWatchAd?: (slotNumber: number, rewardGold: number) => void
   onOpenJardin: () => void
@@ -462,11 +468,25 @@ export default function Shop({
   }
 
   const handleBuyEnergy = async (pkg: EnergyPackage) => {
-    if (userTokens < pkg.priceGems) {
+    const isGold = pkg.currency === 'gold'
+    const currencyIcon = isGold ? '💰' : '💎'
+    const currencyName = isGold ? 'Monedas de Oro' : 'Gemas'
+    const userBalance = isGold ? userGold : userTokens
+
+    if (userBalance < pkg.price) {
       setThemedAlert({
-        title: 'GEMAS INSUFICIENTES',
-        message: `⚠️ Gemas insuficientes (${userTokens} Gemas 💎 disponibles).\nSe requieren ${pkg.priceGems} Gemas 💎 para comprar ${pkg.energyAmount} Energías ⚡.`,
+        title: isGold ? 'ORO INSUFICIENTE' : 'GEMAS INSUFICIENTES',
+        message: `⚠️ Saldo insuficiente (${userBalance.toLocaleString()} ${currencyIcon} disponibles).\nSe requieren ${pkg.price.toLocaleString()} ${currencyName} ${currencyIcon} para comprar esta recarga de energía.`,
         icon: '⚠️',
+      })
+      return
+    }
+
+    if (pkg.isFullRefill && playerEnergy >= maxPlayerEnergy) {
+      setThemedAlert({
+        title: 'ENERGÍA AL MÁXIMO',
+        message: `⚡ Ya cuentas con tu energía al máximo (${playerEnergy}/${maxPlayerEnergy}⚡). No requieres una recarga completa en este momento.`,
+        icon: '⚡',
       })
       return
     }
@@ -478,11 +498,14 @@ export default function Shop({
         trackEvent('purchase_energy', {
           package_id: pkg.id,
           energy_added: res.energyAdded ?? pkg.energyAmount,
-          price_gems: pkg.priceGems,
+          price: pkg.price,
+          currency: pkg.currency,
         })
         setThemedAlert({
           title: '¡ENERGÍA RECARGADA!',
-          message: `⚡ ¡Has adquirido con éxito +${res.energyAdded ?? pkg.energyAmount} Energías ⚡ por ${pkg.priceGems} Gemas 💎!\nAhora puedes seguir compitiendo en Ranked.`,
+          message: pkg.isFullRefill
+            ? `⚡ ¡Has restablecido tu energía al máximo (${maxPlayerEnergy}/${maxPlayerEnergy}⚡) por ${pkg.price} ${currencyName} ${currencyIcon}!\nAhora puedes seguir compitiendo al 100%.`
+            : `⚡ ¡Has adquirido con éxito +${res.energyAdded ?? pkg.energyAmount} Energías ⚡ por ${pkg.price} ${currencyName} ${currencyIcon}!\nAhora puedes seguir compitiendo en Ranked.`,
           icon: '⚡',
         })
       } else {
@@ -1144,78 +1167,99 @@ export default function Shop({
           </div>
         )}
 
-        {/* TAB: ENERGÍAS ⚡ (RECARGAS ANTI-SPAM PARA RANKED COMPETITIVO) */}
+        {/* TAB: ENERGÍAS ⚡ (RECARGAS RANKED EN 2 FILAS: GEMAS Y ORO) */}
         {activeTab === 'energy' && (
           <div className="shop-tab-pane shop-energy-pane">
-            <div className="shop-packs-section-bar">
-              <span className="shop-section-tagline">
-                ⚡ Gestión y Recarga de Energías para Ranked Competitivo (≥ 1602 Copas). Recarga automática a las 00:00 UTC.
-              </span>
-            </div>
-
-            {/* Banner de Estado de Energía */}
-            <div className="shop-energy-status-card">
-              <div className="shop-energy-status-left">
-                <div className="shop-energy-status-bolt">⚡</div>
-                <div className="shop-energy-status-details">
-                  <div className="shop-energy-status-heading">
-                    Energía Diaria:{' '}
-                    <span className="shop-energy-status-val">
-                      {userElo <= 1601 ? '∞ (ILIMITADA)' : `${playerEnergy} / ${maxPlayerEnergy}`}
-                    </span>
-                    {hasVipPass && (
-                      <span className="shop-energy-vip-pill">
-                        👑 PASE VIP {userElo <= 1601 ? '(+5 DIARIAS EN RANKED)' : '(+5 DIARIAS)'}
-                      </span>
-                    )}
-                  </div>
-                  <p className="shop-energy-status-subtext">
-                    {userElo <= 1601
-                      ? `Estás en Arena 1 (< 1602 copas). Todas tus partidas son gratuitas y no consumen energía. Al alcanzar 1602 copas (Ranked Competitivo) contarás con tus ${maxPlayerEnergy} energías diarias (${hasVipPass ? '25 por tu Pase VIP' : '20 estándar'}).`
-                      : hasVipPass
-                      ? 'Cuentas con 25 energías diarias (+5 por Pase VIP). Las partidas en rango competitivo (≥ 1602 copas) consumen 1 ⚡ por juego.'
-                      : 'Cuentas con 20 energías diarias. Las partidas en rango competitivo (≥ 1602 copas) consumen 1 ⚡ por juego. Activa el Pase VIP para obtener 25 diarias.'}
-                  </p>
+            {/* FILA 1: RECARGAS CON GEMAS */}
+            <div className="shop-energy-row-section">
+              <div className="shop-energy-row-header">
+                <div className="shop-energy-row-title-box">
+                  <span className="shop-energy-row-icon">💎</span>
+                  <span className="shop-energy-row-title">RECARGAS CON GEMAS</span>
+                </div>
+                <div className="shop-energy-row-balance">
+                  <span>Tu Saldo:</span>
+                  <strong className="shop-energy-balance-gems">{userTokens.toLocaleString()} 💎</strong>
                 </div>
               </div>
-              <div className="shop-energy-status-right">
-                <span className="shop-energy-reset-label">🔄 Recarga Automática:</span>
-                <span className="shop-energy-reset-time">00:00 UTC</span>
-                <span className="shop-energy-reset-note">* Reseteo estricto (no acumulable)</span>
-              </div>
-            </div>
 
-            {/* Grid de Paquetes de Energía */}
-            <div className="shop-energy-grid">
-              {ENERGY_PACKAGES.map((pkg) => (
-                <div
-                  key={pkg.id}
-                  className={`shop-energy-card ${pkg.popular ? 'shop-energy-card--popular' : ''} ${pkg.bestValue ? 'shop-energy-card--best' : ''}`}
-                >
-                  {pkg.badge && <div className="shop-energy-badge-ribbon">{pkg.badge}</div>}
-
-                  <div className="shop-energy-card-icon-box">
-                    <span className="shop-energy-card-icon">⚡</span>
-                    <span className="shop-energy-card-qty">+{pkg.energyAmount}</span>
-                  </div>
-
-                  <h3 className="shop-energy-card-name">{pkg.name}</h3>
-                  <p className="shop-energy-card-desc">{pkg.description}</p>
-
-                  <div className="shop-energy-card-price-tag">
-                    <span className="shop-energy-gem">💎</span>
-                    <span className="shop-energy-price-num">{pkg.priceGems.toLocaleString()} Gemas</span>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="shop-energy-card-buy-btn"
-                    onClick={() => handleBuyEnergy(pkg)}
+              <div className="shop-energy-grid">
+                {ENERGY_PACKAGES_GEMS.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className={`shop-energy-card ${pkg.popular ? 'shop-energy-card--popular' : ''} ${pkg.bestValue ? 'shop-energy-card--best' : ''}`}
                   >
-                    ⚡ RECARGAR
-                  </button>
+                    {pkg.badge && <div className="shop-energy-badge-ribbon">{pkg.badge}</div>}
+
+                    <div className="shop-energy-card-icon-box">
+                      <span className="shop-energy-card-icon">⚡</span>
+                      <span className="shop-energy-card-qty">{pkg.isFullRefill ? 'MAX' : `+${pkg.energyAmount}`}</span>
+                    </div>
+
+                    <h3 className="shop-energy-card-name">{pkg.name}</h3>
+                    <p className="shop-energy-card-desc">{pkg.description}</p>
+
+                    <div className="shop-energy-card-price-tag">
+                      <span className="shop-energy-gem">💎</span>
+                      <span className="shop-energy-price-num">{pkg.price.toLocaleString()} Gemas</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="shop-energy-card-buy-btn"
+                      onClick={() => handleBuyEnergy(pkg)}
+                    >
+                      ⚡ {pkg.isFullRefill ? 'REC. COMPLETA' : 'RECARGAR'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* FILA 2: RECARGAS CON ORO */}
+            <div className="shop-energy-row-section shop-energy-row-section--gold">
+              <div className="shop-energy-row-header shop-energy-row-header--gold">
+                <div className="shop-energy-row-title-box">
+                  <span className="shop-energy-row-icon">💰</span>
+                  <span className="shop-energy-row-title">RECARGAS CON ORO</span>
                 </div>
-              ))}
+                <div className="shop-energy-row-balance">
+                  <span>Tu Saldo:</span>
+                  <strong className="shop-energy-balance-gold">{userGold.toLocaleString()} 💰</strong>
+                </div>
+              </div>
+
+              <div className="shop-energy-grid">
+                {ENERGY_PACKAGES_GOLD.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className={`shop-energy-card shop-energy-card--gold ${pkg.popular ? 'shop-energy-card--popular' : ''} ${pkg.bestValue ? 'shop-energy-card--best' : ''}`}
+                  >
+                    {pkg.badge && <div className="shop-energy-badge-ribbon">{pkg.badge}</div>}
+
+                    <div className="shop-energy-card-icon-box shop-energy-card-icon-box--gold">
+                      <span className="shop-energy-card-icon">⚡</span>
+                      <span className="shop-energy-card-qty shop-energy-card-qty--gold">+{pkg.energyAmount}</span>
+                    </div>
+
+                    <h3 className="shop-energy-card-name">{pkg.name}</h3>
+                    <p className="shop-energy-card-desc">{pkg.description}</p>
+
+                    <div className="shop-energy-card-price-tag shop-energy-card-price-tag--gold">
+                      <span className="shop-energy-gem">💰</span>
+                      <span className="shop-energy-price-num shop-energy-price-num--gold">{pkg.price.toLocaleString()} Oro</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="shop-energy-card-buy-btn shop-energy-card-buy-btn--gold"
+                      onClick={() => handleBuyEnergy(pkg)}
+                    >
+                      ⚡ RECARGAR
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

@@ -241,6 +241,7 @@ function App() {
     setPlayerEnergy,
     maxPlayerEnergy,
     buyEnergyPack,
+    useEnergyPotion,
   } = useInventory()
 
 
@@ -1377,6 +1378,9 @@ function App() {
             isAdmin={isAdmin}
             onOpenAdmin={() => setIsAdminPanelOpen(true)}
             onRewardsChanged={refreshFromServer}
+            playerEnergy={playerEnergy}
+            maxPlayerEnergy={maxPlayerEnergy}
+            onUseEnergyPotion={useEnergyPotion}
           />
         )}
         {screen === 'shop' && (

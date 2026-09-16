@@ -9,6 +9,7 @@ export type FarmingItemId =
   | 'shovel'
   | 'scarecrow'
   | 'champion_belt'
+  | 'energy_potion_5'
 
 export interface FarmingInventory {
   water: number
@@ -19,6 +20,7 @@ export interface FarmingInventory {
   shovel: number
   scarecrow: number
   champion_belt: number
+  energy_potion_5: number
 }
 
 export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
@@ -30,6 +32,7 @@ export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
   shovel: 0,
   scarecrow: 0,
   champion_belt: 0,
+  energy_potion_5: 0,
 }
 
 export const FARMING_ITEM_DEFINITIONS: Record<
@@ -83,6 +86,12 @@ export const FARMING_ITEM_DEFINITIONS: Record<
     description: 'Cinturón exclusivo de Bonk Choy. Al equiparse otorga +150 HP y +15 de Daño.',
     icon: '/game-assets/farming/champion_belt.png',
     fallback: '🥊',
+  },
+  energy_potion_5: {
+    label: 'Poción de Energía (5⚡)',
+    description: 'Consumible de un solo uso. Recarga +5 energías de Ranked sin superar tu límite máximo.',
+    icon: '/game-assets/farming/energy_potion.png',
+    fallback: '⚡',
   },
 }
 

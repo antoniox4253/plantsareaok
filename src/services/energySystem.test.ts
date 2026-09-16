@@ -46,23 +46,46 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       expect(VIP_DAILY_ENERGY - BASE_DAILY_ENERGY).toBe(5)
     })
 
-    it('Los paquetes de la tienda cumplen con la Opción C Anti-Spam aprobada', () => {
-      expect(ENERGY_PACKAGES).toHaveLength(3)
+    it('Los paquetes de la tienda cumplen con las 2 filas autorizadas (Gemas y Oro)', () => {
+      expect(ENERGY_PACKAGES).toHaveLength(6)
 
-      const pack3 = ENERGY_PACKAGES.find((p) => p.id === 'energy_3')
-      expect(pack3).toBeDefined()
-      expect(pack3?.energyAmount).toBe(3)
-      expect(pack3?.priceGems).toBe(200)
-
+      // Fila 1: Gemas
       const pack5 = ENERGY_PACKAGES.find((p) => p.id === 'energy_5')
       expect(pack5).toBeDefined()
       expect(pack5?.energyAmount).toBe(5)
-      expect(pack5?.priceGems).toBe(300)
+      expect(pack5?.price).toBe(200)
+      expect(pack5?.currency).toBe('gems')
 
-      const pack12 = ENERGY_PACKAGES.find((p) => p.id === 'energy_12')
-      expect(pack12).toBeDefined()
-      expect(pack12?.energyAmount).toBe(12)
-      expect(pack12?.priceGems).toBe(600)
+      const pack10 = ENERGY_PACKAGES.find((p) => p.id === 'energy_10')
+      expect(pack10).toBeDefined()
+      expect(pack10?.energyAmount).toBe(10)
+      expect(pack10?.price).toBe(300)
+      expect(pack10?.currency).toBe('gems')
+
+      const packFull = ENERGY_PACKAGES.find((p) => p.id === 'energy_full')
+      expect(packFull).toBeDefined()
+      expect(packFull?.isFullRefill).toBe(true)
+      expect(packFull?.price).toBe(500)
+      expect(packFull?.currency).toBe('gems')
+
+      // Fila 2: Oro
+      const packGold1 = ENERGY_PACKAGES.find((p) => p.id === 'energy_gold_1')
+      expect(packGold1).toBeDefined()
+      expect(packGold1?.energyAmount).toBe(1)
+      expect(packGold1?.price).toBe(500)
+      expect(packGold1?.currency).toBe('gold')
+
+      const packGold3 = ENERGY_PACKAGES.find((p) => p.id === 'energy_gold_3')
+      expect(packGold3).toBeDefined()
+      expect(packGold3?.energyAmount).toBe(3)
+      expect(packGold3?.price).toBe(1000)
+      expect(packGold3?.currency).toBe('gold')
+
+      const packGold5 = ENERGY_PACKAGES.find((p) => p.id === 'energy_gold_5')
+      expect(packGold5).toBeDefined()
+      expect(packGold5?.energyAmount).toBe(5)
+      expect(packGold5?.price).toBe(1500)
+      expect(packGold5?.currency).toBe('gold')
     })
   })
 
@@ -491,6 +514,81 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       expect(sql).toContain("GREATEST(0, energy_current - 1)")
       expect(sql).toContain("FUNCTION public.claim_ranked_async_opponent")
       expect(sql).toContain("energy_spend")
+    })
+  })
+
+  describe('10. Rebalanceo de Paquetes de Energía y Consumible de Inventario (Migración 167)', () => {
+    it('Auditoría estática SQL: La migración 167 define buy_energy_pack y use_energy_item con límites', async () => {
+      const fs = await import('fs')
+      const path = await import('path')
+      const m167Path = path.resolve(__dirname, '../../supabase/migrations/167-energy-rebalance-gold-packs-and-consumable-item.sql')
+      expect(fs.existsSync(m167Path)).toBe(true)
+
+      const sql = fs.readFileSync(m167Path, 'utf-8')
+      expect(sql).toContain('FUNCTION public.buy_energy_pack')
+      expect(sql).toContain('energy_gold_1')
+      expect(sql).toContain('energy_gold_3')
+      expect(sql).toContain('energy_gold_5')
+      expect(sql).toContain('energy_full')
+      expect(sql).toContain('FUNCTION public.use_energy_item')
+      expect(sql).toContain('LEAST(5, v_max_energy - v_curr_energy)')
+    })
+
+    it('useEnergyItem local: recarga 5 energías respetando el tope de 20 para usuarios estándar', async () => {
+      mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 2 }))
+      mockStorage.setItem('plant_arena_player_energy', '12')
+      mockStorage.setItem('plant_arena_has_vip', 'false')
+
+      const res = await inventoryService.useEnergyItem('energy_potion_5')
+      expect(res.success).toBe(true)
+      expect(res.energyAdded).toBe(5)
+      expect(res.energyCurrent).toBe(17)
+      expect(res.remainingItemQty).toBe(1)
+    })
+
+    it('useEnergyItem local: no excede el tope de 20 si el jugador tiene 18 energías (añade sólo 2)', async () => {
+      mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 1 }))
+      mockStorage.setItem('plant_arena_player_energy', '18')
+      mockStorage.setItem('plant_arena_has_vip', 'false')
+
+      const res = await inventoryService.useEnergyItem('energy_potion_5')
+      expect(res.success).toBe(true)
+      expect(res.energyAdded).toBe(2)
+      expect(res.energyCurrent).toBe(20)
+      expect(res.remainingItemQty).toBe(0)
+    })
+
+    it('useEnergyItem local: rechaza si el jugador ya está en su energía máxima (20/20)', async () => {
+      mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 1 }))
+      mockStorage.setItem('plant_arena_player_energy', '20')
+      mockStorage.setItem('plant_arena_has_vip', 'false')
+
+      const res = await inventoryService.useEnergyItem('energy_potion_5')
+      expect(res.success).toBe(false)
+      expect(res.error).toContain('al máximo')
+    })
+
+    it('useEnergyItem local: respeta tope de 25 para usuarios con Pase VIP', async () => {
+      mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 1 }))
+      mockStorage.setItem('plant_arena_player_energy', '22')
+      mockStorage.setItem('plant_arena_has_vip', 'true')
+
+      const res = await inventoryService.useEnergyItem('energy_potion_5')
+      expect(res.success).toBe(true)
+      expect(res.energyAdded).toBe(3)
+      expect(res.energyCurrent).toBe(25)
+    })
+
+    it('buyEnergyPack local: procesa compras con oro deduciendo correctamente', async () => {
+      mockStorage.setItem('plant_arena_user_gold', '1500')
+      mockStorage.setItem('plant_arena_player_energy', '10')
+
+      const res = await inventoryService.buyEnergyPack('energy_gold_3')
+      expect(res.success).toBe(true)
+      expect(res.energyAdded).toBe(3)
+      expect(res.energyCurrent).toBe(13)
+      expect(res.spentGold).toBe(1000)
+      expect(res.newGoldBalance).toBe(500)
     })
   })
 })

@@ -523,42 +523,90 @@ export const ENERGY_FREE_ELO_THRESHOLD = 1602 // Copas a partir de las cuales se
 export const BASE_DAILY_ENERGY = 20
 export const VIP_DAILY_ENERGY = 25
 
+export type EnergyCurrency = 'gems' | 'gold'
+
 export interface EnergyPackage {
   id: string
   name: string
   energyAmount: number
-  priceGems: number
+  isFullRefill?: boolean
+  currency: EnergyCurrency
+  price: number
+  priceGems?: number
   badge?: string
   popular?: boolean
   bestValue?: boolean
   description: string
 }
 
-export const ENERGY_PACKAGES: EnergyPackage[] = [
-  {
-    id: 'energy_3',
-    name: 'Recarga Rápida',
-    energyAmount: 3,
-    priceGems: 200,
-    badge: '3 PARTIDAS',
-    description: '+3 Energías ⚡ para jugar de inmediato en Ranked competitivo.',
-  },
+export const ENERGY_PACKAGES_GEMS: EnergyPackage[] = [
   {
     id: 'energy_5',
-    name: 'Sesión Extendida',
+    name: 'Recarga 5⚡',
     energyAmount: 5,
+    currency: 'gems',
+    price: 200,
+    priceGems: 200,
+    badge: '5 PARTIDAS',
+    description: '+5 Energías ⚡ para seguir compitiendo en Ranked.',
+  },
+  {
+    id: 'energy_10',
+    name: 'Pase Grinder 10⚡',
+    energyAmount: 10,
+    currency: 'gems',
+    price: 300,
     priceGems: 300,
     badge: 'MÁS POPULAR',
     popular: true,
-    description: '+5 Energías ⚡ para extender tu sesión y cuidar tu winrate.',
+    description: '+10 Energías ⚡ para extender tu racha y asegurar tu top.',
   },
   {
-    id: 'energy_12',
-    name: 'Grind Competitivo',
-    energyAmount: 12,
-    priceGems: 600,
+    id: 'energy_full',
+    name: 'Recarga Completa',
+    energyAmount: 20,
+    isFullRefill: true,
+    currency: 'gems',
+    price: 500,
+    priceGems: 500,
     badge: 'MEJOR VALOR',
     bestValue: true,
-    description: '+12 Energías ⚡ al precio más rentable por partida adicional.',
+    description: 'Restablece tu energía al 100% de tu capacidad máxima (20 o 25⚡ con VIP).',
   },
+]
+
+export const ENERGY_PACKAGES_GOLD: EnergyPackage[] = [
+  {
+    id: 'energy_gold_1',
+    name: 'Chispazo 1⚡',
+    energyAmount: 1,
+    currency: 'gold',
+    price: 500,
+    badge: '1 PARTIDA',
+    description: '+1 Energía ⚡ para una última partida de revancha.',
+  },
+  {
+    id: 'energy_gold_3',
+    name: 'Trío Competitivo 3⚡',
+    energyAmount: 3,
+    currency: 'gold',
+    price: 1000,
+    badge: 'AHORRO ORO',
+    description: '+3 Energías ⚡ usando tu oro acumulado de batallas.',
+  },
+  {
+    id: 'energy_gold_5',
+    name: 'Batería Dorada 5⚡',
+    energyAmount: 5,
+    currency: 'gold',
+    price: 1500,
+    badge: 'PACK DORADO',
+    popular: true,
+    description: '+5 Energías ⚡ para una sesión completa sin gastar gemas.',
+  },
+]
+
+export const ENERGY_PACKAGES: EnergyPackage[] = [
+  ...ENERGY_PACKAGES_GEMS,
+  ...ENERGY_PACKAGES_GOLD,
 ]

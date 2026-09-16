@@ -55,6 +55,7 @@ const DEMO_INVENTORY: FarmingInventory = {
   shovel: 0,
   scarecrow: 1,
   champion_belt: 0,
+  energy_potion_5: 0,
 }
 
 const INVENTORY_ORDER: FarmingItemId[] = [

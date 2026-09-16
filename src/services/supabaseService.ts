@@ -3524,18 +3524,37 @@ export const SupabaseService = {
     energyAdded?: number
     energyCurrent?: number
     spentGems?: number
+    spentGold?: number
     newGemsBalance?: number
+    newGoldBalance?: number
     error?: string
   } {
     let costGems = 0
+    let costGold = 0
     let addEnergy = 0
+    let isFullRefill = false
 
-    if (packId === 'energy_3') {
+    if (packId === 'energy_5' || packId === 'energy_gem_5') {
+      costGems = 200
+      addEnergy = 5
+    } else if (packId === 'energy_10' || packId === 'energy_gem_10') {
+      costGems = 300
+      addEnergy = 10
+    } else if (packId === 'energy_full' || packId === 'energy_gem_full') {
+      costGems = 500
+      isFullRefill = true
+    } else if (packId === 'energy_gold_1') {
+      costGold = 500
+      addEnergy = 1
+    } else if (packId === 'energy_gold_3') {
+      costGold = 1000
+      addEnergy = 3
+    } else if (packId === 'energy_gold_5') {
+      costGold = 1500
+      addEnergy = 5
+    } else if (packId === 'energy_3') {
       costGems = 200
       addEnergy = 3
-    } else if (packId === 'energy_5') {
-      costGems = 300
-      addEnergy = 5
     } else if (packId === 'energy_12') {
       costGems = 600
       addEnergy = 12
@@ -3544,19 +3563,48 @@ export const SupabaseService = {
     }
 
     try {
-      const currentTokens = parseFloat(localStorage.getItem('plant_arena_user_tokens') || '0')
-      if (currentTokens < costGems) {
-        return {
-          success: false,
-          error: `Gemas insuficientes. Tienes ${currentTokens} 💎 y requieres ${costGems} 💎`,
+      const currentEnergy = parseInt(localStorage.getItem('plant_arena_player_energy') || '20', 10)
+      const hasVip = localStorage.getItem('plant_arena_has_vip') === 'true'
+      const maxEnergy = hasVip ? 25 : 20
+
+      if (isFullRefill) {
+        if (currentEnergy >= maxEnergy) {
+          return {
+            success: false,
+            error: `Tu energía ya está completa (${currentEnergy}/${maxEnergy}⚡). No requieres recarga completa.`,
+          }
         }
+        addEnergy = maxEnergy - currentEnergy
       }
 
-      const currentEnergy = parseInt(localStorage.getItem('plant_arena_player_energy') || '20', 10)
-      const newEnergy = currentEnergy + addEnergy
-      const newBalance = Math.max(0, currentTokens - costGems)
+      let newBalance: number | undefined
+      let newGold: number | undefined
 
-      localStorage.setItem('plant_arena_user_tokens', String(newBalance))
+      if (costGems > 0) {
+        const currentTokens = parseFloat(localStorage.getItem('plant_arena_user_tokens') || '0')
+        if (currentTokens < costGems) {
+          return {
+            success: false,
+            error: `Gemas insuficientes. Tienes ${currentTokens} 💎 y requieres ${costGems} 💎`,
+          }
+        }
+        newBalance = Math.max(0, currentTokens - costGems)
+        localStorage.setItem('plant_arena_user_tokens', String(newBalance))
+      }
+
+      if (costGold > 0) {
+        const currentGold = parseFloat(localStorage.getItem('plant_arena_user_gold') || '0')
+        if (currentGold < costGold) {
+          return {
+            success: false,
+            error: `Oro insuficiente. Tienes ${currentGold} 💰 y requieres ${costGold} 💰`,
+          }
+        }
+        newGold = Math.max(0, currentGold - costGold)
+        localStorage.setItem('plant_arena_user_gold', String(newGold))
+      }
+
+      const newEnergy = isFullRefill ? maxEnergy : currentEnergy + addEnergy
       localStorage.setItem('plant_arena_player_energy', String(newEnergy))
 
       return {
@@ -3564,8 +3612,10 @@ export const SupabaseService = {
         packId,
         energyAdded: addEnergy,
         energyCurrent: newEnergy,
-        spentGems: costGems,
+        spentGems: costGems > 0 ? costGems : undefined,
+        spentGold: costGold > 0 ? costGold : undefined,
         newGemsBalance: newBalance,
+        newGoldBalance: newGold,
       }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error en compra local' }
@@ -3578,7 +3628,9 @@ export const SupabaseService = {
     energyAdded?: number
     energyCurrent?: number
     spentGems?: number
+    spentGold?: number
     newGemsBalance?: number
+    newGoldBalance?: number
     error?: string
   }> {
     if (!isSupabaseConfigured()) {
@@ -3605,6 +3657,97 @@ export const SupabaseService = {
     } catch (e: any) {
       logError('buyEnergyPack', e)
       return this.buyEnergyPackLocal(packId)
+    }
+  },
+
+  useEnergyItemLocal(itemId: string = 'energy_potion_5'): {
+    success: boolean
+    itemId?: string
+    energyAdded?: number
+    energyCurrent?: number
+    maxEnergy?: number
+    remainingItemQty?: number
+    farmingInventory?: any
+    error?: string
+  } {
+    try {
+      const invRaw = localStorage.getItem('plant_arena_farming_inventory') || '{}'
+      let inv: Record<string, number> = {}
+      try {
+        inv = JSON.parse(invRaw)
+      } catch {}
+
+      const qty = Number(inv[itemId] || 0)
+      if (qty <= 0) {
+        return { success: false, error: 'No tienes este objeto en tu inventario' }
+      }
+
+      const currentEnergy = parseInt(localStorage.getItem('plant_arena_player_energy') || '20', 10)
+      const hasVip = localStorage.getItem('plant_arena_has_vip') === 'true'
+      const maxEnergy = hasVip ? 25 : 20
+
+      if (currentEnergy >= maxEnergy) {
+        return {
+          success: false,
+          error: `Tu energía ya está al máximo (${currentEnergy}/${maxEnergy}⚡). No necesitas usar este objeto ahora.`,
+        }
+      }
+
+      const addEnergy = Math.min(5, maxEnergy - currentEnergy)
+      const newEnergy = currentEnergy + addEnergy
+      inv[itemId] = Math.max(0, qty - 1)
+
+      localStorage.setItem('plant_arena_farming_inventory', JSON.stringify(inv))
+      localStorage.setItem('plant_arena_player_energy', String(newEnergy))
+
+      return {
+        success: true,
+        itemId,
+        energyAdded: addEnergy,
+        energyCurrent: newEnergy,
+        maxEnergy,
+        remainingItemQty: inv[itemId],
+        farmingInventory: inv,
+      }
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Error al usar objeto' }
+    }
+  },
+
+  async useEnergyItem(itemId: string = 'energy_potion_5'): Promise<{
+    success: boolean
+    itemId?: string
+    energyAdded?: number
+    energyCurrent?: number
+    maxEnergy?: number
+    remainingItemQty?: number
+    farmingInventory?: any
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) {
+      return this.useEnergyItemLocal(itemId)
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('use_energy_item', {
+        p_item_id: itemId,
+      })
+      if (error) {
+        if (
+          error.code === 'PGRST202' ||
+          error.message?.includes('use_energy_item') ||
+          error.message?.includes('schema cache') ||
+          error.code === '42501' ||
+          error.message?.includes('No autenticado')
+        ) {
+          return this.useEnergyItemLocal(itemId)
+        }
+        logError('useEnergyItem', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('useEnergyItem', e)
+      return this.useEnergyItemLocal(itemId)
     }
   },
 

@@ -96,9 +96,9 @@ interface JardinProps {
   }>
   onEquipItem?: (instanceId: string, itemId: string) => Promise<{ success: boolean; error?: string }>
   onUnequipItem?: (instanceId: string) => Promise<{ success: boolean; error?: string }>
-  // Los callbacks de recompensa (onAddTokens, onAddGold, onAddPacks,
-  // onReceivePlant, onDeductTokens) se eliminaron: la lotería era su único
-  // consumidor aquí, y ya no concede nada desde el cliente.
+  playerEnergy?: number
+  maxPlayerEnergy?: number
+  onUseEnergyPotion?: (itemId?: string) => Promise<{ success: boolean; energyAdded?: number; energyCurrent?: number; error?: string }>
   /** Recarga saldo e inventario del servidor tras un premio de la lotería. */
   onRewardsChanged?: () => Promise<void> | void
 }
@@ -152,6 +152,9 @@ export default function Jardin({
   isAdmin,
   onOpenAdmin,
   onRewardsChanged,
+  playerEnergy = 20,
+  maxPlayerEnergy = 20,
+  onUseEnergyPotion,
 }: JardinProps) {
   const [deck, setDeck] = useState<PlantId[]>(activeDeck)
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null)
@@ -351,6 +354,81 @@ export default function Jardin({
     itemEmoji?: string
     bonusText?: string
   } | null>(null)
+
+  const [energyPotionModal, setEnergyPotionModal] = useState<{
+    itemId: string
+    currentEnergy: number
+    maxEnergy: number
+    willAdd: number
+    resultingEnergy: number
+  } | null>(null)
+  const [isConsumingPotion, setIsConsumingPotion] = useState<boolean>(false)
+
+  const handleEnergyPotionClick = (itemId: string = 'energy_potion_5') => {
+    const qty = Number(farmingItems?.[itemId as keyof FarmingInventory] || 0)
+    if (qty <= 0) {
+      setFuseAlert({
+        title: 'SIN POCIONES',
+        message: 'No posees ninguna Poción de Energía en tu inventario.',
+        icon: '⚡',
+      })
+      return
+    }
+
+    soundManager.playSound('click', 0.5)
+
+    const cur = playerEnergy
+    const max = maxPlayerEnergy
+
+    if (cur >= max) {
+      setFuseAlert({
+        title: 'ENERGÍA AL MÁXIMO',
+        message: `⚠️ Tu energía ya está al máximo (${cur}/${max}⚡).\nNo necesitas usar este objeto ahora.`,
+        icon: '⚡',
+      })
+      return
+    }
+
+    const willAdd = Math.min(5, max - cur)
+    const resulting = cur + willAdd
+
+    setEnergyPotionModal({
+      itemId,
+      currentEnergy: cur,
+      maxEnergy: max,
+      willAdd,
+      resultingEnergy: resulting,
+    })
+  }
+
+  const handleConfirmUseEnergyPotion = async () => {
+    if (!energyPotionModal || isConsumingPotion) return
+    setIsConsumingPotion(true)
+    const { itemId } = energyPotionModal
+
+    try {
+      if (onUseEnergyPotion) {
+        const res = await onUseEnergyPotion(itemId)
+        setEnergyPotionModal(null)
+        if (res.success) {
+          soundManager.playSound('plantation', 0.8)
+          setFuseAlert({
+            title: '¡ENERGÍA RECARGADA!',
+            message: `⚡ ¡Has utilizado 1 Poción de Energía con éxito!\nSe añadieron +${res.energyAdded ?? 5}⚡ a tu cuenta (Total: ${res.energyCurrent ?? (playerEnergy + 5)}/${maxPlayerEnergy}⚡).`,
+            icon: '⚡',
+          })
+        } else {
+          setFuseAlert({
+            title: 'ERROR AL CONSUMIR',
+            message: res.error || 'No se pudo usar la Poción de Energía.',
+            icon: '⚠️',
+          })
+        }
+      }
+    } finally {
+      setIsConsumingPotion(false)
+    }
+  }
 
   const handleEquippableResourceClick = (itemId: string) => {
     const itemDef = getEquippableItemDef(itemId)
@@ -1011,21 +1089,37 @@ export default function Jardin({
                   return null
                 }
 
+                // La poción de energía sólo se muestra si el jugador tiene unidades
+                const isEnergyPotion = itemId === 'energy_potion_5'
+                if (isEnergyPotion && qty <= 0) {
+                  return null
+                }
+
+                const isInteractive = Boolean(equippableDef || isEnergyPotion)
+
                 return (
                   <div
                     key={itemId}
-                    className={`jardin-farming-card jardin-farming-card--${itemId} ${equippableDef ? 'jardin-farming-card--interactive' : ''}`}
+                    className={`jardin-farming-card jardin-farming-card--${itemId} ${isInteractive ? 'jardin-farming-card--interactive' : ''}`}
                     onClick={() => {
                       if (equippableDef) handleEquippableResourceClick(itemId)
+                      else if (isEnergyPotion) handleEnergyPotionClick(itemId)
                     }}
-                    role={equippableDef ? 'button' : undefined}
-                    tabIndex={equippableDef ? 0 : undefined}
+                    role={isInteractive ? 'button' : undefined}
+                    tabIndex={isInteractive ? 0 : undefined}
                     onKeyDown={(e) => {
-                      if (equippableDef && (e.key === 'Enter' || e.key === ' ')) {
-                        handleEquippableResourceClick(itemId)
+                      if (isInteractive && (e.key === 'Enter' || e.key === ' ')) {
+                        if (equippableDef) handleEquippableResourceClick(itemId)
+                        else if (isEnergyPotion) handleEnergyPotionClick(itemId)
                       }
                     }}
-                    title={equippableDef ? `${equippableDef.emoji} Toca para equipar o desequipar en ${PLANT_CONFIGS[equippableDef.targetPlantId]?.name || 'tu planta'}` : undefined}
+                    title={
+                      equippableDef
+                        ? `${equippableDef.emoji} Toca para equipar o desequipar en ${PLANT_CONFIGS[equippableDef.targetPlantId]?.name || 'tu planta'}`
+                        : isEnergyPotion
+                        ? '⚡ Toca para usar y recargar +5 energías de Ranked'
+                        : undefined
+                    }
                   >
                     <div className="jardin-farming-card__art">
                       <img
@@ -1041,6 +1135,11 @@ export default function Jardin({
                     {equippableDef && (
                       <span className="jardin-farming-belt-action-pill">
                         {isEquippedAnywhere ? `${equippableDef.emoji} EQUIPADO (TOCA)` : `${equippableDef.emoji} TOCAR PARA EQUIPAR`}
+                      </span>
+                    )}
+                    {isEnergyPotion && (
+                      <span className="jardin-farming-belt-action-pill" style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: '#38bdf8' }}>
+                        ⚡ TOCAR PARA USAR
                       </span>
                     )}
                   </div>
@@ -1652,6 +1751,63 @@ export default function Jardin({
                   : beltConfirmModal.action === 'equip'
                   ? `${beltConfirmModal.itemEmoji || '🥊'} EQUIPAR`
                   : `${beltConfirmModal.itemEmoji || '🥊'} DESEQUIPAR`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Uso de Poción de Energía */}
+      {energyPotionModal && (
+        <div
+          className="jardin-upgrade-modal-overlay"
+          onClick={() => {
+            if (!isConsumingPotion) setEnergyPotionModal(null)
+          }}
+        >
+          <div className="jardin-upgrade-modal-card jardin-fuse-confirm-card" onClick={(e) => e.stopPropagation()}>
+            <div className="jardin-upgrade-modal-sparkle">⚡ ✨ ⚡</div>
+            <h3 className="jardin-upgrade-modal-title">¿Consumir Poción de Energía?</h3>
+
+            <div className="jardin-fuse-confirm-plant">
+              <img
+                src="/game-assets/farming/energy_potion.png"
+                alt="Poción de Energía"
+                className="jardin-fuse-confirm-img"
+                style={{ width: '64px', height: '64px', objectFit: 'contain' }}
+              />
+              <span className="jardin-fuse-confirm-name">Poción de Energía (5⚡)</span>
+              <span className="jardin-fuse-confirm-level" style={{ color: '#38bdf8' }}>
+                +{energyPotionModal.willAdd} ⚡ al instante
+              </span>
+            </div>
+
+            <p style={{ fontSize: '12px', color: '#94a3b8', margin: '10px 0 14px', lineHeight: 1.4, textAlign: 'center' }}>
+              Tu energía actual es de <strong>{energyPotionModal.currentEnergy}/{energyPotionModal.maxEnergy}⚡</strong>.<br />
+              Al usar esta poción pasarás a <strong style={{ color: '#38bdf8' }}>{energyPotionModal.resultingEnergy}/{energyPotionModal.maxEnergy}⚡</strong> (sin superar tu máximo diario).
+            </p>
+
+            <div className="jardin-fuse-confirm-actions">
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-cancel"
+                disabled={isConsumingPotion}
+                onClick={() => setEnergyPotionModal(null)}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn"
+                style={{
+                  background: 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)',
+                  borderColor: '#38bdf8',
+                  color: '#ffffff',
+                }}
+                disabled={isConsumingPotion}
+                onClick={handleConfirmUseEnergyPotion}
+              >
+                {isConsumingPotion ? 'CONSUMIENDO...' : '⚡ USAR AHORA'}
               </button>
             </div>
           </div>

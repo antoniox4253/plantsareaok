@@ -1349,7 +1349,13 @@ export function useInventory() {
 
   const buyEnergyPack = async (
     packId: string
-  ): Promise<{ success: boolean; energyAdded?: number; spentGems?: number; error?: string }> => {
+  ): Promise<{
+    success: boolean
+    energyAdded?: number
+    spentGems?: number
+    spentGold?: number
+    error?: string
+  }> => {
     const res = await inventoryService.buyEnergyPack(packId)
     if (!res.success) return { success: false, error: res.error }
 
@@ -1360,6 +1366,15 @@ export function useInventory() {
       } catch {}
     } else if (typeof res.spentGems === 'number' && res.spentGems > 0) {
       setUserTokens((prev) => Math.max(0, prev - (res.spentGems ?? 0)))
+    }
+
+    if (typeof res.newGoldBalance === 'number') {
+      setUserGold(res.newGoldBalance)
+      try {
+        localStorage.setItem(STORAGE_KEYS.GOLD, res.newGoldBalance.toString())
+      } catch {}
+    } else if (typeof res.spentGold === 'number' && res.spentGold > 0) {
+      setUserGold((prev) => Math.max(0, prev - (res.spentGold ?? 0)))
     }
 
     if (typeof res.energyCurrent === 'number') {
@@ -1373,7 +1388,45 @@ export function useInventory() {
 
     window.dispatchEvent(new Event('refresh_user_balance'))
     await refreshBalance().catch(() => {})
-    return { success: true, energyAdded: res.energyAdded, spentGems: res.spentGems }
+    return {
+      success: true,
+      energyAdded: res.energyAdded,
+      spentGems: res.spentGems,
+      spentGold: res.spentGold,
+    }
+  }
+
+  const useEnergyPotion = async (
+    itemId: string = 'energy_potion_5'
+  ): Promise<{ success: boolean; energyAdded?: number; energyCurrent?: number; error?: string }> => {
+    const res = await inventoryService.useEnergyItem(itemId)
+    if (!res.success) return { success: false, error: res.error }
+
+    if (typeof res.energyCurrent === 'number') {
+      setPlayerEnergy(res.energyCurrent)
+      try {
+        localStorage.setItem(STORAGE_KEYS.ENERGY, res.energyCurrent.toString())
+      } catch {}
+    } else if (typeof res.energyAdded === 'number') {
+      setPlayerEnergy((prev) => prev + (res.energyAdded ?? 0))
+    }
+
+    if (res.farmingInventory) {
+      setFarmingItems(parseFarmingInventory(res.farmingInventory))
+    } else {
+      setFarmingItems((prev) => ({
+        ...prev,
+        [itemId]: Math.max(0, (Number(prev[itemId as keyof FarmingInventory]) || 0) - 1),
+      }))
+    }
+
+    window.dispatchEvent(new Event('refresh_user_balance'))
+    await refreshBalance().catch(() => {})
+    return {
+      success: true,
+      energyAdded: res.energyAdded,
+      energyCurrent: res.energyCurrent,
+    }
   }
 
   /** Abre un sobre del servidor. El sorteo lo hace Postgres. */
@@ -1664,6 +1717,7 @@ export function useInventory() {
     setPlayerEnergy,
     maxPlayerEnergy: hasVipPass ? 25 : 20,
     buyEnergyPack,
+    useEnergyPotion,
   }
 }
 
