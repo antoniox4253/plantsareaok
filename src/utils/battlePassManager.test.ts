@@ -159,16 +159,24 @@ describe('BATTLE PASS REWARDS AUDIT (MIGRACIÓN 47)', () => {
     const aloeRewards = BATTLE_PASS_LEVELS.filter((l) => l.reward.plantId === 'aloe')
     expect(aloeRewards).toHaveLength(0)
 
-    // Niveles 14 y 18 ahora dan cartas raras balanceadas
+    // Nivel 14 da cartas raras y Nivel 18 da x1 Jalapeño
     const lvl14 = BATTLE_PASS_LEVELS.find((l) => l.level === 14)!
     expect(lvl14.reward.label).toBe('x2 Girasol Doble')
     expect(lvl14.reward.copiesCount).toBe(2)
     expect(lvl14.reward.plantId).toBe('twinsunflower')
 
     const lvl18 = BATTLE_PASS_LEVELS.find((l) => l.level === 18)!
-    expect(lvl18.reward.label).toBe('x2 Jalapeño')
-    expect(lvl18.reward.copiesCount).toBe(2)
+    expect(lvl18.reward.label).toBe('x1 Jalapeño')
+    expect(lvl18.reward.copiesCount).toBe(1)
     expect(lvl18.reward.plantId).toBe('jalapeno')
+
+    // Nivel 20 otorga x1 Cinturón de Campeón (ítem equipable para Bonk Choy)
+    const lvl20 = BATTLE_PASS_LEVELS.find((l) => l.level === 20)!
+    expect(lvl20.reward.type).toBe('item')
+    expect(lvl20.reward.itemId).toBe('champion_belt')
+    expect(lvl20.reward.itemCount).toBe(1)
+    expect(lvl20.reward.label).toBe('x1 Cinturón de Campeón')
+    expect(lvl20.reward.icon).toBe('/game-assets/farming/champion_belt.png')
   })
 
   it('FASE 6 — Validación de condiciones de claim anti-duplicado', () => {

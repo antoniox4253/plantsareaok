@@ -610,7 +610,7 @@ export function useInventory() {
     try {
       const res = await inventoryService.claimBattlePassLevel(levelNum)
       if (res && res.success) {
-        await Promise.all([refreshBalance(), refreshInventory()])
+        await Promise.all([refreshBalance(), refreshInventory(), refreshFarmingInventory()])
         return { success: true, level: levelNum, label: res.label }
       }
       return { success: false, error: res?.error || 'Error al reclamar recompensa VIP' }
@@ -631,7 +631,7 @@ export function useInventory() {
     try {
       const res = await inventoryService.claimAllBattlePassLevels()
       if (res && res.success) {
-        await Promise.all([refreshBalance(), refreshInventory()])
+        await Promise.all([refreshBalance(), refreshInventory(), refreshFarmingInventory()])
         return { success: true, claimed: res.claimed }
       }
       return { success: false, error: res?.error || 'Error al reclamar recompensas VIP' }

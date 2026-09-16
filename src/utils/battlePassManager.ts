@@ -1,14 +1,17 @@
 import type { PlantId } from '../types/game'
 import type { PackId } from './packDropManager'
+import type { FarmingItemId } from './pvpRewardManager'
 import monedaImg from '../assets/ico/moneda.webp'
 
 export interface PassReward {
-  type: 'pack' | 'copies' | 'plant' | 'badge' | 'gold'
+  type: 'pack' | 'copies' | 'plant' | 'badge' | 'gold' | 'item'
   packId?: PackId
   packCount?: number
   plantId?: PlantId
   copiesCount?: number
   goldAmount?: number
+  itemId?: FarmingItemId
+  itemCount?: number
   label: string
   icon: string
 }
@@ -127,7 +130,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
     level: 18,
     requiredElo: 3700,
     arenaName: 'Coliseo Galáctico',
-    reward: { type: 'copies', plantId: 'jalapeno', copiesCount: 2, label: 'x2 Jalapeño', icon: '/game-assets/plants/jalapeno_hd.webp' },
+    reward: { type: 'copies', plantId: 'jalapeno', copiesCount: 1, label: 'x1 Jalapeño', icon: '/game-assets/plants/jalapeno_hd.webp' },
   },
   {
     level: 19,
@@ -139,6 +142,12 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
     level: 20,
     requiredElo: 4000,
     arenaName: 'Olimpo de Leyendas (MÁX)',
-    reward: { type: 'badge', label: '👑 Corona Dorada Leyenda ELO + Skin VIP', icon: '👑' },
+    reward: {
+      type: 'item',
+      itemId: 'champion_belt',
+      itemCount: 1,
+      label: 'x1 Cinturón de Campeón',
+      icon: '/game-assets/farming/champion_belt.png',
+    },
   },
 ]

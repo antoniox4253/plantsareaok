@@ -183,4 +183,50 @@ describe('Marketplace Selling Safeties & Deck Auto-Heal', () => {
     expect(content).toMatch(/'marketplace_buy'/i)
     expect(content).toMatch(/'marketplace_sale'/i)
   })
+
+  it('6. Auditoría de la Migración 170: Copias sólo se pierden si la carta se VENDE definitivamente y el vendedor se queda sin cartas físicas', () => {
+    const migration170Path = join(process.cwd(), 'supabase', 'migrations', '170-marketplace-copies-burn-only-on-sale.sql')
+    expect(existsSync(migration170Path)).toBe(true)
+
+    const content = readFileSync(migration170Path, 'utf8')
+
+    // 1. Debe existir buy_marketplace_card
+    expect(content).toMatch(/FUNCTION public\.buy_marketplace_card/i)
+
+    // 2. Debe comprobar si el vendedor aún conserva cartas físicas de la misma especie
+    expect(content).toMatch(/NOT EXISTS \(\s*SELECT 1 FROM public\.plant_instances\s*WHERE \(owner_id = v_listing\.seller_id OR user_id = v_listing\.seller_id\)\s*AND plant_id = v_listing\.item_id\s*\)/i)
+
+    // 3. Sólo si no conserva ninguna, resetea plant_copies a 0
+    expect(content).toMatch(/UPDATE public\.plant_copies\s+SET copies = 0\s+WHERE user_id = v_listing\.seller_id\s+AND plant_id = v_listing\.item_id/i)
+
+    // 4. Simulador lógico de la regla:
+    function evaluateSellerCopiesOnEvent(
+      event: 'list' | 'cancel' | 'sold',
+      initialCopies: number,
+      remainingPhysicalCards: number
+    ): number {
+      if (event === 'list' || event === 'cancel') {
+        // Al listar o cancelar, las copias permanecen intactas
+        return initialCopies
+      }
+      if (event === 'sold') {
+        // Al venderse, sólo si no quedan cartas físicas se pierden las copias
+        return remainingPhysicalCards === 0 ? 0 : initialCopies
+      }
+      return initialCopies
+    }
+
+    // Caso A: Publicar en el mercado -> Copias intactas (4)
+    expect(evaluateSellerCopiesOnEvent('list', 4, 0)).toBe(4)
+
+    // Caso B: Retirar/Cancelar la oferta -> Copias intactas (4)
+    expect(evaluateSellerCopiesOnEvent('cancel', 4, 1)).toBe(4)
+
+    // Caso C: Venta concretada y tenía otra copia física (ej. 2 cartas físicas y vende 1) -> Copias intactas (4)
+    expect(evaluateSellerCopiesOnEvent('sold', 4, 1)).toBe(4)
+
+    // Caso D: Venta concretada y era su única carta física (quedan 0) -> Copias quemadas (0)
+    expect(evaluateSellerCopiesOnEvent('sold', 4, 0)).toBe(0)
+  })
 })
+
