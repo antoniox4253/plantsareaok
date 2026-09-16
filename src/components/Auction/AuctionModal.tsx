@@ -29,6 +29,15 @@ export const AuctionModal: React.FC<AuctionModalProps> = ({
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
   const [remainingMs, setRemainingMs] = useState<number>(0)
   const [isClaiming, setIsClaiming] = useState<boolean>(false)
+  const [rankingPage, setRankingPage] = useState<number>(0)
+
+  const BIDS_PER_PAGE = 4
+  const totalBidPages = Math.max(1, Math.ceil((auction?.bids.length || 0) / BIDS_PER_PAGE))
+  const paginatedBids = useMemo(() => {
+    if (!auction?.bids) return []
+    const start = rankingPage * BIDS_PER_PAGE
+    return auction.bids.slice(start, start + BIDS_PER_PAGE)
+  }, [auction?.bids, rankingPage])
 
   // Cargar datos de la subasta activa
   const fetchAuction = useCallback(async () => {
@@ -80,6 +89,19 @@ export const AuctionModal: React.FC<AuctionModalProps> = ({
 
     return () => clearInterval(timer)
   }, [isOpen, auction, fetchAuction])
+
+  // Cerrar con la tecla Escape
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        soundManager.playSound('click', 0.4)
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   // Formato de tiempo HH:MM:SS
   const formatCountdown = useMemo(() => {
@@ -206,6 +228,18 @@ export const AuctionModal: React.FC<AuctionModalProps> = ({
         {/* BARRA SUPERIOR */}
         <div className="auction-modal-header">
           <div className="auction-header-left">
+            <button
+              type="button"
+              className="auction-back-btn"
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                onClose()
+              }}
+              title="Volver al Menú Principal"
+            >
+              <span className="auction-back-btn-icon">◀</span>
+              <span>VOLVER</span>
+            </button>
             <div className="auction-header-badge">
               <span className="auction-header-badge-dot" />
               <span>{isExpired ? 'Subasta Finalizada' : 'Subasta en Vivo'}</span>
@@ -215,7 +249,10 @@ export const AuctionModal: React.FC<AuctionModalProps> = ({
           <button
             type="button"
             className="auction-modal-close-btn"
-            onClick={onClose}
+            onClick={() => {
+              soundManager.playSound('click', 0.4)
+              onClose()
+            }}
             title="Cerrar ventana"
           >
             ✕
@@ -229,157 +266,186 @@ export const AuctionModal: React.FC<AuctionModalProps> = ({
           </div>
         ) : (
           <div className="auction-horizontal-body">
-            {/* COLUMNA IZQUIERDA: PUJAS, TEMPORIZADOR Y RANKING */}
+            {/* COLUMNA IZQUIERDA: PUJAS, TEMPORIZADOR Y RANKING (SIN SCROLL) */}
             <div className="auction-col-left">
-              {/* 1. Temporizador de 30 horas */}
-              <div className="auction-timer-banner">
-                <div className="auction-timer-label">
-                  <span>⏱️</span>
-                  <span>{isExpired ? 'TIEMPO FINALIZADO' : 'TIEMPO RESTANTE (30H):'}</span>
-                </div>
-                <div className={`auction-timer-digits ${isExpired ? 'auction-timer-digits--expired' : ''}`}>
-                  {formatCountdown}
-                </div>
-              </div>
-
-              {/* 2. Tarjeta del Líder Actual */}
-              <div className="auction-leader-card">
-                <div className="auction-current-bid-info">
-                  <span className="auction-bid-tag">
-                    {auction?.highestBidderId ? 'Última Puja Más Alta' : 'Precio Inicial'}
+              {/* 1. Resumen Consolidado Superior: Puja, Líder y Temporizador en 1 sola franja */}
+              <div className="auction-top-summary-card">
+                <div className="auction-summary-col">
+                  <span className="auction-summary-tag">
+                    {auction?.highestBidderId ? 'Puja Actual' : 'Precio Inicial'}
                   </span>
-                  <div className="auction-bid-amount-wrap">
-                    <span className="auction-bid-amount">
+                  <div className="auction-summary-val-wrap">
+                    <span className="auction-summary-amount">
                       {auction ? auction.currentBid.toLocaleString() : 500}
                     </span>
-                    <span className="auction-bid-gem-icon">💎</span>
+                    <span className="auction-summary-icon">💎</span>
                   </div>
                 </div>
 
-                <div className="auction-leader-user">
-                  <span className="auction-leader-user-tag">
-                    {auction?.highestBidderId ? (isHighestBidder ? '👑 ¡ERES EL LÍDER!' : '👑 MÁXIMO POSTOR') : 'ESTADO INICIAL'}
+                <div className="auction-summary-col auction-summary-col--leader">
+                  <span className="auction-summary-tag">
+                    {auction?.highestBidderId ? (isHighestBidder ? '👑 ¡ERES EL LÍDER!' : '👑 MÁXIMO POSTOR') : 'ESTADO'}
                   </span>
-                  <span className="auction-leader-name">
+                  <span className="auction-summary-leader">
                     {auction?.highestBidderName
                       ? `@${auction.highestBidderName}`
                       : isHighestBidder && username
                       ? `@${username}`
-                      : 'Sin ofertas aún'}
+                      : 'Sin ofertas'}
+                  </span>
+                </div>
+
+                <div className="auction-summary-col auction-summary-col--timer">
+                  <span className="auction-summary-tag">
+                    {isExpired ? 'FINALIZADA' : '⏱️ RESTANTE (30H)'}
+                  </span>
+                  <span className={`auction-summary-timer ${isExpired ? 'auction-summary-timer--expired' : ''}`}>
+                    {formatCountdown}
                   </span>
                 </div>
               </div>
 
-            {/* 3. Consola para Pujar o Reclamar Carta */}
-            <div className="auction-bid-console">
-              <div className="auction-console-top">
-                <span>Tu saldo disponible:</span>
-                <span className="auction-user-gems-balance">
-                  <span>💎</span> {userTokens.toLocaleString()} Gemas
-                </span>
-              </div>
-
-              {isExpired ? (
-                // SUBASTA EXPIRADA: RECLAMO O AVISO
-                auction?.highestBidderId === userId && !auction?.rewardClaimed ? (
-                  <button
-                    type="button"
-                    className="auction-claim-btn"
-                    onClick={handleClaimReward}
-                    disabled={isClaiming}
-                  >
-                    {isClaiming ? 'RECLAMANDO CARTA...' : '🏆 ¡ERES EL GANADOR! RECLAMAR CARTA'}
-                  </button>
-                ) : auction?.rewardClaimed ? (
-                  <div className="auction-feedback-msg auction-feedback-msg--success">
-                    🎉 Esta carta ya fue reclamada por el ganador @{auction?.highestBidderName}
-                  </div>
-                ) : (
-                  <div className="auction-feedback-msg auction-feedback-msg--info">
-                    🏁 Subasta concluida. Ganador definitivo: @{auction?.highestBidderName || 'Nadie'}
-                  </div>
-                )
-              ) : (
-                // SUBASTA EN CURSO: CONSOLA DE PUJA
-                <>
-                  <div className="auction-input-row">
-                    <input
-                      type="number"
-                      className="auction-bid-input"
-                      value={bidAmount}
-                      min={minRequiredBid}
-                      step={10}
-                      onChange={(e) => setBidAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                    />
-                    <div className="auction-quick-btn-group">
-                      <button type="button" className="auction-quick-btn" onClick={() => handleQuickAdd(10)}>+10</button>
-                      <button type="button" className="auction-quick-btn" onClick={() => handleQuickAdd(50)}>+50</button>
-                      <button type="button" className="auction-quick-btn" onClick={() => handleQuickAdd(100)}>+100</button>
-                      <button type="button" className="auction-quick-btn" onClick={() => handleQuickAdd(500)}>+500</button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="auction-submit-btn"
-                    onClick={handlePlaceBid}
-                    disabled={isSubmitting || bidAmount < minRequiredBid}
-                  >
-                    {isSubmitting ? (
-                      'PROCESANDO OFERTA...'
-                    ) : isHighestBidder ? (
-                      `👑 AUMENTAR MI PUJA A ${bidAmount.toLocaleString()} 💎`
-                    ) : (
-                      `⚡ OFERTAR ${bidAmount.toLocaleString()} 💎`
-                    )}
-                  </button>
-                </>
-              )}
-
-              {feedback && (
-                <div className={`auction-feedback-msg auction-feedback-msg--${feedback.type}`}>
-                  {feedback.message}
+              {/* 2. Consola para Pujar o Reclamar Carta */}
+              <div className="auction-bid-console">
+                <div className="auction-console-top">
+                  <span>Tu saldo disponible:</span>
+                  <span className="auction-user-gems-balance">
+                    <span>💎</span> {userTokens.toLocaleString()} Gemas
+                  </span>
                 </div>
-              )}
-            </div>
 
-            {/* 4. Ranking / Historial de Ofertas */}
-            <div className="auction-ranking-section">
-              <div className="auction-ranking-title">
-                <span>HISTORIAL DE OFERTAS ({auction?.totalBids ?? 0})</span>
-                <span>LÍDERES EN VIVO</span>
-              </div>
-
-              <div className="auction-ranking-list">
-                {auction && auction.bids.length > 0 ? (
-                  auction.bids.map((bid: AuctionBid, index: number) => {
-                    const isLeader = index === 0
-                    return (
-                      <div
-                        key={bid.id}
-                        className={`auction-ranking-item ${isLeader ? 'auction-ranking-item--leader' : ''}`}
-                      >
-                        <div className="auction-item-user">
-                          <span className="auction-rank-badge">
-                            {isLeader ? '👑' : `#${index + 1}`}
-                          </span>
-                          <span>@{bid.username}</span>
-                        </div>
-                        <div className="auction-item-bid">
-                          <span className="auction-item-amount">{bid.bidAmount.toLocaleString()} 💎</span>
-                          <span className="auction-item-time">{formatTimeAgo(bid.createdAt)}</span>
-                        </div>
-                      </div>
-                    )
-                  })
+                {isExpired ? (
+                  auction?.highestBidderId === userId && !auction?.rewardClaimed ? (
+                    <button
+                      type="button"
+                      className="auction-claim-btn"
+                      onClick={handleClaimReward}
+                      disabled={isClaiming}
+                    >
+                      {isClaiming ? 'RECLAMANDO CARTA...' : '🏆 ¡ERES EL GANADOR! RECLAMAR CARTA'}
+                    </button>
+                  ) : auction?.rewardClaimed ? (
+                    <div className="auction-feedback-msg auction-feedback-msg--success">
+                      🎉 Esta carta ya fue reclamada por el ganador @{auction?.highestBidderName}
+                    </div>
+                  ) : (
+                    <div className="auction-feedback-msg auction-feedback-msg--info">
+                      🏁 Subasta concluida. Ganador definitivo: @{auction?.highestBidderName || 'Nadie'}
+                    </div>
+                  )
                 ) : (
-                  <div className="auction-empty-bids">
-                    Aún no hay ofertas en esta subasta. ¡Sé el primero en pujar por 500 💎!
+                  <>
+                    {/* Fila 1: Input y botón principal alineados sin desborde */}
+                    <div className="auction-input-row">
+                      <div className="auction-input-container">
+                        <span className="auction-input-prefix">💎</span>
+                        <input
+                          type="number"
+                          className="auction-bid-input"
+                          value={bidAmount}
+                          min={minRequiredBid}
+                          step={10}
+                          onChange={(e) => setBidAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="auction-submit-btn"
+                        onClick={handlePlaceBid}
+                        disabled={isSubmitting || bidAmount < minRequiredBid}
+                      >
+                        {isSubmitting ? (
+                          'PROCESANDO...'
+                        ) : isHighestBidder ? (
+                          `👑 SUBIR A ${bidAmount.toLocaleString()} 💎`
+                        ) : (
+                          `⚡ PUJAR ${bidAmount.toLocaleString()} 💎`
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Fila 2: Grid de 4 botones rápidos que nunca se desbordan */}
+                    <div className="auction-quick-btn-grid">
+                      <button type="button" className="auction-quick-btn" onClick={() => handleQuickAdd(10)}>+10 💎</button>
+                      <button type="button" className="auction-quick-btn" onClick={() => handleQuickAdd(50)}>+50 💎</button>
+                      <button type="button" className="auction-quick-btn" onClick={() => handleQuickAdd(100)}>+100 💎</button>
+                      <button type="button" className="auction-quick-btn" onClick={() => handleQuickAdd(500)}>+500 💎</button>
+                    </div>
+                  </>
+                )}
+
+                {feedback && (
+                  <div className={`auction-feedback-msg auction-feedback-msg--${feedback.type}`}>
+                    {feedback.message}
                   </div>
                 )}
               </div>
+
+              {/* 3. Ranking e Historial de Ofertas Paginado (Cero Scroll) */}
+              <div className="auction-ranking-section">
+                <div className="auction-ranking-title">
+                  <div className="auction-ranking-title-left">
+                    <span>HISTORIAL DE OFERTAS ({auction?.totalBids ?? 0})</span>
+                    <span className="auction-ranking-badge">EN VIVO</span>
+                  </div>
+                  {auction && auction.bids.length > BIDS_PER_PAGE && (
+                    <div className="auction-pagination-controls">
+                      <button
+                        type="button"
+                        className="auction-page-btn"
+                        disabled={rankingPage === 0}
+                        onClick={() => setRankingPage((p) => Math.max(0, p - 1))}
+                        title="Página anterior"
+                      >
+                        ◀
+                      </button>
+                      <span className="auction-page-indicator">
+                        {rankingPage + 1} / {totalBidPages}
+                      </span>
+                      <button
+                        type="button"
+                        className="auction-page-btn"
+                        disabled={rankingPage >= totalBidPages - 1}
+                        onClick={() => setRankingPage((p) => Math.min(totalBidPages - 1, p + 1))}
+                        title="Página siguiente"
+                      >
+                        ▶
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="auction-ranking-list">
+                  {auction && auction.bids.length > 0 ? (
+                    paginatedBids.map((bid: AuctionBid, index: number) => {
+                      const globalRank = rankingPage * BIDS_PER_PAGE + index + 1
+                      const isLeader = globalRank === 1
+                      return (
+                        <div
+                          key={bid.id}
+                          className={`auction-ranking-item ${isLeader ? 'auction-ranking-item--leader' : ''}`}
+                        >
+                          <div className="auction-item-user">
+                            <span className="auction-rank-badge">
+                              {isLeader ? '👑' : `#${globalRank}`}
+                            </span>
+                            <span className="auction-username-text">@{bid.username}</span>
+                          </div>
+                          <div className="auction-item-bid">
+                            <span className="auction-item-amount">{bid.bidAmount.toLocaleString()} 💎</span>
+                            <span className="auction-item-time">{formatTimeAgo(bid.createdAt)}</span>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="auction-empty-bids">
+                      Aún no hay ofertas en esta subasta. ¡Sé el primero en pujar por 500 💎!
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
           {/* COLUMNA DERECHA: TOP AURA & CARTA EXCLUSIVA */}
           <div className="auction-col-right">
