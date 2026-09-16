@@ -429,9 +429,38 @@ export function getScaledPlantConfig(
     }
   }
 
-  // ── BONIFICACIÓN EXCLUSIVA DE ÍTEM: CINTURÓN DE CAMPEÓN EN BONK CHOY ──────────
-  if (plantId === 'bonkchoy' && equippedItem === 'champion_belt') {
-    return {
+  // ── BONIFICACIÓN EXCLUSIVA DE ÍTEMS EQUIPABLES ────────────────────────────────
+  if (equippedItem && EQUIPPABLE_PLANT_ITEMS[equippedItem]) {
+    const itemDef = EQUIPPABLE_PLANT_ITEMS[equippedItem]
+    if (itemDef.targetPlantId === plantId) {
+      return itemDef.applyStats(scaled)
+    }
+  }
+
+  return scaled
+}
+
+export interface EquippablePlantItemDef {
+  id: string
+  name: string
+  emoji: string
+  targetPlantId: PlantId
+  equippedPlantName: string
+  description: string
+  statBonusText: string
+  applyStats: (scaled: PlantConfig) => PlantConfig
+}
+
+export const EQUIPPABLE_PLANT_ITEMS: Record<string, EquippablePlantItemDef> = {
+  champion_belt: {
+    id: 'champion_belt',
+    name: 'Cinturón de Campeón',
+    emoji: '🥊',
+    targetPlantId: 'bonkchoy',
+    equippedPlantName: 'Bonk Choy Campeón',
+    description: 'Cinturón exclusivo de Bonk Choy. Al equiparse otorga +150 HP y +15 de Daño.',
+    statBonusText: '+150 HP · +15 Daño',
+    applyStats: (scaled) => ({
       ...scaled,
       maxHp: scaled.maxHp + 150,
       damage: (scaled.damage ?? 65) + 15,
@@ -439,10 +468,17 @@ export function getScaledPlantConfig(
       icon: '/game-assets/greenfoot/bonkchoy_champion.png',
       packetActive: '/game-assets/greenfoot/bonkchoy_champion.png',
       packetDisabled: '/game-assets/greenfoot/bonkchoy_champion.png',
-    }
-  }
+    }),
+  },
+}
 
-  return scaled
+export function getEquippableItemDef(itemId?: string | null): EquippablePlantItemDef | undefined {
+  if (!itemId) return undefined
+  return EQUIPPABLE_PLANT_ITEMS[itemId]
+}
+
+export function getEquippableItemForPlant(plantId: PlantId): EquippablePlantItemDef | undefined {
+  return Object.values(EQUIPPABLE_PLANT_ITEMS).find((item) => item.targetPlantId === plantId)
 }
 
 /**

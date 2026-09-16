@@ -4,6 +4,9 @@ import {
   PLANT_CONFIGS,
   STAT_LABELS,
   getFusionGoldCost,
+  getScaledPlantConfig,
+  getEquippableItemDef,
+  getEquippableItemForPlant,
   type PlantStatKey,
 } from '../../utils/gameConstants'
 import background from '../../assets/images/background.webp'
@@ -342,53 +345,68 @@ export default function Jardin({
     action: 'equip' | 'unequip'
     instanceId: string
     plantName: string
+    itemId?: string
+    plantId?: PlantId
+    itemName?: string
+    itemEmoji?: string
+    bonusText?: string
   } | null>(null)
 
-  const handleChampionBeltResourceClick = () => {
+  const handleEquippableResourceClick = (itemId: string) => {
+    const itemDef = getEquippableItemDef(itemId)
+    if (!itemDef) return
+
     soundManager.playSound('click', 0.5)
 
-    // 1. Validar si el usuario tiene Bonk Choy
-    const bonkInstances = plantInstances.filter((p) => p.plantId === 'bonkchoy')
-    const hasBonkUnlocked = unlockedPlants.includes('bonkchoy') || bonkInstances.length > 0
+    const targetPlantId = itemDef.targetPlantId
+    const plantConfig = PLANT_CONFIGS[targetPlantId]
+    const targetInstances = plantInstances.filter((p) => p.plantId === targetPlantId)
+    const hasPlantUnlocked = unlockedPlants.includes(targetPlantId) || targetInstances.length > 0
 
-    if (!hasBonkUnlocked) {
+    if (!hasPlantUnlocked) {
       setFuseAlert({
-        title: 'SÓLO PARA BONK CHOY',
-        message: 'El Cinturón de Campeón es un ítem exclusivo para Bonk Choy. Consigue o desbloquea a Bonk Choy en tu Jardín para utilizar este ítem.',
-        icon: '🥊',
+        title: `SÓLO PARA ${plantConfig?.name?.toUpperCase() || 'ESTA PLANTA'}`,
+        message: `${itemDef.name} es un ítem exclusivo para ${plantConfig?.name || 'su planta'}. Consigue o desbloquea a ${plantConfig?.name || 'la planta'} en tu Jardín para utilizar este ítem.`,
+        icon: itemDef.emoji,
       })
       return
     }
 
-    // 2. Comprobar si ya está equipado en alguna instancia de Bonk Choy
-    const equippedBonk = bonkInstances.find((p) => p.equippedItem === 'champion_belt')
-
-    if (equippedBonk) {
+    const equippedInstance = targetInstances.find((p) => p.equippedItem === itemId)
+    if (equippedInstance) {
       setBeltConfirmModal({
         action: 'unequip',
-        instanceId: equippedBonk.instanceId,
-        plantName: 'Bonk Choy',
+        instanceId: equippedInstance.instanceId,
+        plantName: plantConfig?.name || 'Planta',
+        itemId,
+        plantId: targetPlantId,
+        itemName: itemDef.name,
+        itemEmoji: itemDef.emoji,
+        bonusText: itemDef.statBonusText,
       })
       return
     }
 
-    // 3. No está equipado. Comprobar disponibilidad en inventario
-    const availableBelts = Number(farmingItems?.champion_belt || 0)
-    if (availableBelts <= 0) {
+    const availableQty = Number(farmingItems?.[itemId as keyof FarmingInventory] || 0)
+    if (availableQty <= 0) {
       setFuseAlert({
-        title: 'SIN CINTURONES DISPONIBLES',
-        message: 'No tienes ningún Cinturón de Campeón en tus recursos de cultivo.',
-        icon: '🥊',
+        title: 'SIN UNIDADES DISPONIBLES',
+        message: `No tienes unidades de ${itemDef.name} en tus recursos de cultivo.`,
+        icon: itemDef.emoji,
       })
       return
     }
 
-    // 4. Instancia destino (primera disponible)
-    const targetInstId = bonkInstances[0]?.instanceId || 'inst_base_bonkchoy'
+    const targetInstId = targetInstances[0]?.instanceId || `inst_base_${targetPlantId}`
     setBeltConfirmModal({
       action: 'equip',
       instanceId: targetInstId,
-      plantName: 'Bonk Choy',
+      plantName: plantConfig?.name || 'Planta',
+      itemId,
+      plantId: targetPlantId,
+      itemName: itemDef.name,
+      itemEmoji: itemDef.emoji,
+      bonusText: itemDef.statBonusText,
     })
   }
 
@@ -983,29 +1001,31 @@ export default function Jardin({
             <div className="jardin-farming-grid">
               {(Object.entries(FARMING_ITEM_DEFINITIONS) as Array<[keyof FarmingInventory, (typeof FARMING_ITEM_DEFINITIONS)[keyof typeof FARMING_ITEM_DEFINITIONS]]>).map(([itemId, def]) => {
                 const qty = Number(farmingItems[itemId] || 0)
-                const isChampionBelt = itemId === 'champion_belt'
-                const isBeltEquippedAnywhere = plantInstances.some((p) => p.plantId === 'bonkchoy' && p.equippedItem === 'champion_belt')
+                const equippableDef = getEquippableItemDef(itemId)
+                const isEquippedAnywhere = equippableDef
+                  ? plantInstances.some((p) => p.plantId === equippableDef.targetPlantId && p.equippedItem === itemId)
+                  : false
 
-                // El ítem Cinturón de Campeón sólo se muestra si se ha desbloqueado / obtenido (en inventario o equipado)
-                if (isChampionBelt && qty <= 0 && !isBeltEquippedAnywhere) {
+                // Los ítems equipables sólo se muestran si se han obtenido (en inventario o equipados)
+                if (equippableDef && qty <= 0 && !isEquippedAnywhere) {
                   return null
                 }
 
                 return (
                   <div
                     key={itemId}
-                    className={`jardin-farming-card jardin-farming-card--${itemId} ${isChampionBelt ? 'jardin-farming-card--interactive' : ''}`}
+                    className={`jardin-farming-card jardin-farming-card--${itemId} ${equippableDef ? 'jardin-farming-card--interactive' : ''}`}
                     onClick={() => {
-                      if (isChampionBelt) handleChampionBeltResourceClick()
+                      if (equippableDef) handleEquippableResourceClick(itemId)
                     }}
-                    role={isChampionBelt ? 'button' : undefined}
-                    tabIndex={isChampionBelt ? 0 : undefined}
+                    role={equippableDef ? 'button' : undefined}
+                    tabIndex={equippableDef ? 0 : undefined}
                     onKeyDown={(e) => {
-                      if (isChampionBelt && (e.key === 'Enter' || e.key === ' ')) {
-                        handleChampionBeltResourceClick()
+                      if (equippableDef && (e.key === 'Enter' || e.key === ' ')) {
+                        handleEquippableResourceClick(itemId)
                       }
                     }}
-                    title={isChampionBelt ? '🥊 Toca para equipar o desequipar en Bonk Choy' : undefined}
+                    title={equippableDef ? `${equippableDef.emoji} Toca para equipar o desequipar en ${PLANT_CONFIGS[equippableDef.targetPlantId]?.name || 'tu planta'}` : undefined}
                   >
                     <div className="jardin-farming-card__art">
                       <img
@@ -1018,9 +1038,9 @@ export default function Jardin({
                     <strong>{def.label}</strong>
                     <span className="jardin-farming-card__qty">x{qty.toLocaleString()}</span>
                     <small>{def.description}</small>
-                    {isChampionBelt && (
+                    {equippableDef && (
                       <span className="jardin-farming-belt-action-pill">
-                        {isBeltEquippedAnywhere ? '🥊 EQUIPADO (TOCA)' : '🥊 TOCAR PARA EQUIPAR'}
+                        {isEquippedAnywhere ? `${equippableDef.emoji} EQUIPADO (TOCA)` : `${equippableDef.emoji} TOCAR PARA EQUIPAR`}
                       </span>
                     )}
                   </div>
@@ -1066,8 +1086,8 @@ export default function Jardin({
               const card = displayedCards.find((c) => c.instanceId === instanceId)
               const config = card ? PLANT_CONFIGS[card.plantId] : null
               const isSelected = selectedSlotIndex === slotIdx
-              const isEquippedBelt = card?.plantId === 'bonkchoy' && card.equippedItem === 'champion_belt'
-              const slotImgSrc = isEquippedBelt ? '/game-assets/greenfoot/bonkchoy_champion.png' : config?.icon
+              const scaledSlotConfig = card ? getScaledPlantConfig(card.plantId, card.statRolls ?? [], card.equippedItem) : null
+              const slotImgSrc = scaledSlotConfig?.icon || scaledSlotConfig?.sprite || config?.icon
 
               return (
                 <button
@@ -1106,7 +1126,10 @@ export default function Jardin({
                         const slotNumPrefix = instancesOfThis.length > 1 && idxInOwned !== -1 ? ` #${idxInOwned + 1}` : ''
                         return (
                           <span className="jardin-slot__name">
-                            {config.name}{slotNumPrefix} {card.level > 0 ? `(L${card.level})` : ''} {isEquippedBelt ? '🥊' : ''}
+                            {config.name}{slotNumPrefix} {card.level > 0 ? `(L${card.level})` : ''} {(() => {
+                              const itemDef = getEquippableItemDef(card.equippedItem)
+                              return itemDef ? itemDef.emoji : ''
+                            })()}
                           </span>
                         )
                       })()}
@@ -1151,8 +1174,8 @@ export default function Jardin({
               const groupedBuffs = groupRolls(statRolls)
               const isMaxLevel = level >= maxLvl
               const hasCopies = copies >= FUSION_COPIES_REQ
-              const isEquippedBelt = plantId === 'bonkchoy' && equippedItem === 'champion_belt'
-              const cardImgSrc = isEquippedBelt ? '/game-assets/greenfoot/bonkchoy_champion.png' : config.icon
+              const scaledCardConfig = getScaledPlantConfig(plantId, statRolls, equippedItem)
+              const cardImgSrc = scaledCardConfig.icon || scaledCardConfig.sprite || config.icon
 
               const instancesOfThisPlant = plantInstances.filter((i) => i.plantId === plantId)
               const instanceIndex = instancesOfThisPlant.findIndex((i) => i.instanceId === instanceId)
@@ -1223,11 +1246,15 @@ export default function Jardin({
                   />
 
                   <span className="jardin-card__name">{displayName}</span>
-                  {isEquippedBelt && (
-                    <div className="jardin-equipped-belt-badge">
-                      🥊 CINTURÓN (+150 HP, +15 DMG)
-                    </div>
-                  )}
+                  {(() => {
+                    const itemDef = getEquippableItemDef(equippedItem)
+                    if (!itemDef) return null
+                    return (
+                      <div className="jardin-equipped-belt-badge">
+                        {itemDef.emoji} {itemDef.name.toUpperCase()} ({itemDef.statBonusText})
+                      </div>
+                    )
+                  })()}
                   <span className="jardin-card__cat">
                     {!isUnlocked
                       ? '🔒 Bloqueada'
@@ -1309,38 +1336,47 @@ export default function Jardin({
                     </div>
                   )}
 
-                  {/* EQUIPAR / DESEQUIPAR CINTURÓN DE CAMPEÓN (SÓLO BONK CHOY SI LO TIENE DESBLOQUEADO) */}
-                  {isUnlocked && plantId === 'bonkchoy' && (isEquippedBelt || Number(farmingItems?.champion_belt || 0) > 0) && (
-                    <div className="jardin-card-item-row">
-                      {isEquippedBelt ? (
-                        <button
-                          type="button"
-                          className="jardin-unequip-item-btn"
-                          disabled={isEquippingItem}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleUnequipItem(instanceId)
-                          }}
-                          title="Desequipar Cinturón de Campeón (volverá a tu inventario)"
-                        >
-                          🥊 DESEQUIPAR
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="jardin-equip-item-btn"
-                          disabled={isEquippingItem}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleEquipItem(instanceId, 'champion_belt')
-                          }}
-                          title={`Equipar Cinturón de Campeón (+150 HP, +15 DMG) (Disponibles: ${farmingItems?.champion_belt || 0})`}
-                        >
-                          🥊 EQUIPAR
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  {/* EQUIPAR / DESEQUIPAR ÍTEM EXCLUSIVO */}
+                  {(() => {
+                    if (!isUnlocked) return null
+                    const itemDef = getEquippableItemForPlant(plantId)
+                    if (!itemDef) return null
+                    const isItemEquippedOnCard = Boolean(equippedItem && equippedItem === itemDef.id)
+                    const availableQty = Number(farmingItems?.[itemDef.id as keyof FarmingInventory] || 0)
+                    if (!isItemEquippedOnCard && availableQty <= 0) return null
+
+                    return (
+                      <div className="jardin-card-item-row">
+                        {isItemEquippedOnCard ? (
+                          <button
+                            type="button"
+                            className="jardin-unequip-item-btn"
+                            disabled={isEquippingItem}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleUnequipItem(instanceId)
+                            }}
+                            title={`Desequipar ${itemDef.name} (volverá a tu inventario)`}
+                          >
+                            {itemDef.emoji} DESEQUIPAR
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="jardin-equip-item-btn"
+                            disabled={isEquippingItem}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleEquipItem(instanceId, itemDef.id)
+                            }}
+                            title={`Equipar ${itemDef.name} (${itemDef.statBonusText}) (Disponibles: ${availableQty})`}
+                          >
+                            {itemDef.emoji} EQUIPAR
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {isUnlocked && !canSproutThisCard && (
                     <div className="jardin-card-max-instances-tag">
@@ -1539,7 +1575,7 @@ export default function Jardin({
         </div>
       )}
 
-      {/* CONFIRMACIÓN DE EQUIPAR / DESEQUIPAR CINTURÓN DE CAMPEÓN */}
+      {/* CONFIRMACIÓN DE EQUIPAR / DESEQUIPAR ÍTEM EXCLUSIVO */}
       {beltConfirmModal && (
         <div
           className="jardin-upgrade-modal-overlay"
@@ -1548,29 +1584,38 @@ export default function Jardin({
           }}
         >
           <div className="jardin-upgrade-modal-card jardin-fuse-confirm-card" onClick={(e) => e.stopPropagation()}>
-            <div className="jardin-upgrade-modal-sparkle">🥊 ✨ 🥊</div>
+            <div className="jardin-upgrade-modal-sparkle">{beltConfirmModal.itemEmoji || '🥊'} ✨ {beltConfirmModal.itemEmoji || '🥊'}</div>
             <h3 className="jardin-upgrade-modal-title">
               {beltConfirmModal.action === 'equip'
-                ? '¿Deseas equipar el Cinturón de Campeón?'
-                : '¿Deseas desequipar el Cinturón de Campeón?'}
+                ? `¿Deseas equipar ${beltConfirmModal.itemName || 'el ítem'}?`
+                : `¿Deseas desequipar ${beltConfirmModal.itemName || 'el ítem'}?`}
             </h3>
 
-            <div className="jardin-fuse-confirm-plant">
-              <img
-                src="/game-assets/greenfoot/bonkchoy_champion.png"
-                alt="Bonk Choy Campeón"
-                className="jardin-fuse-confirm-img"
-              />
-              <span className="jardin-fuse-confirm-name">Bonk Choy</span>
-              <span className="jardin-fuse-confirm-level" style={{ color: '#4ade80' }}>
-                ❤️ +150 HP · ⚔️ +15 Daño
-              </span>
-            </div>
+            {(() => {
+              const modalPlantId = beltConfirmModal.plantId || 'bonkchoy'
+              const modalItemId = beltConfirmModal.itemId || 'champion_belt'
+              const previewCfg = getScaledPlantConfig(modalPlantId, 0, modalItemId)
+              const previewImg = previewCfg.icon || previewCfg.sprite
+
+              return (
+                <div className="jardin-fuse-confirm-plant">
+                  <img
+                    src={previewImg}
+                    alt={beltConfirmModal.plantName}
+                    className="jardin-fuse-confirm-img"
+                  />
+                  <span className="jardin-fuse-confirm-name">{beltConfirmModal.plantName}</span>
+                  <span className="jardin-fuse-confirm-level" style={{ color: '#4ade80' }}>
+                    {beltConfirmModal.bonusText || '✨ Bonificaciones activas'}
+                  </span>
+                </div>
+              )
+            })()}
 
             <p style={{ fontSize: '11px', color: '#94a3b8', margin: '8px 0 14px', lineHeight: 1.4, textAlign: 'center' }}>
               {beltConfirmModal.action === 'equip'
-                ? 'El Cinturón de Campeón es exclusivo para Bonk Choy. Al equiparlo, aumentará su salud en +150 HP y su daño en +15, y cambiará su aspecto visual a Bonk Choy Campeón en el Jardín y en el campo de batalla.'
-                : 'Al desequipar el Cinturón de Campeón, Bonk Choy volverá a sus estadísticas normales y el cinturón regresará a tus recursos de cultivo.'}
+                ? `${beltConfirmModal.itemName || 'Este ítem'} es exclusivo para ${beltConfirmModal.plantName}. Al equiparlo, aumentará sus estadísticas (${beltConfirmModal.bonusText || ''}) y actualizará su aspecto visual en el Jardín y en el campo de batalla.`
+                : `Al desequipar ${beltConfirmModal.itemName || 'el ítem'}, ${beltConfirmModal.plantName} volverá a sus estadísticas normales y el ítem regresará a tus recursos de cultivo.`}
             </p>
 
             <div className="jardin-fuse-confirm-actions">
@@ -1593,9 +1638,10 @@ export default function Jardin({
                 onClick={async () => {
                   const act = beltConfirmModal.action
                   const instId = beltConfirmModal.instanceId
+                  const itmId = beltConfirmModal.itemId || 'champion_belt'
                   setBeltConfirmModal(null)
                   if (act === 'equip') {
-                    await handleEquipItem(instId, 'champion_belt')
+                    await handleEquipItem(instId, itmId)
                   } else {
                     await handleUnequipItem(instId)
                   }
@@ -1604,8 +1650,8 @@ export default function Jardin({
                 {isEquippingItem
                   ? 'PROCESANDO...'
                   : beltConfirmModal.action === 'equip'
-                  ? '🥊 EQUIPAR CINTURÓN'
-                  : '🥊 DESEQUIPAR CINTURÓN'}
+                  ? `${beltConfirmModal.itemEmoji || '🥊'} EQUIPAR`
+                  : `${beltConfirmModal.itemEmoji || '🥊'} DESEQUIPAR`}
               </button>
             </div>
           </div>

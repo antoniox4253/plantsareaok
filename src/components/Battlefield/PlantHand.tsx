@@ -7,6 +7,7 @@ import {
   STAT_LABELS,
   getEligibleStatsForPlant,
   getScaledPlantConfig,
+  getEquippableItemDef,
   type PlantStatKey,
 } from '../../utils/gameConstants'
 const sunIcon = '/game-assets/greenfoot/sun1.webp'
@@ -356,14 +357,18 @@ export default function PlantHand({
                 )}
 
                 {/* Equipped Item Badge in top-left corner of seed packet */}
-                {cardData.equippedItem === 'champion_belt' && (
-                  <div
-                    className="plant-hand__equipped-item-badge"
-                    title="🥊 Cinturón de Campeón (+150 HP, +15 DMG)"
-                  >
-                    🥊
-                  </div>
-                )}
+                {(() => {
+                  const equippedDef = getEquippableItemDef(cardData.equippedItem)
+                  if (!equippedDef) return null
+                  return (
+                    <div
+                      className="plant-hand__equipped-item-badge"
+                      title={`${equippedDef.emoji} ${equippedDef.name} (${equippedDef.statBonusText})`}
+                    >
+                      {equippedDef.emoji}
+                    </div>
+                  )
+                })()}
 
                 {/* PC Keyboard Hotkey Badge */}
                 <span className="plant-hand__hotkey-badge">{vIdx + 1}</span>
@@ -388,29 +393,33 @@ export default function PlantHand({
                 )}
 
                 {/* Hover Buffs Tooltip */}
-                {(cardData.level > 0 || Boolean(cardData.equippedItem)) && (
-                  <div className="plant-hand__tooltip">
-                    <div className="plant-hand__tooltip-head">
-                      <span>{cardData.equippedItem === 'champion_belt' ? 'Bonk Choy Campeón' : config.name}</span>
-                      {cardData.level > 0 && (
-                        <span className="plant-hand__tooltip-lvl">⭐ LVL {cardData.level}</span>
-                      )}
-                    </div>
-                    <div className="plant-hand__tooltip-buffs">
-                      {cardData.equippedItem === 'champion_belt' && (
-                        <span style={{ color: '#facc15', fontWeight: 800 }}>
-                          🥊 Cinturón: +150 HP · +15 Daño
-                        </span>
-                      )}
-                      {cardData.grouped.map((g, idx) => (
+                {(() => {
+                  const equippedDef = getEquippableItemDef(cardData.equippedItem)
+                  if (cardData.level <= 0 && !equippedDef) return null
+                  return (
+                    <div className="plant-hand__tooltip">
+                      <div className="plant-hand__tooltip-head">
+                        <span>{equippedDef ? equippedDef.equippedPlantName : config.name}</span>
+                        {cardData.level > 0 && (
+                          <span className="plant-hand__tooltip-lvl">⭐ LVL {cardData.level}</span>
+                        )}
+                      </div>
+                      <div className="plant-hand__tooltip-buffs">
+                        {equippedDef && (
+                          <span style={{ color: '#facc15', fontWeight: 800 }}>
+                            {equippedDef.emoji} {equippedDef.name}: {equippedDef.statBonusText}
+                          </span>
+                        )}
+                        {cardData.grouped.map((g, idx) => (
                         <span key={idx} style={{ color: g.color }}>
                           {g.label}
                         </span>
                       ))}
                     </div>
                   </div>
-                )}
-              </button>
+                )
+              })()}
+            </button>
             )
           })}
         </div>
