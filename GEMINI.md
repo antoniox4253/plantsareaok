@@ -102,10 +102,15 @@ Para agregar nuevos ítems equipables exclusivos a diferentes plantas (ej. Cintu
   - Mantener `equippedItem` opcional para preservar compatibilidad con suites de pruebas previas.
 - `src/engine/simulate.ts`:
   - `crearPlantaPropia` y `crearPlantaDelRival` deben propagar `equippedItem` y asignar `spriteOverride` cuando el sprite escalado difiere del sprite base.
+  - En el bucle de simulación `procesarLado`, `getScaledPlantConfig` **SIEMPRE debe recibir `planta.equippedItem`** para que los ataques y atributos escalados coincidan en cada tic.
 - `src/engine/reconstruir.ts`:
   - `AccionRegistrada` debe conservar `equippedItem` para que las reconstrucciones en tiempo real no degraden la planta.
+- `src/engine/asyncP1History.ts` & `src/engine/asyncP1Capture.ts`:
+  - `AccionP1RankedEstricta` y `canonicalAction` **deben almacenar y normalizar `equippedItem`**. Si se omite, al reconstruir la partida tras la confirmación de una acción se perderá el ítem equipado y la planta revertirá a su asset viejo.
+- `src/engine/asyncOpponent.ts`:
+  - Al reconstruir o avanzar la línea temporal (`runAsyncTimeline`), al encolar `own_plant` y `rival_plant` en `state.pending`, proyectar siempre `cartaP1.equippedItem ?? j.equippedItem` y `carta.equippedItem`.
 - `src/hooks/useGameEngine.ts`:
-  - Propagar `cardEquippedItem` a `ejecutarCapturaPlantP1` y a `encolarAccionDelRival` para el rival.
+  - Propagar `cardEquippedItem` a `apuntarJugadaPropia`, `ejecutarCapturaPlantP1` y a `encolarAccionDelRival` para el rival.
   - **Fallback de seguridad**: Si `mazoMioRef` no incluyera `equippedItem` por alguna versión de sala legada, consultar como respaldo `localStorage` (`plant_instances`) para asegurar que el jugador nunca pierda sus bonificaciones en combate.
 
 ---
@@ -114,6 +119,7 @@ Para agregar nuevos ítems equipables exclusivos a diferentes plantas (ej. Cintu
 - `src/components/Battlefield/Battlefield.tsx`:
   - `selectedCardConfig`: Debe resolverse con `getScaledPlantConfig(selectedCard, rolls, equippedItem)` para que la previsualización fantasma en el césped (`previewPlantConfig`) muestre el asset equipado mientras el jugador apunta la casilla.
   - Renderizado de unidades aliadas y rivales: `plants.map` y `enemies.map` deben resolver su `config` con `getScaledPlantConfig(entity.plantId, entity.statRolls, entity.equippedItem)`.
+  - Plantas en brote (`pendingOwnPlants`): Resolver con `getScaledPlantConfig(pp.plantId, pp.statRolls, pp.equippedItem)`.
 - `src/components/Battlefield/PlantHand.tsx`:
   - Recibir `deckCards={mazoMioParsed}` desde el campo de batalla.
   - `getSlotCardLevelData` debe resolver `equippedItem`.
@@ -131,5 +137,6 @@ Para agregar nuevos ítems equipables exclusivos a diferentes plantas (ej. Cintu
 5. `FarmingPreview.tsx`: Inicialización en `0` para build.
 6. `Jardin.tsx`: Handler de click en recursos, modal de confirmación y botón en carta.
 7. `PlantHand.tsx`: Usar `scaledConfig` para `packetActive` / `packetDisabled` y badge de ítem.
-8. `championBelt.test.ts`: Pruebas de stats, fusiones, exclusividad y serialización de mazo.
+8. `asyncP1History.ts` & `asyncOpponent.ts`: Preservar `equippedItem` en `AccionP1RankedEstricta`, `canonicalAction`, `apuntarJugadaPropia` y reconstrucciones de línea temporal.
+9. `championBelt.test.ts`: Pruebas de stats, fusiones, exclusividad, serialización de mazo y reconstrucción de timeline.
 

@@ -56,6 +56,7 @@ export interface AccionP1RankedEstricta {
   targetId?: string
   statRolls?: PlantStatKey[]
   level?: number
+  equippedItem?: string | null
 }
 
 // Tipo de compatibilidad para código existente
@@ -318,6 +319,11 @@ export function validarAccionP1RankedEstricta(
       }
     }
 
+    const equippedItem =
+      typeof a.equippedItem === 'string' && a.equippedItem.trim().length > 0
+        ? a.equippedItem
+        : null
+
     return {
       ok: true,
       accion: {
@@ -331,6 +337,7 @@ export function validarAccionP1RankedEstricta(
         col: a.col,
         statRolls,
         level,
+        equippedItem,
       },
     }
   }
@@ -356,6 +363,7 @@ export function sonAccionesIdenticas(a: AccionP1RankedEstricta, b: AccionP1Ranke
       a.lane === b.lane &&
       a.col === b.col &&
       (a.level ?? 0) === (b.level ?? 0) &&
+      (a.equippedItem ?? null) === (b.equippedItem ?? null) &&
       JSON.stringify(a.statRolls ?? []) === JSON.stringify(b.statRolls ?? [])
     )
   }

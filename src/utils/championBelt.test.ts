@@ -78,4 +78,52 @@ describe('Sistema de Cinturón de Campeón (Bonk Choy)', () => {
     expect(planta.maxHp).toBeGreaterThan(PLANT_CONFIGS.bonkchoy.maxHp)
     expect(planta.damage).toBeGreaterThan(PLANT_CONFIGS.bonkchoy.damage!)
   })
+
+  it('La reconstrucción asíncrona (reconstruirPartidaAsync) preserva el cinturón de campeón sin degradar la planta', async () => {
+    const { validarYNormalizarAccionesP1Ranked } = await import('../engine/asyncP1History')
+
+    const rawActions = [
+      {
+        seq: 1,
+        issuedTick: 10,
+        tick: 16,
+        kind: 'plant',
+        plantId: 'bonkchoy',
+        slot: 1,
+        lane: 1,
+        col: 0,
+        statRolls: ['damage'],
+        level: 1,
+        equippedItem: 'champion_belt',
+      },
+    ]
+
+    const valRes = validarYNormalizarAccionesP1Ranked(rawActions)
+    expect(valRes.ok).toBe(true)
+    if (valRes.ok) {
+      expect(valRes.acciones[0].equippedItem).toBe('champion_belt')
+    }
+
+    const { reconstruirHasta } = await import('../engine/reconstruir')
+    const jugadas: any[] = [
+      {
+        id: 1,
+        mia: true,
+        tick: 10,
+        kind: 'plant',
+        plantId: 'bonkchoy',
+        lane: 1,
+        col: 0,
+        statRolls: ['damage'],
+        level: 1,
+        equippedItem: 'champion_belt',
+      },
+    ]
+
+    const estado = reconstruirHasta(12345, jugadas, 50)
+    const bonk = estado.plants.find((p) => p.plantId === 'bonkchoy')
+    expect(bonk).toBeDefined()
+    expect(bonk?.equippedItem).toBe('champion_belt')
+    expect(bonk?.spriteOverride).toBe('/game-assets/greenfoot/bonkchoy_champion.png')
+  })
 })

@@ -1141,6 +1141,7 @@ export function useGameEngine() {
           col,
           statRolls: rolls,
           level: cardLevel,
+          equippedItem: cardEquippedItem,
         })
         costeDeMisJugadasRef.current.set(claveDeJugada(enTic, lane, col), {
           coste: config.cost,
@@ -1860,7 +1861,7 @@ export function useGameEngine() {
     placePlant,
     digPlant,
     pendingOwnPlants: (stateRef.current.pending || []).filter(
-      (p): p is { atTick: number; kind: 'own_plant'; plantId: PlantId; lane: number; col: number; statRolls?: PlantStatKey[]; level?: number } =>
+      (p): p is { atTick: number; kind: 'own_plant'; plantId: PlantId; lane: number; col: number; statRolls?: PlantStatKey[]; level?: number; equippedItem?: string | null } =>
         p.kind === 'own_plant' && typeof p.col === 'number'
     ),
     encolarAccionDelRival,

@@ -1950,7 +1950,7 @@ export default function Battlefield({
 
       {/* Plantas Propias en fase de Brote / Siembra (Feedback visual instantáneo a 0ms) */}
       {pendingOwnPlants.map((pp, idx) => {
-        const config = PLANT_CONFIGS[pp.plantId]
+        const config = getScaledPlantConfig(pp.plantId, pp.statRolls ?? [], pp.equippedItem)
         const laneConfig = LANES_CONFIG[pp.lane]
         if (!laneConfig || !config) return null
         const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS

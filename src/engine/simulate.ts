@@ -645,7 +645,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
       continue
     }
 
-    const config = getScaledPlantConfig(planta.plantId, planta.statRolls ?? [])
+    const config = getScaledPlantConfig(planta.plantId, planta.statRolls ?? [], planta.equippedItem)
 
     // ── CONGELADA ─────────────────────────────────────────────────────────────
     if (planta.frozenUntil !== undefined) {

@@ -714,6 +714,7 @@ function intentarEjecutarPlant(
     col: camina ? undefined : targetCol,
     statRolls,
     level: statRolls.length > 0 ? statRolls.length : (carta.level ?? 0),
+    equippedItem: carta.equippedItem ?? null,
   })
 
   return true
@@ -1154,7 +1155,8 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         const slot = cartaP1.slot ?? (j.slot ?? 0)
         const plantIdValido = cartaP1.plantId as PlantId
         const statRolls = rollsValidos(cartaP1.statRolls ?? j.statRolls)
-        const config = getScaledPlantConfig(plantIdValido, statRolls)
+        const equippedItem = cartaP1.equippedItem ?? j.equippedItem ?? null
+        const config = getScaledPlantConfig(plantIdValido, statRolls, equippedItem)
         if (!config || state.sunBank < config.cost) {
           // Soles insuficientes en este tic en el replay autoritativo: se descarta la acción sin abortar
           continue
@@ -1187,6 +1189,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
           col: camina ? undefined : j.col,
           statRolls,
           level: statRolls.length > 0 ? statRolls.length : (cartaP1.level ?? j.level ?? 0),
+          equippedItem,
         })
         continue
       }
