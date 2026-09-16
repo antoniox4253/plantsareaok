@@ -3151,6 +3151,30 @@ export const SupabaseService = {
     }
   },
 
+  /** Obtiene los ganadores recientes con los mejores premios de la ruleta para la marquesina */
+  async getRecentLotteryWinners(limit = 15): Promise<Array<{
+    id: string
+    username: string
+    description: string
+    amount_gems: number
+    created_at: string
+  }>> {
+    if (!isSupabaseConfigured()) return []
+    try {
+      const { data, error } = await (supabase as any).rpc('get_recent_lottery_winners', {
+        p_limit: limit,
+      })
+      if (error) {
+        logError('getRecentLotteryWinners', error)
+        return []
+      }
+      return (data as any[]) || []
+    } catch (e) {
+      logError('getRecentLotteryWinners', e)
+      return []
+    }
+  },
+
   /** Guarda todos los sectores de la ruleta y valida que los pesos sumen 100 */
   async adminSaveLotterySectors(sectors: Array<{
     sectorId: string

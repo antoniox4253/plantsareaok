@@ -1236,9 +1236,9 @@ export function useInventory() {
     const packs: InventoryPack[] = (res.packIds || []).map((id) => ({
       instanceId: id,
       packId,
-      name: def.name,
-      icon: def.icon,
-      rarity: def.rarity,
+      name: def?.name || packId,
+      icon: def?.icon || '',
+      rarity: def?.rarity || 'common',
       purchasedAt: Date.now(),
     }))
     return { success: true, packs, goldAdded }

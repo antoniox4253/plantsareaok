@@ -61,8 +61,8 @@ const LORE_MAP: Record<string, string> = {
   twinsunflower: 'Dos cabezas producen mejor que una. Twin Sunflower ilumina el terreno con energía solar multiplicada.',
   threepeater: 'Threepeater vigila tres líneas a la vez brindando cobertura de fuego múltiple.',
   tallnut: 'Tall-nut es un muro gigante inamovible. Su gran altura imposibilita el avance enemigo y resiste el doble de daño.',
-  jalapeno: 'Jalapeño es de 1 solo uso. Desata una bola de fuego ardiente que quema la fila entera limpiando el carril.',
-  iceberglettuce: 'Iceberg Lettuce cuesta 0 Soles y es de 1 solo uso. Al colocarse en el campo, congela a todos los enemigos durante 7 segundos.',
+  jalapeno: 'Jalapeño es de 1 solo uso. Desata una bola de fuego ardiente que quema la fila entera limpiando el carril (1000 daño + 150 por nivel).',
+  iceberglettuce: 'Iceberg Lettuce cuesta 0 Soles y es de 1 solo uso. Al colocarse en el campo, congela a todos los enemigos durante 7 segundos (+2s por cada nivel).',
   aloe: 'Aloe Curandera escanea el carril y cura con ondas de luz mística a las plantas heridas aliadas.',
 }
 

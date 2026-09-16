@@ -3,6 +3,7 @@ import type { PlantCardInstance, PlantId } from '../../types/game'
 import {
   PLANT_CONFIGS,
   STAT_LABELS,
+  getFusionGoldCost,
   type PlantStatKey,
 } from '../../utils/gameConstants'
 import background from '../../assets/images/background.webp'
@@ -19,19 +20,29 @@ const ALL_PLANTS = Object.keys(PLANT_CONFIGS) as PlantId[]
 
 function groupRolls(rolls: PlantStatKey[]) {
   const map = new Map<PlantStatKey, number>()
-  rolls.forEach((r) => {
+  ;(rolls || []).filter(Boolean).forEach((r) => {
     map.set(r, (map.get(r) || 0) + 1)
   })
   return Array.from(map.entries()).map(([stat, count]) => {
-    const meta = STAT_LABELS[stat]
+    const meta = (stat && STAT_LABELS[stat]) || {
+      label: String(stat || 'Mejora'),
+      icon: '⚡',
+      suffix: `+${count * 15}%`,
+      color: '#fbbf24',
+    }
     const totalPct = count * 15
-    const label = count > 1 ? `${meta.icon} +${totalPct}% ${meta.suffix.replace('+15% ', '').replace('-15% ', '')} (x${count})` : `${meta.icon} ${meta.suffix}`
+    const suffix = meta.suffix || `+${count * 15}%`
+    const icon = meta.icon || '⚡'
+    const label =
+      count > 1
+        ? `${icon} +${totalPct}% ${suffix.replace('+15% ', '').replace('-15% ', '')} (x${count})`
+        : `${icon} ${suffix}`
     return {
       stat,
       count,
       totalPct,
       label,
-      color: meta.color,
+      color: meta.color || '#fbbf24',
       meta,
     }
   })
@@ -87,7 +98,6 @@ interface JardinProps {
   onRewardsChanged?: () => Promise<void> | void
 }
 
-const FUSION_GOLD_COST = 1000
 const FUSION_COPIES_REQ = 5
 
 export const PLANT_ELIGIBLE_STATS_LABELS: Record<string, string[]> = {
@@ -101,10 +111,10 @@ export const PLANT_ELIGIBLE_STATS_LABELS: Record<string, string[]> = {
   repeater: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
   squash: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%'],
   twinsunflower: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
-  jalapeno: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%'],
+  jalapeno: ['⚔️ Daño +150', '⏱️ Recarga -15%'],
   aloe: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
   tallnut: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
-  iceberglettuce: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
+  iceberglettuce: ['❄️ Duración +2s', '⏱️ Recarga -15%'],
   threepeater: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
 }
 
@@ -155,6 +165,7 @@ export default function Jardin({
     level: number
     name: string
     icon: string
+    cost: number
   } | null>(null)
   const [isFusing, setIsFusing] = useState(false)
   const [fuseAlert, setFuseAlert] = useState<{ title: string; message: string; icon: string } | null>(null)
@@ -726,8 +737,8 @@ export default function Jardin({
                       </span>
                     )}
                     <img
-                      src={group.first.icon}
-                      alt={group.first.name}
+                      src={group.first?.icon || ''}
+                      alt={group.first?.name || ''}
                       className="jardin-pack-card__img"
                     />
                     <div className="jardin-pack-card__info">
@@ -1070,7 +1081,7 @@ export default function Jardin({
 
                   {isUnlocked && (
                     <div className="jardin-card-copies-tag">
-                      COPIAS: {copies}/{FUSION_COPIES_REQ} · 💰 {FUSION_GOLD_COST} {isMaxLevel ? '(MÁX)' : ''}
+                      COPIAS: {copies}/{FUSION_COPIES_REQ} · 💰 {getFusionGoldCost(plantId, level).toLocaleString()} {isMaxLevel ? '(MÁX)' : ''}
                     </div>
                   )}
 
@@ -1105,15 +1116,17 @@ export default function Jardin({
                           className={`jardin-fuse-btn ${hasCopies ? 'jardin-fuse-btn--pulse' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation()
+                            const cost = getFusionGoldCost(plantId, level)
                             setFuseCandidate({
                               plantId,
                               instanceId,
                               level,
                               name: displayName,
                               icon: config.icon,
+                              cost,
                             })
                           }}
-                          title={hasCopies ? `Fusionar y mejorar a Nivel ${level + 1} (1,000💰 + 5🧩)` : `Requiere 5 copias para fusionar (${copies}/5)`}
+                          title={hasCopies ? `Fusionar y mejorar a Nivel ${level + 1} (${getFusionGoldCost(plantId, level).toLocaleString()}💰 + 5🧩)` : `Requiere 5 copias para fusionar (${copies}/5)`}
                         >
                           🔥 FUSIONAR
                         </button>
@@ -1189,18 +1202,18 @@ export default function Jardin({
                 <span className="jardin-fuse-req-icon">💰</span>
                 <span
                   className="jardin-fuse-req-text"
-                  style={{ color: (userGold ?? 0) >= FUSION_GOLD_COST ? '#fde047' : '#f87171' }}
+                  style={{ color: (userGold ?? 0) >= fuseCandidate.cost ? '#fde047' : '#f87171' }}
                 >
-                  {FUSION_GOLD_COST} Oro (tienes {userGold ?? 0}💰)
+                  {fuseCandidate.cost.toLocaleString()} Oro (tienes {(userGold ?? 0).toLocaleString()}💰)
                 </span>
               </div>
             </div>
 
-            {((userGold ?? 0) < FUSION_GOLD_COST || (plantCopies[fuseCandidate.plantId] || 0) < 5) && (
+            {((userGold ?? 0) < fuseCandidate.cost || (plantCopies[fuseCandidate.plantId] || 0) < 5) && (
               <div style={{ color: '#f87171', fontSize: '11px', fontWeight: 800, marginTop: '10px', textAlign: 'center' }}>
                 {(plantCopies[fuseCandidate.plantId] || 0) < 5
                   ? `⚠️ Copias insuficientes: necesitas 5 copias de ${fuseCandidate.name} (tienes ${plantCopies[fuseCandidate.plantId] || 0}/5).`
-                  : `⚠️ Oro insuficiente para fusionar (requiere ${FUSION_GOLD_COST} Oro).`}
+                  : `⚠️ Oro insuficiente para fusionar (requiere ${fuseCandidate.cost.toLocaleString()} Oro).`}
               </div>
             )}
 
@@ -1216,7 +1229,7 @@ export default function Jardin({
               <button
                 type="button"
                 className="jardin-upgrade-modal-btn jardin-fuse-btn-confirm"
-                disabled={isFusing || (userGold ?? 0) < FUSION_GOLD_COST || (plantCopies[fuseCandidate.plantId] || 0) < 5}
+                disabled={isFusing || (userGold ?? 0) < fuseCandidate.cost || (plantCopies[fuseCandidate.plantId] || 0) < 5}
                 onClick={handleConfirmFuse}
               >
                 {isFusing ? 'FUSIONANDO...' : '🔥 FUSIONAR'}
@@ -1344,30 +1357,43 @@ export default function Jardin({
             <h3 className="jardin-upgrade-modal-title">¡MEJORA EXITOSA!</h3>
             <span className="jardin-upgrade-modal-level">NIVEL {upgradeModal.newLevel}</span>
 
-            <img
-              src={PLANT_CONFIGS[upgradeModal.plantId].icon}
-              alt={PLANT_CONFIGS[upgradeModal.plantId].name}
-              className="jardin-upgrade-modal-img"
-            />
-            <h4 className="jardin-upgrade-modal-name">{PLANT_CONFIGS[upgradeModal.plantId].name}</h4>
+            {(() => {
+              const plantConf = PLANT_CONFIGS[upgradeModal.plantId]
+              const rolledMeta = (upgradeModal.rolledStat && STAT_LABELS[upgradeModal.rolledStat]) || {
+                icon: '⚡',
+                color: '#4ade80',
+                suffix: '+15%',
+                label: upgradeModal.rolledStat || 'Mejora',
+              }
+              return (
+                <>
+                  <img
+                    src={plantConf?.icon}
+                    alt={plantConf?.name || 'Planta'}
+                    className="jardin-upgrade-modal-img"
+                  />
+                  <h4 className="jardin-upgrade-modal-name">{plantConf?.name || 'Planta'}</h4>
 
-            <div
-              className="jardin-upgrade-modal-rolled-box"
-              style={{ borderColor: STAT_LABELS[upgradeModal.rolledStat].color }}
-            >
-              <span className="jardin-upgrade-modal-stat-icon">
-                {STAT_LABELS[upgradeModal.rolledStat].icon}
-              </span>
-              <span
-                className="jardin-upgrade-modal-stat-val"
-                style={{ color: STAT_LABELS[upgradeModal.rolledStat].color }}
-              >
-                {STAT_LABELS[upgradeModal.rolledStat].suffix}
-              </span>
-              <span className="jardin-upgrade-modal-stat-name">
-                {STAT_LABELS[upgradeModal.rolledStat].label}
-              </span>
-            </div>
+                  <div
+                    className="jardin-upgrade-modal-rolled-box"
+                    style={{ borderColor: rolledMeta.color }}
+                  >
+                    <span className="jardin-upgrade-modal-stat-icon">
+                      {rolledMeta.icon}
+                    </span>
+                    <span
+                      className="jardin-upgrade-modal-stat-val"
+                      style={{ color: rolledMeta.color }}
+                    >
+                      {rolledMeta.suffix}
+                    </span>
+                    <span className="jardin-upgrade-modal-stat-name">
+                      {rolledMeta.label}
+                    </span>
+                  </div>
+                </>
+              )
+            })()}
 
             <p className="jardin-upgrade-modal-desc">
               ¡Esta planta acaba de obtener un <strong>+15% aleatorio</strong> en este atributo! Cada planta mejorará de forma única.

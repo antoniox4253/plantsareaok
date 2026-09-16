@@ -39,7 +39,7 @@ export interface PlantConfig {
  * gameConstants porque PlantEntity la necesita, y gameConstants ya importa de
  * este fichero: al revés habría un ciclo.
  */
-export type PlantStatKey = 'hp' | 'damage' | 'attackSpeed' | 'moveSpeed' | 'cooldown'
+export type PlantStatKey = 'hp' | 'damage' | 'attackSpeed' | 'moveSpeed' | 'cooldown' | 'duration'
 
 export interface PlantEntity {
   id: string

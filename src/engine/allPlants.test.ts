@@ -170,6 +170,26 @@ describe('allPlants.test.ts - Catálogo completo de las 15 plantas y escalado', 
         correr(state, 2)
         expect(dummyEnemy.hp).toBe(200) // 1200 - 1000 = 200
       })
+
+      it('aumenta exactamente 150 de daño por nivel de carta (Nivel 2 = 1300 de daño)', () => {
+        const state: GameState = createBattleState(7777, false, true)
+        const dummyEnemy = crearPlantaDelRival(state, 'tallnut', 0, 2, [], 0)
+        dummyEnemy.hp = 1400
+        dummyEnemy.maxHp = 1400
+        state.enemyPlants = [dummyEnemy]
+
+        state.pending.push({
+          atTick: state.tick,
+          kind: 'own_plant',
+          plantId: 'jalapeno',
+          lane: 0,
+          col: 0,
+          level: 2, // Nivel 2 -> +300 daño (1000 + 300 = 1300)
+        })
+
+        correr(state, 2)
+        expect(dummyEnemy.hp).toBe(100) // 1400 - 1300 = 100
+      })
     })
 
     describe('Twin Sunflower', () => {
@@ -212,6 +232,37 @@ describe('allPlants.test.ts - Catálogo completo de las 15 plantas y escalado', 
 
         expect(rival.frozenUntil).toBeDefined()
         expect(rival.frozenUntil!).toBeGreaterThan(state.tick)
+      })
+
+      it('aumenta el tiempo de congelación en 2 segundos más por nivel de fusión', () => {
+        // Nivel 0 (Base): 7 segundos (212 ticks a 33ms)
+        const s0 = createBattleState(1111, false, true)
+        const r0 = crearPlantaDelRival(s0, 'peashooter', 0, 4, [], 0)
+        s0.enemyPlants = [r0]
+        s0.pending.push({ atTick: s0.tick, kind: 'own_plant', plantId: 'iceberglettuce', lane: 0, col: 1, level: 0 })
+        correr(s0, 2)
+        const duracionLvl0 = r0.frozenUntil! - s0.tick
+
+        // Nivel 1: 9 segundos (+2s = +60/61 ticks)
+        const s1 = createBattleState(1111, false, true)
+        const r1 = crearPlantaDelRival(s1, 'peashooter', 0, 4, [], 0)
+        s1.enemyPlants = [r1]
+        s1.pending.push({ atTick: s1.tick, kind: 'own_plant', plantId: 'iceberglettuce', lane: 0, col: 1, level: 1 })
+        correr(s1, 2)
+        const duracionLvl1 = r1.frozenUntil! - s1.tick
+
+        // Nivel 2: 11 segundos (+4s)
+        const s2 = createBattleState(1111, false, true)
+        const r2 = crearPlantaDelRival(s2, 'peashooter', 0, 4, [], 0)
+        s2.enemyPlants = [r2]
+        s2.pending.push({ atTick: s2.tick, kind: 'own_plant', plantId: 'iceberglettuce', lane: 0, col: 1, level: 2 })
+        correr(s2, 2)
+        const duracionLvl2 = r2.frozenUntil! - s2.tick
+
+        expect(duracionLvl1).toBeGreaterThan(duracionLvl0)
+        expect(duracionLvl2).toBeGreaterThan(duracionLvl1)
+        // La diferencia entre nivel 1 y nivel 0 debe ser aproximadamente 2 segundos (~60 ticks)
+        expect(duracionLvl1 - duracionLvl0).toBeGreaterThanOrEqual(60)
       })
     })
 

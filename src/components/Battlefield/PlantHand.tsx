@@ -55,15 +55,22 @@ function getSlotCardLevelData(slotIndex: number, plantId: PlantId) {
   } catch {}
 
   const map = new Map<PlantStatKey, number>()
-  rolls.forEach((r) => map.set(r, (map.get(r) || 0) + 1))
+  ;(rolls || []).filter(Boolean).forEach((r) => map.set(r, (map.get(r) || 0) + 1))
   const grouped = Array.from(map.entries()).map(([stat, count]) => {
-    const meta = STAT_LABELS[stat]
+    const meta = (stat && STAT_LABELS[stat]) || {
+      label: String(stat || 'Mejora'),
+      icon: '⚡',
+      suffix: `+${count * 15}%`,
+      color: '#fbbf24',
+    }
     const totalPct = count * 15
+    const suffix = meta.suffix || `+${count * 15}%`
+    const icon = meta.icon || '⚡'
     const label =
       count > 1
-        ? `${meta.icon} +${totalPct}% ${meta.suffix.replace('+15% ', '').replace('-15% ', '')} (x${count})`
-        : `${meta.icon} ${meta.suffix}`
-    return { stat, count, label, color: meta.color }
+        ? `${icon} +${totalPct}% ${suffix.replace('+15% ', '').replace('-15% ', '')} (x${count})`
+        : `${icon} ${suffix}`
+    return { stat, count, label, color: meta.color || '#fbbf24' }
   })
 
   return { level, rolls, grouped }

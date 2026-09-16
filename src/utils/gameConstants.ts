@@ -191,7 +191,7 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
     packetActive: '/game-assets/plants/jalapeno_hd.webp',
     packetDisabled: '/game-assets/plants/jalapeno_hd.webp',
     sprite: '/game-assets/plants/jalapeno_hd.webp',
-    description: 'Planta Explosiva de Carril de 1 Solo Uso. Al colocarlo en el carril, explota quemando la línea entera e infligiendo 1000 de daño masivo antes de desaparecer.',
+    description: 'Planta Explosiva de Carril de 1 Solo Uso. Al colocarlo en el carril, explota quemando la línea entera e infligiendo 1000 de daño (+150 por nivel) antes de desaparecer.',
   },
   iceberglettuce: {
     id: 'iceberglettuce',
@@ -205,7 +205,7 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
     packetActive: '/game-assets/greenfoot/iceberglettucepacket1.webp',
     packetDisabled: '/game-assets/greenfoot/iceberglettucepacket1.webp',
     sprite: '/game-assets/plants/iceberglettuce_hd.webp',
-    description: 'Planta de Hielo de 0 Soles de 1 Solo Uso. Al colocarse en el campo, congela a todos los enemigos durante 7 segundos, dejándolos completamente inmóviles e incapaces de atacar o actuar.',
+    description: 'Planta de Hielo de 0 Soles de 1 Solo Uso. Al colocarse en el campo, congela a todos los enemigos durante 7 segundos (+2s por cada nivel), dejándolos inmóviles e incapaces de atacar o actuar.',
   },
   aloe: {
     id: 'aloe',
@@ -309,9 +309,17 @@ export const STAT_LABELS: Record<PlantStatKey, { label: string; icon: string; su
   attackSpeed: { label: 'Velocidad de Disparo', icon: '⚡', suffix: '+15% Cadencia', color: '#fbbf24' },
   moveSpeed: { label: 'Velocidad de Movimiento', icon: '👟', suffix: '+15% Movimiento', color: '#60a5fa' },
   cooldown: { label: 'Recarga de Carta', icon: '⏳', suffix: '-15% Recarga', color: '#c084fc' },
+  duration: { label: 'Duración de Efecto', icon: '❄️', suffix: '+2s Duración', color: '#38bdf8' },
 }
 
 export function getEligibleStatsForPlant(plantId: PlantId): PlantStatKey[] {
+  if (plantId === 'iceberglettuce') {
+    return ['duration', 'cooldown']
+  }
+  if (plantId === 'jalapeno') {
+    return ['damage', 'cooldown']
+  }
+
   const base = PLANT_CONFIGS[plantId]
   if (!base) return ['hp', 'cooldown']
 
@@ -330,6 +338,21 @@ export function getEligibleStatsForPlant(plantId: PlantId): PlantStatKey[] {
   return list
 }
 
+export function getFusionGoldCost(plantId: PlantId, level: number): number {
+  let base = 1000
+  if (plantId === 'threepeater' || plantId === 'iceberglettuce') {
+    base = 3500
+  } else if (plantId === 'aloe' || plantId === 'tallnut') {
+    base = 3000
+  } else if (plantId === 'twinsunflower' || plantId === 'jalapeno') {
+    base = 2500
+  } else if (['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash'].includes(plantId)) {
+    base = 1500
+  }
+
+  return Math.round(base * Math.pow(1.5, Math.max(0, level)))
+}
+
 export function getScaledPlantConfig(
   plantId: PlantId,
   levelOrRolls: number | PlantStatKey[] = 0
@@ -345,19 +368,34 @@ export function getScaledPlantConfig(
     let attackSpeedMultiplier = 1
     let moveSpeedMultiplier = 1
     let cooldownMultiplier = 1
+    let extraDamage = 0
 
     levelOrRolls.forEach((stat) => {
-      if (stat === 'hp') hpMultiplier += 0.15
-      if (stat === 'damage') dmgMultiplier += 0.15
+      // Jalapeño e Iceberg Lettuce son de 1 solo uso y no escalan vida
+      if (stat === 'hp' && plantId !== 'jalapeno' && plantId !== 'iceberglettuce') {
+        hpMultiplier += 0.15
+      }
+      if (stat === 'damage') {
+        if (plantId === 'jalapeno') {
+          extraDamage += 150
+        } else {
+          dmgMultiplier += 0.15
+        }
+      }
       if (stat === 'attackSpeed') attackSpeedMultiplier *= 0.85 // 15% faster delay
       if (stat === 'moveSpeed') moveSpeedMultiplier += 0.15
       if (stat === 'cooldown') cooldownMultiplier *= 0.85 // 15% faster cooldown
     })
 
+    const finalDamage =
+      base.damage !== undefined
+        ? Math.round(base.damage * dmgMultiplier) + extraDamage
+        : undefined
+
     return {
       ...base,
-      maxHp: Math.round(base.maxHp * hpMultiplier),
-      damage: base.damage !== undefined ? Math.round(base.damage * dmgMultiplier) : undefined,
+      maxHp: plantId === 'jalapeno' || plantId === 'iceberglettuce' ? base.maxHp : Math.round(base.maxHp * hpMultiplier),
+      damage: finalDamage,
       attackSpeedMs:
         base.attackSpeedMs !== undefined
           ? Math.round(base.attackSpeedMs * attackSpeedMultiplier)
@@ -372,6 +410,16 @@ export function getScaledPlantConfig(
 
   // Fallback for number level
   if (levelOrRolls <= 0) return base
+  if (plantId === 'jalapeno') {
+    return {
+      ...base,
+      damage: (base.damage ?? 1000) + levelOrRolls * 150,
+    }
+  }
+  if (plantId === 'iceberglettuce') {
+    return base
+  }
+
   const scale = 1 + levelOrRolls * 0.15
   return {
     ...base,

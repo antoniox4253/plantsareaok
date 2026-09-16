@@ -29,6 +29,7 @@ import ColosseumModal from '../Colosseum/ColosseumModal'
 import TournamentModal from '../Tournament/TournamentModal'
 import GlobalChat from '../GlobalChat/GlobalChat'
 import { tournamentService } from '../../services/tournamentService'
+import { lotteryService } from '../../services/lotteryService'
 import type { ColosseumBetAmount, PlantId, TournamentModel } from '../../types/game'
 import './MainMenu.css'
 
@@ -284,6 +285,37 @@ export default function MainMenu({
       void loadUpcomingTournament()
     }
   }, [isTournamentModalOpen, loadUpcomingTournament])
+
+  // ── RULETA DE LA SUERTE: CINTILLO / MARQUESINA DE MEJORES PREMIOS (15 SEGUNDOS) ──
+  const [showLotteryTicker, setShowLotteryTicker] = useState(true)
+  const [lotteryWinners, setLotteryWinners] = useState<Array<{
+    id: string
+    username: string
+    description: string
+    amount_gems: number
+    created_at: string
+  }>>([])
+
+  useEffect(() => {
+    let isMounted = true
+    void (lotteryService as any).getRecentLotteryWinners(10).then((w: any) => {
+      if (isMounted && w && Array.isArray(w) && w.length > 0) {
+        setLotteryWinners(w)
+      }
+    })
+
+    // Permanece 15 segundos en el lobby como solicitó el usuario
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        setShowLotteryTicker(false)
+      }
+    }, 15000)
+
+    return () => {
+      isMounted = false
+      clearTimeout(timer)
+    }
+  }, [])
 
   const upcomingTourneyInfo = useMemo(() => {
     if (!upcomingTournament) return null
@@ -574,6 +606,47 @@ export default function MainMenu({
               <span className="tourney-countdown-header__icon">🏆</span>
               <span className="tourney-countdown-header__label">PRÓXIMO TORNEO:</span>
               <span className="tourney-countdown-header__time">Próximamente</span>
+            </div>
+          )}
+
+          {/* LUCKY WHEEL LIVE WINNERS MARQUEE / TICKER IN LOBBY (15s DURATION) */}
+          {showLotteryTicker && lotteryWinners.length > 0 && (
+            <div
+              className="lottery-lobby-ticker"
+              onClick={() => {
+                soundManager.playSound('click', 0.5)
+                onOpenJardin?.()
+              }}
+              title="🎰 Clic para ir a la Ruleta de la Suerte en el Jardín"
+            >
+              <div className="lottery-lobby-ticker__badge">
+                <span className="lottery-lobby-ticker__icon">🎰</span>
+                <span className="lottery-lobby-ticker__title">RULETA</span>
+              </div>
+              <div className="lottery-lobby-ticker__content">
+                <div className="lottery-lobby-ticker__marquee">
+                  {lotteryWinners.map((w, idx) => (
+                    <span key={w.id || idx} className="lottery-lobby-ticker__item">
+                      <strong className="lottery-lobby-ticker__user">{w.username}</strong>:{' '}
+                      <span className="lottery-lobby-ticker__reward">
+                        {w.description.replace(/^Premio de Ruleta:\s*/i, '')}
+                      </span>
+                      {idx < lotteryWinners.length - 1 && <span className="lottery-lobby-ticker__sep">•</span>}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="lottery-lobby-ticker__close"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowLotteryTicker(false)
+                }}
+                title="Cerrar aviso"
+              >
+                ✕
+              </button>
             </div>
           )}
         </div>

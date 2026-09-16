@@ -503,16 +503,18 @@ function aplicarJalapeno(
   lado: Lado,
   lane: number,
   sonar: SonarFn,
-  statRolls: PlantStatKey[] = []
+  statRolls: PlantStatKey[] = [],
+  level = 0
 ): void {
   sonar('pea_hit', 1.0)
 
   // Usa exactamente las mejoras guardadas en el mazo servidor.
-  const config =
-    getScaledPlantConfig('jalapeno', statRolls)
+  // Jalapeño aumenta en 150 de daño por nivel y nunca escala HP
+  const config = getScaledPlantConfig('jalapeno', statRolls)
+  const damageRolls = statRolls.filter((r) => r === 'damage').length
+  const extraPorNivel = Math.max(0, (level ?? 0) - damageRolls) * 150
 
-  const dano =
-    config.damage ?? DAÑO_DEL_JALAPENO
+  const dano = (config.damage ?? DAÑO_DEL_JALAPENO) + extraPorNivel
 
   for (
     const victima of propias(
@@ -738,7 +740,12 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
       planta.spriteOverride = '/game-assets/plants/iceberglettuce_burst.webp'
       sonar('pea_hit', 1.0)
 
-      const hasta = state.tick + msToTicks(7000)
+      // Su efecto aumenta 2 segundos más por nivel (7s base + 2s por nivel)
+      const durationRolls = planta.statRolls?.filter((r) => r === 'duration').length ?? 0
+      const extraSeconds = Math.max(planta.level ?? 0, durationRolls) * 2
+      const freezeDurationMs = 7000 + extraSeconds * 1000
+
+      const hasta = state.tick + msToTicks(freezeDurationMs)
       for (const a of susPlantas) a.frozenUntil = hasta
 
       state.pending.push({
@@ -1053,7 +1060,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
               LADO_P2,
               accion.lane,
               sonar,
-              accion.statRolls ?? []
+              accion.statRolls ?? [],
+              accion.level ?? 0
             )
           } else {
             state.enemyPlants.push(
@@ -1096,7 +1104,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
               LADO_P1,
               accion.lane,
               sonar,
-              accion.statRolls ?? []
+              accion.statRolls ?? [],
+              accion.level ?? 0
             )
           } else {
             state.plants.push(
