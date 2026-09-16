@@ -111,8 +111,9 @@ class AuctionService {
    */
   subscribeToAuctionChanges(onUpdate: () => void): () => void {
     try {
+      const channelId = `auction-live-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
       const channel = supabase
-        .channel('auction-live-updates')
+        .channel(channelId)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'auctions' },
@@ -126,7 +127,11 @@ class AuctionService {
         .subscribe()
 
       return () => {
-        supabase.removeChannel(channel)
+        try {
+          void supabase.removeChannel(channel)
+        } catch (err) {
+          console.warn('[AuctionService] Error al desuscribir canal:', err)
+        }
       }
     } catch (err) {
       console.warn('[AuctionService] No se pudo inicializar suscripción Realtime:', err)
