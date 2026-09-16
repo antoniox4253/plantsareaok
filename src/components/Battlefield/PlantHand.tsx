@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { PlantId } from '../../types/game'
 import { msToTicks } from '../../engine/time'
+import type { CartaDeMazo } from '../../engine/mazoDeLaSala'
 import {
   PLANT_CONFIGS,
   STAT_LABELS,
@@ -12,47 +13,76 @@ const sunIcon = '/game-assets/greenfoot/sun1.webp'
 const shovelIcon = '/game-assets/images/Interface/shovelIcon.webp'
 import './PlantHand.css'
 
-function getSlotCardLevelData(slotIndex: number, plantId: PlantId) {
+function getSlotCardLevelData(
+  slotIndex: number,
+  plantId: PlantId,
+  deckCards?: CartaDeMazo[] | null
+) {
   let level = 0
   let rolls: PlantStatKey[] = []
-  try {
-    const savedDeckInstIds = localStorage.getItem('plant_arena_active_deck_instances')
-    const savedInstances = localStorage.getItem('plant_arena_plant_instances')
-    const savedLvls = localStorage.getItem('plant_arena_plant_levels')
-    const savedRolls = localStorage.getItem('plant_arena_plant_stat_rolls')
+  let equippedItem: string | null = null
 
-    const parsedDeckInstIds: string[] = savedDeckInstIds ? JSON.parse(savedDeckInstIds) : []
-    const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
-    const parsedLvls: Record<string, number> = savedLvls ? JSON.parse(savedLvls) : {}
-    const parsedRolls: Record<string, PlantStatKey[]> = savedRolls ? JSON.parse(savedRolls) : {}
-
-    if (slotIndex >= 0 && parsedDeckInstIds[slotIndex]) {
-      const targetInstId = parsedDeckInstIds[slotIndex]
-      const found = parsedInstances.find((i) => i.instanceId === targetInstId)
+  if (deckCards && deckCards.length > 0) {
+    if (slotIndex >= 0 && deckCards[slotIndex] && deckCards[slotIndex].plantId === plantId) {
+      level = deckCards[slotIndex].level || 0
+      rolls = (deckCards[slotIndex].statRolls as PlantStatKey[]) || []
+      equippedItem = deckCards[slotIndex].equippedItem || null
+    } else {
+      const found = deckCards.find((c) => c.plantId === plantId)
       if (found) {
         level = found.level || 0
-        rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
+        rolls = (found.statRolls as PlantStatKey[]) || []
+        equippedItem = found.equippedItem || null
       }
     }
+  }
 
-    if (level === 0) {
-      level = parsedLvls[plantId] || 0
-    }
+  if (level === 0 && rolls.length === 0 && !equippedItem) {
+    try {
+      const savedDeckInstIds = localStorage.getItem('plant_arena_active_deck_instances')
+      const savedInstances = localStorage.getItem('plant_arena_plant_instances')
+      const savedLvls = localStorage.getItem('plant_arena_plant_levels')
+      const savedRolls = localStorage.getItem('plant_arena_plant_stat_rolls')
 
-    if (rolls.length === 0 && parsedRolls[plantId] && parsedRolls[plantId].length > 0) {
-      rolls = parsedRolls[plantId]
-    }
+      const parsedDeckInstIds: string[] = savedDeckInstIds ? JSON.parse(savedDeckInstIds) : []
+      const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
+      const parsedLvls: Record<string, number> = savedLvls ? JSON.parse(savedLvls) : {}
+      const parsedRolls: Record<string, PlantStatKey[]> = savedRolls ? JSON.parse(savedRolls) : {}
 
-    // Fallback synthesis if level > 0 so bonuses always render
-    if (level > 0 && rolls.length === 0) {
-      const eligible = getEligibleStatsForPlant(plantId)
-      const mockRolls: PlantStatKey[] = []
-      for (let i = 0; i < level; i++) {
-        mockRolls.push(eligible[i % eligible.length])
+      if (slotIndex >= 0 && parsedDeckInstIds[slotIndex]) {
+        const targetInstId = parsedDeckInstIds[slotIndex]
+        const found = parsedInstances.find((i) => i.instanceId === targetInstId)
+        if (found) {
+          level = found.level || 0
+          rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
+          equippedItem = found.equippedItem || null
+        }
+      } else {
+        const found = parsedInstances.find((i) => i.plantId === plantId && i.equippedItem)
+        if (found) {
+          equippedItem = found.equippedItem || null
+        }
       }
-      rolls = mockRolls
-    }
-  } catch {}
+
+      if (level === 0) {
+        level = parsedLvls[plantId] || 0
+      }
+
+      if (rolls.length === 0 && parsedRolls[plantId] && parsedRolls[plantId].length > 0) {
+        rolls = parsedRolls[plantId]
+      }
+
+      // Fallback synthesis if level > 0 so bonuses always render
+      if (level > 0 && rolls.length === 0) {
+        const eligible = getEligibleStatsForPlant(plantId)
+        const mockRolls: PlantStatKey[] = []
+        for (let i = 0; i < level; i++) {
+          mockRolls.push(eligible[i % eligible.length])
+        }
+        rolls = mockRolls
+      }
+    } catch {}
+  }
 
   const map = new Map<PlantStatKey, number>()
   ;(rolls || []).filter(Boolean).forEach((r) => map.set(r, (map.get(r) || 0) + 1))
@@ -73,7 +103,7 @@ function getSlotCardLevelData(slotIndex: number, plantId: PlantId) {
     return { stat, count, label, color: meta.color || '#fbbf24' }
   })
 
-  return { level, rolls, grouped }
+  return { level, rolls, equippedItem, grouped }
 }
 
 interface PlantHandProps {
@@ -94,6 +124,7 @@ interface PlantHandProps {
   currentTick?: number
   slotCooldowns?: Record<number, number>
   activeDeck?: PlantId[]
+  deckCards?: CartaDeMazo[] | null
 }
 
 const CARDS: PlantId[] = Object.keys(PLANT_CONFIGS) as PlantId[]
@@ -108,6 +139,7 @@ export default function PlantHand({
   currentTick,
   slotCooldowns,
   activeDeck,
+  deckCards,
 }: PlantHandProps) {
   // El reloj de la partida son los tics, no Date.now(). Ver currentTick arriba.
   const now = currentTick ?? 0
@@ -264,8 +296,8 @@ export default function PlantHand({
             const config = PLANT_CONFIGS[cardId]
             if (!config) return null
 
-            const cardData = getSlotCardLevelData(realSlotIndex, cardId)
-            const scaledConfig = getScaledPlantConfig(cardId, cardData.rolls)
+            const cardData = getSlotCardLevelData(realSlotIndex, cardId, deckCards)
+            const scaledConfig = getScaledPlantConfig(cardId, cardData.rolls, cardData.equippedItem)
             const isSelected =
               selectedCard === cardId &&
               (selectedSlotIndex === undefined ||
@@ -321,6 +353,16 @@ export default function PlantHand({
                   </div>
                 )}
 
+                {/* Equipped Item Badge in top-left corner of seed packet */}
+                {cardData.equippedItem === 'champion_belt' && (
+                  <div
+                    className="plant-hand__equipped-item-badge"
+                    title="🥊 Cinturón de Campeón (+150 HP, +15 DMG)"
+                  >
+                    🥊
+                  </div>
+                )}
+
                 {/* PC Keyboard Hotkey Badge */}
                 <span className="plant-hand__hotkey-badge">{vIdx + 1}</span>
 
@@ -344,13 +386,20 @@ export default function PlantHand({
                 )}
 
                 {/* Hover Buffs Tooltip */}
-                {cardData.level > 0 && (
+                {(cardData.level > 0 || Boolean(cardData.equippedItem)) && (
                   <div className="plant-hand__tooltip">
                     <div className="plant-hand__tooltip-head">
-                      <span>{config.name}</span>
-                      <span className="plant-hand__tooltip-lvl">⭐ LVL {cardData.level}</span>
+                      <span>{cardData.equippedItem === 'champion_belt' ? 'Bonk Choy Campeón' : config.name}</span>
+                      {cardData.level > 0 && (
+                        <span className="plant-hand__tooltip-lvl">⭐ LVL {cardData.level}</span>
+                      )}
                     </div>
                     <div className="plant-hand__tooltip-buffs">
+                      {cardData.equippedItem === 'champion_belt' && (
+                        <span style={{ color: '#facc15', fontWeight: 800 }}>
+                          🥊 Cinturón: +150 HP · +15 Daño
+                        </span>
+                      )}
                       {cardData.grouped.map((g, idx) => (
                         <span key={idx} style={{ color: g.color }}>
                           {g.label}

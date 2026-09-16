@@ -1323,7 +1323,7 @@ export default function Jardin({
                           }}
                           title="Desequipar Cinturón de Campeón (volverá a tu inventario)"
                         >
-                          🥊 DESEQUIPAR CINTURÓN
+                          🥊 DESEQUIPAR
                         </button>
                       ) : (
                         <button
@@ -1336,7 +1336,7 @@ export default function Jardin({
                           }}
                           title={`Equipar Cinturón de Campeón (+150 HP, +15 DMG) (Disponibles: ${farmingItems?.champion_belt || 0})`}
                         >
-                          🥊 EQUIPAR CINTURÓN ({farmingItems?.champion_belt || 0})
+                          🥊 EQUIPAR
                         </button>
                       )}
                     </div>
@@ -1576,7 +1576,7 @@ export default function Jardin({
             <div className="jardin-fuse-confirm-actions">
               <button
                 type="button"
-                className="jardin-fuse-confirm-cancel-btn"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-cancel"
                 disabled={isEquippingItem}
                 onClick={() => setBeltConfirmModal(null)}
               >
@@ -1584,7 +1584,11 @@ export default function Jardin({
               </button>
               <button
                 type="button"
-                className="jardin-fuse-confirm-btn"
+                className={`jardin-upgrade-modal-btn ${
+                  beltConfirmModal.action === 'equip'
+                    ? 'jardin-belt-confirm-btn--equip'
+                    : 'jardin-belt-confirm-btn--unequip'
+                }`}
                 disabled={isEquippingItem}
                 onClick={async () => {
                   const act = beltConfirmModal.action
@@ -1595,13 +1599,6 @@ export default function Jardin({
                   } else {
                     await handleUnequipItem(instId)
                   }
-                }}
-                style={{
-                  background: beltConfirmModal.action === 'equip'
-                    ? 'linear-gradient(180deg, #16a34a 0%, #15803d 100%)'
-                    : 'linear-gradient(180deg, #ea580c 0%, #c2410c 100%)',
-                  borderColor: beltConfirmModal.action === 'equip' ? '#4ade80' : '#fb923c',
-                  color: '#fff',
                 }}
               >
                 {isEquippingItem

@@ -51,7 +51,7 @@ export interface MejorasDeCarta {
   equippedItem?: string | null
 }
 
-const SIN_MEJORAS: MejorasDeCarta = { statRolls: [], level: 0, equippedItem: null }
+const SIN_MEJORAS: MejorasDeCarta = { statRolls: [], level: 0 }
 
 /**
  * Convierte lo que llega por JSON en un mazo utilizable, o null si no hay mazo.
@@ -78,15 +78,18 @@ export function leerMazo(bruto: unknown): CartaDeMazo[] | null {
     if (!c || typeof c !== 'object') continue
     const carta = c as Record<string, unknown>
     if (typeof carta.plantId !== 'string') continue
-    cartas.push({
+    const cartaObj: CartaDeMazo = {
       plantId: carta.plantId,
       slot: typeof carta.slot === 'number' ? carta.slot : slotIdx++,
       level: typeof carta.level === 'number' ? carta.level : null,
       statRolls: Array.isArray(carta.statRolls)
         ? carta.statRolls.filter((r): r is string => typeof r === 'string')
         : null,
-      equippedItem: typeof carta.equippedItem === 'string' ? carta.equippedItem : null,
-    })
+    }
+    if (typeof carta.equippedItem === 'string') {
+      cartaObj.equippedItem = carta.equippedItem
+    }
+    cartas.push(cartaObj)
   }
   return cartas
 }
@@ -122,8 +125,11 @@ export function mejorasDeLaCartaEnSlot(
 
   const statRolls = (carta.statRolls ?? []) as PlantStatKey[]
   const level = statRolls.length > 0 ? statRolls.length : carta.level ?? 0
-  const equippedItem = carta.equippedItem || null
-  return { statRolls, level, equippedItem }
+  const mejoras: MejorasDeCarta = { statRolls, level }
+  if (carta.equippedItem) {
+    mejoras.equippedItem = carta.equippedItem
+  }
+  return mejoras
 }
 
 /** Compatibilidad para código que todavía no conoce el slot. */

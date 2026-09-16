@@ -1002,6 +1002,17 @@ export function useGameEngine() {
         rolls = mejoras.statRolls
         cardLevel = mejoras.level
         cardEquippedItem = mejoras.equippedItem || null
+
+        if (!cardEquippedItem) {
+          try {
+            const savedInstances = localStorage.getItem('plant_arena_plant_instances')
+            const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
+            const found = parsedInstances.find((i) => i.plantId === card && i.equippedItem)
+            if (found) {
+              cardEquippedItem = found.equippedItem || null
+            }
+          } catch {}
+        }
       } else {
         // En solitario y en prácticas: las del navegador, que es lo que hay y no
         // hay nadie con quien coincidir.

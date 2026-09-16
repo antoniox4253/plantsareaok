@@ -52,4 +52,28 @@ describe('Sistema de Cinturón de Campeón (Bonk Choy)', () => {
     expect(peaWithBelt.sprite).toBe(peaBase.sprite)
     expect(peaWithBelt.icon).toBe(peaBase.icon)
   })
+
+  it('El mazo de la sala preserva y resuelve el cinturón de campeón para Bonk Choy', async () => {
+    const { leerMazo, mejorasDeLaCartaEnSlot } = await import('../engine/mazoDeLaSala')
+    const { crearPlantaPropia } = await import('../engine/simulate')
+
+    const rawDeck = [
+      { plantId: 'peashooter', slot: 0, level: 0, statRolls: [] },
+      { plantId: 'bonkchoy', slot: 1, level: 1, statRolls: ['damage'], equippedItem: 'champion_belt' },
+    ]
+
+    const mazo = leerMazo(rawDeck)
+    expect(mazo).toHaveLength(2)
+    expect(mazo![1].equippedItem).toBe('champion_belt')
+
+    const mejoras = mejorasDeLaCartaEnSlot(mazo, 'bonkchoy', 1)
+    expect(mejoras.equippedItem).toBe('champion_belt')
+
+    const mockState: any = { tick: 10, entityCounter: 0 }
+    const planta = crearPlantaPropia(mockState, 'bonkchoy', 0, 2, mejoras.statRolls, mejoras.level, mejoras.equippedItem)
+    expect(planta.equippedItem).toBe('champion_belt')
+    expect(planta.spriteOverride).toBe('/game-assets/greenfoot/bonkchoy_champion.png')
+    expect(planta.maxHp).toBeGreaterThan(PLANT_CONFIGS.bonkchoy.maxHp)
+    expect(planta.damage).toBeGreaterThan(PLANT_CONFIGS.bonkchoy.damage!)
+  })
 })

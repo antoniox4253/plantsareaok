@@ -19,6 +19,8 @@ import {
   TOTAL_COLUMNS,
   P1_COLUMNS,
   INITIAL_BASE_HP,
+  getScaledPlantConfig,
+  type PlantStatKey,
 } from '../../utils/gameConstants'
 import { getArenaForElo, getEloDeltasForElo, getTrophyGateForElo } from '../../utils/arenaManager'
 const sunIcon = '/game-assets/greenfoot/sun1.webp'
@@ -33,7 +35,7 @@ import { TICK_MS } from '../../engine/time'
 import { soundManager } from '../../utils/audioManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
 import { resolverLiquidacionPartida } from '../../engine/asyncOpponent'
-import { leerMazo } from '../../engine/mazoDeLaSala'
+import { leerMazo, mejorasDeLaCartaEnSlot } from '../../engine/mazoDeLaSala'
 import { StrategicPlaytestPostMatch } from '../StrategicPlaytest/StrategicPlaytestPostMatch'
 import type { StrategicPlaytestConfig } from '../../engine/strategicPlaytest'
 import { recordPlantPlacement } from '../../utils/plantUsageTracker'
@@ -1618,6 +1620,9 @@ export default function Battlefield({
       )}
 
       {/* Grid Lanes */}
+      {(() => {
+        return null
+      })()}
       <div className="lanes">
         {LANES_CONFIG.map((lane) => (
           <div
@@ -1634,7 +1639,34 @@ export default function Battlefield({
               const isP1Side = col < P1_COLUMNS
               const isCellSelected = Boolean(selectedCard && isP1Side)
               const isPlantCard = selectedCard && selectedCard !== 'shovel'
-              const selectedCardConfig = isPlantCard ? PLANT_CONFIGS[selectedCard] : null
+              const selectedCardConfig = isPlantCard
+                ? (mazoMioParsed && mazoMioParsed.length > 0
+                    ? (() => {
+                        const m = mejorasDeLaCartaEnSlot(mazoMioParsed, selectedCard, selectedSlotIndex)
+                        return getScaledPlantConfig(selectedCard, m.statRolls, m.equippedItem)
+                      })()
+                    : (() => {
+                        let r: PlantStatKey[] = []
+                        let eq: string | null = null
+                        try {
+                          const sIds = localStorage.getItem('plant_arena_active_deck_instances')
+                          const sInst = localStorage.getItem('plant_arena_plant_instances')
+                          const pIds: string[] = sIds ? JSON.parse(sIds) : []
+                          const pInst: any[] = sInst ? JSON.parse(sInst) : []
+                          if (selectedSlotIndex !== null && pIds[selectedSlotIndex]) {
+                            const f = pInst.find((i) => i.instanceId === pIds[selectedSlotIndex])
+                            if (f) {
+                              r = f.statRolls || []
+                              eq = f.equippedItem || null
+                            }
+                          } else {
+                            const f = pInst.find((i) => i.plantId === selectedCard && i.equippedItem)
+                            if (f) eq = f.equippedItem || null
+                          }
+                        } catch {}
+                        return getScaledPlantConfig(selectedCard, r, eq)
+                      })())
+                : null
               const isWalkingPlantCard = Boolean(
                 selectedCardConfig &&
                 (selectedCardConfig.category === 'melee' ||
@@ -1784,7 +1816,7 @@ export default function Battlefield({
 
       {/* Player 1 Plants */}
       {plants.map((plant) => {
-        const config = PLANT_CONFIGS[plant.plantId]
+        const config = getScaledPlantConfig(plant.plantId, plant.statRolls ?? [], plant.equippedItem)
         const laneConfig = LANES_CONFIG[plant.lane]
         const hpPct = (plant.hp / plant.maxHp) * 100
         const isShovelTarget = selectedCard === 'shovel' && !plant.isWalking
@@ -1964,7 +1996,7 @@ export default function Battlefield({
         //
         // Ya no hay catálogo enemigo: las plantas de los dos lados son la misma
         // cosa y salen del mismo sitio. El bot también planta cartas de verdad.
-        const config = PLANT_CONFIGS[enemy.plantId]
+        const config = getScaledPlantConfig(enemy.plantId, enemy.statRolls ?? [], enemy.equippedItem)
         const laneConfig = LANES_CONFIG[enemy.lane]
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100)
         // frozenUntil es un TIC, no un instante de reloj. Comparado con Date.now()
@@ -2500,6 +2532,7 @@ export default function Battlefield({
         currentTick={tick}
         slotCooldowns={slotCooldowns}
         activeDeck={effectiveDeck}
+        deckCards={mazoMioParsed}
       />
     </div>
   )
