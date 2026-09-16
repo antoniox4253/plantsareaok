@@ -75,11 +75,11 @@ export const SOLES_POR_CICLO_GIRASOL_DOBLE = 2
 //
 // Ahora toda partida acaba, y acaba con un resultado:
 //
-//   0 → 2:30   FASE NORMAL. Lo de siempre.
-//   2:30 →     MUERTE SÚBITA. Las DOS bases empiezan a perder vida por sí solas.
+//   0 → 3:30   FASE NORMAL. Lo de siempre.
+//   3:30 →     MUERTE SÚBITA. Las DOS bases empiezan a perder vida por sí solas.
 //              Como pierden lo mismo, cae primero la que ya estaba peor: quien va
 //              ganando, gana. Y como la presión sube sola, la partida se cierra.
-//   5:30       TOPE. Si a estas alturas siguen las dos en pie, se decide por
+//   6:30       TOPE. Si a estas alturas siguen las dos en pie, se decide por
 //              puntos y se acaba. Es una red de seguridad; con el desgaste no
 //              debería llegarse nunca.
 //
@@ -93,14 +93,14 @@ export const SOLES_POR_CICLO_GIRASOL_DOBLE = 2
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Cuándo empieza la muerte súbita. */
-export const MUERTE_SUBITA_MS = 150_000
+export const MUERTE_SUBITA_MS = 210_000
 
 /**
  * Vida que pierde CADA base por segundo durante la muerte súbita.
  *
  * Con 600 de vida, una base entera se consume en 50 segundos. O sea que en el
  * peor caso —dos bases intactas al llegar a la muerte súbita— la partida se
- * decide sobre el 3:20. Y no es un empate: las plantas siguen peleando, así que
+ * decide sobre el 4:20. Y no es un empate: las plantas siguen peleando, así que
  * la diferencia que ya hubiera se agranda.
  */
 export const DESGASTE_MUERTE_SUBITA_POR_SEGUNDO = 12
@@ -112,7 +112,7 @@ export const DESGASTE_MUERTE_SUBITA_POR_SEGUNDO = 12
  * ni un registro manipulado, ni un fallo del desgaste, ni una carta que cure la
  * base más rápido de lo que se desgasta.
  */
-export const TOPE_DE_PARTIDA_MS = 330_000
+export const TOPE_DE_PARTIDA_MS = 390_000
 
 /**
  * Cuánto aguanta un sol en el campo antes de recogerse solo.

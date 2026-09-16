@@ -15,7 +15,7 @@ import './RelojDePartida.css'
  *   rindió, nadie atacó, y en la lista de partidas salía "SIN RESULTADO".
  *
  *   Que el plazo exista no basta — hay que verlo. Un jugador que no sabe que a
- *   los 2:30 empiezan a caer las dos bases no puede decidir si le conviene
+ *   los 3:30 empiezan a caer las dos bases no puede decidir si le conviene
  *   atacar ya o seguir plantando, que es justo la decisión que la muerte súbita
  *   viene a forzar.
  *

@@ -1418,7 +1418,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   // ───────────────────────────────────────────────────────────────────────────
   // 6.5 MUERTE SÚBITA
   //
-  // Pasados los 2:30, las dos bases empiezan a perder vida solas. Es lo que hace
+  // Pasados los 3:30, las dos bases empiezan a perder vida solas. Es lo que hace
   // que la partida no pueda ser eterna: antes, dos jugadores plantando girasoles
   // sin atacarse nunca no llegaban a ningún resultado, y a los 120 segundos sin
   // jugadas el servidor daba la sala por abandonada — el "SIN RESULTADO" de la

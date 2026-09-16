@@ -105,8 +105,8 @@ export default function VerRepeticion({ roomId, token, onVolver }: Props) {
       // Se para cuando la partida acaba de verdad. Antes se paraba unos segundos
       // después de la ÚLTIMA JUGADA, y eso cortaba la repetición antes del final:
       // una batalla compartida se quedaba en el segundo 102 y no llegaba nunca al
-      // mensaje de victoria. Ahora toda partida termina (muerte súbita a los 2:30,
-      // tope a los 5:30), así que se puede correr hasta el final sin más.
+      // mensaje de victoria. Ahora toda partida termina (muerte súbita a los 3:30,
+      // tope a los 6:30), así que se puede correr hasta el final sin más.
       if (!sigue) {
         setReproduciendo(false)
         return
@@ -159,7 +159,7 @@ export default function VerRepeticion({ roomId, token, onVolver }: Props) {
     <div className="rep">
       <div className="rep__campo" style={{ backgroundImage: `url(${arena.bgImage})` }}>
         {/* El reloj, igual que en la partida: sin él no se entiende por qué las
-            dos bases empiezan a caer solas a los 2:30. */}
+            dos bases empiezan a caer solas a los 3:30. */}
         <RelojDePartida tick={estado.tick} />
 
         {/* Las bases, con su árbol madre. Es el mismo asset de la batalla: sin él

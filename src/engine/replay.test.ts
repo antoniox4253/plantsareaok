@@ -213,7 +213,7 @@ describe('la repetición llega hasta el final de la partida', () => {
 
     expect(rep.ultimoTic).toBe(90)
     expect(rep.ticFinal).toBeGreaterThan(rep.ultimoTic + 300)
-    // Y la muerte súbita entra a los 2:30, así que el final está más allá.
+    // Y la muerte súbita entra a los 3:30, así que el final está más allá.
     expect(rep.ticFinal).toBeGreaterThan(TIC_MUERTE_SUBITA)
   })
 
