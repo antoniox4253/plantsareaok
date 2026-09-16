@@ -28,6 +28,8 @@ import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
 import ColosseumModal from '../Colosseum/ColosseumModal'
 import TournamentModal from '../Tournament/TournamentModal'
 import GlobalChat from '../GlobalChat/GlobalChat'
+import AuctionModal from '../Auction/AuctionModal'
+import { auctionService, type ActiveAuctionData } from '../../services/auctionService'
 import { tournamentService } from '../../services/tournamentService'
 import { lotteryService } from '../../services/lotteryService'
 import type { ColosseumBetAmount, PlantId, TournamentModel } from '../../types/game'
@@ -166,6 +168,29 @@ export default function MainMenu({
   const [slotToAccelerate, setSlotToAccelerate] = useState<FreePackSlot | null>(null)
 
   const [isAccelerating, setIsAccelerating] = useState<boolean>(false)
+  const [isAuctionModalOpen, setIsAuctionModalOpen] = useState<boolean>(false)
+  const [auctionInfo, setAuctionInfo] = useState<ActiveAuctionData | null>(null)
+
+  useEffect(() => {
+    auctionService.getActiveAuction().then((data) => {
+      if (data) setAuctionInfo(data)
+    })
+    const unsub = auctionService.subscribeToAuctionChanges(() => {
+      auctionService.getActiveAuction().then((data) => {
+        if (data) setAuctionInfo(data)
+      })
+    })
+    return () => unsub()
+  }, [])
+
+  const auctionRemainingStr = useMemo(() => {
+    if (!auctionInfo) return '30h 00m'
+    const diff = Math.max(0, auctionInfo.endTime - Date.now())
+    if (diff <= 0) return 'FINALIZADA'
+    const h = Math.floor(diff / 3600000)
+    const m = Math.floor((diff % 3600000) / 60000)
+    return `${h}h ${m}m`
+  }, [auctionInfo, ticker])
 
   const handleConfirmAccelerate = async () => {
     if (!slotToAccelerate || !onFastUnlockSlot || isAccelerating) return
@@ -457,6 +482,37 @@ export default function MainMenu({
               <span className="online-users-dot" />
               <span className="online-users-count">{onlineUsersCount}</span>
               <span className="online-users-label">en línea</span>
+            </div>
+
+            {/* WIDGET DESTACADO DE SUBASTA EN VIVO (LANZAMAÍZ BRUJA - 500 GEMAS) */}
+            <div
+              className="auction-header-widget"
+              onClick={() => {
+                soundManager.playSound('click', 0.5)
+                setIsAuctionModalOpen(true)
+              }}
+              title="🎃 Clic para entrar a la Gran Subasta Mítica: Lanzamaíz Bruja (500 💎)"
+            >
+              <div className="auction-header-widget__art-wrap">
+                <img
+                  src="/game-assets/auction/kernel_witch.png"
+                  alt="Subasta Lanzamaíz Bruja"
+                  className="auction-header-widget__img"
+                />
+              </div>
+              <div className="auction-header-widget__meta">
+                <div className="auction-header-widget__top-row">
+                  <span className="auction-header-widget__live-dot" />
+                  <span className="auction-header-widget__title">SUBASTA</span>
+                  <span className="auction-header-widget__timer">⏱️ {auctionRemainingStr}</span>
+                </div>
+                <div className="auction-header-widget__price-row">
+                  <span className="auction-header-widget__label">Precio Inicial:</span>
+                  <span className="auction-header-widget__price">
+                    {auctionInfo ? auctionInfo.currentBid.toLocaleString() : '500'} 💎
+                  </span>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -1058,6 +1114,20 @@ export default function MainMenu({
         onNewUnreadMessage={() => {
           setGlobalChatUnreadCount((prev) => prev + 1)
         }}
+      />
+
+      {/* MODAL DE SUBASTA EXCLUSIVA (LANZAMAÍZ BRUJA) */}
+      <AuctionModal
+        isOpen={isAuctionModalOpen}
+        onClose={() => setIsAuctionModalOpen(false)}
+        userTokens={userTokens}
+        onTokensDeducted={(newTokens) => {
+          if (onDeductTokens) {
+            onDeductTokens(userTokens - newTokens)
+          }
+        }}
+        userId={userProfile?.id}
+        username={userProfile?.username || playerProfile.name}
       />
     </div>
   )

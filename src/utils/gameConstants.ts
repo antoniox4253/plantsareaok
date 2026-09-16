@@ -470,6 +470,24 @@ export const EQUIPPABLE_PLANT_ITEMS: Record<string, EquippablePlantItemDef> = {
       packetDisabled: '/game-assets/greenfoot/bonkchoy_champion.png',
     }),
   },
+  witch_hat: {
+    id: 'witch_hat',
+    name: 'Sombrero de Bruja',
+    emoji: '🧙‍♀️',
+    targetPlantId: 'melonpult',
+    equippedPlantName: 'Lanzamaíz Bruja',
+    description: 'Sombrero místico de bruja con calabazas mágicas. Al equiparse en Melon-pult otorga +200 HP y +25 de Daño.',
+    statBonusText: '+200 HP · +25 Daño',
+    applyStats: (scaled) => ({
+      ...scaled,
+      maxHp: scaled.maxHp + 200,
+      damage: (scaled.damage ?? 80) + 25,
+      sprite: '/game-assets/auction/kernel_witch.png',
+      icon: '/game-assets/auction/kernel_witch.png',
+      packetActive: '/game-assets/auction/kernel_witch.png',
+      packetDisabled: '/game-assets/auction/kernel_witch.png',
+    }),
+  },
 }
 
 export function getEquippableItemDef(itemId?: string | null): EquippablePlantItemDef | undefined {
