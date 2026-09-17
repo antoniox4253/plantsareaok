@@ -93,7 +93,6 @@ export default function TournamentModal({
   const [isCreating, setIsCreating] = useState<boolean>(false)
   const [isReentering, setIsReentering] = useState<boolean>(false)
   const [isFinalizing, setIsFinalizing] = useState<boolean>(false)
-  const [isSimulatingMatch, setIsSimulatingMatch] = useState<boolean>(false)
 
   // Custom UTC Date States (Siempre del año actual)
   const [startMode, setStartMode] = useState<'quick' | 'custom_utc'>('quick')
@@ -393,33 +392,6 @@ export default function TournamentModal({
       alert(err?.message || 'Error al liquidar premios')
     } finally {
       setIsFinalizing(false)
-    }
-  }
-
-  // Simulación Sandbox de partidas para el Admin
-  const handleAdminSimulateMatch = async (isVictory: boolean) => {
-    if (!selectedTourney || !details?.my_participation?.registered) {
-      alert('Debes inscribirte primero en el torneo para simular partidas.')
-      return
-    }
-    setIsSimulatingMatch(true)
-    try {
-      soundManager.playSound(isVictory ? 'victory' : 'defeat', 0.7)
-      const res = await tournamentService.submitMatchResult(
-        selectedTourney.id,
-        isVictory,
-        'Gladiador de Prueba'
-      )
-      if (res.success) {
-        await loadDetails(selectedTourney.id)
-        await loadTournaments()
-      } else {
-        alert(res.error || 'No se pudo registrar el resultado de prueba.')
-      }
-    } catch (err: any) {
-      alert(err?.message || 'Error al simular combate')
-    } finally {
-      setIsSimulatingMatch(false)
     }
   }
 
@@ -1079,51 +1051,6 @@ export default function TournamentModal({
                       )}
                     </div>
 
-                    {/* SANDBOX CONSOLE (ADMIN) */}
-                    {isAdmin && (
-                      <div className="tourney-admin-sandbox">
-                        <div className="tourney-admin-sandbox__header">
-                          <div className="tourney-admin-sandbox__title">
-                            <span>🧪</span>
-                            <span>Consola de Pruebas Admin (Solo visible para ti)</span>
-                          </div>
-                          {selectedTourney.is_test && (
-                            <span className="tourney-admin-sandbox__badge">Modo Sandbox Activo</span>
-                          )}
-                        </div>
-                        <p className="tourney-admin-sandbox__desc">
-                          Prueba el flujo completo en vivo en producción: simula partidas para sumar victorias o derrotas y liquida inmediatamente para recibir el premio (Oro, Gemas o Ítem) en tu cuenta.
-                        </p>
-                        <div className="tourney-admin-sandbox__actions">
-                          <button
-                            type="button"
-                            className="tourney-sandbox-btn tourney-sandbox-btn--win"
-                            onClick={() => handleAdminSimulateMatch(true)}
-                            disabled={isSimulatingMatch || isMyPartEliminated}
-                          >
-                            {isSimulatingMatch ? 'Simulando…' : '⚔️ Simular Victoria (+1 V)'}
-                          </button>
-                          <button
-                            type="button"
-                            className="tourney-sandbox-btn tourney-sandbox-btn--loss"
-                            onClick={() => handleAdminSimulateMatch(false)}
-                            disabled={isSimulatingMatch || isMyPartEliminated}
-                          >
-                            {isSimulatingMatch ? 'Simulando…' : '💀 Simular Derrota (+1 D)'}
-                          </button>
-                          {!selectedTourney.prizes_distributed && (
-                            <button
-                              type="button"
-                              className="tourney-sandbox-btn tourney-sandbox-btn--finalize"
-                              onClick={handleFinalizeTournament}
-                              disabled={isFinalizing}
-                            >
-                              {isFinalizing ? 'Liquidando…' : '🏆 Liquidar y Recibir Premios'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </>
                 )}
               </div>
