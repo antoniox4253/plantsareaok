@@ -161,7 +161,11 @@ export default function Jardin({
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [showLotteryModal, setShowLotteryModal] = useState(false)
   const [showTreeModal, setShowTreeModal] = useState(false)
-  const [rewardPackAccelerating, setRewardPackAccelerating] = useState<{ packId: string; goldCost: number } | null>(null)
+  const [rewardPackAccelerating, setRewardPackAccelerating] = useState<{
+    packId: string
+    goldCost: number
+    isClanChampion?: boolean
+  } | null>(null)
   const [isAcceleratingReward, setIsAcceleratingReward] = useState(false)
   const [rewardPackAlert, setRewardPackAlert] = useState<{ title: string; message: string; icon: string } | null>(null)
   const [upgradeModal, setUpgradeModal] = useState<{
@@ -871,11 +875,13 @@ export default function Jardin({
                       {isClanChampion ? '👑 TOP 1 CLANES' : '🎁 STREAMER'}
                     </span>
                     <img
-                      src={isClanChampion ? '/game-assets/greenfoot/pack_legendary.png' : '/game-assets/greenfoot/seed_pack_pvp.webp'}
+                      src={isClanChampion ? '/game-assets/greenfoot/seed_pack_clan_champion.webp' : '/game-assets/greenfoot/seed_pack_pvp.webp'}
                       alt={isClanChampion ? 'Sobre Campeón de Clanes' : 'Sobre PvP de Recompensa'}
                       className="jardin-pack-card__img"
                       onError={(e) => {
-                        ;(e.currentTarget as HTMLImageElement).src = '/game-assets/greenfoot/pack_basic.png'
+                        ;(e.currentTarget as HTMLImageElement).src = isClanChampion
+                          ? '/game-assets/greenfoot/seed_pack_clan_champion.png'
+                          : '/game-assets/greenfoot/seed_pack_pvp.png'
                       }}
                     />
                     <div className="jardin-pack-card__info">
@@ -923,7 +929,7 @@ export default function Jardin({
                             className="jardin-pack-card__accelerate-btn"
                             onClick={() => {
                               soundManager.playSound('click', 0.5)
-                              setRewardPackAccelerating({ packId: pack.id, goldCost })
+                              setRewardPackAccelerating({ packId: pack.id, goldCost, isClanChampion })
                             }}
                           >
                             ⚡ ACELERAR ({goldCost} 💰)
@@ -1948,13 +1954,26 @@ export default function Jardin({
               {/* Vista previa del sobre */}
               <div className="game-dialog-pack-preview">
                 <img
-                  src="/game-assets/greenfoot/seed_pack_pvp.webp"
-                  alt="Sobre PvP"
+                  src={
+                    rewardPackAccelerating.isClanChampion
+                      ? '/game-assets/greenfoot/seed_pack_clan_champion.webp'
+                      : '/game-assets/greenfoot/seed_pack_pvp.webp'
+                  }
+                  alt={rewardPackAccelerating.isClanChampion ? 'Sobre Campeón de Clanes' : 'Sobre PvP'}
                   className="game-dialog-pack-img"
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).src = rewardPackAccelerating.isClanChampion
+                      ? '/game-assets/greenfoot/seed_pack_clan_champion.png'
+                      : '/game-assets/greenfoot/seed_pack_pvp.png'
+                  }}
                 />
                 <div className="game-dialog-pack-meta">
-                  <span className="game-dialog-pack-tag">SOBRE PvP</span>
-                  <span className="game-dialog-pack-name">Sobre de Recompensas</span>
+                  <span className="game-dialog-pack-tag">
+                    {rewardPackAccelerating.isClanChampion ? '👑 TOP 1 CLANES' : 'SOBRE PvP'}
+                  </span>
+                  <span className="game-dialog-pack-name">
+                    {rewardPackAccelerating.isClanChampion ? 'Sobre Campeón de Clanes' : 'Sobre de Recompensas'}
+                  </span>
                   <span className="game-dialog-pack-timer">⚡ Desbloqueo Inmediato</span>
                 </div>
               </div>

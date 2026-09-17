@@ -459,6 +459,10 @@
   box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
 }
 
+.jardin-pack-card--clan-champion .jardin-pack-card__img {
+  filter: drop-shadow(0 4px 10px rgba(251, 191, 36, 0.5)) drop-shadow(0 0 14px rgba(59, 130, 246, 0.45));
+}
+
 .jardin-pack-card--unlocking {
   border-color: #38bdf8;
   box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
