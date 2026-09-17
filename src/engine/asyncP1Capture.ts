@@ -176,6 +176,7 @@ export function ejecutarCapturaPlantP1(
       slot: slotIdx,
       statRolls: rolls,
       level: cardLevel,
+      equippedItem: equippedItem ?? null,
     })
 
     if (!reg.ok) {

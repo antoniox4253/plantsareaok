@@ -387,6 +387,7 @@ export function resolverCartaRival(
     slot: slot ?? encontrada.slot ?? null,
     statRolls,
     level,
+    equippedItem: encontrada.equippedItem ?? null,
   }
 }
 
