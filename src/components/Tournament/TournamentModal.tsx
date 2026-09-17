@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import type { PlantId, TournamentModel, TournamentDetailsResponse } from '../../types/game'
+import type { PlantId, TournamentModel, TournamentDetailsResponse, PlantCardInstance } from '../../types/game'
 import { tournamentService } from '../../services/tournamentService'
 import { soundManager } from '../../utils/audioManager'
-import { PLANT_CONFIGS } from '../../utils/gameConstants'
+import { getScaledPlantConfig } from '../../utils/gameConstants'
 import { FARMING_ITEM_DEFINITIONS, type FarmingItemId } from '../../utils/pvpRewardManager'
 import TournamentDeckBuilder from './TournamentDeckBuilder'
 import './TournamentModal.css'
@@ -14,6 +14,7 @@ interface TournamentModalProps {
   userGold?: number
   isAdmin?: boolean
   unlockedPlants?: PlantId[]
+  plantInstances?: PlantCardInstance[]
   onDeductTokens: (amount: number) => boolean
   onDeductGold?: (amount: number) => boolean
   onStartTournamentMatch: (
@@ -57,6 +58,7 @@ export default function TournamentModal({
   userGold = 0,
   isAdmin = false,
   unlockedPlants = [],
+  plantInstances = [],
   onDeductTokens,
   onDeductGold,
   onStartTournamentMatch,
@@ -955,15 +957,39 @@ export default function TournamentModal({
                       <div className="tourney-deck-preview">
                         <div className="tourney-deck-preview__plants">
                           {activeDeckList.map((pid, idx) => {
-                            const cfg = PLANT_CONFIGS[pid]
+                            const inst = plantInstances?.find((i) => i.plantId === pid && i.equippedItem) ||
+                                         plantInstances?.find((i) => i.plantId === pid) ||
+                                         null
+                            const rolls = inst?.statRolls ?? []
+                            const equippedItem = inst?.equippedItem ?? null
+                            const cfg = getScaledPlantConfig(pid, rolls, equippedItem)
                             return (
-                              <img
-                                key={idx}
-                                src={cfg?.icon}
-                                alt={cfg?.name || pid}
-                                className="tourney-deck-mini-icon"
-                                title={cfg?.name}
-                              />
+                              <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                                <img
+                                  src={cfg?.icon || cfg?.sprite}
+                                  alt={cfg?.name || pid}
+                                  className="tourney-deck-mini-icon"
+                                  title={`${cfg?.name}${equippedItem ? ' (🥊 Ítem Equipado)' : ''}`}
+                                />
+                                {equippedItem && (
+                                  <span
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: -2,
+                                      right: -2,
+                                      fontSize: '0.65rem',
+                                      background: 'rgba(0,0,0,0.85)',
+                                      borderRadius: '50%',
+                                      lineHeight: 1,
+                                      padding: '1px',
+                                      border: '1px solid #f59e0b',
+                                    }}
+                                    title="Ítem equipado"
+                                  >
+                                    🥊
+                                  </span>
+                                )}
+                              </div>
                             )
                           })}
                         </div>
@@ -1917,6 +1943,7 @@ export default function TournamentModal({
           onClose={() => setShowDeckBuilder(false)}
           plantRule={selectedTourney?.plant_rule || 'all_unlocked'}
           unlockedPlants={unlockedPlants}
+          plantInstances={plantInstances}
         />
       </div>
     </div>

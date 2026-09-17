@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react'
-import type { PlantId } from '../../types/game'
-import { PLANT_CONFIGS } from '../../utils/gameConstants'
+import { useState, useEffect, useMemo } from 'react'
+import type { PlantId, PlantCardInstance } from '../../types/game'
+import {
+  PLANT_CONFIGS,
+  getScaledPlantConfig,
+  EQUIPPABLE_PLANT_ITEMS,
+  type PlantStatKey,
+} from '../../utils/gameConstants'
 import { soundManager } from '../../utils/audioManager'
 import './TournamentDeckBuilder.css'
 
@@ -11,6 +16,7 @@ interface TournamentDeckBuilderProps {
   onClose: () => void
   plantRule?: 'all_unlocked' | 'owned_only'
   unlockedPlants?: PlantId[]
+  plantInstances?: PlantCardInstance[]
 }
 
 const ALL_PLANT_IDS = Object.keys(PLANT_CONFIGS) as PlantId[]
@@ -23,7 +29,24 @@ export default function TournamentDeckBuilder({
   onClose,
   plantRule = 'all_unlocked',
   unlockedPlants = [],
+  plantInstances = [],
 }: TournamentDeckBuilderProps) {
+  // Resolver instancias con fallback a localStorage
+  const resolvedInstances = useMemo<PlantCardInstance[]>(() => {
+    if (plantInstances && plantInstances.length > 0) return plantInstances
+    try {
+      const saved = localStorage.getItem('plant_arena_plant_instances')
+      if (saved) return JSON.parse(saved)
+    } catch {}
+    return []
+  }, [plantInstances, isOpen])
+
+  const getPlantInstanceData = (plantId: PlantId) => {
+    const equipped = resolvedInstances.find((i) => i.plantId === plantId && i.equippedItem)
+    if (equipped) return equipped
+    return resolvedInstances.find((i) => i.plantId === plantId) || null
+  }
+
   const isCardAvailable = (plantId: PlantId): boolean => {
     if (plantRule !== 'owned_only') return true
     if (BASE_STARTER_PLANTS.includes(plantId)) return true
@@ -174,46 +197,58 @@ export default function TournamentDeckBuilder({
             <div className="tourney-deck-slots-grid">
               {[0, 1, 2, 3, 4].map((slotIdx) => {
                 const plantId = selectedDeck[slotIdx]
-                const config = plantId ? PLANT_CONFIGS[plantId] : null
-
-                if (config) {
+                if (!plantId) {
                   return (
                     <div
-                      key={`slot_${slotIdx}`}
-                      className="tourney-deck-slot filled"
-                      onClick={() => handleRemoveSlot(slotIdx)}
-                      title={`Quitar ${config.name}`}
+                      key={`slot_empty_${slotIdx}`}
+                      className="tourney-deck-slot"
+                      title="Espacio vacío. Selecciona una planta abajo."
                     >
-                      <div className="tourney-slot-cost">☀️ {config.cost}</div>
-                      <button
-                        type="button"
-                        className="tourney-slot-remove"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleRemoveSlot(slotIdx)
-                        }}
-                      >
-                        ✕
-                      </button>
-                      <img
-                        src={config.icon}
-                        alt={config.name}
-                        className="tourney-slot-img"
-                      />
-                      <span className="tourney-slot-name">{config.name}</span>
+                      <span className="tourney-slot-empty-label">
+                        + Ranura {slotIdx + 1}
+                      </span>
                     </div>
                   )
                 }
 
+                const inst = getPlantInstanceData(plantId)
+                const rolls = (inst?.statRolls as PlantStatKey[]) || []
+                const equippedItem = inst?.equippedItem || null
+                const scaledConfig = getScaledPlantConfig(plantId, rolls, equippedItem)
+                const itemDef = equippedItem ? EQUIPPABLE_PLANT_ITEMS[equippedItem] : null
+
                 return (
                   <div
-                    key={`slot_empty_${slotIdx}`}
-                    className="tourney-deck-slot"
-                    title="Espacio vacío. Selecciona una planta abajo."
+                    key={`slot_${slotIdx}`}
+                    className={`tourney-deck-slot filled ${equippedItem ? 'has-item' : ''}`}
+                    onClick={() => handleRemoveSlot(slotIdx)}
+                    title={`Quitar ${scaledConfig.name} (${scaledConfig.maxHp} HP, ${scaledConfig.damage ?? 0} Daño)${itemDef ? `\nEquipado: ${itemDef.name} (${itemDef.statBonusText})` : ''}`}
                   >
-                    <span className="tourney-slot-empty-label">
-                      + Ranura {slotIdx + 1}
-                    </span>
+                    <div className="tourney-slot-cost">☀️ {scaledConfig.cost}</div>
+                    {itemDef && (
+                      <div className="tourney-slot-item-badge" title={`${itemDef.name}: ${itemDef.statBonusText}`}>
+                        {itemDef.emoji || '🥊'}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="tourney-slot-remove"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRemoveSlot(slotIdx)
+                      }}
+                    >
+                      ✕
+                    </button>
+                    <img
+                      src={scaledConfig.icon || scaledConfig.sprite}
+                      alt={scaledConfig.name}
+                      className="tourney-slot-img"
+                    />
+                    <span className="tourney-slot-name">{scaledConfig.name}</span>
+                    {itemDef && (
+                      <span className="tourney-slot-item-label">{itemDef.emoji} {itemDef.name}</span>
+                    )}
                   </div>
                 )
               })}
@@ -234,19 +269,23 @@ export default function TournamentDeckBuilder({
 
             <div className="tourney-catalog-grid">
               {ALL_PLANT_IDS.map((id) => {
-                const plant = PLANT_CONFIGS[id]
                 const isSelected = selectedDeck.includes(id)
                 const isAvailable = isCardAvailable(id)
+                const inst = getPlantInstanceData(id)
+                const rolls = (inst?.statRolls as PlantStatKey[]) || []
+                const equippedItem = inst?.equippedItem || null
+                const scaledConfig = getScaledPlantConfig(id, rolls, equippedItem)
+                const itemDef = equippedItem ? EQUIPPABLE_PLANT_ITEMS[equippedItem] : null
 
                 return (
                   <div
                     key={id}
-                    className={`tourney-catalog-card ${isSelected ? 'in-deck' : ''} ${!isAvailable ? 'is-locked' : ''}`}
+                    className={`tourney-catalog-card ${isSelected ? 'in-deck' : ''} ${!isAvailable ? 'is-locked' : ''} ${equippedItem ? 'has-item' : ''}`}
                     onClick={() => handleAddCard(id)}
                     title={
                       !isAvailable
                         ? `🔒 Bloqueada: No posees esta planta en tu colección.`
-                        : plant.description
+                        : `${scaledConfig.name}\n${scaledConfig.description}${itemDef ? `\n\n${itemDef.emoji} Equipado con ${itemDef.name} (${itemDef.statBonusText})` : ''}`
                     }
                     style={
                       !isAvailable
@@ -281,15 +320,27 @@ export default function TournamentDeckBuilder({
                         🔒
                       </div>
                     )}
-                    <span className="tourney-catalog-cost">☀️ {plant.cost}</span>
+                    {isAvailable && itemDef && (
+                      <div className="tourney-item-equipped-tag" title={`${itemDef.name}: ${itemDef.statBonusText}`}>
+                        <span>{itemDef.emoji || '🥊'}</span>
+                        <span>{itemDef.name}</span>
+                      </div>
+                    )}
+                    <span className="tourney-catalog-cost">☀️ {scaledConfig.cost}</span>
                     <img
-                      src={plant.icon}
-                      alt={plant.name}
+                      src={scaledConfig.icon || scaledConfig.sprite}
+                      alt={scaledConfig.name}
                       className="tourney-catalog-card-img"
                     />
-                    <span className="tourney-catalog-card-name">{plant.name}</span>
+                    <span className="tourney-catalog-card-name">{scaledConfig.name}</span>
+                    <div className="tourney-card-stats-preview">
+                      <span title="Vida">❤️ {scaledConfig.maxHp}</span>
+                      {scaledConfig.damage !== undefined && (
+                        <span title="Daño">⚔️ {scaledConfig.damage}</span>
+                      )}
+                    </div>
                     <span className="tourney-catalog-card-category">
-                      {!isAvailable ? '🔒 Bloqueada' : plant.category}
+                      {!isAvailable ? '🔒 Bloqueada' : itemDef ? `${itemDef.emoji} Potenciada` : scaledConfig.category}
                     </span>
                     {isSelected && (
                       <span className="tourney-catalog-card-status">✓ En Mazo</span>

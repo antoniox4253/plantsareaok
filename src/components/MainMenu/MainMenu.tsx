@@ -32,7 +32,7 @@ import AuctionModal from '../Auction/AuctionModal'
 import { auctionService, type ActiveAuctionData } from '../../services/auctionService'
 import { tournamentService } from '../../services/tournamentService'
 import { lotteryService } from '../../services/lotteryService'
-import type { ColosseumBetAmount, PlantId, TournamentModel } from '../../types/game'
+import type { ColosseumBetAmount, PlantId, TournamentModel, PlantCardInstance } from '../../types/game'
 import './MainMenu.css'
 
 interface MainMenuProps {
@@ -49,6 +49,7 @@ interface MainMenuProps {
   userGold?: number
   hasVipPass?: boolean
   unlockedPlants?: PlantId[]
+  plantInstances?: PlantCardInstance[]
   claimedVipLevels?: number[]
   freePackSlots?: FreePackSlot[]
   colosseumTickets?: number
@@ -97,6 +98,7 @@ export default function MainMenu({
   playerEnergy = 20,
   maxPlayerEnergy = 20,
   unlockedPlants,
+  plantInstances,
   claimedVipLevels = [],
   freePackSlots = [],
   colosseumTickets = 0,
@@ -1074,6 +1076,7 @@ export default function MainMenu({
         userGold={userGold}
         isAdmin={isAdmin}
         unlockedPlants={unlockedPlants}
+        plantInstances={plantInstances}
         onDeductTokens={(amount) => {
           if (onDeductTokens) return onDeductTokens(amount)
           return false

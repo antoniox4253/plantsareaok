@@ -1218,6 +1218,7 @@ function App() {
             userGold={userGold}
             hasVipPass={hasVipPass}
             unlockedPlants={unlockedPlants}
+            plantInstances={plantInstances}
             claimedVipLevels={claimedVipLevels}
             freePackSlots={freePackSlots}
             colosseumTickets={colosseumTickets}
