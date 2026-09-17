@@ -5,24 +5,24 @@ describe('Sistema de Subasta - Reglas de Negocio y Configuración', () => {
   it('la carta de subasta (witch_hat / Lanzamaíz Bruja) está correctamente registrada con bonos de +200 HP y +25 Daño', () => {
     const itemDef = EQUIPPABLE_PLANT_ITEMS['witch_hat']
     expect(itemDef).toBeDefined()
-    expect(itemDef.targetPlantId).toBe('melonpult')
+    expect(itemDef.targetPlantId).toBe('kernelpult')
     expect(itemDef.equippedPlantName).toBe('Lanzamaíz Bruja')
     expect(itemDef.statBonusText).toContain('+200 HP')
     expect(itemDef.statBonusText).toContain('+25 Daño')
 
-    // Probar aplicación de stats en nivel 0 (base)
-    const baseMelon = PLANT_CONFIGS.melonpult
-    const scaledBase = getScaledPlantConfig('melonpult', 0, 'witch_hat')
+    // Probar aplicación de stats en nivel 0 (base de Lanzamaíz)
+    const baseKernel = PLANT_CONFIGS.kernelpult
+    const scaledBase = getScaledPlantConfig('kernelpult', 0, 'witch_hat')
 
-    expect(scaledBase.maxHp).toBe(baseMelon.maxHp + 200)
-    expect(scaledBase.damage).toBe((baseMelon.damage ?? 80) + 25)
+    expect(scaledBase.maxHp).toBe(baseKernel.maxHp + 200)
+    expect(scaledBase.damage).toBe((baseKernel.damage ?? 30) + 25)
     expect(scaledBase.sprite).toBe('/game-assets/auction/kernel_witch.png')
     expect(scaledBase.icon).toBe('/game-assets/auction/kernel_witch.png')
 
     // Probar aplicación de stats en nivel 1 (escala 15% + 200 HP)
-    const scaledLvl1 = getScaledPlantConfig('melonpult', 1, 'witch_hat')
-    expect(scaledLvl1.maxHp).toBe(Math.round(baseMelon.maxHp * 1.15) + 200)
-    expect(scaledLvl1.damage).toBe(Math.round((baseMelon.damage ?? 80) * 1.15) + 25)
+    const scaledLvl1 = getScaledPlantConfig('kernelpult', 1, 'witch_hat')
+    expect(scaledLvl1.maxHp).toBe(Math.round(baseKernel.maxHp * 1.15) + 200)
+    expect(scaledLvl1.damage).toBe(Math.round((baseKernel.damage ?? 30) * 1.15) + 25)
   })
 
   it('valida que la subasta inicia con 500 gemas y 30 horas de duración', () => {
