@@ -82,6 +82,7 @@ import {
   TOTAL_COLUMNS,
   getScaledPlantConfig,
   getEligibleStatsForPlant,
+  getEquippableItemDef,
   type PlantStatKey,
 } from '../utils/gameConstants'
 import { soundManager } from '../utils/audioManager'
@@ -1013,6 +1014,12 @@ export function useGameEngine() {
             }
           } catch {}
         }
+        if (cardEquippedItem) {
+          const itemDef = getEquippableItemDef(cardEquippedItem)
+          if (!itemDef || itemDef.targetPlantId !== card) {
+            cardEquippedItem = null
+          }
+        }
       } else {
         // En solitario y en prácticas: las del navegador, que es lo que hay y no
         // hay nadie con quien coincidir.
@@ -1027,7 +1034,7 @@ export function useGameEngine() {
 
           if (slotIdx !== null && parsedDeckInstIds[slotIdx]) {
             const targetInstId = parsedDeckInstIds[slotIdx]
-            const found = parsedInstances.find((i) => i.instanceId === targetInstId)
+            const found = parsedInstances.find((i) => i.instanceId === targetInstId && i.plantId === card)
             if (found) {
               rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
               cardLevel = found.level || 0
@@ -1040,6 +1047,13 @@ export function useGameEngine() {
             }
           }
         } catch {}
+
+        if (cardEquippedItem) {
+          const itemDef = getEquippableItemDef(cardEquippedItem)
+          if (!itemDef || itemDef.targetPlantId !== card) {
+            cardEquippedItem = null
+          }
+        }
 
         if (cardLevel > 0 && rolls.length === 0) {
           const eligible = getEligibleStatsForPlant(card)

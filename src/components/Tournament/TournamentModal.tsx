@@ -676,66 +676,64 @@ export default function TournamentModal({
                     }}
                   >
                     <div className="tourney-card-top">
-                      <span
-                        className={`tourney-status-badge ${
-                          tLive ? 'live' : tSched ? 'scheduled' : 'ended'
-                        }`}
-                      >
-                        {tLive ? '● EN VIVO' : tSched ? '⏳ PROGRAMADO' : '🏁 FINALIZADO'}
-                      </span>
-                      {t.is_test && (
-                        <span className="tourney-test-badge">🧪 PRUEBA</span>
-                      )}
-                      {t.plant_rule === 'owned_only' ? (
-                        <span style={{ fontSize: '0.66rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(245, 158, 11, 0.18)', border: '1px solid rgba(245, 158, 11, 0.45)', color: '#fde047' }}>
-                          🌿 Propias
+                      <div className="tourney-card-tags">
+                        <span
+                          className={`tourney-status-badge ${
+                            tLive ? 'live' : tSched ? 'scheduled' : 'ended'
+                          }`}
+                        >
+                          {tLive ? '● EN VIVO' : tSched ? '⏳ PROGRAMADO' : '🏁 FINALIZADO'}
                         </span>
-                      ) : (
-                        <span style={{ fontSize: '0.66rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.4)', color: '#7dd3fc' }}>
-                          🌟 15 Libres
+                        {t.is_test && (
+                          <span className="tourney-test-badge">🧪 PRUEBA</span>
+                        )}
+                        <span className={`tourney-rule-badge ${t.plant_rule === 'owned_only' ? 'owned' : 'free'}`}>
+                          {t.plant_rule === 'owned_only' ? '🌿 Propias' : '🌟 15 Libres'}
                         </span>
-                      )}
-                      {t.entry_currency === 'gold' && (t.entry_fee_amount ?? 0) > 0 ? (
-                        <span className="tourney-fee-badge--gold">🟡 {t.entry_fee_amount?.toLocaleString()} ORO</span>
-                      ) : (t.entry_currency === 'gems' || t.entry_fee_gems > 0) && ((t.entry_fee_amount ?? t.entry_fee_gems) > 0) ? (
-                        <span className="tourney-fee-badge">💎 {t.entry_fee_amount ?? t.entry_fee_gems} GEMAS</span>
-                      ) : (
-                        <span className="tourney-free-badge">🎉 FREE</span>
-                      )}
+                      </div>
+                      <div className="tourney-card-fee">
+                        {t.entry_currency === 'gold' && (t.entry_fee_amount ?? 0) > 0 ? (
+                          <span className="tourney-fee-badge--gold">🟡 {t.entry_fee_amount?.toLocaleString()} ORO</span>
+                        ) : (t.entry_currency === 'gems' || t.entry_fee_gems > 0) && ((t.entry_fee_amount ?? t.entry_fee_gems) > 0) ? (
+                          <span className="tourney-fee-badge">💎 {t.entry_fee_amount ?? t.entry_fee_gems} GEMAS</span>
+                        ) : (
+                          <span className="tourney-free-badge">🎉 GRATIS</span>
+                        )}
+                      </div>
                     </div>
 
                     <h4 className="tourney-card-title">{t.title}</h4>
 
                     <div className="tourney-card-meta">
                       {t.prize_item_id ? (
-                        <span style={{ color: '#f59e0b', fontWeight: 800 }}>
+                        <span className="tourney-card-prize-item">
                           🎁 {FARMING_ITEM_DEFINITIONS[t.prize_item_id as keyof typeof FARMING_ITEM_DEFINITIONS]?.label || t.prize_item_id}
                           {(t.prize_pool_amount ?? t.prize_pool_gems ?? 0) > 0 && ` + ${(t.prize_pool_amount ?? t.prize_pool_gems)} 💎`}
                         </span>
                       ) : t.prize_currency === 'gold' ? (
-                        <span style={{ color: '#fbbf24', fontWeight: 700 }}>
+                        <span className="tourney-card-prize-gold">
                           🟡 Pozo: {(t.prize_pool_amount ?? 0).toLocaleString()} Oro
                         </span>
                       ) : (
-                        <span style={{ color: '#c084fc', fontWeight: 700 }}>
+                        <span className="tourney-card-prize-gems">
                           💎 Pozo: {t.prize_pool_amount ?? t.prize_pool_gems ?? 0} Gemas
                         </span>
                       )}
-                      <span style={{ color: '#94a3b8' }}>
+                      <span className="tourney-card-participants">
                         👥 {t.participants_count || 1}
                       </span>
                     </div>
 
                     <div className="tourney-card-countdown">
                       {tLive ? (
-                        <>🔥 Termina en: {formatCountdown(tEnd)}</>
+                        <span className="tourney-countdown-live">🔥 Termina en: {formatCountdown(tEnd)}</span>
                       ) : tSched ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <div className="tourney-countdown-sched">
                           <span>⏳ Inicia en: {formatCountdown(tStart)}</span>
-                          <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>📅 {formatUtcDateTime(tStart)}</span>
+                          <span className="tourney-countdown-date">📅 {formatUtcDateTime(tStart)}</span>
                         </div>
                       ) : (
-                        <span style={{ color: '#94a3b8' }}>Torneo concluido</span>
+                        <span className="tourney-countdown-ended">🏁 Torneo concluido</span>
                       )}
                     </div>
                   </div>

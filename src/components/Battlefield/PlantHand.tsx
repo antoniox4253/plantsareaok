@@ -22,23 +22,27 @@ function getSlotCardLevelData(
   let level = 0
   let rolls: PlantStatKey[] = []
   let equippedItem: string | null = null
+  let resolvedFromDeck = false
 
   if (deckCards && deckCards.length > 0) {
     if (slotIndex >= 0 && deckCards[slotIndex] && deckCards[slotIndex].plantId === plantId) {
       level = deckCards[slotIndex].level || 0
       rolls = (deckCards[slotIndex].statRolls as PlantStatKey[]) || []
       equippedItem = deckCards[slotIndex].equippedItem || null
+      resolvedFromDeck = true
     } else {
       const found = deckCards.find((c) => c.plantId === plantId)
       if (found) {
         level = found.level || 0
         rolls = (found.statRolls as PlantStatKey[]) || []
         equippedItem = found.equippedItem || null
+        resolvedFromDeck = true
       }
     }
   }
 
-  if (level === 0 && rolls.length === 0 && !equippedItem) {
+  // Only fall back to localStorage if the card was NOT defined in the authoritative match deck
+  if (!resolvedFromDeck) {
     try {
       const savedDeckInstIds = localStorage.getItem('plant_arena_active_deck_instances')
       const savedInstances = localStorage.getItem('plant_arena_plant_instances')
@@ -52,13 +56,16 @@ function getSlotCardLevelData(
 
       if (slotIndex >= 0 && parsedDeckInstIds[slotIndex]) {
         const targetInstId = parsedDeckInstIds[slotIndex]
-        const found = parsedInstances.find((i) => i.instanceId === targetInstId)
+        // CRITICAL FIX: MUST verify i.plantId === plantId so we don't adopt stats or item from another plant in that slot!
+        const found = parsedInstances.find((i) => i.instanceId === targetInstId && i.plantId === plantId)
         if (found) {
           level = found.level || 0
           rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
           equippedItem = found.equippedItem || null
         }
-      } else {
+      }
+
+      if (!equippedItem) {
         const found = parsedInstances.find((i) => i.plantId === plantId && i.equippedItem)
         if (found) {
           equippedItem = found.equippedItem || null
@@ -73,7 +80,7 @@ function getSlotCardLevelData(
         rolls = parsedRolls[plantId]
       }
 
-      // Fallback synthesis if level > 0 so bonuses always render
+      // Fallback synthesis if level > 0 so bonuses always render in practice / sandbox
       if (level > 0 && rolls.length === 0) {
         const eligible = getEligibleStatsForPlant(plantId)
         const mockRolls: PlantStatKey[] = []
@@ -83,6 +90,26 @@ function getSlotCardLevelData(
         rolls = mockRolls
       }
     } catch {}
+  } else {
+    // If card was resolved from authoritative room deck, check if an equippedItem was stored locally as fallback
+    if (!equippedItem) {
+      try {
+        const savedInstances = localStorage.getItem('plant_arena_plant_instances')
+        const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
+        const found = parsedInstances.find((i) => i.plantId === plantId && i.equippedItem)
+        if (found) {
+          equippedItem = found.equippedItem || null
+        }
+      } catch {}
+    }
+  }
+
+  // BULLETPROOF CHECK: equippedItem MUST be compatible with this exact plantId
+  if (equippedItem) {
+    const itemDef = getEquippableItemDef(equippedItem)
+    if (!itemDef || itemDef.targetPlantId !== plantId) {
+      equippedItem = null
+    }
   }
 
   const map = new Map<PlantStatKey, number>()
