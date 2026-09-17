@@ -797,10 +797,18 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
         let isSplash = false
         let freezeDurationMs: number | undefined = undefined
 
+        const salidaX = planta.x + 2 * lado.sentido
+        let targetLane = planta.lane
+        let targetX: number | undefined = undefined
+
         if (planta.plantId === 'melonpult') {
           tipo = 'melon'
           velocidad = 22
           isSplash = true
+          const target = susPlantas
+            .filter((e) => e.lane === planta.lane && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
+            .sort((a, b) => (lado.sentido > 0 ? a.x - b.x : b.x - a.x))[0]
+          targetX = target ? target.x : (lado.sentido > 0 ? BASE_RIGHT_START_X : BASE_LEFT_END_X)
         } else if (planta.plantId === 'chomper') {
           tipo = 'needle'
           velocidad = 34
@@ -814,14 +822,34 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             const durationRolls = planta.statRolls?.filter((r) => r === 'duration').length ?? 0
             const extraSeconds = (planta.statRolls && planta.statRolls.length > 0) ? durationRolls * 0.6 : (planta.level ?? 0) * 0.6
             freezeDurationMs = 3000 + Math.round(extraSeconds * 1000)
+
+            // 🧈 La mantequilla puede salir disparada a cualquiera de las 3 líneas donde haya enemigos
+            const lanesConEnemigos = [0, 1, 2].filter((l) =>
+              susPlantas.some((e) => e.lane === l && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
+            )
+
+            if (lanesConEnemigos.length > 0) {
+              // Priorizar carriles con enemigos que NO estén congelados actualmente
+              const lanesNoCongelados = lanesConEnemigos.filter((l) =>
+                susPlantas.some(
+                  (e) => e.lane === l && e.hp > 0 && (!e.frozenUntil || e.frozenUntil <= state.tick) && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX)
+                )
+              )
+              const pool = lanesNoCongelados.length > 0 ? lanesNoCongelados : lanesConEnemigos
+              const idx = Math.floor(nextFloat(state.rng) * pool.length)
+              targetLane = pool[Math.min(idx, pool.length - 1)]
+            }
           } else {
             tipo = 'kernel'
             velocidad = 28
             damage = config.damage || 30
           }
-        }
 
-        const salidaX = planta.x + 2 * lado.sentido
+          const target = susPlantas
+            .filter((e) => e.lane === targetLane && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
+            .sort((a, b) => (lado.sentido > 0 ? a.x - b.x : b.x - a.x))[0]
+          targetX = target ? target.x : (lado.sentido > 0 ? BASE_RIGHT_START_X : BASE_LEFT_END_X)
+        }
 
         if (planta.plantId === 'threepeater') {
           for (const carril of [planta.lane - 1, planta.lane, planta.lane + 1].filter((l) => l >= 0 && l <= 2)) {
@@ -841,9 +869,12 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             id: entityId(`proj-${lado.equipo}`, state.tick, state.entityCounter++),
             type: tipo,
             targetTeam: lado.objetivo,
-            lane: planta.lane,
+            lane: targetLane,
+            originLane: planta.lane,
+            originX: salidaX,
+            targetX: targetX,
             x: salidaX,
-            y: 20 + planta.lane * 19.33 + 7,
+            y: 20 + targetLane * 19.33 + 7,
             speed: velocidad,
             damage: damage,
             isSplash: isSplash,

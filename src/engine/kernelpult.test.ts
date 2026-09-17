@@ -34,7 +34,7 @@ describe('Lanzamaíz (Kernel-pult) - Configuración, Stats y Mecánicas Oficiale
     expect(config.attackSpeedMs).toBe(2900)
     expect(config.damage).toBe(30)
     expect(config.sprite).toBe('/game-assets/plants/kernelpult.webp')
-    expect(config.packetActive).toBe('/game-assets/plants/kernelpult_packet.webp')
+    expect(config.packetActive).toBe('/game-assets/plants/kernelpult.webp')
   })
 
   it('tiene versión enemiga registrada en ENEMY_PLANT_CONFIGS', () => {
@@ -160,5 +160,33 @@ describe('Lanzamaíz (Kernel-pult) - Configuración, Stats y Mecánicas Oficiale
     expect(s1.enemyPlants[0].hp).toBe(s2.enemyPlants[0].hp)
     expect(s1.enemyPlants[0].frozenUntil).toBe(s2.enemyPlants[0].frozenUntil)
     expect(s1.projectiles.length).toBe(s2.projectiles.length)
+  })
+
+  it('lanza mantequilla hacia cualquiera de los 3 carriles donde haya enemigos con datos de parábola', () => {
+    // Lanzamaíz en carril 0, pero el único enemigo está en carril 2
+    let butterLaunchedToLane2 = false
+    for (let semilla = 1; semilla <= 50; semilla++) {
+      const estado = createBattleState(semilla, false, true)
+      const maiz = crearPlantaPropia(estado, 'kernelpult', 0, 1) // carril 0
+      estado.plants.push(maiz)
+
+      const enemigoCarril2 = crearPlantaDelRival(estado, 'wallnut', 2, 5) // carril 2
+      enemigoCarril2.hp = 3000
+      enemigoCarril2.maxHp = 3000
+      estado.enemyPlants.push(enemigoCarril2)
+
+      correr(estado, msToTicks(3500))
+
+      const butter = estado.projectiles.find((p) => p.type === 'butter')
+      if (butter) {
+        expect(butter.originLane).toBe(0)
+        expect(butter.lane).toBe(2) // fue apuntado al carril 2
+        expect(butter.originX).toBeDefined()
+        expect(butter.targetX).toBeDefined()
+        butterLaunchedToLane2 = true
+        break
+      }
+    }
+    expect(butterLaunchedToLane2, 'Debe haber disparado mantequilla hacia el carril 2 donde está el enemigo').toBe(true)
   })
 })

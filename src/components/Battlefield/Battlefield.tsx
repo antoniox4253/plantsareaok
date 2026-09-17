@@ -2059,38 +2059,64 @@ export default function Battlefield({
       })}
 
       {/* Flying Projectiles */}
-      {projectiles.map((proj) => (
-        <img
-          key={proj.id}
-          className={`projectile ${
-            proj.type === 'melon'
-              ? 'projectile--melon'
-              : proj.type === 'needle'
-              ? 'projectile--needle'
-              : proj.type === 'kernel'
-              ? 'projectile--kernel'
-              : proj.type === 'butter'
-              ? 'projectile--butter'
-              : 'projectile--pea'
-          } ${proj.targetTeam === 'p1' ? 'projectile--left' : ''}`}
-          src={
-            proj.type === 'melon'
-              ? melonImg
-              : proj.type === 'needle'
-              ? needleImg
-              : proj.type === 'kernel'
-              ? kernelImg
-              : proj.type === 'butter'
-              ? butterImg
-              : peaImg
-          }
-          alt=""
-          style={{
-            left: `${proj.x}%`,
-            top: `${proj.y}%`,
-          }}
-        />
-      ))}
+      {projectiles.map((proj) => {
+        const isCatapult = proj.type === 'kernel' || proj.type === 'butter' || proj.type === 'melon'
+        let currentY = proj.y
+        let scale = 1
+        if (isCatapult) {
+          const originX = proj.originX ?? (proj.targetTeam === 'p2' ? 15 : 85)
+          const targetX = proj.targetX ?? (proj.targetTeam === 'p2' ? 85 : 15)
+          const totalDist = Math.max(Math.abs(targetX - originX), 12)
+          const traveled = Math.abs(proj.x - originX)
+          const t = Math.min(Math.max(traveled / totalDist, 0), 1)
+
+          // Parábola de elevación: máxima en t = 0.5 (4 * 0.5 * 0.5 = 1)
+          const maxArc = proj.type === 'butter' ? 18 : 14
+          const arcHeight = 4 * t * (1 - t) * maxArc
+
+          const originLane = proj.originLane ?? proj.lane
+          const startY = 20 + originLane * 19.33 + 7
+          const endY = 20 + proj.lane * 19.33 + 7
+
+          currentY = startY + t * (endY - startY) - arcHeight
+          scale = 1 + 0.35 * Math.sin(t * Math.PI)
+        }
+
+        return (
+          <img
+            key={proj.id}
+            className={`projectile ${
+              proj.type === 'melon'
+                ? 'projectile--melon'
+                : proj.type === 'needle'
+                ? 'projectile--needle'
+                : proj.type === 'kernel'
+                ? 'projectile--kernel'
+                : proj.type === 'butter'
+                ? 'projectile--butter'
+                : 'projectile--pea'
+            } ${proj.targetTeam === 'p1' ? 'projectile--left' : ''}`}
+            src={
+              proj.type === 'melon'
+                ? melonImg
+                : proj.type === 'needle'
+                ? needleImg
+                : proj.type === 'kernel'
+                ? kernelImg
+                : proj.type === 'butter'
+                ? butterImg
+                : peaImg
+            }
+            alt=""
+            style={{
+              left: `${proj.x}%`,
+              top: `${currentY}%`,
+              transform: `${proj.targetTeam === 'p1' ? 'scaleX(-1)' : ''} scale(${scale})`,
+              zIndex: isCatapult ? 35 : 15,
+            }}
+          />
+        )
+      })}
 
       {/* Collectible Suns (Plant-generated and Sky-fallen across both sides) */}
       {suns.map((sun) => {

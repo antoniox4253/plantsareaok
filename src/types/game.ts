@@ -155,6 +155,9 @@ export interface ProjectileEntity {
   damage: number
   isSplash?: boolean
   freezeDurationMs?: number
+  originX?: number
+  originLane?: number
+  targetX?: number
 }
 
 export interface SunEntity {

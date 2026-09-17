@@ -727,17 +727,17 @@
 }
 
 .projectile--kernel {
-  width: 22px;
-  height: 22px;
-  animation: kernelSpin 0.4s linear infinite;
-  filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.85));
+  width: 26px;
+  height: 26px;
+  animation: kernelSpin 0.35s linear infinite;
+  filter: drop-shadow(0 3px 6px rgba(251, 191, 36, 0.9));
 }
 
 .projectile--butter {
-  width: 28px;
-  height: 28px;
-  animation: butterWobble 0.35s ease-in-out infinite alternate;
-  filter: drop-shadow(0 4px 10px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 12px rgba(234, 179, 8, 0.8));
+  width: 38px;
+  height: 38px;
+  animation: butterWobble 0.28s ease-in-out infinite alternate;
+  filter: drop-shadow(0 6px 14px rgba(250, 204, 21, 1)) drop-shadow(0 0 16px rgba(234, 179, 8, 0.95));
 }
 
 .projectile--needle {

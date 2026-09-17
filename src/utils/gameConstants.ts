@@ -231,11 +231,11 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
     category: 'ranged',
     attackSpeedMs: 2900,
     damage: 30,
-    icon: '/game-assets/plants/kernelpult_packet.webp',
-    packetActive: '/game-assets/plants/kernelpult_packet.webp',
-    packetDisabled: '/game-assets/plants/kernelpult_packet.webp',
+    icon: '/game-assets/plants/kernelpult.webp',
+    packetActive: '/game-assets/plants/kernelpult.webp',
+    packetDisabled: '/game-assets/plants/kernelpult.webp',
     sprite: '/game-assets/plants/kernelpult.webp',
-    description: 'Catapulta fija que lanza granos de maíz (30 DMG) y ocasionalmente mantequilla (60 DMG) que inmoviliza por completo al objetivo (3s a 6s).',
+    description: 'Catapulta fija que lanza granos de maíz (30 DMG) y mantequilla paralizante (60 DMG) a cualquiera de las 3 líneas con enemigos (3s a 6s).',
   },
 }
 
