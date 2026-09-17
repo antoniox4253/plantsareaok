@@ -214,6 +214,8 @@ export type TournamentStatus = 'scheduled' | 'live' | 'ended' | 'cancelled'
 export type TournamentEntryCurrency = 'free' | 'gold' | 'gems'
 export type TournamentPrizeCurrency = 'gems' | 'gold' | 'item' | 'mixed'
 
+export type TournamentPlantRule = 'all_unlocked' | 'owned_only'
+
 export interface TournamentModel {
   id: string
   title: string
@@ -239,6 +241,7 @@ export interface TournamentModel {
   prize_item_quantity?: number
   rewarded_places_count?: number
   is_test?: boolean
+  plant_rule?: TournamentPlantRule
 }
 
 export interface TournamentLeaderboardItem {
@@ -289,4 +292,5 @@ export interface CreateTournamentInput {
   prize_item_quantity?: number
   rewarded_places_count?: number
   is_test?: boolean
+  plant_rule?: TournamentPlantRule
 }

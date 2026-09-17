@@ -9,16 +9,27 @@ interface TournamentDeckBuilderProps {
   currentDeck: PlantId[]
   onSaveDeck: (newDeck: PlantId[]) => Promise<void> | void
   onClose: () => void
+  plantRule?: 'all_unlocked' | 'owned_only'
+  unlockedPlants?: PlantId[]
 }
 
 const ALL_PLANT_IDS = Object.keys(PLANT_CONFIGS) as PlantId[]
+const BASE_STARTER_PLANTS: PlantId[] = ['sunflower', 'peashooter', 'wallnut', 'chomper']
 
 export default function TournamentDeckBuilder({
   isOpen,
   currentDeck,
   onSaveDeck,
   onClose,
+  plantRule = 'all_unlocked',
+  unlockedPlants = [],
 }: TournamentDeckBuilderProps) {
+  const isCardAvailable = (plantId: PlantId): boolean => {
+    if (plantRule !== 'owned_only') return true
+    if (BASE_STARTER_PLANTS.includes(plantId)) return true
+    return unlockedPlants.includes(plantId)
+  }
+
   const [selectedDeck, setSelectedDeck] = useState<PlantId[]>(() => {
     if (currentDeck && currentDeck.length >= 5) {
       return currentDeck.slice(0, 5)
@@ -37,6 +48,15 @@ export default function TournamentDeckBuilder({
   if (!isOpen) return null
 
   const handleAddCard = (plantId: PlantId) => {
+    if (!isCardAvailable(plantId)) {
+      soundManager.playSound('click', 0.2)
+      alert(
+        `🔒 La planta "${PLANT_CONFIGS[plantId]?.name || plantId}" está bloqueada en tu colección.\n\n` +
+        `Este torneo tiene la regla "Solo Plantas Propias", por lo que solo puedes seleccionar cartas que poseas en tu inventario.`
+      )
+      return
+    }
+
     soundManager.playSound('click', 0.4)
     if (selectedDeck.includes(plantId)) {
       // Si ya está en el mazo, la quitamos
@@ -45,7 +65,7 @@ export default function TournamentDeckBuilder({
     }
 
     if (selectedDeck.length >= 5) {
-      // Mazo lleno: reemplaza la última o avisa
+      // Mazo lleno: reemplaza la última
       setSelectedDeck((prev) => [...prev.slice(0, 4), plantId])
     } else {
       setSelectedDeck((prev) => [...prev, plantId])
@@ -62,6 +82,19 @@ export default function TournamentDeckBuilder({
       alert('Debes seleccionar exactamente 5 plantas para tu mazo de torneo.')
       return
     }
+
+    if (plantRule === 'owned_only') {
+      const invalid = selectedDeck.filter((id) => !isCardAvailable(id))
+      if (invalid.length > 0) {
+        alert(
+          `Tu mazo contiene plantas que no tienes desbloqueadas: ${invalid
+            .map((id) => PLANT_CONFIGS[id]?.name || id)
+            .join(', ')}.\nPor favor reemplázalas por plantas de tu colección antes de guardar.`
+        )
+        return
+      }
+    }
+
     soundManager.playSound('plantation', 0.8)
     setIsSaving(true)
     try {
@@ -81,7 +114,16 @@ export default function TournamentDeckBuilder({
         <div className="tourney-deck-header">
           <div className="tourney-deck-title-area">
             <h2>Mazo de Torneo</h2>
-            <span className="tourney-deck-badge">15 Cartas Libres</span>
+            <span
+              className="tourney-deck-badge"
+              style={
+                plantRule === 'owned_only'
+                  ? { background: 'rgba(245, 158, 11, 0.25)', borderColor: '#f59e0b', color: '#fde047' }
+                  : undefined
+              }
+            >
+              {plantRule === 'owned_only' ? '🌿 Solo Plantas Propias' : '🌟 15 Cartas Libres'}
+            </span>
           </div>
           <button
             type="button"
@@ -94,12 +136,27 @@ export default function TournamentDeckBuilder({
         </div>
 
         <div className="tourney-deck-body">
-          <div className="tourney-deck-notice">
-            <span className="tourney-deck-notice-icon">🌱</span>
+          <div
+            className="tourney-deck-notice"
+            style={
+              plantRule === 'owned_only'
+                ? { background: 'rgba(245, 158, 11, 0.12)', borderColor: 'rgba(245, 158, 11, 0.4)' }
+                : undefined
+            }
+          >
+            <span className="tourney-deck-notice-icon">
+              {plantRule === 'owned_only' ? '🔒' : '🌱'}
+            </span>
             <div>
-              <strong>¡Todas las cartas desbloqueadas para el torneo!</strong>
+              <strong style={plantRule === 'owned_only' ? { color: '#fde047' } : undefined}>
+                {plantRule === 'owned_only'
+                  ? '¡Regla: Solo Plantas Propias!'
+                  : '¡Todas las cartas desbloqueadas para el torneo!'}
+              </strong>
               <div style={{ marginTop: 2, opacity: 0.9 }}>
-                En el torneo compites en igualdad de condiciones. Puedes probar cualquier planta sin necesidad de tenerla en tu inventario real.
+                {plantRule === 'owned_only'
+                  ? 'En este torneo solo puedes armar tu mazo con las cartas que has desbloqueado en tu colección personal. Las plantas que no posees aparecen bloqueadas.'
+                  : 'En el torneo compites en igualdad de condiciones. Puedes probar cualquier planta sin necesidad de tenerla en tu inventario real.'}
               </div>
             </div>
           </div>
@@ -165,7 +222,11 @@ export default function TournamentDeckBuilder({
 
           <div className="tourney-catalog-section">
             <div className="tourney-catalog-header">
-              <span>Catálogo Disponible (15 Plantas)</span>
+              <span>
+                {plantRule === 'owned_only'
+                  ? 'Catálogo: Tus Plantas Desbloqueadas'
+                  : 'Catálogo Disponible (15 Plantas)'}
+              </span>
               <span style={{ fontSize: 12, color: '#94a3b8' }}>
                 Haz clic en una planta para añadirla o quitarla
               </span>
@@ -175,14 +236,51 @@ export default function TournamentDeckBuilder({
               {ALL_PLANT_IDS.map((id) => {
                 const plant = PLANT_CONFIGS[id]
                 const isSelected = selectedDeck.includes(id)
+                const isAvailable = isCardAvailable(id)
 
                 return (
                   <div
                     key={id}
-                    className={`tourney-catalog-card ${isSelected ? 'in-deck' : ''}`}
+                    className={`tourney-catalog-card ${isSelected ? 'in-deck' : ''} ${!isAvailable ? 'is-locked' : ''}`}
                     onClick={() => handleAddCard(id)}
-                    title={plant.description}
+                    title={
+                      !isAvailable
+                        ? `🔒 Bloqueada: No posees esta planta en tu colección.`
+                        : plant.description
+                    }
+                    style={
+                      !isAvailable
+                        ? {
+                            opacity: 0.45,
+                            filter: 'grayscale(0.85)',
+                            cursor: 'not-allowed',
+                            position: 'relative',
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                          }
+                        : undefined
+                    }
                   >
+                    {!isAvailable && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          background: 'rgba(0, 0, 0, 0.75)',
+                          borderRadius: '50%',
+                          width: 22,
+                          height: 22,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          zIndex: 2,
+                          border: '1px solid rgba(245, 158, 11, 0.5)',
+                        }}
+                      >
+                        🔒
+                      </div>
+                    )}
                     <span className="tourney-catalog-cost">☀️ {plant.cost}</span>
                     <img
                       src={plant.icon}
@@ -190,7 +288,9 @@ export default function TournamentDeckBuilder({
                       className="tourney-catalog-card-img"
                     />
                     <span className="tourney-catalog-card-name">{plant.name}</span>
-                    <span className="tourney-catalog-card-category">{plant.category}</span>
+                    <span className="tourney-catalog-card-category">
+                      {!isAvailable ? '🔒 Bloqueada' : plant.category}
+                    </span>
                     {isSelected && (
                       <span className="tourney-catalog-card-status">✓ En Mazo</span>
                     )}

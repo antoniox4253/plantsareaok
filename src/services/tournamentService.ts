@@ -90,6 +90,7 @@ export const tournamentService = {
         p_prize_item_quantity: input.prize_item_quantity ?? 1,
         p_rewarded_places_count: input.rewarded_places_count ?? 3,
         p_is_test: Boolean(input.is_test),
+        p_plant_rule: input.plant_rule ?? 'all_unlocked',
       })
 
       if (error) {
@@ -593,6 +594,7 @@ export const tournamentService = {
       prize_item_quantity: input.prize_item_quantity ?? 1,
       rewarded_places_count: input.rewarded_places_count ?? 3,
       is_test: Boolean(input.is_test),
+      plant_rule: input.plant_rule || 'all_unlocked',
     }
 
     memoryTournaments.set(newTourn.id, newTourn)

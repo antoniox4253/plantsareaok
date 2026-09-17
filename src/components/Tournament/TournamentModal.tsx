@@ -13,6 +13,7 @@ interface TournamentModalProps {
   userTokens: number
   userGold?: number
   isAdmin?: boolean
+  unlockedPlants?: PlantId[]
   onDeductTokens: (amount: number) => boolean
   onDeductGold?: (amount: number) => boolean
   onStartTournamentMatch: (
@@ -55,6 +56,7 @@ export default function TournamentModal({
   userTokens,
   userGold = 0,
   isAdmin = false,
+  unlockedPlants = [],
   onDeductTokens,
   onDeductGold,
   onStartTournamentMatch,
@@ -82,6 +84,7 @@ export default function TournamentModal({
   const [createPrizeItemQuantity, setCreatePrizeItemQuantity] = useState<number>(1)
   const [createPlacesCount, setCreatePlacesCount] = useState<1 | 3 | 5 | 10>(3)
   const [createIsTest, setCreateIsTest] = useState<boolean>(false)
+  const [createPlantRule, setCreatePlantRule] = useState<'all_unlocked' | 'owned_only'>('all_unlocked')
   const [createStartOffsetMin, setCreateStartOffsetMin] = useState<number>(5)
   const [createDurationMin, setCreateDurationMin] = useState<number>(120)
   const [createError, setCreateError] = useState<string | null>(null)
@@ -280,6 +283,7 @@ export default function TournamentModal({
       setCreatePlacesCount(1)
     }
 
+    setCreatePlantRule('all_unlocked')
     setCreateStep('form')
   }
 
@@ -517,6 +521,7 @@ export default function TournamentModal({
         prize_item_quantity: createCategory === 'item' ? createPrizeItemQuantity : 1,
         rewarded_places_count: createPlacesCount,
         is_test: createIsTest,
+        plant_rule: createCategory === 'free' ? 'all_unlocked' : createPlantRule,
       })
 
       if (!res.success) {
@@ -675,6 +680,15 @@ export default function TournamentModal({
                       {t.is_test && (
                         <span className="tourney-test-badge">🧪 PRUEBA</span>
                       )}
+                      {t.plant_rule === 'owned_only' ? (
+                        <span style={{ fontSize: '0.66rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(245, 158, 11, 0.18)', border: '1px solid rgba(245, 158, 11, 0.45)', color: '#fde047' }}>
+                          🌿 Propias
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.66rem', fontWeight: 800, padding: '2px 6px', borderRadius: 4, background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.4)', color: '#7dd3fc' }}>
+                          🌟 15 Libres
+                        </span>
+                      )}
                       {t.entry_currency === 'gold' && (t.entry_fee_amount ?? 0) > 0 ? (
                         <span className="tourney-fee-badge--gold">🟡 {t.entry_fee_amount?.toLocaleString()} ORO</span>
                       ) : (t.entry_currency === 'gems' || t.entry_fee_gems > 0) && ((t.entry_fee_amount ?? t.entry_fee_gems) > 0) ? (
@@ -734,6 +748,15 @@ export default function TournamentModal({
                     <h3 style={{ margin: 0 }}>{selectedTourney.title}</h3>
                     {selectedTourney.is_test && (
                       <span className="tourney-test-badge">🧪 Torneo de Prueba Admin</span>
+                    )}
+                    {selectedTourney.plant_rule === 'owned_only' ? (
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: 'rgba(245, 158, 11, 0.2)', border: '1px solid #f59e0b', color: '#fde047' }}>
+                        🌿 Solo Plantas Propias
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', color: '#bae6fd' }}>
+                        🌟 15 Plantas Libres
+                      </span>
                     )}
                   </div>
                   <p style={{ marginTop: 4 }}>
@@ -1736,6 +1759,69 @@ export default function TournamentModal({
                     </div>
                   </div>
 
+                  {/* Regla de Plantas (Para Torneos con Oro, Gemas o Ítems) */}
+                  {createCategory !== 'free' && (
+                    <div className="tourney-form-group">
+                      <label>🌱 Regla de Plantas Permitidas</label>
+                      <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                        <button
+                          type="button"
+                          className={`tourney-quick-btn ${createPlantRule === 'all_unlocked' ? 'active' : ''}`}
+                          style={{
+                            flex: 1,
+                            padding: '9px 12px',
+                            fontSize: '0.82rem',
+                            textAlign: 'left',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 3,
+                          }}
+                          onClick={() => setCreatePlantRule('all_unlocked')}
+                        >
+                          <span style={{ fontWeight: 800, color: createPlantRule === 'all_unlocked' ? '#fff' : '#e2e8f0' }}>
+                            🌟 Todas Desbloqueadas
+                          </span>
+                          <span style={{ fontSize: '0.71rem', opacity: 0.85 }}>
+                            15 cartas libres para todos los jugadores (Fair Play total).
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`tourney-quick-btn ${createPlantRule === 'owned_only' ? 'active' : ''}`}
+                          style={{
+                            flex: 1,
+                            padding: '9px 12px',
+                            fontSize: '0.82rem',
+                            textAlign: 'left',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 3,
+                          }}
+                          onClick={() => setCreatePlantRule('owned_only')}
+                        >
+                          <span style={{ fontWeight: 800, color: createPlantRule === 'owned_only' ? '#fff' : '#e2e8f0' }}>
+                            🌿 Solo Plantas Propias
+                          </span>
+                          <span style={{ fontSize: '0.71rem', opacity: 0.85 }}>
+                            Cada jugador solo usa las plantas que ha desbloqueado.
+                          </span>
+                        </button>
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '0.74rem',
+                          color: createPlantRule === 'owned_only' ? '#fde047' : '#86efac',
+                          marginTop: 3,
+                          display: 'block',
+                        }}
+                      >
+                        {createPlantRule === 'owned_only'
+                          ? '🔒 El backend validará que ningún participante guarde o juegue con plantas que no posea en su colección.'
+                          : '🌟 Todos los gladiadores tendrán acceso a las 15 plantas para armar sus mejores estrategias.'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Modo de Prueba para Admin (Producción) */}
                   <div style={{
                     background: createIsTest ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
@@ -1766,7 +1852,7 @@ export default function TournamentModal({
                   </div>
 
                   <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: 10, borderRadius: 8, fontSize: '0.78rem', color: '#d8b4fe' }}>
-                    ℹ️ Reglas: 15 plantas 100% desbloqueadas para todos, eliminación a las 3 derrotas y reentrada disponible por 200 💎 (2 vidas).
+                    ℹ️ Reglas: {createCategory === 'free' || createPlantRule === 'all_unlocked' ? '🌟 15 plantas 100% desbloqueadas para todos' : '🌿 Solo plantas propias (colección de cada jugador)'}, eliminación a las 3 derrotas y reentrada disponible por 200 💎 (2 vidas).
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
@@ -1801,6 +1887,8 @@ export default function TournamentModal({
           currentDeck={activeDeckList}
           onSaveDeck={handleSaveDeck}
           onClose={() => setShowDeckBuilder(false)}
+          plantRule={selectedTourney?.plant_rule || 'all_unlocked'}
+          unlockedPlants={unlockedPlants}
         />
       </div>
     </div>

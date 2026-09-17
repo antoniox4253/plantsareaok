@@ -1073,6 +1073,7 @@ export default function MainMenu({
         userTokens={userTokens}
         userGold={userGold}
         isAdmin={isAdmin}
+        unlockedPlants={unlockedPlants}
         onDeductTokens={(amount) => {
           if (onDeductTokens) return onDeductTokens(amount)
           return false
