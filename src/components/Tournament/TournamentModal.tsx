@@ -147,7 +147,11 @@ export default function TournamentModal({
     try {
       const list = await tournamentService.listTournaments()
       setTournaments(list)
-      if (list.length > 0 && !selectedTourneyId) {
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+      const tourneyParam = urlParams?.get('tourney')
+      if (tourneyParam && list.some((t) => t.id === tourneyParam)) {
+        setSelectedTourneyId(tourneyParam)
+      } else if (list.length > 0 && !selectedTourneyId) {
         setSelectedTourneyId(list[0].id)
       }
     } catch (err) {
@@ -757,6 +761,30 @@ export default function TournamentModal({
                       <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', color: '#bae6fd' }}>
                         🌟 15 Plantas Libres
                       </span>
+                    )}
+                    {selectedTourney.is_test && (
+                      <button
+                        type="button"
+                        className="tourney-btn-deck"
+                        style={{
+                          background: 'rgba(6, 182, 212, 0.25)',
+                          borderColor: '#06b6d4',
+                          color: '#a5f3fc',
+                          padding: '2px 8px',
+                          fontSize: '0.72rem',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => {
+                          const url = `${window.location.origin}${window.location.pathname}?tourney=${selectedTourney.id}`
+                          navigator.clipboard.writeText(url)
+                          alert(
+                            `📋 ¡Enlace de prueba copiado al portapapeles!\n\n${url}\n\n` +
+                            `Envíaselo a tus amigos para que entren desde este preview. Podrán ver el torneo e inscribirse para jugar contigo. En producción (main) nadie más lo verá.`
+                          )
+                        }}
+                      >
+                        🔗 Invitar Testers (Copiar Link)
+                      </button>
                     )}
                   </div>
                   <p style={{ marginTop: 4 }}>

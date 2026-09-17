@@ -19,7 +19,18 @@ export const tournamentService = {
     }
 
     try {
-      const { data, error } = await (supabase.rpc as any)('get_tournaments_list')
+      const isPreviewEnvironment =
+        typeof window !== 'undefined' &&
+        (window.location.hostname.includes('preview') ||
+          window.location.hostname.includes('vercel.app') ||
+          window.location.hostname.includes('localhost') ||
+          window.location.hostname.includes('127.0.0.1') ||
+          window.location.search.includes('test=true') ||
+          window.location.search.includes('tourney='))
+
+      const { data, error } = await (supabase.rpc as any)('get_tournaments_list', {
+        p_include_test: isPreviewEnvironment,
+      })
       if (!error && Array.isArray(data)) {
         return data as TournamentModel[]
       }
