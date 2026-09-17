@@ -1490,9 +1490,9 @@ export default function TournamentModal({
                         type="number"
                         className="tourney-form-input"
                         min="1"
-                        step="50"
+                        step="1"
                         value={createEntryFeeAmount}
-                        onChange={(e) => setCreateEntryFeeAmount(Math.max(1, Number(e.target.value)))}
+                        onChange={(e) => setCreateEntryFeeAmount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0))}
                         required
                       />
                       <span style={{ fontSize: '0.74rem', color: '#fde047' }}>
@@ -1506,9 +1506,9 @@ export default function TournamentModal({
                         type="number"
                         className="tourney-form-input"
                         min="1"
-                        step="5"
+                        step="1"
                         value={createEntryFeeAmount}
-                        onChange={(e) => setCreateEntryFeeAmount(Math.max(1, Number(e.target.value)))}
+                        onChange={(e) => setCreateEntryFeeAmount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0))}
                         required
                       />
                       <span style={{ fontSize: '0.74rem', color: '#c084fc' }}>
@@ -1553,9 +1553,9 @@ export default function TournamentModal({
                       type="number"
                       className="tourney-form-input"
                       min="0"
-                      step={createPrizeCurrency === 'gold' ? '100' : '10'}
+                      step="1"
                       value={createPrizePoolAmount}
-                      onChange={(e) => setCreatePrizePoolAmount(Number(e.target.value))}
+                      onChange={(e) => setCreatePrizePoolAmount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0))}
                     />
                     <span style={{ fontSize: '0.74rem', color: createPrizeCurrency === 'gold' ? '#fde047' : '#c084fc' }}>
                       {createCategory === 'item'
