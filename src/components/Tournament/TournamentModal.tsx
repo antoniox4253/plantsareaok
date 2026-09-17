@@ -361,7 +361,7 @@ export default function TournamentModal({
   // Finalize tournament handler (Distribute pool and items)
   const handleFinalizeTournament = async () => {
     if (!selectedTourney) return
-    const pool = selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0
+    const pool = Number(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0)
     const currName = selectedTourney.prize_currency === 'gold' ? 'Oro' : 'Gemas'
     const currSym = selectedTourney.prize_currency === 'gold' ? '🟡' : '💎'
     const places = selectedTourney.rewarded_places_count || 3
@@ -681,15 +681,15 @@ export default function TournamentModal({
                       {t.prize_item_id ? (
                         <span className="tourney-card-prize-item">
                           🎁 {FARMING_ITEM_DEFINITIONS[t.prize_item_id as keyof typeof FARMING_ITEM_DEFINITIONS]?.label || t.prize_item_id}
-                          {(t.prize_pool_amount ?? t.prize_pool_gems ?? 0) > 0 && ` + ${(t.prize_pool_amount ?? t.prize_pool_gems)} 💎`}
+                          {Number(t.prize_pool_amount ?? t.prize_pool_gems ?? 0) > 0 && ` + ${Number(t.prize_pool_amount ?? t.prize_pool_gems).toLocaleString()} 💎`}
                         </span>
                       ) : t.prize_currency === 'gold' ? (
                         <span className="tourney-card-prize-gold">
-                          🟡 Pozo: {(t.prize_pool_amount ?? 0).toLocaleString()} Oro
+                          🟡 Pozo: {Number(t.prize_pool_amount ?? 0).toLocaleString()} Oro
                         </span>
                       ) : (
                         <span className="tourney-card-prize-gems">
-                          💎 Pozo: {t.prize_pool_amount ?? t.prize_pool_gems ?? 0} Gemas
+                          💎 Pozo: {Number(t.prize_pool_amount ?? t.prize_pool_gems ?? 0).toLocaleString()} Gemas
                         </span>
                       )}
                       <span className="tourney-card-participants">
@@ -772,16 +772,16 @@ export default function TournamentModal({
                     {selectedTourney.prize_item_id ? (
                       <span>
                         🎁 Premio Principal: <strong>{FARMING_ITEM_DEFINITIONS[selectedTourney.prize_item_id as keyof typeof FARMING_ITEM_DEFINITIONS]?.label || selectedTourney.prize_item_id}</strong>
-                        {(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0) > 0 &&
-                          ` + ${(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems)} Gemas`}
+                        {Number(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0) > 0 &&
+                          ` + ${Number(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems).toLocaleString()} Gemas`}
                       </span>
                     ) : selectedTourney.prize_currency === 'gold' ? (
                       <span>
-                        🟡 Pozo Oficial: <strong>{(selectedTourney.prize_pool_amount ?? 0).toLocaleString()} Oro</strong> (Top {selectedTourney.rewarded_places_count || 3})
+                        🟡 Pozo Oficial: <strong>{Number(selectedTourney.prize_pool_amount ?? 0).toLocaleString()} Oro</strong> (Top {selectedTourney.rewarded_places_count || 3})
                       </span>
                     ) : (
                       <span>
-                        💎 Pozo de Premios: <strong>{(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0).toLocaleString()} Gemas</strong> (Top {selectedTourney.rewarded_places_count || 3})
+                        💎 Pozo de Premios: <strong>{Number(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0).toLocaleString()} Gemas</strong> (Top {selectedTourney.rewarded_places_count || 3})
                       </span>
                     )}
                   </p>
@@ -1148,7 +1148,7 @@ export default function TournamentModal({
                       ) : displayedLeaderboard.length > 0 ? (
                         displayedLeaderboard.map((row) => {
                           let prizeText = '—'
-                          const pool = selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0
+                          const pool = Number(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0)
                           const prizeCurr = selectedTourney.prize_currency || 'gems'
                           const sym = prizeCurr === 'gold' ? '🟡' : '💎'
                           const places = selectedTourney.rewarded_places_count || 3
@@ -1156,10 +1156,12 @@ export default function TournamentModal({
                           if (isEnded) {
                             const parts: string[] = []
                             if (row.prize_awarded_gold && row.prize_awarded_gold > 0) {
-                              parts.push(`${Number(row.prize_awarded_gold).toLocaleString()} 🟡`)
+                              const goldVal = Number(row.prize_awarded_gold)
+                              parts.push(`${goldVal % 1 === 0 ? goldVal.toLocaleString() : goldVal.toFixed(2)} 🟡`)
                             }
                             if (row.prize_awarded_gems && row.prize_awarded_gems > 0) {
-                              parts.push(`${Number(row.prize_awarded_gems).toFixed(1)} 💎`)
+                              const gemsVal = Number(row.prize_awarded_gems)
+                              parts.push(`${gemsVal % 1 === 0 ? gemsVal.toLocaleString() : gemsVal.toFixed(2)} 💎`)
                             }
                             if (row.prize_awarded_item_id) {
                               const itemDef = FARMING_ITEM_DEFINITIONS[row.prize_awarded_item_id as FarmingItemId]
@@ -1194,7 +1196,8 @@ export default function TournamentModal({
 
                               if (pct > 0 && pool > 0) {
                                 const val = pool * pct
-                                poolPart = prizeCurr === 'gold' ? `${Math.round(val).toLocaleString()} ${sym}` : `${val.toFixed(1)} ${sym}`
+                                const formattedVal = val % 1 === 0 ? val.toLocaleString() : Number(val.toFixed(2)).toLocaleString()
+                                poolPart = `${formattedVal} ${sym}`
                               }
 
                               let itemPart = ''
@@ -1445,6 +1448,7 @@ export default function TournamentModal({
                         step="1"
                         value={createEntryFeeAmount}
                         onChange={(e) => setCreateEntryFeeAmount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        onWheel={(e) => e.currentTarget.blur()}
                         required
                       />
                       <span style={{ fontSize: '0.74rem', color: '#fde047' }}>
@@ -1461,6 +1465,7 @@ export default function TournamentModal({
                         step="1"
                         value={createEntryFeeAmount}
                         onChange={(e) => setCreateEntryFeeAmount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        onWheel={(e) => e.currentTarget.blur()}
                         required
                       />
                       <span style={{ fontSize: '0.74rem', color: '#c084fc' }}>
@@ -1508,6 +1513,7 @@ export default function TournamentModal({
                       step="1"
                       value={createPrizePoolAmount}
                       onChange={(e) => setCreatePrizePoolAmount(e.target.value === '' ? 0 : Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      onWheel={(e) => e.currentTarget.blur()}
                     />
                     <span style={{ fontSize: '0.74rem', color: createPrizeCurrency === 'gold' ? '#fde047' : '#c084fc' }}>
                       {createCategory === 'item'
@@ -1563,6 +1569,7 @@ export default function TournamentModal({
                           max="100"
                           value={createPrizeItemQuantity}
                           onChange={(e) => setCreatePrizeItemQuantity(Math.max(1, Number(e.target.value)))}
+                          onWheel={(e) => e.currentTarget.blur()}
                         />
                       </div>
                     </div>
@@ -1585,6 +1592,53 @@ export default function TournamentModal({
                         </button>
                       ))}
                     </div>
+
+                    {createPrizePoolAmount > 0 && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          padding: '10px 12px',
+                          background: 'rgba(168, 85, 247, 0.1)',
+                          border: '1px dashed rgba(168, 85, 247, 0.4)',
+                          borderRadius: 8,
+                          fontSize: '0.76rem',
+                          color: '#e9d5ff',
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, marginBottom: 6, color: '#f3e8ff' }}>
+                          📊 Reparto exacto del pozo ({createPrizePoolAmount.toLocaleString()} {createPrizeCurrency === 'gold' ? '🟡 Oro' : '💎 Gemas'}):
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 10px' }}>
+                          {(() => {
+                            let pcts: { rank: number; pct: number }[] = []
+                            if (createPlacesCount === 1) pcts = [{ rank: 1, pct: 100 }]
+                            else if (createPlacesCount === 3) pcts = [{ rank: 1, pct: 50 }, { rank: 2, pct: 30 }, { rank: 3, pct: 20 }]
+                            else if (createPlacesCount === 5) pcts = [{ rank: 1, pct: 40 }, { rank: 2, pct: 25 }, { rank: 3, pct: 15 }, { rank: 4, pct: 10 }, { rank: 5, pct: 10 }]
+                            else if (createPlacesCount === 10) pcts = [
+                              { rank: 1, pct: 30 }, { rank: 2, pct: 20 }, { rank: 3, pct: 15 }, { rank: 4, pct: 10 },
+                              { rank: 5, pct: 7 }, { rank: 6, pct: 5 }, { rank: 7, pct: 5 }, { rank: 8, pct: 3 }, { rank: 9, pct: 3 }, { rank: 10, pct: 2 }
+                            ]
+                            const sym = createPrizeCurrency === 'gold' ? '🟡' : '💎'
+                            return pcts.map(({ rank, pct }) => {
+                              const amount = Math.round((createPrizePoolAmount * pct) / 100)
+                              return (
+                                <span
+                                  key={rank}
+                                  style={{
+                                    background: 'rgba(0,0,0,0.35)',
+                                    padding: '3px 8px',
+                                    borderRadius: 5,
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                  }}
+                                >
+                                  <strong>Top {rank}</strong> ({pct}%): <strong>{amount.toLocaleString()} {sym}</strong>
+                                </span>
+                              )
+                            })
+                          })()}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Hora de Inicio */}

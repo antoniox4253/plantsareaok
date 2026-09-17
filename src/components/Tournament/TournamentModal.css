@@ -884,6 +884,16 @@
   font-size: 0.9rem;
 }
 
+.tourney-form-input[type="number"]::-webkit-inner-spin-button,
+.tourney-form-input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.tourney-form-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .tourney-form-input:focus {
   outline: none;
   border-color: #c084fc;
