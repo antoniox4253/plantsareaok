@@ -14,7 +14,6 @@ import { soundManager } from '../../utils/audioManager'
 import type { InventoryPack, PackId } from '../../utils/packDropManager'
 import type { PlayerRewardPack } from '../../utils/freePackManager'
 import { EMPTY_FARMING_INVENTORY, FARMING_ITEM_DEFINITIONS, type FarmingInventory } from '../../utils/pvpRewardManager'
-import LotteryModal from '../Lottery/LotteryModal'
 import TreeModal from './TreeModal'
 import './Jardin.css'
 
@@ -149,8 +148,8 @@ export default function Jardin({
   onSproutPlant,
   onEquipItem,
   onUnequipItem,
-  isAdmin,
-  onOpenAdmin,
+  isAdmin: _isAdmin,
+  onOpenAdmin: _onOpenAdmin,
   onRewardsChanged,
   playerEnergy = 20,
   maxPlayerEnergy = 20,
@@ -159,7 +158,6 @@ export default function Jardin({
   const [deck, setDeck] = useState<PlantId[]>(activeDeck)
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null)
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
-  const [showLotteryModal, setShowLotteryModal] = useState(false)
   const [showTreeModal, setShowTreeModal] = useState(false)
   const [rewardPackAccelerating, setRewardPackAccelerating] = useState<{
     packId: string
@@ -794,16 +792,6 @@ export default function Jardin({
           </span>
         </div>
         <div className="jardin-header__right">
-          <button
-            type="button"
-            className="jardin-btn-lottery"
-            onClick={() => {
-              soundManager.playSound('click', 0.4)
-              setShowLotteryModal(true)
-            }}
-          >
-            🎰 LOTERÍA
-          </button>
           <button type="button" className="jardin-btn-shop" onClick={onOpenShop}>
             🛒 TIENDA
           </button>
@@ -1899,18 +1887,6 @@ export default function Jardin({
         </div>
       )}
 
-      {/* LOTTERY POPUP MODAL */}
-      {showLotteryModal && (
-        <LotteryModal
-          isOpen={showLotteryModal}
-          onClose={() => setShowLotteryModal(false)}
-          userTokens={userTokens}
-          userGold={userGold}
-          isAdmin={isAdmin}
-          onOpenAdmin={onOpenAdmin}
-          onRewardsChanged={onRewardsChanged}
-        />
-      )}
 
       {/* MOTHER TREE UPGRADE MODAL */}
       {showTreeModal && (

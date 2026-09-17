@@ -1281,12 +1281,14 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 18px rgba(253, 224, 71, 0.6);
 }
 
-.footer-button--settings {
-  border-color: #64748b;
+.footer-button--lottery {
+  border-color: #eab308;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 14px rgba(234, 179, 8, 0.4);
 }
 
-.footer-button--settings:hover {
-  border-color: #94a3b8;
+.footer-button--lottery:hover {
+  border-color: #fde047;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 20px rgba(253, 224, 71, 0.8);
 }
 
 .footer-button__icon-box {

@@ -1258,6 +1258,7 @@ function App() {
             onDeductGold={deductGold}
             reopenTournamentModal={reopenTournamentOnMenu}
             onResetReopenTournamentModal={() => setReopenTournamentOnMenu(false)}
+            onRewardsChanged={refreshFromServer}
           />
         )}
         {screen === 'partidas' && (

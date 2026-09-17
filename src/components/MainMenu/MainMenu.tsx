@@ -12,7 +12,6 @@ import gema from '../../assets/ico/gema.webp'
 import moneda from '../../assets/ico/moneda.webp'
 import ranking from '../../assets/ico/Ranking.webp'
 import clan from '../../assets/ico/clan.webp'
-import ajustes from '../../assets/ico/ajustes.webp'
 import { soundManager } from '../../utils/audioManager'
 import {
   getRemainingTimeString,
@@ -30,6 +29,7 @@ import TournamentModal from '../Tournament/TournamentModal'
 import GlobalChat from '../GlobalChat/GlobalChat'
 import AuctionModal from '../Auction/AuctionModal'
 import MisionesModal from '../Misiones/MisionesModal'
+import LotteryModal from '../Lottery/LotteryModal'
 import { auctionService, type ActiveAuctionData } from '../../services/auctionService'
 import { tournamentService } from '../../services/tournamentService'
 import { lotteryService } from '../../services/lotteryService'
@@ -87,6 +87,7 @@ interface MainMenuProps {
   onlineUsersCount?: number
   reopenTournamentModal?: boolean
   onResetReopenTournamentModal?: () => void
+  onRewardsChanged?: () => Promise<void> | void
 }
 
 export default function MainMenu({
@@ -129,6 +130,7 @@ export default function MainMenu({
   onDeductGold,
   reopenTournamentModal,
   onResetReopenTournamentModal,
+  onRewardsChanged,
 }: MainMenuProps) {
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => UserManager.getProfile())
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
@@ -138,6 +140,7 @@ export default function MainMenu({
   const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false)
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
   const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
+  const [showLotteryModal, setShowLotteryModal] = useState(false)
 
 
   const handleToggleGlobalChat = () => {
@@ -901,11 +904,19 @@ export default function MainMenu({
           <span className="footer-button__title">CLAN</span>
         </button>
 
-        <button className="footer-button footer-button--settings" type="button">
+        <button
+          className="footer-button footer-button--lottery"
+          type="button"
+          onClick={() => {
+            soundManager.playSound('click', 0.4)
+            setShowLotteryModal(true)
+          }}
+          title="Lotería y Ruleta de la Suerte"
+        >
           <div className="footer-button__icon-box">
-            <img src={ajustes} alt="Ajustes" />
+            <span style={{ fontSize: '1.3rem' }}>🎰</span>
           </div>
-          <span className="footer-button__title">AJUSTES</span>
+          <span className="footer-button__title">LOTERÍA</span>
         </button>
       </div>
 
@@ -1164,6 +1175,19 @@ export default function MainMenu({
         onClose={() => setIsMisionesModalOpen(false)}
         userGems={userTokens}
       />
+
+      {/* MODAL DE LOTERÍA Y RULETA */}
+      {showLotteryModal && (
+        <LotteryModal
+          isOpen={showLotteryModal}
+          onClose={() => setShowLotteryModal(false)}
+          userTokens={userTokens}
+          userGold={userGold}
+          isAdmin={isAdmin}
+          onOpenAdmin={onOpenAdmin}
+          onRewardsChanged={onRewardsChanged}
+        />
+      )}
     </div>
   )
 }
