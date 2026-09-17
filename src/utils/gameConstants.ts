@@ -235,7 +235,7 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
     packetActive: '/game-assets/plants/kernelpult_packet.webp',
     packetDisabled: '/game-assets/plants/kernelpult_packet.webp',
     sprite: '/game-assets/plants/kernelpult.webp',
-    description: 'Catapulta fija que lanza granos de maíz y ocasionalmente mantequilla que inmoviliza por completo al objetivo.',
+    description: 'Catapulta fija que lanza granos de maíz (30 DMG) y ocasionalmente mantequilla (60 DMG) que inmoviliza por completo al objetivo (3s a 6s).',
   },
 }
 

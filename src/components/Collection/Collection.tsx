@@ -65,7 +65,7 @@ const LORE_MAP: Record<string, string> = {
   jalapeno: 'Jalapeño es de 1 solo uso. Desata una bola de fuego ardiente que quema la fila entera limpiando el carril (1000 daño + 150 por nivel).',
   iceberglettuce: 'Iceberg Lettuce cuesta 0 Soles y es de 1 solo uso. Al colocarse en el campo, congela a todos los enemigos durante 7 segundos (+2s por cada nivel).',
   aloe: 'Aloe Curandera escanea el carril y cura con ondas de luz mística a las plantas heridas aliadas.',
-  kernelpult: 'Lanzamaíz arroja granos de maíz ligeros a distancia y, con un 25% de probabilidad, una barra de mantequilla pegajosa que inmoviliza por completo al objetivo (3.5s + 1.5s por nivel de duración).',
+  kernelpult: 'Lanzamaíz arroja granos de maíz ligeros a distancia (30 DMG) y, con un 25% de probabilidad, una barra de mantequilla pegajosa de doble impacto (60 DMG) que inmoviliza por completo al objetivo durante 3s (+0.6s por tirada de duración, hasta 6s máx).',
 }
 
 export const CATALOG: CollectionPlant[] = (Object.keys(PLANT_CONFIGS) as PlantId[]).map((id) => {
@@ -89,7 +89,7 @@ export const CATALOG: CollectionPlant[] = (Object.keys(PLANT_CONFIGS) as PlantId
     cost: c.cost,
     cooldownSec: c.cooldownMs / 1000,
     hp: isInstant ? 'Un Solo Uso' : c.maxHp,
-    damage: c.damage !== undefined ? c.damage : (c.category === 'producer' ? '0 (Produce Soles)' : 'Especial'),
+    damage: c.id === 'kernelpult' ? '30 / 60 🧈' : (c.damage !== undefined ? c.damage : (c.category === 'producer' ? '0 (Produce Soles)' : 'Especial')),
     sprite: c.sprite,
     cardImage: c.packetActive || c.icon,
     description: c.description,
