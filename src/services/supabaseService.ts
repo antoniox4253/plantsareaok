@@ -1257,6 +1257,8 @@ export const SupabaseService = {
     maxRevealedTick?: number
     intents?: any[]
     error?: string
+    ended?: boolean
+    roomStatus?: string
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
@@ -1265,11 +1267,19 @@ export const SupabaseService = {
         p_after_seq: afterSeq,
       })
       if (error) {
+        const msg = String(error.message || '')
+        if (msg.includes('no está en curso') || error.code === 'P0001') {
+          return { ok: false, ended: true, error: 'MATCH_NOT_PLAYING' }
+        }
         logError('pollRankedAsyncIntents', error)
         return null
       }
       return data
-    } catch (e) {
+    } catch (e: any) {
+      const msg = String(e?.message || '')
+      if (msg.includes('no está en curso')) {
+        return { ok: false, ended: true, error: 'MATCH_NOT_PLAYING' }
+      }
       logError('pollRankedAsyncIntents', e)
       return null
     }

@@ -321,6 +321,8 @@ export default function Battlefield({
   sessionGenerationRef.current = sessionGeneration ?? 0
   const roomIdRef = useRef<string | null>(roomId ?? null)
   roomIdRef.current = roomId ?? null
+  const gameStatusRef = useRef<string>(gameStatus)
+  gameStatusRef.current = gameStatus
 
   /**
    * Lo que dijo el servidor al liquidar la partida real.
@@ -829,7 +831,7 @@ export default function Battlefield({
   // En lugar de saturar PostgreSQL con peticiones en paralelo sobrecargadas,
   // se utiliza un ciclo adaptativo con protección in-flight que evita apilamiento.
   useEffect(() => {
-    if (!roomId || !isAsyncMatch) return
+    if (!roomId || !isAsyncMatch || gameStatus !== 'playing') return
     ultimaSeqAsyncRef.current = 0
     let cancelado = false
     let enVuelo = false
@@ -837,14 +839,14 @@ export default function Battlefield({
     const capturedRoomId = roomId
 
     const programarSiguiente = (delayMs: number) => {
-      if (cancelado) return
+      if (cancelado || gameStatusRef.current !== 'playing') return
       timerId = setTimeout(() => {
         void refrescarIntencionesAsync()
       }, delayMs)
     }
 
     const refrescarIntencionesAsync = async () => {
-      if (cancelado || enVuelo || capturedRoomId !== roomIdRef.current) return
+      if (cancelado || enVuelo || capturedRoomId !== roomIdRef.current || gameStatusRef.current !== 'playing') return
       const requestGeneration = sessionGenerationRef.current
       enVuelo = true
       let nextDelayMs = 450
@@ -857,8 +859,15 @@ export default function Battlefield({
         if (
           cancelado ||
           requestGeneration !== sessionGenerationRef.current ||
-          capturedRoomId !== roomIdRef.current
+          capturedRoomId !== roomIdRef.current ||
+          gameStatusRef.current !== 'playing'
         ) return
+
+        // Si la sala ya terminó o fue liquidada en el servidor, detenemos el ciclo de sondeo de inmediato
+        if (res && (res.ended || res.error === 'MATCH_NOT_PLAYING')) {
+          cancelado = true
+          return
+        }
 
         // A) Error de red / transporte / res inexistente / res.ok === false -> Reintentar en el siguiente ciclo sin marcar corrupción
         if (res && res.ok !== false) {
@@ -887,7 +896,7 @@ export default function Battlefield({
         nextDelayMs = 600
       } finally {
         enVuelo = false
-        if (!cancelado) {
+        if (!cancelado && gameStatusRef.current === 'playing') {
           programarSiguiente(nextDelayMs)
         }
       }
