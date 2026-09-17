@@ -2295,7 +2295,7 @@ export default function Marketplace({
                         {!isPack && !isEnergy && !isPass && !isGold && !isDeposit && !isTournamentFee && !isTournamentReentry && !isTournamentReward && tx.type.startsWith('shop') && '🛒 TIENDA'}
                         {tx.type === 'lottery_spin' && '🎡 GIRO DE RULETA'}
                         {tx.type === 'lottery_win' && (tx.amountGems && tx.amountGems >= 50 ? '🎰 JACKPOT RULETA' : '🎁 PREMIO DE RULETA')}
-                        {tx.type === 'reward_code' && '🎁 CÓDIGO ESPECIAL'}
+                        {tx.type === 'reward_code' && (tx.amountGold ? '💰 CÓDIGO ORO' : tx.amountGems ? '💎 CÓDIGO GEMAS' : '🎁 CÓDIGO ESPECIAL')}
                         {tx.type === 'referral_reward' && '👥 GANANCIAS REFERIDOS'}
                       </span>
                       <span className="market-tx-time">{formatTxTime(tx.createdAt)}</span>
@@ -2359,7 +2359,7 @@ export default function Marketplace({
                                 : tx.type === 'lottery_win'
                                 ? 'probó suerte en la Ruleta'
                                 : tx.type === 'reward_code'
-                                ? 'canjeó código promocional'
+                                ? (tx.amountGold ? 'canjeó código de oro' : tx.amountGems ? 'canjeó código de gemas' : 'canjeó código promocional')
                                 : tx.type === 'referral_reward'
                                 ? 'cobró ganancias de referidos'
                                 : 'recibió recompensa'}
@@ -2370,7 +2370,7 @@ export default function Marketplace({
                       )}
                     </div>
 
-                    {/* Right: Amount in Gems */}
+                    {/* Right: Amount in Gems or Gold */}
                     <div className="market-tx-card__right">
                       {tx.type === 'withdrawal' ? (
                         <div className="market-tx-amount-box market-tx-amount-box--gems">
@@ -2400,6 +2400,20 @@ export default function Marketplace({
                         <div className="market-tx-amount-box market-tx-amount-box--gems">
                           <span className="market-tx-amount-num" style={{ color: '#4ade80', fontWeight: 'bold' }}>
                             +{tx.amountGems.toLocaleString()} 💎
+                          </span>
+                        </div>
+                      ) : tx.amountGold && tx.amountGold > 0 ? (
+                        <div className="market-tx-amount-box">
+                          <span
+                            className="market-tx-amount-tag"
+                            style={{
+                              color: '#facc15',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              letterSpacing: '0.5px',
+                            }}
+                          >
+                            +{tx.amountGold.toLocaleString()} 🪙
                           </span>
                         </div>
                       ) : (

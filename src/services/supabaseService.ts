@@ -4928,7 +4928,7 @@ export const SupabaseService = {
           .limit(limite),
         supabase
           .from('transactions')
-          .select('id, user_id, type, amount_gems, amount_usd, description, status, created_at')
+          .select('id, user_id, type, amount_gems, amount_gold, amount_usd, description, status, created_at')
           .eq('status', 'completed')
           .order('created_at', { ascending: false })
           .limit(limite),
@@ -5052,6 +5052,7 @@ export const SupabaseService = {
           itemLevel: 0,
           itemRarity: 'common',
           amountGems: t.amount_gems != null ? Number(t.amount_gems) : null,
+          amountGold: t.amount_gold != null ? Number(t.amount_gold) : null,
           amountUsd: t.amount_usd != null ? Number(t.amount_usd) : null,
           status: t.status || 'completed',
         })
@@ -5186,6 +5187,7 @@ export interface GlobalTransactionItem {
   itemLevel?: number | null
   itemRarity?: string | null
   amountGems?: number | null
+  amountGold?: number | null
   amountUsd?: number | null
   status: string
 }
