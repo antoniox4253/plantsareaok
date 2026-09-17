@@ -273,6 +273,7 @@ export default function TournamentModal({
       setCreatePrizePoolAmount(5000)
       setCreateEntryFeeAmount(500)
       setCreatePlacesCount(3)
+      setCreateIsTest(false)
     } else if (cat === 'gems') {
       setCreateTitle('Copa Máster de Gemas')
       setCreatePrizeCurrency('gems')
@@ -526,7 +527,7 @@ export default function TournamentModal({
         prize_item_id: createCategory === 'item' ? createPrizeItemId : undefined,
         prize_item_quantity: createCategory === 'item' ? createPrizeItemQuantity : 1,
         rewarded_places_count: createPlacesCount,
-        is_test: createIsTest,
+        is_test: createCategory === 'gold' ? false : createIsTest,
         plant_rule: createCategory === 'free' ? 'all_unlocked' : createPlantRule,
       })
 
@@ -1874,34 +1875,36 @@ export default function TournamentModal({
                     </div>
                   )}
 
-                  {/* Modo de Prueba para Admin (Producción) */}
-                  <div style={{
-                    background: createIsTest ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
-                    border: createIsTest ? '1px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.12)',
-                    padding: '10px 14px',
-                    borderRadius: 10,
-                    transition: 'all 0.2s ease',
-                    cursor: 'pointer'
-                  }} onClick={() => setCreateIsTest(!createIsTest)}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', margin: 0 }}>
-                      <input
-                        type="checkbox"
-                        checked={createIsTest}
-                        onChange={(e) => setCreateIsTest(e.target.checked)}
-                        style={{ width: 18, height: 18, accentColor: '#06b6d4', cursor: 'pointer' }}
-                      />
-                      <div>
-                        <div style={{ fontSize: '0.86rem', fontWeight: 800, color: createIsTest ? '#67e8f9' : '#f1f5f9' }}>
-                          🧪 Torneo de Prueba Admin (Solo visible para ti en producción)
+                  {/* Modo de Prueba para Admin (Producción) - Excluido en Torneo con Oro */}
+                  {createCategory !== 'gold' && (
+                    <div style={{
+                      background: createIsTest ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                      border: createIsTest ? '1px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.12)',
+                      padding: '10px 14px',
+                      borderRadius: 10,
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer'
+                    }} onClick={() => setCreateIsTest(!createIsTest)}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', margin: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={createIsTest}
+                          onChange={(e) => setCreateIsTest(e.target.checked)}
+                          style={{ width: 18, height: 18, accentColor: '#06b6d4', cursor: 'pointer' }}
+                        />
+                        <div>
+                          <div style={{ fontSize: '0.86rem', fontWeight: 800, color: createIsTest ? '#67e8f9' : '#f1f5f9' }}>
+                            🧪 Torneo de Prueba Admin (Solo visible para ti en producción)
+                          </div>
+                          <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: 2 }}>
+                            {createIsTest
+                              ? '✓ Activado: Los jugadores comunes NO verán este torneo en su lista. Solo tú podrás ingresar, simular victorias/derrotas y liquidar premios desde el panel Sandbox.'
+                              : 'Desactivado: Será un torneo público oficial visible para todos los jugadores.'}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: 2 }}>
-                          {createIsTest
-                            ? '✓ Activado: Los jugadores comunes NO verán este torneo en su lista. Solo tú podrás ingresar, simular victorias/derrotas y liquidar premios desde el panel Sandbox.'
-                            : 'Desactivado: Será un torneo público oficial visible para todos los jugadores.'}
-                        </div>
-                      </div>
-                    </label>
-                  </div>
+                      </label>
+                    </div>
+                  )}
 
                   <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: 10, borderRadius: 8, fontSize: '0.78rem', color: '#d8b4fe' }}>
                     ℹ️ Reglas: {createCategory === 'free' || createPlantRule === 'all_unlocked' ? '🌟 15 plantas 100% desbloqueadas para todos' : '🌿 Solo plantas propias (colección de cada jugador)'}, eliminación a las 3 derrotas y reentrada disponible por 200 💎 (2 vidas).
@@ -1922,7 +1925,7 @@ export default function TournamentModal({
                     >
                       {isCreating
                         ? 'Creando…'
-                        : createIsTest
+                        : createCategory !== 'gold' && createIsTest
                         ? '🧪 Publicar Torneo de Prueba'
                         : '✓ Publicar Torneo Oficial'}
                     </button>
