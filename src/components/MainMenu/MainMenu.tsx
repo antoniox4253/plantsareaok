@@ -851,18 +851,6 @@ export default function MainMenu({
       <div className="panel panel--left">
         <div id="farming-preview-launcher-slot" className="farming-preview-launcher-host" />
 
-        <button
-          className="banner-button"
-          type="button"
-          onClick={() => {
-            soundManager.playSound('click', 0.5)
-            setIsMisionesModalOpen(true)
-          }}
-          title="Misiones Diarias, Racha de 7 Días y Concurso TikTok"
-        >
-          <span style={{ fontSize: '1.8rem' }}>📜</span>
-          <span>MISIONES</span>
-        </button>
         <button className="banner-button" type="button" onClick={onOpenJardin}>
           <img src={jardin} alt="" />
           <span>JARDÍN</span>

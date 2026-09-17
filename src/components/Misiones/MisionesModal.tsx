@@ -290,7 +290,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                   <div className="weekly-tracker-card">
                     <div className="weekly-tracker-header">
                       <div>
-                        <strong style={{ fontSize: '0.95rem', color: '#f8fafc' }}>Progreso Semanal de Puntos</strong>
+                        <strong style={{ fontSize: '0.92rem', color: '#f8fafc' }}>Progreso Semanal de Puntos</strong>
                         <div className="weekly-reset-txt">Se reinicia cada lunes a las 00:00 UTC</div>
                       </div>
                       <div className="weekly-points-badge">
@@ -370,34 +370,40 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Daily Missions List */}
-                  <div className="daily-missions-list">
-                    {dashboard?.missions?.map((m: DailyMission) => {
-                      const isComplete = m.progress >= m.target
-                      const plantCfg = m.plantId ? (PLANT_CONFIGS as any)[m.plantId] : null
+                  {/* Daily Missions List - Horizontal Row */}
+                  <div className="daily-missions-wrapper">
+                    <div className="daily-missions-list">
+                      {dashboard?.missions?.map((m: DailyMission) => {
+                        const isComplete = m.progress >= m.target
+                        const plantCfg = m.plantId ? (PLANT_CONFIGS as any)[m.plantId] : null
 
-                      return (
-                        <div key={m.slot} className={`mission-card ${m.claimed ? 'claimed' : ''}`}>
-                          <div className="mission-card-left">
-                            <div className="mission-avatar">
-                              {m.plantId && plantCfg?.icon ? (
-                                <img src={plantCfg.icon} alt={plantCfg.name} />
-                              ) : m.slot === 0 ? (
-                                '⚔️'
-                              ) : (
-                                '🛡️'
-                              )}
+                        return (
+                          <div key={m.slot} className={`mission-card ${m.claimed ? 'claimed' : ''}`}>
+                            <div className="mission-card-header">
+                              <div className="mission-avatar">
+                                {m.plantId && plantCfg?.icon ? (
+                                  <img src={plantCfg.icon} alt={plantCfg.name} />
+                                ) : m.slot === 0 ? (
+                                  '⚔️'
+                                ) : (
+                                  '🛡️'
+                                )}
+                              </div>
+                              <div className="mission-card-header-info">
+                                <h4 className="mission-card-title">
+                                  {m.title}
+                                </h4>
+                                {m.plantId && plantCfg && (
+                                  <span className="mission-card-plant-name">🌿 {plantCfg.name}</span>
+                                )}
+                              </div>
+                              <div className="mission-points-tag">
+                                +{m.points} Pts
+                              </div>
                             </div>
 
-                            <div className="mission-details">
-                              <h4>
-                                {m.title}
-                                {m.plantId && plantCfg && (
-                                  <span style={{ color: '#fbbf24', fontSize: '0.8rem' }}>({plantCfg.name})</span>
-                                )}
-                              </h4>
-                              <p>{m.description}</p>
-
+                            <div className="mission-card-body">
+                              <p className="mission-card-desc">{m.description}</p>
                               <div className="mission-progress-bar-wrap">
                                 <div
                                   className="mission-progress-fill"
@@ -408,44 +414,44 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                                 Progreso: {m.progress} / {m.target}
                               </div>
                             </div>
-                          </div>
 
-                          <div className="mission-card-right">
-                            <div className="mission-reward-badge">
-                              <span className="mission-reward-val">
-                                {m.rewardGems > 0 ? `+${m.rewardGems} 💎` : `+${m.rewardGold} 🪙`}
-                              </span>
-                              <span className="mission-points-val">+{m.points} Pts</span>
-                            </div>
-
-                            <div className="mission-actions">
-                              {m.claimed ? (
-                                <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem' }}>
-                                  ✓ Reclamada
+                            <div className="mission-card-footer">
+                              <div className="mission-reward-badge">
+                                <span className="mission-reward-label">Recompensa</span>
+                                <span className="mission-reward-val">
+                                  {m.rewardGems > 0 ? `+${m.rewardGems} 💎` : `+${m.rewardGold} 🪙`}
                                 </span>
-                              ) : isComplete ? (
-                                <button
-                                  className="mission-claim-btn"
-                                  disabled={actionLoading}
-                                  onClick={() => handleClaimMission(m.slot)}
-                                >
-                                  Reclamar
-                                </button>
-                              ) : (
-                                <button
-                                  className="mission-reroll-btn"
-                                  title="Cambiar misión por 5 Gemas"
-                                  disabled={actionLoading}
-                                  onClick={() => setRerollSlot(m.slot)}
-                                >
-                                  🔄 5 💎
-                                </button>
-                              )}
+                              </div>
+
+                              <div className="mission-actions">
+                                {m.claimed ? (
+                                  <span className="mission-claimed-status">
+                                    ✓ Reclamada
+                                  </span>
+                                ) : isComplete ? (
+                                  <button
+                                    className="mission-claim-btn"
+                                    disabled={actionLoading}
+                                    onClick={() => handleClaimMission(m.slot)}
+                                  >
+                                    Reclamar
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="mission-reroll-btn"
+                                    title="Cambiar misión por 5 Gemas"
+                                    disabled={actionLoading}
+                                    onClick={() => setRerollSlot(m.slot)}
+                                  >
+                                    🔄 Cambiar (5 💎)
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })}
+                    </div>
                   </div>
                 </>
               )}
@@ -456,57 +462,67 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
               {activeTab === 'racha' && (
                 <>
                   <div className="streak-hero-card">
-                    <h3 className="streak-hero-title">Racha de Conexión Diaria (7 Días)</h3>
-                    <p className="streak-hero-sub">
-                      Inicia sesión todos los días para desbloquear recompensas crecientes. Si faltas un día, la racha vuelve al Día 1.
-                    </p>
-                  </div>
-
-                  <div className="streak-grid">
-                    {[
-                      { day: 1, title: 'Día 1', reward: '+50 🪙', icon: '🪙' },
-                      { day: 2, title: 'Día 2', reward: '+1 Poción 5⚡', icon: '⚡' },
-                      { day: 3, title: 'Día 3', reward: '+1 Sobre PvP', icon: '🎴' },
-                      { day: 4, title: 'Día 4', reward: '+120 🪙', icon: '🪙' },
-                      { day: 5, title: 'Día 5', reward: '+2 Pociones 5⚡', icon: '⚡' },
-                      { day: 6, title: 'Día 6', reward: '+250 🪙', icon: '🪙' },
-                      { day: 7, title: 'Día 7', reward: 'Sobre Básico', icon: '📦' }
-                    ].map(item => {
-                      const isClaimed = dashboard?.loginStreak?.claimedDays?.includes(item.day)
-                      const streak = dashboard?.loginStreak?.currentStreak || 0
-                      const isNextToday = canClaimStreak && (
-                        (streak === 0 && item.day === 1) ||
-                        (streak < 7 && item.day === streak + 1) ||
-                        (streak === 7 && item.day === 1)
-                      )
-
-                      return (
-                        <div
-                          key={item.day}
-                          className={`streak-day-card ${isClaimed ? 'claimed' : ''} ${isNextToday ? 'active-today' : ''}`}
-                        >
-                          {isClaimed && <div className="streak-check-badge">✓</div>}
-                          <span className="streak-day-title">{item.title}</span>
-                          <div className="streak-icon-wrap">{item.icon}</div>
-                          <span className="streak-day-reward">{item.reward}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {canClaimStreak ? (
-                    <button
-                      className="streak-claim-btn"
-                      disabled={actionLoading}
-                      onClick={handleClaimStreak}
-                    >
-                      {actionLoading ? 'Reclamando...' : '🎁 ¡RECLAMAR RECOMPENSA DE HOY!'}
-                    </button>
-                  ) : (
-                    <div className="streak-claimed-alert">
-                      ✓ ¡Ya has reclamado tu recompensa diaria de hoy! Vuelve mañana a las 00:00 UTC para continuar tu racha.
+                    <div className="streak-hero-left">
+                      <h3 className="streak-hero-title">🗓️ Racha de Conexión Diaria (7 Días)</h3>
+                      <p className="streak-hero-sub">
+                        Inicia sesión todos los días para desbloquear recompensas crecientes. Si faltas un día, la racha vuelve al Día 1.
+                      </p>
                     </div>
-                  )}
+                    <div className="streak-counter-badge">
+                      <span className="streak-counter-label">Racha actual</span>
+                      <span className="streak-counter-val">🔥 {dashboard?.loginStreak?.currentStreak || 0} Días</span>
+                    </div>
+                  </div>
+
+                  <div className="streak-grid-wrapper">
+                    <div className="streak-grid">
+                      {[
+                        { day: 1, title: 'Día 1', reward: '+50 🪙', icon: '🪙' },
+                        { day: 2, title: 'Día 2', reward: '+1 Poción 5⚡', icon: '⚡' },
+                        { day: 3, title: 'Día 3', reward: '+1 Sobre PvP', icon: '🎴' },
+                        { day: 4, title: 'Día 4', reward: '+120 🪙', icon: '🪙' },
+                        { day: 5, title: 'Día 5', reward: '+2 Pociones 5⚡', icon: '⚡' },
+                        { day: 6, title: 'Día 6', reward: '+250 🪙', icon: '🪙' },
+                        { day: 7, title: 'Día 7', reward: 'Sobre Básico', icon: '📦' }
+                      ].map(item => {
+                        const isClaimed = dashboard?.loginStreak?.claimedDays?.includes(item.day)
+                        const streak = dashboard?.loginStreak?.currentStreak || 0
+                        const isNextToday = canClaimStreak && (
+                          (streak === 0 && item.day === 1) ||
+                          (streak < 7 && item.day === streak + 1) ||
+                          (streak === 7 && item.day === 1)
+                        )
+
+                        return (
+                          <div
+                            key={item.day}
+                            className={`streak-day-card ${isClaimed ? 'claimed' : ''} ${isNextToday ? 'active-today' : ''}`}
+                          >
+                            {isClaimed && <div className="streak-check-badge">✓</div>}
+                            <span className="streak-day-title">{item.title}</span>
+                            <div className="streak-icon-wrap">{item.icon}</div>
+                            <span className="streak-day-reward">{item.reward}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="streak-action-area">
+                    {canClaimStreak ? (
+                      <button
+                        className="streak-claim-btn"
+                        disabled={actionLoading}
+                        onClick={handleClaimStreak}
+                      >
+                        {actionLoading ? 'Reclamando...' : '🎁 ¡RECLAMAR RECOMPENSA DE HOY!'}
+                      </button>
+                    ) : (
+                      <div className="streak-claimed-alert">
+                        ✓ ¡Ya has reclamado tu recompensa diaria de hoy! Vuelve mañana a las 00:00 UTC para continuar tu racha.
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
 
@@ -514,123 +530,131 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
               {/* TAB 3: CONCURSO TIKTOK (#PlantsArena) */}
               {/* ========================================================= */}
               {activeTab === 'tiktok' && (
-                <>
-                  <div className="tiktok-banner-card">
-                    <div className="tiktok-badge-live">🔥 Concurso Activo</div>
-                    <h3>Gran Concurso de Clips #PlantsArena</h3>
-                    <p style={{ margin: '0', fontSize: '0.9rem', color: '#e0e7ff' }}>
-                      Graba una partida épica en Plant Arena, súbela a TikTok con el hashtag <strong>#PlantsArena</strong> y compite por grandes premios.
-                    </p>
+                <div className="tiktok-horizontal-wrap">
+                  {/* Left Column: Banner, Info, Countdown, Link, and Quota */}
+                  <div className="tiktok-col-left">
+                    <div className="tiktok-banner-card">
+                      <div className="tiktok-badge-live">🔥 Concurso Activo</div>
+                      <h3>Gran Concurso #PlantsArena</h3>
+                      <p className="tiktok-banner-desc">
+                        Graba una partida épica en Plant Arena, súbela a TikTok con el hashtag <strong>#PlantsArena</strong> y compite por grandes premios.
+                      </p>
 
-                    <div className="tiktok-countdown-box">
-                      <span>⏳ Cierra en:</span>
-                      <span>{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s</span>
-                      <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(26 Sep 23:00 UTC)</span>
-                    </div>
-
-                    <div style={{ marginTop: '12px' }}>
-                      <a
-                        href="https://www.tiktok.com/@plantsarena"
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#a5b4fc', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 700 }}
-                      >
-                        <span>🎵</span>
-                        <span>Visitar cuenta oficial @plantsarena en TikTok ↗</span>
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Quota Tracker */}
-                  <div className="tiktok-quota-card">
-                    <div className="tiktok-quota-header">
-                      <span>Cupos para recompensa base (100 💎 de juego):</span>
-                      <span style={{ color: dashboard?.tiktok?.remainingQuota ? '#34d399' : '#ef4444' }}>
-                        {dashboard?.tiktok?.remainingQuota} / {dashboard?.tiktok?.maxApprovedCount || 50} disponibles
-                      </span>
-                    </div>
-                    <div className="tiktok-quota-bar-bg">
-                      <div
-                        className="tiktok-quota-bar-fill"
-                        style={{ width: `${Math.min(100, ((dashboard?.tiktok?.approvedCount || 0) / 50) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Submission Form or Status */}
-                  {dashboard?.tiktok?.hasSubmission && dashboard.tiktok.submission ? (
-                    <div className={`submission-status-card ${dashboard.tiktok.submission.status}`}>
-                      <div>
-                        <strong style={{ fontSize: '0.95rem' }}>
-                          {dashboard.tiktok.submission.status === 'pending' && '⏳ Video en Revisión'}
-                          {dashboard.tiktok.submission.status === 'approved' && '✅ Video Aprobado (+100 💎)'}
-                          {dashboard.tiktok.submission.status === 'rejected' && '❌ Envío Rechazado'}
-                        </strong>
-                        <div style={{ fontSize: '0.82rem', marginTop: '4px', wordBreak: 'break-all', opacity: 0.9 }}>
-                          {dashboard.tiktok.submission.videoUrl}
-                        </div>
-                        {dashboard.tiktok.submission.adminNotes && (
-                          <div style={{ fontSize: '0.8rem', marginTop: '4px', fontStyle: 'italic' }}>
-                            Nota del moderador: {dashboard.tiktok.submission.adminNotes}
-                          </div>
-                        )}
+                      <div className="tiktok-countdown-box">
+                        <span>⏳ Cierra en:</span>
+                        <span className="tiktok-countdown-timer">
+                          {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+                        </span>
+                        <span className="tiktok-countdown-sub">(26 Sep 23:00 UTC)</span>
                       </div>
-                    </div>
-                  ) : (
-                    <form className="tiktok-form-card" onSubmit={handleSubmitTikTok}>
-                      <label className="tiktok-form-label">
-                        Pega el enlace de tu video de TikTok publicado:
-                      </label>
-                      <div className="tiktok-input-row">
-                        <input
-                          type="url"
-                          className="tiktok-url-input"
-                          placeholder="https://www.tiktok.com/@tu_usuario/video/..."
-                          value={tiktokUrl}
-                          onChange={e => setTiktokUrl(e.target.value)}
-                          required
-                          disabled={tiktokSubmitting}
-                        />
-                        <button
-                          type="submit"
-                          className="tiktok-submit-btn"
-                          disabled={tiktokSubmitting || !tiktokUrl.trim()}
+
+                      <div className="tiktok-account-link-row">
+                        <a
+                          href="https://www.tiktok.com/@plantsarena"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="tiktok-account-link"
                         >
-                          {tiktokSubmitting ? 'Enviando...' : 'Enviar Video'}
-                        </button>
+                          <span>🎵</span>
+                          <span>Cuenta oficial @plantsarena en TikTok ↗</span>
+                        </a>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-                        * Tu video debe mostrar una partida real de Plant Arena y contener el hashtag #PlantsArena en la descripción.
-                      </div>
-                    </form>
-                  )}
+                    </div>
 
-                  {/* Grand Prizes Grid */}
-                  <div>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '0.95rem', color: '#cbd5e1' }}>
-                      Premios del Gran Concurso (Clip con más vistas):
-                    </h4>
-                    <div className="tiktok-prizes-grid">
-                      <div className="tiktok-prize-card tiktok-prize-card--1st">
-                        <div className="tiktok-prize-pos">🥇</div>
-                        <div className="tiktok-prize-title">1er Lugar (Más Vistas)</div>
-                        <div className="tiktok-prize-reward">1,500 💎 + Ítem Sorpresa</div>
+                    {/* Quota Tracker */}
+                    <div className="tiktok-quota-card">
+                      <div className="tiktok-quota-header">
+                        <span>Cupos para recompensa base (100 💎 de juego):</span>
+                        <span style={{ color: dashboard?.tiktok?.remainingQuota ? '#34d399' : '#ef4444', fontWeight: 800 }}>
+                          {dashboard?.tiktok?.remainingQuota} / {dashboard?.tiktok?.maxApprovedCount || 50} disponibles
+                        </span>
                       </div>
-
-                      <div className="tiktok-prize-card">
-                        <div className="tiktok-prize-pos">🥈</div>
-                        <div className="tiktok-prize-title">2do Lugar</div>
-                        <div className="tiktok-prize-reward">800 💎 (Juego)</div>
-                      </div>
-
-                      <div className="tiktok-prize-card">
-                        <div className="tiktok-prize-pos">🥉</div>
-                        <div className="tiktok-prize-title">3er Lugar</div>
-                        <div className="tiktok-prize-reward">400 💎 (Juego)</div>
+                      <div className="tiktok-quota-bar-bg">
+                        <div
+                          className="tiktok-quota-bar-fill"
+                          style={{ width: `${Math.min(100, ((dashboard?.tiktok?.approvedCount || 0) / 50) * 100)}%` }}
+                        />
                       </div>
                     </div>
                   </div>
-                </>
+
+                  {/* Right Column: Submission Form / Status and Grand Prizes */}
+                  <div className="tiktok-col-right">
+                    {/* Submission Form or Status */}
+                    {dashboard?.tiktok?.hasSubmission && dashboard.tiktok.submission ? (
+                      <div className={`submission-status-card ${dashboard.tiktok.submission.status}`}>
+                        <div>
+                          <strong style={{ fontSize: '0.95rem' }}>
+                            {dashboard.tiktok.submission.status === 'pending' && '⏳ Video en Revisión'}
+                            {dashboard.tiktok.submission.status === 'approved' && '✅ Video Aprobado (+100 💎)'}
+                            {dashboard.tiktok.submission.status === 'rejected' && '❌ Envío Rechazado'}
+                          </strong>
+                          <div style={{ fontSize: '0.82rem', marginTop: '4px', wordBreak: 'break-all', opacity: 0.9 }}>
+                            {dashboard.tiktok.submission.videoUrl}
+                          </div>
+                          {dashboard.tiktok.submission.adminNotes && (
+                            <div style={{ fontSize: '0.8rem', marginTop: '4px', fontStyle: 'italic' }}>
+                              Nota del moderador: {dashboard.tiktok.submission.adminNotes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <form className="tiktok-form-card" onSubmit={handleSubmitTikTok}>
+                        <label className="tiktok-form-label">
+                          Pega el enlace de tu video de TikTok publicado:
+                        </label>
+                        <div className="tiktok-input-row">
+                          <input
+                            type="url"
+                            className="tiktok-url-input"
+                            placeholder="https://www.tiktok.com/@tu_usuario/video/..."
+                            value={tiktokUrl}
+                            onChange={e => setTiktokUrl(e.target.value)}
+                            required
+                            disabled={tiktokSubmitting}
+                          />
+                          <button
+                            type="submit"
+                            className="tiktok-submit-btn"
+                            disabled={tiktokSubmitting || !tiktokUrl.trim()}
+                          >
+                            {tiktokSubmitting ? 'Enviando...' : 'Enviar Video'}
+                          </button>
+                        </div>
+                        <div className="tiktok-form-hint">
+                          * El video debe mostrar gameplay real de Plant Arena y tener #PlantsArena.
+                        </div>
+                      </form>
+                    )}
+
+                    {/* Grand Prizes Showcase */}
+                    <div className="tiktok-prizes-section">
+                      <h4 className="tiktok-prizes-heading">
+                        Premios del Gran Concurso (Clip con más vistas):
+                      </h4>
+                      <div className="tiktok-prizes-grid">
+                        <div className="tiktok-prize-card tiktok-prize-card--1st">
+                          <div className="tiktok-prize-pos">🥇</div>
+                          <div className="tiktok-prize-title">1er Lugar</div>
+                          <div className="tiktok-prize-reward">1,500 💎 + Ítem</div>
+                        </div>
+
+                        <div className="tiktok-prize-card">
+                          <div className="tiktok-prize-pos">🥈</div>
+                          <div className="tiktok-prize-title">2do Lugar</div>
+                          <div className="tiktok-prize-reward">800 💎</div>
+                        </div>
+
+                        <div className="tiktok-prize-card">
+                          <div className="tiktok-prize-pos">🥉</div>
+                          <div className="tiktok-prize-title">3er Lugar</div>
+                          <div className="tiktok-prize-reward">400 💎</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </>
           )}
