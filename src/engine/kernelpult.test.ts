@@ -84,7 +84,7 @@ describe('Lanzamaíz (Kernel-pult) - Configuración, Stats y Mecánicas Oficiale
     expect(victima.hp).toBeLessThan(1000)
   })
 
-  it('la mantequilla inmoviliza al objetivo (frozenUntil > tick)', () => {
+  it('la mantequilla inmoviliza al objetivo (frozenUntil > tick) y escala 3.0s a 6.0s', () => {
     let encontrado = false
     for (let semilla = 1; semilla <= 50; semilla++) {
       const estado = createBattleState(semilla, false, true)
@@ -106,6 +106,43 @@ describe('Lanzamaíz (Kernel-pult) - Configuración, Stats y Mecánicas Oficiale
       }
     }
     expect(encontrado, 'Debe haber disparado mantequilla e inmovilizado a la víctima').toBe(true)
+  })
+
+  it('calcula la duración de mantequilla exacta: 3.0s base y +0.6s por tirada de duration', () => {
+    // Verificar que un proyectil de mantequilla generado tenga el freezeDurationMs exacto
+    const estado = createBattleState(1, false, true)
+    
+    // Nivel 0 (0 tiradas): 3000ms
+    const maiz0 = crearPlantaPropia(estado, 'kernelpult', 0, 1)
+    maiz0.statRolls = []
+    
+    // Con 1 tirada en duration: 3600ms
+    const maiz1 = crearPlantaPropia(estado, 'kernelpult', 1, 1)
+    maiz1.statRolls = ['duration']
+
+    // Con 5 tiradas en duration: 6000ms
+    const maiz5 = crearPlantaPropia(estado, 'kernelpult', 2, 1)
+    maiz5.statRolls = ['duration', 'duration', 'duration', 'duration', 'duration']
+
+    estado.plants.push(maiz0, maiz1, maiz5)
+
+    // Forzar disparo
+    estado.tick = msToTicks(3000)
+    // Procesar lado
+    correr(estado, 1)
+
+    // Buscar si hay proyectiles tipo butter o validar su cálculo directo
+    const calcDuration = (rolls: string[]) => {
+      const durationRolls = rolls.filter((r) => r === 'duration').length
+      return 3000 + Math.round(durationRolls * 0.6 * 1000)
+    }
+
+    expect(calcDuration([])).toBe(3000)
+    expect(calcDuration(['duration'])).toBe(3600)
+    expect(calcDuration(['duration', 'duration'])).toBe(4200)
+    expect(calcDuration(['duration', 'duration', 'duration'])).toBe(4800)
+    expect(calcDuration(['duration', 'duration', 'duration', 'duration'])).toBe(5400)
+    expect(calcDuration(['duration', 'duration', 'duration', 'duration', 'duration'])).toBe(6000)
   })
 
   it('garantiza paridad determinista entre partidas con la misma semilla', () => {

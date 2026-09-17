@@ -812,8 +812,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             velocidad = 25
             damage = Math.round((config.damage || 30) * 2)
             const durationRolls = planta.statRolls?.filter((r) => r === 'duration').length ?? 0
-            const extraSeconds = Math.max(planta.level ?? 0, durationRolls) * 1.5
-            freezeDurationMs = 3500 + Math.round(extraSeconds * 1000)
+            const extraSeconds = (planta.statRolls && planta.statRolls.length > 0) ? durationRolls * 0.6 : (planta.level ?? 0) * 0.6
+            freezeDurationMs = 3000 + Math.round(extraSeconds * 1000)
           } else {
             tipo = 'kernel'
             velocidad = 28
@@ -978,7 +978,7 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
         sonar('pea_hit', 0.4)
 
         if (proy.type === 'butter') {
-          const freezeDurationMs = proy.freezeDurationMs || 3500
+          const freezeDurationMs = proy.freezeDurationMs || 3000
           const hasta = state.tick + msToTicks(freezeDurationMs)
           objetivo.frozenUntil = Math.max(objetivo.frozenUntil || 0, hasta)
         }
