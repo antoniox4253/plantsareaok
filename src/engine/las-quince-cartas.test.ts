@@ -46,6 +46,7 @@ const QUE_HACE: Record<PlantId, 'produce' | 'daña' | 'aguanta' | 'cura' | 'apar
   wallnut: 'aguanta',
   tallnut: 'aguanta',
   aloe: 'cura',
+  kernelpult: 'daña',
   squash: 'aparte',          // sólo estalla si algo la pisa
   iceberglettuce: 'aparte',  // congela en su primer tic
   jalapeno: 'aparte',        // explota y no deja planta
@@ -66,9 +67,9 @@ function conUnEnemigoDelante(lane = 1) {
 }
 
 describe('el catálogo y el motor no se han separado', () => {
-  it('las quince cartas están declaradas en este test', () => {
+  it('las dieciséis cartas están declaradas en este test', () => {
     // Si esto falla es que se añadió una carta y nadie dijo qué hace.
-    expect(TODAS.length).toBe(15)
+    expect(TODAS.length).toBe(16)
     for (const carta of TODAS) {
       expect(QUE_HACE[carta], `falta declarar qué hace ${carta}`).toBeDefined()
     }

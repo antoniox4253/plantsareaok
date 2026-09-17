@@ -50,7 +50,7 @@ export function getPlantRarityAndMinPrice(plantId: PlantId): {
     return { rarity: 'POCO COMÚN', minPrice: MIN_PLANT_PRICE, color: '#38bdf8' }
   }
   // Raras
-  if (['twinsunflower', 'jalapeno'].includes(plantId)) {
+  if (['twinsunflower', 'jalapeno', 'kernelpult'].includes(plantId)) {
     return { rarity: 'RARA', minPrice: MIN_PLANT_PRICE, color: '#a855f7' }
   }
   // Épicas

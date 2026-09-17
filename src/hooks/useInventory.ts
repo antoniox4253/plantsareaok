@@ -55,6 +55,7 @@ const ALL_15_PLANTS: PlantId[] = [
   'iceberglettuce',
   'aloe',
   'melonpult',
+  'kernelpult',
 ]
 
 const DEFAULT_TOKENS = 0
@@ -76,6 +77,7 @@ const DEFAULT_PLANT_COPIES: Record<PlantId, number> = {
   iceberglettuce: 0,
   aloe: 0,
   melonpult: 0,
+  kernelpult: 0,
 }
 
 /**
@@ -140,6 +142,7 @@ const DEFAULT_PLANT_LEVELS: Record<PlantId, number> = {
   iceberglettuce: 0,
   aloe: 0,
   melonpult: 0,
+  kernelpult: 0,
 }
 
 const STORAGE_KEYS = {

@@ -2805,7 +2805,7 @@ export const SupabaseService = {
       const plantList = [
         'sunflower', 'peashooter', 'repeater', 'wallnut', 'melonpult',
         'chomper', 'bonkchoy', 'garlic', 'squash', 'twinsunflower',
-        'threepeater', 'tallnut', 'jalapeno', 'iceberglettuce', 'aloe'
+        'threepeater', 'tallnut', 'jalapeno', 'iceberglettuce', 'aloe', 'kernelpult'
       ]
       const secretSeq = Array.from({ length: 5 }, () => plantList[Math.floor(Math.random() * plantList.length)])
 

@@ -35,9 +35,10 @@ export const PLANT_RARITIES: Record<string, { label: string; short: string; colo
   melonpult: { label: 'POCO COMÚN', short: 'PC', color: '#22d3ee', bg: 'rgba(34, 211, 238, 0.2)' },
   squash: { label: 'POCO COMÚN', short: 'PC', color: '#22d3ee', bg: 'rgba(34, 211, 238, 0.2)' },
 
-  // Raras (2) -> R
+  // Raras (3) -> R
   twinsunflower: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
   jalapeno: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
+  kernelpult: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
 
   // Épicas (2) -> E
   aloe: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
@@ -64,6 +65,7 @@ const LORE_MAP: Record<string, string> = {
   jalapeno: 'Jalapeño es de 1 solo uso. Desata una bola de fuego ardiente que quema la fila entera limpiando el carril (1000 daño + 150 por nivel).',
   iceberglettuce: 'Iceberg Lettuce cuesta 0 Soles y es de 1 solo uso. Al colocarse en el campo, congela a todos los enemigos durante 7 segundos (+2s por cada nivel).',
   aloe: 'Aloe Curandera escanea el carril y cura con ondas de luz mística a las plantas heridas aliadas.',
+  kernelpult: 'Lanzamaíz arroja granos de maíz ligeros a distancia y, con un 25% de probabilidad, una barra de mantequilla pegajosa que inmoviliza por completo al objetivo (3.5s + 1.5s por nivel de duración).',
 }
 
 export const CATALOG: CollectionPlant[] = (Object.keys(PLANT_CONFIGS) as PlantId[]).map((id) => {

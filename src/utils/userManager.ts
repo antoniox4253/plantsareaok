@@ -38,6 +38,7 @@ export const PRESET_AVATARS = [
   { id: 'jalapeno', name: 'Jalapeño', icon: '/game-assets/plants/jalapeno_hd.webp' },
   { id: 'iceberg', name: 'Lechuga Helada', icon: '/game-assets/plants/iceberglettuce_hd.webp' },
   { id: 'aloe', name: 'Aloe Curandera', icon: '/game-assets/plants/aloe_hd.webp' },
+  { id: 'kernelpult', name: 'Lanzamaíz', icon: '/game-assets/plants/kernelpult_packet.webp' },
 ]
 
 /**
@@ -82,6 +83,8 @@ export function getPlayerAvatarUrl(avatarOrId?: string | null): string {
     apisonaflor: '/game-assets/greenfoot/garlicpacket1.webp',
     girasol: '/game-assets/greenfoot/sunflowerpacket1.webp',
     lanzaguisantes: '/game-assets/greenfoot/peashooterpacket1.webp',
+    lanzamaiz: '/game-assets/plants/kernelpult_packet.webp',
+    kernel_pult: '/game-assets/plants/kernelpult_packet.webp',
   }
 
   if (aliases[key]) {

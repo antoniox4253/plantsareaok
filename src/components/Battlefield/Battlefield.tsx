@@ -27,6 +27,8 @@ const sunIcon = '/game-assets/greenfoot/sun1.webp'
 const peaImg = '/game-assets/images/Plants/PB00.webp'
 const melonImg = '/game-assets/images/Plants/melon_pult.webp'
 const needleImg = '/game-assets/greenfoot/needle1.png'
+const kernelImg = '/game-assets/plants/projectile_kernel.webp'
+const butterImg = '/game-assets/plants/projectile_butter.webp'
 import PlantHand from './PlantHand'
 import RelojDePartida from '../RelojDePartida/RelojDePartida'
 import { SOL_SE_RECOGE_SOLO_MS } from '../../engine/balance'
@@ -1845,6 +1847,8 @@ export default function Battlefield({
                 : ''
             } ${
               plant.plantId === 'bonkchoy' ? 'plant-unit--bonkchoy' : ''
+            } ${
+              plant.plantId === 'kernelpult' ? 'plant-unit--kernelpult' : ''
             } ${plant.state === 'attacking' ? 'plant-unit--attacking' : ''}`}
             style={{
               left: `${plant.x}%`,
@@ -1917,6 +1921,8 @@ export default function Battlefield({
                 <img
                   className={`plant-unit__sprite ${
                     plant.plantId === 'melonpult' ? 'plant-unit__sprite--melon' : ''
+                  } ${
+                    plant.plantId === 'kernelpult' ? 'plant-unit__sprite--kernelpult' : ''
                   } ${plant.spriteOverride?.includes('burst') ? 'plant-unit__sprite--burst' : ''} ${
                     isFrozen ? 'plant-unit__sprite--frozen' : ''
                   }`}
@@ -2007,6 +2013,8 @@ export default function Battlefield({
           <div
             key={enemy.id}
             className={`entity enemy-unit ${
+              enemy.plantId === 'kernelpult' ? 'enemy-unit--kernelpult' : ''
+            } ${
               enemy.state === 'attacking' ? 'enemy-unit--attacking' : ''
             } ${isFrozen ? 'enemy-unit--frozen' : ''}`}
             style={{
@@ -2034,13 +2042,15 @@ export default function Battlefield({
             <img
               className={`enemy-unit__sprite ${
                 enemy.plantId === 'melonpult' ? 'enemy-unit__sprite--melon' : ''
+              } ${
+                enemy.plantId === 'kernelpult' ? 'enemy-unit__sprite--kernelpult' : ''
               } ${enemy.spriteOverride?.includes('burst') ? 'plant-unit__sprite--burst' : ''} ${
                 isFrozen ? 'enemy-unit__sprite--frozen' : ''
               }`}
               src={enemy.spriteOverride || config.sprite}
               alt={config.name}
             />
-            {isFrozen && <div className="frozen-ice-badge">🧊 CONGELADO</div>}
+            {isFrozen && <div className="frozen-ice-badge">🧊 CONGELADO / 🧈</div>}
             {enemy.plantId === 'iceberglettuce' && enemy.spriteOverride?.includes('burst') && (
               <div className="iceberg-burst-fx">⚡ ❄️ ¡RÁFAGA HELADA!</div>
             )}
@@ -2057,9 +2067,23 @@ export default function Battlefield({
               ? 'projectile--melon'
               : proj.type === 'needle'
               ? 'projectile--needle'
+              : proj.type === 'kernel'
+              ? 'projectile--kernel'
+              : proj.type === 'butter'
+              ? 'projectile--butter'
               : 'projectile--pea'
           } ${proj.targetTeam === 'p1' ? 'projectile--left' : ''}`}
-          src={proj.type === 'melon' ? melonImg : proj.type === 'needle' ? needleImg : peaImg}
+          src={
+            proj.type === 'melon'
+              ? melonImg
+              : proj.type === 'needle'
+              ? needleImg
+              : proj.type === 'kernel'
+              ? kernelImg
+              : proj.type === 'butter'
+              ? butterImg
+              : peaImg
+          }
           alt=""
           style={{
             left: `${proj.x}%`,

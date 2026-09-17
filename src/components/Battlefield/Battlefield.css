@@ -726,6 +726,20 @@
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
 }
 
+.projectile--kernel {
+  width: 22px;
+  height: 22px;
+  animation: kernelSpin 0.4s linear infinite;
+  filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.85));
+}
+
+.projectile--butter {
+  width: 28px;
+  height: 28px;
+  animation: butterWobble 0.35s ease-in-out infinite alternate;
+  filter: drop-shadow(0 4px 10px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 12px rgba(234, 179, 8, 0.8));
+}
+
 .projectile--needle {
   width: 26px;
   height: 14px;
@@ -740,6 +754,41 @@
 @keyframes melonSpin {
   0% { transform: translate(-50%, -50%) rotate(0deg); }
   100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes kernelSpin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes butterWobble {
+  0% { transform: translate(-50%, -50%) rotate(-12deg) scale(0.95); }
+  100% { transform: translate(-50%, -50%) rotate(16deg) scale(1.08); }
+}
+
+/* Kernel-pult Launching Motion */
+.plant-unit--kernelpult.plant-unit--attacking .plant-unit__sprite {
+  animation: kernelpultLaunch 0.6s ease-in-out infinite alternate !important;
+  transform-origin: bottom left;
+}
+
+.enemy-unit--kernelpult.enemy-unit--attacking .enemy-unit__sprite {
+  animation: enemyKernelpultLaunch 0.6s ease-in-out infinite alternate !important;
+  transform-origin: bottom right;
+}
+
+@keyframes kernelpultLaunch {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(0.92, 1.05) rotate(-10deg) translateX(-3px); }
+  60% { transform: scale(1.08, 0.95) rotate(14deg) translateX(6px); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes enemyKernelpultLaunch {
+  0% { transform: scaleX(-1) scale(1) rotate(0deg); }
+  25% { transform: scaleX(-1) scale(0.92, 1.05) rotate(-10deg) translateX(-3px); }
+  60% { transform: scaleX(-1) scale(1.08, 0.95) rotate(14deg) translateX(6px); }
+  100% { transform: scaleX(-1) scale(1) rotate(0deg); }
 }
 
 /* Collectible Sun Item */

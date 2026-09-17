@@ -61,7 +61,7 @@ export const PACK_DEFINITIONS: Record<PackId, PackDefinition> = {
 // 15 Plants categorized strictly by user rarity specifications
 const POOL_COMUN: PlantId[] = ['sunflower', 'peashooter', 'wallnut', 'chomper']
 const POOL_POCO_COMUN: PlantId[] = ['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash']
-const POOL_RARA: PlantId[] = ['twinsunflower']
+const POOL_RARA: PlantId[] = ['twinsunflower', 'kernelpult']
 const POOL_EPICA: PlantId[] = ['aloe', 'tallnut']
 const POOL_LEGENDARIA: PlantId[] = ['iceberglettuce', 'threepeater']
 

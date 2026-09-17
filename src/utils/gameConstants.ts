@@ -222,6 +222,21 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
     sprite: '/game-assets/plants/aloe_hd.webp',
     description: 'Planta de Soporte Curativo Inteligente. Regenera la salud de las plantas heridas en su carril.',
   },
+  kernelpult: {
+    id: 'kernelpult',
+    name: 'Lanzamaíz',
+    cost: 100,
+    cooldownMs: 7500,
+    maxHp: 300,
+    category: 'ranged',
+    attackSpeedMs: 2900,
+    damage: 30,
+    icon: '/game-assets/plants/kernelpult_packet.webp',
+    packetActive: '/game-assets/plants/kernelpult_packet.webp',
+    packetDisabled: '/game-assets/plants/kernelpult_packet.webp',
+    sprite: '/game-assets/plants/kernelpult.webp',
+    description: 'Catapulta fija que lanza granos de maíz y ocasionalmente mantequilla que inmoviliza por completo al objetivo.',
+  },
 }
 
 export const ENEMY_PLANT_CONFIGS: Record<EnemyPlantType, EnemyPlantConfig> = {
@@ -280,6 +295,17 @@ export const ENEMY_PLANT_CONFIGS: Record<EnemyPlantType, EnemyPlantConfig> = {
     rewardSun: 50,
     category: 'ranged',
   },
+  enemy_kernelpult: {
+    type: 'enemy_kernelpult',
+    name: 'Lanzamaíz Enemigo',
+    cost: 100,
+    maxHp: 300,
+    speed: 0,
+    damage: 30,
+    sprite: '/game-assets/plants/kernelpult.webp',
+    rewardSun: 25,
+    category: 'ranged',
+  },
 }
 
 export const INITIAL_SUN = 0
@@ -319,6 +345,9 @@ export function getEligibleStatsForPlant(plantId: PlantId): PlantStatKey[] {
   if (plantId === 'jalapeno') {
     return ['damage', 'cooldown']
   }
+  if (plantId === 'kernelpult') {
+    return ['hp', 'cooldown', 'damage', 'attackSpeed', 'duration']
+  }
 
   const base = PLANT_CONFIGS[plantId]
   if (!base) return ['hp', 'cooldown']
@@ -344,7 +373,7 @@ export function getFusionGoldCost(plantId: PlantId, level: number): number {
     base = 3500
   } else if (plantId === 'aloe' || plantId === 'tallnut') {
     base = 3000
-  } else if (plantId === 'twinsunflower' || plantId === 'jalapeno') {
+  } else if (plantId === 'twinsunflower' || plantId === 'jalapeno' || plantId === 'kernelpult') {
     base = 2500
   } else if (['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash'].includes(plantId)) {
     base = 1500

@@ -791,12 +791,36 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
       if (state.tick - planta.lastActionTime > msToTicks(config.attackSpeedMs || 1200)) {
         planta.lastActionTime = state.tick
 
-        const tipo =
-          planta.plantId === 'melonpult' ? 'melon'
-          : planta.plantId === 'chomper' ? 'needle'
-          : 'pea'
+        let tipo: ProjectileEntity['type'] = 'pea'
+        let velocidad = 32
+        let damage = config.damage || 25
+        let isSplash = false
+        let freezeDurationMs: number | undefined = undefined
 
-        const velocidad = tipo === 'melon' ? 22 : tipo === 'needle' ? 34 : 32
+        if (planta.plantId === 'melonpult') {
+          tipo = 'melon'
+          velocidad = 22
+          isSplash = true
+        } else if (planta.plantId === 'chomper') {
+          tipo = 'needle'
+          velocidad = 34
+        } else if (planta.plantId === 'kernelpult') {
+          // Mecánica oficial PvZ 2: 25% probabilidad de mantequilla (inmoviliza) y 75% grano
+          const isButter = nextFloat(state.rng) < 0.25
+          if (isButter) {
+            tipo = 'butter'
+            velocidad = 25
+            damage = Math.round((config.damage || 30) * 2)
+            const durationRolls = planta.statRolls?.filter((r) => r === 'duration').length ?? 0
+            const extraSeconds = Math.max(planta.level ?? 0, durationRolls) * 1.5
+            freezeDurationMs = 3500 + Math.round(extraSeconds * 1000)
+          } else {
+            tipo = 'kernel'
+            velocidad = 28
+            damage = config.damage || 30
+          }
+        }
+
         const salidaX = planta.x + 2 * lado.sentido
 
         if (planta.plantId === 'threepeater') {
@@ -821,11 +845,12 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             x: salidaX,
             y: 20 + planta.lane * 19.33 + 7,
             speed: velocidad,
-            damage: config.damage || 25,
-            isSplash: tipo === 'melon',
+            damage: damage,
+            isSplash: isSplash,
+            freezeDurationMs: freezeDurationMs,
           })
         }
-        sonar('pea_shoot', 0.4)
+        sonar(tipo === 'butter' ? 'plantation' : 'pea_shoot', 0.4)
 
         if (planta.plantId === 'repeater') {
           // El segundo guisante sale 180 ms después. Se forma AHORA y se encola
@@ -951,6 +976,12 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
         impacto = true
         objetivo.hp -= proy.damage
         sonar('pea_hit', 0.4)
+
+        if (proy.type === 'butter') {
+          const freezeDurationMs = proy.freezeDurationMs || 3500
+          const hasta = state.tick + msToTicks(freezeDurationMs)
+          objetivo.frozenUntil = Math.max(objetivo.frozenUntil || 0, hasta)
+        }
 
         if (proy.isSplash) {
           for (const salpicado of blancos) {

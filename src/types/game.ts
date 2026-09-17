@@ -14,6 +14,7 @@ export type PlantId =
   | 'jalapeno'
   | 'iceberglettuce'
   | 'aloe'
+  | 'kernelpult'
 
 export type PlantCategory = 'producer' | 'ranged' | 'defensive' | 'melee'
 
@@ -86,6 +87,7 @@ export type EnemyPlantType =
   | 'enemy_wallnut'
   | 'enemy_chomper'
   | 'enemy_melonpult'
+  | 'enemy_kernelpult'
 
 export interface EnemyPlantConfig {
   type: EnemyPlantType
@@ -144,7 +146,7 @@ export interface EnemyPlantEntity {
 
 export interface ProjectileEntity {
   id: string
-  type: 'pea' | 'melon' | 'needle'
+  type: 'pea' | 'melon' | 'needle' | 'kernel' | 'butter'
   targetTeam: 'p1' | 'p2'
   lane: number
   x: number // current % x position
@@ -152,6 +154,7 @@ export interface ProjectileEntity {
   speed: number // % width per sec (positive moves right, negative moves left)
   damage: number
   isSplash?: boolean
+  freezeDurationMs?: number
 }
 
 export interface SunEntity {

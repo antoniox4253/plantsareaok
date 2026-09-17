@@ -103,6 +103,7 @@ export const PVP_ALLOWED_PLANTS: PlantId[] = [...PVP_ALLOWED_COMMON_PLANTS, ...P
 export const FORBIDDEN_PVP_PLANTS: PlantId[] = [
   'twinsunflower',
   'jalapeno', // Raras (Jalapeño NO debe salir en packs PvP)
+  'kernelpult',
   'aloe',
   'tallnut', // Épicas
   'iceberglettuce',
