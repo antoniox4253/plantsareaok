@@ -119,7 +119,7 @@ export const tournamentService = {
   },
 
   /**
-   * Inscribe al usuario en el torneo de forma gratuita con su mazo inicial.
+   * Inscribe al usuario en el torneo con su cuota de inscripción y mazo inicial.
    */
   async registerParticipant(
     tournamentId: string,
@@ -132,21 +132,37 @@ export const tournamentService = {
     try {
       const { data, error } = await (supabase.rpc as any)('register_tournament_participant', {
         p_tournament_id: tournamentId,
-        p_deck: deck || ['sunflower', 'peashooter', 'wallnut', 'chomper', 'repeater'],
+        p_deck: deck && deck.length >= 5 ? deck : null,
       })
 
       if (error) {
-        console.warn('register_tournament_participant remote fallback:', error.message)
+        console.warn('register_tournament_participant remote error:', error.message)
+        let friendlyError = error.message
         if (
           error.message?.includes('REGISTRATION_CLOSED_15MIN_LIMIT') ||
           error.message?.includes('15 minutos')
         ) {
-          return {
-            success: false,
-            error: 'El plazo de tolerancia de 15 minutos tras el inicio del torneo ha expirado. Ya no se permiten nuevos registros.',
-          }
+          friendlyError = 'El plazo de tolerancia de 15 minutos tras el inicio del torneo ha expirado. Ya no se permiten nuevos registros.'
+        } else if (error.message?.includes('INSUFFICIENT_GOLD_FOR_ENTRY')) {
+          friendlyError = 'No tienes suficiente Oro para inscribirte en este torneo.'
+        } else if (error.message?.includes('INSUFFICIENT_GEMS_FOR_ENTRY')) {
+          friendlyError = 'No tienes suficientes Gemas para inscribirte en este torneo.'
+        } else if (error.message?.includes('TOURNAMENT_CLOSED')) {
+          friendlyError = 'El torneo ya ha finalizado o sus inscripciones están cerradas.'
+        } else if (error.message?.includes('INVALID_TOURNAMENT_DECK_UNOWNED_PLANTS')) {
+          friendlyError = 'El mazo incluye cartas que no posees en tu colección para este torneo.'
         }
-        return this._registerLocalParticipant(tournamentId, deck)
+        return {
+          success: false,
+          error: friendlyError,
+        }
+      }
+
+      if (data && data.success === false) {
+        return {
+          success: false,
+          error: data.error || data.message || 'No se pudo completar la inscripción.',
+        }
       }
 
       return {
@@ -155,16 +171,11 @@ export const tournamentService = {
         error: data?.error,
       }
     } catch (err: any) {
-      if (
-        err?.message?.includes('REGISTRATION_CLOSED_15MIN_LIMIT') ||
-        err?.message?.includes('15 minutos')
-      ) {
-        return {
-          success: false,
-          error: 'El plazo de tolerancia de 15 minutos tras el inicio del torneo ha expirado. Ya no se permiten nuevos registros.',
-        }
+      console.error('register_tournament_participant error:', err)
+      return {
+        success: false,
+        error: err?.message || 'Error de conexión al inscribirse.',
       }
-      return this._registerLocalParticipant(tournamentId, deck)
     }
   },
 
@@ -190,13 +201,17 @@ export const tournamentService = {
       })
 
       if (error) {
-        console.warn('update_tournament_deck remote fallback:', error.message)
-        return this._updateLocalTournamentDeck(tournamentId, deck)
+        console.warn('update_tournament_deck remote error:', error.message)
+        let friendlyError = error.message
+        if (error.message?.includes('INVALID_TOURNAMENT_DECK_UNOWNED_PLANTS')) {
+          friendlyError = 'Tu mazo contiene plantas que no posees en tu colección.'
+        }
+        return { success: false, error: friendlyError }
       }
 
       return { success: Boolean(data?.success) }
-    } catch {
-      return this._updateLocalTournamentDeck(tournamentId, deck)
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Error al actualizar el mazo.' }
     }
   },
 
