@@ -3,6 +3,7 @@ import type { PlantId, TournamentModel, TournamentDetailsResponse } from '../../
 import { tournamentService } from '../../services/tournamentService'
 import { soundManager } from '../../utils/audioManager'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
+import { FARMING_ITEM_DEFINITIONS, type FarmingItemId } from '../../utils/pvpRewardManager'
 import TournamentDeckBuilder from './TournamentDeckBuilder'
 import './TournamentModal.css'
 
@@ -10,8 +11,10 @@ interface TournamentModalProps {
   isOpen: boolean
   onClose: () => void
   userTokens: number
+  userGold?: number
   isAdmin?: boolean
   onDeductTokens: (amount: number) => boolean
+  onDeductGold?: (amount: number) => boolean
   onStartTournamentMatch: (
     opponentName: string,
     tournamentId: string,
@@ -50,8 +53,10 @@ export default function TournamentModal({
   isOpen,
   onClose,
   userTokens,
+  userGold = 0,
   isAdmin = false,
   onDeductTokens,
+  onDeductGold,
   onStartTournamentMatch,
 }: TournamentModalProps) {
   const [tournaments, setTournaments] = useState<TournamentModel[]>([])
@@ -62,21 +67,28 @@ export default function TournamentModal({
   const [searchParticipant, setSearchParticipant] = useState<string>('')
   const [activeTab, setActiveTab] = useState<'active' | 'ended'>('active')
 
-  // Modals inside Tournament
+  // Modals and steps inside Tournament
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
+  const [createStep, setCreateStep] = useState<'select_type' | 'form'>('select_type')
+  const [createCategory, setCreateCategory] = useState<'free' | 'gold' | 'gems' | 'item'>('free')
   const [showDeckBuilder, setShowDeckBuilder] = useState<boolean>(false)
 
   // Create form states
   const [createTitle, setCreateTitle] = useState<string>('')
-  const [createPrizeGems, setCreatePrizeGems] = useState<number>(1000)
-  const [createEntryType, setCreateEntryType] = useState<'free' | 'gems'>('free')
-  const [createEntryFeeGems, setCreateEntryFeeGems] = useState<number>(100)
+  const [createEntryFeeAmount, setCreateEntryFeeAmount] = useState<number>(500)
+  const [createPrizeCurrency, setCreatePrizeCurrency] = useState<'gems' | 'gold' | 'item'>('gems')
+  const [createPrizePoolAmount, setCreatePrizePoolAmount] = useState<number>(1000)
+  const [createPrizeItemId, setCreatePrizeItemId] = useState<string>('champion_belt')
+  const [createPrizeItemQuantity, setCreatePrizeItemQuantity] = useState<number>(1)
+  const [createPlacesCount, setCreatePlacesCount] = useState<1 | 3 | 5 | 10>(3)
+  const [createIsTest, setCreateIsTest] = useState<boolean>(false)
   const [createStartOffsetMin, setCreateStartOffsetMin] = useState<number>(5)
   const [createDurationMin, setCreateDurationMin] = useState<number>(120)
   const [createError, setCreateError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState<boolean>(false)
   const [isReentering, setIsReentering] = useState<boolean>(false)
   const [isFinalizing, setIsFinalizing] = useState<boolean>(false)
+  const [isSimulatingMatch, setIsSimulatingMatch] = useState<boolean>(false)
 
   // Custom UTC Date States (Siempre del año actual)
   const [startMode, setStartMode] = useState<'quick' | 'custom_utc'>('quick')
@@ -234,23 +246,72 @@ export default function TournamentModal({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  // Registration handler (Free entry or Gems)
+  // Selector previo de modalidad de torneo
+  const handleSelectCategory = (cat: 'free' | 'gold' | 'gems' | 'item') => {
+    soundManager.playSound('click', 0.4)
+    setCreateCategory(cat)
+    setCreateError(null)
+
+    if (cat === 'free') {
+      setCreateTitle('Copa Relámpago Free')
+      setCreatePrizeCurrency('gems')
+      setCreatePrizePoolAmount(1000)
+      setCreateEntryFeeAmount(0)
+      setCreatePlacesCount(3)
+    } else if (cat === 'gold') {
+      setCreateTitle('Gran Torneo de Oro')
+      setCreatePrizeCurrency('gold')
+      setCreatePrizePoolAmount(5000)
+      setCreateEntryFeeAmount(500)
+      setCreatePlacesCount(3)
+    } else if (cat === 'gems') {
+      setCreateTitle('Copa Máster de Gemas')
+      setCreatePrizeCurrency('gems')
+      setCreatePrizePoolAmount(1000)
+      setCreateEntryFeeAmount(50)
+      setCreatePlacesCount(3)
+    } else if (cat === 'item') {
+      setCreateTitle('Torneo de Gladiadores: Cinturón de Campeón')
+      setCreatePrizeCurrency('item')
+      setCreatePrizePoolAmount(500)
+      setCreateEntryFeeAmount(100)
+      setCreatePrizeItemId('champion_belt')
+      setCreatePrizeItemQuantity(1)
+      setCreatePlacesCount(1)
+    }
+
+    setCreateStep('form')
+  }
+
+  // Registration handler (Free entry, Gold or Gems)
   const handleRegister = async () => {
     if (!selectedTourney) return
     if (isLateRegistrationClosed) {
       alert('El torneo ya comenzó y el plazo de tolerancia de 15 minutos para registros tardíos ha expirado. Ya no se permiten nuevas inscripciones en este torneo.')
       return
     }
-    const fee = selectedTourney.entry_fee_gems || 0
-    if (fee > 0 && userTokens < fee) {
-      alert(`No tienes suficientes Gemas (${fee} 💎 requeridas) para inscribirte. Tu saldo actual es: ${userTokens} 💎.`)
-      return
+
+    const entryCurr = selectedTourney.entry_currency || (selectedTourney.entry_fee_gems > 0 ? 'gems' : 'free')
+    const fee = selectedTourney.entry_fee_amount ?? selectedTourney.entry_fee_gems ?? 0
+
+    if (entryCurr === 'gold' && fee > 0) {
+      if ((userGold || 0) < fee) {
+        alert(`No tienes suficiente Oro (${fee.toLocaleString()} 🟡 requeridos) para inscribirte. Tu saldo actual es: ${(userGold || 0).toLocaleString()} 🟡.`)
+        return
+      }
+    } else if (entryCurr === 'gems' && fee > 0) {
+      if (userTokens < fee) {
+        alert(`No tienes suficientes Gemas (${fee} 💎 requeridas) para inscribirte. Tu saldo actual es: ${userTokens.toFixed(2)} 💎.`)
+        return
+      }
     }
 
     soundManager.playSound('victory', 0.7)
     const res = await tournamentService.registerParticipant(selectedTourney.id)
     if (res.success) {
-      if (fee > 0) {
+      if (entryCurr === 'gold' && fee > 0) {
+        onDeductGold?.(fee)
+      } else if (entryCurr === 'gems' && fee > 0) {
         onDeductTokens(fee)
       }
       await loadDetails(selectedTourney.id)
@@ -265,7 +326,7 @@ export default function TournamentModal({
     if (!selectedTourney || !details?.my_participation?.registered) return
     const reentryCost = 200
     if (userTokens < reentryCost) {
-      alert(`Necesitas ${reentryCost} 💎 para reentrar al torneo. Tu saldo actual es: ${userTokens} 💎.`)
+      alert(`Necesitas ${reentryCost} 💎 para reentrar al torneo. Tu saldo actual es: ${userTokens.toFixed(2)} 💎.`)
       return
     }
 
@@ -287,20 +348,22 @@ export default function TournamentModal({
     }
   }
 
-  // Finalize tournament handler (Distribute gems pool to Top 1, 2, 3)
+  // Finalize tournament handler (Distribute pool and items)
   const handleFinalizeTournament = async () => {
     if (!selectedTourney) return
-    const pool = selectedTourney.prize_pool_gems || 0
-    const top1 = Number((pool * 0.5).toFixed(1))
-    const top2 = Number((pool * 0.3).toFixed(1))
-    const top3 = Number((pool * 0.2).toFixed(1))
+    const pool = selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0
+    const currName = selectedTourney.prize_currency === 'gold' ? 'Oro' : 'Gemas'
+    const currSym = selectedTourney.prize_currency === 'gold' ? '🟡' : '💎'
+    const places = selectedTourney.rewarded_places_count || 3
+    const itemMsg = selectedTourney.prize_item_id
+      ? `\n🎁 Ítem para el Campeón: ${FARMING_ITEM_DEFINITIONS[selectedTourney.prize_item_id as keyof typeof FARMING_ITEM_DEFINITIONS]?.label || selectedTourney.prize_item_id}`
+      : ''
 
     const confirmReparto = window.confirm(
-      `¿Deseas liquidar y repartir el pozo oficial de ${pool} Gemas entre los ganadores?\n\n` +
-      `🥇 1.er Puesto (50%): ${top1} 💎\n` +
-      `🥈 2.º Puesto (30%): ${top2} 💎\n` +
-      `🥉 3.er Puesto (20%): ${top3} 💎\n\n` +
-      `Esta acción acreditará las gemas directamente a los balances de los jugadores ganadores.`
+      `¿Deseas liquidar y repartir los premios del torneo?\n\n` +
+      `🏆 Pozo Oficial: ${pool.toLocaleString()} ${currName} ${currSym}\n` +
+      `👥 Puestos premiados: Top ${places}${itemMsg}\n\n` +
+      `Esta acción acreditará las recompensas inmediatamente a los ganadores.`
     )
     if (!confirmReparto) return
 
@@ -309,7 +372,7 @@ export default function TournamentModal({
       soundManager.playSound('victory', 0.9)
       const res = await tournamentService.finalizeTournament(selectedTourney.id)
       if (res.success) {
-        alert('🎉 ¡Premios en gemas liquidados y repartidos exitosamente a los ganadores del torneo!')
+        alert('🎉 ¡Premios y recompensas liquidados y repartidos exitosamente a los ganadores del torneo!')
         await loadDetails(selectedTourney.id)
         await loadTournaments()
       } else {
@@ -319,6 +382,33 @@ export default function TournamentModal({
       alert(err?.message || 'Error al liquidar premios')
     } finally {
       setIsFinalizing(false)
+    }
+  }
+
+  // Simulación Sandbox de partidas para el Admin
+  const handleAdminSimulateMatch = async (isVictory: boolean) => {
+    if (!selectedTourney || !details?.my_participation?.registered) {
+      alert('Debes inscribirte primero en el torneo para simular partidas.')
+      return
+    }
+    setIsSimulatingMatch(true)
+    try {
+      soundManager.playSound(isVictory ? 'victory' : 'defeat', 0.7)
+      const res = await tournamentService.submitMatchResult(
+        selectedTourney.id,
+        isVictory,
+        'Gladiador de Prueba'
+      )
+      if (res.success) {
+        await loadDetails(selectedTourney.id)
+        await loadTournaments()
+      } else {
+        alert(res.error || 'No se pudo registrar el resultado de prueba.')
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Error al simular combate')
+    } finally {
+      setIsSimulatingMatch(false)
     }
   }
 
@@ -383,15 +473,50 @@ export default function TournamentModal({
       } else {
         startTime = new Date(Date.now() + createStartOffsetMin * 60 * 1000).toISOString()
       }
-      const entryFee = createEntryType === 'gems' ? createEntryFeeGems : 0
+
+      let entryCurr: 'free' | 'gold' | 'gems' = 'free'
+      let entryFee = 0
+      if (createCategory === 'gold') {
+        entryCurr = 'gold'
+        entryFee = createEntryFeeAmount
+      } else if (createCategory === 'gems' || createCategory === 'item') {
+        entryCurr = 'gems'
+        entryFee = createEntryFeeAmount
+      }
+
+      let prizeCurr: 'gems' | 'gold' | 'item' = 'gems'
+      if (createCategory === 'free') {
+        prizeCurr = 'gems'
+      } else if (createCategory === 'gold' || createCategory === 'gems') {
+        prizeCurr = createPrizeCurrency
+      } else if (createCategory === 'item') {
+        prizeCurr = 'item'
+      }
+
+      let distribution: Record<string, number> = { top1: 50, top2: 30, top3: 20 }
+      if (createPlacesCount === 1) {
+        distribution = { top1: 100 }
+      } else if (createPlacesCount === 5) {
+        distribution = { top1: 40, top2: 25, top3: 15, top4: 10, top5: 10 }
+      } else if (createPlacesCount === 10) {
+        distribution = { top1: 30, top2: 20, top3: 15, top4: 10, top5: 7, top6: 5, top7: 5, top8: 3, top9: 3, top10: 2 }
+      }
 
       const res = await tournamentService.createTournament({
         title: createTitle,
-        prize_pool_gems: createPrizeGems,
-        entry_fee_gems: entryFee,
+        prize_pool_gems: prizeCurr === 'gems' ? createPrizePoolAmount : 0,
+        entry_fee_gems: entryCurr === 'gems' ? entryFee : 0,
         start_time: startTime,
         duration_minutes: createDurationMin,
-        prize_distribution: { top1: 50, top2: 30, top3: 20 },
+        prize_distribution: distribution,
+        entry_currency: entryCurr,
+        entry_fee_amount: entryFee,
+        prize_currency: prizeCurr,
+        prize_pool_amount: createPrizePoolAmount,
+        prize_item_id: createCategory === 'item' ? createPrizeItemId : undefined,
+        prize_item_quantity: createCategory === 'item' ? createPrizeItemQuantity : 1,
+        rewarded_places_count: createPlacesCount,
+        is_test: createIsTest,
       })
 
       if (!res.success) {
@@ -401,6 +526,7 @@ export default function TournamentModal({
 
       soundManager.playSound('plantation', 0.8)
       setShowCreateModal(false)
+      setCreateStep('select_type')
       setCreateTitle('')
       await loadTournaments()
       if (res.tournament_id) {
@@ -433,9 +559,15 @@ export default function TournamentModal({
           </div>
 
           <div className="tourney-header__actions">
-            <div className="tourney-badge--gems">
-              <span>💎</span>
-              <span>{userTokens.toFixed(2)} Gemas</span>
+            <div className="tourney-header__balances">
+              <div className="tourney-badge--gems">
+                <span>💎</span>
+                <span>{userTokens.toFixed(2)} Gemas</span>
+              </div>
+              <div className="tourney-badge--gold">
+                <span>🟡</span>
+                <span>{(userGold || 0).toLocaleString()} Oro</span>
+              </div>
             </div>
 
             {isAdmin && (
@@ -444,6 +576,7 @@ export default function TournamentModal({
                 className="tourney-btn-create"
                 onClick={() => {
                   soundManager.playSound('click', 0.4)
+                  setCreateStep('select_type')
                   setShowCreateModal(true)
                 }}
               >
@@ -504,7 +637,10 @@ export default function TournamentModal({
                       type="button"
                       className="tourney-btn-create"
                       style={{ margin: '0 auto', fontSize: '0.8rem' }}
-                      onClick={() => setShowCreateModal(true)}
+                      onClick={() => {
+                        setCreateStep('select_type')
+                        setShowCreateModal(true)
+                      }}
                     >
                       ➕ ¡Crea el primer torneo!
                     </button>
@@ -536,19 +672,35 @@ export default function TournamentModal({
                       >
                         {tLive ? '● EN VIVO' : tSched ? '⏳ PROGRAMADO' : '🏁 FINALIZADO'}
                       </span>
-                      {t.entry_fee_gems > 0 ? (
-                        <span className="tourney-fee-badge">💎 ENTRADA {t.entry_fee_gems} 💎</span>
+                      {t.is_test && (
+                        <span className="tourney-test-badge">🧪 PRUEBA</span>
+                      )}
+                      {t.entry_currency === 'gold' && (t.entry_fee_amount ?? 0) > 0 ? (
+                        <span className="tourney-fee-badge--gold">🟡 {t.entry_fee_amount?.toLocaleString()} ORO</span>
+                      ) : (t.entry_currency === 'gems' || t.entry_fee_gems > 0) && ((t.entry_fee_amount ?? t.entry_fee_gems) > 0) ? (
+                        <span className="tourney-fee-badge">💎 {t.entry_fee_amount ?? t.entry_fee_gems} GEMAS</span>
                       ) : (
-                        <span className="tourney-free-badge">ENTRADA FREE</span>
+                        <span className="tourney-free-badge">🎉 FREE</span>
                       )}
                     </div>
 
                     <h4 className="tourney-card-title">{t.title}</h4>
 
                     <div className="tourney-card-meta">
-                      <span style={{ color: '#c084fc', fontWeight: 700 }}>
-                        💎 Pozo: {t.prize_pool_gems} Gemas
-                      </span>
+                      {t.prize_item_id ? (
+                        <span style={{ color: '#f59e0b', fontWeight: 800 }}>
+                          🎁 {FARMING_ITEM_DEFINITIONS[t.prize_item_id as keyof typeof FARMING_ITEM_DEFINITIONS]?.label || t.prize_item_id}
+                          {(t.prize_pool_amount ?? t.prize_pool_gems ?? 0) > 0 && ` + ${(t.prize_pool_amount ?? t.prize_pool_gems)} 💎`}
+                        </span>
+                      ) : t.prize_currency === 'gold' ? (
+                        <span style={{ color: '#fbbf24', fontWeight: 700 }}>
+                          🟡 Pozo: {(t.prize_pool_amount ?? 0).toLocaleString()} Oro
+                        </span>
+                      ) : (
+                        <span style={{ color: '#c084fc', fontWeight: 700 }}>
+                          💎 Pozo: {t.prize_pool_amount ?? t.prize_pool_gems ?? 0} Gemas
+                        </span>
+                      )}
                       <span style={{ color: '#94a3b8' }}>
                         👥 {t.participants_count || 1}
                       </span>
@@ -578,15 +730,36 @@ export default function TournamentModal({
               {/* BANNER WITH REALTIME CLOCK */}
               <div className="tourney-detail-banner">
                 <div className="tourney-banner-info">
-                  <h3>{selectedTourney.title}</h3>
-                  <p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <h3 style={{ margin: 0 }}>{selectedTourney.title}</h3>
+                    {selectedTourney.is_test && (
+                      <span className="tourney-test-badge">🧪 Torneo de Prueba Admin</span>
+                    )}
+                  </div>
+                  <p style={{ marginTop: 4 }}>
                     Organizado por <strong>{selectedTourney.creator_name}</strong> •{' '}
-                    {selectedTourney.entry_fee_gems > 0
-                      ? `Entrada: ${selectedTourney.entry_fee_gems} 💎`
+                    {selectedTourney.entry_currency === 'gold' && (selectedTourney.entry_fee_amount ?? 0) > 0
+                      ? `Entrada: ${(selectedTourney.entry_fee_amount ?? 0).toLocaleString()} 🟡 Oro`
+                      : (selectedTourney.entry_currency === 'gems' || selectedTourney.entry_fee_gems > 0) && ((selectedTourney.entry_fee_amount ?? selectedTourney.entry_fee_gems) > 0)
+                      ? `Entrada: ${selectedTourney.entry_fee_amount ?? selectedTourney.entry_fee_gems} 💎 Gemas`
                       : 'Entrada 100% Gratuita'}
                   </p>
                   <p style={{ color: '#c084fc', fontSize: '0.85rem', marginTop: 4 }}>
-                    💎 Pozo de Premios: <strong>{selectedTourney.prize_pool_gems} Gemas</strong> (Top 1: 50% • Top 2: 30% • Top 3: 20%)
+                    {selectedTourney.prize_item_id ? (
+                      <span>
+                        🎁 Premio Principal: <strong>{FARMING_ITEM_DEFINITIONS[selectedTourney.prize_item_id as keyof typeof FARMING_ITEM_DEFINITIONS]?.label || selectedTourney.prize_item_id}</strong>
+                        {(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0) > 0 &&
+                          ` + ${(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems)} Gemas`}
+                      </span>
+                    ) : selectedTourney.prize_currency === 'gold' ? (
+                      <span>
+                        🟡 Pozo Oficial: <strong>{(selectedTourney.prize_pool_amount ?? 0).toLocaleString()} Oro</strong> (Top {selectedTourney.rewarded_places_count || 3})
+                      </span>
+                    ) : (
+                      <span>
+                        💎 Pozo de Premios: <strong>{(selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0).toLocaleString()} Gemas</strong> (Top {selectedTourney.rewarded_places_count || 3})
+                      </span>
+                    )}
                   </p>
                 </div>
 
@@ -671,8 +844,10 @@ export default function TournamentModal({
                           </div>
                         )}
                         <p style={{ color: '#cbd5e1', fontSize: '0.9rem', marginBottom: 12 }}>
-                          {selectedTourney.entry_fee_gems > 0
-                            ? `Costo de Inscripción: ${selectedTourney.entry_fee_gems} Gemas. Tu saldo: ${userTokens.toFixed(2)} 💎. ¡15 cartas desbloqueadas para competir!`
+                          {selectedTourney.entry_currency === 'gold' && (selectedTourney.entry_fee_amount ?? 0) > 0
+                            ? `Costo de Inscripción: ${(selectedTourney.entry_fee_amount ?? 0).toLocaleString()} 🟡 Oro. Tu saldo actual: ${(userGold || 0).toLocaleString()} 🟡.`
+                            : (selectedTourney.entry_currency === 'gems' || selectedTourney.entry_fee_gems > 0) && ((selectedTourney.entry_fee_amount ?? selectedTourney.entry_fee_gems) > 0)
+                            ? `Costo de Inscripción: ${selectedTourney.entry_fee_amount ?? selectedTourney.entry_fee_gems} 💎 Gemas. Tu saldo: ${userTokens.toFixed(2)} 💎.`
                             : '¡La entrada es completamente gratis! Inscríbete para armar tu mazo con todas las cartas desbloqueadas y competir.'}
                         </p>
                         <button
@@ -681,8 +856,10 @@ export default function TournamentModal({
                           style={{ margin: '0 auto', padding: '10px 24px', fontSize: '0.95rem' }}
                           onClick={handleRegister}
                         >
-                          {selectedTourney.entry_fee_gems > 0
-                            ? `🎟️ Inscribirme al Torneo (${selectedTourney.entry_fee_gems} 💎)`
+                          {selectedTourney.entry_currency === 'gold' && (selectedTourney.entry_fee_amount ?? 0) > 0
+                            ? `🎟️ Inscribirme con ${(selectedTourney.entry_fee_amount ?? 0).toLocaleString()} 🟡 Oro`
+                            : (selectedTourney.entry_currency === 'gems' || selectedTourney.entry_fee_gems > 0) && ((selectedTourney.entry_fee_amount ?? selectedTourney.entry_fee_gems) > 0)
+                            ? `🎟️ Inscribirme con ${selectedTourney.entry_fee_amount ?? selectedTourney.entry_fee_gems} 💎 Gemas`
                             : '📝 Inscribirme Gratis al Torneo'}
                         </button>
                       </>
@@ -805,12 +982,12 @@ export default function TournamentModal({
                               onClick={handleFinalizeTournament}
                               disabled={isFinalizing}
                             >
-                              {isFinalizing ? '⏳ Repartiendo Premios…' : '🏆 Liquidar y Repartir Premios (Gemas)'}
+                              {isFinalizing ? '⏳ Repartiendo Premios…' : '🏆 Liquidar y Repartir Premios'}
                             </button>
                           )}
                           {selectedTourney.prizes_distributed && (
                             <div style={{ textAlign: 'center', color: '#4ade80', fontSize: '0.85rem', fontWeight: 800, background: 'rgba(74, 222, 128, 0.12)', padding: '8px 12px', borderRadius: 8, border: '1px solid #22c55e' }}>
-                              ✅ Premios del pozo liquidados y entregados a los ganadores (Top 1, 2 y 3).
+                              ✅ Premios del pozo liquidados y entregados a los ganadores.
                             </div>
                           )}
                         </div>
@@ -825,6 +1002,52 @@ export default function TournamentModal({
                         </button>
                       )}
                     </div>
+
+                    {/* SANDBOX CONSOLE (ADMIN) */}
+                    {isAdmin && (
+                      <div className="tourney-admin-sandbox">
+                        <div className="tourney-admin-sandbox__header">
+                          <div className="tourney-admin-sandbox__title">
+                            <span>🧪</span>
+                            <span>Consola de Pruebas Admin (Solo visible para ti)</span>
+                          </div>
+                          {selectedTourney.is_test && (
+                            <span className="tourney-admin-sandbox__badge">Modo Sandbox Activo</span>
+                          )}
+                        </div>
+                        <p className="tourney-admin-sandbox__desc">
+                          Prueba el flujo completo en vivo en producción: simula partidas para sumar victorias o derrotas y liquida inmediatamente para recibir el premio (Oro, Gemas o Ítem) en tu cuenta.
+                        </p>
+                        <div className="tourney-admin-sandbox__actions">
+                          <button
+                            type="button"
+                            className="tourney-sandbox-btn tourney-sandbox-btn--win"
+                            onClick={() => handleAdminSimulateMatch(true)}
+                            disabled={isSimulatingMatch || isMyPartEliminated}
+                          >
+                            {isSimulatingMatch ? 'Simulando…' : '⚔️ Simular Victoria (+1 V)'}
+                          </button>
+                          <button
+                            type="button"
+                            className="tourney-sandbox-btn tourney-sandbox-btn--loss"
+                            onClick={() => handleAdminSimulateMatch(false)}
+                            disabled={isSimulatingMatch || isMyPartEliminated}
+                          >
+                            {isSimulatingMatch ? 'Simulando…' : '💀 Simular Derrota (+1 D)'}
+                          </button>
+                          {!selectedTourney.prizes_distributed && (
+                            <button
+                              type="button"
+                              className="tourney-sandbox-btn tourney-sandbox-btn--finalize"
+                              onClick={handleFinalizeTournament}
+                              disabled={isFinalizing}
+                            >
+                              {isFinalizing ? 'Liquidando…' : '🏆 Liquidar y Recibir Premios'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -922,13 +1145,65 @@ export default function TournamentModal({
                       ) : displayedLeaderboard.length > 0 ? (
                         displayedLeaderboard.map((row) => {
                           let prizeText = '—'
-                          const pool = selectedTourney.prize_pool_gems || 0
-                          if (isEnded && row.prize_awarded_gems && row.prize_awarded_gems > 0) {
-                            prizeText = `${Number(row.prize_awarded_gems).toFixed(1)} 💎`
-                          } else if (pool > 0 && (row.wins > 0 || isEnded)) {
-                            if (row.rank === 1) prizeText = `${(pool * 0.5).toFixed(1)} 💎`
-                            else if (row.rank === 2) prizeText = `${(pool * 0.3).toFixed(1)} 💎`
-                            else if (row.rank === 3) prizeText = `${(pool * 0.2).toFixed(1)} 💎`
+                          const pool = selectedTourney.prize_pool_amount ?? selectedTourney.prize_pool_gems ?? 0
+                          const prizeCurr = selectedTourney.prize_currency || 'gems'
+                          const sym = prizeCurr === 'gold' ? '🟡' : '💎'
+                          const places = selectedTourney.rewarded_places_count || 3
+
+                          if (isEnded) {
+                            const parts: string[] = []
+                            if (row.prize_awarded_gold && row.prize_awarded_gold > 0) {
+                              parts.push(`${Number(row.prize_awarded_gold).toLocaleString()} 🟡`)
+                            }
+                            if (row.prize_awarded_gems && row.prize_awarded_gems > 0) {
+                              parts.push(`${Number(row.prize_awarded_gems).toFixed(1)} 💎`)
+                            }
+                            if (row.prize_awarded_item_id) {
+                              const itemDef = FARMING_ITEM_DEFINITIONS[row.prize_awarded_item_id as FarmingItemId]
+                              parts.push(`${row.prize_awarded_item_quantity || 1}x ${itemDef?.label || row.prize_awarded_item_id} ${itemDef?.fallback || '🎁'}`)
+                            }
+                            if (parts.length > 0) {
+                              prizeText = parts.join(' + ')
+                            }
+                          } else if (pool > 0 || selectedTourney.prize_item_id) {
+                            if (row.wins > 0 || isEnded) {
+                              let poolPart = ''
+                              let pct = 0
+                              if (places === 1 && row.rank === 1) pct = 1.0
+                              else if (places === 3) {
+                                if (row.rank === 1) pct = 0.5
+                                else if (row.rank === 2) pct = 0.3
+                                else if (row.rank === 3) pct = 0.2
+                              } else if (places === 5) {
+                                if (row.rank === 1) pct = 0.4
+                                else if (row.rank === 2) pct = 0.25
+                                else if (row.rank === 3) pct = 0.15
+                                else if (row.rank === 4 || row.rank === 5) pct = 0.1
+                              } else if (places === 10) {
+                                if (row.rank === 1) pct = 0.3
+                                else if (row.rank === 2) pct = 0.2
+                                else if (row.rank === 3) pct = 0.15
+                                else if (row.rank === 4) pct = 0.1
+                                else if (row.rank === 5) pct = 0.07
+                                else if (row.rank === 6 || row.rank === 7) pct = 0.05
+                                else if (row.rank >= 8 && row.rank <= 10) pct = 0.03
+                              }
+
+                              if (pct > 0 && pool > 0) {
+                                const val = pool * pct
+                                poolPart = prizeCurr === 'gold' ? `${Math.round(val).toLocaleString()} ${sym}` : `${val.toFixed(1)} ${sym}`
+                              }
+
+                              let itemPart = ''
+                              if (row.rank === 1 && selectedTourney.prize_item_id) {
+                                const itemDef = FARMING_ITEM_DEFINITIONS[selectedTourney.prize_item_id as FarmingItemId]
+                                itemPart = `${selectedTourney.prize_item_quantity || 1}x ${itemDef?.label || selectedTourney.prize_item_id} ${itemDef?.fallback || '🎁'}`
+                              }
+
+                              if (poolPart && itemPart) prizeText = `${itemPart} + ${poolPart}`
+                              else if (itemPart) prizeText = itemPart
+                              else if (poolPart) prizeText = poolPart
+                            }
                           }
 
                           return (
@@ -984,7 +1259,11 @@ export default function TournamentModal({
                   type="button"
                   className="tourney-btn-create"
                   style={{ marginTop: 14 }}
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setCreateStep('select_type')
+                    setShowCreateModal(true)
+                  }}
                 >
                   <span>➕</span>
                   <span>Crear Nuevo Torneo</span>
@@ -997,11 +1276,22 @@ export default function TournamentModal({
         {/* MODAL CREAR TORNEO */}
         {showCreateModal && (
           <div className="tourney-create-modal" onClick={() => setShowCreateModal(false)}>
-            <div className="tourney-create-card" onClick={(e) => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#f3e8ff' }}>
-                  🏆 Crear Nuevo Torneo
-                </h3>
+            <div
+              className="tourney-create-card"
+              style={createStep === 'select_type' ? { maxWidth: 780 } : undefined}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#f3e8ff', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    🏆 Crear Nuevo Torneo
+                  </h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: '#cbd5e1' }}>
+                    {createStep === 'select_type'
+                      ? 'Selecciona la modalidad y economía para tu torneo competitivo.'
+                      : 'Configura las reglas, pozo de recompensas y horario de inicio.'}
+                  </p>
+                </div>
                 <button
                   type="button"
                   className="tourney-close-btn"
@@ -1012,249 +1302,495 @@ export default function TournamentModal({
               </div>
 
               {createError && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', padding: '8px 12px', borderRadius: 8, color: '#fca5a5', fontSize: '0.82rem' }}>
+                <div style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', padding: '8px 12px', borderRadius: 8, color: '#fca5a5', fontSize: '0.82rem', marginBottom: 12 }}>
                   {createError}
                 </div>
               )}
 
-              <form onSubmit={handleConfirmCreate} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div className="tourney-form-group">
-                  <label>Título del Torneo</label>
-                  <input
-                    type="text"
-                    className="tourney-form-input"
-                    placeholder="Ej: Copa Relámpago de la Comunidad"
-                    value={createTitle}
-                    onChange={(e) => setCreateTitle(e.target.value)}
-                    required
-                  />
-                </div>
+              {createStep === 'select_type' ? (
+                <div className="tourney-type-grid">
+                  {/* Tipo 1: Free */}
+                  <div
+                    className="tourney-type-card tourney-type-card--free"
+                    onClick={() => handleSelectCategory('free')}
+                  >
+                    <div className="tourney-type-card__header">
+                      <span className="tourney-type-card__icon">🎁</span>
+                      <span className="tourney-type-card__tag">Comunidad • 100% Free</span>
+                    </div>
+                    <h4 className="tourney-type-card__title">Torneo Free</h4>
+                    <p className="tourney-type-card__desc">
+                      Entrada libre sin costo para todos los gladiadores. Pozo oficial de gemas patrocinado por la administración con reparto al Top 3.
+                    </p>
+                    <div className="tourney-type-card__action">
+                      Configurar Torneo Free <span>➔</span>
+                    </div>
+                  </div>
 
-                <div className="tourney-form-group">
-                  <label>Pozo Inicial de Gemas a Repartir</label>
-                  <input
-                    type="number"
-                    className="tourney-form-input"
-                    min="0"
-                    step="1"
-                    value={createPrizeGems}
-                    onChange={(e) => setCreatePrizeGems(Number(e.target.value))}
-                  />
-                  <span style={{ fontSize: '0.75rem', color: '#c084fc' }}>
-                    💎 Pozo oficial asignado por administración para premiar a los ganadores (Top 1: 50% • Top 2: 30% • Top 3: 20%). No se descuenta de tu saldo personal.
-                  </span>
-                </div>
+                  {/* Tipo 2: Oro */}
+                  <div
+                    className="tourney-type-card tourney-type-card--gold"
+                    onClick={() => handleSelectCategory('gold')}
+                  >
+                    <div className="tourney-type-card__header">
+                      <span className="tourney-type-card__icon">🟡</span>
+                      <span className="tourney-type-card__tag">Economía • Entrada Oro</span>
+                    </div>
+                    <h4 className="tourney-type-card__title">Torneo con Oro</h4>
+                    <p className="tourney-type-card__desc">
+                      Inscripción cobrada en Oro. Recompensa personalizable en Oro o Gemas, pozo acumulativo y puestos configurables (Top 1, 3, 5, 10).
+                    </p>
+                    <div className="tourney-type-card__action">
+                      Configurar Torneo con Oro <span>➔</span>
+                    </div>
+                  </div>
 
-                <div className="tourney-form-group">
-                  <label>Tipo de Entrada para Jugadores</label>
-                  <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                    <button
-                      type="button"
-                      className={`tourney-quick-btn ${createEntryType === 'free' ? 'active' : ''}`}
-                      style={{ flex: 1, padding: '8px 10px', fontSize: '0.82rem' }}
-                      onClick={() => setCreateEntryType('free')}
-                    >
-                      🎉 Entrada Libre (Free)
-                    </button>
-                    <button
-                      type="button"
-                      className={`tourney-quick-btn ${createEntryType === 'gems' ? 'active' : ''}`}
-                      style={{ flex: 1, padding: '8px 10px', fontSize: '0.82rem' }}
-                      onClick={() => setCreateEntryType('gems')}
-                    >
-                      💎 Entrada con Gemas
-                    </button>
+                  {/* Tipo 3: Gemas */}
+                  <div
+                    className="tourney-type-card tourney-type-card--gems"
+                    onClick={() => handleSelectCategory('gems')}
+                  >
+                    <div className="tourney-type-card__header">
+                      <span className="tourney-type-card__icon">💎</span>
+                      <span className="tourney-type-card__tag">Competitivo • Entrada Gemas</span>
+                    </div>
+                    <h4 className="tourney-type-card__title">Torneo con Gemas</h4>
+                    <p className="tourney-type-card__desc">
+                      Torneo élite con tarifa de inscripción en Gemas. El pozo se acumula con cada jugador. Recompensa en Gemas u Oro a elección.
+                    </p>
+                    <div className="tourney-type-card__action">
+                      Configurar Torneo con Gemas <span>➔</span>
+                    </div>
+                  </div>
+
+                  {/* Tipo 4: Ítem Exclusivo */}
+                  <div
+                    className="tourney-type-card tourney-type-card--item"
+                    onClick={() => handleSelectCategory('item')}
+                  >
+                    <div className="tourney-type-card__header">
+                      <span className="tourney-type-card__icon">🥊</span>
+                      <span className="tourney-type-card__tag">Artefactos • Recompensa Ítem</span>
+                    </div>
+                    <h4 className="tourney-type-card__title">Torneo Gemas + Ítem</h4>
+                    <p className="tourney-type-card__desc">
+                      Entrada en Gemas. El Campeón indiscutido (Top 1) gana un artefacto exclusivo (Cinturón de Campeón 🥊, pociones, etc.) más pozo en gemas.
+                    </p>
+                    <div className="tourney-type-card__action">
+                      Configurar Torneo con Ítem <span>➔</span>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                /* FORMULARIO DINÁMICO SEGÚN TIPO */
+                <form onSubmit={handleConfirmCreate} style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+                  <div className="tourney-form-subnav">
+                    <button
+                      type="button"
+                      className="tourney-back-btn"
+                      onClick={() => setCreateStep('select_type')}
+                    >
+                      ← Elegir otro tipo
+                    </button>
+                    <span className="tourney-category-pill" style={{
+                      background:
+                        createCategory === 'free' ? 'rgba(74, 222, 128, 0.15)' :
+                        createCategory === 'gold' ? 'rgba(245, 158, 11, 0.15)' :
+                        createCategory === 'gems' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color:
+                        createCategory === 'free' ? '#86efac' :
+                        createCategory === 'gold' ? '#fde047' :
+                        createCategory === 'gems' ? '#d8b4fe' : '#fca5a5',
+                      border: `1px solid ${
+                        createCategory === 'free' ? '#22c55e' :
+                        createCategory === 'gold' ? '#eab308' :
+                        createCategory === 'gems' ? '#a855f7' : '#ef4444'
+                      }`
+                    }}>
+                      {createCategory === 'free' && '🎁 Modalidad: Torneo Free'}
+                      {createCategory === 'gold' && '🟡 Modalidad: Torneo con Oro'}
+                      {createCategory === 'gems' && '💎 Modalidad: Torneo con Gemas'}
+                      {createCategory === 'item' && '🥊 Modalidad: Gemas + Ítem de Campeón'}
+                    </span>
+                  </div>
 
-                {createEntryType === 'gems' && (
+                  {/* Título */}
                   <div className="tourney-form-group">
-                    <label>Costo de Entrada por Jugador (Gemas)</label>
+                    <label>Título del Torneo</label>
+                    <input
+                      type="text"
+                      className="tourney-form-input"
+                      placeholder="Ej: Copa Relámpago de la Comunidad"
+                      value={createTitle}
+                      onChange={(e) => setCreateTitle(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  {/* Costo de Entrada */}
+                  {createCategory === 'free' ? (
+                    <div style={{ background: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.3)', padding: 10, borderRadius: 8, fontSize: '0.8rem', color: '#86efac' }}>
+                      🎉 <strong>Entrada Gratuita (Free)</strong>: Cualquier gladiador podrá inscribirse sin pagar costo de entrada.
+                    </div>
+                  ) : createCategory === 'gold' ? (
+                    <div className="tourney-form-group">
+                      <label>Costo de Entrada por Jugador (🟡 Oro)</label>
+                      <input
+                        type="number"
+                        className="tourney-form-input"
+                        min="1"
+                        step="50"
+                        value={createEntryFeeAmount}
+                        onChange={(e) => setCreateEntryFeeAmount(Math.max(1, Number(e.target.value)))}
+                        required
+                      />
+                      <span style={{ fontSize: '0.74rem', color: '#fde047' }}>
+                        Se descontará automáticamente del saldo de Oro del jugador al registrarse.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="tourney-form-group">
+                      <label>Costo de Entrada por Jugador (💎 Gemas)</label>
+                      <input
+                        type="number"
+                        className="tourney-form-input"
+                        min="1"
+                        step="5"
+                        value={createEntryFeeAmount}
+                        onChange={(e) => setCreateEntryFeeAmount(Math.max(1, Number(e.target.value)))}
+                        required
+                      />
+                      <span style={{ fontSize: '0.74rem', color: '#c084fc' }}>
+                        Las gemas cobradas a cada jugador se sumarán automáticamente al pozo si la recompensa es en Gemas.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Moneda de Recompensa (Para Gold y Gems) */}
+                  {(createCategory === 'gold' || createCategory === 'gems') && (
+                    <div className="tourney-form-group">
+                      <label>Moneda del Pozo de Premios</label>
+                      <div className="tourney-currency-toggle">
+                        <button
+                          type="button"
+                          className={`tourney-quick-btn ${createPrizeCurrency === 'gems' ? 'active' : ''}`}
+                          style={{ flex: 1, padding: '8px 10px', fontSize: '0.82rem' }}
+                          onClick={() => setCreatePrizeCurrency('gems')}
+                        >
+                          💎 Recompensar en Gemas
+                        </button>
+                        <button
+                          type="button"
+                          className={`tourney-quick-btn ${createPrizeCurrency === 'gold' ? 'active' : ''}`}
+                          style={{ flex: 1, padding: '8px 10px', fontSize: '0.82rem' }}
+                          onClick={() => setCreatePrizeCurrency('gold')}
+                        >
+                          🟡 Recompensar en Oro
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Pozo Inicial */}
+                  <div className="tourney-form-group">
+                    <label>
+                      {createCategory === 'item'
+                        ? 'Pozo Adicional de Gemas (Opcional)'
+                        : `Pozo Inicial de ${createPrizeCurrency === 'gold' ? 'Oro' : 'Gemas'} a Repartir`}
+                    </label>
                     <input
                       type="number"
                       className="tourney-form-input"
-                      min="1"
-                      step="1"
-                      value={createEntryFeeGems}
-                      onChange={(e) => setCreateEntryFeeGems(Math.max(1, Number(e.target.value)))}
+                      min="0"
+                      step={createPrizeCurrency === 'gold' ? '100' : '10'}
+                      value={createPrizePoolAmount}
+                      onChange={(e) => setCreatePrizePoolAmount(Number(e.target.value))}
                     />
-                    <span style={{ fontSize: '0.75rem', color: '#c084fc' }}>
-                      Las gemas cobradas a cada jugador se sumarán automáticamente al pozo total de premios.
+                    <span style={{ fontSize: '0.74rem', color: createPrizeCurrency === 'gold' ? '#fde047' : '#c084fc' }}>
+                      {createCategory === 'item'
+                        ? '💎 Pozo en gemas adicional que se repartirá entre los mejores clasificados además del ítem.'
+                        : `Pozo oficial asignado por administración. No se descuenta de tu saldo personal.`}
                     </span>
                   </div>
-                )}
 
-                <div className="tourney-form-group">
-                  <label>Hora de Inicio Programada (Cuenta Regresiva)</label>
-                  <div className="tourney-quick-times">
-                    {[
-                      { label: 'En 1 min', min: 1 },
-                      { label: 'En 5 min', min: 5 },
-                      { label: 'En 15 min', min: 15 },
-                      { label: 'En 30 min', min: 30 },
-                      { label: 'En 1 hora', min: 60 },
-                    ].map((opt) => (
-                      <button
-                        key={opt.min}
-                        type="button"
-                        className={`tourney-quick-btn ${startMode === 'quick' && createStartOffsetMin === opt.min ? 'active' : ''}`}
-                        onClick={() => {
-                          setStartMode('quick')
-                          setCreateStartOffsetMin(opt.min)
-                          const target = new Date(Date.now() + opt.min * 60 * 1000)
-                          setCustomMonth(target.getUTCMonth() + 1)
-                          setCustomDay(target.getUTCDate())
-                          setCustomHour(target.getUTCHours())
-                          setCustomMinute(target.getUTCMinutes())
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-
-                    <button
-                      type="button"
-                      className={`tourney-quick-btn ${startMode === 'custom_utc' ? 'active' : ''}`}
-                      style={
-                        startMode === 'custom_utc'
-                          ? { background: 'linear-gradient(135deg, #a855f7, #7e22ce)', borderColor: '#c084fc', color: '#fff' }
-                          : undefined
-                      }
-                      onClick={() => setStartMode('custom_utc')}
-                    >
-                      📅 Fecha y Hora UTC
-                    </button>
-                  </div>
-
-                  {startMode === 'custom_utc' ? (
-                    <div className="tourney-utc-container">
-                      <div className="tourney-utc-picker">
-                        <div className="tourney-utc-picker__item" style={{ width: 84 }}>
-                          <label>Año (Fijo)</label>
-                          <div className="tourney-utc-year-pill">{currentYear}</div>
-                        </div>
-
-                        <div className="tourney-utc-picker__item" style={{ flex: 1.5, minWidth: 120 }}>
-                          <label>Mes</label>
-                          <select
-                            className="tourney-utc-select"
-                            value={customMonth}
-                            onChange={(e) => setCustomMonth(Number(e.target.value))}
-                          >
-                            {MONTHS_ES.map((m) => (
-                              <option key={m.value} value={m.value}>
-                                {m.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="tourney-utc-picker__item" style={{ width: 68 }}>
-                          <label>Día</label>
-                          <select
-                            className="tourney-utc-select"
-                            value={customDay}
-                            onChange={(e) => setCustomDay(Number(e.target.value))}
-                          >
-                            {Array.from({ length: maxDaysInSelectedMonth }, (_, i) => i + 1).map((d) => (
-                              <option key={d} value={d}>
-                                {d.toString().padStart(2, '0')}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="tourney-utc-picker__item" style={{ width: 75 }}>
-                          <label>Hora UTC</label>
-                          <select
-                            className="tourney-utc-select"
-                            value={customHour}
-                            onChange={(e) => setCustomHour(Number(e.target.value))}
-                          >
-                            {Array.from({ length: 24 }, (_, i) => i).map((h) => (
-                              <option key={h} value={h}>
-                                {h.toString().padStart(2, '0')}:00
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="tourney-utc-picker__item" style={{ width: 75 }}>
-                          <label>Min UTC</label>
-                          <select
-                            className="tourney-utc-select"
-                            value={customMinute}
-                            onChange={(e) => setCustomMinute(Number(e.target.value))}
-                          >
-                            {Array.from({ length: 60 }, (_, i) => i).map((m) => (
-                              <option key={m} value={m}>
-                                :{m.toString().padStart(2, '0')}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                  {/* Selector de Ítem para la modalidad Item */}
+                  {createCategory === 'item' && (
+                    <div className="tourney-form-group">
+                      <label>🎁 Ítem Exclusivo para el Campeón (Top 1)</label>
+                      <div className="tourney-item-selector-grid">
+                        {(
+                          [
+                            'champion_belt',
+                            'energy_potion_5',
+                            'shovel',
+                            'scarecrow',
+                            'pesticide',
+                            'water',
+                            'fertilizer',
+                          ] as FarmingItemId[]
+                        ).map((itemId) => {
+                          const itemDef = FARMING_ITEM_DEFINITIONS[itemId]
+                          const isSelected = createPrizeItemId === itemId
+                          return (
+                            <button
+                              key={itemId}
+                              type="button"
+                              className={`tourney-item-option-btn ${isSelected ? 'active' : ''}`}
+                              onClick={() => setCreatePrizeItemId(itemId)}
+                            >
+                              <img
+                                src={itemDef?.icon || '/game-assets/farming/champion_belt.png'}
+                                alt={itemDef?.label || itemId}
+                                onError={(e) => {
+                                  ;(e.currentTarget as HTMLElement).style.display = 'none'
+                                }}
+                              />
+                              <span>{itemDef?.label || itemId}</span>
+                            </button>
+                          )
+                        })}
                       </div>
-
-                      <div className="tourney-utc-preview">
-                        <div className="tourney-utc-preview__date">
-                          🌐 Inicio: <strong>{customDay.toString().padStart(2, '0')}/{customMonth.toString().padStart(2, '0')}/{currentYear} {customHour.toString().padStart(2, '0')}:{customMinute.toString().padStart(2, '0')} UTC</strong>
-                        </div>
-                        <div className={`tourney-utc-preview__countdown ${isCustomUtcInFuture ? 'is-valid' : 'is-invalid'}`}>
-                          {isCustomUtcInFuture
-                            ? `⏳ Cuenta regresiva: ${formatCountdown(customUtcTargetMs)}`
-                            : '⚠️ La fecha debe ser posterior al momento actual.'}
-                        </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+                        <span style={{ fontSize: '0.78rem', color: '#cbd5e1' }}>Cantidad a otorgar:</span>
+                        <input
+                          type="number"
+                          className="tourney-form-input"
+                          style={{ width: 80, padding: '4px 8px' }}
+                          min="1"
+                          max="100"
+                          value={createPrizeItemQuantity}
+                          onChange={(e) => setCreatePrizeItemQuantity(Math.max(1, Number(e.target.value)))}
+                        />
                       </div>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: '0.74rem', color: '#cbd5e1', marginTop: 4 }}>
-                      🌐 Inicio UTC calculado: <strong>{formatUtcDateTime(Date.now() + createStartOffsetMin * 60 * 1000)}</strong>
                     </div>
                   )}
-                </div>
 
-                <div className="tourney-form-group">
-                  <label>Duración del Torneo</label>
-                  <div className="tourney-quick-times">
-                    {[
-                      { label: '45 min', min: 45 },
-                      { label: '1 hora (60 min)', min: 60 },
-                      { label: '🔥 2 Horas (120 min)', min: 120 },
-                      { label: '3 Horas (180 min)', min: 180 },
-                    ].map((opt) => (
-                      <button
-                        key={opt.min}
-                        type="button"
-                        className={`tourney-quick-btn ${createDurationMin === opt.min ? 'active' : ''}`}
-                        onClick={() => setCreateDurationMin(opt.min)}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                  {/* Cantidad de Puestos Premiados */}
+                  <div className="tourney-form-group">
+                    <label>Puestos Premiados en el Pozo</label>
+                    <div className="tourney-quick-times">
+                      {([1, 3, 5, 10] as const).map((places) => (
+                        <button
+                          key={places}
+                          type="button"
+                          className={`tourney-quick-btn ${createPlacesCount === places ? 'active' : ''}`}
+                          onClick={() => setCreatePlacesCount(places)}
+                        >
+                          {places === 1 ? '👑 Top 1 (100%)' :
+                           places === 3 ? '🏆 Top 3 (50/30/20%)' :
+                           places === 5 ? '🎖️ Top 5' : '🎖️ Top 10'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: 10, borderRadius: 8, fontSize: '0.78rem', color: '#d8b4fe' }}>
-                  ℹ️ Reglas: 15 plantas 100% desbloqueadas para todos, eliminación a las 3 derrotas y reentrada disponible por 3 💎 (2 vidas).
-                </div>
+                  {/* Hora de Inicio */}
+                  <div className="tourney-form-group">
+                    <label>Hora de Inicio Programada (Cuenta Regresiva)</label>
+                    <div className="tourney-quick-times">
+                      {[
+                        { label: 'En 1 min', min: 1 },
+                        { label: 'En 5 min', min: 5 },
+                        { label: 'En 15 min', min: 15 },
+                        { label: 'En 30 min', min: 30 },
+                        { label: 'En 1 hora', min: 60 },
+                      ].map((opt) => (
+                        <button
+                          key={opt.min}
+                          type="button"
+                          className={`tourney-quick-btn ${startMode === 'quick' && createStartOffsetMin === opt.min ? 'active' : ''}`}
+                          onClick={() => {
+                            setStartMode('quick')
+                            setCreateStartOffsetMin(opt.min)
+                            const target = new Date(Date.now() + opt.min * 60 * 1000)
+                            setCustomMonth(target.getUTCMonth() + 1)
+                            setCustomDay(target.getUTCDate())
+                            setCustomHour(target.getUTCHours())
+                            setCustomMinute(target.getUTCMinutes())
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
-                  <button
-                    type="button"
-                    className="tourney-btn-secondary"
-                    onClick={() => setShowCreateModal(false)}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="tourney-btn-create"
-                    disabled={isCreating}
-                  >
-                    {isCreating ? 'Creando…' : '✓ Publicar Torneo'}
-                  </button>
-                </div>
-              </form>
+                      <button
+                        type="button"
+                        className={`tourney-quick-btn ${startMode === 'custom_utc' ? 'active' : ''}`}
+                        style={
+                          startMode === 'custom_utc'
+                            ? { background: 'linear-gradient(135deg, #a855f7, #7e22ce)', borderColor: '#c084fc', color: '#fff' }
+                            : undefined
+                        }
+                        onClick={() => setStartMode('custom_utc')}
+                      >
+                        📅 Fecha y Hora UTC
+                      </button>
+                    </div>
+
+                    {startMode === 'custom_utc' ? (
+                      <div className="tourney-utc-container">
+                        <div className="tourney-utc-picker">
+                          <div className="tourney-utc-picker__item" style={{ width: 84 }}>
+                            <label>Año (Fijo)</label>
+                            <div className="tourney-utc-year-pill">{currentYear}</div>
+                          </div>
+
+                          <div className="tourney-utc-picker__item" style={{ flex: 1.5, minWidth: 120 }}>
+                            <label>Mes</label>
+                            <select
+                              className="tourney-utc-select"
+                              value={customMonth}
+                              onChange={(e) => setCustomMonth(Number(e.target.value))}
+                            >
+                              {MONTHS_ES.map((m) => (
+                                <option key={m.value} value={m.value}>
+                                  {m.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="tourney-utc-picker__item" style={{ width: 68 }}>
+                            <label>Día</label>
+                            <select
+                              className="tourney-utc-select"
+                              value={customDay}
+                              onChange={(e) => setCustomDay(Number(e.target.value))}
+                            >
+                              {Array.from({ length: maxDaysInSelectedMonth }, (_, i) => i + 1).map((d) => (
+                                <option key={d} value={d}>
+                                  {d.toString().padStart(2, '0')}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="tourney-utc-picker__item" style={{ width: 75 }}>
+                            <label>Hora UTC</label>
+                            <select
+                              className="tourney-utc-select"
+                              value={customHour}
+                              onChange={(e) => setCustomHour(Number(e.target.value))}
+                            >
+                              {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                                <option key={h} value={h}>
+                                  {h.toString().padStart(2, '0')}:00
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="tourney-utc-picker__item" style={{ width: 75 }}>
+                            <label>Min UTC</label>
+                            <select
+                              className="tourney-utc-select"
+                              value={customMinute}
+                              onChange={(e) => setCustomMinute(Number(e.target.value))}
+                            >
+                              {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+                                <option key={m} value={m}>
+                                  :{m.toString().padStart(2, '0')}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="tourney-utc-preview">
+                          <div className="tourney-utc-preview__date">
+                            🌐 Inicio: <strong>{customDay.toString().padStart(2, '0')}/{customMonth.toString().padStart(2, '0')}/{currentYear} {customHour.toString().padStart(2, '0')}:{customMinute.toString().padStart(2, '0')} UTC</strong>
+                          </div>
+                          <div className={`tourney-utc-preview__countdown ${isCustomUtcInFuture ? 'is-valid' : 'is-invalid'}`}>
+                            {isCustomUtcInFuture
+                              ? `⏳ Cuenta regresiva: ${formatCountdown(customUtcTargetMs)}`
+                              : '⚠️ La fecha debe ser posterior al momento actual.'}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.74rem', color: '#cbd5e1', marginTop: 4 }}>
+                        🌐 Inicio UTC calculado: <strong>{formatUtcDateTime(Date.now() + createStartOffsetMin * 60 * 1000)}</strong>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Duración */}
+                  <div className="tourney-form-group">
+                    <label>Duración del Torneo</label>
+                    <div className="tourney-quick-times">
+                      {[
+                        { label: '45 min', min: 45 },
+                        { label: '1 hora (60 min)', min: 60 },
+                        { label: '🔥 2 Horas (120 min)', min: 120 },
+                        { label: '3 Horas (180 min)', min: 180 },
+                      ].map((opt) => (
+                        <button
+                          key={opt.min}
+                          type="button"
+                          className={`tourney-quick-btn ${createDurationMin === opt.min ? 'active' : ''}`}
+                          onClick={() => setCreateDurationMin(opt.min)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Modo de Prueba para Admin (Producción) */}
+                  <div style={{
+                    background: createIsTest ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                    border: createIsTest ? '1px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.12)',
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer'
+                  }} onClick={() => setCreateIsTest(!createIsTest)}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={createIsTest}
+                        onChange={(e) => setCreateIsTest(e.target.checked)}
+                        style={{ width: 18, height: 18, accentColor: '#06b6d4', cursor: 'pointer' }}
+                      />
+                      <div>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 800, color: createIsTest ? '#67e8f9' : '#f1f5f9' }}>
+                          🧪 Torneo de Prueba Admin (Solo visible para ti en producción)
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: 2 }}>
+                          {createIsTest
+                            ? '✓ Activado: Los jugadores comunes NO verán este torneo en su lista. Solo tú podrás ingresar, simular victorias/derrotas y liquidar premios desde el panel Sandbox.'
+                            : 'Desactivado: Será un torneo público oficial visible para todos los jugadores.'}
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: 10, borderRadius: 8, fontSize: '0.78rem', color: '#d8b4fe' }}>
+                    ℹ️ Reglas: 15 plantas 100% desbloqueadas para todos, eliminación a las 3 derrotas y reentrada disponible por 200 💎 (2 vidas).
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className="tourney-btn-secondary"
+                      onClick={() => setShowCreateModal(false)}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="tourney-btn-create"
+                      disabled={isCreating}
+                    >
+                      {isCreating
+                        ? 'Creando…'
+                        : createIsTest
+                        ? '🧪 Publicar Torneo de Prueba'
+                        : '✓ Publicar Torneo Oficial'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         )}

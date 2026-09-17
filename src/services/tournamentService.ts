@@ -82,6 +82,14 @@ export const tournamentService = {
         p_duration_minutes: input.duration_minutes ?? 60,
         p_prize_distribution: input.prize_distribution || { top1: 50, top2: 30, top3: 20 },
         p_entry_fee_gems: input.entry_fee_gems ?? 0,
+        p_entry_currency: input.entry_currency ?? 'gems',
+        p_entry_fee_amount: input.entry_fee_amount ?? input.entry_fee_gems ?? 0,
+        p_prize_currency: input.prize_currency ?? 'gems',
+        p_prize_pool_amount: input.prize_pool_amount ?? input.prize_pool_gems ?? 0,
+        p_prize_item_id: input.prize_item_id || null,
+        p_prize_item_quantity: input.prize_item_quantity ?? 1,
+        p_rewarded_places_count: input.rewarded_places_count ?? 3,
+        p_is_test: Boolean(input.is_test),
       })
 
       if (error) {
@@ -577,6 +585,14 @@ export const tournamentService = {
       prizes_distributed: false,
       participants_count: 1,
       active_participants_count: 1,
+      entry_currency: input.entry_currency || 'gems',
+      entry_fee_amount: input.entry_fee_amount ?? input.entry_fee_gems ?? 0,
+      prize_currency: input.prize_currency || 'gems',
+      prize_pool_amount: input.prize_pool_amount ?? input.prize_pool_gems ?? 0,
+      prize_item_id: input.prize_item_id || null,
+      prize_item_quantity: input.prize_item_quantity ?? 1,
+      rewarded_places_count: input.rewarded_places_count ?? 3,
+      is_test: Boolean(input.is_test),
     }
 
     memoryTournaments.set(newTourn.id, newTourn)

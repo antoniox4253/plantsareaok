@@ -1254,6 +1254,7 @@ function App() {
             onFastUnlockSlot={fastUnlockSlot}
             onOpenSlotPack={handleOpenSlotPack}
             onDeductTokens={deductUserTokens}
+            onDeductGold={deductGold}
             reopenTournamentModal={reopenTournamentOnMenu}
             onResetReopenTournamentModal={() => setReopenTournamentOnMenu(false)}
           />

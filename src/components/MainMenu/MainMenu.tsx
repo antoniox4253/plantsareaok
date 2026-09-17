@@ -81,6 +81,7 @@ interface MainMenuProps {
   // onAddTokens se eliminó al dejar el formulario de recarga como maqueta:
   // era la vía por la que ProfileModal se sumaba saldo sin cobrar nada.
   onDeductTokens?: (amountUsd: number) => boolean
+  onDeductGold?: (amount: number) => boolean
   onlineUsersCount?: number
   reopenTournamentModal?: boolean
   onResetReopenTournamentModal?: () => void
@@ -122,6 +123,7 @@ export default function MainMenu({
   onFastUnlockSlot,
   onOpenSlotPack,
   onDeductTokens,
+  onDeductGold,
   reopenTournamentModal,
   onResetReopenTournamentModal,
 }: MainMenuProps) {
@@ -1069,9 +1071,14 @@ export default function MainMenu({
         isOpen={isTournamentModalOpen}
         onClose={() => setIsTournamentModalOpen(false)}
         userTokens={userTokens}
+        userGold={userGold}
         isAdmin={isAdmin}
         onDeductTokens={(amount) => {
           if (onDeductTokens) return onDeductTokens(amount)
+          return false
+        }}
+        onDeductGold={(amount) => {
+          if (onDeductGold) return onDeductGold(amount)
           return false
         }}
         onStartTournamentMatch={(oppName, tourneyId, tourneyDeck) => {

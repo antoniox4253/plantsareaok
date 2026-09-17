@@ -211,6 +211,8 @@ export { parseEngineVersion } from '../engine/simulate'
 
 // ── SISTEMA DE TORNEOS AUTORITATIVO ───────────────────────────────────────────
 export type TournamentStatus = 'scheduled' | 'live' | 'ended' | 'cancelled'
+export type TournamentEntryCurrency = 'free' | 'gold' | 'gems'
+export type TournamentPrizeCurrency = 'gems' | 'gold' | 'item' | 'mixed'
 
 export interface TournamentModel {
   id: string
@@ -219,7 +221,7 @@ export interface TournamentModel {
   creator_id?: string | null
   creator_name: string
   prize_pool_gems: number
-  prize_distribution?: { top1?: number; top2?: number; top3?: number }
+  prize_distribution?: Record<string, number>
   status: TournamentStatus
   entry_fee_gems: number
   start_time: string
@@ -229,6 +231,14 @@ export interface TournamentModel {
   prizes_distributed: boolean
   participants_count?: number
   active_participants_count?: number
+  entry_currency?: TournamentEntryCurrency
+  entry_fee_amount?: number
+  prize_currency?: TournamentPrizeCurrency
+  prize_pool_amount?: number
+  prize_item_id?: string | null
+  prize_item_quantity?: number
+  rewarded_places_count?: number
+  is_test?: boolean
 }
 
 export interface TournamentLeaderboardItem {
@@ -240,6 +250,9 @@ export interface TournamentLeaderboardItem {
   is_eliminated: boolean
   is_me: boolean
   prize_awarded_gems: number
+  prize_awarded_gold?: number
+  prize_awarded_item_id?: string | null
+  prize_awarded_item_quantity?: number
 }
 
 export interface TournamentMyParticipation {
@@ -249,6 +262,9 @@ export interface TournamentMyParticipation {
   losses?: number
   is_eliminated?: boolean
   prize_awarded_gems?: number
+  prize_awarded_gold?: number
+  prize_awarded_item_id?: string | null
+  prize_awarded_item_quantity?: number
 }
 
 export interface TournamentDetailsResponse {
@@ -264,5 +280,13 @@ export interface CreateTournamentInput {
   entry_fee_gems?: number
   start_time?: string
   duration_minutes?: number
-  prize_distribution?: { top1?: number; top2?: number; top3?: number }
+  prize_distribution?: Record<string, number>
+  entry_currency?: TournamentEntryCurrency
+  entry_fee_amount?: number
+  prize_currency?: TournamentPrizeCurrency
+  prize_pool_amount?: number
+  prize_item_id?: string | null
+  prize_item_quantity?: number
+  rewarded_places_count?: number
+  is_test?: boolean
 }
