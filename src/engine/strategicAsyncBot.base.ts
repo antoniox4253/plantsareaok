@@ -280,6 +280,20 @@ export const PLANT_TACTICAL_PROFILES: Record<PlantId, PlantTacticalProfile> = {
     preferredCols: [0, 0],
     baseWeight: 1.15,
   },
+  kernelpult: {
+    id: 'kernelpult',
+    role: 'ranged_attack',
+    isProducer: false,
+    isWalking: false,
+    isTank: false,
+    isInstant: false,
+    isLaneClear: false,
+    isFreezer: false,
+    isHealer: false,
+    isTrap: false,
+    preferredCols: [1, 3],
+    baseWeight: 1.05,
+  },
 }
 
 export function getTacticalProfile(plantId: PlantId): PlantTacticalProfile {

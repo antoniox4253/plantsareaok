@@ -1261,6 +1261,16 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 18px rgba(96, 165, 250, 0.6);
 }
 
+.footer-button--missions {
+  border-color: #10b981;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.footer-button--missions:hover {
+  border-color: #34d399;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 18px rgba(52, 211, 153, 0.6);
+}
+
 .footer-button--market {
   border-color: #f59e0b;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(245, 158, 11, 0.3);

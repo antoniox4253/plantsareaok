@@ -396,10 +396,10 @@ describe('RIVAL ESTRATÉGICO V1.2.1 — CERTIFICACIÓN REAL PROGRAMÁTICA', () =
   })
 
   // ── 3. ANÁLISIS DE LAS 15 CARTAS ───────────────────────────────────────────
-  describe('3. Análisis Exhaustivo de las 15 Cartas del Juego', () => {
-    it('cada una de las 15 cartas es evaluable legalmente y ninguna tiene utility nula o anómala', () => {
+  describe('3. Análisis Exhaustivo de las 16 Cartas del Juego', () => {
+    it('cada una de las 16 cartas es evaluable legalmente y ninguna tiene utility nula o anómala', () => {
       const allPlantKeys = Object.keys(PLANT_CONFIGS) as PlantId[]
-      expect(allPlantKeys.length).toBe(15)
+      expect(allPlantKeys.length).toBe(16)
 
       const state = createBattleState(9999, false, true)
       const styles: StrategicStyle[] = ['balanced', 'aggressive', 'defensive', 'economic', 'opportunistic']

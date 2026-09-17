@@ -3,6 +3,11 @@ import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import { soundManager } from '../../utils/audioManager'
 import { adminService } from '../../services/adminService'
 import { SupabaseService } from '../../services/supabaseService'
+import {
+  adminGetTikTokSubmissions,
+  adminReviewTikTokSubmission,
+  type AdminTikTokSubmissionRow,
+} from '../../services/missionService'
 import type { Database, CodeRoundPrizeTier } from '../../types/database.types'
 import GoldIcon from '../Common/GoldIcon'
 import './AdminPanel.css'
@@ -45,7 +50,9 @@ interface AdminPanelProps {
 }
 
 export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'tournaments' | 'seasons' | 'players' | 'rewards' | 'code' | 'referidos' | 'partidas' | 'clan_rewards'>('tournaments')
+  const [activeTab, setActiveTab] = useState<
+    'tournaments' | 'seasons' | 'players' | 'rewards' | 'code' | 'referidos' | 'partidas' | 'clan_rewards' | 'tiktok'
+  >('tournaments')
 
   /**
    * ¿SE SEPARARON LAS DOS PANTALLAS?
@@ -148,6 +155,55 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       console.error('Error loading clan rewards data', e)
     } finally {
       setIsLoadingClanRewards(false)
+    }
+  }
+
+  // TikTok clips moderation state
+  const [tiktokSubmissions, setTiktokSubmissions] = useState<AdminTikTokSubmissionRow[]>([])
+  const [isLoadingTikTok, setIsLoadingTikTok] = useState<boolean>(false)
+
+  const loadTikTokSubmissions = async () => {
+    setIsLoadingTikTok(true)
+    try {
+      const res = await adminGetTikTokSubmissions()
+      if (res.success) {
+        setTiktokSubmissions(res.submissions)
+      } else {
+        showNotice(`⚠️ Error cargando TikTok clips: ${res.error}`)
+      }
+    } catch (e: any) {
+      console.error('Error loading tiktok submissions', e)
+    } finally {
+      setIsLoadingTikTok(false)
+    }
+  }
+
+  const handleReviewTikTok = async (id: string, action: 'approve' | 'reject') => {
+    let notes: string | undefined = undefined
+    if (action === 'reject') {
+      const reason = prompt('Motivo del rechazo (opcional):')
+      if (reason === null) return
+      notes = reason.trim() || undefined
+    } else {
+      if (!confirm('¿Aprobar este video de TikTok? Si está dentro de los 50 cupos se le acreditarán +100 Gemas de juego automáticamente.')) {
+        return
+      }
+    }
+
+    setIsLoading(true)
+    try {
+      const res = await adminReviewTikTokSubmission(id, action, notes)
+      if (res.success) {
+        soundManager.playSound('victory', 0.8)
+        showNotice(action === 'approve' ? `✅ Video aprobado (+${res.rewardGems} 💎)` : '❌ Video rechazado')
+        await loadTikTokSubmissions()
+      } else {
+        alert('Error al revisar video: ' + res.error)
+      }
+    } catch (e: any) {
+      alert('Excepción al revisar video: ' + e.message)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -854,6 +910,16 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             }}
           >
             ⚔️ Rewards Clanes por Confirmar
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-btn ${activeTab === 'tiktok' ? 'admin-tab-btn--active' : ''}`}
+            onClick={() => {
+              setActiveTab('tiktok')
+              loadTikTokSubmissions()
+            }}
+          >
+            🎬 TikTok Clips ({tiktokSubmissions.filter((s) => s.status === 'pending').length} pendientes)
           </button>
         </div>
 
@@ -2611,6 +2677,121 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
                               {h.total_gold_distributed} <GoldIcon size={13} />
                             </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: MODERACIÓN DE CLIPS DE TIKTOK (#PlantsArena) */}
+        {activeTab === 'tiktok' && (
+          <div className="admin-content-section">
+            <div className="admin-card">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>🎬 Concurso TikTok #PlantsArena — Revisión de Videos</h3>
+                  <p className="admin-card-desc" style={{ margin: '4px 0 0 0' }}>
+                    Revisa los videos enviados por los jugadores. Los primeros 50 aprobados reciben 100 💎 de saldo bloqueado (juego).
+                  </p>
+                </div>
+                <div style={{ background: '#1e293b', border: '1px solid #475569', padding: '6px 14px', borderRadius: '10px', fontSize: '0.9rem', fontWeight: 800, color: '#fbbf24' }}>
+                  Cupos Otorgados: {tiktokSubmissions.filter((s) => s.status === 'approved' && s.reward_gems > 0).length} / 50
+                </div>
+              </div>
+
+              {isLoadingTikTok ? (
+                <p>Cargando envíos de TikTok...</p>
+              ) : tiktokSubmissions.length === 0 ? (
+                <p className="admin-card-desc">No hay videos de TikTok registrados todavía.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', borderBottom: '1px solid #334155', color: '#94a3b8' }}>
+                        <th style={{ padding: '8px' }}>Fecha</th>
+                        <th style={{ padding: '8px' }}>Jugador</th>
+                        <th style={{ padding: '8px' }}>Video</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>Estado</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>Premio</th>
+                        <th style={{ padding: '8px' }}>Notas</th>
+                        <th style={{ padding: '8px', textAlign: 'right' }}>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tiktokSubmissions.map((sub) => (
+                        <tr key={sub.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '8px', color: '#94a3b8', fontSize: '12px' }}>
+                            {new Date(sub.created_at).toLocaleDateString()}
+                          </td>
+                          <td style={{ padding: '8px', fontWeight: 700, color: '#f8fafc' }}>
+                            {sub.username}
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <a
+                              href={sub.video_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: '#38bdf8', textDecoration: 'underline', fontSize: '12px', wordBreak: 'break-all' }}
+                            >
+                              Ver Video en TikTok ↗
+                            </a>
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <span
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                background:
+                                  sub.status === 'approved'
+                                    ? 'rgba(16, 185, 129, 0.2)'
+                                    : sub.status === 'rejected'
+                                    ? 'rgba(239, 68, 68, 0.2)'
+                                    : 'rgba(245, 158, 11, 0.2)',
+                                color:
+                                  sub.status === 'approved'
+                                    ? '#34d399'
+                                    : sub.status === 'rejected'
+                                    ? '#f87171'
+                                    : '#fbbf24',
+                              }}
+                            >
+                              {sub.status === 'approved' ? '✓ Aprobado' : sub.status === 'rejected' ? '✕ Rechazado' : '⏳ Pendiente'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center', fontWeight: 800, color: '#fbbf24' }}>
+                            {sub.reward_gems > 0 ? `+${sub.reward_gems} 💎` : '0 💎'}
+                          </td>
+                          <td style={{ padding: '8px', color: '#cbd5e1', fontSize: '12px' }}>
+                            {sub.admin_notes || '-'}
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'right' }}>
+                            {sub.status === 'pending' ? (
+                              <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReviewTikTok(sub.id, 'approve')}
+                                  style={{ background: '#10b981', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}
+                                >
+                                  ✓ Aprobar (+100 💎)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReviewTikTok(sub.id, 'reject')}
+                                  style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}
+                                >
+                                  ✕ Rechazar
+                                </button>
+                              </div>
+                            ) : (
+                              <span style={{ color: '#64748b', fontSize: '12px' }}>Procesado</span>
+                            )}
                           </td>
                         </tr>
                       ))}

@@ -1,0 +1,675 @@
+import React, { useState, useEffect } from 'react'
+import './MisionesModal.css'
+import {
+  getMissionsDashboard,
+  claimDailyLoginStreak,
+  claimDailyMission,
+  rerollDailyMission,
+  claimWeeklyChest,
+  submitTikTokVideo,
+  type MissionsDashboardData,
+  type DailyMission,
+} from '../../services/missionService'
+import { PLANT_CONFIGS } from '../../utils/gameConstants'
+
+interface MisionesModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onRewardClaimed?: () => void
+  userGems?: number
+}
+
+export const MisionesModal: React.FC<MisionesModalProps> = ({
+  isOpen,
+  onClose,
+  onRewardClaimed,
+  userGems = 0
+}) => {
+  const [activeTab, setActiveTab] = useState<'diarias' | 'racha' | 'tiktok'>('diarias')
+  const [dashboard, setDashboard] = useState<MissionsDashboardData | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [actionLoading, setActionLoading] = useState<boolean>(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Reroll confirmation modal state
+  const [rerollSlot, setRerollSlot] = useState<number | null>(null)
+
+  // TikTok form state
+  const [tiktokUrl, setTiktokUrl] = useState<string>('')
+  const [tiktokSubmitting, setTiktokSubmitting] = useState<boolean>(false)
+
+  // Countdown to Sept 26 23:00 UTC
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  })
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    loadDashboard()
+  }, [isOpen])
+
+  useEffect(() => {
+    const target = new Date('2026-09-26T23:00:00Z').getTime()
+    const updateTimer = () => {
+      const now = new Date().getTime()
+      const diff = Math.max(0, target - now)
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / 1000 / 60) % 60),
+        seconds: Math.floor((diff / 1000) % 60)
+      })
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const loadDashboard = async () => {
+    setLoading(true)
+    setErrorMessage(null)
+    try {
+      const data = await getMissionsDashboard()
+      if (data.success) {
+        setDashboard(data)
+      } else {
+        setErrorMessage(data.error || 'Error al cargar el tablero de misiones')
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error de conexión')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleClaimStreak = async () => {
+    setActionLoading(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const res = await claimDailyLoginStreak()
+      if (res.success) {
+        setSuccessMessage(`¡Recompensa del Día ${res.day} reclamada con éxito!`)
+        await loadDashboard()
+        if (onRewardClaimed) onRewardClaimed()
+      } else {
+        setErrorMessage(res.error || 'Error al reclamar la racha diaria')
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error de conexión')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleClaimMission = async (slotIndex: number) => {
+    setActionLoading(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const res = await claimDailyMission(slotIndex)
+      if (res.success) {
+        setSuccessMessage(`¡Misión completada! +${res.pointsGained} puntos acumulados.`)
+        await loadDashboard()
+        if (onRewardClaimed) onRewardClaimed()
+      } else {
+        setErrorMessage(res.error || 'No se pudo reclamar la misión')
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error de conexión')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleConfirmReroll = async () => {
+    if (rerollSlot === null) return
+    setActionLoading(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const res = await rerollDailyMission(rerollSlot)
+      if (res.success) {
+        setSuccessMessage('¡Misión cambiada exitosamente (-5 💎)!')
+        setRerollSlot(null)
+        await loadDashboard()
+        if (onRewardClaimed) onRewardClaimed()
+      } else {
+        setErrorMessage(res.error || 'No se pudo cambiar la misión')
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error de conexión')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleClaimChest = async (tier: 'bronze' | 'silver' | 'gold') => {
+    setActionLoading(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const res = await claimWeeklyChest(tier)
+      if (res.success) {
+        setSuccessMessage(`¡Cofre ${tier.toUpperCase()} reclamado con éxito!`)
+        await loadDashboard()
+        if (onRewardClaimed) onRewardClaimed()
+      } else {
+        setErrorMessage(res.error || 'No se pudo reclamar el cofre')
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error de conexión')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleSubmitTikTok = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!tiktokUrl.trim()) return
+
+    setTiktokSubmitting(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const res = await submitTikTokVideo(tiktokUrl.trim())
+      if (res.success) {
+        setSuccessMessage('¡Video enviado exitosamente! Será revisado por un administrador.')
+        setTiktokUrl('')
+        await loadDashboard()
+      } else {
+        setErrorMessage(res.error || 'Error al enviar el video de TikTok')
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error de conexión')
+    } finally {
+      setTiktokSubmitting(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  const weeklyPts = dashboard?.weeklyPoints || 0
+  const maxWeeklyPts = 245
+  const weeklyProgressPercent = Math.min(100, Math.round((weeklyPts / maxWeeklyPts) * 100))
+
+  const hasUnclaimedMissions = dashboard?.missions?.some(
+    m => !m.claimed && m.progress >= m.target
+  )
+
+  const canClaimStreak = dashboard?.loginStreak?.canClaimToday
+
+  return (
+    <div className="misiones-overlay" onClick={onClose}>
+      <div className="misiones-container" onClick={e => e.stopPropagation()}>
+        {/* Sábado de Fiebre de Oro Banner */}
+        {dashboard?.goldRush?.isSaturday && (
+          <div className="gold-rush-ribbon">
+            <span>✨</span>
+            <span>¡HOY ES SÁBADO DE FIEBRE DE ORO! Oro extra en cada victoria Ranked ({dashboard.goldRush.isVip ? 'x2 VIP' : '+5 o 10 Oro'})</span>
+            <span>✨</span>
+          </div>
+        )}
+
+        {/* Modal Header */}
+        <div className="misiones-header">
+          <div className="misiones-title-wrap">
+            <span style={{ fontSize: '1.8rem' }}>📜</span>
+            <div>
+              <h2>Misiones y Recompensas</h2>
+            </div>
+          </div>
+          <button className="misiones-close-btn" onClick={onClose} title="Cerrar">
+            ✕
+          </button>
+        </div>
+
+        {/* Tabs Navigation */}
+        <div className="misiones-tabs">
+          <button
+            className={`misiones-tab-btn ${activeTab === 'diarias' ? 'active' : ''}`}
+            onClick={() => setActiveTab('diarias')}
+          >
+            <span>📅</span>
+            <span>Misiones Diarias</span>
+            {hasUnclaimedMissions && <span className="misiones-tab-badge">!</span>}
+          </button>
+
+          <button
+            className={`misiones-tab-btn ${activeTab === 'racha' ? 'active' : ''}`}
+            onClick={() => setActiveTab('racha')}
+          >
+            <span>🗓️</span>
+            <span>Racha 7 Días</span>
+            {canClaimStreak && <span className="misiones-tab-badge">!</span>}
+          </button>
+
+          <button
+            className={`misiones-tab-btn ${activeTab === 'tiktok' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tiktok')}
+          >
+            <span>🎬</span>
+            <span>Concurso TikTok</span>
+            <span className="misiones-tab-badge" style={{ background: '#6366f1' }}>#PlantsArena</span>
+          </button>
+        </div>
+
+        {/* Feedback banners */}
+        {errorMessage && (
+          <div style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 16px', margin: '8px 1.5rem 0', borderRadius: '8px', fontSize: '0.85rem' }}>
+            ⚠️ {errorMessage}
+          </div>
+        )}
+        {successMessage && (
+          <div style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#6ee7b7', padding: '8px 16px', margin: '8px 1.5rem 0', borderRadius: '8px', fontSize: '0.85rem' }}>
+            🎉 {successMessage}
+          </div>
+        )}
+
+        {/* Content Body */}
+        <div className="misiones-content">
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '3rem 0', color: '#94a3b8' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⏳</div>
+              <p>Cargando información del tablero...</p>
+            </div>
+          ) : (
+            <>
+              {/* ========================================================= */}
+              {/* TAB 1: MISIONES DIARIAS & COFRES SEMANALES */}
+              {/* ========================================================= */}
+              {activeTab === 'diarias' && (
+                <>
+                  {/* Weekly Chest Tracker */}
+                  <div className="weekly-tracker-card">
+                    <div className="weekly-tracker-header">
+                      <div>
+                        <strong style={{ fontSize: '0.95rem', color: '#f8fafc' }}>Progreso Semanal de Puntos</strong>
+                        <div className="weekly-reset-txt">Se reinicia cada lunes a las 00:00 UTC</div>
+                      </div>
+                      <div className="weekly-points-badge">
+                        ⭐ {weeklyPts} / {maxWeeklyPts} Pts
+                      </div>
+                    </div>
+
+                    <div className="chests-progress-wrapper">
+                      <div className="chests-bar-bg">
+                        <div className="chests-bar-fill" style={{ width: `${weeklyProgressPercent}%` }} />
+                      </div>
+
+                      <div className="chests-nodes-container">
+                        {/* Bronze Chest: 70 Pts */}
+                        <div
+                          className={`chest-node chest-node--bronze ${weeklyPts >= 70 ? 'unlocked' : ''} ${dashboard?.claimedChests?.includes('bronze') ? 'claimed' : ''}`}
+                          title="Cofre de Bronce (70 Pts): 150 Oro + 1 Sobre Básico"
+                        >
+                          <div className="chest-icon-wrap">📦</div>
+                          <span className="chest-points-label">70 pts</span>
+                          {weeklyPts >= 70 && !dashboard?.claimedChests?.includes('bronze') && (
+                            <button
+                              className="chest-claim-btn"
+                              disabled={actionLoading}
+                              onClick={() => handleClaimChest('bronze')}
+                            >
+                              Reclamar
+                            </button>
+                          )}
+                          {dashboard?.claimedChests?.includes('bronze') && (
+                            <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
+                          )}
+                        </div>
+
+                        {/* Silver Chest: 140 Pts */}
+                        <div
+                          className={`chest-node chest-node--silver ${weeklyPts >= 140 ? 'unlocked' : ''} ${dashboard?.claimedChests?.includes('silver') ? 'claimed' : ''}`}
+                          title="Cofre de Plata (140 Pts): 400 Oro + 20 Gemas + 1 Poción 5⚡"
+                        >
+                          <div className="chest-icon-wrap">🥈</div>
+                          <span className="chest-points-label">140 pts</span>
+                          {weeklyPts >= 140 && !dashboard?.claimedChests?.includes('silver') && (
+                            <button
+                              className="chest-claim-btn"
+                              disabled={actionLoading}
+                              onClick={() => handleClaimChest('silver')}
+                            >
+                              Reclamar
+                            </button>
+                          )}
+                          {dashboard?.claimedChests?.includes('silver') && (
+                            <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
+                          )}
+                        </div>
+
+                        {/* Gold Chest: 210 Pts */}
+                        <div
+                          className={`chest-node chest-node--gold ${weeklyPts >= 210 ? 'unlocked' : ''} ${dashboard?.claimedChests?.includes('gold') ? 'claimed' : ''}`}
+                          title="Cofre Dorado (210 Pts): 1 Sobre Épico (Místico)"
+                        >
+                          <div className="chest-icon-wrap">🏆</div>
+                          <span className="chest-points-label">210 pts</span>
+                          {weeklyPts >= 210 && !dashboard?.claimedChests?.includes('gold') && (
+                            <button
+                              className="chest-claim-btn"
+                              disabled={actionLoading}
+                              onClick={() => handleClaimChest('gold')}
+                            >
+                              Reclamar
+                            </button>
+                          )}
+                          {dashboard?.claimedChests?.includes('gold') && (
+                            <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Daily Missions List */}
+                  <div className="daily-missions-list">
+                    {dashboard?.missions?.map((m: DailyMission) => {
+                      const isComplete = m.progress >= m.target
+                      const plantCfg = m.plantId ? (PLANT_CONFIGS as any)[m.plantId] : null
+
+                      return (
+                        <div key={m.slot} className={`mission-card ${m.claimed ? 'claimed' : ''}`}>
+                          <div className="mission-card-left">
+                            <div className="mission-avatar">
+                              {m.plantId && plantCfg?.icon ? (
+                                <img src={plantCfg.icon} alt={plantCfg.name} />
+                              ) : m.slot === 0 ? (
+                                '⚔️'
+                              ) : (
+                                '🛡️'
+                              )}
+                            </div>
+
+                            <div className="mission-details">
+                              <h4>
+                                {m.title}
+                                {m.plantId && plantCfg && (
+                                  <span style={{ color: '#fbbf24', fontSize: '0.8rem' }}>({plantCfg.name})</span>
+                                )}
+                              </h4>
+                              <p>{m.description}</p>
+
+                              <div className="mission-progress-bar-wrap">
+                                <div
+                                  className="mission-progress-fill"
+                                  style={{ width: `${Math.min(100, (m.progress / m.target) * 100)}%` }}
+                                />
+                              </div>
+                              <div className="mission-progress-text">
+                                Progreso: {m.progress} / {m.target}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mission-card-right">
+                            <div className="mission-reward-badge">
+                              <span className="mission-reward-val">
+                                {m.rewardGems > 0 ? `+${m.rewardGems} 💎` : `+${m.rewardGold} 🪙`}
+                              </span>
+                              <span className="mission-points-val">+{m.points} Pts</span>
+                            </div>
+
+                            <div className="mission-actions">
+                              {m.claimed ? (
+                                <span style={{ color: '#10b981', fontWeight: 800, fontSize: '0.85rem' }}>
+                                  ✓ Reclamada
+                                </span>
+                              ) : isComplete ? (
+                                <button
+                                  className="mission-claim-btn"
+                                  disabled={actionLoading}
+                                  onClick={() => handleClaimMission(m.slot)}
+                                >
+                                  Reclamar
+                                </button>
+                              ) : (
+                                <button
+                                  className="mission-reroll-btn"
+                                  title="Cambiar misión por 5 Gemas"
+                                  disabled={actionLoading}
+                                  onClick={() => setRerollSlot(m.slot)}
+                                >
+                                  🔄 5 💎
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* ========================================================= */}
+              {/* TAB 2: RACHA DE 7 DÍAS */}
+              {/* ========================================================= */}
+              {activeTab === 'racha' && (
+                <>
+                  <div className="streak-hero-card">
+                    <h3 className="streak-hero-title">Racha de Conexión Diaria (7 Días)</h3>
+                    <p className="streak-hero-sub">
+                      Inicia sesión todos los días para desbloquear recompensas crecientes. Si faltas un día, la racha vuelve al Día 1.
+                    </p>
+                  </div>
+
+                  <div className="streak-grid">
+                    {[
+                      { day: 1, title: 'Día 1', reward: '+50 🪙', icon: '🪙' },
+                      { day: 2, title: 'Día 2', reward: '+1 Poción 5⚡', icon: '⚡' },
+                      { day: 3, title: 'Día 3', reward: '+1 Sobre PvP', icon: '🎴' },
+                      { day: 4, title: 'Día 4', reward: '+120 🪙', icon: '🪙' },
+                      { day: 5, title: 'Día 5', reward: '+2 Pociones 5⚡', icon: '⚡' },
+                      { day: 6, title: 'Día 6', reward: '+250 🪙', icon: '🪙' },
+                      { day: 7, title: 'Día 7', reward: 'Sobre Básico', icon: '📦' }
+                    ].map(item => {
+                      const isClaimed = dashboard?.loginStreak?.claimedDays?.includes(item.day)
+                      const streak = dashboard?.loginStreak?.currentStreak || 0
+                      const isNextToday = canClaimStreak && (
+                        (streak === 0 && item.day === 1) ||
+                        (streak < 7 && item.day === streak + 1) ||
+                        (streak === 7 && item.day === 1)
+                      )
+
+                      return (
+                        <div
+                          key={item.day}
+                          className={`streak-day-card ${isClaimed ? 'claimed' : ''} ${isNextToday ? 'active-today' : ''}`}
+                        >
+                          {isClaimed && <div className="streak-check-badge">✓</div>}
+                          <span className="streak-day-title">{item.title}</span>
+                          <div className="streak-icon-wrap">{item.icon}</div>
+                          <span className="streak-day-reward">{item.reward}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {canClaimStreak ? (
+                    <button
+                      className="streak-claim-btn"
+                      disabled={actionLoading}
+                      onClick={handleClaimStreak}
+                    >
+                      {actionLoading ? 'Reclamando...' : '🎁 ¡RECLAMAR RECOMPENSA DE HOY!'}
+                    </button>
+                  ) : (
+                    <div className="streak-claimed-alert">
+                      ✓ ¡Ya has reclamado tu recompensa diaria de hoy! Vuelve mañana a las 00:00 UTC para continuar tu racha.
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ========================================================= */}
+              {/* TAB 3: CONCURSO TIKTOK (#PlantsArena) */}
+              {/* ========================================================= */}
+              {activeTab === 'tiktok' && (
+                <>
+                  <div className="tiktok-banner-card">
+                    <div className="tiktok-badge-live">🔥 Concurso Activo</div>
+                    <h3>Gran Concurso de Clips #PlantsArena</h3>
+                    <p style={{ margin: '0', fontSize: '0.9rem', color: '#e0e7ff' }}>
+                      Graba una partida épica en Plant Arena, súbela a TikTok con el hashtag <strong>#PlantsArena</strong> y compite por grandes premios.
+                    </p>
+
+                    <div className="tiktok-countdown-box">
+                      <span>⏳ Cierra en:</span>
+                      <span>{timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s</span>
+                      <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(26 Sep 23:00 UTC)</span>
+                    </div>
+
+                    <div style={{ marginTop: '12px' }}>
+                      <a
+                        href="https://www.tiktok.com/@plantsarena"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#a5b4fc', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 700 }}
+                      >
+                        <span>🎵</span>
+                        <span>Visitar cuenta oficial @plantsarena en TikTok ↗</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Quota Tracker */}
+                  <div className="tiktok-quota-card">
+                    <div className="tiktok-quota-header">
+                      <span>Cupos para recompensa base (100 💎 de juego):</span>
+                      <span style={{ color: dashboard?.tiktok?.remainingQuota ? '#34d399' : '#ef4444' }}>
+                        {dashboard?.tiktok?.remainingQuota} / {dashboard?.tiktok?.maxApprovedCount || 50} disponibles
+                      </span>
+                    </div>
+                    <div className="tiktok-quota-bar-bg">
+                      <div
+                        className="tiktok-quota-bar-fill"
+                        style={{ width: `${Math.min(100, ((dashboard?.tiktok?.approvedCount || 0) / 50) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submission Form or Status */}
+                  {dashboard?.tiktok?.hasSubmission && dashboard.tiktok.submission ? (
+                    <div className={`submission-status-card ${dashboard.tiktok.submission.status}`}>
+                      <div>
+                        <strong style={{ fontSize: '0.95rem' }}>
+                          {dashboard.tiktok.submission.status === 'pending' && '⏳ Video en Revisión'}
+                          {dashboard.tiktok.submission.status === 'approved' && '✅ Video Aprobado (+100 💎)'}
+                          {dashboard.tiktok.submission.status === 'rejected' && '❌ Envío Rechazado'}
+                        </strong>
+                        <div style={{ fontSize: '0.82rem', marginTop: '4px', wordBreak: 'break-all', opacity: 0.9 }}>
+                          {dashboard.tiktok.submission.videoUrl}
+                        </div>
+                        {dashboard.tiktok.submission.adminNotes && (
+                          <div style={{ fontSize: '0.8rem', marginTop: '4px', fontStyle: 'italic' }}>
+                            Nota del moderador: {dashboard.tiktok.submission.adminNotes}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <form className="tiktok-form-card" onSubmit={handleSubmitTikTok}>
+                      <label className="tiktok-form-label">
+                        Pega el enlace de tu video de TikTok publicado:
+                      </label>
+                      <div className="tiktok-input-row">
+                        <input
+                          type="url"
+                          className="tiktok-url-input"
+                          placeholder="https://www.tiktok.com/@tu_usuario/video/..."
+                          value={tiktokUrl}
+                          onChange={e => setTiktokUrl(e.target.value)}
+                          required
+                          disabled={tiktokSubmitting}
+                        />
+                        <button
+                          type="submit"
+                          className="tiktok-submit-btn"
+                          disabled={tiktokSubmitting || !tiktokUrl.trim()}
+                        >
+                          {tiktokSubmitting ? 'Enviando...' : 'Enviar Video'}
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                        * Tu video debe mostrar una partida real de Plant Arena y contener el hashtag #PlantsArena en la descripción.
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Grand Prizes Grid */}
+                  <div>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '0.95rem', color: '#cbd5e1' }}>
+                      Premios del Gran Concurso (Clip con más vistas):
+                    </h4>
+                    <div className="tiktok-prizes-grid">
+                      <div className="tiktok-prize-card tiktok-prize-card--1st">
+                        <div className="tiktok-prize-pos">🥇</div>
+                        <div className="tiktok-prize-title">1er Lugar (Más Vistas)</div>
+                        <div className="tiktok-prize-reward">1,500 💎 + Ítem Sorpresa</div>
+                      </div>
+
+                      <div className="tiktok-prize-card">
+                        <div className="tiktok-prize-pos">🥈</div>
+                        <div className="tiktok-prize-title">2do Lugar</div>
+                        <div className="tiktok-prize-reward">800 💎 (Juego)</div>
+                      </div>
+
+                      <div className="tiktok-prize-card">
+                        <div className="tiktok-prize-pos">🥉</div>
+                        <div className="tiktok-prize-title">3er Lugar</div>
+                        <div className="tiktok-prize-reward">400 💎 (Juego)</div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Modal Confirmation for Reroll */}
+        {rerollSlot !== null && (
+          <div className="reroll-confirm-modal" onClick={() => setRerollSlot(null)}>
+            <div className="reroll-confirm-card" onClick={e => e.stopPropagation()}>
+              <h3>🔄 ¿Cambiar Misión?</h3>
+              <p>
+                Esta misión será reemplazada por una nueva tarea aleatoria. Esta acción tiene un costo de <strong>5 Gemas 💎</strong>.
+              </p>
+              <div className="reroll-confirm-actions">
+                <button
+                  className="reroll-cancel-btn"
+                  disabled={actionLoading}
+                  onClick={() => setRerollSlot(null)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="reroll-confirm-btn"
+                  disabled={actionLoading || userGems < 5}
+                  onClick={handleConfirmReroll}
+                >
+                  {actionLoading ? 'Cambiando...' : 'Confirmar (-5 💎)'}
+                </button>
+              </div>
+              {userGems < 5 && (
+                <div style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '8px' }}>
+                  No tienes suficientes gemas (tienes {userGems} 💎).
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+export default MisionesModal

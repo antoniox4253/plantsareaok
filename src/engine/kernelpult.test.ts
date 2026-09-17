@@ -14,7 +14,6 @@ import {
   type GameState,
 } from './simulate'
 import { msToTicks } from './time'
-import type { PlantId } from '../types/game'
 
 const callar = () => {}
 

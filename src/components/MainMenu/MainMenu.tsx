@@ -29,6 +29,7 @@ import ColosseumModal from '../Colosseum/ColosseumModal'
 import TournamentModal from '../Tournament/TournamentModal'
 import GlobalChat from '../GlobalChat/GlobalChat'
 import AuctionModal from '../Auction/AuctionModal'
+import MisionesModal from '../Misiones/MisionesModal'
 import { auctionService, type ActiveAuctionData } from '../../services/auctionService'
 import { tournamentService } from '../../services/tournamentService'
 import { lotteryService } from '../../services/lotteryService'
@@ -173,6 +174,7 @@ export default function MainMenu({
 
   const [isAccelerating, setIsAccelerating] = useState<boolean>(false)
   const [isAuctionModalOpen, setIsAuctionModalOpen] = useState<boolean>(false)
+  const [isMisionesModalOpen, setIsMisionesModalOpen] = useState<boolean>(false)
   const [auctionInfo, setAuctionInfo] = useState<ActiveAuctionData | null>(null)
 
   useEffect(() => {
@@ -849,6 +851,18 @@ export default function MainMenu({
       <div className="panel panel--left">
         <div id="farming-preview-launcher-slot" className="farming-preview-launcher-host" />
 
+        <button
+          className="banner-button"
+          type="button"
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            setIsMisionesModalOpen(true)
+          }}
+          title="Misiones Diarias, Racha de 7 Días y Concurso TikTok"
+        >
+          <span style={{ fontSize: '1.8rem' }}>📜</span>
+          <span>MISIONES</span>
+        </button>
         <button className="banner-button" type="button" onClick={onOpenJardin}>
           <img src={jardin} alt="" />
           <span>JARDÍN</span>
@@ -877,6 +891,21 @@ export default function MainMenu({
       </div>
 
       <div className="footer">
+        <button
+          className="footer-button footer-button--missions"
+          type="button"
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            setIsMisionesModalOpen(true)
+          }}
+          title="Misiones Diarias, Racha de 7 Días y Concurso TikTok"
+        >
+          <div className="footer-button__icon-box">
+            <span style={{ fontSize: '1.3rem' }}>📜</span>
+          </div>
+          <span className="footer-button__title">MISIONES</span>
+        </button>
+
         <button className="footer-button footer-button--clan" type="button" onClick={onOpenClan}>
           <div className="footer-button__icon-box">
             <img src={clan} alt="Clan" />
@@ -1139,6 +1168,13 @@ export default function MainMenu({
         }}
         userId={userProfile?.id}
         username={userProfile?.username || playerProfile.name}
+      />
+
+      {/* MODAL DE MISIONES, RACHA Y TIKTOK */}
+      <MisionesModal
+        isOpen={isMisionesModalOpen}
+        onClose={() => setIsMisionesModalOpen(false)}
+        userGems={userTokens}
       />
     </div>
   )
