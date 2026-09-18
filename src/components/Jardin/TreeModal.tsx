@@ -94,9 +94,9 @@ export default function TreeModal({
   const getCalculatedXp = (res: FeedResource, qty: number): number => {
     switch (res) {
       case 'water':
-        return qty * 8
+        return qty * 5
       case 'fertilizer':
-        return qty * 30
+        return qty * 15
       case 'gold':
         return Math.floor(qty / 10) * 2
       case 'gems':
@@ -252,7 +252,7 @@ export default function TreeModal({
                   <span className="tree-res-card__icon">💧</span>
                   <span className="tree-res-card__name">Agua</span>
                 </div>
-                <div className="tree-res-card__xp">+8 XP c/u</div>
+                <div className="tree-res-card__xp">+5 XP c/u</div>
                 <div className="tree-res-card__balance">Saldo: <b>{curWater}</b></div>
               </button>
 
@@ -265,7 +265,7 @@ export default function TreeModal({
                   <span className="tree-res-card__icon">🌱</span>
                   <span className="tree-res-card__name">Fertilizante</span>
                 </div>
-                <div className="tree-res-card__xp">+30 XP c/u</div>
+                <div className="tree-res-card__xp">+15 XP c/u</div>
                 <div className="tree-res-card__balance">Saldo: <b>{curFert}</b></div>
               </button>
 
