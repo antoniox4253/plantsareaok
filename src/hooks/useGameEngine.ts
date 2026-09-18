@@ -126,6 +126,7 @@ export function useGameEngine() {
   const [, setRenderTick] = useState<number>(0)
 
   const p1TreeBonusHpRef = useRef<number>(getStoredMotherTreeBonus())
+  const p2TreeBonusHpRef = useRef<number>(0)
 
   // Single mutable reference holding all game state
   const stateRef = useRef<GameState>({
@@ -145,7 +146,7 @@ export function useGameEngine() {
     },
     status: 'ready',
     p1BaseHp: INITIAL_BASE_HP + p1TreeBonusHpRef.current,
-    p2BaseHp: INITIAL_BASE_HP,
+    p2BaseHp: INITIAL_BASE_HP + p2TreeBonusHpRef.current,
     sunBank: INITIAL_SUN,
     p2SunBank: INITIAL_SUN,
     plants: [],
@@ -458,7 +459,8 @@ export function useGameEngine() {
     isAsyncMatch?: boolean,
     initialAsyncIntents?: unknown,
     engineVersion: EngineVersion = 'auth-v2',
-    treeBonusHp?: number
+    treeBonusHp?: number,
+    rivalTreeBonusHp?: number
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
@@ -467,6 +469,10 @@ export function useGameEngine() {
       ? treeBonusHp
       : getStoredMotherTreeBonus()
     p1TreeBonusHpRef.current = effectiveTreeBonusHp
+    const effectiveRivalTreeBonusHp = typeof rivalTreeBonusHp === 'number'
+      ? Math.max(0, rivalTreeBonusHp)
+      : 0
+    p2TreeBonusHpRef.current = effectiveRivalTreeBonusHp
 
     stateRef.current = createBattleState(
       seed,
@@ -475,7 +481,7 @@ export function useGameEngine() {
       nivelPorElo(miElo ?? 1000),
       engineVersion,
       INITIAL_BASE_HP + effectiveTreeBonusHp,
-      INITIAL_BASE_HP
+      INITIAL_BASE_HP + effectiveRivalTreeBonusHp
     )
 
     ancoraMsRef.current = ancoraMs ?? null
@@ -545,10 +551,16 @@ export function useGameEngine() {
   }, [forceRender, marcarInconsistenciaRanked])
 
   const updateInitialTreeBonusHp = useCallback(
-    (bonus: number) => {
+    (bonus: number, rivalBonus?: number) => {
       p1TreeBonusHpRef.current = bonus
+      if (typeof rivalBonus === 'number') {
+        p2TreeBonusHpRef.current = Math.max(0, rivalBonus)
+      }
       if (stateRef.current.status === 'ready' && stateRef.current.tick === 0) {
         stateRef.current.p1BaseHp = INITIAL_BASE_HP + bonus
+        if (typeof rivalBonus === 'number') {
+          stateRef.current.p2BaseHp = INITIAL_BASE_HP + Math.max(0, rivalBonus)
+        }
         forceRender()
       }
     },
@@ -870,7 +882,7 @@ export function useGameEngine() {
         viejo.tick,
         engineVersionRef.current,
         INITIAL_BASE_HP + p1TreeBonusHpRef.current,
-        INITIAL_BASE_HP
+        INITIAL_BASE_HP + p2TreeBonusHpRef.current
       )
 
       if (!rebuildRes.ok) {
@@ -911,7 +923,7 @@ export function useGameEngine() {
       soyP1 ?? true,
       engineVersionRef.current,
       INITIAL_BASE_HP + p1TreeBonusHpRef.current,
-      INITIAL_BASE_HP
+      INITIAL_BASE_HP + p2TreeBonusHpRef.current
     )
     // Los soles y los enfriamientos son sólo tuyos y no salen del registro: si se
     // rehicieran, perderías los soles que ya habías recogido pulsando.

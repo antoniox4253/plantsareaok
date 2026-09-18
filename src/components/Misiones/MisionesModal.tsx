@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import './MisionesModal.css'
 import {
   getMissionsDashboard,
@@ -60,8 +61,18 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
   useEffect(() => {
     if (!isOpen) return
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
     loadDashboard()
-  }, [isOpen])
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, onClose])
 
   useEffect(() => {
     const target = new Date('2026-09-26T23:00:00Z').getTime()
@@ -220,6 +231,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
   }
 
   if (!isOpen) return null
+  if (typeof document === 'undefined') return null
 
   const weeklyPts = dashboard?.weeklyPoints || 0
   const maxWeeklyPts = 245
@@ -231,7 +243,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
 
   const canClaimStreak = dashboard?.loginStreak?.canClaimToday
 
-  return (
+  return createPortal(
     <div className="misiones-overlay" onClick={onClose}>
       <div className="misiones-container" onClick={e => e.stopPropagation()}>
         {/* Sábado de Fiebre de Oro Banner */}
@@ -763,7 +775,8 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 export default MisionesModal

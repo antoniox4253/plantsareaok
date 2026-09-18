@@ -1499,8 +1499,18 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     }
     if (state.tick >= TIC_MUERTE_SUBITA) {
       const desgaste = DESGASTE_MUERTE_SUBITA_POR_SEGUNDO * dt
+      const prevP1 = state.p1BaseHp
+      const prevP2 = state.p2BaseHp
       state.p1BaseHp = Math.max(0, state.p1BaseHp - desgaste)
       state.p2BaseHp = Math.max(0, state.p2BaseHp - desgaste)
+
+      // Si el desgaste de muerte súbita hace caer ambas bases a 0 en el mismo tic,
+      // pero una tenía más vida que la otra antes del desgaste, esa base sobrevivió más tiempo.
+      // Se evita que Math.max(0, ...) borre la ventaja y caiga a un desempate incorrecto por plantas.
+      if (state.p1BaseHp <= 0 && state.p2BaseHp <= 0 && prevP1 !== prevP2) {
+        terminar(state, prevP1 > prevP2 ? 'victory' : 'defeat', sonar)
+        return
+      }
     }
   }
 

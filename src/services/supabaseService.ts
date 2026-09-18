@@ -864,8 +864,10 @@ export const SupabaseService = {
     colosseumBet: number
     p1Deck: unknown
     p2Deck: unknown
-    player1: { id: string; username: string | null; avatarId: string | null; elo: number | null }
-    player2: { id: string; username: string | null; avatarId: string | null; elo: number | null }
+    player1: { id: string; username: string | null; avatarId: string | null; elo: number | null; treeLevel?: number | null }
+    player2: { id: string; username: string | null; avatarId: string | null; elo: number | null; treeLevel?: number | null }
+    p1TreeLevel?: number | null
+    p2TreeLevel?: number | null
     iAm: 'p1' | 'p2'
     isAsyncMatch?: boolean
     asyncActionsSnapshot?: unknown
@@ -1226,12 +1228,14 @@ export const SupabaseService = {
     async_avatar_id?: string | null
     async_rating_snapshot?: number | null
     async_deck_snapshot?: unknown
+    p1_tree_level?: number | null
+    p2_tree_level?: number | null
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
       const { data, error } = await supabase
         .from('game_rooms')
-        .select('id, mode, player1_id, player2_id, seed, p1_deck, p2_deck, colosseum_bet, status, settled_at, server_winner_id, p1_reported_winner, p2_reported_winner, verification_status, verification_payload, verification_note, engine_version, is_async_match, async_opponent_id, async_display_name, async_avatar_id, async_rating_snapshot, async_deck_snapshot')
+        .select('id, mode, player1_id, player2_id, seed, p1_deck, p2_deck, colosseum_bet, status, settled_at, server_winner_id, p1_reported_winner, p2_reported_winner, verification_status, verification_payload, verification_note, engine_version, is_async_match, async_opponent_id, async_display_name, async_avatar_id, async_rating_snapshot, async_deck_snapshot, p1_tree_level, p2_tree_level')
         .eq('id', roomId)
         .single()
       if (error) {

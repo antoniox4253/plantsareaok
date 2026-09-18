@@ -112,7 +112,7 @@ export default function ModeSelectorModal({
             <div className="mode-selector-grid-4">
               {/* 1. MODO RANKED */}
               {(() => {
-                const isEnergyDepleted = userElo >= 1602 && playerEnergy <= 0
+                const isEnergyDepleted = userElo > 1602 && playerEnergy <= 0
                 return (
                   <div
                     className={`mode-card mode-card--ranked ${isEnergyDepleted ? 'mode-card--depleted' : ''}`}
@@ -129,14 +129,14 @@ export default function ModeSelectorModal({
                   >
                     <div
                       className={`mode-card__badge ${
-                        userElo <= 1601
+                        userElo <= 1602
                           ? 'mode-card__badge--free'
                           : isEnergyDepleted
                           ? 'mode-card__badge--depleted'
                           : 'mode-card__badge--energy'
                       }`}
                       style={
-                        userElo >= 1602
+                        userElo > 1602
                           ? {
                               background: isEnergyDepleted
                                 ? 'linear-gradient(135deg, #ef4444, #b91c1c)'
@@ -147,7 +147,7 @@ export default function ModeSelectorModal({
                           : undefined
                       }
                     >
-                      {userElo <= 1601 ? 'GRATIS' : isEnergyDepleted ? '⚡ 0 ENERGÍA' : `⚡ ${playerEnergy}/${maxPlayerEnergy}`}
+                      {userElo <= 1602 ? 'GRATIS' : isEnergyDepleted ? '⚡ 0 ENERGÍA' : `⚡ ${playerEnergy}/${maxPlayerEnergy}`}
                     </div>
                     <div className="mode-card__icon">🏆</div>
                     <h3 className="mode-card__name">RANKED GLOBAL</h3>
@@ -155,8 +155,8 @@ export default function ModeSelectorModal({
                       Escala en el ranking mundial por copas de ELO, desbloquea nuevas arenas y gana sobres de batalla en tus 4 slots.
                     </p>
                     <div className="mode-card__perks">
-                      {userElo <= 1601 ? (
-                        <span>✅ Ilimitado (Arena 1 Novato &lt; 1602)</span>
+                      {userElo <= 1602 ? (
+                        <span>✅ Ilimitado (Arena 1 Novato ≤ 1602)</span>
                       ) : (
                         <span>⚡ Consume 1 Energía (Partida Competitiva)</span>
                       )}

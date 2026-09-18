@@ -133,8 +133,8 @@ export function useMatchmaking() {
 
     const segundosEsperados = r.waitedSeconds ?? 0
 
-    // En Ranked: si ya pasaron >= 30 segundos, solicitar automáticamente Rival Semilla
-    if (modoRef.current === 'ranked' && segundosEsperados >= RANKED_MATCHMAKING_TIMEOUT_SECONDS && !claimingRef.current) {
+    // En Ranked: si ya pasaron >= 35 segundos o el servidor marca ghostAvailable, solicitar automáticamente Rival Semilla
+    if (modoRef.current === 'ranked' && (segundosEsperados >= RANKED_MATCHMAKING_TIMEOUT_SECONDS || Boolean((r as any).ghostAvailable)) && !claimingRef.current) {
       claimingRef.current = true
       try {
         const claimRes = await MatchmakingService.claimRankedAsyncOpponent()

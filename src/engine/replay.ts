@@ -78,11 +78,13 @@ export interface DatosDeRepeticion {
     nombre: string | null
     avatar: string | null
     mazo?: unknown
+    treeLevel?: number | null
   }
   jugador2: {
     nombre: string | null
     avatar: string | null
     mazo?: unknown
+    treeLevel?: number | null
   }
   ganador: 1 | 2 | null
   yoSoy: 1 | 2 | null
@@ -300,7 +302,11 @@ export function construirRepeticion(datos: DatosDeRepeticion, desde: 1 | 2 = 1):
 
   function estadoInicial(): GameState {
     const engineVersion = resolverEngineVersion(datos.engineVersion)
-    const estado = createBattleState(datos.seed, false, true, undefined, engineVersion)
+    const p1Bonus = Math.max(0, (datos.jugador1?.treeLevel ?? 0) * 50)
+    const p2Bonus = Math.max(0, (datos.jugador2?.treeLevel ?? 0) * 50)
+    const p1Hp = desde === 1 ? 600 + p1Bonus : 600 + p2Bonus
+    const p2Hp = desde === 1 ? 600 + p2Bonus : 600 + p1Bonus
+    const estado = createBattleState(datos.seed, false, true, undefined, engineVersion, p1Hp, p2Hp)
     const estricto = datos.engineVersion === 'auth-v1' || datos.engineVersion === 'auth-v2'
 
     for (const j of jugadas) {
@@ -587,8 +593,10 @@ export function recalcularGanadorAutoritativo(
   }
 
   const engineVersion = resolverEngineVersion(datos.engineVersion)
-  const vistaP1 = createBattleState(datos.seed, false, true, undefined, engineVersion)
-  const vistaP2 = createBattleState(datos.seed, false, true, undefined, engineVersion)
+  const p1Bonus = Math.max(0, (datos.jugador1?.treeLevel ?? 0) * 50)
+  const p2Bonus = Math.max(0, (datos.jugador2?.treeLevel ?? 0) * 50)
+  const vistaP1 = createBattleState(datos.seed, false, true, undefined, engineVersion, 600 + p1Bonus, 600 + p2Bonus)
+  const vistaP2 = createBattleState(datos.seed, false, true, undefined, engineVersion, 600 + p2Bonus, 600 + p1Bonus)
   const jugadas = ordenarJugadas(datos.jugadas)
   const ilegales: AccionIlegal[] = []
   let i = 0

@@ -271,7 +271,7 @@ export default function MainMenu({
 
   const handlePlayClick = () => {
     soundManager.playSound('click', 0.5)
-    if (userElo >= 1602 && playerEnergy <= 0) {
+    if (userElo > 1602 && playerEnergy <= 0) {
       setActiveAlert({
         title: 'ENERGÍA AGOTADA',
         message: `⚡ Has agotado tus ${maxPlayerEnergy} partidas competitivas de hoy. Tu energía se recarga automáticamente a las 00:00 UTC, o puedes recargar ahora en la Tienda.`,
@@ -678,8 +678,8 @@ export default function MainMenu({
             <div
               className="card card--stat card--stat-energy"
               title={
-                userElo <= 1601
-                  ? '⚡ Energía ilimitada en Arena 1 novato (< 1602 Copas). ¡Juega todas las partidas que quieras sin costo!'
+                userElo <= 1602
+                  ? '⚡ Energía ilimitada en Arena 1 novato (≤ 1602 Copas). ¡Juega todas las partidas que quieras sin costo!'
                   : `⚡ Energía Diaria: ${playerEnergy}/${maxPlayerEnergy} (Recarga a las 00:00 UTC). Clic para recargar en la Tienda.`
               }
               style={{ cursor: 'pointer' }}
@@ -689,7 +689,7 @@ export default function MainMenu({
               }}
             >
               <span style={{ fontSize: '1.05rem', filter: 'drop-shadow(0 0 3px #38bdf8)' }}>⚡</span>
-              {userElo <= 1601 ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`}
+              {userElo <= 1602 ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`}
             </div>
           </div>
 

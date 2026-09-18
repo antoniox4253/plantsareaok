@@ -113,13 +113,15 @@ function BaseTower({ team, hp, maxHp, sunBank, nombre, level, sideBadge }: BaseT
         )}
       </div>
       <div className="base__tree-wrap" style={{ position: 'relative' }}>
-        {team === 'p1' && level !== undefined && level > 0 && (
+        {level !== undefined && level > 0 && (
           <div
             style={{
               position: 'absolute',
               inset: '-10%',
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(74, 222, 128, 0.45) 0%, transparent 70%)',
+              background: team === 'p1'
+                ? 'radial-gradient(circle, rgba(74, 222, 128, 0.45) 0%, transparent 70%)'
+                : 'radial-gradient(circle, rgba(239, 68, 68, 0.45) 0%, transparent 70%)',
               filter: 'blur(10px)',
               pointerEvents: 'none',
               zIndex: 0,
@@ -201,6 +203,7 @@ interface BattlefieldProps {
   isAsyncMatch?: boolean
   engineVersion?: EngineVersion | null
   onServerEloUpdated?: (newElo: number) => void
+  treeLevels?: { mio: number; rival: number } | null
 }
 
 export default function Battlefield({
@@ -229,6 +232,7 @@ export default function Battlefield({
   onColosseumComplete,
   strategicPlaytestConfig = null,
   onPlayAgainPlaytest,
+  treeLevels = null,
 }: BattlefieldProps) {
   const {
     tick,
@@ -280,6 +284,9 @@ export default function Battlefield({
   const currentUserId = user?.id ?? null
 
   const [treeLevel, setTreeLevel] = useState<number>(() => {
+    if (typeof treeLevels?.mio === 'number') {
+      return treeLevels.mio
+    }
     try {
       const raw = localStorage.getItem('plant_arena_mother_tree')
       if (raw) {
@@ -291,6 +298,9 @@ export default function Battlefield({
   })
 
   const [treeBonusHp, setTreeBonusHp] = useState<number>(() => {
+    if (typeof treeLevels?.mio === 'number') {
+      return treeLevels.mio * 50
+    }
     try {
       const raw = localStorage.getItem('plant_arena_mother_tree')
       if (raw) {
@@ -303,17 +313,34 @@ export default function Battlefield({
   const treeBonusHpRef = useRef<number>(treeBonusHp)
   treeBonusHpRef.current = treeBonusHp
 
+  const rivalTreeLevel = treeLevels?.rival ?? 0
+  const rivalTreeBonusHp = rivalTreeLevel * 50
+  const rivalTreeBonusHpRef = useRef<number>(rivalTreeBonusHp)
+  rivalTreeBonusHpRef.current = rivalTreeBonusHp
+
   useEffect(() => {
+    if (typeof treeLevels?.mio === 'number' || typeof treeLevels?.rival === 'number') {
+      const bonus = typeof treeLevels?.mio === 'number' ? treeLevels.mio * 50 : treeBonusHpRef.current
+      const rivalBonus = typeof treeLevels?.rival === 'number' ? treeLevels.rival * 50 : 0
+      if (typeof treeLevels?.mio === 'number') {
+        setTreeLevel(treeLevels.mio)
+        setTreeBonusHp(bonus)
+        treeBonusHpRef.current = bonus
+      }
+      rivalTreeBonusHpRef.current = rivalBonus
+      updateInitialTreeBonusHp(bonus, rivalBonus)
+      return
+    }
     void supabaseService.getMotherTreeState().then((res) => {
       if (typeof res?.treeLevel === 'number') {
         const bonus = res.treeLevel * 50
         setTreeLevel(res.treeLevel)
         setTreeBonusHp(bonus)
         treeBonusHpRef.current = bonus
-        updateInitialTreeBonusHp(bonus)
+        updateInitialTreeBonusHp(bonus, rivalTreeBonusHpRef.current)
       }
     })
-  }, [updateInitialTreeBonusHp])
+  }, [treeLevels?.mio, treeLevels?.rival, updateInitialTreeBonusHp])
 
   const [showPvpDiag, setShowPvpDiag] = useState<boolean>(false)
 
@@ -402,7 +429,7 @@ export default function Battlefield({
 
         startedGensRef.current.add(attemptGen)
         setClockSyncStatus('synced')
-        startGame(seed, true, reloj.ancoraMs, userElo, soyP1, mazosDeLaSala, isAsyncMatch, undefined, validEngine, treeBonusHpRef.current)
+        startGame(seed, true, reloj.ancoraMs, userElo, soyP1, mazosDeLaSala, isAsyncMatch, undefined, validEngine, treeBonusHpRef.current, rivalTreeBonusHpRef.current)
       })
       .catch((err: any) => {
         if (matchClockGenRef.current !== attemptGen) {
@@ -1447,9 +1474,10 @@ export default function Battlefield({
       <BaseTower
         team="p2"
         hp={p2BaseHp}
-        maxHp={INITIAL_BASE_HP}
+        maxHp={INITIAL_BASE_HP + rivalTreeBonusHp}
         sunBank={roomId ? undefined : p2SunBank}
         nombre={nombres?.rival}
+        level={rivalTreeLevel}
         sideBadge={
           matchMode === 'tournament' ? (
             <div

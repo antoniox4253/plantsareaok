@@ -543,8 +543,8 @@ export default function Shop({
           <div
             className="shop-energy-badge"
             title={
-              userElo <= 1601
-                ? '⚡ Energía ilimitada en rango novato (< 1602 copas)'
+              userElo <= 1602
+                ? '⚡ Energía ilimitada en rango novato (≤ 1602 copas)'
                 : `⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy}`
             }
             onClick={() => {
@@ -555,7 +555,7 @@ export default function Shop({
           >
             <span className="shop-energy-badge-icon">⚡</span>
             <span className="shop-energy-badge-amount">
-              {userElo <= 1601 ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`}
+              {userElo <= 1602 ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`}
             </span>
           </div>
           <button

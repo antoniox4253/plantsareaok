@@ -542,6 +542,7 @@ function App() {
    * El dato ya llegaba en game_room_info; sólo se estaba tirando.
    */
   const [mazosDeLaSala, setMazosDeLaSala] = useState<{ mio: unknown; rival: unknown } | null>(null)
+  const [treeLevelsEnPartida, setTreeLevelsEnPartida] = useState<{ mio: number; rival: number } | null>(null)
   const [partidaAsincrona, setPartidaAsincrona] = useState<boolean>(false)
   const [reopenTournamentOnMenu, setReopenTournamentOnMenu] = useState<boolean>(false)
 
@@ -603,10 +604,12 @@ function App() {
           seed: basica.seed,
           engineVersion: parseEngineVersion(basica.engine_version),
           iAm: (basica.player1_id === user?.id ? 'p1' : 'p2') as 'p1' | 'p2',
-          player1: { id: basica.player1_id, username: null },
-          player2: { id: basica.player2_id ?? '00000000-0000-0000-0000-000000000000', username: basica.async_display_name ?? null },
+          player1: { id: basica.player1_id, username: null, treeLevel: basica.p1_tree_level ?? 0 },
+          player2: { id: basica.player2_id ?? '00000000-0000-0000-0000-000000000000', username: basica.async_display_name ?? null, treeLevel: basica.p2_tree_level ?? 0 },
           p1Deck: basica.p1_deck,
           p2Deck: basica.is_async_match ? basica.async_deck_snapshot : basica.p2_deck,
+          p1TreeLevel: basica.p1_tree_level ?? 0,
+          p2TreeLevel: basica.p2_tree_level ?? 0,
           isAsyncMatch: basica.is_async_match,
         }
       })())
@@ -642,6 +645,12 @@ function App() {
         mio: soyP1 ? sala.p1Deck : sala.p2Deck,
         rival: soyP1 ? sala.p2Deck : sala.p1Deck,
       })
+      const p1Tree = Number((sala as any).p1TreeLevel ?? (sala as any).player1?.treeLevel ?? 0)
+      const p2Tree = Number((sala as any).p2TreeLevel ?? (sala as any).player2?.treeLevel ?? 0)
+      setTreeLevelsEnPartida({
+        mio: soyP1 ? p1Tree : p2Tree,
+        rival: soyP1 ? p2Tree : p1Tree,
+      })
       const esTorneo = modoBuscando === 'tournament' || sala.mode === 'tournament'
       setPartidaAsincrona(esTorneo ? false : Boolean(sala.isAsyncMatch))
       setBattleMatchMode(esTorneo ? 'tournament' : (sala.mode as 'ranked' | 'friendly' | 'colosseum' | 'tournament'))
@@ -652,7 +661,7 @@ function App() {
           tournamentId: tId,
         }))
       }
-      if (!esTorneo && sala.mode === 'ranked' && userElo >= 1602) {
+      if (!esTorneo && sala.mode === 'ranked' && userElo > 1602) {
         setPlayerEnergy((prev) => Math.max(0, prev - 1))
       }
       if (sala.mode === 'friendly') {
@@ -670,6 +679,7 @@ function App() {
     setRivalId(null)
     setNombresEnPartida(null)
     setMazosDeLaSala(null)
+    setTreeLevelsEnPartida(null)
     setPartidaAsincrona(false)
     setEngineVersionSala(null)
     setCustomArenaBg(undefined)
@@ -768,6 +778,7 @@ function App() {
     setRivalId(null)
     setNombresEnPartida(null)
     setMazosDeLaSala(null)
+    setTreeLevelsEnPartida(null)
     setModoBuscando('friendly')
     setScreen('searching')
     void buscar('friendly', { roomCode, betGems })
@@ -862,8 +873,8 @@ function App() {
   const handlePlayNormal = async (
     instanceIdsOverride?: string[]
   ) => {
-    // Validación preventiva estricta en cliente para Ranked Competitivo (>= 1602 copas)
-    if (userElo >= 1602 && playerEnergy <= 0) {
+    // Validación preventiva estricta en cliente para Ranked Competitivo (> 1602 copas)
+    if (userElo > 1602 && playerEnergy <= 0) {
       soundManager.playSound('defeat', 0.5)
       setActiveAppAlert({
         title: 'ENERGÍA AGOTADA',
@@ -894,6 +905,7 @@ function App() {
     setRivalId(null)
     setNombresEnPartida(null)
     setMazosDeLaSala(null)
+    setTreeLevelsEnPartida(null)
 
     if (!buscaRival('ranked')) {
       setScreen('battle')
@@ -986,6 +998,7 @@ function App() {
     setRivalId(null)
     setNombresEnPartida(null)
     setMazosDeLaSala(null)
+    setTreeLevelsEnPartida(null)
 
     if (!buscaRival('tournament')) {
       setScreen('battle')
@@ -1337,6 +1350,7 @@ function App() {
             mazosDeLaSala={mazosDeLaSala}
             isAsyncMatch={partidaAsincrona}
             engineVersion={engineVersionSala}
+            treeLevels={treeLevelsEnPartida}
             onColosseumComplete={(won) => {
               if (colosseumConfig) {
                 return resolveColosseumMatch(won, colosseumConfig.betGems, colosseumConfig.usedTicket)

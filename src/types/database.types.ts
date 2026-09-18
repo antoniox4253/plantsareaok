@@ -598,6 +598,8 @@ export interface Database {
           colosseum_bet: number
           tournament_id: string | null
           status: 'playing' | 'p1_won' | 'p2_won' | 'draw' | 'abandoned'
+          p1_tree_level?: number | null
+          p2_tree_level?: number | null
           created_at: string
         }
         Insert: {
@@ -611,6 +613,8 @@ export interface Database {
           colosseum_bet?: number
           tournament_id?: string | null
           status?: 'playing' | 'p1_won' | 'p2_won' | 'draw' | 'abandoned'
+          p1_tree_level?: number | null
+          p2_tree_level?: number | null
           created_at?: string
         }
         Update: {
@@ -624,6 +628,8 @@ export interface Database {
           colosseum_bet?: number
           tournament_id?: string | null
           status?: 'playing' | 'p1_won' | 'p2_won' | 'draw' | 'abandoned'
+          p1_tree_level?: number | null
+          p2_tree_level?: number | null
           created_at?: string
         }
         Relationships: []

@@ -175,4 +175,53 @@ describe('las dos pantallas cuentan lo mismo', () => {
     expect(ana.status).toBe('defeat')
     expect(beto.status).toBe('defeat')
   })
+
+  it('árbol madre de nivel superior otorga victoria en muerte súbita y ambas pantallas coinciden', () => {
+    // Ana tiene Árbol Madre Nivel 1 (650 HP). Beto tiene Nivel 0 (600 HP).
+    // Ninguno juega plantas. Al llegar a la muerte súbita, la base de Beto (600 HP)
+    // caerá exactamente a los 50 segundos de desgaste (1000 tics).
+    // Ana sobrevivirá con 50 HP y ganará.
+    const ana = createBattleState(999, false, true, undefined, 'auth-v2', 650, 600)
+    const beto = createBattleState(999, false, true, undefined, 'auth-v2', 600, 650)
+
+    const tAna = jugarHastaElFinal(ana)
+    const tBeto = jugarHastaElFinal(beto)
+
+    expect(tAna).toBe(tBeto)
+    expect(ana.status).toBe('victory')
+    expect(beto.status).toBe('defeat')
+    expect(ana.p1BaseHp).toBeGreaterThan(0)
+    expect(ana.p2BaseHp).toBe(0)
+    expect(beto.p1BaseHp).toBe(0)
+    expect(beto.p2BaseHp).toBeGreaterThan(0)
+  })
+
+  it('desempate exacto cuando ambas bases caen a <= 0 en el mismo tic de muerte súbita', () => {
+    // El desgaste por tic es 12 * 0.033 = 0.396 HP.
+    // Con 0.35 HP y 0.1 HP, ambas bases están por debajo de 0.396 y cruzan 0 en el MISMO tic.
+    // La base con mayor vida antes del desgaste (0.35 vs 0.1) resistió más tiempo y debe ganar.
+    const e = createBattleState(555, false, true)
+    e.tick = TIC_MUERTE_SUBITA + 100
+    e.p1BaseHp = 0.35
+    e.p2BaseHp = 0.1
+
+    stepTick(e, callar)
+
+    expect(e.p1BaseHp).toBe(0)
+    expect(e.p2BaseHp).toBe(0)
+    expect(e.status).toBe('victory')
+
+    // Perspectiva inversa
+    const f = createBattleState(555, false, true)
+    f.tick = TIC_MUERTE_SUBITA + 100
+    f.p1BaseHp = 0.1
+    f.p2BaseHp = 0.35
+
+    stepTick(f, callar)
+
+    expect(f.p1BaseHp).toBe(0)
+    expect(f.p2BaseHp).toBe(0)
+    expect(f.status).toBe('defeat')
+  })
 })
+

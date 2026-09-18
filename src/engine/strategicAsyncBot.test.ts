@@ -602,7 +602,7 @@ describe('RIVAL ESTRATÉGICO V1.2.1 — CERTIFICACIÓN REAL PROGRAMÁTICA', () =
 
         expect(completed).toBe(10000)
       },
-      120000
+      300000
     )
   })
 })

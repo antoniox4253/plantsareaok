@@ -89,22 +89,24 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
     })
   })
 
-  describe('2. Verificación de Umbral de Copas (Ranked Energy Gate)', () => {
-    const isPlayerEnergyFree = (elo: number) => elo < ENERGY_FREE_ELO_THRESHOLD
-
-    it('Jugadores con 1000 copas (Arena 1) juegan de forma ilimitada y gratuita', () => {
-      expect(isPlayerEnergyFree(1000)).toBe(true)
+  describe('2. Verificación de Reglas de Consumo de Energía en Ranked vs Torneo', () => {
+    it('ENERGY_FREE_ELO_THRESHOLD permanece definido como 1602 por compatibilidad', () => {
+      expect(ENERGY_FREE_ELO_THRESHOLD).toBe(1602)
     })
 
-    it('Jugadores con 1600 y 1601 copas aún juegan de forma ilimitada y gratuita', () => {
-      expect(isPlayerEnergyFree(1600)).toBe(true)
-      expect(isPlayerEnergyFree(1601)).toBe(true)
+    it('En Ranked los jugadores con ELO <= 1602 tienen vidas infinitas y solo > 1602 consumen energía', () => {
+      const consumesEnergyInRanked = (elo: number) => elo > ENERGY_FREE_ELO_THRESHOLD
+      expect(consumesEnergyInRanked(1000)).toBe(false)
+      expect(consumesEnergyInRanked(1600)).toBe(false)
+      expect(consumesEnergyInRanked(1602)).toBe(false)
+      expect(consumesEnergyInRanked(1603)).toBe(true)
+      expect(consumesEnergyInRanked(2400)).toBe(true)
     })
 
-    it('Jugadores a partir de 1602 copas (Arena 2 Desierto Nocturno en adelante) consumen energía', () => {
-      expect(isPlayerEnergyFree(1602)).toBe(false)
-      expect(isPlayerEnergyFree(1750)).toBe(false)
-      expect(isPlayerEnergyFree(2400)).toBe(false)
+    it('En Torneo y Amistoso NUNCA se consume energía', () => {
+      const consumesEnergy = (mode: string) => mode === 'ranked'
+      expect(consumesEnergy('tournament')).toBe(false)
+      expect(consumesEnergy('friendly')).toBe(false)
     })
   })
 
@@ -330,8 +332,8 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
         profile.lastResetUtc = nowUtc
       }
 
-      // Backend Authority Gate
-      if (mode === 'ranked' && profile.elo >= ENERGY_FREE_ELO_THRESHOLD) {
+      // Backend Authority Gate (Migración 193): Vidas infinitas para ELO <= 1602
+      if (mode === 'ranked' && profile.elo > ENERGY_FREE_ELO_THRESHOLD) {
         if (effectiveEnergy < 1) {
           return {
             matched: false,
@@ -342,6 +344,7 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
         }
       }
 
+      // En Torneos, Amistosos y novatos Ranked (<= 1602): NO se consume energía
       return {
         matched: false,
         searching: true,
@@ -354,27 +357,27 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       p2: SimProfile
     ) {
       if (mode === 'ranked') {
-        if (p1.elo >= ENERGY_FREE_ELO_THRESHOLD) {
+        if (p1.elo > ENERGY_FREE_ELO_THRESHOLD) {
           p1.energyCurrent = Math.max(0, p1.energyCurrent - 1)
         }
-        if (p2.elo >= ENERGY_FREE_ELO_THRESHOLD) {
+        if (p2.elo > ENERGY_FREE_ELO_THRESHOLD) {
           p2.energyCurrent = Math.max(0, p2.energyCurrent - 1)
         }
       }
+      // Torneo, Amistoso y novatos (ELO <= 1602): 0 descuento
       return { roomId: 'mock-room-123', mode }
     }
 
     function simularClaimRankedAsyncOpponentBackend(
       profile: SimProfile
     ) {
-      if (profile.elo >= ENERGY_FREE_ELO_THRESHOLD && profile.energyCurrent < 1) {
-        return {
-          matched: false,
-          error: 'sin_energia',
+      if (profile.elo > ENERGY_FREE_ELO_THRESHOLD) {
+        if (profile.energyCurrent < 1) {
+          return {
+            matched: false,
+            error: 'sin_energia',
+          }
         }
-      }
-
-      if (profile.elo >= ENERGY_FREE_ELO_THRESHOLD) {
         profile.energyCurrent = Math.max(0, profile.energyCurrent - 1)
       }
 
@@ -385,46 +388,44 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       }
     }
 
-    it('Jugador con 1000 copas y 0 energías: Puede buscar partida en Ranked sin restricciones (gratuito)', () => {
-      const p: SimProfile = {
+    it('Jugador con 0 energías: ELO <= 1602 puede buscar Ranked (vidas infinitas), mientras que ELO > 1602 es rechazado', () => {
+      const p1: SimProfile = {
         id: 'user-novato',
         elo: 1000,
         energyCurrent: 0,
         lastResetUtc: new Date(),
         hasVip: false,
       }
-      const res = simularEnterMatchmakingBackend(p, 'ranked')
-      expect(res.searching).toBe(true)
-      expect(res.error).toBeUndefined()
-    })
+      const res1 = simularEnterMatchmakingBackend(p1, 'ranked')
+      expect(res1.searching).toBe(true)
+      expect(res1.error).toBeUndefined()
 
-    it('Jugador con 1601 copas y 0 energías: Sigue jugando gratis por estar bajo el umbral 1602', () => {
-      const p: SimProfile = {
-        id: 'user-1601',
-        elo: 1601,
-        energyCurrent: 0,
-        lastResetUtc: new Date(),
-        hasVip: false,
-      }
-      const res = simularEnterMatchmakingBackend(p, 'ranked')
-      expect(res.searching).toBe(true)
-      expect(res.error).toBeUndefined()
-    })
-
-    it('Jugador con 1602 copas y 0 energías: El backend RECHAZA con error "sin_energia" sin encolar', () => {
-      const p: SimProfile = {
+      const p2: SimProfile = {
         id: 'user-competitivo',
-        elo: 1602,
+        elo: 1750,
         energyCurrent: 0,
         lastResetUtc: new Date(),
         hasVip: false,
       }
-      const res = simularEnterMatchmakingBackend(p, 'ranked')
-      expect(res.searching).toBe(false)
-      expect(res.error).toBe('sin_energia')
+      const res2 = simularEnterMatchmakingBackend(p2, 'ranked')
+      expect(res2.searching).toBe(false)
+      expect(res2.error).toBe('sin_energia')
     })
 
-    it('Jugador con 2200 copas y 5 energías: Pasa el gate de enter_matchmaking', () => {
+    it('Jugador con 0 energías: Puede ingresar a Torneo sin restricciones de energía (sistema de vidas)', () => {
+      const p: SimProfile = {
+        id: 'user-torneo-sin-energia',
+        elo: 1600,
+        energyCurrent: 0,
+        lastResetUtc: new Date(),
+        hasVip: false,
+      }
+      const res = simularEnterMatchmakingBackend(p, 'tournament')
+      expect(res.searching).toBe(true)
+      expect(res.error).toBeUndefined()
+    })
+
+    it('Jugador con 5 energías: Pasa el gate de enter_matchmaking en Ranked', () => {
       const p: SimProfile = {
         id: 'user-master',
         elo: 2200,
@@ -437,7 +438,7 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       expect(res.error).toBeUndefined()
     })
 
-    it('Creación de sala PvP en Ranked: Descuenta 1 energía a jugadores >= 1602 y 0 a jugadores < 1602', () => {
+    it('Creación de sala PvP en Ranked: Descuenta 1 energía sólo si ELO > 1602 (novato no consume)', () => {
       const p1: SimProfile = {
         id: 'p1-high',
         elo: 1800,
@@ -454,11 +455,46 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       }
 
       simularCreateRoomBackend('ranked', p1, p2)
-      expect(p1.energyCurrent).toBe(9) // Descontó 1
-      expect(p2.energyCurrent).toBe(8) // No descontó (gratis < 1602)
+      expect(p1.energyCurrent).toBe(9) // Descontó 1 porque ELO > 1602
+      expect(p2.energyCurrent).toBe(8) // NO descontó porque ELO <= 1602 (vidas infinitas)
     })
 
-    it('claimRankedAsyncOpponent: Rechaza a jugador >= 1602 con 0 energía', () => {
+    it('Creación de sala PvP en Torneo: NO descuenta energía a ningún jugador (exento)', () => {
+      const p1: SimProfile = {
+        id: 'p1-tourney',
+        elo: 1800,
+        energyCurrent: 10,
+        lastResetUtc: new Date(),
+        hasVip: false,
+      }
+      const p2: SimProfile = {
+        id: 'p2-tourney',
+        elo: 1500,
+        energyCurrent: 8,
+        lastResetUtc: new Date(),
+        hasVip: false,
+      }
+
+      simularCreateRoomBackend('tournament', p1, p2)
+      expect(p1.energyCurrent).toBe(10) // NO descuenta
+      expect(p2.energyCurrent).toBe(8)  // NO descuenta
+    })
+
+    it('claimRankedAsyncOpponent: Jugador novato (ELO <= 1602) con 0 energía puede emparejar sin costo', () => {
+      const p: SimProfile = {
+        id: 'user-novato-seed',
+        elo: 1200,
+        energyCurrent: 0,
+        lastResetUtc: new Date(),
+        hasVip: false,
+      }
+      const res = simularClaimRankedAsyncOpponentBackend(p)
+      expect(res.matched).toBe(true)
+      expect(res.isAsyncMatch).toBe(true)
+      expect(p.energyCurrent).toBe(0) // Sin cambios
+    })
+
+    it('claimRankedAsyncOpponent: Rechaza a jugador con ELO > 1602 y 0 energía en Ranked', () => {
       const p: SimProfile = {
         id: 'user-high-depleted',
         elo: 1700,
@@ -471,7 +507,7 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       expect(res.error).toBe('sin_energia')
     })
 
-    it('claimRankedAsyncOpponent: Descuenta 1 energía al emparejar con Rival Semilla (10 -> 9)', () => {
+    it('claimRankedAsyncOpponent: Descuenta 1 energía a jugador competitivo (ELO > 1602) al emparejar (10 -> 9)', () => {
       const p: SimProfile = {
         id: 'user-seed-match',
         elo: 1700,
@@ -514,6 +550,38 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       expect(sql).toContain("GREATEST(0, energy_current - 1)")
       expect(sql).toContain("FUNCTION public.claim_ranked_async_opponent")
       expect(sql).toContain("energy_spend")
+    })
+
+    it('Auditoría estática SQL: La migración 192 implementa la deducción obligatoria en Ranked, exención en Torneos y sincronización de Árbol Madre', async () => {
+      const fs = await import('fs')
+      const path = await import('path')
+      const m192Path = path.resolve(__dirname, '../../supabase/migrations/192-fix-ranked-pvp-energy-and-mother-tree-sync.sql')
+      expect(fs.existsSync(m192Path)).toBe(true)
+
+      const sql = fs.readFileSync(m192Path, 'utf-8')
+      expect(sql).toContain("FUNCTION public.enter_matchmaking")
+      expect(sql).toContain("FUNCTION public._create_room")
+      expect(sql).toContain("FUNCTION public.claim_ranked_async_opponent")
+      expect(sql).toContain("p1_tree_level")
+      expect(sql).toContain("p2_tree_level")
+      expect(sql).toContain("COALESCE(energy_current, 1) - 1")
+    })
+
+    it('Auditoría estática SQL: La migración 193 restablece vidas infinitas para ELO <= 1602 y control estricto para ELO > 1602', async () => {
+      const fs = await import('fs')
+      const path = await import('path')
+      const m193Path = path.resolve(__dirname, '../../supabase/migrations/193-ranked-infinite-lives-under-1602.sql')
+      expect(fs.existsSync(m193Path)).toBe(true)
+
+      const sql = fs.readFileSync(m193Path, 'utf-8')
+      expect(sql).toContain("FUNCTION public.enter_matchmaking")
+      expect(sql).toContain("p_mode = 'ranked' AND v_elo > 1602")
+      expect(sql).toContain("FUNCTION public._create_room")
+      expect(sql).toContain("v_p1_elo > 1602")
+      expect(sql).toContain("FUNCTION public.claim_ranked_async_opponent")
+      expect(sql).toContain("v_player_elo > 1602 AND COALESCE(v_cur_en, 0) < 1")
+      expect(sql).toContain("UPDATE public.profiles")
+      expect(sql).toContain("WHERE elo_rating <= 1602")
     })
   })
 
