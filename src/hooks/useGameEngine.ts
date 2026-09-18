@@ -1040,10 +1040,22 @@ export function useGameEngine() {
               cardLevel = found.level || 0
               cardEquippedItem = found.equippedItem || null
             }
-          } else {
-            const found = parsedInstances.find((i) => i.plantId === card && i.equippedItem)
-            if (found) {
-              cardEquippedItem = found.equippedItem || null
+          }
+          if (rolls.length === 0 && !cardEquippedItem) {
+            const copies = parsedInstances.filter((i) => i.plantId === card)
+            if (copies.length > 0) {
+              copies.sort((a, b) => {
+                if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
+                  return a.equippedItem ? -1 : 1
+                }
+                const rA = a.statRolls?.length || 0
+                const rB = b.statRolls?.length || 0
+                if (rA !== rB) return rB - rA
+                return (b.level || 0) - (a.level || 0)
+              })
+              rolls = copies[0].statRolls && copies[0].statRolls.length > 0 ? copies[0].statRolls : []
+              cardLevel = copies[0].level || 0
+              cardEquippedItem = copies[0].equippedItem || null
             }
           }
         } catch {}

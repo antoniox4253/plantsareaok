@@ -1344,7 +1344,7 @@ export default function TournamentModal({
                     </div>
                     <h4 className="tourney-type-card__title">Torneo con Oro</h4>
                     <p className="tourney-type-card__desc">
-                      Inscripción cobrada en Oro. Recompensa personalizable en Oro o Gemas, pozo acumulativo y puestos configurables (Top 1, 3, 5, 10).
+                      Inscripción cobrada en Oro. Recompensa en Oro o Gemas con pozo fijo garantizado por administración y puestos configurables (Top 1, 3, 5, 10).
                     </p>
                     <div className="tourney-type-card__action">
                       Configurar Torneo con Oro <span>➔</span>
@@ -1362,7 +1362,7 @@ export default function TournamentModal({
                     </div>
                     <h4 className="tourney-type-card__title">Torneo con Gemas</h4>
                     <p className="tourney-type-card__desc">
-                      Torneo élite con tarifa de inscripción en Gemas. El pozo se acumula con cada jugador. Recompensa en Gemas u Oro a elección.
+                      Torneo élite con tarifa de inscripción en Gemas. Pozo fijo garantizado por administración. Recompensa en Gemas u Oro a elección.
                     </p>
                     <div className="tourney-type-card__action">
                       Configurar Torneo con Gemas <span>➔</span>
@@ -1452,7 +1452,7 @@ export default function TournamentModal({
                         required
                       />
                       <span style={{ fontSize: '0.74rem', color: '#fde047' }}>
-                        Se descontará automáticamente del saldo de Oro del jugador al registrarse.
+                        Tarifa cobrada al saldo de Oro del jugador (ingreso para la casa). El pozo de premios permanece fijo.
                       </span>
                     </div>
                   ) : (
@@ -1469,7 +1469,7 @@ export default function TournamentModal({
                         required
                       />
                       <span style={{ fontSize: '0.74rem', color: '#c084fc' }}>
-                        Las gemas cobradas a cada jugador se sumarán automáticamente al pozo si la recompensa es en Gemas.
+                        Tarifa cobrada al saldo de Gemas del jugador (ingreso para la casa). El pozo de premios permanece fijo.
                       </span>
                     </div>
                   )}
@@ -1504,7 +1504,7 @@ export default function TournamentModal({
                     <label>
                       {createCategory === 'item'
                         ? 'Pozo Adicional de Gemas (Opcional)'
-                        : `Pozo Inicial de ${createPrizeCurrency === 'gold' ? 'Oro' : 'Gemas'} a Repartir`}
+                        : `Pozo Fijo de ${createPrizeCurrency === 'gold' ? 'Oro' : 'Gemas'} a Repartir`}
                     </label>
                     <input
                       type="number"
@@ -1518,7 +1518,7 @@ export default function TournamentModal({
                     <span style={{ fontSize: '0.74rem', color: createPrizeCurrency === 'gold' ? '#fde047' : '#c084fc' }}>
                       {createCategory === 'item'
                         ? '💎 Pozo en gemas adicional que se repartirá entre los mejores clasificados además del ítem.'
-                        : `Pozo oficial asignado por administración. No se descuenta de tu saldo personal.`}
+                        : `Pozo oficial garantizado fijado por administración. No varía con las inscripciones.`}
                     </span>
                   </div>
 
@@ -1813,10 +1813,10 @@ export default function TournamentModal({
                           onClick={() => setCreatePlantRule('all_unlocked')}
                         >
                           <span style={{ fontWeight: 800, color: createPlantRule === 'all_unlocked' ? '#fff' : '#e2e8f0' }}>
-                            🌟 Todas Desbloqueadas
+                            🌟 16 Desbloqueadas (Híbrido)
                           </span>
                           <span style={{ fontSize: '0.71rem', opacity: 0.85 }}>
-                            15 cartas libres para todos los jugadores (Fair Play total).
+                            16 cartas libres. Quien tenga plantas fusionadas o ítems los usará con sus mejoras; quien no, jugará la base.
                           </span>
                         </button>
                         <button
@@ -1837,7 +1837,7 @@ export default function TournamentModal({
                             🌿 Solo Plantas Propias
                           </span>
                           <span style={{ fontSize: '0.71rem', opacity: 0.85 }}>
-                            Cada jugador solo usa las plantas que ha desbloqueado.
+                            Cada jugador solo usa las plantas que ha desbloqueado en su colección.
                           </span>
                         </button>
                       </div>
@@ -1851,7 +1851,7 @@ export default function TournamentModal({
                       >
                         {createPlantRule === 'owned_only'
                           ? '🔒 El backend validará que ningún participante guarde o juegue con plantas que no posea en su colección.'
-                          : '🌟 Todos los gladiadores tendrán acceso a las 15 plantas para armar sus mejores estrategias.'}
+                          : '🌟 Todos los gladiadores tendrán acceso a las 16 plantas del catálogo y se activarán automáticamente las fusiones e ítems de las cartas que posean.'}
                       </span>
                     </div>
                   )}

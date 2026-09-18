@@ -65,7 +65,24 @@ function getSlotCardLevelData(
         }
       }
 
-      if (!equippedItem) {
+      if (!equippedItem && rolls.length === 0) {
+        const copies = parsedInstances.filter((i) => i.plantId === plantId)
+        if (copies.length > 0) {
+          copies.sort((a, b) => {
+            if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
+              return a.equippedItem ? -1 : 1
+            }
+            const rA = a.statRolls?.length || 0
+            const rB = b.statRolls?.length || 0
+            if (rA !== rB) return rB - rA
+            return (b.level || 0) - (a.level || 0)
+          })
+          const best = copies[0]
+          if (level === 0) level = best.level || 0
+          if (rolls.length === 0) rolls = best.statRolls || []
+          if (!equippedItem) equippedItem = best.equippedItem || null
+        }
+      } else if (!equippedItem) {
         const found = parsedInstances.find((i) => i.plantId === plantId && i.equippedItem)
         if (found) {
           equippedItem = found.equippedItem || null

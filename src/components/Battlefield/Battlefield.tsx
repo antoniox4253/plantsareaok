@@ -1665,14 +1665,27 @@ export default function Battlefield({
                           const pIds: string[] = sIds ? JSON.parse(sIds) : []
                           const pInst: any[] = sInst ? JSON.parse(sInst) : []
                           if (selectedSlotIndex !== null && pIds[selectedSlotIndex]) {
-                            const f = pInst.find((i) => i.instanceId === pIds[selectedSlotIndex])
+                            const f = pInst.find((i) => i.instanceId === pIds[selectedSlotIndex] && i.plantId === selectedCard)
                             if (f) {
                               r = f.statRolls || []
                               eq = f.equippedItem || null
                             }
-                          } else {
-                            const f = pInst.find((i) => i.plantId === selectedCard && i.equippedItem)
-                            if (f) eq = f.equippedItem || null
+                          }
+                          if (r.length === 0 && !eq) {
+                            const copies = pInst.filter((i) => i.plantId === selectedCard)
+                            if (copies.length > 0) {
+                              copies.sort((a, b) => {
+                                if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
+                                  return a.equippedItem ? -1 : 1
+                                }
+                                const rA = a.statRolls?.length || 0
+                                const rB = b.statRolls?.length || 0
+                                if (rA !== rB) return rB - rA
+                                return (b.level || 0) - (a.level || 0)
+                              })
+                              r = copies[0].statRolls || []
+                              eq = copies[0].equippedItem || null
+                            }
                           }
                         } catch {}
                         return getScaledPlantConfig(selectedCard, r, eq)
