@@ -5210,6 +5210,40 @@ export const SupabaseService = {
       return { success: false, error: e?.message || 'Error al alimentar el Árbol Madre' }
     }
   },
+
+  /**
+   * Obtiene los 5 primeros jugadores en carrera o que hayan llevado el Árbol Madre a Nivel 5.
+   */
+  async getMotherTreeTop5(): Promise<Array<{
+    rank: number
+    user_id: string
+    username: string
+    tree_level: number
+    tree_xp: number
+    tree_level_5_at: string | null
+    reached_level_5: boolean
+  }>> {
+    if (!isSupabaseConfigured()) return []
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_mother_tree_top5')
+      if (error) {
+        logError('getMotherTreeTop5', error)
+        return []
+      }
+      return (data || []) as Array<{
+        rank: number
+        user_id: string
+        username: string
+        tree_level: number
+        tree_xp: number
+        tree_level_5_at: string | null
+        reached_level_5: boolean
+      }>
+    } catch (e: any) {
+      logError('getMotherTreeTop5', e)
+      return []
+    }
+  },
 }
 
 export interface GlobalTransactionItem {

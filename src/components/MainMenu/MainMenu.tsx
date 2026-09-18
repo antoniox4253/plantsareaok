@@ -33,6 +33,7 @@ import LotteryModal from '../Lottery/LotteryModal'
 import { auctionService, type ActiveAuctionData } from '../../services/auctionService'
 import { tournamentService } from '../../services/tournamentService'
 import { lotteryService } from '../../services/lotteryService'
+import { SupabaseService } from '../../services/supabaseService'
 import type { ColosseumBetAmount, PlantId, TournamentModel, PlantCardInstance } from '../../types/game'
 import './MainMenu.css'
 
@@ -200,6 +201,46 @@ export default function MainMenu({
     const m = Math.floor((diff % 3600000) / 60000)
     return `${h}h ${m}m`
   }, [auctionInfo, ticker])
+
+  // ── RANKING TOP 5 ÁRBOL MADRE (CARRERA A NIVEL 5) ──
+  const [motherTreeTop5, setMotherTreeTop5] = useState<Array<{
+    rank: number
+    user_id: string
+    username: string
+    tree_level: number
+    tree_xp: number
+    tree_level_5_at: string | null
+    reached_level_5: boolean
+  }>>([])
+
+  const loadMotherTreeTop5 = useCallback(async () => {
+    try {
+      const list = await SupabaseService.getMotherTreeTop5()
+      if (Array.isArray(list)) {
+        setMotherTreeTop5(list)
+      }
+    } catch (err) {
+      console.warn('Error al cargar Top 5 Árbol Madre:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadMotherTreeTop5()
+    const intv = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+      void loadMotherTreeTop5()
+    }, 30000)
+    const onRefresh = () => void loadMotherTreeTop5()
+    window.addEventListener('refresh_user_balance', onRefresh)
+    return () => {
+      clearInterval(intv)
+      window.removeEventListener('refresh_user_balance', onRefresh)
+    }
+  }, [loadMotherTreeTop5])
+
+  // La interfaz y modal de subasta están 100% guardados; se oculta el botón del lobby
+  // hasta que se reemplace el asset gráfico de la nueva planta en subasta.
+  const SHOW_AUCTION_HEADER_WIDGET = false
 
   const handleConfirmAccelerate = async () => {
     if (!slotToAccelerate || !onFastUnlockSlot || isAccelerating) return
@@ -493,34 +534,104 @@ export default function MainMenu({
               <span className="online-users-label">en línea</span>
             </div>
 
-            {/* WIDGET DESTACADO DE SUBASTA EN VIVO (LANZAMAÍZ BRUJA - 500 GEMAS) */}
-            <div
-              className="auction-header-widget"
-              onClick={() => {
-                soundManager.playSound('click', 0.5)
-                setIsAuctionModalOpen(true)
-              }}
-              title="🎃 Clic para entrar a la Gran Subasta Mítica: Lanzamaíz Bruja (500 💎)"
-            >
-              <div className="auction-header-widget__art-wrap">
-                <img
-                  src="/game-assets/auction/kernel_witch.png"
-                  alt="Subasta Lanzamaíz Bruja"
-                  className="auction-header-widget__img"
-                />
+            {/* WIDGET DESTACADO DE SUBASTA EN VIVO (GUARDADO Y PRESERVADO PARA FUTURO CAMBIO DE IMAGEN) */}
+            {SHOW_AUCTION_HEADER_WIDGET && (
+              <div
+                className="auction-header-widget"
+                onClick={() => {
+                  soundManager.playSound('click', 0.5)
+                  setIsAuctionModalOpen(true)
+                }}
+                title="🎃 Clic para entrar a la Gran Subasta Mítica: Lanzamaíz Bruja (500 💎)"
+              >
+                <div className="auction-header-widget__art-wrap">
+                  <img
+                    src="/game-assets/auction/kernel_witch.png"
+                    alt="Subasta Lanzamaíz Bruja"
+                    className="auction-header-widget__img"
+                  />
+                </div>
+                <div className="auction-header-widget__meta">
+                  <div className="auction-header-widget__top-row">
+                    <span className="auction-header-widget__live-dot" />
+                    <span className="auction-header-widget__title">SUBASTA</span>
+                    <span className="auction-header-widget__timer">⏱️ {auctionRemainingStr}</span>
+                  </div>
+                  <div className="auction-header-widget__price-row">
+                    <span className="auction-header-widget__label">Precio Inicial:</span>
+                    <span className="auction-header-widget__price">
+                      {auctionInfo ? auctionInfo.currentBid.toLocaleString() : '500'} 💎
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="auction-header-widget__meta">
-                <div className="auction-header-widget__top-row">
-                  <span className="auction-header-widget__live-dot" />
-                  <span className="auction-header-widget__title">SUBASTA</span>
-                  <span className="auction-header-widget__timer">⏱️ {auctionRemainingStr}</span>
+            )}
+
+            {/* WIDGET SUAVE CON RANKING TOP 5 DE CARRERA AL ÁRBOL MADRE NIVEL 5 */}
+            <div
+              className="tree-ranking-widget"
+              onClick={() => {
+                soundManager.playSound('plantation', 0.5)
+                onOpenJardin?.()
+              }}
+              title="🌳 Carrera de Árbol Madre: Los 5 primeros jugadores en llegar a Nivel 5 quedarán inmortalizados aquí. ¡Clic para nutrir tu Árbol en Mi Jardín!"
+            >
+              <div className="tree-ranking-widget__header">
+                <div className="tree-ranking-widget__title-box">
+                  <span className="tree-ranking-widget__icon">🌳</span>
+                  <span className="tree-ranking-widget__title">CARRERA ÁRBOL MADRE</span>
                 </div>
-                <div className="auction-header-widget__price-row">
-                  <span className="auction-header-widget__label">Precio Inicial:</span>
-                  <span className="auction-header-widget__price">
-                    {auctionInfo ? auctionInfo.currentBid.toLocaleString() : '500'} 💎
-                  </span>
-                </div>
+                <span className="tree-ranking-widget__badge">Top 5 al Nvl 5</span>
+              </div>
+
+              <div className="tree-ranking-widget__list">
+                {Array.from({ length: 5 }).map((_, idx) => {
+                  const entry = motherTreeTop5[idx]
+                  const rankNum = idx + 1
+                  const medal = rankNum === 1 ? '🥇' : rankNum === 2 ? '🥈' : rankNum === 3 ? '🥉' : `${rankNum}.`
+
+                  if (!entry) {
+                    return (
+                      <div key={idx} className="tree-ranking-widget__row tree-ranking-widget__row--empty">
+                        <span className="tree-ranking-widget__rank">{medal}</span>
+                        <span className="tree-ranking-widget__empty-name">— Puesto Libre —</span>
+                        <span className="tree-ranking-widget__empty-lvl">Nvl 0</span>
+                      </div>
+                    )
+                  }
+
+                  const isCurrentUser = userProfile?.id && entry.user_id === userProfile.id
+                  const isLvl5 = entry.reached_level_5 || entry.tree_level >= 5
+
+                  return (
+                    <div
+                      key={entry.user_id || idx}
+                      className={`tree-ranking-widget__row ${isCurrentUser ? 'tree-ranking-widget__row--me' : ''} ${isLvl5 ? 'tree-ranking-widget__row--max' : ''}`}
+                    >
+                      <div className="tree-ranking-widget__user-info">
+                        <span className="tree-ranking-widget__rank">{medal}</span>
+                        <span className="tree-ranking-widget__name" title={entry.username}>
+                          {entry.username}
+                        </span>
+                      </div>
+
+                      <div className="tree-ranking-widget__lvl-box">
+                        {isLvl5 ? (
+                          <span
+                            className="tree-ranking-widget__lvl-badge tree-ranking-widget__lvl-badge--max"
+                            title={entry.tree_level_5_at ? `Alcanzó Nivel 5 el ${new Date(entry.tree_level_5_at).toLocaleDateString()}` : '¡Meta Nivel 5 lograda!'}
+                          >
+                            👑 Nvl 5
+                          </span>
+                        ) : (
+                          <span className="tree-ranking-widget__lvl-badge">
+                            Nvl {entry.tree_level} <small className="tree-ranking-widget__xp-sub">({entry.tree_xp} XP)</small>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 

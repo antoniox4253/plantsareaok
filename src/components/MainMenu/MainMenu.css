@@ -289,6 +289,164 @@
   text-shadow: 0 0 6px rgba(192, 132, 252, 0.6);
 }
 
+/* ── RANKING SUAVE TOP 5 ÁRBOL MADRE EN EL LOBBY ──────────────────────── */
+.tree-ranking-widget {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, rgba(6, 44, 28, 0.78) 0%, rgba(15, 23, 42, 0.88) 100%);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 12px;
+  padding: 5px 9px;
+  margin-top: 5px;
+  width: 195px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 10px rgba(34, 197, 94, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tree-ranking-widget:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(6, 58, 36, 0.9) 0%, rgba(15, 30, 50, 0.95) 100%);
+  border-color: rgba(74, 222, 128, 0.65);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55), 0 0 14px rgba(34, 197, 94, 0.35);
+}
+
+.tree-ranking-widget__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+  padding-bottom: 3px;
+  margin-bottom: 3px;
+}
+
+.tree-ranking-widget__title-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tree-ranking-widget__icon {
+  font-size: 11px;
+}
+
+.tree-ranking-widget__title {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #86efac;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.tree-ranking-widget__badge {
+  font-size: 8px;
+  font-weight: 800;
+  color: #fde047;
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  padding: 1px 5px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.tree-ranking-widget__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tree-ranking-widget__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5px 4px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  transition: background 0.15s ease;
+}
+
+.tree-ranking-widget__row:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.tree-ranking-widget__row--me {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.tree-ranking-widget__row--max {
+  background: rgba(234, 179, 8, 0.15);
+}
+
+.tree-ranking-widget__row--empty {
+  opacity: 0.4;
+}
+
+.tree-ranking-widget__user-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  max-width: 105px;
+}
+
+.tree-ranking-widget__rank {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #fde047;
+  min-width: 13px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tree-ranking-widget__name {
+  color: #f8fafc;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-ranking-widget__empty-name {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 8.5px;
+}
+
+.tree-ranking-widget__lvl-box {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.tree-ranking-widget__lvl-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #6ee7b7;
+}
+
+.tree-ranking-widget__lvl-badge--max {
+  color: #fde047;
+  text-shadow: 0 0 6px rgba(250, 204, 21, 0.6);
+  font-weight: 900;
+}
+
+.tree-ranking-widget__xp-sub {
+  font-size: 8px;
+  color: #94a3b8;
+  font-weight: normal;
+}
+
+.tree-ranking-widget__empty-lvl {
+  font-size: 8px;
+  color: #64748b;
+}
+
 @keyframes onlineFadeIn {
   from {
     opacity: 0;
