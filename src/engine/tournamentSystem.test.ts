@@ -27,9 +27,9 @@ describe('SISTEMA AUTORITATIVO DE TORNEOS — PRUEBAS DE DOMINIO Y REGLAS', () =
   })
 
   it('2. Validación de Mazo: exige exactamente entre 5 y 6 plantas válidas del catálogo', async () => {
-    // Mazo válido de 5
-    const validDeck: PlantId[] = ['sunflower', 'peashooter', 'wallnut', 'chomper', 'aloe']
-    const resValid = await tournamentService.updateTournamentDeck('test_tourney', validDeck)
+    // Mazo válido de 5 con Lanzamaíz (kernelpult)
+    const validDeckWithKernelpult: PlantId[] = ['sunflower', 'peashooter', 'wallnut', 'chomper', 'kernelpult']
+    const resValid = await tournamentService.updateTournamentDeck('test_tourney', validDeckWithKernelpult)
     expect(resValid.success).toBe(true)
 
     // Mazo inválido: menos de 5 cartas

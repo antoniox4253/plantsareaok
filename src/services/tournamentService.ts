@@ -204,7 +204,13 @@ export const tournamentService = {
         console.warn('update_tournament_deck remote error:', error.message)
         let friendlyError = error.message
         if (error.message?.includes('INVALID_TOURNAMENT_DECK_UNOWNED_PLANTS')) {
-          friendlyError = 'Tu mazo contiene plantas que no posees en tu colección.'
+          friendlyError = 'Tu mazo contiene plantas que no posees en tu colección para este torneo.'
+        } else if (error.message?.includes('INVALID_TOURNAMENT_DECK')) {
+          friendlyError = 'El mazo seleccionado contiene plantas no válidas o no cumple con las reglas del torneo.'
+        } else if (error.message?.includes('PARTICIPANT_NOT_REGISTERED')) {
+          friendlyError = 'No te encuentras inscrito en este torneo.'
+        } else if (error.message?.includes('PLAYER_ALREADY_ELIMINATED')) {
+          friendlyError = 'No puedes modificar el mazo porque ya has quedado eliminado del torneo.'
         }
         return { success: false, error: friendlyError }
       }

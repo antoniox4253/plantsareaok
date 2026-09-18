@@ -129,7 +129,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
   }
 
   const handleConfirmReroll = async () => {
-    if (rerollSlot === null) return
+    if (rerollSlot === null || rerollSlot < 2) return
     setActionLoading(true)
     setErrorMessage(null)
     setSuccessMessage(null)
@@ -373,9 +373,11 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                   {/* Daily Missions List - Horizontal Row */}
                   <div className="daily-missions-wrapper">
                     <div className="daily-missions-list">
-                      {dashboard?.missions?.map((m: DailyMission) => {
+                      {dashboard?.missions?.map((m: DailyMission, index: number) => {
                         const isComplete = m.progress >= m.target
                         const plantCfg = m.plantId ? (PLANT_CONFIGS as any)[m.plantId] : null
+                        const totalMissions = dashboard.missions.length
+                        const isLastMission = index === totalMissions - 1 || m.slot === 2
 
                         return (
                           <div key={m.slot} className={`mission-card ${m.claimed ? 'claimed' : ''}`}>
@@ -436,7 +438,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                                   >
                                     Reclamar
                                   </button>
-                                ) : (
+                                ) : isLastMission ? (
                                   <button
                                     className="mission-reroll-btn"
                                     title="Cambiar misión por 5 Gemas"
@@ -445,7 +447,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                                   >
                                     🔄 Cambiar (5 💎)
                                   </button>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                           </div>
