@@ -9,11 +9,50 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Luckiest+Guy&display=swap" rel="stylesheet">
-  <!-- Google tag (gtag.js) -->
+  <!-- Google Consent Mode v2 & Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-SQ03E6YGC7"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
+
+    var savedConsent = null;
+    try {
+      savedConsent = localStorage.getItem('plant_arena_cookie_consent');
+    } catch (e) {}
+
+    if (savedConsent === 'granted') {
+      gtag('consent', 'default', {
+        'ad_storage': 'granted',
+        'ad_user_data': 'granted',
+        'ad_personalization': 'granted',
+        'analytics_storage': 'granted',
+        'functionality_storage': 'granted',
+        'personalization_storage': 'granted',
+        'security_storage': 'granted'
+      });
+    } else if (savedConsent === 'denied') {
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'granted',
+        'functionality_storage': 'granted',
+        'personalization_storage': 'denied',
+        'security_storage': 'granted'
+      });
+    } else {
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'granted',
+        'functionality_storage': 'granted',
+        'personalization_storage': 'granted',
+        'security_storage': 'granted',
+        'wait_for_update': 500
+      });
+    }
+
     gtag('js', new Date());
     gtag('config', 'G-SQ03E6YGC7');
   </script>

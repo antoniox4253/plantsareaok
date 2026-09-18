@@ -52,6 +52,7 @@ import {
   getScreenFromPath,
   getShopTabFromPath,
 } from './utils/analytics'
+import { CookieBanner } from './components/CookieBanner/CookieBanner'
 
 function App() {
   const [screen, setScreen] = useState<GameScreen>(() => {
@@ -1194,6 +1195,7 @@ function App() {
           isOpen={isAdminPanelOpen}
           onClose={() => setIsAdminPanelOpen(false)}
         />
+        <CookieBanner screen={screen} />
       </>
     )
   }
@@ -1738,6 +1740,7 @@ function App() {
         />
       </GameFrame>
       <RotateOverlay />
+      <CookieBanner screen={screen} />
     </>
   )
 }
