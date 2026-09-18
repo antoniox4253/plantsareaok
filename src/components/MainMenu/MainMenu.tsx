@@ -1285,6 +1285,7 @@ export default function MainMenu({
         isOpen={isMisionesModalOpen}
         onClose={() => setIsMisionesModalOpen(false)}
         userGems={userTokens}
+        onRewardClaimed={onRewardsChanged}
       />
 
       {/* MODAL DE LOTERÍA Y RULETA */}

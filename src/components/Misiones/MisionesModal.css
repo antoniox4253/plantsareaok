@@ -219,7 +219,9 @@
 
 .chests-progress-wrapper {
   position: relative;
-  margin: 16px 0 6px 0;
+  min-height: 82px;
+  margin: 18px 0 10px 0;
+  padding-bottom: 24px;
 }
 
 .chests-bar-bg {
@@ -255,6 +257,23 @@
   position: absolute;
   transform: translateX(-50%);
   cursor: pointer;
+  z-index: 5;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chest-node.claimable {
+  cursor: pointer;
+  z-index: 15;
+}
+
+.chest-node.claimable:hover {
+  transform: translateX(-50%) scale(1.08);
+}
+
+.chest-node.claimable:active {
+  transform: translateX(-50%) scale(0.96);
 }
 
 .chest-node--bronze { left: 28.5%; } /* 70/245 */
@@ -276,12 +295,23 @@
 }
 
 .chest-node:hover .chest-icon-wrap {
-  transform: scale(1.15);
+  transform: scale(1.12);
 }
 
 .chest-node.unlocked .chest-icon-wrap {
   border-color: #10b981;
   box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+}
+
+.chest-node.unlocked.claimable .chest-icon-wrap {
+  border-color: #34d399;
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.7);
+  animation: chestBounce 2s infinite ease-in-out;
+}
+
+@keyframes chestBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 .chest-node.claimed .chest-icon-wrap {
@@ -291,23 +321,35 @@
 }
 
 .chest-points-label {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 800;
   color: #cbd5e1;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .chest-claim-btn {
-  margin-top: 2px;
+  margin-top: 4px;
   background: linear-gradient(180deg, #10b981 0%, #059669 100%);
   border: 1px solid #34d399;
   color: #fff;
   font-weight: 800;
-  font-size: 0.65rem;
-  padding: 2px 6px;
-  border-radius: 6px;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  min-height: 26px;
+  border-radius: 8px;
   cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   animation: pulseButton 1.5s infinite;
+  touch-action: manipulation;
+}
+
+.chest-claim-btn:hover {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+}
+
+.chest-claim-btn:active {
+  transform: scale(0.95);
 }
 
 @keyframes pulseButton {

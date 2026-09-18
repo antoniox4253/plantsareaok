@@ -43,6 +43,7 @@ import {
   validarIntencionAsyncRankedEstricta,
   validarYNormalizarIntencionesAsyncRanked,
   normalizarAccionesDbParaSimulacion,
+  type AccionP1RankedEstricta,
 } from './asyncP1History.ts'
 import type { CartaDeMazo } from './mazoDeLaSala.ts'
 import { createBattleState, stepTick } from './simulate.ts'

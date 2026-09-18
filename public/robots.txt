@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /privacy.html
+Allow: /terms
+Allow: /terms.html
+Allow: /about
+Allow: /about.html
+Allow: /contact
+Allow: /roadmap.html
+
+Sitemap: https://www.plants-arena.online/sitemap.xml

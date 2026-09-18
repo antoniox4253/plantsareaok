@@ -11,6 +11,16 @@ import {
   type DailyMission,
 } from '../../services/missionService'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
+import { soundManager } from '../../utils/audioManager'
+
+const triggerGlobalRefresh = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+    window.dispatchEvent(new CustomEvent('refresh_user_inventory'))
+    window.dispatchEvent(new CustomEvent('refresh_reward_packs'))
+    window.dispatchEvent(new CustomEvent('refresh_pack_slots'))
+  }
+}
 
 interface MisionesModalProps {
   isOpen: boolean
@@ -95,7 +105,9 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
     try {
       const res = await claimDailyLoginStreak()
       if (res.success) {
+        soundManager.playSound('plantation', 0.8)
         setSuccessMessage(`¡Recompensa del Día ${res.day} reclamada con éxito!`)
+        triggerGlobalRefresh()
         await loadDashboard()
         if (onRewardClaimed) onRewardClaimed()
       } else {
@@ -115,7 +127,9 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
     try {
       const res = await claimDailyMission(slotIndex)
       if (res.success) {
+        soundManager.playSound('plantation', 0.8)
         setSuccessMessage(`¡Misión completada! +${res.pointsGained} puntos acumulados.`)
+        triggerGlobalRefresh()
         await loadDashboard()
         if (onRewardClaimed) onRewardClaimed()
       } else {
@@ -136,8 +150,10 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
     try {
       const res = await rerollDailyMission(rerollSlot)
       if (res.success) {
+        soundManager.playSound('click', 0.6)
         setSuccessMessage('¡Misión cambiada exitosamente (-5 💎)!')
         setRerollSlot(null)
+        triggerGlobalRefresh()
         await loadDashboard()
         if (onRewardClaimed) onRewardClaimed()
       } else {
@@ -157,7 +173,17 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
     try {
       const res = await claimWeeklyChest(tier)
       if (res.success) {
-        setSuccessMessage(`¡Cofre ${tier.toUpperCase()} reclamado con éxito!`)
+        soundManager.playSound('plantation', 0.8)
+        let rewardDetail = ''
+        if (tier === 'bronze') {
+          rewardDetail = '¡+150 🪙 Oro y 1 Sobre Básico enviado a tu Jardín 📦!'
+        } else if (tier === 'silver') {
+          rewardDetail = '¡+400 🪙 Oro, +20 💎 Gemas y 1 Poción de Energía ⚡!'
+        } else if (tier === 'gold') {
+          rewardDetail = '¡1 Sobre Épico Místico enviado a tu Jardín 🏆!'
+        }
+        setSuccessMessage(`¡Cofre ${tier.toUpperCase()} reclamado con éxito! ${rewardDetail}`)
+        triggerGlobalRefresh()
         await loadDashboard()
         if (onRewardClaimed) onRewardClaimed()
       } else {
@@ -305,67 +331,109 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
 
                       <div className="chests-nodes-container">
                         {/* Bronze Chest: 70 Pts */}
-                        <div
-                          className={`chest-node chest-node--bronze ${weeklyPts >= 70 ? 'unlocked' : ''} ${dashboard?.claimedChests?.includes('bronze') ? 'claimed' : ''}`}
-                          title="Cofre de Bronce (70 Pts): 150 Oro + 1 Sobre Básico"
-                        >
-                          <div className="chest-icon-wrap">📦</div>
-                          <span className="chest-points-label">70 pts</span>
-                          {weeklyPts >= 70 && !dashboard?.claimedChests?.includes('bronze') && (
-                            <button
-                              className="chest-claim-btn"
-                              disabled={actionLoading}
-                              onClick={() => handleClaimChest('bronze')}
+                        {(() => {
+                          const isClaimable = weeklyPts >= 70 && !dashboard?.claimedChests?.includes('bronze')
+                          const isClaimed = dashboard?.claimedChests?.includes('bronze')
+                          return (
+                            <div
+                              className={`chest-node chest-node--bronze ${weeklyPts >= 70 ? 'unlocked' : ''} ${isClaimed ? 'claimed' : ''} ${isClaimable ? 'claimable' : ''}`}
+                              title="Cofre de Bronce (70 Pts): 150 Oro + 1 Sobre Básico"
+                              onClick={() => {
+                                if (isClaimable && !actionLoading) handleClaimChest('bronze')
+                              }}
+                              role={isClaimable ? 'button' : undefined}
+                              tabIndex={isClaimable ? 0 : undefined}
                             >
-                              Reclamar
-                            </button>
-                          )}
-                          {dashboard?.claimedChests?.includes('bronze') && (
-                            <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
-                          )}
-                        </div>
+                              <div className="chest-icon-wrap">📦</div>
+                              <span className="chest-points-label">70 pts</span>
+                              {isClaimable && (
+                                <button
+                                  className="chest-claim-btn"
+                                  disabled={actionLoading}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleClaimChest('bronze')
+                                  }}
+                                >
+                                  Reclamar
+                                </button>
+                              )}
+                              {isClaimed && (
+                                <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
+                              )}
+                            </div>
+                          )
+                        })()}
 
                         {/* Silver Chest: 140 Pts */}
-                        <div
-                          className={`chest-node chest-node--silver ${weeklyPts >= 140 ? 'unlocked' : ''} ${dashboard?.claimedChests?.includes('silver') ? 'claimed' : ''}`}
-                          title="Cofre de Plata (140 Pts): 400 Oro + 20 Gemas + 1 Poción 5⚡"
-                        >
-                          <div className="chest-icon-wrap">🥈</div>
-                          <span className="chest-points-label">140 pts</span>
-                          {weeklyPts >= 140 && !dashboard?.claimedChests?.includes('silver') && (
-                            <button
-                              className="chest-claim-btn"
-                              disabled={actionLoading}
-                              onClick={() => handleClaimChest('silver')}
+                        {(() => {
+                          const isClaimable = weeklyPts >= 140 && !dashboard?.claimedChests?.includes('silver')
+                          const isClaimed = dashboard?.claimedChests?.includes('silver')
+                          return (
+                            <div
+                              className={`chest-node chest-node--silver ${weeklyPts >= 140 ? 'unlocked' : ''} ${isClaimed ? 'claimed' : ''} ${isClaimable ? 'claimable' : ''}`}
+                              title="Cofre de Plata (140 Pts): 400 Oro + 20 Gemas + 1 Poción 5⚡"
+                              onClick={() => {
+                                if (isClaimable && !actionLoading) handleClaimChest('silver')
+                              }}
+                              role={isClaimable ? 'button' : undefined}
+                              tabIndex={isClaimable ? 0 : undefined}
                             >
-                              Reclamar
-                            </button>
-                          )}
-                          {dashboard?.claimedChests?.includes('silver') && (
-                            <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
-                          )}
-                        </div>
+                              <div className="chest-icon-wrap">🥈</div>
+                              <span className="chest-points-label">140 pts</span>
+                              {isClaimable && (
+                                <button
+                                  className="chest-claim-btn"
+                                  disabled={actionLoading}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleClaimChest('silver')
+                                  }}
+                                >
+                                  Reclamar
+                                </button>
+                              )}
+                              {isClaimed && (
+                                <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
+                              )}
+                            </div>
+                          )
+                        })()}
 
                         {/* Gold Chest: 210 Pts */}
-                        <div
-                          className={`chest-node chest-node--gold ${weeklyPts >= 210 ? 'unlocked' : ''} ${dashboard?.claimedChests?.includes('gold') ? 'claimed' : ''}`}
-                          title="Cofre Dorado (210 Pts): 1 Sobre Épico (Místico)"
-                        >
-                          <div className="chest-icon-wrap">🏆</div>
-                          <span className="chest-points-label">210 pts</span>
-                          {weeklyPts >= 210 && !dashboard?.claimedChests?.includes('gold') && (
-                            <button
-                              className="chest-claim-btn"
-                              disabled={actionLoading}
-                              onClick={() => handleClaimChest('gold')}
+                        {(() => {
+                          const isClaimable = weeklyPts >= 210 && !dashboard?.claimedChests?.includes('gold')
+                          const isClaimed = dashboard?.claimedChests?.includes('gold')
+                          return (
+                            <div
+                              className={`chest-node chest-node--gold ${weeklyPts >= 210 ? 'unlocked' : ''} ${isClaimed ? 'claimed' : ''} ${isClaimable ? 'claimable' : ''}`}
+                              title="Cofre Dorado (210 Pts): 1 Sobre Épico (Místico)"
+                              onClick={() => {
+                                if (isClaimable && !actionLoading) handleClaimChest('gold')
+                              }}
+                              role={isClaimable ? 'button' : undefined}
+                              tabIndex={isClaimable ? 0 : undefined}
                             >
-                              Reclamar
-                            </button>
-                          )}
-                          {dashboard?.claimedChests?.includes('gold') && (
-                            <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
-                          )}
-                        </div>
+                              <div className="chest-icon-wrap">🏆</div>
+                              <span className="chest-points-label">210 pts</span>
+                              {isClaimable && (
+                                <button
+                                  className="chest-claim-btn"
+                                  disabled={actionLoading}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleClaimChest('gold')
+                                  }}
+                                >
+                                  Reclamar
+                                </button>
+                              )}
+                              {isClaimed && (
+                                <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800 }}>✓ Listo</span>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </div>
                     </div>
                   </div>

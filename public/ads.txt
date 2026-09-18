@@ -1,0 +1,3 @@
+# Plant Arena Authorized Digital Sellers (ads.txt)
+# Agrega aquí las líneas proporcionadas por tu red publicitaria (ej. Google AdSense, Monetag, etc.)
+# Formato: <dominio_del_sistema_publicitario>, <id_del_editor>, <tipo_de_relacion>, <id_de_certificacion>

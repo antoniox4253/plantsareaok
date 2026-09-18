@@ -267,7 +267,7 @@ export default function Battlefield({
     descartarAccionPropia,
     confirmarAccionP1,
     incorporarIntencionesAsync,
-    reconciliationState,
+    reconciliationState: _reconciliationState,
     terminarPorOrdenDelServidor,
     tomarHuellasPendientes,
     reconstrucciones,

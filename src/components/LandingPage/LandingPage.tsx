@@ -1188,13 +1188,19 @@ export default function LandingPage({
               <a href="#hero" onClick={handlePlayClick}>{lang === 'es' ? 'Jugar en Navegador' : 'Play in Browser'}</a>
             </div>
             <div className="landing-footer__col">
-              <h4>{lang === 'es' ? 'Proyecto' : 'Project'}</h4>
-              <span>Fanmade PvZ PvP</span>
-              <span style={{ color: '#64748b' }}>Vite + TypeScript + React</span>
+              <h4>{lang === 'es' ? 'Legal & Info' : 'Legal & Info'}</h4>
+              <a href="/privacy">{lang === 'es' ? 'Política de Privacidad' : 'Privacy Policy'}</a>
+              <a href="/terms">{lang === 'es' ? 'Términos de Servicio' : 'Terms of Service'}</a>
+              <a href="/about">{lang === 'es' ? 'Sobre Nosotros & Contacto' : 'About & Contact'}</a>
             </div>
           </div>
           <div className="landing-footer__bottom">
             <span>© 2026 Plant Arena. Todos los derechos reservados.</span>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <a href="/privacy" style={{ color: '#94a3b8', textDecoration: 'none' }}>{lang === 'es' ? 'Privacidad' : 'Privacy'}</a>
+              <a href="/terms" style={{ color: '#94a3b8', textDecoration: 'none' }}>{lang === 'es' ? 'Términos' : 'Terms'}</a>
+              <a href="/about" style={{ color: '#94a3b8', textDecoration: 'none' }}>{lang === 'es' ? 'Contacto' : 'Contact'}</a>
+            </div>
             <span>{lang === 'es' ? 'Optimizado para PC y dispositivos móviles.' : 'Optimized for desktop and mobile devices.'}</span>
           </div>
         </div>

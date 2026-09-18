@@ -108,7 +108,19 @@ export async function rerollDailyMission(slotIndex: number): Promise<{ success: 
   return data
 }
 
-export async function claimWeeklyChest(tier: 'bronze' | 'silver' | 'gold'): Promise<{ success: boolean; error?: string }> {
+export interface WeeklyChestClaimResult {
+  success: boolean
+  tier?: 'bronze' | 'silver' | 'gold'
+  packId?: string | null
+  gold?: number
+  gems?: number
+  itemId?: string | null
+  itemCount?: number
+  claimedChests?: ('bronze' | 'silver' | 'gold')[]
+  error?: string
+}
+
+export async function claimWeeklyChest(tier: 'bronze' | 'silver' | 'gold'): Promise<WeeklyChestClaimResult> {
   const { data, error } = await (supabase as any).rpc('claim_weekly_chest', { p_tier: tier })
   if (error) {
     return { success: false, error: error.message }
