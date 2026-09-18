@@ -576,6 +576,48 @@ export function useInventory() {
     return { success: true }
   }
 
+  const convertPlantToCopy = async (
+    instanceId: string
+  ): Promise<{
+    success: boolean
+    plantId?: string
+    newCopies?: number
+    newGemsBalance?: number
+    refundedItem?: string | null
+    error?: string
+  }> => {
+    const res = await inventoryService.convertPlantToCopy(instanceId)
+    if (!res.success) return { success: false, error: res.error }
+
+    if (res.newGemsBalance !== undefined) {
+      setUserTokens(res.newGemsBalance)
+    }
+    if (res.plantId && res.newCopies !== undefined) {
+      const pid = res.plantId as PlantId
+      const copies = res.newCopies
+      setPlantCopies((prev) => ({
+        ...prev,
+        [pid]: copies,
+      }))
+    }
+    setPlantInstances((prev) =>
+      prev.filter((inst) => inst.instanceId !== instanceId && inst.instanceId !== res.instanceId)
+    )
+
+    await refreshFromServer().catch(() => {})
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('refresh_user_inventory'))
+    }
+
+    return {
+      success: true,
+      plantId: res.plantId,
+      newCopies: res.newCopies,
+      newGemsBalance: res.newGemsBalance,
+      refundedItem: res.refundedItem,
+    }
+  }
+
   /**
    * Arranca en false, no en lo que diga localStorage.
    *
@@ -1692,6 +1734,7 @@ export function useInventory() {
     sproutPlantInstance,
     equipItem,
     unequipItem,
+    convertPlantToCopy,
     buyVipPass,
     claimPassReward,
     claimAllPassRewards,

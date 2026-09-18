@@ -219,6 +219,7 @@ function App() {
     sproutPlantInstance,
     equipItem,
     unequipItem,
+    convertPlantToCopy,
     buyVipPass,
     claimPassReward,
     claimAllPassRewards,
@@ -1378,6 +1379,7 @@ function App() {
             onSproutPlant={sproutPlantInstance}
             onEquipItem={equipItem}
             onUnequipItem={unequipItem}
+            onConvertPlantToCopy={convertPlantToCopy}
             isAdmin={isAdmin}
             onOpenAdmin={() => setIsAdminPanelOpen(true)}
             onRewardsChanged={refreshFromServer}

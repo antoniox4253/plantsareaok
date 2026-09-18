@@ -95,6 +95,14 @@ interface JardinProps {
   }>
   onEquipItem?: (instanceId: string, itemId: string) => Promise<{ success: boolean; error?: string }>
   onUnequipItem?: (instanceId: string) => Promise<{ success: boolean; error?: string }>
+  onConvertPlantToCopy?: (instanceId: string) => Promise<{
+    success: boolean
+    plantId?: string
+    newCopies?: number
+    newGemsBalance?: number
+    refundedItem?: string | null
+    error?: string
+  }>
   playerEnergy?: number
   maxPlayerEnergy?: number
   onUseEnergyPotion?: (itemId?: string) => Promise<{ success: boolean; energyAdded?: number; energyCurrent?: number; error?: string }>
@@ -148,6 +156,7 @@ export default function Jardin({
   onSproutPlant,
   onEquipItem,
   onUnequipItem,
+  onConvertPlantToCopy,
   isAdmin: _isAdmin,
   onOpenAdmin: _onOpenAdmin,
   onRewardsChanged,
@@ -343,6 +352,53 @@ export default function Jardin({
       })
     } finally {
       setIsEquippingItem(false)
+    }
+  }
+
+  const [convertCandidate, setConvertCandidate] = useState<{
+    instanceId: string
+    plantId: PlantId
+    name: string
+    icon: string
+    level: number
+    equippedItem?: string | null
+    inDeck: boolean
+    speciesCount?: number
+  } | null>(null)
+  const [isConverting, setIsConverting] = useState(false)
+
+  const handleConfirmConvert = async () => {
+    if (!convertCandidate || !onConvertPlantToCopy || isConverting) return
+    setIsConverting(true)
+    const candidate = convertCandidate
+    try {
+      soundManager.playSound('click', 0.5)
+      const res = await onConvertPlantToCopy(candidate.instanceId)
+      setConvertCandidate(null)
+      if (res?.success) {
+        soundManager.playSound('victory', 0.6)
+        setDeckInstanceIds((prev) => prev.filter((id) => id !== candidate.instanceId))
+        setFuseAlert({
+          title: '¡PLANTA CONVERTIDA EN COPIA!',
+          message: `Has convertido con éxito a ${candidate.name} en +1 copia para fusiones. Se descontaron 50 Gemas de tu saldo.${candidate.equippedItem ? ' El ítem equipado fue reintegrado a tus recursos.' : ''}`,
+          icon: '♻️',
+        })
+      } else if (res && !res.success && res.error) {
+        setFuseAlert({
+          title: 'NO SE PUDO CONVERTIR',
+          message: res.error,
+          icon: '⚠️',
+        })
+      }
+    } catch (err: any) {
+      setConvertCandidate(null)
+      setFuseAlert({
+        title: 'ERROR AL CONVERTIR',
+        message: err?.message || 'Error inesperado al convertir la planta en copia',
+        icon: '⚠️',
+      })
+    } finally {
+      setIsConverting(false)
     }
   }
 
@@ -1323,13 +1379,43 @@ export default function Jardin({
                       <img src={sunIcon} alt="Sol" className="jardin-card__sun" />
                       <span>{config.cost}</span>
                     </div>
-                    {inDeck && <span className="jardin-card__badge">EN MAZO ✓</span>}
-                    {isUnlocked && !inDeck && (
-                      <span className="jardin-card__badge" style={{ color: '#60a5fa', borderColor: '#60a5fa' }}>
-                        OBTENIDA ✓
-                      </span>
-                    )}
-                    {!isUnlocked && <span className="jardin-card__badge-locked">🔒 BLOQUEADA</span>}
+                    <div className="jardin-card__header-right">
+                      {inDeck && <span className="jardin-card__badge">EN MAZO ✓</span>}
+                      {isUnlocked && !inDeck && (
+                        <span className="jardin-card__badge" style={{ color: '#60a5fa', borderColor: '#60a5fa' }}>
+                          OBTENIDA ✓
+                        </span>
+                      )}
+                      {!isUnlocked && <span className="jardin-card__badge-locked">🔒 BLOQUEADA</span>}
+                      {isUnlocked && (
+                        <button
+                          type="button"
+                          className={`jardin-card__trash-btn ${instancesOfThisPlant.length < 2 ? 'jardin-card__trash-btn--disabled' : ''}`}
+                          disabled={instancesOfThisPlant.length < 2}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (instancesOfThisPlant.length < 2) return
+                            setConvertCandidate({
+                              instanceId,
+                              plantId,
+                              name: displayName,
+                              icon: cardImgSrc,
+                              level,
+                              equippedItem,
+                              inDeck,
+                              speciesCount: instancesOfThisPlant.length,
+                            })
+                          }}
+                          title={
+                            instancesOfThisPlant.length >= 2
+                              ? 'Convertir esta planta en copia (50 💎)'
+                              : 'No puedes usar el bote si solo tienes la carta base (debes tener al menos 2 cartas)'
+                          }
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <img
@@ -1662,6 +1748,112 @@ export default function Jardin({
                 onClick={handleConfirmSprout}
               >
                 {isSprouting ? 'GERMINANDO...' : '🌱 GERMINAR'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN: CONVERTIR PLANTA EN COPIA */}
+      {convertCandidate && (
+        <div
+          className="jardin-upgrade-modal-overlay"
+          onClick={() => {
+            if (!isConverting) setConvertCandidate(null)
+          }}
+        >
+          <div className="jardin-upgrade-modal-card jardin-fuse-confirm-card" onClick={(e) => e.stopPropagation()}>
+            <div className="jardin-upgrade-modal-sparkle">🗑️ ✨ 🧩</div>
+            <h3 className="jardin-upgrade-modal-title">¿Convertir planta en copia?</h3>
+
+            <div className="jardin-fuse-confirm-plant">
+              <img src={convertCandidate.icon} alt={convertCandidate.name} className="jardin-fuse-confirm-img" />
+              <span className="jardin-fuse-confirm-name">{convertCandidate.name}</span>
+              <span className="jardin-fuse-confirm-level" style={{ color: '#ec4899' }}>
+                Nivel {convertCandidate.level} ➔ +1 Copia 🧩
+              </span>
+            </div>
+
+            <p style={{ fontSize: '11px', color: '#cbd5e1', margin: '8px 0 12px', lineHeight: 1.4, textAlign: 'center' }}>
+              ¿Seguro desea convertir la planta en copia?<br />
+              <span style={{ color: '#94a3b8', fontSize: '10px' }}>
+                Esta carta se eliminará permanentemente de tu inventario y recibirás <strong>+1 copia</strong> para fusiones.
+              </span>
+            </p>
+
+            {convertCandidate.equippedItem && (
+              <div style={{
+                background: 'rgba(234, 179, 8, 0.15)',
+                border: '1px solid rgba(234, 179, 8, 0.4)',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                fontSize: '11px',
+                color: '#fde047',
+                marginBottom: '10px',
+                textAlign: 'center',
+              }}>
+                🥊 El ítem equipado volverá automáticamente a tus recursos de cultivo.
+              </div>
+            )}
+
+            <div className="jardin-fuse-confirm-reqs">
+              <div className="jardin-fuse-req-item">
+                <span className="jardin-fuse-req-icon">💎</span>
+                <span
+                  className="jardin-fuse-req-text"
+                  style={{ color: (userTokens ?? 0) >= 50 ? '#67e8f9' : '#f87171' }}
+                >
+                  Costo: 50 Gemas (tienes {Math.floor(userTokens ?? 0)} 💎)
+                </span>
+              </div>
+              <div className="jardin-fuse-req-item">
+                <span className="jardin-fuse-req-icon">🧩</span>
+                <span
+                  className="jardin-fuse-req-text"
+                  style={{ color: (plantCopies[convertCandidate.plantId] || 0) < 5 ? '#a3e635' : '#f87171' }}
+                >
+                  Copias: {plantCopies[convertCandidate.plantId] || 0}/5
+                  {(plantCopies[convertCandidate.plantId] || 0) < 5 ? ' ➔ Recibirás +1' : ' (LÍMITE MÁXIMO)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Mensajes de validación visual preventiva */}
+            {((userTokens ?? 0) < 50 || (plantCopies[convertCandidate.plantId] || 0) >= 5 || (convertCandidate.speciesCount !== undefined && convertCandidate.speciesCount < 2)) && (
+              <div style={{ color: '#f87171', fontSize: '11px', fontWeight: 800, marginTop: '10px', textAlign: 'center' }}>
+                {convertCandidate.speciesCount !== undefined && convertCandidate.speciesCount < 2
+                  ? `⚠️ No puedes usar el bote si solo tienes la carta base. Debes tener al menos 2 cartas de ${convertCandidate.name}.`
+                  : (plantCopies[convertCandidate.plantId] || 0) >= 5
+                  ? `⚠️ Límite alcanzado: Ya posees el máximo de 5 copias de ${convertCandidate.name}. No puedes convertir más.`
+                  : `⚠️ Gemas insuficientes: Requieres 50 gemas (tienes ${Math.floor(userTokens ?? 0)} 💎).`}
+              </div>
+            )}
+
+            <div className="jardin-fuse-confirm-actions">
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-cancel"
+                disabled={isConverting}
+                onClick={() => setConvertCandidate(null)}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-confirm"
+                style={{
+                  background: 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)',
+                  borderColor: '#fb7185',
+                }}
+                disabled={
+                  isConverting ||
+                  (userTokens ?? 0) < 50 ||
+                  (plantCopies[convertCandidate.plantId] || 0) >= 5 ||
+                  (convertCandidate.speciesCount !== undefined && convertCandidate.speciesCount < 2)
+                }
+                onClick={handleConfirmConvert}
+              >
+                {isConverting ? 'CONVIRTIENDO...' : '🗑️ CONVERTIR (50 💎)'}
               </button>
             </div>
           </div>

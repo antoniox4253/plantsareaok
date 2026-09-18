@@ -4165,6 +4165,33 @@ export const SupabaseService = {
     }
   },
 
+  /** Convierte una carta jugable en +1 copia para fusiones por 50 gemas. */
+  async convertPlantToCopy(instanceId: string): Promise<{
+    success: boolean
+    instanceId?: string
+    plantId?: string
+    newCopies?: number
+    newGemsBalance?: number
+    wasInDeck?: boolean
+    refundedItem?: string | null
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('convert_plant_to_copy', {
+        p_instance_id: instanceId,
+      })
+      if (error) {
+        logError('convertPlantToCopy', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('convertPlantToCopy', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   // ---------------------------------------------------------------------------
   // PACK SLOTS (CHESTS) PERSISTENCE
   // ---------------------------------------------------------------------------
