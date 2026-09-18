@@ -66,8 +66,8 @@ describe('BATTLE PASS REWARDS AUDIT (MIGRACIÓN 47)', () => {
     expect(lvl8.reward).toEqual({
       type: 'pack',
       packId: 'basic',
-      packCount: 2,
-      label: '2x Sobres Básicos',
+      packCount: 1,
+      label: '1x Sobre Básico',
       icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp',
     })
 
@@ -126,14 +126,14 @@ describe('BATTLE PASS REWARDS AUDIT (MIGRACIÓN 47)', () => {
     const lvl15 = BATTLE_PASS_LEVELS.find((l) => l.level === 15)!
     expect(lvl15.reward.type).toBe('pack')
     expect(lvl15.reward.packId).toBe('basic')
-    expect(lvl15.reward.packCount).toBe(2)
-    expect(lvl15.reward.label).toBe('2x Sobre Básico')
+    expect(lvl15.reward.packCount).toBe(1)
+    expect(lvl15.reward.label).toBe('1x Sobre Básico')
 
     const lvl16 = BATTLE_PASS_LEVELS.find((l) => l.level === 16)!
     expect(lvl16.reward.type).toBe('pack')
     expect(lvl16.reward.packId).toBe('basic')
-    expect(lvl16.reward.packCount).toBe(2)
-    expect(lvl16.reward.label).toBe('2x Sobre Básico')
+    expect(lvl16.reward.packCount).toBe(1)
+    expect(lvl16.reward.label).toBe('1x Sobre Básico')
 
     const lvl17 = BATTLE_PASS_LEVELS.find((l) => l.level === 17)!
     expect(lvl17.reward.type).toBe('pack')
@@ -144,8 +144,8 @@ describe('BATTLE PASS REWARDS AUDIT (MIGRACIÓN 47)', () => {
     const lvl8 = BATTLE_PASS_LEVELS.find((l) => l.level === 8)!
     expect(lvl8.reward.type).toBe('pack')
     expect(lvl8.reward.packId).toBe('basic')
-    expect(lvl8.reward.packCount).toBe(2)
-    expect(lvl8.reward.label).toBe('2x Sobres Básicos')
+    expect(lvl8.reward.packCount).toBe(1)
+    expect(lvl8.reward.label).toBe('1x Sobre Básico')
   })
 
   it('FASE 5 — Cero legendarias en el Pase VIP y solo Tall-nut como épica', () => {
@@ -161,8 +161,8 @@ describe('BATTLE PASS REWARDS AUDIT (MIGRACIÓN 47)', () => {
 
     // Nivel 14 da cartas raras y Nivel 18 da x1 Jalapeño
     const lvl14 = BATTLE_PASS_LEVELS.find((l) => l.level === 14)!
-    expect(lvl14.reward.label).toBe('x2 Girasol Doble')
-    expect(lvl14.reward.copiesCount).toBe(2)
+    expect(lvl14.reward.label).toBe('x1 Girasol Doble')
+    expect(lvl14.reward.copiesCount).toBe(1)
     expect(lvl14.reward.plantId).toBe('twinsunflower')
 
     const lvl18 = BATTLE_PASS_LEVELS.find((l) => l.level === 18)!

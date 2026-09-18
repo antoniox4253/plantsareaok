@@ -70,7 +70,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
     level: 8,
     requiredElo: 2200,
     arenaName: 'Rascacielos Cyberpunk',
-    reward: { type: 'pack', packId: 'basic', packCount: 2, label: '2x Sobres Básicos', icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp' },
+    reward: { type: 'pack', packId: 'basic', packCount: 1, label: '1x Sobre Básico', icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp' },
   },
   {
     level: 9,
@@ -106,19 +106,19 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
     level: 14,
     requiredElo: 3100,
     arenaName: 'Coliseo Galáctico',
-    reward: { type: 'copies', plantId: 'twinsunflower', copiesCount: 2, label: 'x2 Girasol Doble', icon: '/game-assets/greenfoot/twinsunflower1.webp' },
+    reward: { type: 'copies', plantId: 'twinsunflower', copiesCount: 1, label: 'x1 Girasol Doble', icon: '/game-assets/greenfoot/twinsunflower1.webp' },
   },
   {
     level: 15,
     requiredElo: 3250,
     arenaName: 'Coliseo Galáctico',
-    reward: { type: 'pack', packId: 'basic', packCount: 2, label: '2x Sobre Básico', icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp' },
+    reward: { type: 'pack', packId: 'basic', packCount: 1, label: '1x Sobre Básico', icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp' },
   },
   {
     level: 16,
     requiredElo: 3400,
     arenaName: 'Coliseo Galáctico',
-    reward: { type: 'pack', packId: 'basic', packCount: 2, label: '2x Sobre Básico', icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp' },
+    reward: { type: 'pack', packId: 'basic', packCount: 1, label: '1x Sobre Básico', icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp' },
   },
   {
     level: 17,
