@@ -1423,13 +1423,14 @@ export interface CondicionFreezeMotorAsync {
 
 /**
  * Determina de forma pura si el bucle competitivo de Ranked Async debe congelarse (Fail-Closed).
+ * Solo congela si hay una inconsistencia terminal verificada o estado 'inconsistent'.
+ * El estado 'reconciling_pending' es transitorio de red y no congela el motor para evitar lag.
  */
 export function debeCongelarMotorRankedAsync(cond: CondicionFreezeMotorAsync): boolean {
   if (!cond.isAsyncMatch) return false
   return (
     cond.rankedAsyncInconsistency !== null ||
-    cond.reconciliationState === 'inconsistent' ||
-    cond.reconciliationState === 'reconciling_pending'
+    cond.reconciliationState === 'inconsistent'
   )
 }
 

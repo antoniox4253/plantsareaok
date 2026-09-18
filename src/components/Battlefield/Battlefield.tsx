@@ -498,8 +498,8 @@ export default function Battlefield({
     } = {}
   ) => {
     if (!roomId) return
-    if (isAsyncMatch && (rankedAsyncInconsistency || reconciliationState === 'reconciling_pending')) {
-      // Partida en estado inconsistente o esperando resolución: no seguir enviando acciones
+    if (isAsyncMatch && rankedAsyncInconsistency) {
+      // Partida en estado inconsistente terminal: no seguir enviando acciones
       return
     }
 
@@ -1723,7 +1723,7 @@ export default function Battlefield({
                   }
                   return
                 }
-                if (isAsyncMatch && (rankedAsyncInconsistency || reconciliationState === 'reconciling_pending')) return
+                if (isAsyncMatch && rankedAsyncInconsistency) return
                 if (selectedCard && isP1Side) {
                   if (selectedCard === 'shovel') {
                     // Igual que al plantar: sólo se registra si aquí de verdad
@@ -1886,7 +1886,7 @@ export default function Battlefield({
                   }
                   return
                 }
-                if (isAsyncMatch && (rankedAsyncInconsistency || reconciliationState === 'reconciling_pending')) return
+                if (isAsyncMatch && rankedAsyncInconsistency) return
                 const seq = roomId ? ++ordenRef.current : undefined
                 const casilla = digPlant(plant.id, seq)
                 if (casilla) {

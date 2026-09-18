@@ -5628,6 +5628,45 @@ describe('Rival Semilla Ranked V1 — Suite de Tests', () => {
 
     expect(resolvedSlot).toBe(1)
   })
+
+  // 244. Anti-lag: reconciling_pending NO congela el bucle de simulación
+  it('244. Anti-lag Ranked Async: reconciling_pending no congela el motor (permite que la partida siga viva y fluida)', () => {
+    expect(
+      debeCongelarMotorRankedAsync({
+        isAsyncMatch: true,
+        rankedAsyncInconsistency: null,
+        reconciliationState: 'reconciling_pending',
+      })
+    ).toBe(false)
+  })
+
+  // 245. Reconstrucción fluida con acciones locales pendientes
+  it('245. Reconstrucción Ranked Async incluye acciones pendientes de P1 sin congelar', () => {
+    const seed = 12345
+    const p1Deck: CartaDeMazo[] = [{ slot: 0, plantId: 'sunflower', level: 0, statRolls: [] }]
+    const p2Deck: CartaDeMazo[] = [{ slot: 0, plantId: 'sunflower', level: 0, statRolls: [] }]
+
+    const accepted: AccionP1RankedEstricta[] = [
+      { seq: 1, issuedTick: 20, tick: 26, kind: 'plant', plantId: 'sunflower', slot: 0, lane: 0, col: 0 },
+    ]
+    const pending: AccionP1RankedEstricta[] = [
+      { seq: 2, issuedTick: 40, tick: 46, kind: 'plant', plantId: 'sunflower', slot: 0, lane: 1, col: 0 },
+    ]
+
+    const allP1 = [...accepted, ...pending].sort((a, b) => a.issuedTick - b.issuedTick)
+
+    const res = reconstruirPartidaAsync(
+      seed,
+      p1Deck,
+      p2Deck,
+      [],
+      allP1,
+      60
+    )
+
+    expect(res.ok).toBe(true)
+    expect(res.estado.tick).toBe(60)
+  })
 })
 
 

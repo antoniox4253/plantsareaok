@@ -849,15 +849,15 @@ export function useGameEngine() {
 
     // ── RAMA ASÍNCRONA (RIVAL SEMILLA RANKED) ─────────────────────────────────
     if (isAsyncMatchRef.current && asyncOpponentDeckRef.current) {
-      if (accionesP1PendingRef.current.length > 0) {
-        reconciliationStateRef.current = 'reconciling_pending'
-        setReconciliationState('reconciling_pending')
-        if (reconcilingSinceMsRef.current === null) {
-          reconcilingSinceMsRef.current = performance.now()
-        }
-        rehacerDesdeRef.current = desdeTick
-        return
-      }
+      // Reconstruir de inmediato incluyendo tanto las acciones aceptadas por el servidor
+      // como las acciones pendientes en vuelo para no perder plantas locales ni congelar la partida.
+      const p1ActionsParaRebuild = [
+        ...accionesP1AceptadasRef.current,
+        ...accionesP1PendingRef.current,
+      ].sort((a, b) => {
+        if (a.issuedTick !== b.issuedTick) return a.issuedTick - b.issuedTick
+        return a.seq - b.seq
+      })
 
       const selectedCard = viejo.selectedCard
       const selectedSlotIndex = viejo.selectedSlotIndex
@@ -866,7 +866,7 @@ export function useGameEngine() {
         mazoMioRef.current,
         asyncOpponentDeckRef.current,
         asyncOpponentActionsBufferRef.current,
-        accionesP1AceptadasRef.current,
+        p1ActionsParaRebuild,
         viejo.tick,
         engineVersionRef.current,
         INITIAL_BASE_HP + p1TreeBonusHpRef.current,
