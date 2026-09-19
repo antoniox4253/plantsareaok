@@ -158,6 +158,7 @@ export interface ProjectileEntity {
   originX?: number
   originLane?: number
   targetX?: number
+  targetEntityId?: string
 }
 
 export interface SunEntity {

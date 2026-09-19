@@ -917,23 +917,25 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
 
         if (planta.plantId === 'kernelpult' && tipo === 'butter' && planta.equippedItem === 'witch_hat') {
           // Sombrero Mágico: lanza 2 mantequillas congelantes en vez de una.
-          // La segunda mantequilla sale 180 ms después hacia otro carril con enemigos (o el mismo).
-          let secondTargetLane = targetLane
-          const lanesConEnemigos = [0, 1, 2].filter((l) =>
-            susPlantas.some((e) => e.lane === l && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
+          // El segundo proyectil es aleatorio: puede ir a CUALQUIER planta del enemigo.
+          const candidatosEnFrente = susPlantas.filter(
+            (e) => e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX)
           )
-          if (lanesConEnemigos.length > 1) {
-            const otherLanes = lanesConEnemigos.filter((l) => l !== targetLane)
-            const idx2 = Math.floor(nextFloat(state.rng) * otherLanes.length)
-            secondTargetLane = otherLanes[Math.min(idx2, otherLanes.length - 1)]
-          } else if (lanesConEnemigos.length === 1) {
-            secondTargetLane = lanesConEnemigos[0]
-          }
+          const candidatos = candidatosEnFrente.length > 0 ? candidatosEnFrente : susPlantas.filter((e) => e.hp > 0)
 
-          const target2 = susPlantas
-            .filter((e) => e.lane === secondTargetLane && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
-            .sort((a, b) => (lado.sentido > 0 ? a.x - b.x : b.x - a.x))[0]
-          const target2X = target2 ? target2.x : (lado.sentido > 0 ? BASE_RIGHT_START_X : BASE_LEFT_END_X)
+          let secondTargetLane = targetLane
+          let target2X: number
+          let target2EntityId: string | undefined
+
+          if (candidatos.length > 0) {
+            const idxAleatorio = Math.floor(nextFloat(state.rng) * candidatos.length)
+            const targetAleatorio = candidatos[Math.min(idxAleatorio, candidatos.length - 1)]
+            secondTargetLane = targetAleatorio.lane
+            target2X = targetAleatorio.x
+            target2EntityId = targetAleatorio.id
+          } else {
+            target2X = lado.sentido > 0 ? BASE_RIGHT_START_X : BASE_LEFT_END_X
+          }
 
           state.pending.push({
             atTick: state.tick + msToTicks(180),
@@ -946,6 +948,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
               originLane: planta.lane,
               originX: salidaX,
               targetX: target2X,
+              targetEntityId: target2EntityId,
               x: salidaX,
               y: 20 + secondTargetLane * 19.33 + 7,
               speed: velocidad,
@@ -1055,31 +1058,72 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
     let impacto = false
 
     for (const objetivo of blancos) {
-      if (objetivo.lane === proy.lane && Math.abs(objetivo.x - proy.x) <= 2.5 && objetivo.hp > 0) {
-        impacto = true
-        objetivo.hp -= proy.damage
-        sonar('pea_hit', 0.4)
+      if (proy.targetEntityId) {
+        // Proyectil con blanco fijado (ej. segundo tiro aleatorio de Lanzamaíz Bruja):
+        // Sobrevuela las plantas intermedias y solo impacta contra la planta elegida.
+        if (objetivo.id === proy.targetEntityId && objetivo.hp > 0) {
+          const dist = Math.abs(objetivo.x - proy.x)
+          const pasado = proy.targetX !== undefined ? (proy.x - proy.targetX) * sentido >= 0 : false
+          if (dist <= 3.5 || (pasado && dist <= 7.0)) {
+            impacto = true
+            objetivo.hp -= proy.damage
+            sonar('pea_hit', 0.4)
 
-        if (proy.type === 'butter') {
-          const freezeDurationMs = proy.freezeDurationMs || 3000
-          const hasta = state.tick + msToTicks(freezeDurationMs)
-          objetivo.frozenUntil = Math.max(objetivo.frozenUntil || 0, hasta)
-        }
-
-        if (proy.isSplash) {
-          for (const salpicado of blancos) {
-            if (
-              salpicado.id !== objetivo.id &&
-              salpicado.lane === proy.lane &&
-              Math.abs(salpicado.x - proy.x) <= 7.0 &&
-              salpicado.hp > 0
-            ) {
-              salpicado.hp -= Math.round(proy.damage * 0.6)
+            if (proy.type === 'butter') {
+              const freezeDurationMs = proy.freezeDurationMs || 3000
+              const hasta = state.tick + msToTicks(freezeDurationMs)
+              objetivo.frozenUntil = Math.max(objetivo.frozenUntil || 0, hasta)
             }
+
+            if (proy.isSplash) {
+              for (const salpicado of blancos) {
+                if (
+                  salpicado.id !== objetivo.id &&
+                  salpicado.lane === proy.lane &&
+                  Math.abs(salpicado.x - proy.x) <= 7.0 &&
+                  salpicado.hp > 0
+                ) {
+                  salpicado.hp -= Math.round(proy.damage * 0.6)
+                }
+              }
+            }
+            break
           }
         }
-        break
+      } else {
+        if (objetivo.lane === proy.lane && Math.abs(objetivo.x - proy.x) <= 2.5 && objetivo.hp > 0) {
+          impacto = true
+          objetivo.hp -= proy.damage
+          sonar('pea_hit', 0.4)
+
+          if (proy.type === 'butter') {
+            const freezeDurationMs = proy.freezeDurationMs || 3000
+            const hasta = state.tick + msToTicks(freezeDurationMs)
+            objetivo.frozenUntil = Math.max(objetivo.frozenUntil || 0, hasta)
+          }
+
+          if (proy.isSplash) {
+            for (const salpicado of blancos) {
+              if (
+                salpicado.id !== objetivo.id &&
+                salpicado.lane === proy.lane &&
+                Math.abs(salpicado.x - proy.x) <= 7.0 &&
+                salpicado.hp > 0
+              ) {
+                salpicado.hp -= Math.round(proy.damage * 0.6)
+              }
+            }
+          }
+          break
+        }
       }
+    }
+
+    // Si tenía un blanco específico fijado pero dicho objetivo fue destruido antes de llegar,
+    // se deshace al impactar en el suelo al llegar a targetX
+    if (!impacto && proy.targetEntityId && proy.targetX !== undefined && (proy.x - proy.targetX) * sentido >= 0) {
+      impacto = true
+      sonar('pea_hit', 0.3)
     }
 
     if (!impacto && (proy.x - baseX) * sentido >= 0) {

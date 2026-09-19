@@ -123,6 +123,8 @@ describe('Sistema de Sombrero Mágico (Kernelpult / Lanzamaíz)', () => {
         if (pendingButter && pendingButter.kind === 'spawn_projectile') {
           disparoDobleDetectado = true
           expect(pendingButter.projectile.freezeDurationMs).toBeGreaterThanOrEqual(3000)
+          expect(pendingButter.projectile.targetEntityId).toBeDefined()
+          expect([enemigo1.id, enemigo2.id]).toContain(pendingButter.projectile.targetEntityId)
           break
         }
       }
@@ -131,6 +133,61 @@ describe('Sistema de Sombrero Mágico (Kernelpult / Lanzamaíz)', () => {
     }
 
     expect(disparoDobleDetectado, 'El Sombrero Mágico debe encolar la 2da mantequilla al salir mantequilla').toBe(true)
+  })
+
+  it('El segundo proyectil de mantequilla sobrevuela plantas intermedias e impacta directamente a su blanco fijado', async () => {
+    const { createBattleState, stepTick, crearPlantaPropia, crearPlantaDelRival } = await import('../engine/simulate')
+    const estado = createBattleState(42, false, true)
+    const maiz = crearPlantaPropia(estado, 'kernelpult', 1, 0, [], 0, 'witch_hat')
+    estado.plants.push(maiz)
+
+    // Colocar una planta al frente (col 3) y una al fondo (col 6) en el mismo carril
+    const frente = crearPlantaDelRival(estado, 'wallnut', 1, 3)
+    frente.x = 45
+    frente.hp = 1000
+    frente.maxHp = 1000
+
+    const fondo = crearPlantaDelRival(estado, 'peashooter', 1, 6)
+    fondo.x = 75
+    fondo.hp = 300
+    fondo.maxHp = 300
+
+    estado.enemyPlants.push(frente, fondo)
+
+    // Inyectar un proyectil de segunda mantequilla apuntando específicamente a la planta del fondo
+    estado.projectiles.push({
+      id: 'test-butter-backline',
+      type: 'butter',
+      targetTeam: 'p2',
+      lane: 1,
+      originLane: 1,
+      originX: maiz.x,
+      targetX: fondo.x,
+      targetEntityId: fondo.id,
+      x: frente.x - 1, // Justo antes de tocar la planta de adelante
+      y: 20 + 1 * 19.33 + 7,
+      speed: 32,
+      damage: 60,
+      freezeDurationMs: 3000,
+    })
+
+    // Avanzar 2 tics para pasar por encima de la planta del frente
+    stepTick(estado, () => {})
+    stepTick(estado, () => {})
+
+    // La planta del frente NO debe haber recibido daño ni estar congelada
+    expect(frente.hp).toBe(1000)
+    expect(frente.frozenUntil ?? 0).toBe(0)
+
+    // Avanzar los tics necesarios hasta que el proyectil alcance la planta del fondo
+    for (let t = 0; t < 30; t++) {
+      stepTick(estado, () => {})
+      if (fondo.hp < 300) break
+    }
+
+    // La planta del fondo sí debe recibir el daño e impacto congelante
+    expect(fondo.hp).toBe(240)
+    expect(fondo.frozenUntil).toBeGreaterThan(estado.tick)
   })
 
   it('La reconstrucción asíncrona (reconstruirPartidaAsync) preserva el Sombrero Mágico sin degradar la planta', async () => {
