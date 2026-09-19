@@ -10,6 +10,7 @@ export type FarmingItemId =
   | 'scarecrow'
   | 'champion_belt'
   | 'energy_potion_5'
+  | 'mother_tree_skin'
 
 export interface FarmingInventory {
   water: number
@@ -21,6 +22,7 @@ export interface FarmingInventory {
   scarecrow: number
   champion_belt: number
   energy_potion_5: number
+  mother_tree_skin: number
 }
 
 export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
@@ -33,6 +35,7 @@ export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
   scarecrow: 0,
   champion_belt: 0,
   energy_potion_5: 0,
+  mother_tree_skin: 0,
 }
 
 export const FARMING_ITEM_DEFINITIONS: Record<
@@ -92,6 +95,12 @@ export const FARMING_ITEM_DEFINITIONS: Record<
     description: 'Consumible de un solo uso. Recarga +5 energías de Ranked sin superar tu límite máximo.',
     icon: '/game-assets/farming/energy_potion.png',
     fallback: '⚡',
+  },
+  mother_tree_skin: {
+    label: 'Skin: Árbol Centinela',
+    description: 'Aspecto sagrado para el Árbol Madre. Al equiparse, tu base cambia de aspecto y dispara 2 proyectiles mágicos en líneas aleatorias cada 10s en combate.',
+    icon: '/game-assets/farming/mother_tree_skin.png',
+    fallback: '🌳',
   },
 }
 

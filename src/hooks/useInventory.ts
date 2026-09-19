@@ -576,6 +576,30 @@ export function useInventory() {
     return { success: true }
   }
 
+  const equipMotherTreeSkin = async (
+    skinId: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const res = await supabaseService.equipMotherTreeSkin(skinId)
+    if (!res.success) return { success: false, error: res.error }
+    setEquippedTreeSkin(skinId)
+    await refreshFromServer().catch(() => {})
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('refresh_user_inventory'))
+    }
+    return { success: true }
+  }
+
+  const unequipMotherTreeSkin = async (): Promise<{ success: boolean; error?: string }> => {
+    const res = await supabaseService.unequipMotherTreeSkin()
+    if (!res.success) return { success: false, error: res.error }
+    setEquippedTreeSkin(null)
+    await refreshFromServer().catch(() => {})
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('refresh_user_inventory'))
+    }
+    return { success: true }
+  }
+
   const convertPlantToCopy = async (
     instanceId: string
   ): Promise<{
@@ -702,6 +726,7 @@ export function useInventory() {
   const [playerRewardPacks, setPlayerRewardPacks] = useState<PlayerRewardPack[]>([])
   // Recursos farming: sólo memoria de UI. La fuente de verdad vive en Supabase.
   const [farmingItems, setFarmingItems] = useState<FarmingInventory>({ ...EMPTY_FARMING_INVENTORY })
+  const [equippedTreeSkin, setEquippedTreeSkin] = useState<string | null>(null)
 
   useEffect(() => {
     localStorage.setItem('plant_arena_free_pack_slots', JSON.stringify(freePackSlots))
@@ -1258,7 +1283,7 @@ export function useInventory() {
   }
 
   const refreshFromServer = async (): Promise<void> => {
-    await Promise.all([
+    const results = await Promise.all([
       refreshBalance(),
       refreshInventory(),
       refreshFarmingInventory(),
@@ -1266,6 +1291,10 @@ export function useInventory() {
       refreshRewardPacks(),
       supabaseService.getMotherTreeState(),
     ])
+    const treeRes = results[5] as any
+    if (treeRes?.success && treeRes.equippedTreeSkin !== undefined) {
+      setEquippedTreeSkin(treeRes.equippedTreeSkin || null)
+    }
   }
 
   /** Compra sobres. El precio y el tope de cantidad los pone el servidor. */
@@ -1734,6 +1763,9 @@ export function useInventory() {
     sproutPlantInstance,
     equipItem,
     unequipItem,
+    equippedTreeSkin,
+    equipMotherTreeSkin,
+    unequipMotherTreeSkin,
     convertPlantToCopy,
     buyVipPass,
     claimPassReward,

@@ -600,6 +600,8 @@ export interface Database {
           status: 'playing' | 'p1_won' | 'p2_won' | 'draw' | 'abandoned'
           p1_tree_level?: number | null
           p2_tree_level?: number | null
+          p1_tree_skin?: string | null
+          p2_tree_skin?: string | null
           created_at: string
         }
         Insert: {
@@ -615,6 +617,8 @@ export interface Database {
           status?: 'playing' | 'p1_won' | 'p2_won' | 'draw' | 'abandoned'
           p1_tree_level?: number | null
           p2_tree_level?: number | null
+          p1_tree_skin?: string | null
+          p2_tree_skin?: string | null
           created_at?: string
         }
         Update: {
@@ -630,6 +634,8 @@ export interface Database {
           status?: 'playing' | 'p1_won' | 'p2_won' | 'draw' | 'abandoned'
           p1_tree_level?: number | null
           p2_tree_level?: number | null
+          p1_tree_skin?: string | null
+          p2_tree_skin?: string | null
           created_at?: string
         }
         Relationships: []

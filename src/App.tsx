@@ -246,6 +246,9 @@ function App() {
     maxPlayerEnergy,
     buyEnergyPack,
     useEnergyPotion,
+    equippedTreeSkin,
+    equipMotherTreeSkin,
+    unequipMotherTreeSkin,
   } = useInventory()
 
 
@@ -545,6 +548,7 @@ function App() {
    */
   const [mazosDeLaSala, setMazosDeLaSala] = useState<{ mio: unknown; rival: unknown } | null>(null)
   const [treeLevelsEnPartida, setTreeLevelsEnPartida] = useState<{ mio: number; rival: number } | null>(null)
+  const [treeSkinsEnPartida, setTreeSkinsEnPartida] = useState<{ mio: string | null; rival: string | null } | null>(null)
   const [partidaAsincrona, setPartidaAsincrona] = useState<boolean>(false)
   const [reopenTournamentOnMenu, setReopenTournamentOnMenu] = useState<boolean>(false)
 
@@ -606,12 +610,24 @@ function App() {
           seed: basica.seed,
           engineVersion: parseEngineVersion(basica.engine_version),
           iAm: (basica.player1_id === user?.id ? 'p1' : 'p2') as 'p1' | 'p2',
-          player1: { id: basica.player1_id, username: null, treeLevel: basica.p1_tree_level ?? 0 },
-          player2: { id: basica.player2_id ?? '00000000-0000-0000-0000-000000000000', username: basica.async_display_name ?? null, treeLevel: basica.p2_tree_level ?? 0 },
+          player1: {
+            id: basica.player1_id,
+            username: (basica.player1_id === user?.id ? (profile?.username || UserManager.getProfile().name) : null),
+            treeLevel: basica.p1_tree_level ?? 0,
+            treeSkin: basica.p1_tree_skin ?? null,
+          },
+          player2: {
+            id: basica.player2_id ?? '00000000-0000-0000-0000-000000000000',
+            username: basica.async_display_name ?? (basica.player2_id === user?.id ? (profile?.username || UserManager.getProfile().name) : 'Rival Bot'),
+            treeLevel: basica.p2_tree_level ?? 0,
+            treeSkin: basica.p2_tree_skin ?? null,
+          },
           p1Deck: basica.p1_deck,
           p2Deck: basica.is_async_match ? basica.async_deck_snapshot : basica.p2_deck,
           p1TreeLevel: basica.p1_tree_level ?? 0,
           p2TreeLevel: basica.p2_tree_level ?? 0,
+          p1TreeSkin: basica.p1_tree_skin ?? null,
+          p2TreeSkin: basica.p2_tree_skin ?? null,
           isAsyncMatch: basica.is_async_match,
         }
       })())
@@ -638,11 +654,17 @@ function App() {
       const soyP1 = sala.iAm === 'p1'
       setSoyJugador1(soyP1)
       setRivalId(soyP1 ? sala.player2.id : sala.player1.id)
-      const miNick = soyP1 ? sala.player1.username : sala.player2.username
-      const suNick = soyP1 ? sala.player2.username : sala.player1.username
-      setNombresEnPartida(
-        miNick && suNick ? { mio: miNick, rival: suNick } : null
-      )
+      const miNick = (soyP1 ? sala.player1.username : sala.player2.username)
+        || profile?.username
+        || UserManager.getProfile().name
+        || user?.user_metadata?.full_name
+        || user?.user_metadata?.name
+        || user?.email?.split('@')[0]
+        || 'Tú'
+      const suNick = (soyP1 ? sala.player2.username : sala.player1.username)
+        || (sala as any).async_display_name
+        || ((sala as any).isAsyncMatch ? 'Rival Bot' : 'Rival')
+      setNombresEnPartida({ mio: miNick, rival: suNick })
       setMazosDeLaSala({
         mio: soyP1 ? sala.p1Deck : sala.p2Deck,
         rival: soyP1 ? sala.p2Deck : sala.p1Deck,
@@ -652,6 +674,12 @@ function App() {
       setTreeLevelsEnPartida({
         mio: soyP1 ? p1Tree : p2Tree,
         rival: soyP1 ? p2Tree : p1Tree,
+      })
+      const p1Skin = (sala as any).p1TreeSkin ?? (sala as any).player1?.treeSkin ?? (sala as any).p1_tree_skin ?? null
+      const p2Skin = (sala as any).p2TreeSkin ?? (sala as any).player2?.treeSkin ?? (sala as any).p2_tree_skin ?? null
+      setTreeSkinsEnPartida({
+        mio: soyP1 ? p1Skin : p2Skin,
+        rival: soyP1 ? p2Skin : p1Skin,
       })
       const esTorneo = modoBuscando === 'tournament' || sala.mode === 'tournament'
       setPartidaAsincrona(esTorneo ? false : Boolean(sala.isAsyncMatch))
@@ -682,6 +710,7 @@ function App() {
     setNombresEnPartida(null)
     setMazosDeLaSala(null)
     setTreeLevelsEnPartida(null)
+    setTreeSkinsEnPartida(null)
     setPartidaAsincrona(false)
     setEngineVersionSala(null)
     setCustomArenaBg(undefined)
@@ -910,6 +939,8 @@ function App() {
     setTreeLevelsEnPartida(null)
 
     if (!buscaRival('ranked')) {
+      const miNombre = profile?.username || UserManager.getProfile().name || 'Tú'
+      setNombresEnPartida({ mio: miNombre, rival: 'Bot Entrenador' })
       setScreen('battle')
       return
     }
@@ -968,9 +999,8 @@ function App() {
     setSalaId(null)
     setSemillaPartida(undefined)
     if (!buscaRival('colosseum')) {
-      // El coliseo espera a la verificación en servidor. Hasta entonces una
-      // discrepancia entre los dos clientes dejaría la partida en disputa, y aquí
-      // hay gemas de verdad: se devuelven, pero es una vuelta entera para nada.
+      const miNombre = profile?.username || UserManager.getProfile().name || 'Tú'
+      setNombresEnPartida({ mio: miNombre, rival: 'Gladiador Bot' })
       setScreen('battle')
       return
     }
@@ -1003,6 +1033,8 @@ function App() {
     setTreeLevelsEnPartida(null)
 
     if (!buscaRival('tournament')) {
+      const miNombre = profile?.username || UserManager.getProfile().name || 'Tú'
+      setNombresEnPartida({ mio: miNombre, rival: opponentName || 'Rival de Torneo' })
       setScreen('battle')
       return
     }
@@ -1056,6 +1088,8 @@ function App() {
   const handlePracticePlant = (plantId: string) => {
     setPracticePlantId(plantId)
     setCustomArenaBg(undefined)
+    const miNombre = profile?.username || UserManager.getProfile().name || 'Tú'
+    setNombresEnPartida({ mio: miNombre, rival: 'Bot de Práctica' })
     setScreen('battle')
   }
 
@@ -1355,6 +1389,7 @@ function App() {
             isAsyncMatch={partidaAsincrona}
             engineVersion={engineVersionSala}
             treeLevels={treeLevelsEnPartida}
+            treeSkins={treeSkinsEnPartida}
             onColosseumComplete={(won) => {
               if (colosseumConfig) {
                 return resolveColosseumMatch(won, colosseumConfig.betGems, colosseumConfig.usedTicket)
@@ -1406,6 +1441,9 @@ function App() {
             playerEnergy={playerEnergy}
             maxPlayerEnergy={maxPlayerEnergy}
             onUseEnergyPotion={useEnergyPotion}
+            equippedTreeSkin={equippedTreeSkin}
+            onEquipMotherTreeSkin={equipMotherTreeSkin}
+            onUnequipMotherTreeSkin={unequipMotherTreeSkin}
           />
         )}
         {screen === 'shop' && (

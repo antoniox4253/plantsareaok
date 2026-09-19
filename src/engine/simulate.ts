@@ -229,7 +229,9 @@ export function createBattleState(
   nivelBot: NivelDelBot = NIVEL_POR_DEFECTO,
   engineVersion: EngineVersion = 'auth-v2',
   p1BaseHp: number = INITIAL_BASE_HP,
-  p2BaseHp: number = INITIAL_BASE_HP
+  p2BaseHp: number = INITIAL_BASE_HP,
+  p1TreeSkin?: string | null,
+  p2TreeSkin?: string | null
 ): GameState {
   return {
     tick: 0,
@@ -244,16 +246,20 @@ export function createBattleState(
     // cae a los 2,5 s en lugar de a los 6. En práctica no hay oleadas ni rival, así
     // que todo arranca a cero.
     timers: isPracticeMode
-      ? { lastSkySun: 0, lastP2PassiveSun: 0, lastEnemySpawn: 0, waveStart: 0 }
+      ? { lastSkySun: 0, lastP2PassiveSun: 0, lastEnemySpawn: 0, waveStart: 0, lastP1TreeShot: 0, lastP2TreeShot: 0 }
       : {
           lastSkySun: -msToTicks(3500),
           lastP2PassiveSun: -msToTicks(3500),
           lastEnemySpawn: -msToTicks(1000),
           waveStart: 0,
+          lastP1TreeShot: 0,
+          lastP2TreeShot: 0,
         },
     status: 'playing',
     p1BaseHp: p1BaseHp ?? INITIAL_BASE_HP,
     p2BaseHp: p2BaseHp ?? INITIAL_BASE_HP,
+    p1TreeSkin: p1TreeSkin ?? null,
+    p2TreeSkin: p2TreeSkin ?? null,
     sunBank: INITIAL_SUN,
     // Paridad: los dos jugadores empiezan con los mismos soles.
     p2SunBank: INITIAL_SUN,
@@ -408,10 +414,16 @@ export interface GameState {
     lastEnemySpawn: number
     /** Comienzo de la oleada actual. */
     waveStart: number
+    /** Último disparo del Árbol Madre P1. */
+    lastP1TreeShot?: number
+    /** Último disparo del Árbol Madre P2. */
+    lastP2TreeShot?: number
   }
   status: GameStatus
   p1BaseHp: number
   p2BaseHp: number
+  p1TreeSkin?: string | null
+  p2TreeSkin?: string | null
   sunBank: number
   p2SunBank: number
   plants: PlantEntity[]
@@ -1474,6 +1486,54 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   // mismo trato, que es la única forma de que las dos pantallas coincidan.
   procesarLado(state, LADO_P1, dt, sonar)
   procesarLado(state, LADO_P2, dt, sonar)
+
+  // ── DISPARO DE SKINS DEL ÁRBOL MADRE (2 proyectiles cada 10 segundos) ──
+  // Cada 10s (msToTicks(10000)), la base con skin dispara 2 proyectiles mágicos
+  // hacia el lado contrario en carriles elegidos al azar con state.rng.
+  const INTERVALO_DISPARO_ARBOL_TICKS = msToTicks(10000)
+
+  if (state.p1TreeSkin) {
+    const ultimoDisparo = state.timers.lastP1TreeShot ?? 0
+    if (state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
+      state.timers.lastP1TreeShot = state.tick
+      for (let i = 0; i < 2; i++) {
+        const lane = nextInt(state.rng, 3)
+        state.projectiles.push({
+          id: entityId(`tree-p1-shot-${i}`, state.tick, state.entityCounter++),
+          type: 'pea',
+          targetTeam: 'p2',
+          lane,
+          x: BASE_LEFT_END_X,
+          y: 20 + lane * 19.33 + 7,
+          speed: 28,
+          damage: 20,
+        })
+      }
+      sonar('pea_shoot', 0.4)
+    }
+  }
+
+  if (state.p2TreeSkin) {
+    const ultimoDisparo = state.timers.lastP2TreeShot ?? 0
+    if (state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
+      state.timers.lastP2TreeShot = state.tick
+      for (let i = 0; i < 2; i++) {
+        const lane = nextInt(state.rng, 3)
+        state.projectiles.push({
+          id: entityId(`tree-p2-shot-${i}`, state.tick, state.entityCounter++),
+          type: 'pea',
+          targetTeam: 'p1',
+          lane,
+          x: BASE_RIGHT_START_X,
+          y: 20 + lane * 19.33 + 7,
+          speed: 28,
+          damage: 20,
+        })
+      }
+      sonar('pea_shoot', 0.4)
+    }
+  }
+
   moverProyectiles(state, dt, sonar)
 
 

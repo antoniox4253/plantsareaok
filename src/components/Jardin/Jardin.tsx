@@ -108,6 +108,9 @@ interface JardinProps {
   onUseEnergyPotion?: (itemId?: string) => Promise<{ success: boolean; energyAdded?: number; energyCurrent?: number; error?: string }>
   /** Recarga saldo e inventario del servidor tras un premio de la lotería. */
   onRewardsChanged?: () => Promise<void> | void
+  equippedTreeSkin?: string | null
+  onEquipMotherTreeSkin?: (skinId: string) => Promise<{ success: boolean; error?: string }>
+  onUnequipMotherTreeSkin?: () => Promise<{ success: boolean; error?: string }>
 }
 
 const FUSION_COPIES_REQ = 5
@@ -163,6 +166,9 @@ export default function Jardin({
   playerEnergy = 20,
   maxPlayerEnergy = 20,
   onUseEnergyPotion,
+  equippedTreeSkin = null,
+  onEquipMotherTreeSkin,
+  onUnequipMotherTreeSkin,
 }: JardinProps) {
   const [deck, setDeck] = useState<PlantId[]>(activeDeck)
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null)
@@ -412,6 +418,83 @@ export default function Jardin({
     itemEmoji?: string
     bonusText?: string
   } | null>(null)
+
+  const [treeSkinModal, setTreeSkinModal] = useState<{
+    action: 'equip' | 'unequip'
+    skinId: string
+  } | null>(null)
+  const [isEquippingTreeSkin, setIsEquippingTreeSkin] = useState<boolean>(false)
+
+  const handleTreeSkinCardClick = () => {
+    soundManager.playSound('click', 0.5)
+    if (equippedTreeSkin === 'mother_tree_skin') {
+      setTreeSkinModal({ action: 'unequip', skinId: 'mother_tree_skin' })
+    } else {
+      const qty = Number(farmingItems?.mother_tree_skin || 0)
+      if (qty <= 0) {
+        setFuseAlert({
+          title: 'SIN UNIDADES DISPONIBLES',
+          message: 'No tienes unidades de Skin: Árbol Centinela en tus recursos de cultivo.',
+          icon: '🌌',
+        })
+        return
+      }
+      setTreeSkinModal({ action: 'equip', skinId: 'mother_tree_skin' })
+    }
+  }
+
+  const handleConfirmTreeSkinAction = async () => {
+    if (!treeSkinModal || isEquippingTreeSkin) return
+    const { action, skinId } = treeSkinModal
+    setIsEquippingTreeSkin(true)
+    try {
+      if (action === 'equip') {
+        const res = await onEquipMotherTreeSkin?.(skinId)
+        if (res?.success) {
+          soundManager.playSound('victory', 0.6)
+          setFuseAlert({
+            title: '¡SKIN CENTINELA EQUIPADA!',
+            message: 'El aspecto del Árbol Centinela ha sido equipado en tu Árbol Madre. Ahora se verá en combate tanto para ti como para tu rival y lanzará 2 proyectiles cósmicos cada 10s.',
+            icon: '🌌',
+          })
+          setTreeSkinModal(null)
+          void onRewardsChanged?.()
+        } else {
+          setFuseAlert({
+            title: 'ERROR AL EQUIPAR',
+            message: res?.error || 'No se pudo equipar el aspecto del Árbol Madre.',
+            icon: '⚠️',
+          })
+        }
+      } else {
+        const res = await onUnequipMotherTreeSkin?.()
+        if (res?.success) {
+          soundManager.playSound('click', 0.6)
+          setFuseAlert({
+            title: 'ASPECTO DESEQUIPADO',
+            message: 'El aspecto ha sido desequipado y regresó a tus recursos de cultivo. Tu Árbol Madre volvió a su aspecto clásico.',
+            icon: '🌳',
+          })
+          setTreeSkinModal(null)
+          void onRewardsChanged?.()
+        } else {
+          setFuseAlert({
+            title: 'ERROR AL DESEQUIPAR',
+            message: res?.error || 'No se pudo desequipar el aspecto.',
+            icon: '⚠️',
+          })
+        }
+      }
+    } catch (err: any) {
+      setFuseAlert({
+        title: 'ERROR',
+        message: err?.message || 'Ocurrió un error al procesar el aspecto.',
+        icon: '⚠️',
+      })
+    } finally {
+      setIsEquippingTreeSkin(false)
+    }
+  }
 
   const [energyPotionModal, setEnergyPotionModal] = useState<{
     itemId: string
@@ -853,13 +936,23 @@ export default function Jardin({
           </button>
           <button
             type="button"
-            className="jardin-btn-sec"
+            className={`jardin-btn-sec ${equippedTreeSkin === 'mother_tree_skin' ? 'jardin-btn-sec--sentinel' : ''}`}
+            style={
+              equippedTreeSkin === 'mother_tree_skin'
+                ? {
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #4338ca 100%)',
+                    borderColor: '#c084fc',
+                    color: '#ffffff',
+                    boxShadow: '0 0 10px rgba(192, 132, 252, 0.5)',
+                  }
+                : undefined
+            }
             onClick={() => {
               soundManager.playSound('click', 0.4)
               setShowTreeModal(true)
             }}
           >
-            🌳 ÁRBOL
+            {equippedTreeSkin === 'mother_tree_skin' ? '🌌 ÁRBOL' : '🌳 ÁRBOL'}
           </button>
           <button
             type="button"
@@ -1145,7 +1238,14 @@ export default function Jardin({
                   return null
                 }
 
-                const isInteractive = Boolean(equippableDef || isEnergyPotion)
+                // La skin del Árbol Madre sólo se muestra si se tiene en inventario o está equipada
+                const isTreeSkin = itemId === 'mother_tree_skin'
+                const isTreeSkinEquipped = equippedTreeSkin === 'mother_tree_skin'
+                if (isTreeSkin && qty <= 0 && !isTreeSkinEquipped) {
+                  return null
+                }
+
+                const isInteractive = Boolean(equippableDef || isEnergyPotion || isTreeSkin)
 
                 return (
                   <div
@@ -1154,6 +1254,7 @@ export default function Jardin({
                     onClick={() => {
                       if (equippableDef) handleEquippableResourceClick(itemId)
                       else if (isEnergyPotion) handleEnergyPotionClick(itemId)
+                      else if (isTreeSkin) handleTreeSkinCardClick()
                     }}
                     role={isInteractive ? 'button' : undefined}
                     tabIndex={isInteractive ? 0 : undefined}
@@ -1161,6 +1262,7 @@ export default function Jardin({
                       if (isInteractive && (e.key === 'Enter' || e.key === ' ')) {
                         if (equippableDef) handleEquippableResourceClick(itemId)
                         else if (isEnergyPotion) handleEnergyPotionClick(itemId)
+                        else if (isTreeSkin) handleTreeSkinCardClick()
                       }
                     }}
                     title={
@@ -1168,6 +1270,8 @@ export default function Jardin({
                         ? `${equippableDef.emoji} Toca para equipar o desequipar en ${PLANT_CONFIGS[equippableDef.targetPlantId]?.name || 'tu planta'}`
                         : isEnergyPotion
                         ? '⚡ Toca para usar y recargar +5 energías de Ranked'
+                        : isTreeSkin
+                        ? '🌌 Toca para equipar o desequipar el aspecto del Árbol Centinela'
                         : undefined
                     }
                   >
@@ -1190,6 +1294,18 @@ export default function Jardin({
                     {isEnergyPotion && (
                       <span className="jardin-farming-belt-action-pill" style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', borderColor: '#38bdf8' }}>
                         ⚡ TOCAR PARA USAR
+                      </span>
+                    )}
+                    {isTreeSkin && (
+                      <span
+                        className="jardin-farming-belt-action-pill"
+                        style={{
+                          background: 'linear-gradient(135deg, #7c3aed 0%, #4338ca 100%)',
+                          borderColor: '#c084fc',
+                          boxShadow: '0 0 8px rgba(192, 132, 252, 0.4)',
+                        }}
+                      >
+                        {isTreeSkinEquipped ? '🌌 EQUIPADO (TOCA)' : '🌌 TOCAR PARA EQUIPAR'}
                       </span>
                     )}
                   </div>
@@ -1943,6 +2059,86 @@ export default function Jardin({
         </div>
       )}
 
+      {/* Modal de Confirmación de Skin de Árbol Madre */}
+      {treeSkinModal && (
+        <div
+          className="jardin-upgrade-modal-overlay"
+          onClick={() => {
+            if (!isEquippingTreeSkin) setTreeSkinModal(null)
+          }}
+        >
+          <div className="jardin-upgrade-modal-card jardin-fuse-confirm-card" onClick={(e) => e.stopPropagation()}>
+            <div className="jardin-upgrade-modal-sparkle">🌌 ✨ 🌌</div>
+            <h3 className="jardin-upgrade-modal-title">
+              {treeSkinModal.action === 'equip'
+                ? '¿Deseas equipar el Árbol Centinela?'
+                : '¿Deseas desequipar el Árbol Centinela?'}
+            </h3>
+
+            <div className="jardin-fuse-confirm-plant" style={{ minHeight: '130px' }}>
+              <img
+                src="/game-assets/greenfoot/mothertree_sentinel.webp"
+                alt="Árbol Centinela"
+                className="jardin-fuse-confirm-img"
+                style={{
+                  maxHeight: '110px',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.6))',
+                }}
+              />
+              <span className="jardin-fuse-confirm-name" style={{ color: '#c084fc', fontWeight: 900 }}>
+                Skin: Árbol Centinela
+              </span>
+              <span className="jardin-fuse-confirm-level" style={{ color: '#38bdf8' }}>
+                ⚔️ Ataque: 2 proyectiles cada 10s (20 daño c/u)
+              </span>
+            </div>
+
+            <p style={{ fontSize: '11px', color: '#94a3b8', margin: '8px 0 14px', lineHeight: 1.4, textAlign: 'center' }}>
+              {treeSkinModal.action === 'equip'
+                ? 'Aspecto exclusivo para tu Árbol Madre. Al equiparlo, tu base adoptará el aspecto celestial del Centinela en combate, visible tanto para ti como para tu rival, y lanzará 2 proyectiles cósmicos aleatoriamente entre las líneas cada 10 segundos.'
+                : 'Al desequipar, tu Árbol Madre volverá a su aspecto ancestral tradicional y el ítem regresará a tus recursos de cultivo.'}
+            </p>
+
+            <div className="jardin-fuse-confirm-actions">
+              <button
+                type="button"
+                className="jardin-upgrade-modal-btn jardin-fuse-btn-cancel"
+                disabled={isEquippingTreeSkin}
+                onClick={() => setTreeSkinModal(null)}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className={`jardin-upgrade-modal-btn ${
+                  treeSkinModal.action === 'equip'
+                    ? 'jardin-belt-confirm-btn--equip'
+                    : 'jardin-belt-confirm-btn--unequip'
+                }`}
+                style={
+                  treeSkinModal.action === 'equip'
+                    ? {
+                        background: 'linear-gradient(135deg, #7c3aed 0%, #4338ca 100%)',
+                        borderColor: '#c084fc',
+                        boxShadow: '0 0 12px rgba(192, 132, 252, 0.45)',
+                      }
+                    : undefined
+                }
+                disabled={isEquippingTreeSkin}
+                onClick={handleConfirmTreeSkinAction}
+              >
+                {isEquippingTreeSkin
+                  ? 'PROCESANDO...'
+                  : treeSkinModal.action === 'equip'
+                  ? '🌌 EQUIPAR'
+                  : '🌌 DESEQUIPAR'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Confirmación de Uso de Poción de Energía */}
       {energyPotionModal && (
         <div
@@ -2089,6 +2285,9 @@ export default function Jardin({
           userGold={userGold}
           farmingItems={farmingItems}
           onRewardsChanged={onRewardsChanged}
+          equippedTreeSkin={equippedTreeSkin}
+          onEquipMotherTreeSkin={onEquipMotherTreeSkin}
+          onUnequipMotherTreeSkin={onUnequipMotherTreeSkin}
         />
       )}
 

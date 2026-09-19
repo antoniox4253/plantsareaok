@@ -11,11 +11,15 @@ interface TreeModalProps {
   userGold: number
   farmingItems: FarmingInventory
   onRewardsChanged?: () => void | Promise<void>
+  equippedTreeSkin?: string | null
+  onEquipMotherTreeSkin?: (skinId: string) => Promise<{ success: boolean; error?: string }>
+  onUnequipMotherTreeSkin?: () => Promise<{ success: boolean; error?: string }>
 }
 
 type FeedResource = 'water' | 'fertilizer' | 'gold' | 'gems'
 
 const MOTHER_TREE_IMAGE = '/game-assets/greenfoot/mothertree_whitebg.webp'
+const MOTHER_TREE_SENTINEL_IMAGE = '/game-assets/greenfoot/mothertree_sentinel.webp'
 
 const LEVEL_NAMES = [
   'Brote Inicial',
@@ -33,6 +37,9 @@ export default function TreeModal({
   userGold,
   farmingItems,
   onRewardsChanged,
+  equippedTreeSkin = null,
+  onEquipMotherTreeSkin,
+  onUnequipMotherTreeSkin,
 }: TreeModalProps) {
   const [treeLevel, setTreeLevel] = useState<number>(0)
   const [treeXp, setTreeXp] = useState<number>(0)
@@ -42,6 +49,12 @@ export default function TreeModal({
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [feedbackNotice, setFeedbackNotice] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [leveledUpCelebration, setLeveledUpCelebration] = useState<boolean>(false)
+  const [currentSkin, setCurrentSkin] = useState<string | null>(equippedTreeSkin ?? null)
+  const [isTogglingSkin, setIsTogglingSkin] = useState<boolean>(false)
+
+  useEffect(() => {
+    setCurrentSkin(equippedTreeSkin ?? null)
+  }, [equippedTreeSkin])
 
   // Cargar estado del Árbol al abrir
   useEffect(() => {
@@ -53,6 +66,9 @@ export default function TreeModal({
       setTreeLevel(res.treeLevel)
       setTreeXp(res.treeXp)
       setNextLevelXp(res.nextLevelXp || 500)
+      if (typeof res.equippedTreeSkin !== 'undefined') {
+        setCurrentSkin(res.equippedTreeSkin)
+      }
     })
 
     return () => {
@@ -195,6 +211,43 @@ export default function TreeModal({
     try {
       await onRewardsChanged?.()
     } catch (_) {}
+  }
+
+  const hasSkinInResources = Number(farmingItems?.mother_tree_skin || 0) > 0
+  const isSkinEquipped = currentSkin === 'mother_tree_skin'
+  const canToggleSkin = isSkinEquipped || hasSkinInResources
+
+  const handleToggleSkin = async () => {
+    if (isTogglingSkin) return
+    setIsTogglingSkin(true)
+    soundManager.playSound('click', 0.4)
+    try {
+      if (isSkinEquipped) {
+        const res = await onUnequipMotherTreeSkin?.()
+        if (res?.success) {
+          setCurrentSkin(null)
+          setFeedbackNotice({ type: 'success', msg: 'Aspecto desequipado. El Árbol volvió a su forma clásica.' })
+          void onRewardsChanged?.()
+        } else {
+          setFeedbackNotice({ type: 'error', msg: res?.error || 'No se pudo desequipar el aspecto.' })
+        }
+      } else {
+        const res = await onEquipMotherTreeSkin?.('mother_tree_skin')
+        if (res?.success) {
+          soundManager.playSound('victory', 0.6)
+          setCurrentSkin('mother_tree_skin')
+          setFeedbackNotice({
+            type: 'success',
+            msg: '🌌 ¡Aspecto Árbol Centinela equipado! Disparará 2 proyectiles cósmicos cada 10s en combate.',
+          })
+          void onRewardsChanged?.()
+        } else {
+          setFeedbackNotice({ type: 'error', msg: res?.error || 'No se pudo equipar el aspecto.' })
+        }
+      }
+    } finally {
+      setIsTogglingSkin(false)
+    }
   }
 
   const currentHp = 600 + treeLevel * 50
@@ -370,15 +423,72 @@ export default function TreeModal({
                 <span className="tree-badge-title">{LEVEL_NAMES[treeLevel] || 'Árbol Sagrado'}</span>
               </div>
 
+              {isSkinEquipped && (
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.85) 0%, rgba(67, 56, 202, 0.85) 100%)',
+                    border: '1px solid #c084fc',
+                    borderRadius: '20px',
+                    padding: '3px 10px',
+                    fontSize: '10px',
+                    fontWeight: 900,
+                    color: '#ffffff',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: '0 0 10px rgba(192, 132, 252, 0.4)',
+                  }}
+                >
+                  <span>🌌 Skin: Árbol Centinela</span>
+                  <span style={{ color: '#38bdf8' }}>[⚔️ 2 Proyectiles / 10s]</span>
+                </div>
+              )}
+
               {/* Imagen del árbol base del campo de batalla */}
               <div className="tree-img-container">
-                <div className={`tree-aura-glow tree-aura-glow--lvl${treeLevel}`} />
+                <div
+                  className={`tree-aura-glow ${
+                    isSkinEquipped ? 'tree-aura-glow--sentinel' : `tree-aura-glow--lvl${treeLevel}`
+                  }`}
+                />
                 <img
-                  src={MOTHER_TREE_IMAGE}
-                  alt="Árbol Madre"
-                  className={`tree-display-img tree-display-img--lvl${treeLevel}`}
+                  src={isSkinEquipped ? MOTHER_TREE_SENTINEL_IMAGE : MOTHER_TREE_IMAGE}
+                  alt={isSkinEquipped ? 'Árbol Centinela' : 'Árbol Madre'}
+                  className={`tree-display-img ${
+                    isSkinEquipped ? 'tree-display-img--sentinel' : `tree-display-img--lvl${treeLevel}`
+                  }`}
                 />
               </div>
+
+              {/* Botón de equipar/desequipar skin si la posee o está equipada */}
+              {canToggleSkin && (
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                  <button
+                    type="button"
+                    onClick={handleToggleSkin}
+                    disabled={isTogglingSkin}
+                    style={{
+                      background: isSkinEquipped
+                        ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+                        : 'linear-gradient(135deg, #7c3aed 0%, #4338ca 100%)',
+                      border: isSkinEquipped ? '1px solid #fca5a5' : '1px solid #c084fc',
+                      borderRadius: '8px',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      fontSize: '11px',
+                      padding: '5px 12px',
+                      cursor: isTogglingSkin ? 'wait' : 'pointer',
+                      boxShadow: '0 3px 8px rgba(0, 0, 0, 0.3)',
+                    }}
+                  >
+                    {isTogglingSkin
+                      ? 'PROCESANDO...'
+                      : isSkinEquipped
+                      ? '🌳 DESEQUIPAR CENTINELA'
+                      : '🌌 EQUIPAR CENTINELA'}
+                  </button>
+                </div>
+              )}
 
               {/* Barra de progreso de XP */}
               <div className="tree-progress-wrap">

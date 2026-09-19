@@ -477,6 +477,10 @@
 .tree-aura-glow--lvl3 { background: radial-gradient(circle, rgba(168, 85, 247, 0.45) 0%, transparent 70%); }
 .tree-aura-glow--lvl4 { background: radial-gradient(circle, rgba(250, 204, 21, 0.5) 0%, transparent 70%); }
 .tree-aura-glow--lvl5 { background: radial-gradient(circle, rgba(244, 63, 94, 0.6) 0%, transparent 70%); }
+.tree-aura-glow--sentinel {
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.75) 0%, rgba(56, 189, 248, 0.45) 50%, transparent 75%) !important;
+  filter: blur(18px) !important;
+}
 
 .tree-display-img {
   width: 100%;
@@ -484,6 +488,10 @@
   object-fit: contain;
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.65));
   transition: transform 0.3s ease;
+}
+
+.tree-display-img--sentinel {
+  filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.75)) drop-shadow(0 8px 14px rgba(0, 0, 0, 0.65)) !important;
 }
 
 .tree-display-img:hover {

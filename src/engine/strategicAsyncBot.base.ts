@@ -33,6 +33,7 @@ const ESTADISTICAS_VALIDAS = new Set<PlantStatKey>([
   'attackSpeed',
   'moveSpeed',
   'cooldown',
+  'duration',
 ])
 
 function rollsValidos(brutos: string[] | null | undefined): PlantStatKey[] {

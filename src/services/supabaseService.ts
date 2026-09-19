@@ -864,10 +864,12 @@ export const SupabaseService = {
     colosseumBet: number
     p1Deck: unknown
     p2Deck: unknown
-    player1: { id: string; username: string | null; avatarId: string | null; elo: number | null; treeLevel?: number | null }
-    player2: { id: string; username: string | null; avatarId: string | null; elo: number | null; treeLevel?: number | null }
+    player1: { id: string; username: string | null; avatarId: string | null; elo: number | null; treeLevel?: number | null; treeSkin?: string | null }
+    player2: { id: string; username: string | null; avatarId: string | null; elo: number | null; treeLevel?: number | null; treeSkin?: string | null }
     p1TreeLevel?: number | null
     p2TreeLevel?: number | null
+    p1TreeSkin?: string | null
+    p2TreeSkin?: string | null
     iAm: 'p1' | 'p2'
     isAsyncMatch?: boolean
     asyncActionsSnapshot?: unknown
@@ -1230,12 +1232,14 @@ export const SupabaseService = {
     async_deck_snapshot?: unknown
     p1_tree_level?: number | null
     p2_tree_level?: number | null
+    p1_tree_skin?: string | null
+    p2_tree_skin?: string | null
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
       const { data, error } = await supabase
         .from('game_rooms')
-        .select('id, mode, player1_id, player2_id, seed, p1_deck, p2_deck, colosseum_bet, status, settled_at, server_winner_id, p1_reported_winner, p2_reported_winner, verification_status, verification_payload, verification_note, engine_version, is_async_match, async_opponent_id, async_display_name, async_avatar_id, async_rating_snapshot, async_deck_snapshot, p1_tree_level, p2_tree_level')
+        .select('id, mode, player1_id, player2_id, seed, p1_deck, p2_deck, colosseum_bet, status, settled_at, server_winner_id, p1_reported_winner, p2_reported_winner, verification_status, verification_payload, verification_note, engine_version, is_async_match, async_opponent_id, async_display_name, async_avatar_id, async_rating_snapshot, async_deck_snapshot, p1_tree_level, p2_tree_level, p1_tree_skin, p2_tree_skin')
         .eq('id', roomId)
         .single()
       if (error) {
@@ -5116,6 +5120,7 @@ export const SupabaseService = {
     treeXp: number
     nextLevelXp: number
     hpBonus: number
+    equippedTreeSkin?: string | null
     error?: string
   }> {
     if (!isSupabaseConfigured()) {
@@ -5123,7 +5128,7 @@ export const SupabaseService = {
         const raw = localStorage.getItem('plant_arena_mother_tree')
         if (raw) return JSON.parse(raw)
       } catch {}
-      return { success: true, treeLevel: 0, treeXp: 0, nextLevelXp: 100, hpBonus: 0 }
+      return { success: true, treeLevel: 0, treeXp: 0, nextLevelXp: 100, hpBonus: 0, equippedTreeSkin: null }
     }
 
     try {
@@ -5141,12 +5146,13 @@ export const SupabaseService = {
       if (userData?.user?.id) {
         const { data: prof } = await supabase
           .from('profiles')
-          .select('tree_level, tree_xp')
+          .select('tree_level, tree_xp, equipped_tree_skin')
           .eq('id', userData.user.id)
           .maybeSingle()
         if (prof) {
           const lvl = Number((prof as any).tree_level) || 0
           const xp = Number((prof as any).tree_xp) || 0
+          const skin = (prof as any).equipped_tree_skin || null
           const req = [500, 1200, 1800, 2500, 3000, 0][lvl] ?? 500
           const res = {
             success: true,
@@ -5154,6 +5160,7 @@ export const SupabaseService = {
             treeXp: xp,
             nextLevelXp: req,
             hpBonus: lvl * 50,
+            equippedTreeSkin: skin,
           }
           try {
             localStorage.setItem('plant_arena_mother_tree', JSON.stringify(res))
@@ -5168,7 +5175,69 @@ export const SupabaseService = {
       if (raw) return JSON.parse(raw)
     } catch {}
 
-    return { success: true, treeLevel: 0, treeXp: 0, nextLevelXp: 500, hpBonus: 0 }
+    return { success: true, treeLevel: 0, treeXp: 0, nextLevelXp: 500, hpBonus: 0, equippedTreeSkin: null }
+  },
+
+  async equipMotherTreeSkin(skinId: string): Promise<{
+    success: boolean
+    equippedTreeSkin?: string | null
+    farmingInventory?: any
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('equip_mother_tree_skin', {
+        p_skin_id: skinId,
+      })
+      if (error) {
+        logError('equipMotherTreeSkin', error)
+        return { success: false, error: error.message }
+      }
+      try {
+        const stored = localStorage.getItem('plant_arena_mother_tree')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          parsed.equippedTreeSkin = skinId
+          localStorage.setItem('plant_arena_mother_tree', JSON.stringify(parsed))
+        }
+      } catch {}
+      return data || { success: true, equippedTreeSkin: skinId }
+    } catch (e: any) {
+      logError('equipMotherTreeSkin', e)
+      return { success: false, error: e?.message || 'Error al equipar la skin' }
+    }
+  },
+
+  async unequipMotherTreeSkin(): Promise<{
+    success: boolean
+    equippedTreeSkin?: string | null
+    farmingInventory?: any
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('unequip_mother_tree_skin')
+      if (error) {
+        logError('unequipMotherTreeSkin', error)
+        return { success: false, error: error.message }
+      }
+      try {
+        const stored = localStorage.getItem('plant_arena_mother_tree')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          parsed.equippedTreeSkin = null
+          localStorage.setItem('plant_arena_mother_tree', JSON.stringify(parsed))
+        }
+      } catch {}
+      return data || { success: true, equippedTreeSkin: null }
+    } catch (e: any) {
+      logError('unequipMotherTreeSkin', e)
+      return { success: false, error: e?.message || 'Error al desequipar la skin' }
+    }
   },
 
   async feedMotherTree(

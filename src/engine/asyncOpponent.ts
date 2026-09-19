@@ -71,13 +71,14 @@ const ESTADISTICAS_VALIDAS = new Set<PlantStatKey>([
   'attackSpeed',
   'moveSpeed',
   'cooldown',
+  'duration',
 ])
 
 function esPlantId(x: string | null | undefined): x is PlantId {
   return !!x && Object.prototype.hasOwnProperty.call(PLANT_CONFIGS, x)
 }
 
-function rollsValidos(brutos: string[] | null | undefined): PlantStatKey[] {
+export function rollsValidos(brutos: string[] | null | undefined): PlantStatKey[] {
   return (brutos ?? []).filter((r): r is PlantStatKey =>
     ESTADISTICAS_VALIDAS.has(r as PlantStatKey)
   )

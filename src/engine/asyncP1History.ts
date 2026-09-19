@@ -68,6 +68,7 @@ export const ESTADISTICAS_VALIDAS = new Set<PlantStatKey>([
   'attackSpeed',
   'moveSpeed',
   'cooldown',
+  'duration',
 ])
 
 export function esPlantId(x: string | null | undefined): x is PlantId {

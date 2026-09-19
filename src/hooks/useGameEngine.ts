@@ -113,6 +113,19 @@ export function getStoredMotherTreeBonus(): number {
   return 0
 }
 
+export function getStoredMotherTreeSkin(): string | null {
+  try {
+    const raw = localStorage.getItem('plant_arena_mother_tree')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (typeof parsed?.equippedTreeSkin === 'string' && parsed.equippedTreeSkin) {
+        return parsed.equippedTreeSkin
+      }
+    }
+  } catch (_) {}
+  return null
+}
+
 const createInitialCooldowns = (): Record<PlantId, number> =>
   (Object.keys(PLANT_CONFIGS) as PlantId[]).reduce(
     (acc, id) => ({ ...acc, [id]: 0 }),
@@ -127,6 +140,8 @@ export function useGameEngine() {
 
   const p1TreeBonusHpRef = useRef<number>(getStoredMotherTreeBonus())
   const p2TreeBonusHpRef = useRef<number>(0)
+  const p1TreeSkinRef = useRef<string | null>(getStoredMotherTreeSkin())
+  const p2TreeSkinRef = useRef<string | null>(null)
 
   // Single mutable reference holding all game state
   const stateRef = useRef<GameState>({
@@ -143,10 +158,14 @@ export function useGameEngine() {
       lastP2PassiveSun: -msToTicks(3500),
       lastEnemySpawn: -msToTicks(1000),
       waveStart: 0,
+      lastP1TreeShot: 0,
+      lastP2TreeShot: 0,
     },
     status: 'ready',
     p1BaseHp: INITIAL_BASE_HP + p1TreeBonusHpRef.current,
     p2BaseHp: INITIAL_BASE_HP + p2TreeBonusHpRef.current,
+    p1TreeSkin: p1TreeSkinRef.current,
+    p2TreeSkin: p2TreeSkinRef.current,
     sunBank: INITIAL_SUN,
     p2SunBank: INITIAL_SUN,
     plants: [],
@@ -460,7 +479,9 @@ export function useGameEngine() {
     initialAsyncIntents?: unknown,
     engineVersion: EngineVersion = 'auth-v2',
     treeBonusHp?: number,
-    rivalTreeBonusHp?: number
+    rivalTreeBonusHp?: number,
+    treeSkin?: string | null,
+    rivalTreeSkin?: string | null
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
@@ -474,6 +495,12 @@ export function useGameEngine() {
       : 0
     p2TreeBonusHpRef.current = effectiveRivalTreeBonusHp
 
+    const effectiveTreeSkin = typeof treeSkin === 'string'
+      ? treeSkin
+      : (treeSkin === null ? null : getStoredMotherTreeSkin())
+    p1TreeSkinRef.current = effectiveTreeSkin
+    p2TreeSkinRef.current = rivalTreeSkin ?? null
+
     stateRef.current = createBattleState(
       seed,
       false,
@@ -481,7 +508,9 @@ export function useGameEngine() {
       nivelPorElo(miElo ?? 1000),
       engineVersion,
       INITIAL_BASE_HP + effectiveTreeBonusHp,
-      INITIAL_BASE_HP + effectiveRivalTreeBonusHp
+      INITIAL_BASE_HP + effectiveRivalTreeBonusHp,
+      effectiveTreeSkin,
+      rivalTreeSkin ?? null
     )
 
     ancoraMsRef.current = ancoraMs ?? null
@@ -551,15 +580,27 @@ export function useGameEngine() {
   }, [forceRender, marcarInconsistenciaRanked])
 
   const updateInitialTreeBonusHp = useCallback(
-    (bonus: number, rivalBonus?: number) => {
+    (bonus: number, rivalBonus?: number, treeSkin?: string | null, rivalTreeSkin?: string | null) => {
       p1TreeBonusHpRef.current = bonus
       if (typeof rivalBonus === 'number') {
         p2TreeBonusHpRef.current = Math.max(0, rivalBonus)
+      }
+      if (treeSkin !== undefined) {
+        p1TreeSkinRef.current = treeSkin
+      }
+      if (rivalTreeSkin !== undefined) {
+        p2TreeSkinRef.current = rivalTreeSkin
       }
       if (stateRef.current.status === 'ready' && stateRef.current.tick === 0) {
         stateRef.current.p1BaseHp = INITIAL_BASE_HP + bonus
         if (typeof rivalBonus === 'number') {
           stateRef.current.p2BaseHp = INITIAL_BASE_HP + Math.max(0, rivalBonus)
+        }
+        if (treeSkin !== undefined) {
+          stateRef.current.p1TreeSkin = treeSkin
+        }
+        if (rivalTreeSkin !== undefined) {
+          stateRef.current.p2TreeSkin = rivalTreeSkin
         }
         forceRender()
       }
@@ -636,6 +677,7 @@ export function useGameEngine() {
     }
 
       let p1PracticeTreeBonusHp = 0
+      let p1PracticeTreeSkin: string | null = null
       try {
         const raw = localStorage.getItem('plant_arena_mother_tree')
         if (raw) {
@@ -643,8 +685,13 @@ export function useGameEngine() {
           if (typeof parsed?.treeLevel === 'number') {
             p1PracticeTreeBonusHp = parsed.treeLevel * 50
           }
+          if (typeof parsed?.equippedTreeSkin === 'string' && parsed.equippedTreeSkin) {
+            p1PracticeTreeSkin = parsed.equippedTreeSkin
+          }
         }
       } catch (_) {}
+
+      p1TreeSkinRef.current = p1PracticeTreeSkin
 
       stateRef.current = {
         tick: 0,
@@ -654,11 +701,13 @@ export function useGameEngine() {
         engineVersion: 'auth-v2',
         // En práctica el cartel dura 4 s.
         pending: [{ atTick: msToTicks(4000), kind: 'clear_wave_banner' }],
-        timers: { lastSkySun: 0, lastP2PassiveSun: 0, lastEnemySpawn: 0, waveStart: 0 },
+        timers: { lastSkySun: 0, lastP2PassiveSun: 0, lastEnemySpawn: 0, waveStart: 0, lastP1TreeShot: 0, lastP2TreeShot: 0 },
         status: 'playing',
         isPracticeMode: true,
         p1BaseHp: INITIAL_BASE_HP + p1PracticeTreeBonusHp,
       p2BaseHp: 99999,
+      p1TreeSkin: p1PracticeTreeSkin,
+      p2TreeSkin: null,
       sunBank: 9999,
       p2SunBank: 0,
       plants: initialPlants,

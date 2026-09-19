@@ -60,6 +60,19 @@ function getBattlefieldPlantLevel(plantId: string): number {
   return 0
 }
 
+function getLocalPlayerName(): string {
+  try {
+    const saved = localStorage.getItem('plant_arena_player_profile')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      if (parsed?.name && typeof parsed.name === 'string' && parsed.name.trim().length > 0) {
+        return parsed.name.trim()
+      }
+    }
+  } catch {}
+  return 'Tú'
+}
+
 interface BaseTowerProps {
   team: 'p1' | 'p2'
   hp: number
@@ -68,13 +81,16 @@ interface BaseTowerProps {
   /** El nick del dueño de este árbol. Sin él se usa la etiqueta genérica. */
   nombre?: string | null
   level?: number
+  skin?: string | null
   sideBadge?: React.ReactNode
 }
 
 const motherTreeImg = '/game-assets/greenfoot/mothertree_whitebg.webp'
+const motherTreeSentinelImg = '/game-assets/greenfoot/mothertree_sentinel.webp'
 
-function BaseTower({ team, hp, maxHp, sunBank, nombre, level, sideBadge }: BaseTowerProps) {
+function BaseTower({ team, hp, maxHp, sunBank, nombre, level, skin, sideBadge }: BaseTowerProps) {
   const hpPct = Math.max(0, Math.min(100, (hp / maxHp) * 100))
+  const treeImgSrc = skin === 'mother_tree_skin' ? motherTreeSentinelImg : motherTreeImg
 
   return (
     <div className={`base base--${team}`}>
@@ -94,11 +110,11 @@ function BaseTower({ team, hp, maxHp, sunBank, nombre, level, sideBadge }: BaseT
           />
         </div>
         <span className="base__label">
-          {/* El nick cuando se sabe de quién es el árbol; la etiqueta genérica
-              contra el bot, donde no hay nadie al otro lado. */}
-          🌳 {nombre
-            ? nombre
-            : team === 'p1' ? 'ÁRBOL MADRE (P1)' : 'ÁRBOL MADRE (P2)'}
+          {skin === 'mother_tree_skin' ? '🌌 ' : '🌳 '}
+          {nombre ? nombre : team === 'p1' ? getLocalPlayerName() : 'Rival Bot'}
+          {skin === 'mother_tree_skin' && (
+            <span style={{ color: '#c084fc', fontWeight: 900, marginLeft: '4px' }}>[Centinela]</span>
+          )}
           {level !== undefined && level > 0 && (
             <span style={{ color: '#facc15', fontWeight: 900, marginLeft: '4px' }}>[Nv.{level}]</span>
           )}{' '}
@@ -114,7 +130,19 @@ function BaseTower({ team, hp, maxHp, sunBank, nombre, level, sideBadge }: BaseT
         )}
       </div>
       <div className="base__tree-wrap" style={{ position: 'relative' }}>
-        {level !== undefined && level > 0 && (
+        {skin === 'mother_tree_skin' ? (
+          <div
+            style={{
+              position: 'absolute',
+              inset: '-15%',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(168, 85, 247, 0.6) 0%, rgba(56, 189, 248, 0.4) 45%, transparent 75%)',
+              filter: 'blur(12px)',
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+        ) : level !== undefined && level > 0 && (
           <div
             style={{
               position: 'absolute',
@@ -130,7 +158,7 @@ function BaseTower({ team, hp, maxHp, sunBank, nombre, level, sideBadge }: BaseT
           />
         )}
         <img
-          src={motherTreeImg}
+          src={treeImgSrc}
           alt={team === 'p1' ? 'Árbol Madre P1' : 'Árbol Madre P2'}
           className={`base__mothertree-img ${team === 'p2' ? 'base__mothertree-img--p2' : ''}`}
           style={{ position: 'relative', zIndex: 1 }}
@@ -205,6 +233,7 @@ interface BattlefieldProps {
   engineVersion?: EngineVersion | null
   onServerEloUpdated?: (newElo: number) => void
   treeLevels?: { mio: number; rival: number } | null
+  treeSkins?: { mio: string | null; rival: string | null } | null
 }
 
 export default function Battlefield({
@@ -234,6 +263,7 @@ export default function Battlefield({
   strategicPlaytestConfig = null,
   onPlayAgainPlaytest,
   treeLevels = null,
+  treeSkins = null,
 }: BattlefieldProps) {
   const {
     tick,
@@ -319,29 +349,67 @@ export default function Battlefield({
   const rivalTreeBonusHpRef = useRef<number>(rivalTreeBonusHp)
   rivalTreeBonusHpRef.current = rivalTreeBonusHp
 
+  const [treeSkin, setTreeSkin] = useState<string | null>(() => {
+    if (typeof treeSkins?.mio !== 'undefined') return treeSkins.mio
+    try {
+      const raw = localStorage.getItem('plant_arena_mother_tree')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (typeof parsed?.equippedTreeSkin === 'string' && parsed.equippedTreeSkin) {
+          return parsed.equippedTreeSkin
+        }
+      }
+    } catch (_) {}
+    return null
+  })
+  const treeSkinRef = useRef<string | null>(treeSkin)
+  treeSkinRef.current = treeSkin
+
+  const rivalTreeSkin = treeSkins?.rival ?? null
+  const rivalTreeSkinRef = useRef<string | null>(rivalTreeSkin)
+  rivalTreeSkinRef.current = rivalTreeSkin
+
   useEffect(() => {
-    if (typeof treeLevels?.mio === 'number' || typeof treeLevels?.rival === 'number') {
+    if (typeof treeLevels?.mio === 'number' || typeof treeLevels?.rival === 'number' || treeSkins) {
       const bonus = typeof treeLevels?.mio === 'number' ? treeLevels.mio * 50 : treeBonusHpRef.current
       const rivalBonus = typeof treeLevels?.rival === 'number' ? treeLevels.rival * 50 : 0
+      const currentSkin = treeSkins?.mio !== undefined ? treeSkins.mio : treeSkinRef.current
+      const currentRivalSkin = treeSkins?.rival !== undefined ? treeSkins.rival : null
       if (typeof treeLevels?.mio === 'number') {
         setTreeLevel(treeLevels.mio)
         setTreeBonusHp(bonus)
         treeBonusHpRef.current = bonus
       }
+      if (treeSkins?.mio !== undefined) {
+        setTreeSkin(treeSkins.mio)
+        treeSkinRef.current = treeSkins.mio
+      }
       rivalTreeBonusHpRef.current = rivalBonus
-      updateInitialTreeBonusHp(bonus, rivalBonus)
+      rivalTreeSkinRef.current = currentRivalSkin
+      updateInitialTreeBonusHp(bonus, rivalBonus, currentSkin, currentRivalSkin)
       return
     }
     void supabaseService.getMotherTreeState().then((res) => {
-      if (typeof res?.treeLevel === 'number') {
-        const bonus = res.treeLevel * 50
-        setTreeLevel(res.treeLevel)
-        setTreeBonusHp(bonus)
-        treeBonusHpRef.current = bonus
-        updateInitialTreeBonusHp(bonus, rivalTreeBonusHpRef.current)
+      if (res) {
+        if (typeof res?.treeLevel === 'number') {
+          const bonus = res.treeLevel * 50
+          setTreeLevel(res.treeLevel)
+          setTreeBonusHp(bonus)
+          treeBonusHpRef.current = bonus
+        }
+        if (typeof res?.equippedTreeSkin !== 'undefined') {
+          setTreeSkin(res.equippedTreeSkin)
+          treeSkinRef.current = res.equippedTreeSkin
+        }
+        updateInitialTreeBonusHp(
+          treeBonusHpRef.current,
+          rivalTreeBonusHpRef.current,
+          res.equippedTreeSkin ?? treeSkinRef.current,
+          rivalTreeSkinRef.current
+        )
       }
     })
-  }, [treeLevels?.mio, treeLevels?.rival, updateInitialTreeBonusHp])
+  }, [treeLevels?.mio, treeLevels?.rival, treeSkins?.mio, treeSkins?.rival, updateInitialTreeBonusHp])
 
   const [showPvpDiag, setShowPvpDiag] = useState<boolean>(false)
 
@@ -482,7 +550,21 @@ export default function Battlefield({
 
         startedGensRef.current.add(attemptGen)
         setClockSyncStatus('synced')
-        startGame(seed, true, reloj.ancoraMs, userElo, soyP1, mazosDeLaSala, isAsyncMatch, undefined, validEngine, treeBonusHpRef.current, rivalTreeBonusHpRef.current)
+        startGame(
+          seed,
+          true,
+          reloj.ancoraMs,
+          userElo,
+          soyP1,
+          mazosDeLaSala,
+          isAsyncMatch,
+          undefined,
+          validEngine,
+          treeBonusHpRef.current,
+          rivalTreeBonusHpRef.current,
+          treeSkinRef.current,
+          rivalTreeSkinRef.current
+        )
       })
       .catch((err: any) => {
         if (matchClockGenRef.current !== attemptGen) {
@@ -1366,7 +1448,21 @@ export default function Battlefield({
         syncAndStartMatchClock(roomId)
       } else {
         // Entrenamiento contra el bot local: no hay reloj que alinear
-        startGame(seed, false, undefined, userElo, undefined, undefined, undefined, undefined, undefined, treeBonusHpRef.current)
+        startGame(
+          seed,
+          false,
+          undefined,
+          userElo,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          treeBonusHpRef.current,
+          rivalTreeBonusHpRef.current,
+          treeSkinRef.current,
+          rivalTreeSkinRef.current
+        )
       }
     }
   }, [practicePlantId, seed, roomId, startGame, startPracticeGame, startStrategicPlaytestGame, setSelectedCard, gameStatus, userElo, syncAndStartMatchClock, matchMode, strategicPlaytestConfig, activeDeck])
@@ -1518,7 +1614,14 @@ export default function Battlefield({
       )}
 
       {/* Base Towers */}
-      <BaseTower team="p1" hp={p1BaseHp} maxHp={INITIAL_BASE_HP + treeBonusHp} nombre={nombres?.mio} level={treeLevel} />
+      <BaseTower
+        team="p1"
+        hp={p1BaseHp}
+        maxHp={INITIAL_BASE_HP + treeBonusHp}
+        nombre={nombres?.mio || getLocalPlayerName()}
+        level={treeLevel}
+        skin={treeSkin}
+      />
       {/* Los soles del rival sólo se enseñan contra el bot, que es cuando el
           número es de verdad: lo lleva esta misma simulación. En PvP los soles del
           otro son cosa de SU navegador y aquí no se conocen, así que el contador
@@ -1529,8 +1632,9 @@ export default function Battlefield({
         hp={p2BaseHp}
         maxHp={INITIAL_BASE_HP + rivalTreeBonusHp}
         sunBank={roomId ? undefined : p2SunBank}
-        nombre={nombres?.rival}
+        nombre={nombres?.rival || tournamentOpponent?.name || (roomId ? 'Rival' : 'Bot Entrenador')}
         level={rivalTreeLevel}
+        skin={rivalTreeSkin}
         sideBadge={
           matchMode === 'tournament' ? (
             <div
@@ -2216,6 +2320,9 @@ export default function Battlefield({
               top: `${currentY}%`,
               transform: `${proj.targetTeam === 'p1' ? 'scaleX(-1)' : ''} scale(${scale})`,
               zIndex: isCatapult ? 35 : 15,
+              filter: proj.id.startsWith('tree-')
+                ? 'drop-shadow(0 0 8px #c084fc) drop-shadow(0 0 14px #38bdf8) hue-rotate(240deg) saturate(2)'
+                : undefined,
             }}
           />
         )
