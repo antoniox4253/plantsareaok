@@ -117,8 +117,10 @@ describe('Sistema de Sombrero Mágico (Kernelpult / Lanzamaíz)', () => {
       for (let t = 0; t < msToTicks(3500); t++) {
         stepTick(estado, () => {})
         // Verificar si se encoló la segunda mantequilla en pending
-        const pendingButter = estado.pending.find((p) => p.kind === 'spawn_projectile' && p.projectile.type === 'butter')
-        if (pendingButter) {
+        const pendingButter = estado.pending.find(
+          (p) => p.kind === 'spawn_projectile' && (p as any).projectile?.type === 'butter'
+        )
+        if (pendingButter && pendingButter.kind === 'spawn_projectile') {
           disparoDobleDetectado = true
           expect(pendingButter.projectile.freezeDurationMs).toBeGreaterThanOrEqual(3000)
           break
