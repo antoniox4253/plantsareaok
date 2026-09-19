@@ -497,7 +497,7 @@ export function useGameEngine() {
 
     const effectiveTreeSkin = typeof treeSkin === 'string'
       ? treeSkin
-      : (treeSkin === null ? null : getStoredMotherTreeSkin())
+      : (treeSkin === null ? null : (p1TreeSkinRef.current ?? getStoredMotherTreeSkin()))
     p1TreeSkinRef.current = effectiveTreeSkin
     p2TreeSkinRef.current = rivalTreeSkin ?? null
 
@@ -587,20 +587,16 @@ export function useGameEngine() {
       }
       if (treeSkin !== undefined) {
         p1TreeSkinRef.current = treeSkin
+        stateRef.current.p1TreeSkin = treeSkin
       }
       if (rivalTreeSkin !== undefined) {
         p2TreeSkinRef.current = rivalTreeSkin
+        stateRef.current.p2TreeSkin = rivalTreeSkin
       }
       if (stateRef.current.status === 'ready' && stateRef.current.tick === 0) {
         stateRef.current.p1BaseHp = INITIAL_BASE_HP + bonus
         if (typeof rivalBonus === 'number') {
           stateRef.current.p2BaseHp = INITIAL_BASE_HP + Math.max(0, rivalBonus)
-        }
-        if (treeSkin !== undefined) {
-          stateRef.current.p1TreeSkin = treeSkin
-        }
-        if (rivalTreeSkin !== undefined) {
-          stateRef.current.p2TreeSkin = rivalTreeSkin
         }
         forceRender()
       }
@@ -691,7 +687,8 @@ export function useGameEngine() {
         }
       } catch (_) {}
 
-      p1TreeSkinRef.current = p1PracticeTreeSkin
+      const effectivePracticeSkin = p1PracticeTreeSkin ?? p1TreeSkinRef.current
+      p1TreeSkinRef.current = effectivePracticeSkin
 
       stateRef.current = {
         tick: 0,
@@ -706,7 +703,7 @@ export function useGameEngine() {
         isPracticeMode: true,
         p1BaseHp: INITIAL_BASE_HP + p1PracticeTreeBonusHp,
       p2BaseHp: 99999,
-      p1TreeSkin: p1PracticeTreeSkin,
+      p1TreeSkin: effectivePracticeSkin,
       p2TreeSkin: null,
       sunBank: 9999,
       p2SunBank: 0,
@@ -763,7 +760,9 @@ export function useGameEngine() {
         undefined,
         'auth-v2',
         INITIAL_BASE_HP + p1TreeBonusHp,
-        INITIAL_BASE_HP
+        INITIAL_BASE_HP,
+        p1TreeSkinRef.current,
+        null
       )
       ancoraMsRef.current = null
       soyP1Ref.current = true
@@ -931,7 +930,9 @@ export function useGameEngine() {
         viejo.tick,
         engineVersionRef.current,
         INITIAL_BASE_HP + p1TreeBonusHpRef.current,
-        INITIAL_BASE_HP + p2TreeBonusHpRef.current
+        INITIAL_BASE_HP + p2TreeBonusHpRef.current,
+        p1TreeSkinRef.current,
+        p2TreeSkinRef.current
       )
 
       if (!rebuildRes.ok) {
@@ -972,7 +973,9 @@ export function useGameEngine() {
       soyP1 ?? true,
       engineVersionRef.current,
       INITIAL_BASE_HP + p1TreeBonusHpRef.current,
-      INITIAL_BASE_HP + p2TreeBonusHpRef.current
+      INITIAL_BASE_HP + p2TreeBonusHpRef.current,
+      p1TreeSkinRef.current,
+      p2TreeSkinRef.current
     )
     // Los soles y los enfriamientos son sólo tuyos y no salen del registro: si se
     // rehicieran, perderías los soles que ya habías recogido pulsando.

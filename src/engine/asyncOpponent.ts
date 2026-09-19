@@ -856,6 +856,8 @@ export interface RunAsyncTimelineOptions {
   engineVersion?: EngineVersion
   p1BaseHp?: number
   p2BaseHp?: number
+  p1TreeSkin?: string | null
+  p2TreeSkin?: string | null
 }
 
 export interface RunAsyncTimelineResult {
@@ -896,6 +898,8 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
     engineVersion = 'auth-v2',
     p1BaseHp,
     p2BaseHp,
+    p1TreeSkin,
+    p2TreeSkin,
   } = options
 
   const isStrategicMode = asyncOpponentMode === 'strategic'
@@ -914,7 +918,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         ok: false,
         reason: 'INVALID_P1_DECK',
         details: 'El mazo de P1 es obligatorio y no puede estar vacío en Ranked Async',
-        state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp),
+        state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin),
         controller: createAsyncOpponentControllerFromValidated([], []),
         p1Ilegal: true,
         motivo: 'no_result',
@@ -927,7 +931,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         ok: false,
         reason: 'INVALID_P1_DECK',
         details: 'El mazo de P1 no contiene cartas válidas',
-        state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp),
+        state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin),
         controller: createAsyncOpponentControllerFromValidated([], []),
         p1Ilegal: true,
         motivo: 'no_result',
@@ -943,7 +947,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         ok: false,
         reason: valDeckP2.reason,
         details: valDeckP2.details,
-        state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp),
+        state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin),
         controller: createAsyncOpponentControllerFromValidated([], []),
         p1Ilegal: false,
         motivo: 'no_result',
@@ -962,7 +966,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
           inconsistencySeq: valIntents.seq,
           inconsistencyTick: valIntents.issuedTick,
           details: valIntents.details,
-          state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp),
+          state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin),
           controller: createAsyncOpponentControllerFromValidated(mazoP2, []),
           p1Ilegal: false,
           motivo: 'no_result',
@@ -981,7 +985,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         inconsistencySeq: validacionP1.seq,
         inconsistencyTick: validacionP1.issuedTick,
         details: validacionP1.details,
-        state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp),
+        state: createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin),
         controller: isStrategicMode
           ? createStrategicOpponentController(mazoP2, {
               style: strategicStyle,
@@ -1000,7 +1004,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
     ordenadasP1 = validacionP1.acciones
 
     // 5. Inicialización estricta de State y Controller únicamente tras validar todo
-    state = createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp)
+    state = createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin)
     controller = isStrategicMode
       ? createStrategicOpponentController(mazoP2, {
           style: strategicStyle,
@@ -1013,7 +1017,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
       : createAsyncOpponentControllerFromValidated(mazoP2, intencionesP2)
   } else {
     // RUTA PERMISIVA LEGACY (solo para compatibilidad fuera de Ranked)
-    state = createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp)
+    state = createBattleState(seed, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin)
     mazoP1 = leerMazo(p1Deck) ?? []
     mazoP2 = leerMazo(asyncDeck) ?? []
     if (isStrategicMode) {
@@ -1276,7 +1280,9 @@ export function simulateAsyncMatch(
   maxTicks = TOPE_DE_SEGURIDAD_ASYNC,
   engineVersion: EngineVersion = 'auth-v2',
   p1BaseHp?: number,
-  p2BaseHp?: number
+  p2BaseHp?: number,
+  p1TreeSkin?: string | null,
+  p2TreeSkin?: string | null
 ): ResultadoSimulacionAsync {
   const res = runAsyncTimeline({
     seed,
@@ -1291,6 +1297,8 @@ export function simulateAsyncMatch(
     engineVersion,
     p1BaseHp,
     p2BaseHp,
+    p1TreeSkin,
+    p2TreeSkin,
   })
 
   // Si la simulación estricta resolvió limpiamente con ganador o empate:
@@ -1327,6 +1335,8 @@ export function simulateAsyncMatch(
       engineVersion,
       p1BaseHp,
       p2BaseHp,
+      p1TreeSkin,
+      p2TreeSkin,
     })
 
     if (resTolerant.ok && (resTolerant.winner === 1 || resTolerant.winner === 2 || resTolerant.motivo === 'draw')) {
@@ -1384,7 +1394,9 @@ export function reconstruirPartidaAsync(
   hastaTick: number,
   engineVersion: EngineVersion = 'auth-v2',
   p1BaseHp?: number,
-  p2BaseHp?: number
+  p2BaseHp?: number,
+  p1TreeSkin?: string | null,
+  p2TreeSkin?: string | null
 ): ReconstruirPartidaAsyncResult {
   const res = runAsyncTimeline({
     seed,
@@ -1399,6 +1411,8 @@ export function reconstruirPartidaAsync(
     engineVersion,
     p1BaseHp,
     p2BaseHp,
+    p1TreeSkin,
+    p2TreeSkin,
   })
 
   if (!res.ok) {

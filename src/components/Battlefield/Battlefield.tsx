@@ -134,10 +134,10 @@ function BaseTower({ team, hp, maxHp, sunBank, nombre, level, skin, sideBadge }:
           <div
             style={{
               position: 'absolute',
-              inset: '-15%',
+              inset: '0%',
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(168, 85, 247, 0.6) 0%, rgba(56, 189, 248, 0.4) 45%, transparent 75%)',
-              filter: 'blur(12px)',
+              background: 'radial-gradient(circle, rgba(168, 85, 247, 0.55) 0%, rgba(56, 189, 248, 0.35) 45%, transparent 75%)',
+              filter: 'blur(8px)',
               pointerEvents: 'none',
               zIndex: 0,
             }}
@@ -160,7 +160,7 @@ function BaseTower({ team, hp, maxHp, sunBank, nombre, level, skin, sideBadge }:
         <img
           src={treeImgSrc}
           alt={team === 'p1' ? 'Árbol Madre P1' : 'Árbol Madre P2'}
-          className={`base__mothertree-img ${team === 'p2' ? 'base__mothertree-img--p2' : ''}`}
+          className={`base__mothertree-img ${team === 'p2' ? 'base__mothertree-img--p2' : ''} ${skin === 'mother_tree_skin' ? 'base__mothertree-img--skin' : ''}`}
           style={{ position: 'relative', zIndex: 1 }}
         />
       </div>

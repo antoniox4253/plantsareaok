@@ -191,19 +191,30 @@
 }
 
 .base__mothertree-img {
-  width: 160%;
-  max-width: 220px;
+  width: 120%;
+  max-width: 160px;
   height: auto;
-  max-height: 95%;
+  max-height: 85%;
   object-fit: contain;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 12px rgba(82, 224, 97, 0.5));
   transform-origin: bottom center;
   animation: motherTreePulse 4.0s ease-in-out infinite alternate;
 }
 
+.base__mothertree-img--skin {
+  width: 100%;
+  max-width: 130px;
+  max-height: 76%;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 12px rgba(168, 85, 247, 0.6));
+}
+
 .base__mothertree-img--p2 {
   transform: scaleX(-1);
   animation: motherTreePulseP2 4.0s ease-in-out infinite alternate;
+}
+
+.base__mothertree-img--skin.base__mothertree-img--p2 {
+  transform: scaleX(-1);
 }
 
 @keyframes motherTreePulse {

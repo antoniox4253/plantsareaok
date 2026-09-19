@@ -78,9 +78,11 @@ export function reconstruirHasta(
   hastaTick: number,
   engineVersion: EngineVersion = 'auth-v2',
   p1BaseHp: number = INITIAL_BASE_HP,
-  p2BaseHp: number = INITIAL_BASE_HP
+  p2BaseHp: number = INITIAL_BASE_HP,
+  p1TreeSkin?: string | null,
+  p2TreeSkin?: string | null
 ): GameState {
-  const estado = sembrar(semilla, acciones, engineVersion, p1BaseHp, p2BaseHp)
+  const estado = sembrar(semilla, acciones, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin)
   while (estado.tick < hastaTick && estado.status === 'playing') {
     // Sin sonidos: se están rehaciendo tics que el jugador ya vivió, y volver a
     // sonarlos sería un estruendo de dos minutos de partida en un instante.
@@ -107,9 +109,11 @@ export function reconstruirConHuellas(
   soyP1: boolean,
   engineVersion: EngineVersion = 'auth-v2',
   p1BaseHp: number = INITIAL_BASE_HP,
-  p2BaseHp: number = INITIAL_BASE_HP
+  p2BaseHp: number = INITIAL_BASE_HP,
+  p1TreeSkin?: string | null,
+  p2TreeSkin?: string | null
 ): { estado: GameState; huellas: HuellaEnUnTic[] } {
-  const estado = sembrar(semilla, acciones, engineVersion, p1BaseHp, p2BaseHp)
+  const estado = sembrar(semilla, acciones, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin)
   const huellas: HuellaEnUnTic[] = []
 
   while (estado.tick < hastaTick && estado.status === 'playing') {
@@ -130,9 +134,11 @@ function sembrar(
   acciones: readonly AccionRegistrada[],
   engineVersion: EngineVersion = 'auth-v2',
   p1BaseHp: number = INITIAL_BASE_HP,
-  p2BaseHp: number = INITIAL_BASE_HP
+  p2BaseHp: number = INITIAL_BASE_HP,
+  p1TreeSkin?: string | null,
+  p2TreeSkin?: string | null
 ): GameState {
-  const estado = createBattleState(semilla, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp)
+  const estado = createBattleState(semilla, false, true, undefined, engineVersion, p1BaseHp, p2BaseHp, p1TreeSkin, p2TreeSkin)
 
   // Por tic, y a igualdad de tic en el orden en que están: el registro llega
   // desordenado cuando el canal en vivo y la recuperación periódica se solapan, y

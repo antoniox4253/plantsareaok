@@ -146,4 +146,55 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     }
     expect(state.projectiles.filter((p) => p.id.startsWith('tree-p1-')).length).toBe(2)
   })
+
+  it('preserves mother_tree_skin through reconstruirPartidaAsync and reconstruirConHuellas', async () => {
+    const { reconstruirPartidaAsync } = await import('./asyncOpponent')
+    const { reconstruirConHuellas } = await import('./reconstruir')
+
+    const seed = 42
+    const deck = [
+      { plantId: 'peashooter', level: 1, statRolls: [] },
+      { plantId: 'sunflower', level: 1, statRolls: [] },
+      { plantId: 'wallnut', level: 1, statRolls: [] },
+      { plantId: 'repeater', level: 1, statRolls: [] },
+    ]
+
+    // 1. Reconstrucción Asíncrona (Ranked / Rival Semilla)
+    const resAsync = reconstruirPartidaAsync(
+      seed,
+      deck as any,
+      deck as any,
+      [],
+      [],
+      msToTicks(11000), // 11s simulation
+      'auth-v2',
+      600,
+      600,
+      'mother_tree_skin',
+      null
+    )
+
+    expect(resAsync.ok).toBe(true)
+    expect(resAsync.estado.p1TreeSkin).toBe('mother_tree_skin')
+    const projs = resAsync.estado.projectiles.filter((p) => p.id.startsWith('tree-p1-'))
+    expect(projs.length).toBeGreaterThanOrEqual(1)
+
+    // 2. Reconstrucción Lockstep (1c1 con huellas)
+    const resLockstep = reconstruirConHuellas(
+      seed,
+      [],
+      msToTicks(11000),
+      true,
+      'auth-v2',
+      600,
+      600,
+      'mother_tree_skin',
+      null
+    )
+
+    expect(resLockstep.estado.p1TreeSkin).toBe('mother_tree_skin')
+    const projsLockstep = resLockstep.estado.projectiles.filter((p) => p.id.startsWith('tree-p1-'))
+    expect(projsLockstep.length).toBeGreaterThanOrEqual(1)
+  })
 })
+

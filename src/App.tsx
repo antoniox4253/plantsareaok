@@ -1389,7 +1389,9 @@ function App() {
             isAsyncMatch={partidaAsincrona}
             engineVersion={engineVersionSala}
             treeLevels={treeLevelsEnPartida}
-            treeSkins={treeSkinsEnPartida}
+            treeSkins={
+              treeSkinsEnPartida ?? (equippedTreeSkin ? { mio: equippedTreeSkin, rival: null } : null)
+            }
             onColosseumComplete={(won) => {
               if (colosseumConfig) {
                 return resolveColosseumMatch(won, colosseumConfig.betGems, colosseumConfig.usedTicket)
