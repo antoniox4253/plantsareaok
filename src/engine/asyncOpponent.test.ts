@@ -2032,7 +2032,7 @@ describe('Rival Semilla Ranked V1 — Suite de Tests', () => {
       { seq: 3, issuedTick: 10, tick: 16, kind: 'plant', plantId: 'peashooter', slot: 6, lane: 0, col: 0 },
       { seq: 4, issuedTick: 10, tick: 16, kind: 'plant', plantId: 'peashooter', slot: 0, lane: 3, col: 0 },
       { seq: 5, issuedTick: 10, tick: 16, kind: 'plant', plantId: 'peashooter', slot: 0, lane: -1, col: 0 },
-      { seq: 6, issuedTick: 10, tick: 16, kind: 'plant', plantId: 'peashooter', slot: 0, lane: 0, col: 6 },
+      { seq: 6, issuedTick: 10, tick: 16, kind: 'plant', plantId: 'peashooter', slot: 0, lane: 0, col: 7 },
       { seq: 7, issuedTick: 10, tick: 16, kind: 'plant', plantId: 'peashooter', slot: 0, lane: 0, col: -1 },
     ]
 
@@ -2050,7 +2050,7 @@ describe('Rival Semilla Ranked V1 — Suite de Tests', () => {
     const casosInvalidos = [
       { seq: 1, issuedTick: 10, tick: 16, kind: 'dig', lane: 3, col: 0 },
       { seq: 2, issuedTick: 10, tick: 16, kind: 'dig', lane: -1, col: 0 },
-      { seq: 3, issuedTick: 10, tick: 16, kind: 'dig', lane: 0, col: 6 },
+      { seq: 3, issuedTick: 10, tick: 16, kind: 'dig', lane: 0, col: 7 },
       { seq: 4, issuedTick: 10, tick: 16, kind: 'dig', lane: 0, col: -1 },
       { seq: 5, issuedTick: 10, tick: 16, kind: 'dig', lane: undefined, col: 0 },
     ]

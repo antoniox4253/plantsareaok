@@ -322,9 +322,9 @@ export const LANES_CONFIG = [
 export const BASE_LEFT_END_X = 15
 export const BASE_RIGHT_START_X = 85
 export const FIELD_WIDTH_PCT = BASE_RIGHT_START_X - BASE_LEFT_END_X
-export const TOTAL_COLUMNS = 12
-export const P1_COLUMNS = 6
-export const P2_COLUMNS = 6
+export const TOTAL_COLUMNS = 14
+export const P1_COLUMNS = 7
+export const P2_COLUMNS = 7
 export const DECK_SIZE = 6
 export const MAX_DECK_SLOTS = 6
 
