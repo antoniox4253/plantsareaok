@@ -953,17 +953,6 @@ export default function LotteryModal({
             </>
           )
 
-          const renderWheelBanner = () => (
-            <div className="lottery-sec-banner">
-              <span className="lottery-banner-header">📢 PUBLICIDAD</span>
-              <div className="lottery-vertical-banner-slot">
-                <div className="banner-logo">🎰</div>
-                <div className="banner-display-tag">Lucky Arcade</div>
-                <span className="banner-sponsor-sub">Patrocinado</span>
-              </div>
-            </div>
-          )
-
           if (activeTab !== 'wheel') return null
 
           const isScreen = Boolean(onBack)
@@ -985,29 +974,14 @@ export default function LotteryModal({
                 </div>
               )}
 
-              {isScreen ? (
-                <div className="lottery-screen-3sections">
-                  {/* SECCION 1 (IZQUIERDA): RULETA 3D */}
-                  <div className="lottery-sec-wheel">
-                    {renderWheelVisual()}
-                  </div>
-                  {/* SECCION 2 (MEDIO): INFORMACION HERO, TIEMPO Y BOTONES */}
-                  <div className="lottery-sec-info">
-                    {renderWheelInfoAndActions()}
-                  </div>
-                  {/* SECCION 3 (DERECHA): VERTICAL BANNER */}
-                  {renderWheelBanner()}
+              <div className="lottery-wheel-content-grid">
+                <div className="lottery-wheel-visual-col">
+                  {renderWheelVisual()}
                 </div>
-              ) : (
-                <div className="lottery-wheel-content-grid">
-                  <div className="lottery-wheel-visual-col">
-                    {renderWheelVisual()}
-                  </div>
-                  <div className="lottery-wheel-info-col">
-                    {renderWheelInfoAndActions()}
-                  </div>
+                <div className="lottery-wheel-info-col">
+                  {renderWheelInfoAndActions()}
                 </div>
-              )}
+              </div>
             </div>
           )
         })()}

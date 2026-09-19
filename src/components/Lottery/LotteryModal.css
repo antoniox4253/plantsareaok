@@ -1595,7 +1595,7 @@
 .lottery-screen-view {
   width: 100%;
   height: 100%;
-  min-height: 100vh;
+  min-height: 0;
   background: radial-gradient(circle at 50% 15%, #1e1b4b 0%, #09090b 100%);
   display: flex;
   flex-direction: column;
@@ -1604,7 +1604,7 @@
   position: relative;
   color: #f8fafc;
   box-sizing: border-box;
-  padding: 12px 20px;
+  padding: 10px 16px;
 }
 
 .lottery-screen-header {
@@ -1616,7 +1616,7 @@
   border: 1.5px solid #334155;
   border-radius: 14px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   flex-shrink: 0;
 }
 
@@ -1674,69 +1674,66 @@
   color: #f8fafc;
 }
 
-/* 3 SECTIONS FOR WHEEL TAB IN SCREEN MODE */
-.lottery-screen-3sections {
+/* FULL SCREEN MODE WHEEL GRID (CLEAN 2-COLUMN, NO ADS) */
+.lottery-screen-view .lottery-wheel-tab-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  overflow: hidden;
+}
+
+.lottery-screen-view .lottery-wheel-content-grid {
   display: grid;
-  grid-template-columns: 290px 1fr 180px;
-  gap: 14px;
+  grid-template-columns: 310px 1fr;
+  gap: 18px;
   align-items: center;
   width: 100%;
   flex: 1;
-  margin-top: 4px;
   box-sizing: border-box;
 }
 
-@media (max-width: 1200px) {
-  .lottery-screen-3sections {
-    grid-template-columns: 280px 1fr;
-  }
-  .lottery-sec-banner {
-    display: none;
-  }
-}
-
 @media (max-width: 860px) {
-  .lottery-screen-3sections {
+  .lottery-screen-view .lottery-wheel-content-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
-/* SECCION 1: RULETA (COMPACTA Y PROPORCIONADA) */
-.lottery-sec-wheel {
+.lottery-screen-view .lottery-wheel-visual-col {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 4px;
 }
 
-.lottery-sec-wheel .lottery-wheel-wrapper {
+.lottery-screen-view .lottery-wheel-wrapper {
   width: 270px;
   height: 270px;
   border: 4px solid #eab308;
   box-shadow: 0 0 25px rgba(234, 179, 8, 0.45), inset 0 0 16px rgba(0, 0, 0, 0.8);
 }
 
-.lottery-sec-wheel .lottery-wheel-pointer {
+.lottery-screen-view .lottery-wheel-pointer {
   font-size: 26px;
   top: -14px;
 }
 
-.lottery-sec-wheel .lottery-wheel-center-hub {
+.lottery-screen-view .lottery-wheel-center-hub {
   width: 58px;
   height: 58px;
   font-size: 11px;
 }
 
-.lottery-sec-wheel .lottery-slice-icon {
+.lottery-screen-view .lottery-slice-icon {
   font-size: 18px;
 }
 
-.lottery-sec-wheel .lottery-slice-label {
+.lottery-screen-view .lottery-slice-label {
   font-size: 8.5px;
 }
 
-/* SECCION 2: INFORMACION Y BOTONES */
-.lottery-sec-info {
+.lottery-screen-view .lottery-wheel-info-col {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1747,7 +1744,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
-.lottery-sec-info .lottery-wheel-hero-card {
+.lottery-screen-view .lottery-wheel-hero-card {
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid #475569;
   border-radius: 10px;
@@ -1755,44 +1752,44 @@
   text-align: center;
 }
 
-.lottery-sec-info .lottery-wheel-hero-card h3 {
+.lottery-screen-view .lottery-wheel-hero-card h3 {
   font-size: 0.95rem;
   margin: 2px 0;
   color: #f8fafc;
 }
 
-.lottery-sec-info .lottery-wheel-hero-card p {
+.lottery-screen-view .lottery-wheel-hero-card p {
   font-size: 0.74rem;
   line-height: 1.25;
   margin: 0;
   color: #94a3b8;
 }
 
-.lottery-sec-info .lottery-spin-action-box {
+.lottery-screen-view .lottery-spin-action-box {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.lottery-sec-info .lottery-spin-btn {
+.lottery-screen-view .lottery-spin-btn {
   font-size: 0.84rem;
   padding: 8px 14px;
   border-radius: 8px;
 }
 
-.lottery-sec-info .lottery-free-cooldown-box {
+.lottery-screen-view .lottery-free-cooldown-box {
   padding: 6px 10px;
   border-radius: 8px;
 }
 
-.lottery-sec-info .lottery-prizes-preview-box {
+.lottery-screen-view .lottery-prizes-preview-box {
   background: rgba(20, 30, 45, 0.6);
   border: 1px solid rgba(234, 179, 8, 0.2);
   border-radius: 8px;
   padding: 6px 10px;
 }
 
-.lottery-sec-info .lottery-prizes-title {
+.lottery-screen-view .lottery-prizes-title {
   font-size: 0.7rem;
   font-weight: 800;
   color: #fde047;
@@ -1801,60 +1798,18 @@
   text-align: center;
 }
 
-.lottery-sec-info .lottery-prizes-tags-grid {
+.lottery-screen-view .lottery-prizes-tags-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   justify-content: center;
 }
 
-.lottery-sec-info .lottery-prize-tag {
+.lottery-screen-view .lottery-prize-tag {
   font-size: 0.66rem;
   padding: 2px 6px;
   border-radius: 6px;
 }
 
-/* SECCION 3: BANNER VERTICAL (LIMPIO) */
-.lottery-sec-banner {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(8, 14, 26, 0.95) 100%);
-  border: 1.5px solid rgba(234, 179, 8, 0.3);
-  border-radius: 12px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.lottery-banner-header {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: #fde047;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.lottery-vertical-banner-slot {
-  width: 100%;
-  flex: 1;
-  min-height: 200px;
-  background: rgba(30, 41, 59, 0.5);
-  border: 1.5px dashed rgba(234, 179, 8, 0.35);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  box-sizing: border-box;
-  text-align: center;
-  gap: 8px;
-}
-
-.lottery-vertical-banner-slot .banner-logo {
-  font-size: 2.2rem;
-  filter: drop-shadow(0 0 8px rgba(234, 179, 8, 0.5));
-}
 
 

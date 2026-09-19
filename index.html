@@ -18,10 +18,13 @@
       href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap"
       rel="stylesheet"
     />
-    <!-- GameMonetize.com SDK -->
+    <!-- GameMonetize.com SDK Configuration (Autoplay desactivado para evitar anuncios en inicio) -->
     <script type="text/javascript">
       window.SDK_OPTIONS = {
         gameId: "%VITE_GAMEMONETIZE_GAME_ID%",
+        advertisementSettings: {
+          autoplay: false
+        },
         onEvent: function (a) {
           switch (a.name) {
             case "SDK_GAME_PAUSE":
@@ -36,10 +39,9 @@
           }
         }
       };
-      (function (a, b, c) {
-        var d = a.getElementsByTagName(b)[0];
-        a.getElementById(c) || (a = a.createElement(b), a.id = c, a.src = "https://api.gamemonetize.com/sdk.js", d.parentNode.insertBefore(a, d))
-      })(document, "script", "gamemonetize-sdk");
+      // Nota: El script de GameMonetize ya no se inyecta al cargar la página para evitar
+      // anuncios en el menú principal. Se carga bajo demanda exclusivamente cuando el
+      // jugador pulsa voluntariamente 'Ver Anuncio' (gestionado por adManager.ts).
     </script>
 
     <!-- Google Consent Mode v2 (Debe ejecutarse ANTES de cargar gtag.js) -->
