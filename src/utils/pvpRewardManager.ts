@@ -104,7 +104,7 @@ export const FARMING_ITEM_DEFINITIONS: Record<
   },
   knight_helmet: {
     label: 'Yelmo de Caballero',
-    description: 'Yelmo exclusivo de Nuez. Al equiparse otorga +500 HP y resistencia de acero.',
+    description: 'Yelmo exclusivo de Nuez. Al equiparse otorga +150 HP y resistencia de acero.',
     icon: '/game-assets/auction/knight_wallnut.png',
     fallback: '🛡️',
   },

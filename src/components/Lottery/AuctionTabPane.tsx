@@ -530,7 +530,7 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
                 <div className="lottery-auction-stats-pills">
                   {isLive ? (
                     <>
-                      <span className="lottery-stat-pill">❤️ +500 HP</span>
+                      <span className="lottery-stat-pill">❤️ +150 HP</span>
                       <span className="lottery-stat-pill">🛡️ Defensa de Acero</span>
                       <span className="lottery-stat-pill">⚔️ Resistencia Máxima</span>
                     </>
