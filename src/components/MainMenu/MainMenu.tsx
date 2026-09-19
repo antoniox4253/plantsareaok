@@ -70,6 +70,8 @@ interface MainMenuProps {
   onOpenBattlePass?: () => void
   onOpenClan?: () => void
   onOpenMarketplace?: () => void
+  onOpenMisiones?: () => void
+  onOpenLoteria?: () => void
   onOpenLanding?: () => void
   onOpenAdmin?: () => void
   onOpenStrategicPlaytest?: () => void
@@ -118,6 +120,8 @@ export default function MainMenu({
   onOpenMisPartidas,
   onOpenBattlePass,
   onOpenClan,
+  onOpenMisiones,
+  onOpenLoteria,
   onOpenLanding,
   onOpenAdmin,
   onOpenStrategicPlaytest,
@@ -796,9 +800,13 @@ export default function MainMenu({
               className="lottery-lobby-ticker"
               onClick={() => {
                 soundManager.playSound('click', 0.5)
-                onOpenJardin?.()
+                if (onOpenLoteria) {
+                  onOpenLoteria()
+                } else {
+                  setShowLotteryModal(true)
+                }
               }}
-              title="🎰 Clic para ir a la Ruleta de la Suerte en el Jardín"
+              title="🎰 Clic para ir a la Ruleta de la Suerte"
             >
               <div className="lottery-lobby-ticker__badge">
                 <span className="lottery-lobby-ticker__icon">🎰</span>
@@ -1003,7 +1011,11 @@ export default function MainMenu({
           type="button"
           onClick={() => {
             soundManager.playSound('click', 0.5)
-            setIsMisionesModalOpen(true)
+            if (onOpenMisiones) {
+              onOpenMisiones()
+            } else {
+              setIsMisionesModalOpen(true)
+            }
           }}
           title="Misiones Diarias, Racha de 7 Días y Concurso TikTok"
         >
@@ -1025,7 +1037,11 @@ export default function MainMenu({
           type="button"
           onClick={() => {
             soundManager.playSound('click', 0.4)
-            setShowLotteryModal(true)
+            if (onOpenLoteria) {
+              onOpenLoteria()
+            } else {
+              setShowLotteryModal(true)
+            }
           }}
           title="Lotería y Ruleta de la Suerte"
         >
@@ -1290,6 +1306,7 @@ export default function MainMenu({
         isOpen={isMisionesModalOpen}
         onClose={handleCloseMisionesModal}
         userGems={userTokens}
+        userGold={userGold}
         onRewardClaimed={onRewardsChanged}
       />
 

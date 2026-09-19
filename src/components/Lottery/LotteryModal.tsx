@@ -4,11 +4,13 @@ import type { CodeRoundPrizeTier } from '../../types/database.types'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { soundManager } from '../../utils/audioManager'
 import { lotteryService } from '../../services/lotteryService'
+import { adManager } from '../../utils/adManager'
 import './LotteryModal.css'
 
 interface LotteryModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen?: boolean
+  onClose?: () => void
+  onBack?: () => void
   userTokens: number
   userGold?: number
   isAdmin?: boolean
@@ -195,9 +197,11 @@ interface BoardEntry {
 // respuesta. Ahora lo genera el servidor al abrir la ronda.
 
 export default function LotteryModal({
-  isOpen,
+  isOpen = true,
   onClose,
+  onBack,
   userTokens,
+  userGold = 0,
   isAdmin,
   onOpenAdmin,
   onRewardsChanged,
@@ -791,34 +795,12 @@ export default function LotteryModal({
     await onRewardsChanged?.()
   }
 
-  return (
-    <div className="lottery-backdrop" onClick={onClose}>
-      <div className="lottery-modal-container" onClick={(e) => e.stopPropagation()}>
-        {/* MODAL HEADER */}
-        <div className="lottery-header">
-          <div className="lottery-header__title-box">
-            <span className="lottery-header__icon">🎰</span>
-            <div>
-              <h2 className="lottery-header__title">RULETA & CÓDIGO BOTÁNICO</h2>
-              <p className="lottery-header__subtitle">
-                Gira la Ruleta de la Suerte y Descifra el Código Secreto para ganar Gemas 💎 y grandes recompensas
-              </p>
-            </div>
-          </div>
+  if (!isOpen && !onBack) return null
 
-          <div className="lottery-header__right">
-            <div className="lottery-user-balance">
-              <span>💎 Saldo:</span>
-              <strong>{currentGems} Gemas</strong>
-            </div>
-            <button type="button" className="lottery-close-btn" onClick={onClose}>
-              ✕
-            </button>
-          </div>
-        </div>
-
-        {/* TOP NAVIGATION TABS */}
-        <div className="lottery-tabs-bar">
+  const innerContent = (
+    <>
+      {/* TOP NAVIGATION TABS */}
+      <div className="lottery-tabs-bar">
           <button
             type="button"
             className={`lottery-tab-btn ${activeTab === 'wheel' ? 'lottery-tab-btn--active' : ''}`}
@@ -842,155 +824,203 @@ export default function LotteryModal({
         </div>
 
         {/* ===================== TAB 1: WHEEL ===================== */}
-        {activeTab === 'wheel' && (
-          <div className="lottery-wheel-tab-pane">
-            {recentWinners.length > 0 && (
-              <div className="lottery-modal-marquee-banner">
-                <span className="lottery-modal-marquee-tag">🔥 PREMIOS EN VIVO:</span>
-                <div className="lottery-modal-marquee-track">
-                  {recentWinners.map((w, idx) => (
-                    <span key={w.id || idx} className="lottery-modal-marquee-item">
-                      <strong style={{ color: '#ffffff' }}>{w.username}</strong>:{' '}
-                      <span style={{ color: '#38bdf8' }}>{w.description.replace(/^Premio de Ruleta:\s*/i, '')}</span>
-                      {idx < recentWinners.length - 1 && <span style={{ color: '#f59e0b', margin: '0 8px' }}>•</span>}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="lottery-wheel-content-grid">
-              {/* LEFT: 3D LUCKY WHEEL */}
-              <div className="lottery-wheel-visual-col">
-                <div className="lottery-wheel-wrapper">
-                  {/* Wheel Pointer */}
-                  <div className="lottery-wheel-pointer">▼</div>
+        {(() => {
+          const renderWheelVisual = () => (
+            <div className="lottery-wheel-wrapper">
+              {/* Wheel Pointer */}
+              <div className="lottery-wheel-pointer">▼</div>
 
-                  {/* Rotating Wheel Container */}
-                  <div
-                    className="lottery-wheel-disk"
-                    style={{
-                      transform: `rotate(${wheelRotation}deg)`,
-                      transition: isSpinning ? 'transform 4.5s cubic-bezier(0.15, 0.9, 0.2, 1)' : 'none',
-                    }}
-                  >
-                    {sectors.map((sec, idx) => {
-                      const angle = (360 / sectors.length) * idx
-                      const halfAngle = (180 / sectors.length) * (Math.PI / 180)
-                      const dx = 50 * Math.tan(halfAngle)
-                      const x1 = Math.max(0, 50 - dx)
-                      const x2 = Math.min(100, 50 + dx)
-                      const clipPath = sectors.length === 8 ? undefined : `polygon(50% 50%, ${x1.toFixed(2)}% 0%, ${x2.toFixed(2)}% 0%)`
-                      return (
-                        <div
-                          key={sec.id}
-                          className={`lottery-wheel-slice lottery-slice--${sec.rarity}`}
-                          style={{
-                            transform: `rotate(${angle}deg)`,
-                            background: sec.color,
-                            ...(clipPath ? { clipPath } : {}),
-                          }}
-                        >
-                          <div className="lottery-slice-content">
-                            <span className="lottery-slice-icon">{sec?.icon || '🎁'}</span>
-                            <span className="lottery-slice-label">{sec?.label || ''}</span>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Wheel Center Button */}
-                  <button
-                    type="button"
-                    className={`lottery-wheel-center-hub ${isSpinning ? 'lottery-hub--spinning' : ''} ${!canFreeSpin ? 'lottery-hub--locked' : ''}`}
-                    disabled={isSpinning || !canFreeSpin}
-                    onClick={() => handleSpinWheel(true)}
-                    title={canFreeSpin ? 'Girar tiro gratis' : `Tiro gratis usado. Haz clic en "⚡ GIRAR POR ${PAID_SPIN_COST_GEMS} GEMAS 💎"`}
-                  >
-                    <span>{isSpinning ? '🌀' : 'GIRAR'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* RIGHT: WHEEL INFO & ACTION BUTTONS */}
-              <div className="lottery-wheel-info-col">
-                <div className="lottery-wheel-hero-card">
-                  <div className="lottery-wheel-hero-badge">⭐ RULETA DE LA SUERTE</div>
-                  <h3>¡PRUEBA TU SUERTE CADA DÍA!</h3>
-                  <p>
-                    Tienes <strong>1 Tiro Gratis cada 24 horas</strong> garantizado. También puedes adquirir giros extra por tan solo <strong>{PAID_SPIN_COST_GEMS} Gemas 💎</strong>.
-                  </p>
-                </div>
-
-                <div className="lottery-spin-action-box">
-                  {canFreeSpin ? (
-                    <button
-                      type="button"
-                      className="lottery-spin-btn lottery-spin-btn--free"
-                      disabled={isSpinning}
-                      onClick={() => handleSpinWheel(true)}
+              {/* Rotating Wheel Container */}
+              <div
+                className="lottery-wheel-disk"
+                style={{
+                  transform: `rotate(${wheelRotation}deg)`,
+                  transition: isSpinning ? 'transform 4.5s cubic-bezier(0.15, 0.9, 0.2, 1)' : 'none',
+                }}
+              >
+                {sectors.map((sec, idx) => {
+                  const angle = (360 / sectors.length) * idx
+                  const halfAngle = (180 / sectors.length) * (Math.PI / 180)
+                  const dx = 50 * Math.tan(halfAngle)
+                  const x1 = Math.max(0, 50 - dx)
+                  const x2 = Math.min(100, 50 + dx)
+                  const clipPath = sectors.length === 8 ? undefined : `polygon(50% 50%, ${x1.toFixed(2)}% 0%, ${x2.toFixed(2)}% 0%)`
+                  return (
+                    <div
+                      key={sec.id}
+                      className={`lottery-wheel-slice lottery-slice--${sec.rarity}`}
+                      style={{
+                        transform: `rotate(${angle}deg)`,
+                        background: sec.color,
+                        ...(clipPath ? { clipPath } : {}),
+                      }}
                     >
-                      <span className="lottery-btn-sparkle">✨</span>
-                      <span>🎉 GIRAR GRATIS (1 TIRO HOY)</span>
-                    </button>
-                  ) : (
-                    <div className="lottery-free-cooldown-box">
-                      <span className="lottery-cooldown-icon">⏳</span>
-                      <div className="lottery-cooldown-text">
-                        <strong>TIRO GRATIS USADO</strong>
-                        <small>Próximo giro gratis en: {timeUntilFreeSpin}</small>
+                      <div className="lottery-slice-content">
+                        <span className="lottery-slice-icon">{sec?.icon || '🎁'}</span>
+                        <span className="lottery-slice-label">{sec?.label || ''}</span>
                       </div>
                     </div>
-                  )}
+                  )
+                })}
+              </div>
 
+              {/* Wheel Center Button */}
+              <button
+                type="button"
+                className={`lottery-wheel-center-hub ${isSpinning ? 'lottery-hub--spinning' : ''} ${!canFreeSpin ? 'lottery-hub--locked' : ''}`}
+                disabled={isSpinning || !canFreeSpin}
+                onClick={() => handleSpinWheel(true)}
+                title={canFreeSpin ? 'Girar tiro gratis' : `Tiro gratis usado. Haz clic en "⚡ GIRAR POR ${PAID_SPIN_COST_GEMS} GEMAS 💎"`}
+              >
+                <span>{isSpinning ? '🌀' : 'GIRAR'}</span>
+              </button>
+            </div>
+          )
+
+          const renderWheelInfoAndActions = () => (
+            <>
+              <div className="lottery-wheel-hero-card">
+                <div className="lottery-wheel-hero-badge">⭐ RULETA DE LA SUERTE</div>
+                <h3>¡PRUEBA TU SUERTE CADA DÍA!</h3>
+                <p>
+                  Tienes <strong>1 Tiro Gratis cada 24 horas</strong> garantizado. También puedes adquirir giros extra por tan solo <strong>{PAID_SPIN_COST_GEMS} Gemas 💎</strong>.
+                </p>
+              </div>
+
+              <div className="lottery-spin-action-box">
+                {canFreeSpin ? (
                   <button
                     type="button"
-                    className="lottery-spin-btn lottery-spin-btn--paid"
-                    disabled={isSpinning || currentGems < PAID_SPIN_COST_GEMS}
-                    onClick={() => {
-                      soundManager.playSound('click', 0.4)
-                      setShowConfirmPaidModal(true)
-                    }}
+                    className="lottery-spin-btn lottery-spin-btn--free"
+                    disabled={isSpinning}
+                    onClick={() => handleSpinWheel(true)}
                   >
-                    <span>⚡ GIRAR POR {PAID_SPIN_COST_GEMS} GEMAS 💎</span>
+                    <span className="lottery-btn-sparkle">✨</span>
+                    <span>🎉 GIRAR GRATIS (1 TIRO HOY)</span>
                   </button>
-                </div>
-
-                {/* PRIZES HIGHLIGHT LIST */}
-                <div className="lottery-prizes-preview-box">
-                  <span className="lottery-prizes-title">🎁 PREMIOS EN ESTE SORTEO:</span>
-                  <div className="lottery-prizes-tags-grid">
-                    <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                      💎 500 Gemas (MEGA JACKPOT)
-                    </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                      👑 Sobre Básico (300💎)
-                    </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--legendary">
-                      💎 10 Gemas (Giro Extra)
-                    </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--gold">
-                      💰 150 Monedas de Oro
-                    </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--gold">
-                      💰 100 Monedas de Oro
-                    </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--gold">
-                      💰 50 Monedas de Oro
-                    </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--rare">
-                      🌿 Fertilizante de Cultivo
-                    </div>
-                    <div className="lottery-prize-tag lottery-prize-tag--epic">
-                      🍀 Sigue Intentando
+                ) : (
+                  <div className="lottery-free-cooldown-box">
+                    <span className="lottery-cooldown-icon">⏳</span>
+                    <div className="lottery-cooldown-text">
+                      <strong>TIRO GRATIS USADO</strong>
+                      <small>Próximo giro gratis en: {timeUntilFreeSpin}</small>
                     </div>
                   </div>
+                )}
 
+                <button
+                  type="button"
+                  className="lottery-spin-btn lottery-spin-btn--paid"
+                  disabled={isSpinning || currentGems < PAID_SPIN_COST_GEMS}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setShowConfirmPaidModal(true)
+                  }}
+                >
+                  <span>⚡ GIRAR POR {PAID_SPIN_COST_GEMS} GEMAS 💎</span>
+                </button>
+              </div>
+
+              {/* PRIZES HIGHLIGHT LIST */}
+              <div className="lottery-prizes-preview-box">
+                <span className="lottery-prizes-title">🎁 PREMIOS EN ESTE SORTEO:</span>
+                <div className="lottery-prizes-tags-grid">
+                  <div className="lottery-prize-tag lottery-prize-tag--jackpot">
+                    💎 500 Gemas (MEGA JACKPOT)
+                  </div>
+                  <div className="lottery-prize-tag lottery-prize-tag--jackpot">
+                    👑 Sobre Básico (300💎)
+                  </div>
+                  <div className="lottery-prize-tag lottery-prize-tag--legendary">
+                    💎 10 Gemas (Giro Extra)
+                  </div>
+                  <div className="lottery-prize-tag lottery-prize-tag--gold">
+                    💰 150 Monedas de Oro
+                  </div>
+                  <div className="lottery-prize-tag lottery-prize-tag--gold">
+                    💰 100 Monedas de Oro
+                  </div>
+                  <div className="lottery-prize-tag lottery-prize-tag--gold">
+                    💰 50 Monedas de Oro
+                  </div>
+                  <div className="lottery-prize-tag lottery-prize-tag--rare">
+                    🌿 Fertilizante de Cultivo
+                  </div>
+                  <div className="lottery-prize-tag lottery-prize-tag--epic">
+                    🍀 Sigue Intentando
+                  </div>
                 </div>
               </div>
+            </>
+          )
+
+          const renderWheelBanner = () => (
+            <div className="lottery-sec-banner">
+              <span className="lottery-banner-header">📢 PUBLICIDAD / PATROCINADO</span>
+              <div className="lottery-vertical-banner-slot">
+                <div className="banner-logo">🎰</div>
+                <h4>Plant Arena Arcade</h4>
+                <p>Gira la ruleta y juega para ganar increíbles recompensas y gemas.</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    soundManager.playSound('click', 0.5)
+                    await adManager.showAd('lottery_banner')
+                  }}
+                >
+                  ▶ Ver Anuncio
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )
+
+          if (activeTab !== 'wheel') return null
+
+          const isScreen = Boolean(onBack)
+
+          return (
+            <div className="lottery-wheel-tab-pane" style={isScreen ? { padding: '8px 0' } : undefined}>
+              {recentWinners.length > 0 && (
+                <div className="lottery-modal-marquee-banner">
+                  <span className="lottery-modal-marquee-tag">🔥 PREMIOS EN VIVO:</span>
+                  <div className="lottery-modal-marquee-track">
+                    {recentWinners.map((w, idx) => (
+                      <span key={w.id || idx} className="lottery-modal-marquee-item">
+                        <strong style={{ color: '#ffffff' }}>{w.username}</strong>:{' '}
+                        <span style={{ color: '#38bdf8' }}>{w.description.replace(/^Premio de Ruleta:\s*/i, '')}</span>
+                        {idx < recentWinners.length - 1 && <span style={{ color: '#f59e0b', margin: '0 8px' }}>•</span>}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isScreen ? (
+                <div className="lottery-screen-3sections">
+                  {/* SECCION 1 (IZQUIERDA): RULETA 3D */}
+                  <div className="lottery-sec-wheel">
+                    {renderWheelVisual()}
+                  </div>
+                  {/* SECCION 2 (MEDIO): INFORMACION HERO, TIEMPO Y BOTONES */}
+                  <div className="lottery-sec-info">
+                    {renderWheelInfoAndActions()}
+                  </div>
+                  {/* SECCION 3 (DERECHA): VERTICAL BANNER */}
+                  {renderWheelBanner()}
+                </div>
+              ) : (
+                <div className="lottery-wheel-content-grid">
+                  <div className="lottery-wheel-visual-col">
+                    {renderWheelVisual()}
+                  </div>
+                  <div className="lottery-wheel-info-col">
+                    {renderWheelInfoAndActions()}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* ===================== TAB 2: CODE (PLANT SEQUENCE) ===================== */}
         {activeTab === 'code' && (
@@ -1044,7 +1074,7 @@ export default function LotteryModal({
                   }}
                   onClick={() => {
                     soundManager.playSound('click', 0.3)
-                    onClose()
+                    onClose?.()
                     onOpenAdmin?.()
                   }}
                   title="Configurar Bote, Coste e Iniciar Nuevo Acertijo desde Panel de Administrador"
@@ -1146,7 +1176,7 @@ export default function LotteryModal({
                           }}
                           onClick={() => {
                             soundManager.playSound('click', 0.3)
-                            onClose()
+                            onClose?.()
                             onOpenAdmin?.()
                           }}
                         >
@@ -1826,6 +1856,79 @@ export default function LotteryModal({
             </div>
           </div>
         )}
+    </>
+  )
+
+  if (onBack) {
+    return (
+      <div className="lottery-screen-view">
+        {/* SCREEN HEADER */}
+        <div className="lottery-screen-header">
+          <button
+            type="button"
+            className="lottery-screen-back-btn"
+            onClick={onBack}
+            title="Volver al Menú Principal"
+          >
+            <span>⬅</span>
+            <span>Volver al Menú</span>
+          </button>
+
+          <div className="lottery-screen-title-box">
+            <span style={{ fontSize: '1.8rem' }}>🎰</span>
+            <h2>RULETA & CÓDIGO BOTÁNICO</h2>
+          </div>
+
+          <div className="lottery-screen-balances">
+            <div className="lottery-screen-balance-tag" title="Monedas de Oro">
+              🪙 {(userGold ?? 0).toLocaleString()} Oro
+            </div>
+            <div className="lottery-screen-balance-tag" title="Gemas Disponibles">
+              💎 {currentGems.toLocaleString()} Gemas
+            </div>
+            <button
+              type="button"
+              className="ranking-mute-btn"
+              onClick={() => soundManager.toggleMute()}
+              title="Silenciar / Activar Sonido"
+            >
+              🔊
+            </button>
+          </div>
+        </div>
+
+        {innerContent}
+      </div>
+    )
+  }
+
+  return (
+    <div className="lottery-backdrop" onClick={onClose}>
+      <div className="lottery-modal-container" onClick={(e) => e.stopPropagation()}>
+        {/* MODAL HEADER */}
+        <div className="lottery-header">
+          <div className="lottery-header__title-box">
+            <span className="lottery-header__icon">🎰</span>
+            <div>
+              <h2 className="lottery-header__title">RULETA & CÓDIGO BOTÁNICO</h2>
+              <p className="lottery-header__subtitle">
+                Gira la Ruleta de la Suerte y Descifra el Código Secreto para ganar Gemas 💎 y grandes recompensas
+              </p>
+            </div>
+          </div>
+
+          <div className="lottery-header__right">
+            <div className="lottery-user-balance">
+              <span>💎 Saldo:</span>
+              <strong>{currentGems} Gemas</strong>
+            </div>
+            <button type="button" className="lottery-close-btn" onClick={onClose}>
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {innerContent}
       </div>
     </div>
   )

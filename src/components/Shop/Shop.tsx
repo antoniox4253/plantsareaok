@@ -20,6 +20,7 @@ import {
 } from '../../utils/gameConstants'
 import type { FarmingInventory } from '../../utils/pvpRewardManager'
 import { navigateAndTrack, trackEvent } from '../../utils/analytics'
+import { adManager } from '../../utils/adManager'
 import './Shop.css'
 
 const commonSeedImg = '/game-assets/greenfoot/seed_pack_common_whitebg.webp'
@@ -148,69 +149,45 @@ export const EMOTE_ITEMS: EmoteItem[] = [
   },
 ]
 
-export const ADS_ENABLED = false
+export const ADS_ENABLED = true
 
 export interface AdRewardSlot {
-  id?: string
+  id: 'shop_channel_1' | 'shop_channel_2' | 'shop_channel_3'
   slotNumber: number
   rewardGold: number
   title: string
   desc: string
-  rewardDescription?: string
-  durationText?: string
   icon: string
-  badge?: string
+  badge: string
 }
-
 
 export const AD_REWARD_SLOTS: AdRewardSlot[] = [
   {
+    id: 'shop_channel_1',
     slotNumber: 1,
-    rewardGold: 15,
-    title: 'Semillero Inicial',
-    desc: 'Bolsa rápida de monedas para mejoras tempranas.',
+    rewardGold: 20,
+    title: 'Canal Botánico 1',
+    desc: 'Mira un video y recibe +20 de Oro.',
     icon: '🌱',
-    badge: 'NIVEL 1',
+    badge: 'CANAL #1',
   },
   {
+    id: 'shop_channel_2',
     slotNumber: 2,
-    rewardGold: 30,
-    title: 'Riego Nutritivo',
-    desc: 'Impulso intermedio de oro para tu jardín.',
-    icon: '💧',
-    badge: 'NIVEL 2',
-  },
-  {
-    slotNumber: 3,
-    rewardGold: 50,
-    title: 'Cosecha Solar',
-    desc: 'Buena recompensa para adquirir cartas y pases.',
+    rewardGold: 20,
+    title: 'Canal Solar 2',
+    desc: 'Mira un video y recibe +20 de Oro.',
     icon: '☀️',
-    badge: 'NIVEL 3',
+    badge: 'CANAL #2',
   },
   {
-    slotNumber: 4,
-    rewardGold: 75,
-    title: 'Cofre Dorado',
-    desc: 'Un botín considerable directo a tu reserva.',
-    icon: '💰',
-    badge: 'NIVEL 4',
-  },
-  {
-    slotNumber: 5,
-    rewardGold: 100,
-    title: 'Tesoro del Jardín',
-    desc: 'Gran premio para jugadores dedicados.',
-    icon: '🏆',
-    badge: 'NIVEL 5',
-  },
-  {
-    slotNumber: 6,
-    rewardGold: 150,
-    title: 'Bóveda Legendaria',
-    desc: '¡La máxima recompensa diaria de oro disponible!',
+    id: 'shop_channel_3',
+    slotNumber: 3,
+    rewardGold: 20,
+    title: 'Bóveda Mística 3',
+    desc: 'Mira un video y recibe +20 de Oro.',
     icon: '💎',
-    badge: 'MÁXIMO',
+    badge: 'CANAL #3',
   },
 ]
 
@@ -334,6 +311,22 @@ export default function Shop({
     }
   }, [])
 
+  // Estado de vistas de anuncios para los 3 canales de oro (máx 5 vistas c/u)
+  const [adViews, setAdViews] = useState<Record<string, number>>({})
+  const [isWatchingAd, setIsWatchingAd] = useState<string | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    adManager.getAdViewsStatus().then((res) => {
+      if (mounted && res.success) {
+        setAdViews(res.views)
+      }
+    })
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   /** Precio del sobre. Respaldo en PACK_DEFINITIONS si el servidor no responde. */
   const packPrice = (packId: PackId): number =>
     serverPackPrices?.[packId] ?? (PACK_DEFINITIONS[packId].priceGems ?? PACK_DEFINITIONS[packId].priceUsd ?? 300)
@@ -433,13 +426,62 @@ export default function Shop({
     }
   }
 
-  const handleWatchAd = (_adSlot: AdRewardSlot) => {
+  const handleWatchAd = async (adSlot: AdRewardSlot) => {
     soundManager.playSound('click', 0.5)
-    setThemedAlert({
-      title: '📺 ANUNCIOS DESACTIVADOS',
-      message: 'Los anuncios publicitarios y las recompensas de oro por este medio se encuentran actualmente desactivados.',
-      icon: 'ℹ️',
-    })
+    const views = adViews[adSlot.id] || 0
+    if (views >= 5) {
+      setThemedAlert({
+        title: 'LÍMITE ALCANZADO',
+        message: 'Has alcanzado el límite diario de 5 anuncios para este canal. ¡Vuelve mañana para seguir ganando oro!',
+        icon: '⏳',
+      })
+      return
+    }
+
+    if (isWatchingAd) return
+    setIsWatchingAd(adSlot.id)
+
+    try {
+      const finished = await adManager.showAd(adSlot.id)
+      if (finished) {
+        const res = await adManager.claimAdReward(adSlot.id)
+        if (res.success) {
+          soundManager.playSound('points', 0.8)
+          setAdViews((prev) => ({
+            ...prev,
+            [adSlot.id]: res.viewsToday ?? (views + 1),
+          }))
+          setThemedAlert({
+            title: '¡RECOMPENSA OBTENIDA!',
+            message: `🎉 ¡Has completado el anuncio!\n+20 Monedas de Oro 🪙 acreditadas a tu cuenta.\n(Vistas hoy: ${res.viewsToday ?? (views + 1)}/5)`,
+            icon: '🪙',
+          })
+          if (onServerChange) {
+            onServerChange()
+          }
+        } else {
+          setThemedAlert({
+            title: 'AVISO DE RECOMPENSA',
+            message: res.error || 'No se pudo reclamar la recompensa.',
+            icon: '⚠️',
+          })
+        }
+      } else {
+        setThemedAlert({
+          title: 'ANUNCIO INCOMPLETO',
+          message: 'Debes ver el video completo para recibir la recompensa de 20 monedas de oro.',
+          icon: 'ℹ️',
+        })
+      }
+    } catch (err: any) {
+      setThemedAlert({
+        title: 'ERROR',
+        message: err?.message || 'Error al reproducir el anuncio.',
+        icon: '⚠️',
+      })
+    } finally {
+      setIsWatchingAd(null)
+    }
   }
 
   const handleBuyVipFromShop = async () => {
@@ -868,7 +910,7 @@ export default function Shop({
                 if (touchStartX === null) return
                 const touchEndX = e.changedTouches[0].clientX
                 const diff = touchStartX - touchEndX
-                const maxSlide = ADS_ENABLED ? 2 : 1
+                const maxSlide = 1
                 if (Math.abs(diff) > 45) {
                   soundManager.playSound('click', 0.4)
                   if (diff > 0) {
@@ -894,6 +936,9 @@ export default function Shop({
                         <span className="shop-epic-section__icon">💰</span>
                         <div>
                           <h2 className="shop-epic-section__title">BÓVEDA DE MONEDAS DE ORO</h2>
+                          <span className="shop-epic-section__subtitle">
+                            Compra paquetes de oro o mira videos diarios para ganar monedas gratis.
+                          </span>
                         </div>
                       </div>
 
@@ -907,12 +952,12 @@ export default function Shop({
                           }}
                           title="Deslizar a Emotes"
                         >
-                          {ADS_ENABLED ? 'VER EMOTES (1/3) ▶' : 'VER EMOTES (1/2) ▶'}
+                          VER EMOTES (1/2) ▶
                         </button>
                       </div>
                     </div>
 
-                    <div className="shop-epic-gold-grid">
+                    <div className="shop-epic-gold-grid shop-epic-gold-grid--compact">
                       {GOLD_PACKAGES.map((pkg) => (
                         <div
                           key={pkg.id}
@@ -943,6 +988,49 @@ export default function Shop({
                         </div>
                       ))}
                     </div>
+
+                    {/* 2. ZONA DE 3 BOTONES DE ANUNCIOS RECOMPENSADOS (+20 ORO, MÁX 5/5) */}
+                    <div className="shop-gold-ads-container">
+                      <div className="shop-gold-ads-title">
+                        <span>📺</span>
+                        <strong>VIDEOS RECOMPENSADOS (+20 ORO CADA UNO)</strong>
+                        <small>Hasta 100 de oro por canal cada día (5 vistas máx.)</small>
+                      </div>
+                      <div className="shop-gold-ads-grid">
+                        {AD_REWARD_SLOTS.map((ad) => {
+                          const views = adViews[ad.id] || 0
+                          const isMaxed = views >= 5
+                          const isCurrentWatching = isWatchingAd === ad.id
+
+                          return (
+                            <div key={ad.id} className={`shop-gold-ad-slot ${isMaxed ? 'shop-gold-ad-slot--maxed' : ''}`}>
+                              <div className="shop-gold-ad-slot__header">
+                                <span className="shop-gold-ad-slot__icon">{ad.icon}</span>
+                                <div className="shop-gold-ad-slot__info">
+                                  <strong className="shop-gold-ad-slot__title">{ad.title}</strong>
+                                  <span className="shop-gold-ad-slot__counter">
+                                    Vistas hoy: <strong>{views}/5</strong>
+                                  </span>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="shop-gold-ad-slot__btn"
+                                disabled={isMaxed || isWatchingAd !== null}
+                                onClick={() => handleWatchAd(ad)}
+                              >
+                                {isCurrentWatching
+                                  ? '⏳ REPRODUCIENDO...'
+                                  : isMaxed
+                                  ? '✅ AGOTADO (5/5)'
+                                  : '▶ VER VIDEO (+20 🪙)'}
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -970,33 +1058,19 @@ export default function Shop({
                           }}
                           title="Volver a Oro"
                         >
-                          {ADS_ENABLED ? '◀ ORO' : '◀ ORO (1/2)'}
+                          ◀ ORO (1/2)
                         </button>
-                        {ADS_ENABLED ? (
-                          <button
-                            type="button"
-                            className="shop-slide-nav-btn"
-                            onClick={() => {
-                              soundManager.playSound('click', 0.5)
-                              setGoldSlideIndex(2)
-                            }}
-                            title="Deslizar a Anuncios Gratis"
-                          >
-                            VER ADS (2/3) ▶
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="shop-slide-nav-btn shop-slide-nav-btn--gold"
-                            onClick={() => {
-                              soundManager.playSound('click', 0.5)
-                              setGoldSlideIndex(0)
-                            }}
-                            title="Volver a Bóveda de Oro"
-                          >
-                            VOLVER A ORO (2/2) 💰
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="shop-slide-nav-btn shop-slide-nav-btn--gold"
+                          onClick={() => {
+                            soundManager.playSound('click', 0.5)
+                            setGoldSlideIndex(0)
+                          }}
+                          title="Volver a Bóveda de Oro"
+                        >
+                          VOLVER A ORO (2/2) 💰
+                        </button>
                       </div>
                     </div>
 
@@ -1051,99 +1125,13 @@ export default function Shop({
                     </div>
                   </div>
                 </div>
-
-                {/* SLIDE 2: 📺 3 ANUNCIOS RECOMPENSADOS (CONDICIONADO POR ADS_ENABLED) */}
-                {ADS_ENABLED && (
-                  <div className="shop-slide-item">
-                    <div className="shop-epic-section shop-epic-section--ads">
-                      <div className="shop-epic-section__header">
-                        <div className="shop-epic-section__title-wrap">
-                          <span className="shop-epic-section__icon">📺</span>
-                          <div>
-                            <h2 className="shop-epic-section__title">ZONA DE ANUNCIOS RECOMPENSADOS (GRATIS)</h2>
-                            <span className="shop-epic-section__subtitle">
-                              Mira videos publicitarios cortos y acumula monedas de oro diariamente sin costo.
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="shop-epic-section__header-actions">
-                          <button
-                            type="button"
-                            className="shop-slide-nav-btn shop-slide-nav-btn--prev"
-                            onClick={() => {
-                              soundManager.playSound('click', 0.5)
-                              setGoldSlideIndex(1)
-                            }}
-                            title="Volver a Emotes"
-                          >
-                            ◀ EMOTES
-                          </button>
-                          <button
-                            type="button"
-                            className="shop-slide-nav-btn shop-slide-nav-btn--gold"
-                            onClick={() => {
-                              soundManager.playSound('click', 0.5)
-                              setGoldSlideIndex(0)
-                            }}
-                            title="Volver a Bóveda de Oro"
-                          >
-                            VOLVER A ORO (3/3) 💰
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="shop-epic-ads-grid">
-                        {AD_REWARD_SLOTS.map((ad) => (
-                          <div key={ad.id} className="shop-ad-card">
-                            {/* 1. PANTALLA DE CINE / VIDEO PLAYER PREVIEW */}
-                            <div className="shop-ad-card__screen" title="Reproductor de Video Recompensado">
-                              <div className="shop-ad-card__screen-glow" />
-                              <div className="shop-ad-card__screen-icon-box">
-                                <span className="shop-ad-card__screen-emoji">{ad.icon}</span>
-                                <span className="shop-ad-card__screen-slot">CANAL #{ad.slotNumber}</span>
-                              </div>
-                              <div className="shop-ad-card__screen-overlay">
-                                <span className="shop-ad-card__screen-reward-tag">💰 +{ad.rewardGold} ORO</span>
-                              </div>
-                            </div>
-
-                            {/* 2. INFORMACIÓN Y DETALLES DEL ANUNCIO */}
-                            <div className="shop-ad-card__content">
-                              <h4 className="shop-ad-card__title">{ad.title}</h4>
-                              <p className="shop-ad-card__desc">{ad.rewardDescription}</p>
-                              <div className="shop-ad-card__meta-bar">
-                                <span className="shop-ad-card__limit">⏳ {ad.durationText}</span>
-                                <div className="shop-ad-card__limit-pills">
-                                  <span className="shop-ad-card__limit-dot active" />
-                                  <span className="shop-ad-card__limit-dot active" />
-                                  <span className="shop-ad-card__limit-dot active" />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* 3. BOTÓN DE ACCIÓN TÁCTICO */}
-                            <button
-                              type="button"
-                              className="shop-ad-card__btn"
-                              onClick={() => handleWatchAd(ad)}
-                            >
-                              <span>▶ VER ANUNCIO</span>
-                              <strong className="shop-ad-card__btn-gain">+{ad.rewardGold} ORO</strong>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
             {/* INDICADOR INFERIOR DE PUNTOS Y GUÍA */}
             <div className="shop-slider-footer">
               <div className="shop-slider-dots">
-                {(ADS_ENABLED ? [0, 1, 2] : [0, 1]).map((idx) => (
+                {[0, 1].map((idx) => (
                   <button
                     key={idx}
                     type="button"
@@ -1157,10 +1145,10 @@ export default function Shop({
                 ))}
               </div>
               <span className="shop-slider-hint">
-                {ADS_ENABLED ? (
-                  <>💡 Desliza la pantalla o pulsa los botones de navegación para alternar entre <strong>Oro</strong>, <strong>Emotes</strong> y <strong>Ads</strong></>
+                {goldSlideIndex === 0 ? (
+                  <>👉 Desliza para explorar <strong>Emotes & Reacciones</strong></>
                 ) : (
-                  <>💡 Desliza la pantalla o pulsa los botones de navegación para alternar entre <strong>Oro</strong> y <strong>Emotes</strong></>
+                  <>👈 Desliza para volver a la <strong>Bóveda de Oro</strong></>
                 )}
               </span>
             </div>

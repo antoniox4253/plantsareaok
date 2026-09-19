@@ -42,6 +42,7 @@ import { StrategicPlaytestPostMatch } from '../StrategicPlaytest/StrategicPlayte
 import type { StrategicPlaytestConfig } from '../../engine/strategicPlaytest'
 import { recordPlantPlacement } from '../../utils/plantUsageTracker'
 import { trackGameOver, trackGameStart } from '../../utils/analytics'
+import { adManager } from '../../utils/adManager'
 import GoldIcon from '../Common/GoldIcon'
 import './Battlefield.css'
 
@@ -372,6 +373,58 @@ export default function Battlefield({
     vipGoldBonus?: number
     error?: string
   } | null>(null)
+
+  // Estado de bono de anuncio voluntario (+20 oro) en fin de partida
+  const [matchAdClaimed, setMatchAdClaimed] = useState<boolean>(false)
+  const [isWatchingMatchAd, setIsWatchingMatchAd] = useState<boolean>(false)
+
+  const handleWatchMatchAd = async () => {
+    if (matchAdClaimed || isWatchingMatchAd) return
+    setIsWatchingMatchAd(true)
+    try {
+      const finished = await adManager.showAd('match_end')
+      if (finished) {
+        const res = await adManager.claimAdReward('match_end')
+        if (res.success) {
+          setMatchAdClaimed(true)
+          soundManager.playSound('points', 0.8)
+          window.dispatchEvent(
+            new CustomEvent('plant-arena:game-alert', {
+              detail: {
+                title: '¡RECOMPENSA DE ORO!',
+                message: '🪙 ¡Has recibido +20 Monedas de Oro por ver el anuncio publicitario!',
+                icon: '🎉',
+              },
+            })
+          )
+        } else {
+          window.dispatchEvent(
+            new CustomEvent('plant-arena:game-alert', {
+              detail: {
+                title: 'AVISO DE RECOMPENSA',
+                message: res.error || 'No se pudo reclamar la recompensa en este momento.',
+                icon: '⚠️',
+              },
+            })
+          )
+        }
+      } else {
+        window.dispatchEvent(
+          new CustomEvent('plant-arena:game-alert', {
+            detail: {
+              title: 'ANUNCIO INCOMPLETO',
+              message: 'Debes ver el video completo para recibir las 20 monedas de oro.',
+              icon: 'ℹ️',
+            },
+          })
+        )
+      }
+    } catch {
+      // safe fallback
+    } finally {
+      setIsWatchingMatchAd(false)
+    }
+  }
 
   const esperandoConfirmacionServidor =
     Boolean(roomId) &&
@@ -2436,6 +2489,8 @@ export default function Battlefield({
                         Abre un sobre en el Menú Principal para liberar espacio.
                       </div>
                     ) : null}
+                  </div>
+                )}
 
                     {/* COLOSSEUM MATCH REWARD CARD */}
                     {matchMode === 'colosseum' && colosseumResult && (
@@ -2511,6 +2566,30 @@ export default function Battlefield({
                           </>
                         )}
                       </div>
+                    )}
+                {/* BONIFICACIÓN OPCIONAL DE ORO POR VER ANUNCIO */}
+                {!isPracticeMode && !strategicPlaytestConfig && (
+                  <div className="battle-ad-bonus-box">
+                    <div className="battle-ad-bonus-header">
+                      <span className="battle-ad-bonus-icon">📺</span>
+                      <div className="battle-ad-bonus-text">
+                        <strong>¿DESEAS GANAR +20 ORO EXTRA?</strong>
+                        <p>Mira un anuncio publicitario corto y recibe 20 monedas de oro gratis.</p>
+                      </div>
+                    </div>
+                    {matchAdClaimed ? (
+                      <div className="battle-ad-bonus-claimed">
+                        <span>✅</span> ¡+20 ORO RECLAMADO CON ÉXITO!
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="battle-ad-bonus-btn"
+                        disabled={isWatchingMatchAd}
+                        onClick={handleWatchMatchAd}
+                      >
+                        {isWatchingMatchAd ? '⏳ REPRODUCIENDO ANUNCIO...' : '▶ VER ANUNCIO (+20 🪙)'}
+                      </button>
                     )}
                   </div>
                 )}

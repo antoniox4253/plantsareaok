@@ -41,6 +41,8 @@ export type GameScreen =
   | 'pass'
   | 'clan'
   | 'market'
+  | 'misiones'
+  | 'loteria'
 
 export const SCREEN_ROUTES: Record<GameScreen, { path: string; title: string }> = {
   landing: { path: '/', title: 'Plant Arena - Estrategia y Batallas Tácticas' },
@@ -54,6 +56,8 @@ export const SCREEN_ROUTES: Record<GameScreen, { path: string; title: string }> 
   pass: { path: '/play/pass', title: 'Plant Arena - Pase de Batalla' },
   clan: { path: '/play/clan', title: 'Plant Arena - Clan' },
   market: { path: '/play/market', title: 'Plant Arena - Mercado' },
+  misiones: { path: '/play/quests', title: 'Plant Arena - Misiones y Recompensas' },
+  loteria: { path: '/play/lottery', title: 'Plant Arena - Ruleta de la Suerte y Lotería' },
   partidas: { path: '/play/history', title: 'Plant Arena - Historial de Partidas' },
   repeticion: { path: '/play/replay', title: 'Plant Arena - Repetición' },
 }
@@ -64,6 +68,8 @@ export function getScreenFromPath(pathname: string, hash: string): GameScreen {
 
   if (path.startsWith('/r/')) return 'repeticion'
   if (path.startsWith('/play') || h.includes('play')) {
+    if (path.includes('/quests') || path.includes('/misiones')) return 'misiones'
+    if (path.includes('/lottery') || path.includes('/loteria') || path.includes('/ruleta')) return 'loteria'
     if (path.includes('/shop')) return 'shop'
     if (path.includes('/collection')) return 'collection'
     if (path.includes('/garden') || path.includes('/jardin')) return 'jardin'

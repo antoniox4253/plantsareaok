@@ -10,6 +10,8 @@ import Ranking from './components/Ranking/Ranking'
 import BattlePass from './components/BattlePass/BattlePass'
 import Clan from './components/Clan/Clan'
 import Marketplace from './components/Marketplace/Marketplace'
+import MisionesModal from './components/Misiones/MisionesModal'
+import LotteryModal from './components/Lottery/LotteryModal'
 import LandingPage from './components/LandingPage/LandingPage'
 import PackOpeningModal from './components/PackOpeningModal/PackOpeningModal'
 import PvpRewardOpeningModal from './components/PvpRewardOpeningModal/PvpRewardOpeningModal'
@@ -1254,6 +1256,8 @@ function App() {
             onOpenBattlePass={() => setScreen('pass')}
             onOpenClan={() => setScreen('clan')}
             onOpenMarketplace={() => setScreen('market')}
+            onOpenMisiones={() => setScreen('misiones')}
+            onOpenLoteria={() => setScreen('loteria')}
             onOpenLanding={handleGoToLanding}
             onOpenAdmin={() => setIsAdminPanelOpen(true)}
             onOpenBetaInfo={() => setIsBetaPhaseModalOpen(true)}
@@ -1584,6 +1588,58 @@ function App() {
               // retirar una oferta.
               onServerChange={() => void refreshFromServer()}
               onBackToMenu={() => setScreen('menu')}
+            />
+          </div>
+        )}
+
+        {screen === 'misiones' && (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundImage: `url(${background})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+            }}
+          >
+            <MisionesModal
+              isOpen={true}
+              onBack={() => setScreen('menu')}
+              onClose={() => setScreen('menu')}
+              onRewardClaimed={refreshFromServer}
+              userGems={userTokens}
+              userGold={userGold}
+            />
+          </div>
+        )}
+
+        {screen === 'loteria' && (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundImage: `url(${background})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+            }}
+          >
+            <LotteryModal
+              isOpen={true}
+              onBack={() => setScreen('menu')}
+              onClose={() => setScreen('menu')}
+              userTokens={userTokens}
+              userGold={userGold}
+              isAdmin={isAdmin}
+              onOpenAdmin={() => setIsAdminPanelOpen(true)}
+              onRewardsChanged={refreshFromServer}
             />
           </div>
         )}

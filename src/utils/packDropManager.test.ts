@@ -1,13 +1,23 @@
 import { describe, it, expect } from 'vitest'
 import { rollSingleCardFromPack, openSeedPack } from './packDropManager'
 
-describe('packDropManager - Sistema de Ranura Destacada y Exclusión de Jalapeño', () => {
+describe('packDropManager - Sistema de Ranura Destacada y Exclusión de Jalapeño y Lanzamaíz', () => {
   it('Jalapeño jamás se entrega en ningún tipo de sobre (básico, épico, legendario)', () => {
     const packs = ['basic', 'epic', 'legendary'] as const
     for (const packId of packs) {
       for (let i = 0; i < 200; i++) {
         const card = rollSingleCardFromPack(packId, [], i % 2 === 0)
         expect(card.plantId).not.toBe('jalapeno')
+      }
+    }
+  })
+
+  it('Lanzamaíz (kernelpult) jamás se entrega en ningún tipo de sobre (básico, épico, legendario)', () => {
+    const packs = ['basic', 'epic', 'legendary'] as const
+    for (const packId of packs) {
+      for (let i = 0; i < 300; i++) {
+        const card = rollSingleCardFromPack(packId, [], i % 2 === 0)
+        expect(card.plantId).not.toBe('kernelpult')
       }
     }
   })
