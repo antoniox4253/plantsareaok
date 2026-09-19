@@ -26,7 +26,7 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     expect(treeProjectiles.length).toBe(0)
   })
 
-  it('fires 2 projectiles from P1 every 10 seconds when P1 has mother_tree_skin', () => {
+  it('fires 2 projectiles from P1 starting at 25 seconds when P1 has mother_tree_skin', () => {
     const state = createBattleState(
       12345,
       false,
@@ -42,17 +42,17 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     expect(state.p1TreeSkin).toBe('mother_tree_skin')
     expect(state.p2TreeSkin).toBeNull()
 
-    const ticksFor10s = msToTicks(10000) // 304 ticks
+    const ticksFor25s = msToTicks(25000)
 
-    // Simulate right before 10s
-    for (let i = 0; i < ticksFor10s - 1; i++) {
+    // Simulate right before 25s
+    for (let i = 0; i < ticksFor25s - 1; i++) {
       stepTick(state)
     }
 
     let treeProjectiles = state.projectiles.filter((p) => p.id.startsWith('tree-p1-'))
     expect(treeProjectiles.length).toBe(0)
 
-    // Tick exactly at 10s mark
+    // Tick exactly at 25s mark
     stepTick(state)
 
     treeProjectiles = state.projectiles.filter((p) => p.id.startsWith('tree-p1-'))
@@ -70,7 +70,7 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     }
   })
 
-  it('fires symmetrically from P2 when P2 has mother_tree_skin', () => {
+  it('fires symmetrically from P2 when P2 has mother_tree_skin at 25 seconds', () => {
     const state = createBattleState(
       54321,
       false,
@@ -86,9 +86,9 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     expect(state.p1TreeSkin).toBeNull()
     expect(state.p2TreeSkin).toBe('mother_tree_skin')
 
-    const ticksFor10s = msToTicks(10000)
+    const ticksFor25s = msToTicks(25000)
 
-    for (let i = 0; i < ticksFor10s; i++) {
+    for (let i = 0; i < ticksFor25s; i++) {
       stepTick(state)
     }
 
@@ -108,9 +108,9 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     const stateA = createBattleState(seed, false, true, NIVEL_POR_DEFECTO, 'auth-v2', 600, 600, 'mother_tree_skin', 'mother_tree_skin')
     const stateB = createBattleState(seed, false, true, NIVEL_POR_DEFECTO, 'auth-v2', 600, 600, 'mother_tree_skin', 'mother_tree_skin')
 
-    const ticksFor10s = msToTicks(10000)
+    const ticksFor25s = msToTicks(25000)
 
-    for (let i = 0; i < ticksFor10s; i++) {
+    for (let i = 0; i < ticksFor25s; i++) {
       stepTick(stateA)
       stepTick(stateB)
     }
@@ -129,13 +129,14 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     }
   })
 
-  it('fires periodic volleys every 10 seconds consecutively', () => {
+  it('fires periodic volleys every 15 seconds consecutively after the initial 25 seconds', () => {
     const state = createBattleState(777, false, true, NIVEL_POR_DEFECTO, 'auth-v2', 600, 600, 'mother_tree_skin', null)
 
-    const ticksFor10s = msToTicks(10000)
+    const ticksFor25s = msToTicks(25000)
+    const ticksFor15s = msToTicks(15000)
 
-    // First volley at 10s
-    for (let i = 0; i < ticksFor10s; i++) {
+    // First volley at 25s
+    for (let i = 0; i < ticksFor25s; i++) {
       stepTick(state)
     }
     expect(state.projectiles.filter((p) => p.id.startsWith('tree-p1-')).length).toBe(2)
@@ -143,8 +144,8 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     // Clear projectiles to count second volley
     state.projectiles = []
 
-    // Simulate next 10s (up to 20s)
-    for (let i = 0; i < ticksFor10s; i++) {
+    // Simulate next 15s (up to 40s)
+    for (let i = 0; i < ticksFor15s; i++) {
       stepTick(state)
     }
     expect(state.projectiles.filter((p) => p.id.startsWith('tree-p1-')).length).toBe(2)
@@ -169,7 +170,7 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
       deck as any,
       [],
       [],
-      msToTicks(11000), // 11s simulation
+      msToTicks(26000), // 26s simulation (first shot at 25s)
       'auth-v2',
       600,
       600,
@@ -186,7 +187,7 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
     const resLockstep = reconstruirConHuellas(
       seed,
       [],
-      msToTicks(11000),
+      msToTicks(26000),
       true,
       'auth-v2',
       600,

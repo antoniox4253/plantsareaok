@@ -98,7 +98,7 @@ export const FARMING_ITEM_DEFINITIONS: Record<
   },
   mother_tree_skin: {
     label: 'Skin: Árbol Centinela',
-    description: 'Aspecto sagrado para el Árbol Madre. Al equiparse, tu base cambia de aspecto y dispara 2 proyectiles mágicos en líneas aleatorias cada 10s en combate.',
+    description: 'Aspecto sagrado para el Árbol Madre. Al equiparse, tu base cambia de aspecto y dispara 2 proyectiles mágicos en líneas aleatorias (1º a los 25s, luego cada 15s) en combate.',
     icon: '/game-assets/farming/mother_tree_skin.png',
     fallback: '🌳',
   },

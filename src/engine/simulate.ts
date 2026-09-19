@@ -1487,14 +1487,16 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   procesarLado(state, LADO_P1, dt, sonar)
   procesarLado(state, LADO_P2, dt, sonar)
 
-  // ── DISPARO DE SKINS DEL ÁRBOL MADRE (2 proyectiles cada 10 segundos) ──
-  // Cada 10s (msToTicks(10000)), la base con skin dispara 2 proyectiles mágicos
-  // hacia el lado contrario en carriles elegidos al azar con state.rng.
-  const INTERVALO_DISPARO_ARBOL_TICKS = msToTicks(10000)
+  // ── DISPARO DE SKINS DEL ÁRBOL MADRE ──
+  // El primer disparo se produce a los 25 segundos de partida (msToTicks(25000)).
+  // Los siguientes disparos ocurren cada 15 segundos (msToTicks(15000)).
+  // Cada andanada lanza 2 proyectiles mágicos hacia el rival en carriles aleatorios.
+  const RETARDO_INICIAL_ARBOL_TICKS = msToTicks(25000)
+  const INTERVALO_DISPARO_ARBOL_TICKS = msToTicks(15000)
 
-  if (state.p1TreeSkin) {
+  if (state.p1TreeSkin && state.tick >= RETARDO_INICIAL_ARBOL_TICKS) {
     const ultimoDisparo = state.timers.lastP1TreeShot ?? 0
-    if (state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
+    if (ultimoDisparo === 0 || state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
       state.timers.lastP1TreeShot = state.tick
       for (let i = 0; i < 2; i++) {
         const lane = nextInt(state.rng, 3)
@@ -1521,9 +1523,9 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     }
   }
 
-  if (state.p2TreeSkin) {
+  if (state.p2TreeSkin && state.tick >= RETARDO_INICIAL_ARBOL_TICKS) {
     const ultimoDisparo = state.timers.lastP2TreeShot ?? 0
-    if (state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
+    if (ultimoDisparo === 0 || state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
       state.timers.lastP2TreeShot = state.tick
       for (let i = 0; i < 2; i++) {
         const lane = nextInt(state.rng, 3)
@@ -1558,14 +1560,10 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   //
   // Pasados los 3:30, las dos bases empiezan a perder vida solas. Es lo que hace
   // que la partida no pueda ser eterna: antes, dos jugadores plantando girasoles
-  // sin atacarse nunca no llegaban a ningún resultado, y a los 120 segundos sin
-  // jugadas el servidor daba la sala por abandonada — el "SIN RESULTADO" de la
-  // lista de partidas.
+  // en bucle podían trabar el servidor.
   //
-  // Pierden LO MISMO las dos, así que no cambia quién va ganando: sólo obliga a
-  // que se decida. Cae primero la que ya estaba peor.
-  //
-  // En práctica no: ahí no hay rival ni partida que cerrar.
+  // El desgaste es por segundo y se convierte a tics para que el daño sea idéntico
+  // independientemente del tiempo que pase entre fotogramas.
   // ───────────────────────────────────────────────────────────────────────────
   if (!state.isPracticeMode) {
     if (state.tick === TIC_MUERTE_SUBITA) {
@@ -1624,8 +1622,10 @@ export function enMuerteSubita(state: GameState): boolean {
 
 function terminar(state: GameState, resultado: 'victory' | 'defeat', sonar: SonarFn) {
   state.status = resultado
-  if (resultado === 'victory') sonar('level_select', 0.7)
-  else sonar('zombieFinalKill', 0.7)
+  if (resultado === 'victory') {
+    sonar('level_select', 0.7)
+  }
+  // En derrota no se reproduce audio por requerimiento de diseño
 }
 
 /**

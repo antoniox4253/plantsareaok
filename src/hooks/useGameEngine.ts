@@ -1871,7 +1871,6 @@ export function useGameEngine() {
   const surrenderGame = () => {
     stateRef.current.status = 'defeat'
     stateRef.current.p1BaseHp = 0
-    soundManager.playSound('defeat', 0.7)
     forceRender()
   }
 
@@ -1889,7 +1888,9 @@ export function useGameEngine() {
     const state = stateRef.current
     if (state.status === resultado) return
     state.status = resultado
-    soundManager.playSound(resultado === 'victory' ? 'level_select' : 'defeat', 0.7)
+    if (resultado === 'victory') {
+      soundManager.playSound('level_select', 0.7)
+    }
     forceRender()
   }, [forceRender])
 

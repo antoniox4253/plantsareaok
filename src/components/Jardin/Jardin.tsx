@@ -2090,13 +2090,13 @@ export default function Jardin({
                 Skin: Árbol Centinela
               </span>
               <span className="jardin-fuse-confirm-level" style={{ color: '#38bdf8' }}>
-                ⚔️ Ataque: 2 proyectiles cada 10s (20 daño c/u)
+                ⚔️ Ataque: 2 proyectiles (1º a los 25s, luego cada 15s - 20 daño c/u)
               </span>
             </div>
 
             <p style={{ fontSize: '11px', color: '#94a3b8', margin: '8px 0 14px', lineHeight: 1.4, textAlign: 'center' }}>
               {treeSkinModal.action === 'equip'
-                ? 'Aspecto exclusivo para tu Árbol Madre. Al equiparlo, tu base adoptará el aspecto celestial del Centinela en combate, visible tanto para ti como para tu rival, y lanzará 2 proyectiles cósmicos aleatoriamente entre las líneas cada 10 segundos.'
+                ? 'Aspecto exclusivo para tu Árbol Madre. Al equiparlo, tu base adoptará el aspecto celestial del Centinela en combate, visible tanto para ti como para tu rival, y lanzará 2 proyectiles cósmicos aleatoriamente entre las líneas (primer disparo a los 25s, luego cada 15 segundos).'
                 : 'Al desequipar, tu Árbol Madre volverá a su aspecto ancestral tradicional y el ítem regresará a tus recursos de cultivo.'}
             </p>
 
