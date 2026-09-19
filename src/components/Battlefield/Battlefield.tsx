@@ -392,7 +392,7 @@ export default function Battlefield({
             new CustomEvent('plant-arena:game-alert', {
               detail: {
                 title: '¡RECOMPENSA DE ORO!',
-                message: '🪙 ¡Has recibido +20 Monedas de Oro por ver el anuncio publicitario!',
+                message: `🪙 ¡Has recibido +${res.goldAdded ?? 10} Monedas de Oro por ver el anuncio publicitario!`,
                 icon: '🎉',
               },
             })
@@ -2295,7 +2295,7 @@ export default function Battlefield({
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div
-              className={`game-card ${
+              className={`game-card game-card--horizontal ${
                 esperandoConfirmacionServidor
                   ? 'game-card--loading'
                   : resultadoEmpatado
@@ -2326,9 +2326,12 @@ export default function Battlefield({
                   : '💀 ¡DERROTA!'}
               </h2>
 
-            {/* PARTIDA REAL: RESULTADO AUTORITATIVO DEL SERVIDOR */}
-            {roomId && (
-              <div className="resultado-servidor">
+              <div className="game-card__horizontal-layout">
+                {/* COLUMNA IZQUIERDA: RESUMEN Y RECOMPENSAS */}
+                <div className="game-card__col-results">
+                  {/* PARTIDA REAL: RESULTADO AUTORITATIVO DEL SERVIDOR */}
+                  {roomId && (
+                    <div className="resultado-servidor">
                 {esperandoConfirmacionServidor && (
                   <div className="resultado-servidor__cargando">
                     <span
@@ -2413,7 +2416,6 @@ export default function Battlefield({
               </div>
             )}
 
-            <>
               {/* ELO BADGE (sólo para partidas sin sala / offline de Ranked) */}
               {!roomId && matchMode !== 'tournament' && matchMode !== 'friendly' && battleSummaryResult?.eloChange !== undefined && (
                   <div
@@ -2567,61 +2569,66 @@ export default function Battlefield({
                         )}
                       </div>
                     )}
-                {/* BONIFICACIÓN OPCIONAL DE ORO POR VER ANUNCIO */}
-                {!isPracticeMode && !strategicPlaytestConfig && (
-                  <div className="battle-ad-bonus-box">
-                    <div className="battle-ad-bonus-header">
-                      <span className="battle-ad-bonus-icon">📺</span>
-                      <div className="battle-ad-bonus-text">
-                        <strong>¿DESEAS GANAR +20 ORO EXTRA?</strong>
-                        <p>Mira un anuncio publicitario corto y recibe 20 monedas de oro gratis.</p>
-                      </div>
-                    </div>
-                    {matchAdClaimed ? (
-                      <div className="battle-ad-bonus-claimed">
-                        <span>✅</span> ¡+20 ORO RECLAMADO CON ÉXITO!
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="battle-ad-bonus-btn"
-                        disabled={isWatchingMatchAd}
-                        onClick={handleWatchMatchAd}
-                      >
-                        {isWatchingMatchAd ? '⏳ REPRODUCIENDO ANUNCIO...' : '▶ VER ANUNCIO (+20 🪙)'}
-                      </button>
-                    )}
                   </div>
-                )}
 
-                <div className="game-card__prompt">
-                  {matchMode === 'tournament' ? 'Revisa tu posición en la tabla de clasificación del torneo.' : '¿Deseas seguir jugando o regresar al menú?'}
-                </div>
+                  {/* COLUMNA DERECHA: BONIFICACIÓN DE ANUNCIO Y ACCIONES */}
+                  <div className="game-card__col-actions">
+                    {/* BONIFICACIÓN OPCIONAL DE ORO POR VER ANUNCIO */}
+                    {!isPracticeMode && !strategicPlaytestConfig && (
+                      <div className="battle-ad-bonus-box">
+                        <div className="battle-ad-bonus-header">
+                          <span className="battle-ad-bonus-icon">📺</span>
+                          <div className="battle-ad-bonus-text">
+                            <strong>¿DESEAS GANAR +10 ORO EXTRA?</strong>
+                            <p>Mira un anuncio publicitario corto y recibe 10 monedas de oro gratis.</p>
+                          </div>
+                        </div>
+                        {matchAdClaimed ? (
+                          <div className="battle-ad-bonus-claimed">
+                            <span>✅</span> ¡+10 ORO RECLAMADO CON ÉXITO!
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="battle-ad-bonus-btn"
+                            disabled={isWatchingMatchAd}
+                            onClick={handleWatchMatchAd}
+                          >
+                            {isWatchingMatchAd ? '⏳ REPRODUCIENDO ANUNCIO...' : '▶ VER ANUNCIO (+10 🪙)'}
+                          </button>
+                        )}
+                      </div>
+                    )}
 
-                <div className="game-card__actions">
-                  <button
-                    className="game-button"
-                    type="button"
-                    onClick={handlePlayAgain}
-                  >
-                    {matchMode === 'tournament' ? '🏆 VOLVER AL TORNEO' : '🎮 SEGUIR JUGANDO'}
-                  </button>
-                  {onBackToMenu && matchMode !== 'tournament' && (
-                    <button
-                      className="game-button game-button--secondary"
-                      type="button"
-                      onClick={() => {
-                        soundManager.playBgm('menu')
-                        onBackToMenu()
-                      }}
-                    >
-                      🏠 MENÚ PRINCIPAL
-                    </button>
-                  )}
+                    <div className="game-card__prompt">
+                      {matchMode === 'tournament' ? 'Revisa tu posición en la tabla de clasificación del torneo.' : '¿Deseas seguir jugando o regresar al menú?'}
+                    </div>
+
+                    <div className="game-card__actions">
+                      <button
+                        className="game-button"
+                        type="button"
+                        onClick={handlePlayAgain}
+                      >
+                        {matchMode === 'tournament' ? '🏆 VOLVER AL TORNEO' : '🎮 SEGUIR JUGANDO'}
+                      </button>
+                      {onBackToMenu && matchMode !== 'tournament' && (
+                        <button
+                          className="game-button game-button--secondary"
+                          type="button"
+                          onClick={() => {
+                            soundManager.playBgm('menu')
+                            onBackToMenu()
+                          }}
+                        >
+                          🏠 MENÚ PRINCIPAL
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </>
-          </div>
-        </div>
+              </div>
+            </div>
       )})()}
 
       {/* Strategic Playtest Post-Match Evaluation Modal */}

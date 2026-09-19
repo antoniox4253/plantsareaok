@@ -4,7 +4,6 @@ import type { CodeRoundPrizeTier } from '../../types/database.types'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { soundManager } from '../../utils/audioManager'
 import { lotteryService } from '../../services/lotteryService'
-import { adManager } from '../../utils/adManager'
 import './LotteryModal.css'
 
 interface LotteryModalProps {
@@ -883,7 +882,7 @@ export default function LotteryModal({
                 <div className="lottery-wheel-hero-badge">⭐ RULETA DE LA SUERTE</div>
                 <h3>¡PRUEBA TU SUERTE CADA DÍA!</h3>
                 <p>
-                  Tienes <strong>1 Tiro Gratis cada 24 horas</strong> garantizado. También puedes adquirir giros extra por tan solo <strong>{PAID_SPIN_COST_GEMS} Gemas 💎</strong>.
+                  1 Giro Gratis cada 24h garantizado. Giros extra por tan solo <strong>{PAID_SPIN_COST_GEMS} Gemas 💎</strong>.
                 </p>
               </div>
 
@@ -921,33 +920,33 @@ export default function LotteryModal({
                 </button>
               </div>
 
-              {/* PRIZES HIGHLIGHT LIST */}
+              {/* PRIZES HIGHLIGHT LIST (COMPACT ROW) */}
               <div className="lottery-prizes-preview-box">
                 <span className="lottery-prizes-title">🎁 PREMIOS EN ESTE SORTEO:</span>
                 <div className="lottery-prizes-tags-grid">
                   <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                    💎 500 Gemas (MEGA JACKPOT)
+                    💎 500 Gemas
                   </div>
                   <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                    👑 Sobre Básico (300💎)
+                    👑 Sobre Básico
                   </div>
                   <div className="lottery-prize-tag lottery-prize-tag--legendary">
-                    💎 10 Gemas (Giro Extra)
+                    💎 10 Gemas
                   </div>
                   <div className="lottery-prize-tag lottery-prize-tag--gold">
-                    💰 150 Monedas de Oro
+                    💰 150 Oro
                   </div>
                   <div className="lottery-prize-tag lottery-prize-tag--gold">
-                    💰 100 Monedas de Oro
+                    💰 100 Oro
                   </div>
                   <div className="lottery-prize-tag lottery-prize-tag--gold">
-                    💰 50 Monedas de Oro
+                    💰 50 Oro
                   </div>
                   <div className="lottery-prize-tag lottery-prize-tag--rare">
-                    🌿 Fertilizante de Cultivo
+                    🌿 Fertilizante
                   </div>
                   <div className="lottery-prize-tag lottery-prize-tag--epic">
-                    🍀 Sigue Intentando
+                    🍀 Suerte
                   </div>
                 </div>
               </div>
@@ -956,20 +955,11 @@ export default function LotteryModal({
 
           const renderWheelBanner = () => (
             <div className="lottery-sec-banner">
-              <span className="lottery-banner-header">📢 PUBLICIDAD / PATROCINADO</span>
+              <span className="lottery-banner-header">📢 PUBLICIDAD</span>
               <div className="lottery-vertical-banner-slot">
                 <div className="banner-logo">🎰</div>
-                <h4>Plant Arena Arcade</h4>
-                <p>Gira la ruleta y juega para ganar increíbles recompensas y gemas.</p>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    soundManager.playSound('click', 0.5)
-                    await adManager.showAd('lottery_banner')
-                  }}
-                >
-                  ▶ Ver Anuncio
-                </button>
+                <div className="banner-display-tag">Lucky Arcade</div>
+                <span className="banner-sponsor-sub">Patrocinado</span>
               </div>
             </div>
           )

@@ -13,7 +13,6 @@ import {
 } from '../../services/missionService'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { soundManager } from '../../utils/audioManager'
-import { adManager } from '../../utils/adManager'
 
 const triggerGlobalRefresh = () => {
   if (typeof window !== 'undefined') {
@@ -704,7 +703,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                     </div>
                   </div>
 
-                  {/* COLUMNA 2: 3 MISIONES DIARIAS APILADAS */}
+                  {/* COLUMNA 2: 3 MISIONES DIARIAS APILADAS (COMPACTAS) */}
                   <div className="misiones-col--daily">
                     {dashboard?.missions?.map((m: DailyMission, index: number) => {
                       const isComplete = m.progress >= m.target
@@ -714,50 +713,46 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
 
                       return (
                         <div key={m.slot} className={`daily-mission-card-v ${m.claimed ? 'claimed' : ''}`}>
-                          <div className="daily-mission-v-top">
-                            <div className="daily-mission-v-info">
-                              <div className="daily-mission-v-avatar">
-                                {m.plantId && plantCfg?.icon ? (
-                                  <img src={plantCfg.icon} alt={plantCfg.name} />
-                                ) : m.slot === 0 ? (
-                                  '⚔️'
-                                ) : (
-                                  '🛡️'
-                                )}
-                              </div>
-                              <div>
+                          <div className="daily-mission-v-row1">
+                            <div className="daily-mission-v-avatar">
+                              {m.plantId && plantCfg?.icon ? (
+                                <img src={plantCfg.icon} alt={plantCfg.name} />
+                              ) : m.slot === 0 ? (
+                                '⚔️'
+                              ) : (
+                                '🛡️'
+                              )}
+                            </div>
+                            <div className="daily-mission-v-header-info">
+                              <div className="daily-mission-v-title-wrap">
                                 <h4 className="daily-mission-v-title">{m.title}</h4>
                                 {m.plantId && plantCfg && (
                                   <span className="daily-mission-v-plant">🌿 {plantCfg.name}</span>
                                 )}
                               </div>
+                              <p className="daily-mission-v-desc">{m.description}</p>
                             </div>
-                            <div className="daily-mission-v-pts">+{m.points} Pts</div>
-                          </div>
-
-                          <p className="daily-mission-v-desc">{m.description}</p>
-
-                          <div className="mission-progress-bar-wrap">
-                            <div
-                              className="mission-progress-fill"
-                              style={{ width: `${Math.min(100, (m.progress / m.target) * 100)}%` }}
-                            />
-                          </div>
-                          <div className="mission-progress-text">
-                            Progreso: {m.progress} / {m.target}
-                          </div>
-
-                          <div className="daily-mission-v-bottom">
-                            <div className="mission-reward-badge">
-                              <span className="mission-reward-label">Recompensa</span>
-                              <span className="mission-reward-val">
+                            <div className="daily-mission-v-badges">
+                              <span className="daily-mission-v-pts">+{m.points} Pts</span>
+                              <span className="daily-mission-v-reward">
                                 {m.rewardGems > 0 ? `+${m.rewardGems} 💎` : `+${m.rewardGold} 🪙`}
                               </span>
                             </div>
+                          </div>
 
+                          <div className="daily-mission-v-row2">
+                            <div className="mission-progress-bar-wrap">
+                              <div
+                                className="mission-progress-fill"
+                                style={{ width: `${Math.min(100, (m.progress / m.target) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="mission-progress-text">
+                              {m.progress} / {m.target}
+                            </div>
                             <div className="mission-actions">
                               {m.claimed ? (
-                                <span className="mission-claimed-status">✓ Reclamada</span>
+                                <span className="mission-claimed-status">✓ Listo</span>
                               ) : isComplete ? (
                                 <button
                                   className="mission-claim-btn"
@@ -773,7 +768,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                                   disabled={actionLoading}
                                   onClick={() => setRerollSlot(m.slot)}
                                 >
-                                  🔄 Cambiar (5 💎)
+                                  🔄 (5 💎)
                                 </button>
                               ) : null}
                             </div>
@@ -783,22 +778,13 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                     })}
                   </div>
 
-                  {/* COLUMNA 3: BANNER VERTICAL */}
+                  {/* COLUMNA 3: BANNER VERTICAL DISPLAY (SIN TEXTOS LARGOS NI BOTÓN) */}
                   <div className="misiones-col--banner">
-                    <span className="misiones-banner-header">📢 PUBLICIDAD / PATROCINADO</span>
+                    <span className="misiones-banner-header">📢 PUBLICIDAD</span>
                     <div className="misiones-vertical-banner-slot">
-                      <div className="banner-logo">📜</div>
-                      <h4>Misiones Plant Arena</h4>
-                      <p>Completa tus tareas diarias y apoya el juego disfrutando de recompensas.</p>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          soundManager.playSound('click', 0.5)
-                          await adManager.showAd('misiones_banner')
-                        }}
-                      >
-                        ▶ Ver Anuncio
-                      </button>
+                      <div className="banner-logo">🌿</div>
+                      <div className="banner-display-tag">Plant Arena Ads</div>
+                      <span className="banner-sponsor-sub">Patrocinado</span>
                     </div>
                   </div>
                 </div>

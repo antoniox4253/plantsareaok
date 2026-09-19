@@ -165,27 +165,27 @@ export const AD_REWARD_SLOTS: AdRewardSlot[] = [
   {
     id: 'shop_channel_1',
     slotNumber: 1,
-    rewardGold: 20,
+    rewardGold: 10,
     title: 'Canal Botánico 1',
-    desc: 'Mira un video y recibe +20 de Oro.',
+    desc: 'Mira un video y recibe +10 de Oro.',
     icon: '🌱',
     badge: 'CANAL #1',
   },
   {
     id: 'shop_channel_2',
     slotNumber: 2,
-    rewardGold: 20,
+    rewardGold: 10,
     title: 'Canal Solar 2',
-    desc: 'Mira un video y recibe +20 de Oro.',
+    desc: 'Mira un video y recibe +10 de Oro.',
     icon: '☀️',
     badge: 'CANAL #2',
   },
   {
     id: 'shop_channel_3',
     slotNumber: 3,
-    rewardGold: 20,
+    rewardGold: 10,
     title: 'Bóveda Mística 3',
-    desc: 'Mira un video y recibe +20 de Oro.',
+    desc: 'Mira un video y recibe +10 de Oro.',
     icon: '💎',
     badge: 'CANAL #3',
   },
@@ -453,7 +453,7 @@ export default function Shop({
           }))
           setThemedAlert({
             title: '¡RECOMPENSA OBTENIDA!',
-            message: `🎉 ¡Has completado el anuncio!\n+20 Monedas de Oro 🪙 acreditadas a tu cuenta.\n(Vistas hoy: ${res.viewsToday ?? (views + 1)}/5)`,
+            message: `🎉 ¡Has completado el anuncio!\n+${res.goldAdded ?? 10} Monedas de Oro 🪙 acreditadas a tu cuenta.\n(Vistas hoy: ${res.viewsToday ?? (views + 1)}/5)`,
             icon: '🪙',
           })
           if (onServerChange) {
@@ -989,12 +989,12 @@ export default function Shop({
                       ))}
                     </div>
 
-                    {/* 2. ZONA DE 3 BOTONES DE ANUNCIOS RECOMPENSADOS (+20 ORO, MÁX 5/5) */}
+                    {/* 2. ZONA DE 3 BOTONES DE ANUNCIOS RECOMPENSADOS (+10 ORO, MÁX 5/5) */}
                     <div className="shop-gold-ads-container">
                       <div className="shop-gold-ads-title">
                         <span>📺</span>
-                        <strong>VIDEOS RECOMPENSADOS (+20 ORO CADA UNO)</strong>
-                        <small>Hasta 100 de oro por canal cada día (5 vistas máx.)</small>
+                        <strong>VIDEOS RECOMPENSADOS (+10 ORO CADA UNO)</strong>
+                        <small>Hasta 50 de oro por canal cada día (5 vistas máx.)</small>
                       </div>
                       <div className="shop-gold-ads-grid">
                         {AD_REWARD_SLOTS.map((ad) => {
@@ -1024,7 +1024,7 @@ export default function Shop({
                                   ? '⏳ REPRODUCIENDO...'
                                   : isMaxed
                                   ? '✅ AGOTADO (5/5)'
-                                  : '▶ VER VIDEO (+20 🪙)'}
+                                  : '▶ VER VIDEO (+10 🪙)'}
                               </button>
                             </div>
                           )

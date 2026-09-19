@@ -1503,37 +1503,61 @@
   background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
   border: 1.5px solid #86efac;
   cursor: pointer;
-  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4);
+  color: #ffffff;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   z-index: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
 }
 
 .shop-epic-buy-btn:hover {
-  transform: scale(1.03);
+  transform: translateY(-2px) scale(1.02);
   filter: brightness(1.15);
   border-color: #ffffff;
+  box-shadow: 0 5px 14px rgba(22, 163, 74, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.shop-epic-buy-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .shop-epic-buy-btn--popular {
-  background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%);
+  background: linear-gradient(180deg, #f97316 0%, #c2410c 100%);
   border-color: #fdba74;
-  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.4);
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.shop-epic-buy-btn--popular:hover {
+  box-shadow: 0 5px 14px rgba(234, 88, 12, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .shop-epic-buy-btn--best {
-  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+  background: linear-gradient(180deg, #eab308 0%, #b45309 100%);
   border-color: #fef08a;
-  box-shadow: 0 3px 12px rgba(217, 119, 6, 0.5);
+  box-shadow: 0 3px 12px rgba(217, 119, 6, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.shop-epic-buy-btn--best:hover {
+  box-shadow: 0 5px 16px rgba(217, 119, 6, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .shop-epic-buy-price {
   background: rgba(0, 0, 0, 0.35);
   padding: 1px 6px;
   border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fef08a;
 }
 
 /* =========================================================

@@ -122,7 +122,7 @@ class AdManager {
   }
 
   /**
-   * Valida y reclama +20 de Oro en la base de datos PostgreSQL tras ver un anuncio.
+   * Valida y reclama +10 de Oro en la base de datos PostgreSQL tras ver un anuncio.
    */
   public async claimAdReward(placement: 'match_end' | 'shop_channel_1' | 'shop_channel_2' | 'shop_channel_3'): Promise<{
     success: boolean
