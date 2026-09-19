@@ -2268,6 +2268,7 @@ export default function Battlefield({
       {/* Flying Projectiles */}
       {projectiles.map((proj) => {
         const isCatapult = proj.type === 'kernel' || proj.type === 'butter' || proj.type === 'melon' || proj.id.startsWith('tree-')
+        const isTreeShot = proj.id.startsWith('tree-')
         let currentY = proj.y
         let scale = 1
         if (isCatapult) {
@@ -2278,15 +2279,15 @@ export default function Battlefield({
           const t = Math.min(Math.max(traveled / totalDist, 0), 1)
 
           // Parábola de elevación: máxima en t = 0.5 (4 * 0.5 * 0.5 = 1)
-          const maxArc = proj.id.startsWith('tree-') ? 16 : (proj.type === 'butter' ? 18 : 14)
+          const maxArc = isTreeShot ? 15 : (proj.type === 'butter' ? 18 : 14)
           const arcHeight = 4 * t * (1 - t) * maxArc
 
           const originLane = proj.originLane ?? proj.lane
-          const startY = 20 + originLane * 19.33 + 7
+          const startY = isTreeShot ? 22 : (20 + originLane * 19.33 + 7)
           const endY = 20 + proj.lane * 19.33 + 7
 
           currentY = startY + t * (endY - startY) - arcHeight
-          scale = 1 + 0.35 * Math.sin(t * Math.PI)
+          scale = 1 + (isTreeShot ? 0.4 : 0.35) * Math.sin(t * Math.PI)
         }
 
         return (
