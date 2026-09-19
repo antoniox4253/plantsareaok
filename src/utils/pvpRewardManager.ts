@@ -94,8 +94,8 @@ export const FARMING_ITEM_DEFINITIONS: Record<
     fallback: '🥊',
   },
   witch_hat: {
-    label: 'Sombrero de Bruja',
-    description: 'Sombrero místico exclusivo de Lanzamaíz. Al equiparse otorga +200 HP y +25 de Daño.',
+    label: 'Sombrero Mágico',
+    description: 'Sombrero místico exclusivo de Lanzamaíz. Otorga +80 HP y permite lanzar 2 mantequillas congelantes en vez de una.',
     icon: '/game-assets/farming/witch_hat.png',
     fallback: '🧙‍♀️',
   },

@@ -914,6 +914,46 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             },
           })
         }
+
+        if (planta.plantId === 'kernelpult' && tipo === 'butter' && planta.equippedItem === 'witch_hat') {
+          // Sombrero Mágico: lanza 2 mantequillas congelantes en vez de una.
+          // La segunda mantequilla sale 180 ms después hacia otro carril con enemigos (o el mismo).
+          let secondTargetLane = targetLane
+          const lanesConEnemigos = [0, 1, 2].filter((l) =>
+            susPlantas.some((e) => e.lane === l && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
+          )
+          if (lanesConEnemigos.length > 1) {
+            const otherLanes = lanesConEnemigos.filter((l) => l !== targetLane)
+            const idx2 = Math.floor(nextFloat(state.rng) * otherLanes.length)
+            secondTargetLane = otherLanes[Math.min(idx2, otherLanes.length - 1)]
+          } else if (lanesConEnemigos.length === 1) {
+            secondTargetLane = lanesConEnemigos[0]
+          }
+
+          const target2 = susPlantas
+            .filter((e) => e.lane === secondTargetLane && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
+            .sort((a, b) => (lado.sentido > 0 ? a.x - b.x : b.x - a.x))[0]
+          const target2X = target2 ? target2.x : (lado.sentido > 0 ? BASE_RIGHT_START_X : BASE_LEFT_END_X)
+
+          state.pending.push({
+            atTick: state.tick + msToTicks(180),
+            kind: 'spawn_projectile',
+            projectile: {
+              id: entityId(`proj-${lado.equipo}-butter2`, state.tick, state.entityCounter++),
+              type: 'butter',
+              targetTeam: lado.objetivo,
+              lane: secondTargetLane,
+              originLane: planta.lane,
+              originX: salidaX,
+              targetX: target2X,
+              x: salidaX,
+              y: 20 + secondTargetLane * 19.33 + 7,
+              speed: velocidad,
+              damage: damage,
+              freezeDurationMs: freezeDurationMs,
+            },
+          })
+        }
       }
     }
 

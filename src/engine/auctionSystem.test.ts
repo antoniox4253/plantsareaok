@@ -2,27 +2,27 @@ import { describe, it, expect } from 'vitest'
 import { EQUIPPABLE_PLANT_ITEMS, getScaledPlantConfig, PLANT_CONFIGS } from '../utils/gameConstants'
 
 describe('Sistema de Subasta - Reglas de Negocio y Configuración', () => {
-  it('la carta de subasta (witch_hat / Lanzamaíz Bruja) está correctamente registrada con bonos de +200 HP y +25 Daño', () => {
+  it('la carta de subasta (witch_hat / Lanzamaíz Mágico) está correctamente registrada con bonos de +80 HP y 2x Mantequillas', () => {
     const itemDef = EQUIPPABLE_PLANT_ITEMS['witch_hat']
     expect(itemDef).toBeDefined()
     expect(itemDef.targetPlantId).toBe('kernelpult')
-    expect(itemDef.equippedPlantName).toBe('Lanzamaíz Bruja')
-    expect(itemDef.statBonusText).toContain('+200 HP')
-    expect(itemDef.statBonusText).toContain('+25 Daño')
+    expect(itemDef.name).toBe('Sombrero Mágico')
+    expect(itemDef.statBonusText).toContain('+80 HP')
+    expect(itemDef.statBonusText).toContain('2x Mantequillas')
 
-    // Probar aplicación de stats en nivel 0 (base de Lanzamaíz)
+    // Probar aplicación de stats en nivel 0 (base de Lanzamaíz + 80 HP)
     const baseKernel = PLANT_CONFIGS.kernelpult
     const scaledBase = getScaledPlantConfig('kernelpult', 0, 'witch_hat')
 
-    expect(scaledBase.maxHp).toBe(baseKernel.maxHp + 200)
-    expect(scaledBase.damage).toBe((baseKernel.damage ?? 30) + 25)
+    expect(scaledBase.maxHp).toBe(baseKernel.maxHp + 80)
+    expect(scaledBase.damage).toBe(baseKernel.damage)
     expect(scaledBase.sprite).toBe('/game-assets/auction/kernel_witch.png')
     expect(scaledBase.icon).toBe('/game-assets/auction/kernel_witch.png')
 
-    // Probar aplicación de stats en nivel 1 (escala 15% + 200 HP)
+    // Probar aplicación de stats en nivel 1 (escala 15% + 80 HP)
     const scaledLvl1 = getScaledPlantConfig('kernelpult', 1, 'witch_hat')
-    expect(scaledLvl1.maxHp).toBe(Math.round(baseKernel.maxHp * 1.15) + 200)
-    expect(scaledLvl1.damage).toBe(Math.round((baseKernel.damage ?? 30) * 1.15) + 25)
+    expect(scaledLvl1.maxHp).toBe(Math.round(baseKernel.maxHp * 1.15) + 80)
+    expect(scaledLvl1.damage).toBe(Math.round((baseKernel.damage ?? 30) * 1.15))
   })
 
   it('valida que la subasta inicia con 500 gemas y 30 horas de duración', () => {
