@@ -292,20 +292,22 @@ export default function Jardin({
   const handleEquipItem = async (instanceId: string, itemId: string) => {
     if (isEquippingItem || !onEquipItem) return
     setIsEquippingItem(true)
+    const itemDef = getEquippableItemDef(itemId)
+    const targetPlantId = itemDef?.targetPlantId || 'bonkchoy'
     try {
       soundManager.playSound('click', 0.5)
       let targetId = instanceId
       if (targetId.startsWith('inst_base_')) {
-        const real = plantInstances.find((p) => p.plantId === 'bonkchoy' && !p.instanceId.startsWith('inst_base_'))
+        const real = plantInstances.find((p) => p.plantId === targetPlantId && !p.instanceId.startsWith('inst_base_'))
         if (real) targetId = real.instanceId
       }
       const res = await onEquipItem(targetId, itemId)
       if (res?.success) {
         soundManager.playSound('victory', 0.6)
         setFuseAlert({
-          title: '¡CINTURÓN EQUIPADO!',
-          message: 'Has equipado el Cinturón de Campeón a Bonk Choy. ¡Su salud aumentó en +150 HP y su daño en +15!',
-          icon: '🥊',
+          title: `¡${itemDef?.name?.toUpperCase() || 'ÍTEM'} EQUIPADO!`,
+          message: `Has equipado ${itemDef?.name || 'el ítem'} a ${itemDef?.equippedPlantName || 'tu planta'}. ¡${itemDef?.statBonusText || 'Bonificaciones activadas'}!`,
+          icon: itemDef?.emoji || '🥊',
         })
       } else if (res && !res.success && res.error) {
         setFuseAlert({
@@ -328,19 +330,22 @@ export default function Jardin({
   const handleUnequipItem = async (instanceId: string) => {
     if (isEquippingItem || !onUnequipItem) return
     setIsEquippingItem(true)
+    const currentInst = plantInstances.find((p) => p.instanceId === instanceId)
+    const currentItemDef = getEquippableItemDef(currentInst?.equippedItem)
+    const targetPlantId = currentItemDef?.targetPlantId || (instanceId.startsWith('inst_base_') ? (instanceId.replace('inst_base_', '') as PlantId) : 'bonkchoy')
     try {
       soundManager.playSound('click', 0.5)
       let targetId = instanceId
       if (targetId.startsWith('inst_base_')) {
-        const real = plantInstances.find((p) => p.plantId === 'bonkchoy' && !p.instanceId.startsWith('inst_base_'))
+        const real = plantInstances.find((p) => p.plantId === targetPlantId && !p.instanceId.startsWith('inst_base_'))
         if (real) targetId = real.instanceId
       }
       const res = await onUnequipItem(targetId)
       if (res?.success) {
         soundManager.playSound('plantation', 0.6)
         setFuseAlert({
-          title: 'CINTURÓN DESEQUIPADO',
-          message: 'Has desequipado el Cinturón de Campeón. Ha vuelto a tu inventario de recursos de cultivo.',
+          title: `${currentItemDef?.name?.toUpperCase() || 'ÍTEM'} DESEQUIPADO`,
+          message: `Has desequipado ${currentItemDef?.name || 'el ítem'}. Ha vuelto a tu inventario de recursos de cultivo.`,
           icon: '📦',
         })
       } else if (res && !res.success && res.error) {

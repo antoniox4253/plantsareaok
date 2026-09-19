@@ -9,6 +9,7 @@ export type FarmingItemId =
   | 'shovel'
   | 'scarecrow'
   | 'champion_belt'
+  | 'witch_hat'
   | 'energy_potion_5'
   | 'mother_tree_skin'
 
@@ -21,6 +22,7 @@ export interface FarmingInventory {
   shovel: number
   scarecrow: number
   champion_belt: number
+  witch_hat: number
   energy_potion_5: number
   mother_tree_skin: number
 }
@@ -34,6 +36,7 @@ export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
   shovel: 0,
   scarecrow: 0,
   champion_belt: 0,
+  witch_hat: 0,
   energy_potion_5: 0,
   mother_tree_skin: 0,
 }
@@ -89,6 +92,12 @@ export const FARMING_ITEM_DEFINITIONS: Record<
     description: 'Cinturón exclusivo de Bonk Choy. Al equiparse otorga +150 HP y +15 de Daño.',
     icon: '/game-assets/farming/champion_belt.png',
     fallback: '🥊',
+  },
+  witch_hat: {
+    label: 'Sombrero de Bruja',
+    description: 'Sombrero místico exclusivo de Lanzamaíz. Al equiparse otorga +200 HP y +25 de Daño.',
+    icon: '/game-assets/farming/witch_hat.png',
+    fallback: '🧙‍♀️',
   },
   energy_potion_5: {
     label: 'Poción de Energía (5⚡)',

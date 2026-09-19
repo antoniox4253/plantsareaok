@@ -264,6 +264,7 @@ export default function Marketplace({
         'shovel',
         'scarecrow',
         'champion_belt',
+        'witch_hat',
         'energy_potion_5',
       ]
       order.forEach((fId) => {
