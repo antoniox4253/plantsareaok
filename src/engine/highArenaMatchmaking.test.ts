@@ -10,8 +10,8 @@ function simularCriterioEmparejamiento(
   waitedSeconds: number,
   lastMatchMinutesAgo?: number
 ): { matched: boolean; reason?: string } {
-  // 1. Cooldown de revancha: 5 minutos
-  const COOLDOWN_MINUTOS = 5
+  // 1. Cooldown de revancha: 45 minutos (Migración 196)
+  const COOLDOWN_MINUTOS = 45
   if (lastMatchMinutesAgo !== undefined && lastMatchMinutesAgo < COOLDOWN_MINUTOS) {
     return { matched: false, reason: 'cooldown_activo' }
   }
@@ -81,12 +81,12 @@ describe('Emparejamiento Optimizado en Arenas 4 y 5', () => {
     expect(res.reason).toBe('fuera_de_banda_estandar')
   })
 
-  it('6. Cooldown de revancha: Bloquea si jugaron hace 3 minutos, pero permite si pasaron 5 minutos', () => {
-    const resBloqueado = simularCriterioEmparejamiento(5000, 5200, 10, 3)
+  it('6. Cooldown de revancha: Bloquea si jugaron hace menos de 45 minutos (ej. 30 min), pero permite si pasaron 45 minutos', () => {
+    const resBloqueado = simularCriterioEmparejamiento(5000, 5200, 10, 30)
     expect(resBloqueado.matched).toBe(false)
     expect(resBloqueado.reason).toBe('cooldown_activo')
 
-    const resPermitido = simularCriterioEmparejamiento(5000, 5200, 10, 5.5)
+    const resPermitido = simularCriterioEmparejamiento(5000, 5200, 10, 45.5)
     expect(resPermitido.matched).toBe(true)
   })
 
