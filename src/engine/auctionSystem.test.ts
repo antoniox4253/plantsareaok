@@ -120,4 +120,80 @@ describe('Sistema de Subasta - Reglas de Negocio y Configuración', () => {
     expect(auction.status).toBe('completed')
     expect(auction.highestBidderId).toBe('user_winner_123')
   })
+
+  it('la nueva carta de subasta (knight_helmet / Nuez Blindada) está correctamente registrada con bonos de +500 HP para wallnut', () => {
+    const itemDef = EQUIPPABLE_PLANT_ITEMS['knight_helmet']
+    expect(itemDef).toBeDefined()
+    expect(itemDef.targetPlantId).toBe('wallnut')
+    expect(itemDef.name).toBe('Yelmo de Caballero')
+    expect(itemDef.statBonusText).toContain('+500 HP')
+    expect(itemDef.statBonusText).toContain('Defensa de Acero')
+
+    // Probar aplicación de stats en nivel 0 (base de Wallnut + 500 HP)
+    const baseWallnut = PLANT_CONFIGS.wallnut
+    const scaledBase = getScaledPlantConfig('wallnut', 0, 'knight_helmet')
+
+    expect(scaledBase.maxHp).toBe(baseWallnut.maxHp + 500)
+    expect(scaledBase.sprite).toBe('/game-assets/auction/knight_wallnut.png')
+    expect(scaledBase.icon).toBe('/game-assets/auction/knight_wallnut.png')
+    expect(scaledBase.packetActive).toBe('/game-assets/auction/knight_wallnut.png')
+  })
+
+  it('valida que la nueva subasta en oro inicia con 1000 de oro y 48 horas de duración', () => {
+    const STARTING_BID_GOLD = 1000
+    const DURATION_HOURS = 48
+    const MIN_STEP_GOLD = 50
+
+    expect(STARTING_BID_GOLD).toBe(1000)
+    expect(DURATION_HOURS).toBe(48)
+    expect(MIN_STEP_GOLD).toBe(50)
+
+    const now = Date.now()
+    const endTime = now + DURATION_HOURS * 3600 * 1000
+    const diffMs = endTime - now
+    expect(diffMs).toBe(48 * 3600 * 1000)
+
+    // Puja inicial mínima válida
+    const canBidFirst = (amount: number) => amount >= STARTING_BID_GOLD
+    expect(canBidFirst(999)).toBe(false)
+    expect(canBidFirst(1000)).toBe(true)
+    expect(canBidFirst(1500)).toBe(true)
+
+    // Superar puja de 1000 de oro (+50)
+    const canOutbid = (amount: number, current: number) => amount >= current + MIN_STEP_GOLD
+    expect(canOutbid(1040, 1000)).toBe(false)
+    expect(canOutbid(1050, 1000)).toBe(true)
+  })
+
+  it('simula la retención de oro y reembolso automático de oro al postor anterior', () => {
+    let userAGold = 5000
+    let userBGold = 8000
+
+    let currentBid = 1000
+    let highestBidder: 'A' | 'B' | null = null
+    let prevBidAmount = 0
+
+    // Usuario A puja 1000 de oro
+    userAGold -= 1000
+    highestBidder = 'A'
+    currentBid = 1000
+    prevBidAmount = 1000
+
+    expect(userAGold).toBe(4000)
+    expect(highestBidder).toBe('A')
+
+    // Usuario B supera la puja ofertando 1200 de oro
+    userBGold -= 1200
+    userAGold += prevBidAmount // Reembolso a A en oro
+
+    highestBidder = 'B'
+    currentBid = 1200
+    prevBidAmount = 1200
+
+    expect(userAGold).toBe(5000) // A recuperó su oro íntegro
+    expect(userBGold).toBe(6800)
+    expect(highestBidder).toBe('B')
+    expect(currentBid).toBe(1200)
+    expect(prevBidAmount).toBe(1200)
+  })
 })

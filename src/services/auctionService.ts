@@ -15,6 +15,7 @@ export interface ActiveAuctionData {
   itemName: string
   description: string
   imageUrl: string
+  currency?: 'gold' | 'gems'
   startingBid: number
   currentBid: number
   minBidStep: number
@@ -34,8 +35,10 @@ export interface BidResult {
   success: boolean
   auctionId?: string
   bidAmount?: number
+  currency?: 'gold' | 'gems'
   highestBidderName?: string
   remainingGems?: number
+  remainingGold?: number
   error?: string
 }
 
@@ -64,6 +67,23 @@ class AuctionService {
     } catch (e) {
       console.error('[AuctionService] Excepción en getActiveAuction:', e)
       return null
+    }
+  }
+
+  /**
+   * Obtiene la lista de subastas completadas (para el historial y la pestaña de subasta finalizada).
+   */
+  async getCompletedAuctions(): Promise<ActiveAuctionData[]> {
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_completed_auctions')
+      if (error) {
+        console.error('[AuctionService] Error al obtener subastas completadas:', error)
+        return []
+      }
+      return (data || []) as ActiveAuctionData[]
+    } catch (e) {
+      console.error('[AuctionService] Excepción en getCompletedAuctions:', e)
+      return []
     }
   }
 

@@ -146,6 +146,16 @@ export default function MainMenu({
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
   const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
   const [showLotteryModal, setShowLotteryModal] = useState(false)
+  const [lotteryInitialTab, setLotteryInitialTab] = useState<'wheel' | 'auction' | 'code'>('wheel')
+
+  useEffect(() => {
+    const handleOpenLottery = (e: any) => {
+      setLotteryInitialTab(e?.detail?.tab || 'wheel')
+      setShowLotteryModal(true)
+    }
+    window.addEventListener('open_lottery_modal', handleOpenLottery)
+    return () => window.removeEventListener('open_lottery_modal', handleOpenLottery)
+  }, [])
 
 
   const handleToggleGlobalChat = () => {
@@ -1320,6 +1330,9 @@ export default function MainMenu({
           isAdmin={isAdmin}
           onOpenAdmin={onOpenAdmin}
           onRewardsChanged={onRewardsChanged}
+          userId={userProfile?.id}
+          username={userProfile?.username}
+          initialTab={lotteryInitialTab}
         />
       )}
     </div>

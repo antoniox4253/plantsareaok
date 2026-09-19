@@ -10,6 +10,7 @@ export type FarmingItemId =
   | 'scarecrow'
   | 'champion_belt'
   | 'witch_hat'
+  | 'knight_helmet'
   | 'energy_potion_5'
   | 'mother_tree_skin'
 
@@ -23,6 +24,7 @@ export interface FarmingInventory {
   scarecrow: number
   champion_belt: number
   witch_hat: number
+  knight_helmet: number
   energy_potion_5: number
   mother_tree_skin: number
 }
@@ -37,6 +39,7 @@ export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
   scarecrow: 0,
   champion_belt: 0,
   witch_hat: 0,
+  knight_helmet: 0,
   energy_potion_5: 0,
   mother_tree_skin: 0,
 }
@@ -98,6 +101,12 @@ export const FARMING_ITEM_DEFINITIONS: Record<
     description: 'Sombrero místico exclusivo de Lanzamaíz. Otorga +80 HP y permite lanzar 2 mantequillas congelantes en vez de una.',
     icon: '/game-assets/farming/witch_hat.png',
     fallback: '🧙‍♀️',
+  },
+  knight_helmet: {
+    label: 'Yelmo de Caballero',
+    description: 'Yelmo exclusivo de Nuez. Al equiparse otorga +500 HP y resistencia de acero.',
+    icon: '/game-assets/auction/knight_wallnut.png',
+    fallback: '🛡️',
   },
   energy_potion_5: {
     label: 'Poción de Energía (5⚡)',

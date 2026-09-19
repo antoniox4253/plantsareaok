@@ -186,6 +186,24 @@ export default function GlobalChat({
         </div>
       </div>
 
+      {/* RECORDATORIO DE SUBASTA ACTIVA EN LOTERÍA (SOLO POR EL CHAT) */}
+      <div
+        className="global-chat-auction-notice"
+        onClick={() => {
+          soundManager.playSound('click', 0.4)
+          window.dispatchEvent(
+            new CustomEvent('open_lottery_modal', { detail: { tab: 'auction' } })
+          )
+        }}
+        title="Clic para ir a la Subasta en Lotería"
+      >
+        <span className="global-chat-auction-notice__badge">🔨 SUBASTA</span>
+        <div className="global-chat-auction-notice__text">
+          ¡Subasta activa en Lotería! Puja en <strong>Oro 💰</strong> por la <strong>Nuez Blindada</strong>
+        </div>
+        <span className="global-chat-auction-notice__btn">IR ➔</span>
+      </div>
+
       {/* CUERPO DE MENSAJES */}
       <div className="global-chat-body">
         {messages.length === 0 ? (

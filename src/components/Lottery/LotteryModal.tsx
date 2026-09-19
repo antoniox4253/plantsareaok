@@ -4,6 +4,7 @@ import type { CodeRoundPrizeTier } from '../../types/database.types'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { soundManager } from '../../utils/audioManager'
 import { lotteryService } from '../../services/lotteryService'
+import { AuctionTabPane } from './AuctionTabPane'
 import './LotteryModal.css'
 
 interface LotteryModalProps {
@@ -19,6 +20,9 @@ interface LotteryModalProps {
   /** Recarga saldo e inventario desde el servidor tras un premio. El premio ya
    *  está entregado en la base: esto sólo lo trae a la pantalla. */
   onRewardsChanged?: () => Promise<void> | void
+  userId?: string
+  username?: string
+  initialTab?: 'wheel' | 'auction' | 'code'
 }
 
 interface WheelSector {
@@ -204,8 +208,17 @@ export default function LotteryModal({
   isAdmin,
   onOpenAdmin,
   onRewardsChanged,
+  userId,
+  username,
+  initialTab,
 }: LotteryModalProps) {
-  const [activeTab, setActiveTab] = useState<'wheel' | 'code'>('wheel')
+  const [activeTab, setActiveTab] = useState<'wheel' | 'auction' | 'code'>(initialTab || 'wheel')
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab)
+    }
+  }, [initialTab])
 
   // --- TAB 1: WHEEL STATE ---
   const [isSpinning, setIsSpinning] = useState(false)
@@ -812,6 +825,16 @@ export default function LotteryModal({
           </button>
           <button
             type="button"
+            className={`lottery-tab-btn ${activeTab === 'auction' ? 'lottery-tab-btn--active' : ''}`}
+            onClick={() => {
+              soundManager.playSound('click', 0.4)
+              setActiveTab('auction')
+            }}
+          >
+            🔨 SUBASTAS
+          </button>
+          <button
+            type="button"
             className={`lottery-tab-btn ${activeTab === 'code' ? 'lottery-tab-btn--active' : ''}`}
             onClick={() => {
               soundManager.playSound('click', 0.4)
@@ -985,6 +1008,17 @@ export default function LotteryModal({
             </div>
           )
         })()}
+
+        {/* ===================== TAB: SUBASTAS ===================== */}
+        {activeTab === 'auction' && (
+          <AuctionTabPane
+            userGold={userGold}
+            userTokens={currentGems}
+            userId={userId}
+            username={username}
+            onRewardsChanged={onRewardsChanged}
+          />
+        )}
 
         {/* ===================== TAB 2: CODE (PLANT SEQUENCE) ===================== */}
         {activeTab === 'code' && (

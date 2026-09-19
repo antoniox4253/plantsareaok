@@ -516,6 +516,23 @@ export const EQUIPPABLE_PLANT_ITEMS: Record<string, EquippablePlantItemDef> = {
       packetDisabled: '/game-assets/auction/kernel_witch.png',
     }),
   },
+  knight_helmet: {
+    id: 'knight_helmet',
+    name: 'Yelmo de Caballero',
+    emoji: '🛡️',
+    targetPlantId: 'wallnut',
+    equippedPlantName: 'Nuez Blindada',
+    description: 'Yelmo de caballero de acero forjado. Concede una armadura impenetrable de +500 HP a la Nuez.',
+    statBonusText: '+500 HP · Defensa de Acero',
+    applyStats: (scaled) => ({
+      ...scaled,
+      maxHp: scaled.maxHp + 500,
+      sprite: '/game-assets/auction/knight_wallnut.png',
+      icon: '/game-assets/auction/knight_wallnut.png',
+      packetActive: '/game-assets/auction/knight_wallnut.png',
+      packetDisabled: '/game-assets/auction/knight_wallnut.png',
+    }),
+  },
 }
 
 export function getEquippableItemDef(itemId?: string | null): EquippablePlantItemDef | undefined {
