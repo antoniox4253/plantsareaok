@@ -1498,11 +1498,19 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
       state.timers.lastP1TreeShot = state.tick
       for (let i = 0; i < 2; i++) {
         const lane = nextInt(state.rng, 3)
+        const target = state.enemyPlants
+          .filter((e) => e.lane === lane && e.hp > 0 && e.x > BASE_LEFT_END_X)
+          .sort((a, b) => a.x - b.x)[0]
+        const targetX = target ? target.x : BASE_RIGHT_START_X
+
         state.projectiles.push({
           id: entityId(`tree-p1-shot-${i}`, state.tick, state.entityCounter++),
           type: 'pea',
           targetTeam: 'p2',
           lane,
+          originLane: 1,
+          originX: BASE_LEFT_END_X,
+          targetX,
           x: BASE_LEFT_END_X,
           y: 20 + lane * 19.33 + 7,
           speed: 28,
@@ -1519,11 +1527,19 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
       state.timers.lastP2TreeShot = state.tick
       for (let i = 0; i < 2; i++) {
         const lane = nextInt(state.rng, 3)
+        const target = state.plants
+          .filter((e) => e.lane === lane && e.hp > 0 && e.x < BASE_RIGHT_START_X)
+          .sort((a, b) => b.x - a.x)[0]
+        const targetX = target ? target.x : BASE_LEFT_END_X
+
         state.projectiles.push({
           id: entityId(`tree-p2-shot-${i}`, state.tick, state.entityCounter++),
           type: 'pea',
           targetTeam: 'p1',
           lane,
+          originLane: 1,
+          originX: BASE_RIGHT_START_X,
+          targetX,
           x: BASE_RIGHT_START_X,
           y: 20 + lane * 19.33 + 7,
           speed: 28,

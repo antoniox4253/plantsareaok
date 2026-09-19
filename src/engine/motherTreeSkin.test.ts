@@ -64,6 +64,9 @@ describe('Mother Tree Skin Sentinel & Combat Attack', () => {
       expect(proj.lane).toBeGreaterThanOrEqual(0)
       expect(proj.lane).toBeLessThanOrEqual(2)
       expect(proj.type).toBe('pea')
+      expect(proj.originLane).toBe(1)
+      expect(proj.originX).toBe(15)
+      expect(proj.targetX).toBe(85)
     }
   })
 
