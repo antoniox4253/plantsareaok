@@ -181,6 +181,11 @@ export default function MainMenu({
   const [isMisionesModalOpen, setIsMisionesModalOpen] = useState<boolean>(false)
   const [auctionInfo, setAuctionInfo] = useState<ActiveAuctionData | null>(null)
 
+  const handleCloseGlobalChat = useCallback(() => setIsGlobalChatOpen(false), [])
+  const handleCloseAuctionModal = useCallback(() => setIsAuctionModalOpen(false), [])
+  const handleCloseMisionesModal = useCallback(() => setIsMisionesModalOpen(false), [])
+  const handleCloseLotteryModal = useCallback(() => setShowLotteryModal(false), [])
+
   useEffect(() => {
     auctionService.getActiveAuction().then((data) => {
       if (data) setAuctionInfo(data)
@@ -1253,7 +1258,7 @@ export default function MainMenu({
       {/* CHAT GLOBAL MINIMIZABLE */}
       <GlobalChat
         isOpen={isGlobalChatOpen}
-        onClose={() => setIsGlobalChatOpen(false)}
+        onClose={handleCloseGlobalChat}
         currentUser={{
           name: playerProfile.name || userProfile?.username || 'Guerrero',
           hasVipPass: Boolean(hasVipPass),
@@ -1269,7 +1274,7 @@ export default function MainMenu({
       {/* MODAL DE SUBASTA EXCLUSIVA (LANZAMAÍZ BRUJA) */}
       <AuctionModal
         isOpen={isAuctionModalOpen}
-        onClose={() => setIsAuctionModalOpen(false)}
+        onClose={handleCloseAuctionModal}
         userTokens={userTokens}
         onTokensDeducted={(newTokens) => {
           if (onDeductTokens) {
@@ -1283,7 +1288,7 @@ export default function MainMenu({
       {/* MODAL DE MISIONES, RACHA Y TIKTOK */}
       <MisionesModal
         isOpen={isMisionesModalOpen}
-        onClose={() => setIsMisionesModalOpen(false)}
+        onClose={handleCloseMisionesModal}
         userGems={userTokens}
         onRewardClaimed={onRewardsChanged}
       />
@@ -1292,7 +1297,7 @@ export default function MainMenu({
       {showLotteryModal && (
         <LotteryModal
           isOpen={showLotteryModal}
-          onClose={() => setShowLotteryModal(false)}
+          onClose={handleCloseLotteryModal}
           userTokens={userTokens}
           userGold={userGold}
           isAdmin={isAdmin}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import './MisionesModal.css'
 import {
@@ -58,23 +58,37 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
     seconds: 0
   })
 
+  // Estabilizar onClose con un ref para evitar que re-renders del componente padre disparen efectos
+  const onCloseRef = useRef(onClose)
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  const dashboardRef = useRef(dashboard)
+  useEffect(() => {
+    dashboardRef.current = dashboard
+  }, [dashboard])
+
+  // Manejador de teclado para cerrar con Escape
   useEffect(() => {
     if (!isOpen) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current?.()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
-    loadDashboard()
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, onClose])
+  }, [isOpen])
 
+  // Temporizador TikTok: solo corre si el modal está abierto Y en la pestaña de TikTok
   useEffect(() => {
+    if (!isOpen || activeTab !== 'tiktok') return
+
     const target = new Date('2026-09-26T23:00:00Z').getTime()
     const updateTimer = () => {
       const now = new Date().getTime()
@@ -90,10 +104,12 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
     updateTimer()
     const interval = setInterval(updateTimer, 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [isOpen, activeTab])
 
-  const loadDashboard = async () => {
-    setLoading(true)
+  const loadDashboard = useCallback(async (showSpinner = false) => {
+    if (showSpinner) {
+      setLoading(true)
+    }
     setErrorMessage(null)
     try {
       const data = await getMissionsDashboard()
@@ -107,7 +123,15 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  // Carga de tablero única al abrir el modal (sin parpadeos si ya existen datos)
+  useEffect(() => {
+    if (isOpen) {
+      const needsSpinner = dashboardRef.current === null
+      void loadDashboard(needsSpinner)
+    }
+  }, [isOpen, loadDashboard])
 
   const handleClaimStreak = async () => {
     setActionLoading(true)
