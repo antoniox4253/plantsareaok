@@ -563,6 +563,7 @@ export default function Battlefield({
   )
   const [isRerollingTarget, setIsRerollingTarget] = useState<boolean>(false)
   const [rerollError, setRerollError] = useState<string | null>(null)
+  const hasClanFortressStartedRef = useRef<boolean>(false)
 
   const activeLanesConfig = useMemo(() => {
     if (matchMode !== 'clan_fortress') return LANES_CONFIG
@@ -1628,7 +1629,12 @@ export default function Battlefield({
       }
     } else if (matchMode === 'strategic_test' && strategicPlaytestConfig) {
       startStrategicPlaytestGame(strategicPlaytestConfig, activeDeck)
-    } else if (matchMode === 'clan_fortress' && (currentFortressOpponent || clanFortressConfig?.targetClan)) {
+    } else if (
+      matchMode === 'clan_fortress' &&
+      !hasClanFortressStartedRef.current &&
+      (currentFortressOpponent || clanFortressConfig?.targetClan)
+    ) {
+      hasClanFortressStartedRef.current = true
       const opp = currentFortressOpponent || clanFortressConfig!.targetClan
       const fortressAttackSuns = 300 + Math.max(0, treeLevel) * 100
       startGame(
@@ -1919,80 +1925,70 @@ export default function Battlefield({
         }
       />
 
-      {/* HUD ULTRA-SLIM DE PREPARACIÓN EN ASALTO A FORTALEZA (120S) */}
+      {/* PANEL DE PREPARACIÓN EN ASALTO A FORTALEZA (120S) */}
       {matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && (
         <div className="clan-raid-prep-hud">
-          <div className="clan-raid-prep-hud__target">
-            <span className="clan-raid-prep-hud__badge">{currentFortressOpponent?.targetBadge || '🏰'}</span>
-            <div className="clan-raid-prep-hud__info">
-              <div className="clan-raid-prep-hud__title-row">
+          {/* Fila Principal: Rival, Cronómetro y Botones de Acción */}
+          <div className="clan-raid-prep-hud__main-row">
+            <div className="clan-raid-prep-hud__target">
+              <span className="clan-raid-prep-hud__badge">{currentFortressOpponent?.targetBadge || '🏰'}</span>
+              <div className="clan-raid-prep-hud__title-group">
                 <span className="clan-raid-prep-hud__name">{currentFortressOpponent?.targetClanName}</span>
                 <span className="clan-raid-prep-hud__tag">{currentFortressOpponent?.targetClanTag}</span>
                 {currentFortressOpponent?.isNpc && (
                   <span className="clan-raid-prep-hud__npc-tag">BOT</span>
                 )}
               </div>
-              <div className="clan-raid-prep-hud__meta-row">
-                <span>❤️ <strong>{currentFortressOpponent?.targetBaseHp} HP</strong></span>
-                <span>•</span>
-                <span>💎 <strong>{Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} Gemas</strong></span>
-                <span>•</span>
-                <span>🌱 <strong>{currentFortressOpponent?.layout?.length || 0} Defensas</strong></span>
-                <span>•</span>
-                <span>☀️ <strong>{sunBank} Soles (Nv.{treeLevel} Árbol)</strong></span>
-                <span>•</span>
-                <span title="Desentierra con la pala para reembolsar el 100% de los soles gastados durante la fase de preparación">🧹 <strong>100% Reembolso Pala</strong></span>
+            </div>
+
+            <div className="clan-raid-prep-hud__center">
+              <div className="clan-raid-prep-timer-box">
+                <span className="clan-raid-prep-timer-box__label">⏳ PREPARACIÓN</span>
+                <strong className="clan-raid-prep-timer-box__val">
+                  {Math.floor(clanRaidPrepTimer / 60).toString().padStart(2, '0')}:{(clanRaidPrepTimer % 60).toString().padStart(2, '0')}
+                </strong>
               </div>
-            </div>
-          </div>
-
-          <div className="clan-raid-prep-hud__center">
-            <div className="clan-raid-prep-timer-box">
-              <span className="clan-raid-prep-timer-box__label">⏳ PREP</span>
-              <strong className="clan-raid-prep-timer-box__val">
-                {Math.floor(clanRaidPrepTimer / 60).toString().padStart(2, '0')}:{(clanRaidPrepTimer % 60).toString().padStart(2, '0')}
-              </strong>
-            </div>
-            {rerollError && (
-              <span className="clan-raid-prep-hud__error">⚠️ {rerollError}</span>
-            )}
-          </div>
-
-          <div className="clan-raid-prep-hud__actions">
-            <button
-              type="button"
-              className="clan-raid-prep-btn clan-raid-prep-btn--reroll"
-              onClick={handleRerollClanRaidTarget}
-              disabled={isRerollingTarget}
-              title="Buscar otro bot o clan rival pagando 500 de Oro"
-            >
-              {isRerollingTarget ? (
-                <>
-                  <span className="clan-fortress-mini-spinner" /> BUSCANDO...
-                </>
-              ) : (
-                '🔄 BUSCAR (500 🪙)'
+              {rerollError && (
+                <span className="clan-raid-prep-hud__error">⚠️ {rerollError}</span>
               )}
-            </button>
+            </div>
 
-            <button
-              type="button"
-              className="clan-raid-prep-btn clan-raid-prep-btn--start"
-              onClick={handleStartClanRaidBattle}
-              title="Comenzar el asalto inmediatamente"
-            >
-              ⚔️ ¡ASALTO YA!
-            </button>
+            <div className="clan-raid-prep-hud__actions">
+              <button
+                type="button"
+                className="clan-raid-prep-btn clan-raid-prep-btn--reroll"
+                onClick={handleRerollClanRaidTarget}
+                disabled={isRerollingTarget}
+                title="Buscar otro bot o clan rival pagando 500 de Oro"
+              >
+                {isRerollingTarget ? (
+                  <>
+                    <span className="clan-fortress-mini-spinner" /> BUSCANDO...
+                  </>
+                ) : (
+                  '🔄 BUSCAR (500 🪙)'
+                )}
+              </button>
+
+              <button
+                type="button"
+                className="clan-raid-prep-btn clan-raid-prep-btn--start"
+                onClick={handleStartClanRaidBattle}
+                title="Comenzar el asalto inmediatamente"
+              >
+                ⚔️ ¡ASALTO YA!
+              </button>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Banner de asalto activo durante el combate */}
-      {matchMode === 'clan_fortress' && clanRaidPhase === 'battle' && (
-        <div className="clan-raid-active-banner">
-          <span>⚔️</span>
-          <span>ASALTO EN CURSO: <strong>{currentFortressOpponent?.targetClanName}</strong> ({currentFortressOpponent?.targetClanTag})</span>
-          <span className="clan-raid-active-banner__loot">💎 {Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} Gemas en juego</span>
+          {/* Fila Táctica: Estadísticas, Soles y Reembolso de Pala */}
+          <div className="clan-raid-prep-hud__meta-row">
+            <span className="clan-raid-meta-pill">❤️ <strong>{currentFortressOpponent?.targetBaseHp} HP</strong></span>
+            <span className="clan-raid-meta-pill">💎 <strong>{Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} Gemas</strong></span>
+            <span className="clan-raid-meta-pill">🌱 <strong>{currentFortressOpponent?.layout?.length || 0} Defensas</strong></span>
+            <span className="clan-raid-meta-pill clan-raid-meta-pill--sun">☀️ <strong>{sunBank} Soles (Nv.{treeLevel} Árbol)</strong></span>
+            <span className="clan-raid-meta-pill clan-raid-meta-pill--shovel" title="Desentierra con la pala para reembolsar el 100% de los soles gastados durante la fase de preparación">🧹 <strong>100% Reembolso Pala</strong></span>
+          </div>
         </div>
       )}
 
@@ -2690,7 +2686,7 @@ export default function Battlefield({
       )}
 
       {/* Wave Banner */}
-      {waveBanner && (
+      {waveBanner && matchMode !== 'clan_fortress' && (
         <div className="wave-banner">
           <span className="wave-banner__text">{waveBanner}</span>
         </div>

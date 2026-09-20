@@ -277,7 +277,7 @@ export function createBattleState(
     cooldowns: enfriamientosACero(),
     slotCooldowns: {},
     wave: 1,
-    waveBanner: isPracticeMode ? 'Modo Práctica' : '¡Ola 1 de Plantas Enemigas!',
+    waveBanner: isPracticeMode ? 'Modo Práctica' : (isFortressMode ? null : '¡Ola 1 de Plantas Enemigas!'),
     stats: { sunsCollected: 0, enemyPlantsDefeated: 0, plantsPlaced: 0, score: 0 },
     ...(isPracticeMode ? { isPracticeMode: true } : {}),
     ...(isPvpMode ? { isPvpMode: true } : {}),
@@ -1480,8 +1480,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     }
   }
 
-  // Wave progression timer (Every 25s)
-  if (state.tick - state.timers.waveStart > msToTicks(25000)) {
+  // Wave progression timer (Every 25s, no aplica a fortaleza de clanes)
+  if (!state.isFortressMode && state.tick - state.timers.waveStart > msToTicks(25000)) {
     state.timers.waveStart = state.tick
     state.wave += 1
     if (state.wave % 3 === 0) {

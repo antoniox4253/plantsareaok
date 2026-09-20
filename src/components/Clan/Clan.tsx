@@ -3098,55 +3098,8 @@ export default function Clan({
                           />
                         </div>
 
-                        {/* Barras de Progreso Requisitos */}
-                        {(fortressData?.motherTreeLevel ?? 1) < 4 ? (
-                          <div className="clan-tree-progress-wrap">
-                            <div className="clan-tree-req-item">
-                              <div className="clan-tree-req-labels">
-                                <span>💧 Agua Requerida:</span>
-                                <strong>{fortressData?.motherTreeWater ?? 0} / {fortressData?.nextTreeWaterReq || 150}</strong>
-                              </div>
-                              <div className="clan-tree-pbar-track">
-                                <div
-                                  className="clan-tree-pbar-fill clan-tree-pbar-fill--water"
-                                  style={{
-                                    width: `${Math.min(100, (((fortressData?.motherTreeWater ?? 0) / (fortressData?.nextTreeWaterReq || 150)) * 100))}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="clan-tree-req-item">
-                              <div className="clan-tree-req-labels">
-                                <span>🌱 Fertilizante Requerido:</span>
-                                <strong>{fortressData?.motherTreeFertilizer ?? 0} / {fortressData?.nextTreeFertReq || 100}</strong>
-                              </div>
-                              <div className="clan-tree-pbar-track">
-                                <div
-                                  className="clan-tree-pbar-fill clan-tree-pbar-fill--fert"
-                                  style={{
-                                    width: `${Math.min(100, (((fortressData?.motherTreeFertilizer ?? 0) / (fortressData?.nextTreeFertReq || 100)) * 100))}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="clan-tree-req-item">
-                              <div className="clan-tree-req-labels">
-                                <span>💎 Gemas Requeridas:</span>
-                                <strong>{fortressData?.motherTreeGems ?? 0} / {fortressData?.nextTreeGemsReq || 600}</strong>
-                              </div>
-                              <div className="clan-tree-pbar-track">
-                                <div
-                                  className="clan-tree-pbar-fill clan-tree-pbar-fill--gems"
-                                  style={{
-                                    width: `${Math.min(100, (((fortressData?.motherTreeGems ?? 0) / (fortressData?.nextTreeGemsReq || 600)) * 100))}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
+                        {/* Insignia de Nivel Máximo */}
+                        {(fortressData?.motherTreeLevel ?? 1) >= 4 && (
                           <div className="clan-tree-max-perks-badge">
                             ⭐ ¡MÁXIMO PODER MILENARIO ALCANZADO!
                           </div>
