@@ -23,18 +23,6 @@ import './PanelDeReferidos.css'
  *    - 🎖️ Top 5: 2,000 Oro
  */
 
-/** Formatea los segundos restantes de la temporada en formato legible */
-function cuentaAtras(segundos: number): string {
-  if (segundos <= 0) return 'Terminada'
-  const d = Math.floor(segundos / 86400)
-  const h = Math.floor((segundos % 86400) / 3600)
-  const m = Math.floor((segundos % 3600) / 60)
-  const s = segundos % 60
-  if (d > 0) return `${d}d ${h}h ${m}m`
-  if (h > 0) return `${h}h ${m}m ${s}s`
-  return `${m}m ${s}s`
-}
-
 const POR_QUE_NO: Record<string, string> = {
   cuenta_demasiado_antigua:
     'Tu cuenta tiene más de 7 días. El código de un amigo solo se puede usar al empezar.',
@@ -65,7 +53,6 @@ export default function PanelDeReferidos() {
   const [aviso, setAviso] = useState<{ texto: string; bien: boolean } | null>(null)
   const [copiado, setCopiado] = useState(false)
   const [ocupado, setOcupado] = useState<string | null>(null)
-  const [restante, setRestante] = useState(0)
   const [codigoEscrito, setCodigoEscrito] = useState('')
 
   // Paginación y búsqueda de amigos invitados
@@ -82,21 +69,12 @@ export default function PanelDeReferidos() {
   const cargar = useCallback(async () => {
     const d = await referralService.myReferrals()
     setDatos(d)
-    setRestante(d?.temporada?.segundos ?? 0)
     setCargando(false)
   }, [])
 
   useEffect(() => {
     void cargar()
   }, [cargar])
-
-  // Temporizador en vivo sincronizado con el backend
-  const corriendo = restante > 0
-  useEffect(() => {
-    if (!corriendo) return
-    const id = setInterval(() => setRestante((s) => Math.max(0, s - 1)), 1000)
-    return () => clearInterval(id)
-  }, [corriendo])
 
   // Amigos filtrados y paginados
   const amigosFiltrados = useMemo(() => {
@@ -253,46 +231,8 @@ export default function PanelDeReferidos() {
     }
   }
 
-  // COBRAR METAS DE TEMPORADA (10 AMIGOS -> SOBRE BÁSICO, 35 AMIGOS -> 500 GEMAS)
-  const cobrarMeta = async (kind: 'sobre_10' | 'gemas_35') => {
-    setOcupado(kind)
-    const r = await referralService.claimReferralReward(kind)
-    setOcupado(null)
-    if (r.ok) {
-      soundManager.playSound('victory', 0.9)
-      if (kind === 'sobre_10') {
-        UserManager.addTransaction({
-          type: 'reward',
-          amountUsd: 1.0,
-          description: 'Meta de Temporada Referidos: 1 Sobre Básico por 10 amigos válidos',
-          status: 'completed',
-        })
-      } else {
-        UserManager.addTransaction({
-          type: 'reward',
-          amountUsd: 5.0,
-          description: 'Meta de Temporada Referidos: 35 amigos válidos (+500 💎)',
-          status: 'completed',
-        })
-      }
-      decir(
-        kind === 'sobre_10'
-          ? '🎉 ¡Recompensa de temporada reclamada! 1 Sobre Básico añadido a tu inventario.'
-          : '🎉 ¡Recompensa de temporada reclamada! +500 💎 gemas añadidas a tu saldo.'
-      )
-      window.dispatchEvent(new Event('refresh_user_balance'))
-      window.dispatchEvent(new Event('refresh_user_inventory'))
-      void cargar()
-    } else if (r.motivo === 'faltan_amigos') {
-      decir(`Te faltan amigos en esta temporada: tienes ${r.tienes} de ${r.necesitas}.`, false)
-    } else if (r.motivo === 'ya_cobrada') {
-      decir('Ya habías cobrado esta meta en la temporada actual.', false)
-    } else {
-      decir(`No se pudo cobrar la meta: ${r.motivo ?? 'error'}`, false)
-    }
-  }
 
-  const validosTemporada = datos.validosTemporada ?? datos.validos
+
   const gemasDeposito = Number(datos.gemasDepositoPorCobrar ?? 0)
   const oroACobrar =
     Number(datos.oroPorCobrar ?? 0) > 0
@@ -397,7 +337,7 @@ export default function PanelDeReferidos() {
           <span className="ref-cifra__num ref-cifra__num--oro">
             {datos.miPuesto ? `#${datos.miPuesto}` : '—'}
           </span>
-          <span className="ref-cifra__lbl">Tu Puesto en Temporada</span>
+          <span className="ref-cifra__lbl">Tu Puesto en Ranking</span>
         </div>
       </div>
 
@@ -458,115 +398,70 @@ export default function PanelDeReferidos() {
         </div>
       </div>
 
-      {/* ── SECCIÓN 5: METAS DE LA TEMPORADA ACTIVA ─────────────────────── */}
+      {/* ── SECCIÓN 5: RESULTADOS FINALES DEL RANKING DE REFERIDOS ────────── */}
       <div className="ref-bloque">
-        <h3 className="ref-titulo">🎯 Metas de la Temporada Activa</h3>
+        <h3 className="ref-titulo">🏆 Resultados Finales del Ranking de Referidos</h3>
         <p className="ref-sub">
-          Disponibles durante los 15 días de la temporada actual. Al finalizar la temporada estas metas se reinician.
+          La temporada de referidos ha concluido exitosamente y todos los premios del Top 5 han sido liquidados y entregados a las cuentas de los ganadores.
         </p>
 
-        {/* Meta 1: 10 amigos -> 1 Sobre Básico */}
-        <div className="ref-premio">
-          <div className="ref-premio__txt">
-            <strong>📦 1 Sobre Básico al alcanzar 10 amigos</strong>
-            <small>
-              Progreso en temporada: <strong>{validosTemporada}</strong> / 10 amigos válidos.
-            </small>
-          </div>
-          <button
-            type="button"
-            className="ref-btn ref-btn--principal"
-            disabled={!datos.metaSobre.alcanzada || datos.metaSobre.cobrada || ocupado === 'sobre_10'}
-            onClick={() => void cobrarMeta('sobre_10')}
-          >
-            {datos.metaSobre.cobrada
-              ? '✓ Cobrado'
-              : ocupado === 'sobre_10'
-              ? '⏳'
-              : datos.metaSobre.alcanzada
-              ? 'Cobrar 1 Sobre 📦'
-              : `${validosTemporada}/10 amigos`}
-          </button>
-        </div>
-
-        {/* Meta 2: 35 amigos -> 500 Gemas */}
-        <div className="ref-premio">
-          <div className="ref-premio__txt">
-            <strong>💎 500 Gemas al alcanzar 35 amigos</strong>
-            <small>
-              Progreso en temporada: <strong>{validosTemporada}</strong> / 35 amigos válidos.
-            </small>
-          </div>
-          <button
-            type="button"
-            className="ref-btn ref-btn--principal"
-            disabled={!datos.metaGemas.alcanzada || datos.metaGemas.cobrada || ocupado === 'gemas_35'}
-            onClick={() => void cobrarMeta('gemas_35')}
-          >
-            {datos.metaGemas.cobrada
-              ? '✓ Cobrado'
-              : ocupado === 'gemas_35'
-              ? '⏳'
-              : datos.metaGemas.alcanzada
-              ? 'Cobrar 500 💎'
-              : `${validosTemporada}/35 amigos`}
-          </button>
-        </div>
-      </div>
-
-      {/* ── SECCIÓN 6: RANKING Y PREMIOS DE TEMPORADA ────────────────────── */}
-      <div className="ref-bloque">
-        <h3 className="ref-titulo">🏆 Premios del Ranking de Temporada</h3>
-        <p className="ref-sub">
-          La temporada concluye en la fecha indicada. Al llegar al término, el backend liquida y entrega los premios automáticamente a los mejores 5 participantes.
-        </p>
-
-        <div className="ref-reloj">
-          <span className="ref-reloj__num">{cuentaAtras(restante)}</span>
-          <span className="ref-reloj__lbl">para la liquidación automática</span>
-        </div>
-
-        {/* Tabla de Premios Oficiales Top 1 al 5 */}
+        {/* Tabla de Premios Oficiales Top 1 al 5 Entregados */}
         <table className="ref-tabla">
           <thead>
             <tr>
               <th>Puesto</th>
+              <th>Ganador</th>
               <th>Gemas</th>
               <th>Oro</th>
               <th>Sobres</th>
             </tr>
           </thead>
           <tbody>
-            {PREMIOS_OFICIALES.map((p) => (
-              <tr key={p.puesto} style={datos.miPuesto === p.puesto ? { background: 'rgba(251, 191, 36, 0.15)', fontWeight: 'bold' } : undefined}>
-                <td>{p.icono} {p.titulo}</td>
-                <td style={{ color: p.gemas > 0 ? '#c084fc' : '#94a3b8' }}>
-                  {p.gemas > 0 ? `${p.gemas.toLocaleString()} 💎` : '—'}
-                </td>
-                <td style={{ color: p.oro > 0 ? '#facc15' : '#94a3b8' }}>
-                  {p.oro > 0 ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                      {p.oro.toLocaleString()} <GoldIcon size={14} />
-                    </span>
-                  ) : (
-                    '—'
-                  )}
-                </td>
-                <td style={{ color: p.sobres > 0 ? '#4ade80' : '#94a3b8' }}>
-                  {p.sobres > 0 ? `${p.sobres}x ${p.tipoSobre}` : '—'}
-                </td>
-              </tr>
-            ))}
+            {PREMIOS_OFICIALES.map((p) => {
+              const ganador = datos.ranking?.find((r) => r.puesto === p.puesto)
+              return (
+                <tr key={p.puesto} style={datos.miPuesto === p.puesto ? { background: 'rgba(251, 191, 36, 0.15)', fontWeight: 'bold' } : undefined}>
+                  <td>{p.icono} {p.titulo}</td>
+                  <td style={{ color: '#67e8f9', fontWeight: '600' }}>
+                    {ganador ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <img
+                          src={getPlayerAvatarUrl(ganador.avatar || 'peashooter')}
+                          alt=""
+                          style={{ width: 20, height: 20, borderRadius: '50%' }}
+                        />
+                        {ganador.nombre} ({ganador.validos} válidos)
+                      </span>
+                    ) : '—'}
+                  </td>
+                  <td style={{ color: p.gemas > 0 ? '#c084fc' : '#94a3b8' }}>
+                    {p.gemas > 0 ? `${p.gemas.toLocaleString()} 💎` : '—'}
+                  </td>
+                  <td style={{ color: p.oro > 0 ? '#facc15' : '#94a3b8' }}>
+                    {p.oro > 0 ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                        {p.oro.toLocaleString()} <GoldIcon size={14} />
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td style={{ color: p.sobres > 0 ? '#4ade80' : '#94a3b8' }}>
+                    {p.sobres > 0 ? `${p.sobres}x ${p.tipoSobre}` : '—'}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
 
-        {/* Tabla de los que más invitan (Ranking en vivo) */}
+        {/* Cuadro de Honor Top 10 */}
         <h4 style={{ margin: '1.2rem 0 0.5rem', fontSize: '0.88rem', color: '#fde047' }}>
-          👑 Los que más invitan en esta Temporada
+          👑 Cuadro de Honor Oficial (Top 10)
         </h4>
 
         {totalRanking === 0 ? (
-          <p className="ref-sub">Aún no hay invitaciones válidas registradas en esta temporada. ¡Sé el primero en liderar!</p>
+          <p className="ref-sub">No hay registros de la temporada finalizada.</p>
         ) : (
           <>
             <ol className="ref-ranking" ref={rankingListaRef}>
@@ -597,13 +492,13 @@ export default function PanelDeReferidos() {
                       </div>
                     </div>
 
-                    {/* Recompensas referenciales del puesto */}
+                    {/* Recompensas entregadas del puesto */}
                     <div className="ref-ranking__right">
                       {premio ? (
                         <div className={`ref-ranking__reward-badge ref-ranking__reward-badge--top${premio.puesto}`}>
                           <span className="ref-ranking__reward-icon">{premio.icono}</span>
                           <div className="ref-ranking__reward-info">
-                            <span className="ref-ranking__reward-titulo">Premio Estimado:</span>
+                            <span className="ref-ranking__reward-titulo">Premio Entregado:</span>
                             <span className="ref-ranking__reward-desc">
                               {premio.gemas > 0 && <strong className="ref-badge-gemas">+{premio.gemas.toLocaleString()} 💎 </strong>}
                               {premio.oro > 0 && (
@@ -616,7 +511,7 @@ export default function PanelDeReferidos() {
                           </div>
                         </div>
                       ) : (
-                        <span className="ref-ranking__sin-premio">Top 5 para premio</span>
+                        <span className="ref-ranking__sin-premio">Participante Top</span>
                       )}
                     </div>
                   </li>
@@ -651,7 +546,7 @@ export default function PanelDeReferidos() {
         )}
       </div>
 
-      {/* ── SECCIÓN 7: TUS INVITADOS (LISTA GAMING OPTIMIZADA) ────────────── */}
+      {/* ── SECCIÓN 6: TUS INVITADOS (LISTA GAMING OPTIMIZADA) ────────────── */}
       <div className="ref-bloque">
         <h3 className="ref-titulo">👥 Tus Amigos Invitados ({datos.total})</h3>
         <p className="ref-sub">

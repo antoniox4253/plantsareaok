@@ -25,6 +25,7 @@ import {
 } from '../../utils/gameConstants'
 import type { ClanFortressMatchOpponent, ClanFortressRaidResult } from '../../types/game'
 import { getArenaForElo, getEloDeltasForElo, getTrophyGateForElo } from '../../utils/arenaManager'
+import arena1Bg from '../../assets/images/battlefield-bg.webp'
 const sunIcon = '/game-assets/greenfoot/sun1.webp'
 const peaImg = '/game-assets/images/Plants/PB00.webp'
 const melonImg = '/game-assets/images/Plants/melon_pult.webp'
@@ -551,7 +552,7 @@ export default function Battlefield({
       : 0
 
   const activeArena = useMemo(() => getArenaForElo(userElo), [userElo])
-  const activeBgImage = customBgImage || (matchMode === 'clan_fortress' ? '/src/assets/images/battlefield-bg.webp' : activeArena.bgImage)
+  const activeBgImage = customBgImage || (matchMode === 'clan_fortress' ? arena1Bg : activeArena.bgImage)
   const activeLanesConfig = useMemo(() => {
     return matchMode === 'clan_fortress' ? LANES_CONFIG_5 : LANES_CONFIG
   }, [matchMode])
@@ -2273,7 +2274,8 @@ export default function Battlefield({
       {projectiles.map((proj) => {
         const isCatapult = proj.type === 'kernel' || proj.type === 'butter' || proj.type === 'melon' || proj.id.startsWith('tree-')
         const isTreeShot = proj.id.startsWith('tree-')
-        let currentY = proj.y
+        const targetLaneCfg = activeLanesConfig[proj.lane] || activeLanesConfig[0]
+        let currentY = targetLaneCfg.topPct + targetLaneCfg.heightPct / 2
         let scale = 1
         if (isCatapult) {
           const originX = proj.originX ?? (proj.targetTeam === 'p2' ? 15 : 85)
@@ -2287,8 +2289,9 @@ export default function Battlefield({
           const arcHeight = 4 * t * (1 - t) * maxArc
 
           const originLane = proj.originLane ?? proj.lane
-          const startY = isTreeShot ? 22 : (20 + originLane * 19.33 + 7)
-          const endY = 20 + proj.lane * 19.33 + 7
+          const originLaneCfg = activeLanesConfig[originLane] || activeLanesConfig[0]
+          const startY = isTreeShot ? 22 : (originLaneCfg.topPct + originLaneCfg.heightPct / 2)
+          const endY = targetLaneCfg.topPct + targetLaneCfg.heightPct / 2
 
           currentY = startY + t * (endY - startY) - arcHeight
           scale = 1 + (isTreeShot ? 0.4 : 0.35) * Math.sin(t * Math.PI)
