@@ -81,6 +81,26 @@ export default function Clan({
   const [showFortressEditor, setShowFortressEditor] = useState(false)
   const [showFortressDonateModal, setShowFortressDonateModal] = useState(false)
   const [isSearchingRaid, setIsSearchingRaid] = useState(false)
+  const [fortressSlideIndex, setFortressSlideIndex] = useState<number>(0)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
+
+  const handleFortressTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX)
+  }
+
+  const handleFortressTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return
+    const touchEndX = e.changedTouches[0].clientX
+    const diff = touchStartX - touchEndX
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        setFortressSlideIndex((prev) => Math.min(2, prev + 1))
+      } else {
+        setFortressSlideIndex((prev) => Math.max(0, prev - 1))
+      }
+    }
+    setTouchStartX(null)
+  }
 
   // Mother Tree Contribution Modal State
   const [showMotherTreeModal, setShowMotherTreeModal] = useState(false)
@@ -2335,357 +2355,452 @@ export default function Clan({
             </div>
           ) : (
             <>
-              {/* Hero Card: Estado del Bastión */}
-              <div className="clan-fortress-hero-card">
-                <div className="clan-fortress-hero-header">
-                  <div className="clan-fortress-hero-badge">
-                    <span className="clan-fortress-badge-icon">{userClan.badge || '🏰'}</span>
-                    <div>
-                      <h2 className="clan-fortress-title">FORTALEZA DE {userClan.name.toUpperCase()}</h2>
-                      <span className="clan-fortress-tag">[{userClan.tag}] • Modo 5 Carriles</span>
-                    </div>
-                  </div>
+              {/* Slider Top Navigation Header */}
+              <div className="clan-fslider-header">
+                <button
+                  type="button"
+                  className="clan-fslider-nav-btn clan-fslider-nav-btn--prev"
+                  disabled={fortressSlideIndex === 0}
+                  onClick={() => setFortressSlideIndex((p) => Math.max(0, p - 1))}
+                  title="Vista anterior"
+                >
+                  ◀
+                </button>
 
-                  {/* Escudo Status Badge */}
-                  {(() => {
-                    const isShieldActive = fortressData?.shieldUntil && new Date(fortressData.shieldUntil).getTime() > Date.now()
-                    if (isShieldActive) {
-                      const minsLeft = Math.ceil((new Date(fortressData!.shieldUntil!).getTime() - Date.now()) / 60000)
-                      const hrs = Math.floor(minsLeft / 60)
-                      const mins = minsLeft % 60
-                      return (
-                        <div className="clan-fortress-shield-badge clan-fortress-shield--active" title="Protección activa post-asalto">
-                          🛡️ ESCUDO ACTIVO ({hrs}h {mins}m)
-                        </div>
-                      )
-                    }
-                    return (
-                      <div className="clan-fortress-shield-badge clan-fortress-shield--vulnerable" title="La fortaleza puede recibir asaltos de otros clanes">
-                        ⚔️ VULNERABLE A ASALTOS
-                      </div>
-                    )
-                  })()}
-                </div>
-
-                {/* Grid de Estadísticas de la Fortaleza */}
-                <div className="clan-fortress-stats-grid">
-                  {/* Salud de la Base */}
-                  <div className="clan-fstat-card">
-                    <div className="clan-fstat-header">
-                      <span className="clan-fstat-label">❤️ SALUD DEL BASTIÓN</span>
-                      <span className="clan-fstat-num">
-                        {fortressData?.baseHp ?? 500} / {fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500} HP
+                <div className="clan-fslider-tabs">
+                  <button
+                    type="button"
+                    className={`clan-fslider-tab ${fortressSlideIndex === 0 ? 'clan-fslider-tab--active' : ''}`}
+                    onClick={() => setFortressSlideIndex(0)}
+                  >
+                    <span className="clan-fslider-tab-icon">🏰</span>
+                    <span className="clan-fslider-tab-text">Bastión & Asaltos</span>
+                    {fortressData?.baseHp !== undefined && (
+                      <span className="clan-fslider-tab-badge">
+                        {fortressData.baseHp}/{fortressData.maxBaseHp ?? fortressData.maxHp ?? 500} HP
                       </span>
-                    </div>
-                    <div className="clan-fstat-bar-track">
-                      <div
-                        className="clan-fstat-bar-fill clan-fstat-bar-fill--hp"
-                        style={{
-                          width: `${Math.max(0, Math.min(100, (((fortressData?.baseHp ?? 500) / (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500)) * 100)))}%`,
-                        }}
-                      />
-                    </div>
-                    {(fortressData?.baseHp ?? 500) < (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500) && (
-                      <button
-                        type="button"
-                        className="clan-fstat-repair-btn"
-                        onClick={handleRepairBase}
-                      >
-                        🔧 Reparar (500 💎)
-                      </button>
                     )}
-                  </div>
+                  </button>
 
-                  {/* Presupuesto Solar */}
-                  <div className="clan-fstat-card">
-                    <div className="clan-fstat-header">
-                      <span className="clan-fstat-label">☀️ PRESUPUESTO DEFENSIVO</span>
-                      <span className="clan-fstat-num">
-                        {fortressData?.sunsSpent ?? 0} / {fortressData?.defenseSunsBudget ?? 2500} ☀️
-                      </span>
-                    </div>
-                    <div className="clan-fstat-bar-track">
-                      <div
-                        className="clan-fstat-bar-fill clan-fstat-bar-fill--suns"
-                        style={{
-                          width: `${Math.max(0, Math.min(100, (((fortressData?.sunsSpent ?? 0) / (fortressData?.defenseSunsBudget ?? 2500)) * 100)))}%`,
-                        }}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="clan-fstat-donate-btn"
-                      onClick={() => setShowFortressDonateModal(true)}
-                    >
-                      ☀️ Altar Solar (+Aumentar)
-                    </button>
-                  </div>
-
-                  {/* Gemas en Riesgo */}
-                  <div className="clan-fstat-card">
-                    <div className="clan-fstat-header">
-                      <span className="clan-fstat-label">💎 BOTÍN EN RIESGO (MÁX 60 💎)</span>
-                      <span className="clan-fstat-num clan-fstat-num--gems">
-                        {Math.min(60, Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.08))} / {(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎
-                      </span>
-                    </div>
-                    <p className="clan-fstat-desc">
-                      Saqueo por asalto: hasta 30💎 por 2⭐ y 60💎 por 3⭐. 100% va al Tesoro del Clan atacante (0 a cuenta personal).
-                    </p>
-                  </div>
-                </div>
-
-                {/* Árbol Madre del Clan */}
-                <div className="clan-fortress-tree-card">
-                  <div className="clan-ftree-header">
-                    <div className="clan-ftree-title">
-                      <span className="clan-ftree-icon">🌳</span>
-                      <div>
-                        <h4>ÁRBOL MADRE DEL CLAN (NIVEL {fortressData?.motherTreeLevel ?? 1} DE 4)</h4>
-                        <p>
-                          Aumenta soles (+500☀️), vida (+200 HP), cupos del clan, soles de asalto y bonificaciones.
-                        </p>
-                      </div>
-                    </div>
-                    <span className="clan-ftree-badge">
-                      {(fortressData?.motherTreeLevel ?? 1) >= 4 ? '⭐ MÁXIMO NIVEL TITÁNICO' : `PRÓXIMO NIVEL: ${(fortressData?.motherTreeLevel ?? 1) + 1}`}
+                  <button
+                    type="button"
+                    className={`clan-fslider-tab ${fortressSlideIndex === 1 ? 'clan-fslider-tab--active' : ''}`}
+                    onClick={() => setFortressSlideIndex(1)}
+                  >
+                    <span className="clan-fslider-tab-icon">🌳</span>
+                    <span className="clan-fslider-tab-text">Árbol Madre</span>
+                    <span className="clan-fslider-tab-badge clan-fslider-tab-badge--tree">
+                      Nv. {fortressData?.motherTreeLevel ?? 1}/4
                     </span>
-                  </div>
+                  </button>
 
-                  <div className="clan-ftree-stats">
-                    <div className="clan-ftree-stat-item">
-                      <span>☀️ Límite Solar Defensivo:</span>
-                      <strong>{1000 + (((fortressData?.motherTreeLevel ?? 1) - 1) * 500)} Soles</strong>
-                    </div>
-                    <div className="clan-ftree-stat-item">
-                      <span>❤️ Salud Máxima de la Base:</span>
-                      <strong>{500 + (((fortressData?.motherTreeLevel ?? 1) - 1) * 200)} HP</strong>
-                    </div>
-                    <div className="clan-ftree-stat-item">
-                      <span>👥 Capacidad Máxima del Clan:</span>
-                      <strong>{fortressData?.maxMembers || 15} Miembros</strong>
-                    </div>
-                    <div className="clan-ftree-stat-item">
-                      <span>⚔️ Soles Iniciales en Asalto:</span>
-                      <strong>{fortressData?.initialAttackSuns || 100} Soles</strong>
-                    </div>
-                    <div className="clan-ftree-stat-item">
-                      <span>🚩 Estandarte de Conquista:</span>
-                      <strong>+{fortressData?.conquestDamageBonusPct || 0}% Daño Ranking</strong>
-                    </div>
-                    <div className="clan-ftree-stat-item">
-                      <span>⛲ Manantial Solar Diario:</span>
-                      <strong>+{fortressData?.dailyPassiveSuns || 0} Soles/Día</strong>
-                    </div>
-                    <div className="clan-ftree-stat-item">
-                      <span>👑 Bono VIP Oro Victoria:</span>
-                      <strong>+{fortressData?.vipGoldBonusPct || 0}% Oro</strong>
-                    </div>
-                    <div className="clan-ftree-stat-item">
-                      <span>🥊 Bono Daño en PvP:</span>
-                      <strong>+{fortressData?.pvpDamageBonusPct || 0}% Daño</strong>
-                    </div>
-                  </div>
-
-                  {(fortressData?.motherTreeLevel ?? 1) < 4 ? (
-                    <div className="clan-ftree-progress-box">
-                      <div className="clan-ftree-progress-row">
-                        <span>💧 Agua:</span>
-                        <div className="clan-ftree-bar-track">
-                          <div
-                            className="clan-ftree-bar-fill clan-ftree-bar-fill--water"
-                            style={{
-                              width: `${Math.min(100, (((fortressData?.motherTreeWater ?? 0) / (fortressData?.nextTreeWaterReq || 150)) * 100))}%`,
-                            }}
-                          />
-                        </div>
-                        <strong>{fortressData?.motherTreeWater ?? 0} / {fortressData?.nextTreeWaterReq || 150}</strong>
-                      </div>
-                      <div className="clan-ftree-progress-row">
-                        <span>🧪 Fertilizante:</span>
-                        <div className="clan-ftree-bar-track">
-                          <div
-                            className="clan-ftree-bar-fill clan-ftree-bar-fill--fert"
-                            style={{
-                              width: `${Math.min(100, (((fortressData?.motherTreeFertilizer ?? 0) / (fortressData?.nextTreeFertReq || 100)) * 100))}%`,
-                            }}
-                          />
-                        </div>
-                        <strong>{fortressData?.motherTreeFertilizer ?? 0} / {fortressData?.nextTreeFertReq || 100}</strong>
-                      </div>
-                      <div className="clan-ftree-progress-row">
-                        <span>💎 Gemas:</span>
-                        <div className="clan-ftree-bar-track">
-                          <div
-                            className="clan-ftree-bar-fill clan-ftree-bar-fill--gems"
-                            style={{
-                              width: `${Math.min(100, (((fortressData?.motherTreeGems ?? 0) / (fortressData?.nextTreeGemsReq || 600)) * 100))}%`,
-                            }}
-                          />
-                        </div>
-                        <strong>{fortressData?.motherTreeGems ?? 0} / {fortressData?.nextTreeGemsReq || 600}</strong>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="clan-ftree-nutrir-btn"
-                        onClick={handleOpenMotherTreeModal}
-                      >
-                        💧🧪💎 NUTRIR Y SUBIR DE NIVEL EL ÁRBOL MADRE
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="clan-ftree-maxed-banner">
-                      <span>👑 ¡El Árbol Madre ha alcanzado su cúspide milenaria de poder (Nivel 4 Titánico)!</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Acciones Principales: Centro de Control */}
-                <div className="clan-fortress-cta-box">
-                  {/* Botón Editar Fortaleza */}
-                  <div className="clan-fcta-group">
-                    <button
-                      type="button"
-                      className={`clan-fortress-action-btn clan-fortress-action-btn--edit ${!isOfficer ? 'clan-fortress-action-btn--disabled' : ''}`}
-                      onClick={() => {
-                        if (!isOfficer) {
-                          setActiveDialog({
-                            title: 'Rol Insuficiente',
-                            message: 'Solo el Líder, Colíderes o Veteranos del clan tienen autorización para reorganizar la defensa del bastión.',
-                            icon: '🔒',
-                            type: 'warning',
-                          })
-                          return
-                        }
-                        setShowFortressEditor(true)
-                      }}
-                    >
-                      🛠️ EDITAR FORTALEZA (5 CARRILES)
-                    </button>
-                    <span className="clan-fcta-hint">
-                      {isOfficer ? 'Acomoda tus 5 carriles en Arena 1' : 'Requiere rol de Veterano o superior'}
+                  <button
+                    type="button"
+                    className={`clan-fslider-tab ${fortressSlideIndex === 2 ? 'clan-fslider-tab--active' : ''}`}
+                    onClick={() => setFortressSlideIndex(2)}
+                  >
+                    <span className="clan-fslider-tab-icon">🛡️</span>
+                    <span className="clan-fslider-tab-text">Defensas & Guía</span>
+                    <span className="clan-fslider-tab-badge clan-fslider-tab-badge--def">
+                      {fortressData?.layout?.length ?? 0} Def.
                     </span>
-                  </div>
-
-                  {/* Botón Asaltar Fortaleza Rival */}
-                  <div className="clan-fcta-group">
-                    <button
-                      type="button"
-                      className="clan-fortress-action-btn clan-fortress-action-btn--raid"
-                      disabled={isSearchingRaid}
-                      onClick={handleSearchFortressRaid}
-                    >
-                      {isSearchingRaid ? (
-                        <>
-                          <span className="clan-fortress-mini-spinner" />
-                          BUSCANDO FORTALEZA...
-                        </>
-                      ) : (
-                        '⚔️ ASALTAR FORTALEZA RIVAL'
-                      )}
-                    </button>
-                    <div className="clan-fcta-cost-badge">
-                      {isOfficer ? (
-                        <span>🪙 <strong>500 Oro del Clan</strong> • Sin enfriamiento</span>
-                      ) : (
-                        <span>🪙 <strong>250 Oro Personal</strong> • ⚠️ 24h si pierdes</span>
-                      )}
-                    </div>
-                  </div>
+                  </button>
                 </div>
+
+                <button
+                  type="button"
+                  className="clan-fslider-nav-btn clan-fslider-nav-btn--next"
+                  disabled={fortressSlideIndex === 2}
+                  onClick={() => setFortressSlideIndex((p) => Math.min(2, p + 1))}
+                  title="Siguiente vista"
+                >
+                  ▶
+                </button>
               </div>
 
-              {/* Sección de Defensas Desplegadas */}
-              <div className="clan-fortress-layout-preview-card">
-                <div className="clan-fpreview-header">
-                  <h3>🌱 DEFENSAS ACTIVAS EN EL BASTIÓN</h3>
-                  <span className="clan-fpreview-count">
-                    {fortressData?.layout?.length ?? 0} Unidades Guardando los 5 Carriles
-                  </span>
-                </div>
-                {(!fortressData?.layout || fortressData.layout.length === 0) ? (
-                  <div className="clan-fpreview-empty">
-                    <p>⚠️ Tu clan no ha desplegado plantas protectoras todavía. ¡El bastión está desprotegido!</p>
-                    {isOfficer && (
-                      <button
-                        type="button"
-                        className="clan-fpreview-empty-btn"
-                        onClick={() => setShowFortressEditor(true)}
-                      >
-                        Desplegar Defensas Ahora
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="clan-fpreview-lanes">
-                    {[0, 1, 2, 3, 4].map((laneIndex) => {
-                      const plantsInLane = (fortressData?.layout || []).filter((p) => p.lane === laneIndex)
-                      return (
-                        <div key={laneIndex} className="clan-fpreview-lane-row">
-                          <div className="clan-fpreview-lane-badge">Carril {laneIndex + 1}</div>
-                          <div className="clan-fpreview-lane-plants">
-                            {plantsInLane.length === 0 ? (
-                              <span className="clan-fpreview-empty-lane">Sin defensas en esta línea</span>
+              {/* Slider Viewport */}
+              <div
+                className="clan-fortress-slider-viewport"
+                onTouchStart={handleFortressTouchStart}
+                onTouchEnd={handleFortressTouchEnd}
+              >
+                <div
+                  className="clan-fortress-slider-track"
+                  style={{ transform: `translateX(-${fortressSlideIndex * 33.333333}%)` }}
+                >
+                  {/* SLIDE 0: BASTIÓN & ASALTOS */}
+                  <div className="clan-fortress-slide">
+                    <div className="clan-fortress-hero-card">
+                      <div className="clan-fortress-hero-header">
+                        <div className="clan-fortress-hero-badge">
+                          <span className="clan-fortress-badge-icon">{userClan.badge || '🏰'}</span>
+                          <div>
+                            <h2 className="clan-fortress-title">FORTALEZA DE {userClan.name.toUpperCase()}</h2>
+                            <span className="clan-fortress-tag">[{userClan.tag}] • Modo 5 Carriles</span>
+                          </div>
+                        </div>
+
+                        {/* Escudo Status Badge */}
+                        {(() => {
+                          const isShieldActive = fortressData?.shieldUntil && new Date(fortressData.shieldUntil).getTime() > Date.now()
+                          if (isShieldActive) {
+                            const minsLeft = Math.ceil((new Date(fortressData!.shieldUntil!).getTime() - Date.now()) / 60000)
+                            const hrs = Math.floor(minsLeft / 60)
+                            const mins = minsLeft % 60
+                            return (
+                              <div className="clan-fortress-shield-badge clan-fortress-shield--active" title="Protección activa post-asalto">
+                                🛡️ ESCUDO ACTIVO ({hrs}h {mins}m)
+                              </div>
+                            )
+                          }
+                          return (
+                            <div className="clan-fortress-shield-badge clan-fortress-shield--vulnerable" title="La fortaleza puede recibir asaltos de otros clanes">
+                              ⚔️ VULNERABLE A ASALTOS
+                            </div>
+                          )
+                        })()}
+                      </div>
+
+                      {/* Grid de Estadísticas de la Fortaleza */}
+                      <div className="clan-fortress-stats-grid">
+                        {/* Salud de la Base */}
+                        <div className="clan-fstat-card">
+                          <div className="clan-fstat-header">
+                            <span className="clan-fstat-label">❤️ SALUD DEL BASTIÓN</span>
+                            <span className="clan-fstat-num">
+                              {fortressData?.baseHp ?? 500} / {fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500} HP
+                            </span>
+                          </div>
+                          <div className="clan-fstat-bar-track">
+                            <div
+                              className="clan-fstat-bar-fill clan-fstat-bar-fill--hp"
+                              style={{
+                                width: `${Math.max(0, Math.min(100, (((fortressData?.baseHp ?? 500) / (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500)) * 100)))}%`,
+                              }}
+                            />
+                          </div>
+                          {(fortressData?.baseHp ?? 500) < (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500) && (
+                            <button
+                              type="button"
+                              className="clan-fstat-repair-btn"
+                              onClick={handleRepairBase}
+                            >
+                              🔧 Reparar (500 💎)
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Presupuesto Solar */}
+                        <div className="clan-fstat-card">
+                          <div className="clan-fstat-header">
+                            <span className="clan-fstat-label">☀️ PRESUPUESTO DEFENSIVO</span>
+                            <span className="clan-fstat-num">
+                              {fortressData?.sunsSpent ?? 0} / {fortressData?.defenseSunsBudget ?? 2500} ☀️
+                            </span>
+                          </div>
+                          <div className="clan-fstat-bar-track">
+                            <div
+                              className="clan-fstat-bar-fill clan-fstat-bar-fill--suns"
+                              style={{
+                                width: `${Math.max(0, Math.min(100, (((fortressData?.sunsSpent ?? 0) / (fortressData?.defenseSunsBudget ?? 2500)) * 100)))}%`,
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="clan-fstat-donate-btn"
+                            onClick={() => setShowFortressDonateModal(true)}
+                          >
+                            ☀️ Altar Solar (+Aumentar)
+                          </button>
+                        </div>
+
+                        {/* Gemas en Riesgo */}
+                        <div className="clan-fstat-card">
+                          <div className="clan-fstat-header">
+                            <span className="clan-fstat-label">💎 BOTÍN EN RIESGO (MÁX 60 💎)</span>
+                            <span className="clan-fstat-num clan-fstat-num--gems">
+                              {Math.min(60, Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.08))} / {(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎
+                            </span>
+                          </div>
+                          <p className="clan-fstat-desc">
+                            Saqueo por asalto: hasta 30💎 por 2⭐ y 60💎 por 3⭐. 100% va al Tesoro del Clan atacante (0 a cuenta personal).
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Acciones Principales: Centro de Control */}
+                      <div className="clan-fortress-cta-box">
+                        {/* Botón Editar Fortaleza */}
+                        <div className="clan-fcta-group">
+                          <button
+                            type="button"
+                            className={`clan-fortress-action-btn clan-fortress-action-btn--edit ${!isOfficer ? 'clan-fortress-action-btn--disabled' : ''}`}
+                            onClick={() => {
+                              if (!isOfficer) {
+                                setActiveDialog({
+                                  title: 'Rol Insuficiente',
+                                  message: 'Solo el Líder, Colíderes o Veteranos del clan tienen autorización para reorganizar la defensa del bastión.',
+                                  icon: '🔒',
+                                  type: 'warning',
+                                })
+                                return
+                              }
+                              setShowFortressEditor(true)
+                            }}
+                          >
+                            🛠️ EDITAR FORTALEZA (5 CARRILES)
+                          </button>
+                          <span className="clan-fcta-hint">
+                            {isOfficer ? 'Acomoda tus 5 carriles en Arena 1' : 'Requiere rol de Veterano o superior'}
+                          </span>
+                        </div>
+
+                        {/* Botón Asaltar Fortaleza Rival */}
+                        <div className="clan-fcta-group">
+                          <button
+                            type="button"
+                            className="clan-fortress-action-btn clan-fortress-action-btn--raid"
+                            disabled={isSearchingRaid}
+                            onClick={handleSearchFortressRaid}
+                          >
+                            {isSearchingRaid ? (
+                              <>
+                                <span className="clan-fortress-mini-spinner" />
+                                BUSCANDO FORTALEZA...
+                              </>
                             ) : (
-                              plantsInLane.map((p, idx) => {
-                                const conf = PLANT_CONFIGS[p.plantId]
-                                return (
-                                  <div key={idx} className="clan-fpreview-plant-chip" title={`${conf?.name || p.plantId} (Columna ${p.col + 1})`}>
-                                    <img
-                                      src={conf?.icon || conf?.sprite}
-                                      alt={conf?.name || p.plantId}
-                                      className="clan-fpreview-plant-img"
-                                    />
-                                    <span className="clan-fpreview-plant-col">C{p.col + 1}</span>
-                                  </div>
-                                )
-                              })
+                              '⚔️ ASALTAR FORTALEZA RIVAL'
+                            )}
+                          </button>
+                          <div className="clan-fcta-cost-badge">
+                            {isOfficer ? (
+                              <span>🪙 <strong>500 Oro del Clan</strong> • Sin enfriamiento</span>
+                            ) : (
+                              <span>🪙 <strong>250 Oro Personal</strong> • ⚠️ 24h si pierdes</span>
                             )}
                           </div>
                         </div>
-                      )
-                    })}
+                      </div>
+                    </div>
                   </div>
-                )}
+
+                  {/* SLIDE 1: ÁRBOL MADRE */}
+                  <div className="clan-fortress-slide">
+                    <div className="clan-fortress-tree-card">
+                      <div className="clan-ftree-header">
+                        <div className="clan-ftree-title">
+                          <span className="clan-ftree-icon">🌳</span>
+                          <div>
+                            <h4>ÁRBOL MADRE DEL CLAN (NIVEL {fortressData?.motherTreeLevel ?? 1} DE 4)</h4>
+                            <p>
+                              Aumenta soles (+500☀️), vida (+200 HP), cupos del clan, soles de asalto y bonificaciones de guerra.
+                            </p>
+                          </div>
+                        </div>
+                        <span className="clan-ftree-badge">
+                          {(fortressData?.motherTreeLevel ?? 1) >= 4 ? '⭐ MÁXIMO NIVEL TITÁNICO' : `PRÓXIMO NIVEL: ${(fortressData?.motherTreeLevel ?? 1) + 1}`}
+                        </span>
+                      </div>
+
+                      <div className="clan-ftree-stats">
+                        <div className="clan-ftree-stat-item">
+                          <span>☀️ Límite Solar Defensivo:</span>
+                          <strong>{1000 + (((fortressData?.motherTreeLevel ?? 1) - 1) * 500)} Soles</strong>
+                        </div>
+                        <div className="clan-ftree-stat-item">
+                          <span>❤️ Salud Máxima de la Base:</span>
+                          <strong>{500 + (((fortressData?.motherTreeLevel ?? 1) - 1) * 200)} HP</strong>
+                        </div>
+                        <div className="clan-ftree-stat-item">
+                          <span>👥 Capacidad Máxima del Clan:</span>
+                          <strong>{fortressData?.maxMembers || 15} Miembros</strong>
+                        </div>
+                        <div className="clan-ftree-stat-item">
+                          <span>⚔️ Soles Iniciales en Asalto:</span>
+                          <strong>{fortressData?.initialAttackSuns || 100} Soles</strong>
+                        </div>
+                        <div className="clan-ftree-stat-item">
+                          <span>🚩 Estandarte de Conquista:</span>
+                          <strong>+{fortressData?.conquestDamageBonusPct || 0}% Daño Ranking</strong>
+                        </div>
+                        <div className="clan-ftree-stat-item">
+                          <span>⛲ Manantial Solar Diario:</span>
+                          <strong>+{fortressData?.dailyPassiveSuns || 0} Soles/Día</strong>
+                        </div>
+                        <div className="clan-ftree-stat-item">
+                          <span>👑 Bono VIP Oro Victoria:</span>
+                          <strong>+{fortressData?.vipGoldBonusPct || 0}% Oro</strong>
+                        </div>
+                        <div className="clan-ftree-stat-item">
+                          <span>🥊 Bono Daño en PvP:</span>
+                          <strong>+{fortressData?.pvpDamageBonusPct || 0}% Daño</strong>
+                        </div>
+                      </div>
+
+                      {(fortressData?.motherTreeLevel ?? 1) < 4 ? (
+                        <div className="clan-ftree-progress-box">
+                          <div className="clan-ftree-progress-row">
+                            <span>💧 Agua:</span>
+                            <div className="clan-ftree-bar-track">
+                              <div
+                                className="clan-ftree-bar-fill clan-ftree-bar-fill--water"
+                                style={{
+                                  width: `${Math.min(100, (((fortressData?.motherTreeWater ?? 0) / (fortressData?.nextTreeWaterReq || 150)) * 100))}%`,
+                                }}
+                              />
+                            </div>
+                            <strong>{fortressData?.motherTreeWater ?? 0} / {fortressData?.nextTreeWaterReq || 150}</strong>
+                          </div>
+                          <div className="clan-ftree-progress-row">
+                            <span>🧪 Fertilizante:</span>
+                            <div className="clan-ftree-bar-track">
+                              <div
+                                className="clan-ftree-bar-fill clan-ftree-bar-fill--fert"
+                                style={{
+                                  width: `${Math.min(100, (((fortressData?.motherTreeFertilizer ?? 0) / (fortressData?.nextTreeFertReq || 100)) * 100))}%`,
+                                }}
+                              />
+                            </div>
+                            <strong>{fortressData?.motherTreeFertilizer ?? 0} / {fortressData?.nextTreeFertReq || 100}</strong>
+                          </div>
+                          <div className="clan-ftree-progress-row">
+                            <span>💎 Gemas:</span>
+                            <div className="clan-ftree-bar-track">
+                              <div
+                                className="clan-ftree-bar-fill clan-ftree-bar-fill--gems"
+                                style={{
+                                  width: `${Math.min(100, (((fortressData?.motherTreeGems ?? 0) / (fortressData?.nextTreeGemsReq || 600)) * 100))}%`,
+                                }}
+                              />
+                            </div>
+                            <strong>{fortressData?.motherTreeGems ?? 0} / {fortressData?.nextTreeGemsReq || 600}</strong>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="clan-ftree-nutrir-btn"
+                            onClick={handleOpenMotherTreeModal}
+                          >
+                            💧🧪💎 NUTRIR Y SUBIR DE NIVEL EL ÁRBOL MADRE
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="clan-ftree-maxed-banner">
+                          <span>👑 ¡El Árbol Madre ha alcanzado su cúspide milenaria de poder (Nivel 4 Titánico)!</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* SLIDE 2: DEFENSAS & GUÍA */}
+                  <div className="clan-fortress-slide">
+                    {/* Sección de Defensas Desplegadas */}
+                    <div className="clan-fortress-layout-preview-card">
+                      <div className="clan-fpreview-header">
+                        <h3>🌱 DEFENSAS ACTIVAS EN EL BASTIÓN</h3>
+                        <span className="clan-fpreview-count">
+                          {fortressData?.layout?.length ?? 0} Unidades Guardando los 5 Carriles
+                        </span>
+                      </div>
+                      {(!fortressData?.layout || fortressData.layout.length === 0) ? (
+                        <div className="clan-fpreview-empty">
+                          <p>⚠️ Tu clan no ha desplegado plantas protectoras todavía. ¡El bastión está desprotegido!</p>
+                          {isOfficer && (
+                            <button
+                              type="button"
+                              className="clan-fpreview-empty-btn"
+                              onClick={() => setShowFortressEditor(true)}
+                            >
+                              Desplegar Defensas Ahora
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="clan-fpreview-lanes">
+                          {[0, 1, 2, 3, 4].map((laneIndex) => {
+                            const plantsInLane = (fortressData?.layout || []).filter((p) => p.lane === laneIndex)
+                            return (
+                              <div key={laneIndex} className="clan-fpreview-lane-row">
+                                <div className="clan-fpreview-lane-badge">Carril {laneIndex + 1}</div>
+                                <div className="clan-fpreview-lane-plants">
+                                  {plantsInLane.length === 0 ? (
+                                    <span className="clan-fpreview-empty-lane">Sin defensas en esta línea</span>
+                                  ) : (
+                                    plantsInLane.map((p, idx) => {
+                                      const conf = PLANT_CONFIGS[p.plantId]
+                                      return (
+                                        <div key={idx} className="clan-fpreview-plant-chip" title={`${conf?.name || p.plantId} (Columna ${p.col + 1})`}>
+                                          <img
+                                            src={conf?.icon || conf?.sprite}
+                                            alt={conf?.name || p.plantId}
+                                            className="clan-fpreview-plant-img"
+                                          />
+                                          <span className="clan-fpreview-plant-col">C{p.col + 1}</span>
+                                        </div>
+                                      )
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tarjeta de Información y Reglas de Guerra */}
+                    <div className="clan-fortress-rules-card">
+                      <div className="clan-frules-title">
+                        <span>📜</span>
+                        <h4>REGLAS DE GUERRA DE FORTALEZAS & BOTÍN</h4>
+                      </div>
+                      <div className="clan-frules-grid">
+                        <div className="clan-frule-item">
+                          <div className="clan-frule-icon">⚔️</div>
+                          <div>
+                            <strong>Perspectiva 5 Carriles</strong>
+                            <p>Los asaltos se disputan en el mapa de Arena 1 con profundidad ampliada y 5 líneas de combate simultáneas.</p>
+                          </div>
+                        </div>
+                        <div className="clan-frule-item">
+                          <div className="clan-frule-icon">⭐</div>
+                          <div>
+                            <strong>Escala de Saqueo por Estrellas</strong>
+                            <p>1★ (20% daño base): 25% del botín. 2★ (50% daño base): 60% del botín. 3★ (Base destruida): 100% del botín.</p>
+                          </div>
+                        </div>
+                        <div className="clan-frule-item">
+                          <div className="clan-frule-icon">💎</div>
+                          <div>
+                            <strong>100% al Tesoro del Clan</strong>
+                            <p>Todo el botín saqueado va directamente al tesoro del clan atacante (0 a cuenta personal) para financiar mejoras comunitarias.</p>
+                          </div>
+                        </div>
+                        <div className="clan-frule-item">
+                          <div className="clan-frule-icon">🛡️</div>
+                          <div>
+                            <strong>Escudo Defensivo de 4 Horas</strong>
+                            <p>Tras sufrir un asalto, la fortaleza queda bajo un domo protector inviolable para reorganizar y reparar defensas.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Tarjeta de Información y Botín Web3 */}
-              <div className="clan-fortress-rules-card">
-                <div className="clan-frules-title">
-                  <span>📜</span>
-                  <h4>REGLAS DE GUERRA DE FORTALEZAS & BOTÍN WEB3</h4>
-                </div>
-                <div className="clan-frules-grid">
-                  <div className="clan-frule-item">
-                    <div className="clan-frule-icon">⚔️</div>
-                    <div>
-                      <strong>Perspectiva 5 Carriles</strong>
-                      <p>Los asaltos se disputan en el mapa de Arena 1 con profundidad ampliada y 5 líneas de combate simultáneas.</p>
-                    </div>
-                  </div>
-                  <div className="clan-frule-item">
-                    <div className="clan-frule-icon">⭐</div>
-                    <div>
-                      <strong>Escala de Saqueo por Estrellas</strong>
-                      <p>1★ (20% daño base): 25% del botín. 2★ (50% daño base): 60% del botín. 3★ (Base destruida): 100% del botín.</p>
-                    </div>
-                  </div>
-                  <div className="clan-frule-item">
-                    <div className="clan-frule-icon">💎</div>
-                    <div>
-                      <strong>Reparto de Botín 70% / 30%</strong>
-                      <p>El 70% de las gemas saqueadas van a tu billetera personal y el 30% restante incrementa el Tesoro de tu Clan.</p>
-                    </div>
-                  </div>
-                  <div className="clan-frule-item">
-                    <div className="clan-frule-icon">🛡️</div>
-                    <div>
-                      <strong>Escudo Defensivo de 4 Horas</strong>
-                      <p>Tras sufrir un asalto, la fortaleza queda bajo un domo protector inviolable para reorganizar y reparar defensas.</p>
-                    </div>
-                  </div>
-                </div>
+              {/* Slider Dots Indicator */}
+              <div className="clan-fslider-dots">
+                {[0, 1, 2].map((idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`clan-fslider-dot ${fortressSlideIndex === idx ? 'clan-fslider-dot--active' : ''}`}
+                    onClick={() => setFortressSlideIndex(idx)}
+                    aria-label={`Ir a la vista ${idx + 1}`}
+                  />
+                ))}
               </div>
             </>
           )}

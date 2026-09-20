@@ -4054,14 +4054,400 @@
    ========================================================================== */
 
 .clan-fortress-pane {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   width: 100%;
   max-width: 1000px;
   margin: 0 auto;
-  padding-bottom: 30px;
+  overflow: hidden;
+  box-sizing: border-box;
   animation: clanFadeIn 0.25s ease-out;
+}
+
+/* Slider Top Navigation Header */
+.clan-fslider-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid #334155;
+  border-radius: 14px;
+  padding: 6px 8px;
+}
+
+.clan-fslider-nav-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1.5px solid #475569;
+  border-radius: 10px;
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.clan-fslider-nav-btn:hover:not(:disabled) {
+  background: #2563eb;
+  border-color: #60a5fa;
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+.clan-fslider-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.clan-fslider-tabs {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.clan-fslider-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  padding: 6px 10px;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clan-fslider-tab:hover {
+  background: rgba(30, 41, 59, 0.85);
+  color: #f1f5f9;
+}
+
+.clan-fslider-tab--active {
+  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  border-color: #60a5fa;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);
+}
+
+.clan-fslider-tab-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.clan-fslider-tab-text {
+  font-weight: 800;
+}
+
+.clan-fslider-tab-badge {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fde047;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.clan-fslider-tab-badge--tree {
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.clan-fslider-tab-badge--def {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* Viewport, Track and Slides */
+.clan-fortress-slider-viewport {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  border-radius: 16px;
+}
+
+.clan-fortress-slider-track {
+  display: flex;
+  width: 300%;
+  height: 100%;
+  transition: transform 0.38s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+}
+
+.clan-fortress-slide {
+  width: 33.333333%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 2px 6px 16px 2px;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+.clan-fortress-slide::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clan-fortress-slide::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 4px;
+}
+
+.clan-fortress-slide::-webkit-scrollbar-thumb {
+  background: rgba(234, 179, 8, 0.5);
+  border-radius: 4px;
+}
+
+.clan-fortress-slide::-webkit-scrollbar-thumb:hover {
+  background: rgba(234, 179, 8, 0.8);
+}
+
+/* Slider Dots Indicator */
+.clan-fslider-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+
+.clan-fslider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.clan-fslider-dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.2);
+}
+
+.clan-fslider-dot--active {
+  width: 24px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eab308, #f59e0b);
+  border-color: #fde047;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
+}
+
+/* Árbol Madre del Clan Card */
+.clan-fortress-tree-card {
+  background: linear-gradient(135deg, rgba(16, 44, 28, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid rgba(74, 222, 128, 0.4);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.clan-ftree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 14px;
+}
+
+.clan-ftree-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.clan-ftree-title h4 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 900;
+  color: #4ade80;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
+}
+
+.clan-ftree-title p {
+  margin: 3px 0 0 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.clan-ftree-icon {
+  font-size: 34px;
+  filter: drop-shadow(0 2px 8px rgba(74, 222, 128, 0.5));
+}
+
+.clan-ftree-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1.5px solid #4ade80;
+  color: #86efac;
+}
+
+.clan-ftree-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.clan-ftree-stat-item {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: #cbd5e1;
+}
+
+.clan-ftree-stat-item strong {
+  color: #fde047;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.clan-ftree-progress-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(74, 222, 128, 0.25);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.clan-ftree-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.clan-ftree-progress-row span {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.clan-ftree-progress-row strong {
+  width: 90px;
+  text-align: right;
+  flex-shrink: 0;
+  color: #f1f5f9;
+  font-size: 12px;
+}
+
+.clan-ftree-bar-track {
+  flex: 1;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.clan-ftree-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.clan-ftree-bar-fill--water {
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+
+.clan-ftree-bar-fill--fert {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+
+.clan-ftree-bar-fill--gems {
+  background: linear-gradient(90deg, #9333ea, #c084fc);
+}
+
+.clan-ftree-nutrir-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  border: 2px solid #86efac;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.4);
+  margin-top: 4px;
+}
+
+.clan-ftree-nutrir-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+}
+
+.clan-ftree-maxed-banner {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(202, 138, 4, 0.3) 100%);
+  border: 1.5px solid #facc15;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  color: #fef08a;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .clan-fslider-tab-text {
+    font-size: 10px;
+  }
+  .clan-fslider-tab {
+    padding: 6px 4px;
+    gap: 4px;
+  }
+  .clan-fslider-tab-badge {
+    display: none;
+  }
 }
 
 .clan-fortress-loading {
