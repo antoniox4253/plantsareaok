@@ -39,7 +39,7 @@ import { ClanManager } from './utils/clanManager'
 import { UserManager } from './utils/userManager'
 import { useVersionDelJuego } from './hooks/useVersionDelJuego'
 import UpdateModal from './components/UpdateModal/UpdateModal'
-import { parseEngineVersion, type EngineVersion, type PlantId } from './types/game'
+import { parseEngineVersion, type EngineVersion, type PlantId, type ClanFortressMatchOpponent } from './types/game'
 import { StrategicPlaytestLauncherModal } from './components/StrategicPlaytest/StrategicPlaytestLauncherModal'
 import type { StrategicPlaytestConfig } from './engine/strategicPlaytest'
 import { SeasonManager } from './utils/seasonManager'
@@ -513,13 +513,14 @@ function App() {
     }
   }, [loading, user])
 
-  const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'colosseum' | 'tournament' | 'strategic_test'>('ranked')
+  const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'colosseum' | 'tournament' | 'strategic_test' | 'clan_fortress'>('ranked')
   const [friendlyBet, setFriendlyBet] = useState<number>(0)
   const [colosseumConfig, setColosseumConfig] = useState<import('./types/game').ColosseumMatchConfig | null>(null)
   const [tournamentOpponent, setTournamentOpponent] = useState<{ name: string; tournamentId: string } | null>(null)
   const [tournamentDeck, setTournamentDeck] = useState<PlantId[] | null>(null)
   const [isStrategicPlaytestModalOpen, setIsStrategicPlaytestModalOpen] = useState<boolean>(false)
   const [strategicPlaytestConfig, setStrategicPlaytestConfig] = useState<StrategicPlaytestConfig | null>(null)
+  const [clanFortressConfig, setClanFortressConfig] = useState<{ targetClan: ClanFortressMatchOpponent } | null>(null)
 
   // ── EMPAREJAMIENTO ────────────────────────────────────────────────────────
   // La sala la crea el servidor (migración 17) y trae la semilla, que es lo que
@@ -717,16 +718,31 @@ function App() {
     setTournamentOpponent(null)
     setTournamentDeck(null)
     setPracticePlantId(null)
+    setClanFortressConfig(null)
   }, [])
 
   const handleRegresarAlMenu = useCallback(() => {
     if (battleMatchMode === 'tournament') {
       setReopenTournamentOnMenu(true)
     }
+    const isFortress = battleMatchMode === 'clan_fortress'
     limpiarEstadoPartida()
-    setScreen('menu')
+    setScreen(isFortress ? 'clan' : 'menu')
     void refreshFromServer()
   }, [battleMatchMode, limpiarEstadoPartida, refreshFromServer])
+
+  const handleStartClanFortressRaid = useCallback((opponent: ClanFortressMatchOpponent) => {
+    setClanFortressConfig({ targetClan: opponent })
+    setBattleMatchMode('clan_fortress')
+    setSalaId(null)
+    setRivalId(opponent.targetClanId)
+    setNombresEnPartida({
+      mio: currentUsername || 'Comandante',
+      rival: opponent.targetClanName,
+    })
+    setPracticePlantId(null)
+    setScreen('battle')
+  }, [currentUsername])
 
   /** Cancelar la búsqueda y volver al menú. */
   const salirDeLaCola = async () => {
@@ -1392,6 +1408,10 @@ function App() {
             treeSkins={
               treeSkinsEnPartida ?? (equippedTreeSkin ? { mio: equippedTreeSkin, rival: null } : null)
             }
+            clanFortressConfig={clanFortressConfig}
+            onClanFortressComplete={() => {
+              void refreshFromServer()
+            }}
             onColosseumComplete={(won) => {
               if (colosseumConfig) {
                 return resolveColosseumMatch(won, colosseumConfig.betGems, colosseumConfig.usedTicket)
@@ -1586,6 +1606,7 @@ function App() {
               onAddPacks={addPacksToInventory}
               onBackToMenu={() => setScreen('menu')}
               onRefreshUserData={refreshFromServer}
+              onStartClanFortressRaid={handleStartClanFortressRaid}
             />
           </div>
         )}

@@ -301,3 +301,61 @@ export interface CreateTournamentInput {
   is_test?: boolean
   plant_rule?: TournamentPlantRule
 }
+
+// ── SISTEMA DE FORTALEZAS DE CLAN (5 CARRILES) ──────────────────────────────
+export interface ClanFortressPlant {
+  plantId: PlantId
+  lane: number // 0..4 (5 carriles)
+  col: number // 7..13 (lado defensivo del campo)
+  level?: number
+  statRolls?: PlantStatKey[]
+  equippedItem?: string | null
+}
+
+export interface ClanFortressData {
+  clanId: string
+  clanName: string
+  clanTag: string
+  badge: string
+  baseHp: number
+  maxBaseHp: number
+  maxHp?: number
+  vaultGems: number
+  vaultGold: number
+  shieldUntil: string | null
+  isShielded: boolean
+  isNpc: boolean
+  defenseSunsBudget: number
+  sunsSpent: number
+  layout: ClanFortressPlant[]
+  isMine: boolean
+  canEdit: boolean
+}
+
+export interface ClanFortressMatchOpponent {
+  targetClanId: string
+  targetClanName: string
+  targetClanTag: string
+  targetBadge: string
+  targetBaseHp: number
+  targetMaxBaseHp: number
+  targetVaultGems: number
+  isNpc: boolean
+  layout: ClanFortressPlant[]
+  paidWith: 'clan_gold' | 'personal_gold'
+  costPaid: number
+}
+
+export interface ClanFortressRaidResult {
+  success: boolean
+  starsEarned: number
+  damageDealt: number
+  stolenTotal: number
+  stolenToUser: number
+  stolenToClan: number
+  goldBonus: number
+  targetClanName: string
+  shieldHoursGranted: number
+  cooldownApplied: boolean
+}
+

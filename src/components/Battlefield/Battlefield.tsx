@@ -14,6 +14,7 @@ import {
 import {
   PLANT_CONFIGS,
   LANES_CONFIG,
+  LANES_CONFIG_5,
   BASE_LEFT_END_X,
   FIELD_WIDTH_PCT,
   TOTAL_COLUMNS,
@@ -22,6 +23,7 @@ import {
   getScaledPlantConfig,
   type PlantStatKey,
 } from '../../utils/gameConstants'
+import type { ClanFortressMatchOpponent, ClanFortressRaidResult } from '../../types/game'
 import { getArenaForElo, getEloDeltasForElo, getTrophyGateForElo } from '../../utils/arenaManager'
 const sunIcon = '/game-assets/greenfoot/sun1.webp'
 const peaImg = '/game-assets/images/Plants/PB00.webp'
@@ -177,7 +179,7 @@ interface BattlefieldProps {
   activeDeck?: PlantId[]
   userElo?: number
   customBgImage?: string
-  matchMode?: 'ranked' | 'colosseum' | 'tournament' | 'strategic_test' | 'friendly'
+  matchMode?: 'ranked' | 'colosseum' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress'
   friendlyBetGems?: number
   colosseumConfig?: ColosseumMatchConfig | null
   tournamentOpponent?: { name: string; tournamentId: string } | null
@@ -185,6 +187,8 @@ interface BattlefieldProps {
   onColosseumComplete?: (won: boolean) => { payoutGems: number; newStreak: number; newMaxStreak: number; isNewRecord: boolean }
   strategicPlaytestConfig?: StrategicPlaytestConfig | null
   onPlayAgainPlaytest?: () => void
+  clanFortressConfig?: { targetClan: ClanFortressMatchOpponent } | null
+  onClanFortressComplete?: (result: ClanFortressRaidResult) => void
   /**
    * La sala de la partida, si es contra otro jugador de verdad.
    *
@@ -262,6 +266,8 @@ export default function Battlefield({
   onColosseumComplete,
   strategicPlaytestConfig = null,
   onPlayAgainPlaytest,
+  clanFortressConfig = null,
+  onClanFortressComplete,
   treeLevels = null,
   treeSkins = null,
 }: BattlefieldProps) {
@@ -597,7 +603,11 @@ export default function Battlefield({
       : 0
 
   const activeArena = useMemo(() => getArenaForElo(userElo), [userElo])
-  const activeBgImage = customBgImage || activeArena.bgImage
+  const activeBgImage = customBgImage || (matchMode === 'clan_fortress' ? '/src/assets/images/battlefield-bg.webp' : activeArena.bgImage)
+  const activeLanesConfig = useMemo(() => {
+    return matchMode === 'clan_fortress' ? LANES_CONFIG_5 : LANES_CONFIG
+  }, [matchMode])
+  const [clanRaidResult, setClanRaidResult] = useState<ClanFortressRaidResult | null>(null)
 
   const allCatalogCards = useMemo(() => Object.keys(PLANT_CONFIGS) as PlantId[], [])
   const mazoMioParsed = useMemo(() => leerMazo(mazosDeLaSala?.mio), [mazosDeLaSala?.mio])
@@ -1395,11 +1405,38 @@ export default function Battlefield({
         }
       }
 
+      if (matchMode === 'clan_fortress' && clanFortressConfig?.targetClan) {
+        const target = clanFortressConfig.targetClan
+        const isVic = gameStatus === 'victory'
+        const maxHp = target.targetMaxBaseHp || 1000
+        const curHp = Math.max(0, p2BaseHp)
+        const damageDealt = Math.max(0, maxHp - curHp)
+        const damagePct = (damageDealt / maxHp) * 100
+
+        let starsEarned = 0
+        if (curHp <= 0 || isVic) {
+          starsEarned = 3
+        } else if (damagePct >= 50) {
+          starsEarned = 2
+        } else if (damagePct >= 20) {
+          starsEarned = 1
+        }
+
+        void supabaseService.settleClanFortressRaid(target.targetClanId, damageDealt, starsEarned).then((res) => {
+          if (res.success && res.data) {
+            setClanRaidResult(res.data)
+            if (onClanFortressComplete) {
+              onClanFortressComplete(res.data)
+            }
+          }
+        })
+      }
+
       // Partida local sin roomId = entrenamiento / bot / PvE (el cliente calcula ELO local y sobre).
       // Partida con roomId = el servidor liquida autoritativamente arriba; no ejecutar aquí para no duplicar ni otorgar sobres en derrotas.
       if (!roomId) {
         if (gameStatus === 'victory') {
-          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly') {
+          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress') {
             void (async () => {
               const res = await onBattleComplete(true)
               if (res) {
@@ -1414,7 +1451,7 @@ export default function Battlefield({
             })()
           }
         } else if (gameStatus === 'defeat') {
-          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly') {
+          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress') {
             void (async () => {
               const res = await onBattleComplete(false)
               if (res) {
@@ -1439,6 +1476,25 @@ export default function Battlefield({
       }
     } else if (matchMode === 'strategic_test' && strategicPlaytestConfig) {
       startStrategicPlaytestGame(strategicPlaytestConfig, activeDeck)
+    } else if (matchMode === 'clan_fortress' && clanFortressConfig?.targetClan) {
+      startGame(
+        seed || Math.floor(Math.random() * 1000000),
+        false,
+        undefined,
+        userElo,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        'auth-v2',
+        treeBonusHpRef.current,
+        0,
+        treeSkinRef.current,
+        null,
+        5,
+        clanFortressConfig.targetClan.layout,
+        clanFortressConfig.targetClan.targetBaseHp
+      )
     } else if (gameStatus === 'ready') {
       hasHandledEndRef.current = false
 
@@ -1820,7 +1876,7 @@ export default function Battlefield({
         return null
       })()}
       <div className="lanes">
-        {LANES_CONFIG.map((lane) => (
+        {activeLanesConfig.map((lane) => (
           <div
             key={lane.id}
             className="lane"
@@ -2026,7 +2082,7 @@ export default function Battlefield({
       {/* Player 1 Plants */}
       {plants.map((plant) => {
         const config = getScaledPlantConfig(plant.plantId, plant.statRolls ?? [], plant.equippedItem)
-        const laneConfig = LANES_CONFIG[plant.lane]
+        const laneConfig = activeLanesConfig[plant.lane] || activeLanesConfig[0]
         const hpPct = (plant.hp / plant.maxHp) * 100
         const isShovelTarget = selectedCard === 'shovel' && !plant.isWalking
         const isFrozen = plant.frozenUntil ? tick < plant.frozenUntil : false
@@ -2164,7 +2220,7 @@ export default function Battlefield({
       {/* Plantas Propias en fase de Brote / Siembra (Feedback visual instantáneo a 0ms) */}
       {pendingOwnPlants.map((pp, idx) => {
         const config = getScaledPlantConfig(pp.plantId, pp.statRolls ?? [], pp.equippedItem)
-        const laneConfig = LANES_CONFIG[pp.lane]
+        const laneConfig = activeLanesConfig[pp.lane] || activeLanesConfig[0]
         if (!laneConfig || !config) return null
         const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
         const x = BASE_LEFT_END_X + pp.col * colWidth + colWidth / 2
@@ -2210,7 +2266,7 @@ export default function Battlefield({
         // Ya no hay catálogo enemigo: las plantas de los dos lados son la misma
         // cosa y salen del mismo sitio. El bot también planta cartas de verdad.
         const config = getScaledPlantConfig(enemy.plantId, enemy.statRolls ?? [], enemy.equippedItem)
-        const laneConfig = LANES_CONFIG[enemy.lane]
+        const laneConfig = activeLanesConfig[enemy.lane] || activeLanesConfig[0]
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100)
         // frozenUntil es un TIC, no un instante de reloj. Comparado con Date.now()
         // esto era siempre falso y la congelación del hielo no se veía nunca.
@@ -2525,7 +2581,7 @@ export default function Battlefield({
             )}
 
               {/* ELO BADGE (sólo para partidas sin sala / offline de Ranked) */}
-              {!roomId && matchMode !== 'tournament' && matchMode !== 'friendly' && battleSummaryResult?.eloChange !== undefined && (
+              {!roomId && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress' && battleSummaryResult?.eloChange !== undefined && (
                   <div
                     className={`elo-result-badge ${
                       battleSummaryResult.eloChange >= 0
@@ -2543,6 +2599,60 @@ export default function Battlefield({
                     </span>
                   </div>
                 )}
+
+              {/* CLAN FORTRESS RAID RESULTS BOX */}
+              {matchMode === 'clan_fortress' && (
+                <div
+                  className="clan-raid-victory-box"
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.92)',
+                    border: '2px solid #eab308',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    margin: '10px 0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong style={{ color: '#fef08a', fontSize: '0.95rem' }}>
+                      🏰 ASALTO A LA FORTALEZA: {clanFortressConfig?.targetClan?.targetClanName}
+                    </strong>
+                    <span style={{ fontSize: '1.25rem', letterSpacing: '3px' }}>
+                      {clanRaidResult && clanRaidResult.starsEarned > 0 ? '⭐'.repeat(clanRaidResult.starsEarned) : '💀 DERROTA'}
+                    </span>
+                  </div>
+
+                  {clanRaidResult ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.85rem' }}>
+                      <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>💎 Gemas para ti (70%):</span>
+                        <strong style={{ color: '#4ade80', display: 'block', fontSize: '1.15rem' }}>
+                          +{clanRaidResult.stolenToUser} 💎
+                        </strong>
+                      </div>
+                      <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>💎 Tesoro del Clan (30%):</span>
+                        <strong style={{ color: '#facc15', display: 'block', fontSize: '1.15rem' }}>
+                          +{clanRaidResult.stolenToClan} 💎
+                        </strong>
+                      </div>
+                      {clanRaidResult.goldBonus > 0 && (
+                        <div style={{ gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '6px', borderRadius: '8px', textAlign: 'center', color: '#fef08a', fontWeight: 'bold' }}>
+                          🪙 ¡Bonus de Victoria: +{clanRaidResult.goldBonus} Oro!
+                        </div>
+                      )}
+                      <div style={{ gridColumn: 'span 2', color: '#94a3b8', fontSize: '0.78rem', textAlign: 'center' }}>
+                        🛡️ El clan rival recibe 4 horas de escudo de protección.
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.82rem' }}>Liquidando botín de guerra con el tesoro...</p>
+                  )}
+                </div>
+              )}
 
                 <div className="game-card__stats">
                   <p>☀️ Soles Recolectados: {stats.sunsCollected}</p>

@@ -19,7 +19,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 // ─────────────────────────────────────────────────────────────────────────────
 import { createRng } from '../engine/rng'
 import { TICK_MS, MAX_TICKS_PER_FRAME, msToTicks } from '../engine/time'
-import { stepTick, createBattleState, type GameState, type EngineVersion } from '../engine/simulate'
+import { stepTick, createBattleState, crearPlantaDelRival, type GameState, type EngineVersion } from '../engine/simulate'
 import { MARGEN_DE_RED_TICS } from '../engine/pvp'
 import {
   huellaDeLaPartida,
@@ -72,6 +72,7 @@ import { nivelPorElo } from '../engine/bot'
 import type {
   PlantEntity,
   PlantId,
+  ClanFortressPlant,
 } from '../types/game'
 import {
   PLANT_CONFIGS,
@@ -481,7 +482,10 @@ export function useGameEngine() {
     treeBonusHp?: number,
     rivalTreeBonusHp?: number,
     treeSkin?: string | null,
-    rivalTreeSkin?: string | null
+    rivalTreeSkin?: string | null,
+    lanesCount?: number,
+    clanFortressLayout?: ClanFortressPlant[],
+    targetBaseHp?: number
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
@@ -501,6 +505,10 @@ export function useGameEngine() {
     p1TreeSkinRef.current = effectiveTreeSkin
     p2TreeSkinRef.current = rivalTreeSkin ?? null
 
+    const effectiveP2Hp = targetBaseHp || (INITIAL_BASE_HP + effectiveRivalTreeBonusHp)
+    const effectiveLanes = lanesCount || 3
+    const isFortress = effectiveLanes === 5 || Boolean(clanFortressLayout && clanFortressLayout.length > 0)
+
     stateRef.current = createBattleState(
       seed,
       false,
@@ -508,10 +516,29 @@ export function useGameEngine() {
       nivelPorElo(miElo ?? 1000),
       engineVersion,
       INITIAL_BASE_HP + effectiveTreeBonusHp,
-      INITIAL_BASE_HP + effectiveRivalTreeBonusHp,
+      effectiveP2Hp,
       effectiveTreeSkin,
-      rivalTreeSkin ?? null
+      rivalTreeSkin ?? null,
+      effectiveLanes,
+      isFortress
     )
+
+    // Pre-instanciar las defensas de la fortaleza en el lado derecho (columnas 7 a 13)
+    if (clanFortressLayout && clanFortressLayout.length > 0) {
+      for (const defPlant of clanFortressLayout) {
+        stateRef.current.enemyPlants.push(
+          crearPlantaDelRival(
+            stateRef.current,
+            defPlant.plantId,
+            defPlant.lane,
+            defPlant.col,
+            defPlant.statRolls || [],
+            defPlant.level || 1,
+            defPlant.equippedItem
+          )
+        )
+      }
+    }
 
     ancoraMsRef.current = ancoraMs ?? null
     soyP1Ref.current = soyP1 === undefined ? null : soyP1

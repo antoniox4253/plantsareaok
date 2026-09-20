@@ -1,0 +1,457 @@
+.fortress-editor-fullscreen {
+  position: fixed;
+  inset: 0;
+  background: #020617;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  color: #f8fafc;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* ── HEADER ────────────────────────────────────────────────────────────────── */
+.fortress-editor-header {
+  height: 64px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 2px solid #eab308;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+.fortress-editor-header__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fortress-editor-btn-back {
+  background: rgba(51, 65, 85, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #f8fafc;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fortress-editor-btn-back:hover {
+  background: #475569;
+  border-color: #94a3b8;
+}
+
+.fortress-editor-title h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fef08a;
+  letter-spacing: 0.5px;
+}
+
+.fortress-editor-title small {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.fortress-editor-header__center {
+  flex: 1;
+  max-width: 420px;
+  margin: 0 20px;
+}
+
+.fortress-sun-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fortress-sun-meter__info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.fortress-sun-meter__info strong {
+  color: #facc15;
+  font-weight: 900;
+}
+
+.fortress-sun-meter__info small {
+  color: #94a3b8;
+}
+
+.fortress-sun-icon {
+  font-size: 1.1rem;
+}
+
+.fortress-sun-meter__track {
+  height: 10px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fortress-sun-meter__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fortress-editor-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fortress-editor-btn-clear {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.fortress-editor-btn-clear:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #fff;
+}
+
+.fortress-editor-btn-clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fortress-editor-btn-save {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border: 1px solid #86efac;
+  color: #052e16;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+  transition: all 0.2s;
+}
+
+.fortress-editor-btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.5);
+}
+
+.fortress-editor-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fortress-editor-alert {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  animation: fortressSlideDown 0.3s ease-out;
+}
+
+@keyframes fortressSlideDown {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.fortress-editor-alert--success {
+  background: #14532d;
+  border: 1px solid #4ade80;
+  color: #bbf7d0;
+}
+
+.fortress-editor-alert--error {
+  background: #7f1d1d;
+  border: 1px solid #f87171;
+  color: #fecaca;
+}
+
+/* ── CAMPO DE BATALLA 5 CARRILES ───────────────────────────────────────────── */
+.fortress-editor-field-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020617;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.fortress-editor-field {
+  position: relative;
+  width: 100%;
+  max-width: 1300px;
+  height: 100%;
+  max-height: 640px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 60px rgba(0, 0, 0, 0.6);
+  border: 3px solid #334155;
+  overflow: hidden;
+}
+
+/* Efecto de perspectiva y profundidad en el césped */
+.fortress-editor-depth-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
+}
+
+/* Zonas de ataque y defensa */
+.fortress-field-zone {
+  position: absolute;
+  top: 6px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.fortress-field-zone--attack {
+  left: 20px;
+  background: rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.fortress-field-zone--defense {
+  right: 20px;
+  background: rgba(34, 197, 94, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  color: #86efac;
+}
+
+.fortress-field-half-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  background: repeating-linear-gradient(180deg, rgba(234, 179, 8, 0.8), rgba(234, 179, 8, 0.8) 12px, transparent 12px, transparent 24px);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* Carril individual */
+.fortress-editor-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+.fortress-lane-tag {
+  position: absolute;
+  left: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Casillas defensivas (columnas 7 a 13) */
+.fortress-lane-tiles {
+  position: absolute;
+  left: 50%;
+  right: 4%;
+  height: 90%;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.fortress-defense-tile {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1.5px dashed rgba(74, 222, 128, 0.4);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  position: relative;
+}
+
+.fortress-defense-tile:hover {
+  background: rgba(34, 197, 94, 0.28);
+  border-color: #86efac;
+  transform: scale(1.02);
+}
+
+.fortress-defense-tile--occupied {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1.5px solid #facc15;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.25);
+}
+
+.fortress-placed-plant-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fortress-placed-plant-sprite {
+  max-width: 80%;
+  max-height: 80%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.fortress-placed-cost-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #eab308;
+  color: #fef08a;
+  font-size: 0.62rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* ── FOOTER / PALETA DE PLANTAS ────────────────────────────────────────────── */
+.fortress-editor-footer {
+  height: 120px;
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  border-top: 2px solid #334155;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px;
+  gap: 6px;
+  z-index: 10;
+}
+
+.fortress-selector-hint {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.fortress-plant-palette {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.fortress-plant-palette::-webkit-scrollbar {
+  height: 6px;
+}
+
+.fortress-plant-palette::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
+}
+
+.fortress-palette-card {
+  flex: 0 0 76px;
+  height: 80px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fortress-palette-card:hover:not(.fortress-palette-card--disabled) {
+  transform: translateY(-2px);
+  border-color: #facc15;
+  background: rgba(51, 65, 85, 0.95);
+}
+
+.fortress-palette-card--selected {
+  border-color: #facc15 !important;
+  background: rgba(234, 179, 8, 0.2) !important;
+  box-shadow: 0 0 14px rgba(234, 179, 8, 0.45);
+}
+
+.fortress-palette-card--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+
+.fortress-palette-img-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fortress-palette-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.fortress-palette-cost {
+  position: absolute;
+  bottom: -4px;
+  right: -8px;
+  background: #0f172a;
+  border: 1px solid #eab308;
+  color: #fef08a;
+  font-size: 0.62rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.fortress-palette-name {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}

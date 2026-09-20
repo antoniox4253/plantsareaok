@@ -231,7 +231,9 @@ export function createBattleState(
   p1BaseHp: number = INITIAL_BASE_HP,
   p2BaseHp: number = INITIAL_BASE_HP,
   p1TreeSkin?: string | null,
-  p2TreeSkin?: string | null
+  p2TreeSkin?: string | null,
+  lanesCount = 3,
+  isFortressMode = false
 ): GameState {
   return {
     tick: 0,
@@ -239,6 +241,8 @@ export function createBattleState(
     entityCounter: 0,
     skySunSeq: 0,
     engineVersion,
+    lanesCount,
+    isFortressMode,
     // El cartel de la primera oleada se oculta a los 3 s (4 en práctica). Antes lo
     // hacía un setTimeout tras el arranque; ahora es un tic concreto.
     pending: [{ atTick: msToTicks(isPracticeMode ? 4000 : 3000), kind: 'clear_wave_banner' }],
@@ -454,6 +458,8 @@ export interface GameState {
    * en el lado contrario llega del registro de acciones del rival.
    */
   isPvpMode?: boolean
+  lanesCount?: number
+  isFortressMode?: boolean
   /**
    * Lo que el bot lleva en la cabeza: los soles que aún no ha recogido, lo que
    * cree que está pasando, y cuándo se plantea su próxima jugada.
@@ -835,8 +841,10 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             const extraSeconds = (planta.statRolls && planta.statRolls.length > 0) ? durationRolls * 0.6 : (planta.level ?? 0) * 0.6
             freezeDurationMs = 3000 + Math.round(extraSeconds * 1000)
 
-            // 🧈 La mantequilla puede salir disparada a cualquiera de las 3 líneas donde haya enemigos
-            const lanesConEnemigos = [0, 1, 2].filter((l) =>
+            // 🧈 La mantequilla puede salir disparada a cualquiera de las líneas donde haya enemigos
+            const totalLanes = state.lanesCount || 3
+            const poolLanes = Array.from({ length: totalLanes }, (_, i) => i)
+            const lanesConEnemigos = poolLanes.filter((l) =>
               susPlantas.some((e) => e.lane === l && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
             )
 
@@ -864,7 +872,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
         }
 
         if (planta.plantId === 'threepeater') {
-          for (const carril of [planta.lane - 1, planta.lane, planta.lane + 1].filter((l) => l >= 0 && l <= 2)) {
+          const maxLaneIndex = (state.lanesCount || 3) - 1
+          for (const carril of [planta.lane - 1, planta.lane, planta.lane + 1].filter((l) => l >= 0 && l <= maxLaneIndex)) {
             state.projectiles.push({
               id: entityId(`proj-${lado.equipo}-3p-${carril}`, state.tick, state.entityCounter++),
               type: 'pea',
@@ -1338,7 +1347,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     ).length
 
     // Lo que está pasando DE VERDAD…
-    const amenazaAhora = [0, 1, 2].filter((l) =>
+    const totalLanes = state.lanesCount || 3
+    const amenazaAhora = Array.from({ length: totalLanes }, (_, i) => i).filter((l) =>
       state.plants.some((pl) => pl.lane === l && pl.hp > 0 && pl.x > 25)
     )
     // …y lo que el bot alcanza a ver, que llega con retraso. Ese medio segundo

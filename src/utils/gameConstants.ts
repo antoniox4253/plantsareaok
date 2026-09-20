@@ -319,6 +319,37 @@ export const LANES_CONFIG = [
   { id: 2, topPct: 58.67, heightPct: 19.33 },
 ]
 
+export const LANES_CONFIG_5 = [
+  { id: 0, topPct: 13, heightPct: 13 },
+  { id: 1, topPct: 27, heightPct: 14 },
+  { id: 2, topPct: 42, heightPct: 15 },
+  { id: 3, topPct: 58, heightPct: 16 },
+  { id: 4, topPct: 75, heightPct: 17 },
+]
+
+export const FORTRESS_SUN_COSTS: Record<PlantId, number> = {
+  sunflower: 50,
+  peashooter: 100,
+  repeater: 200,
+  wallnut: 50,
+  tallnut: 125,
+  snowpea: 175,
+  bonkchoy: 150,
+  spikeweed: 100,
+  potatomine: 25,
+  iceberglettuce: 25,
+  jalapeno: 125,
+  chomper: 150,
+  torchwood: 175,
+  twinsunflower: 125,
+  melonpult: 300,
+  kernelpult: 100,
+  aloe: 150,
+  garlic: 75,
+  squash: 100,
+  threepeater: 325,
+}
+
 export const BASE_LEFT_END_X = 15
 export const BASE_RIGHT_START_X = 85
 export const FIELD_WIDTH_PCT = BASE_RIGHT_START_X - BASE_LEFT_END_X

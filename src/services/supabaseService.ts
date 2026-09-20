@@ -6,7 +6,7 @@ import { type FreePackSlot, type PlayerRewardPack, normalizePackSlots } from '..
 import type { DatosDeRepeticion } from '../engine/replay'
 import { parseLeaderboardRow, type ParsedLeaderboardRow } from '../utils/leaderboardParser'
 import { validateMatchClock } from '../utils/matchClock'
-import type { EngineVersion } from '../types/game'
+import type { EngineVersion, ClanFortressData, ClanFortressPlant, ClanFortressMatchOpponent, ClanFortressRaidResult } from '../types/game'
 import type { FarmingInventory, PvpRewardDrop } from '../utils/pvpRewardManager'
 import { FLASH_OFFER_PRICE_GEMS } from '../utils/gameConstants'
 
@@ -1903,6 +1903,101 @@ export const SupabaseService = {
       return data as { success: boolean; plant_id?: string }
     } catch (e: any) {
       logError('donateClanPlantCopy', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async getClanFortress(clanId?: string): Promise<{ success: boolean; data?: ClanFortressData; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_clan_fortress', {
+        p_clan_id: clanId || null,
+      })
+      if (error) {
+        logError('getClanFortress', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data: data as ClanFortressData }
+    } catch (e: any) {
+      logError('getClanFortress', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async saveClanFortress(layout: ClanFortressPlant[]): Promise<{ success: boolean; sunsSpent?: number; defenseSunsBudget?: number; plantsCount?: number; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('save_clan_fortress', {
+        p_layout: layout,
+      })
+      if (error) {
+        logError('saveClanFortress', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('saveClanFortress', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async donateSunsToFortress(
+    plantId?: string,
+    copies?: number,
+    goldAmount?: number
+  ): Promise<{ success: boolean; sunsGained?: number; newBudget?: number; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('donate_suns_to_fortress', {
+        p_plant_id: plantId || null,
+        p_copies: copies || 0,
+        p_gold_amount: goldAmount || 0,
+      })
+      if (error) {
+        logError('donateSunsToFortress', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('donateSunsToFortress', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async searchClanFortressMatch(): Promise<{ success: boolean; data?: ClanFortressMatchOpponent; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('search_clan_fortress_match')
+      if (error) {
+        logError('searchClanFortressMatch', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data: data as ClanFortressMatchOpponent }
+    } catch (e: any) {
+      logError('searchClanFortressMatch', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async settleClanFortressRaid(
+    targetClanId: string,
+    damageDealt: number,
+    starsEarned: number
+  ): Promise<{ success: boolean; data?: ClanFortressRaidResult; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('settle_clan_fortress_raid', {
+        p_target_clan_id: targetClanId,
+        p_damage_dealt: damageDealt,
+        p_stars_earned: starsEarned,
+      })
+      if (error) {
+        logError('settleClanFortressRaid', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data: data as ClanFortressRaidResult }
+    } catch (e: any) {
+      logError('settleClanFortressRaid', e)
       return { success: false, error: e?.message }
     }
   },
