@@ -4445,64 +4445,36 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
+  height: 100%;
   padding: 4px 0;
+  box-sizing: border-box;
+  justify-content: center;
 }
 
-/* HUB PRINCIPAL DE 3 CARDS */
+/* HUB PRINCIPAL DE 3 CARDS (SIN SCROLL) */
 .clan-fortress-hub {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  flex: 1;
+  height: 100%;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
-  padding: 6px 4px 20px;
-}
-
-.clan-fortress-hub-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.clan-fortress-hub-badge-wrap {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.clan-fortress-hub-badge-icon {
-  font-size: 34px;
-  filter: drop-shadow(0 2px 8px rgba(234, 179, 8, 0.5));
-}
-
-.clan-fortress-hub-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 900;
-  color: #f8fafc;
-  letter-spacing: 0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.clan-fortress-hub-subtitle {
-  font-size: 11.5px;
-  color: #38bdf8;
-  font-weight: 800;
-  letter-spacing: 0.4px;
+  padding: 6px 4px;
+  justify-content: center;
+  overflow: hidden;
 }
 
 /* 3 CARDS GRID */
 .clan-fortress-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  gap: 14px;
+  align-items: stretch;
+  height: 100%;
+  max-height: 390px;
 }
 
 @media (max-width: 900px) {
@@ -4515,21 +4487,21 @@
 .clan-fhub-card {
   background: linear-gradient(150deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%);
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
   cursor: pointer;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
 }
 
 .clan-fhub-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
 }
 
 /* CARD THEMES */
@@ -4538,7 +4510,7 @@
 }
 .clan-fhub-card--bastion:hover {
   border-color: #facc15;
-  box-shadow: 0 12px 32px rgba(234, 179, 8, 0.25);
+  box-shadow: 0 10px 28px rgba(234, 179, 8, 0.25);
 }
 
 .clan-fhub-card--tree {
@@ -4546,7 +4518,7 @@
 }
 .clan-fhub-card--tree:hover {
   border-color: #4ade80;
-  box-shadow: 0 12px 32px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 10px 28px rgba(34, 197, 94, 0.25);
 }
 
 .clan-fhub-card--defenses {
@@ -4554,7 +4526,7 @@
 }
 .clan-fhub-card--defenses:hover {
   border-color: #38bdf8;
-  box-shadow: 0 12px 32px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 10px 28px rgba(56, 189, 248, 0.25);
 }
 
 /* CARD TOP */
@@ -4562,13 +4534,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 12px;
+  padding-bottom: 8px;
 }
 
 .clan-fhub-card__icon {
-  font-size: 28px;
+  font-size: 24px;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
@@ -4578,22 +4550,22 @@
 
 .clan-fhub-card__title {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   color: #f8fafc;
   letter-spacing: 0.5px;
 }
 
 .clan-fhub-card__tag {
-  font-size: 10.5px;
+  font-size: 10px;
   color: #94a3b8;
   font-weight: 700;
 }
 
 .clan-fhub-card__badge {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -4620,7 +4592,7 @@
 .clan-fhub-card__body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
 }
 
@@ -4628,7 +4600,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -4642,16 +4614,16 @@
 
 .clan-fhub-bar-track {
   width: 100%;
-  height: 8px;
+  height: 7px;
   background: rgba(0, 0, 0, 0.55);
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .clan-fhub-bar-fill {
   height: 100%;
-  border-radius: 5px;
+  border-radius: 4px;
   transition: width 0.3s ease;
 }
 
@@ -4665,14 +4637,14 @@
 
 .clan-fhub-pill-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .clan-fhub-pill {
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 6px;
+  font-size: 9.5px;
+  padding: 2.5px 7px;
+  border-radius: 5px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #cbd5e1;
@@ -4684,54 +4656,47 @@
 
 .clan-fhub-nutrients-preview {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 
 .clan-fhub-nutrient-chip {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 800;
-  padding: 3px 8px;
+  padding: 2.5px 7px;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: 5px;
   color: #e2e8f0;
 }
 
 .clan-fhub-perks-preview {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 
 .clan-fhub-perk-item {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 2px 6px;
   background: rgba(22, 101, 52, 0.3);
   border: 1px solid rgba(74, 222, 128, 0.3);
-  border-radius: 5px;
+  border-radius: 4px;
   color: #86efac;
-}
-
-.clan-fhub-card__desc {
-  margin: 0;
-  font-size: 11px;
-  color: #94a3b8;
-  line-height: 1.35;
 }
 
 /* CARD FOOTER BUTTONS */
 .clan-fhub-card__footer {
   margin-top: auto;
-  padding-top: 10px;
+  padding-top: 4px;
 }
 
 .clan-fhub-card__btn {
   width: 100%;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 12.5px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.5px;
   cursor: pointer;
@@ -5077,23 +5042,190 @@
   transform: scale(1.03);
 }
 
-/* Central Action CTA Box */
-.clan-fortress-cta-box {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 4px;
+/* ==============================================================================
+   BASTIÓN EN PANTALLA COMPLETA - GAMING WAR ROOM & VÍNCULO DEFENSIVO
+   ============================================================================== */
+
+.clan-bastion-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
 }
 
-.clan-fcta-group {
+@media (max-width: 900px) {
+  .clan-bastion-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.clan-bastion-col {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+.clan-bastion-card--hp {
+  border-color: rgba(239, 68, 68, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 0 16px rgba(239, 68, 68, 0.1);
+}
+
+.clan-bastion-status-pill {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 280px;
-  max-width: 440px;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid #4ade80;
+  color: #86efac;
+  font-size: 11px;
+  font-weight: 800;
+  align-self: flex-start;
+}
+
+/* Tarjeta de Vínculo Táctico: ¿Cómo Defiende tu Bastión? */
+.clan-bastion-link-defenses-card {
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.35) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid #38bdf8;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.2), 0 8px 24px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.clan-bastion-link-defenses-card:hover {
+  border-color: #7dd3fc;
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.35), 0 10px 28px rgba(0, 0, 0, 0.6);
+}
+
+.clan-bld-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clan-bld-icon {
+  font-size: 30px;
+  filter: drop-shadow(0 0 10px #38bdf8);
+}
+
+.clan-bld-header h4 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 900;
+  color: #e0f2fe;
+  letter-spacing: 0.6px;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+.clan-bld-header span {
+  font-size: 11px;
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.clan-bld-desc {
+  margin: 0;
+  font-size: 11.5px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.clan-bld-desc strong {
+  color: #38bdf8;
+}
+
+.clan-bld-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.clan-bld-badge {
+  font-size: 11px;
+  color: #bae6fd;
+  background: rgba(2, 132, 199, 0.25);
+  border: 1px solid #38bdf8;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.clan-bld-badge strong {
+  color: #facc15;
+}
+
+.clan-bld-action-btn {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 1.5px solid #38bdf8;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45);
+  letter-spacing: 0.4px;
+}
+
+.clan-bld-action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.2);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+}
+
+/* Asalto Ofensivo Hero Card */
+.clan-bastion-raid-hero {
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.4) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.25), 0 8px 24px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.clan-bastion-raid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.clan-bastion-raid-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clan-bastion-raid-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 0 8px #ef4444);
+}
+
+.clan-bastion-raid-title h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #fca5a5;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.clan-bastion-raid-title span {
+  font-size: 11px;
+  color: #94a3b8;
 }
 
 .clan-fortress-action-btn {
@@ -5110,19 +5242,6 @@
   justify-content: center;
   gap: 8px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
-}
-
-.clan-fortress-action-btn--edit {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border: 2px solid #60a5fa;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-}
-
-.clan-fortress-action-btn--edit:hover:not(:disabled) {
-  filter: brightness(1.15);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
 }
 
 .clan-fortress-action-btn--raid {
@@ -5144,10 +5263,22 @@
   filter: grayscale(0.4);
 }
 
-.clan-fcta-hint {
-  font-size: 11px;
-  color: #94a3b8;
-  font-weight: 600;
+.clan-bastion-raid-cta {
+  font-size: 15px;
+  padding: 14px 20px;
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
+  animation: raidPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes raidPulse {
+  from {
+    box-shadow: 0 0 16px rgba(220, 38, 38, 0.4);
+    transform: scale(0.99);
+  }
+  to {
+    box-shadow: 0 0 28px rgba(239, 68, 68, 0.75);
+    transform: scale(1.01);
+  }
 }
 
 .clan-fcta-cost-badge {
@@ -5157,142 +5288,6 @@
   padding: 5px 12px;
   border-radius: 8px;
   border: 1px solid rgba(253, 224, 71, 0.3);
-}
-
-/* Layout Preview Card */
-.clan-fortress-layout-preview-card {
-  background: rgba(15, 23, 42, 0.85);
-  border: 1.5px solid rgba(56, 189, 248, 0.3);
-  border-radius: 14px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-
-.clan-fpreview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 10px;
-}
-
-.clan-fpreview-header h3 {
-  margin: 0;
-  font-size: 15px;
-  color: #38bdf8;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-.clan-fpreview-count {
-  font-size: 12px;
-  color: #94a3b8;
-  font-weight: 700;
-}
-
-.clan-fpreview-empty {
-  text-align: center;
-  padding: 24px 16px;
-  color: #94a3b8;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.clan-fpreview-empty-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: 1.5px solid #34d399;
-  color: #ffffff;
-  font-weight: 900;
-  font-size: 13px;
-  padding: 8px 18px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
-}
-
-.clan-fpreview-empty-btn:hover {
-  filter: brightness(1.15);
-  transform: scale(1.03);
-}
-
-.clan-fpreview-lanes {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.clan-fpreview-lane-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(30, 41, 59, 0.5);
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.clan-fpreview-lane-badge {
-  font-size: 11px;
-  font-weight: 800;
-  color: #cbd5e1;
-  width: 70px;
-  flex-shrink: 0;
-}
-
-.clan-fpreview-lane-plants {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  flex: 1;
-}
-
-.clan-fpreview-plant-chip {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1.5px solid #22c55e;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease;
-}
-
-.clan-fpreview-plant-chip:hover {
-  transform: scale(1.12);
-  z-index: 2;
-}
-
-.clan-fpreview-plant-img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-}
-
-.clan-fpreview-plant-col {
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  font-size: 8px;
-  font-weight: 900;
-  background: #000000;
-  color: #fde047;
-  padding: 1px 4px;
-  border-radius: 3px;
-  border: 1px solid #475569;
-}
-
-.clan-fpreview-empty-lane {
-  font-size: 11px;
-  color: #64748b;
-  font-style: italic;
 }
 
 /* Web3 Rules Card */
@@ -5374,174 +5369,515 @@
   border-color: #fef08a;
 }
 
-/* Tarjeta del Árbol Madre del Clan */
-.clan-fortress-tree-card {
-  background: linear-gradient(135deg, rgba(20, 83, 45, 0.35) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 2px solid rgba(74, 222, 128, 0.4);
-  border-radius: 14px;
-  padding: 16px 18px;
-  margin-top: 14px;
+/* ==============================================================================
+   ÁRBOL MADRE DEL CLAN - SANTUARIO BOTÁNICO COLECTIVO
+   ============================================================================== */
+
+.clan-tree-sanctuary-body {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 18px;
+  padding: 14px 24px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .clan-tree-sanctuary-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.clan-tree-sanctuary-left {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(34, 197, 94, 0.15);
+  gap: 12px;
+  min-width: 0;
 }
 
-.clan-ftree-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.clan-ftree-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.clan-ftree-icon {
-  font-size: 32px;
-  filter: drop-shadow(0 0 8px #4ade80);
-}
-
-.clan-ftree-title h4 {
+.clan-tree-section-header h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
   color: #86efac;
   letter-spacing: 0.5px;
+  text-shadow: 0 0 8px rgba(134, 239, 172, 0.4);
 }
 
-.clan-ftree-title p {
-  margin: 2px 0 0;
-  font-size: 11.5px;
+.clan-tree-section-sub {
+  font-size: 11px;
   color: #94a3b8;
 }
 
-.clan-ftree-badge {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
+/* Grid de los 3 recursos de nutrición */
+.clan-tree-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.clan-tree-res-card {
+  background: rgba(15, 42, 28, 0.65);
+  border: 1.5px solid rgba(74, 222, 128, 0.25);
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+}
+
+.clan-tree-res-card:hover {
+  background: rgba(22, 60, 40, 0.85);
+  border-color: #4ade80;
+  transform: translateY(-2px);
+}
+
+.clan-tree-res-card.is-active {
+  background: linear-gradient(145deg, rgba(22, 101, 52, 0.9), rgba(6, 78, 59, 0.95));
+  border-color: #86efac;
+  box-shadow: 0 0 14px rgba(74, 222, 128, 0.45);
+  transform: translateY(-1px);
+}
+
+.clan-tree-res-card__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clan-tree-res-card__icon {
+  font-size: 18px;
+}
+
+.clan-tree-res-card__name {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.clan-tree-res-card__meta {
+  font-size: 10.5px;
+  color: #a7f3d0;
+}
+
+.clan-tree-res-card__meta strong {
+  color: #facc15;
+}
+
+.clan-tree-res-card__balance {
+  font-size: 10.5px;
+  color: #cbd5e1;
+}
+
+.clan-tree-res-card__balance b {
+  color: #fef08a;
+}
+
+/* Controles de alimentación */
+.clan-tree-feed-controls {
+  background: rgba(6, 30, 18, 0.8);
+  border: 1.5px solid rgba(74, 222, 128, 0.3);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.clan-tree-amount-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: #cbd5e1;
+}
+
+.clan-tree-amount-preview {
+  color: #facc15;
+  font-weight: 900;
+  font-size: 12px;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+}
+
+.clan-tree-amount-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.clan-tree-amount-input {
+  width: 80px;
+  height: 34px;
+  background: rgba(3, 15, 9, 0.9);
+  border: 1.5px solid #2e7d4a;
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.clan-tree-amount-input:focus {
+  outline: none;
+  border-color: #86efac;
+  box-shadow: 0 0 8px rgba(134, 239, 172, 0.4);
+}
+
+.clan-tree-quick-buttons {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+.clan-tree-quick-buttons button {
+  flex: 1;
+  height: 34px;
+  background: rgba(30, 70, 48, 0.7);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 7px;
+  color: #d1fae5;
   font-weight: 800;
-  background: rgba(34, 197, 94, 0.15);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clan-tree-quick-buttons button:hover {
+  background: #166534;
+  color: white;
+  border-color: #4ade80;
+}
+
+.clan-tree-quick-buttons .clan-tree-btn-max {
+  background: linear-gradient(135deg, #ca8a04, #854d0e);
+  border-color: #facc15;
+  color: #fef9c3;
+  font-weight: 900;
+}
+
+.clan-tree-quick-buttons .clan-tree-btn-max:hover {
+  background: #eab308;
+  color: #000;
+}
+
+.clan-tree-submit-btn {
+  width: 100%;
+  height: 40px;
+  background: linear-gradient(135deg, #15803d 0%, #166534 50%, #14532d 100%);
+  border: 1.5px solid #4ade80;
+  border-radius: 9px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(22, 101, 52, 0.55);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.clan-tree-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.65);
+}
+
+.clan-tree-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.7);
+}
+
+.clan-tree-notice {
+  margin: 8px 24px 0;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.clan-tree-notice--success {
+  background: rgba(34, 197, 94, 0.2);
   border: 1px solid #4ade80;
   color: #bbf7d0;
 }
 
-.clan-ftree-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  background: rgba(15, 23, 42, 0.6);
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(74, 222, 128, 0.2);
+.clan-tree-notice--error {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #f87171;
+  color: #fecaca;
 }
 
-.clan-ftree-stat-item {
+.clan-tree-ascenso-banner {
+  margin: 8px 24px 0;
+  padding: 10px 16px;
+  background: radial-gradient(circle, rgba(234, 179, 8, 0.3) 0%, rgba(20, 83, 45, 0.7) 100%);
+  border: 1.5px solid #facc15;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 25px rgba(250, 204, 21, 0.5);
+  animation: treePulse 1s ease-in-out infinite alternate;
+}
+
+.clan-tree-ascenso-glow {
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fef08a;
+  letter-spacing: 1.5px;
+}
+
+.clan-tree-ascenso-banner h3 {
+  margin: 3px 0;
+  font-size: 15px;
+  font-weight: 950;
+  color: #ffffff;
+  text-shadow: 0 0 8px #eab308;
+}
+
+.clan-tree-ascenso-banner p {
+  margin: 0;
+  font-size: 11.5px;
+  color: #fef9c3;
+}
+
+.clan-tree-maxed-box {
+  background: rgba(234, 179, 8, 0.12);
+  border: 1.5px solid #eab308;
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.clan-tree-maxed-badge {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fef08a;
+  letter-spacing: 1px;
+}
+
+.clan-tree-impact-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clan-tree-impact-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #cbd5e1;
-}
-
-.clan-ftree-stat-item strong {
-  color: #facc15;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #86efac;
   font-weight: 900;
 }
 
-.clan-ftree-progress-box {
+/* Columna Derecha: Visualización del Árbol & Bendiciones */
+.clan-tree-sanctuary-right {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(15, 23, 42, 0.4);
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  min-width: 0;
 }
 
-.clan-ftree-progress-row {
+.clan-tree-visual-card {
+  background: radial-gradient(circle at center, rgba(22, 101, 52, 0.4) 0%, rgba(5, 20, 12, 0.9) 75%);
+  border: 2px solid rgba(74, 222, 128, 0.35);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  box-sizing: border-box;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.clan-tree-badge-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.clan-tree-badge-lvl {
+  background: linear-gradient(90deg, #15803d, #047857);
+  border: 1px solid #86efac;
+  color: #f0fdf4;
+  padding: 2px 12px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+}
+
+.clan-tree-badge-title {
+  font-size: 15px;
+  font-weight: 950;
+  color: #fef08a;
+  text-shadow: 0 0 10px rgba(254, 240, 138, 0.4);
+}
+
+.clan-tree-img-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 12px;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.clan-ftree-progress-row > span {
-  width: 95px;
-  font-weight: 700;
-  color: #e2e8f0;
+.clan-tree-aura-glow {
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  filter: blur(14px);
+  pointer-events: none;
 }
 
-.clan-ftree-progress-row > strong {
-  width: 70px;
-  text-align: right;
-  font-size: 11.5px;
+.clan-tree-aura-glow--lvl1 { background: radial-gradient(circle, rgba(74, 222, 128, 0.35) 0%, transparent 70%); }
+.clan-tree-aura-glow--lvl2 { background: radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, transparent 70%); }
+.clan-tree-aura-glow--lvl3 { background: radial-gradient(circle, rgba(168, 85, 247, 0.5) 0%, transparent 70%); }
+.clan-tree-aura-glow--lvl4 { background: radial-gradient(circle, rgba(250, 204, 21, 0.55) 0%, transparent 70%); }
+
+.clan-tree-display-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.65));
+  transition: transform 0.3s ease;
+}
+
+.clan-tree-display-img:hover {
+  transform: scale(1.05);
+}
+
+.clan-tree-progress-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clan-tree-req-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clan-tree-req-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.clan-tree-req-labels strong {
   color: #f8fafc;
 }
 
-.clan-ftree-bar-track {
-  flex: 1;
-  height: 10px;
-  background: #1e293b;
+.clan-tree-pbar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.clan-ftree-bar-fill {
+.clan-tree-pbar-fill {
   height: 100%;
   border-radius: 999px;
   transition: width 0.3s ease;
 }
 
-.clan-ftree-bar-fill--water {
+.clan-tree-pbar-fill--water {
   background: linear-gradient(90deg, #0284c7, #38bdf8);
 }
 
-.clan-ftree-bar-fill--fert {
+.clan-tree-pbar-fill--fert {
   background: linear-gradient(90deg, #16a34a, #4ade80);
 }
 
-.clan-ftree-bar-fill--gems {
+.clan-tree-pbar-fill--gems {
   background: linear-gradient(90deg, #9333ea, #c084fc);
 }
 
-.clan-ftree-nutrir-btn {
-  margin-top: 6px;
-  padding: 10px 14px;
-  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
-  border: 1.5px solid #86efac;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 12px;
+.clan-tree-max-perks-badge {
+  font-size: 11px;
   font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
-  transition: all 0.2s ease;
-  letter-spacing: 0.4px;
-}
-
-.clan-ftree-nutrir-btn:hover {
-  transform: translateY(-2px);
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
-  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.5);
-  border-color: #bbf7d0;
-}
-
-.clan-ftree-maxed-banner {
-  padding: 12px;
-  text-align: center;
-  background: rgba(234, 179, 8, 0.12);
-  border: 1.5px solid #eab308;
-  border-radius: 8px;
   color: #fef08a;
-  font-weight: 800;
-  font-size: 12px;
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid #facc15;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.clan-tree-perks-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.clan-tree-perk-card {
+  background: rgba(6, 26, 16, 0.75);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 8px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clan-tree-perk-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.clan-tree-perk-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.clan-tree-perk-label {
+  font-size: 9px;
+  color: #94a3b8;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clan-tree-perk-val {
+  font-size: 11px;
+  font-weight: 900;
+  color: #facc15;
 }
 
 /* Modal Nutrir Árbol Madre */
