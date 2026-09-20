@@ -4437,17 +4437,426 @@
   font-size: 13px;
 }
 
-@media (max-width: 640px) {
-  .clan-fslider-tab-text {
-    font-size: 10px;
+/* ==============================================================================
+   FORTALEZA DEL CLAN: 3-CARDS HUB & PANTALLA COMPLETA
+   ============================================================================== */
+
+.clan-fortress-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* HUB PRINCIPAL DE 3 CARDS */
+.clan-fortress-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 6px 4px 20px;
+}
+
+.clan-fortress-hub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.clan-fortress-hub-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.clan-fortress-hub-badge-icon {
+  font-size: 34px;
+  filter: drop-shadow(0 2px 8px rgba(234, 179, 8, 0.5));
+}
+
+.clan-fortress-hub-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.clan-fortress-hub-subtitle {
+  font-size: 11.5px;
+  color: #38bdf8;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+/* 3 CARDS GRID */
+.clan-fortress-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .clan-fortress-cards-grid {
+    grid-template-columns: 1fr;
   }
-  .clan-fslider-tab {
-    padding: 6px 4px;
-    gap: 4px;
-  }
-  .clan-fslider-tab-badge {
-    display: none;
-  }
+}
+
+/* INDIVIDUAL HUB CARD */
+.clan-fhub-card {
+  background: linear-gradient(150deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.clan-fhub-card:hover {
+  transform: translateY(-5px);
+}
+
+/* CARD THEMES */
+.clan-fhub-card--bastion {
+  border-color: rgba(234, 179, 8, 0.4);
+}
+.clan-fhub-card--bastion:hover {
+  border-color: #facc15;
+  box-shadow: 0 12px 32px rgba(234, 179, 8, 0.25);
+}
+
+.clan-fhub-card--tree {
+  border-color: rgba(74, 222, 128, 0.4);
+}
+.clan-fhub-card--tree:hover {
+  border-color: #4ade80;
+  box-shadow: 0 12px 32px rgba(34, 197, 94, 0.25);
+}
+
+.clan-fhub-card--defenses {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+.clan-fhub-card--defenses:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 12px 32px rgba(56, 189, 248, 0.25);
+}
+
+/* CARD TOP */
+.clan-fhub-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.clan-fhub-card__icon {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+}
+
+.clan-fhub-card__header-text {
+  flex: 1;
+}
+
+.clan-fhub-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+}
+
+.clan-fhub-card__tag {
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.clan-fhub-card__badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.clan-fhub-card__badge--bastion {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  color: #fef08a;
+}
+
+.clan-fhub-card__badge--tree {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.5);
+  color: #bbf7d0;
+}
+
+.clan-fhub-card__badge--def {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  color: #bae6fd;
+}
+
+/* CARD BODY */
+.clan-fhub-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.clan-fhub-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.clan-fhub-stat-label {
+  color: #94a3b8;
+}
+
+.clan-fhub-stat-val {
+  color: #f8fafc;
+}
+
+.clan-fhub-bar-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.clan-fhub-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.clan-fhub-bar-fill--hp {
+  background: linear-gradient(90deg, #ef4444, #22c55e);
+}
+
+.clan-fhub-bar-fill--suns {
+  background: linear-gradient(90deg, #eab308, #f59e0b);
+}
+
+.clan-fhub-pill-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.clan-fhub-pill {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.clan-fhub-pill strong {
+  color: #facc15;
+}
+
+.clan-fhub-nutrients-preview {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.clan-fhub-nutrient-chip {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #e2e8f0;
+}
+
+.clan-fhub-perks-preview {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.clan-fhub-perk-item {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  background: rgba(22, 101, 52, 0.3);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 5px;
+  color: #86efac;
+}
+
+.clan-fhub-card__desc {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+/* CARD FOOTER BUTTONS */
+.clan-fhub-card__footer {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.clan-fhub-card__btn {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.clan-fhub-card__btn--bastion {
+  background: linear-gradient(135deg, #ca8a04 0%, #a16207 100%);
+  border: 1.5px solid #fde047;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.clan-fhub-card__btn--bastion:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(234, 179, 8, 0.4);
+}
+
+.clan-fhub-card__btn--tree {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  border: 1.5px solid #86efac;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.clan-fhub-card__btn--tree:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.4);
+}
+
+.clan-fhub-card__btn--defenses {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: 1.5px solid #60a5fa;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.clan-fhub-card__btn--defenses:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+}
+
+/* ==============================================================================
+   VISTAS EN PANTALLA COMPLETA DEDICADAS (BASTIÓN Y ÁRBOL MADRE)
+   ============================================================================== */
+
+.clan-fortress-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  background: #020617;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  color: #f8fafc;
+  user-select: none;
+  overflow: hidden;
+}
+
+.clan-fortress-subview-topbar {
+  height: 64px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 2px solid #eab308;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.clan-fortress-back-btn {
+  background: rgba(51, 65, 85, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.clan-fortress-back-btn:hover {
+  background: #475569;
+  border-color: #facc15;
+  transform: scale(1.02);
+}
+
+.clan-fortress-subview-header-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.clan-fortress-subview-header-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+}
+
+.clan-fortress-subview-header-title small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.clan-fortress-fullscreen-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px 40px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .clan-fortress-loading {
@@ -5308,3 +5717,123 @@
 .clan-role-perk-badge strong {
   color: #38bdf8;
 }
+
+/* Panel de Asignación Directa de Roles en Ajustes */
+.clan-settings-roles-management {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1.5px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.clan-settings-roles-management-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.clan-settings-roles-management-icon {
+  font-size: 24px;
+}
+
+.clan-settings-roles-management-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: 0.5px;
+}
+
+.clan-settings-roles-management-desc {
+  display: block;
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.clan-settings-roles-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.clan-settings-role-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 12px;
+  gap: 12px;
+}
+
+.clan-settings-role-member-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.clan-settings-role-member-icon {
+  font-size: 18px;
+}
+
+.clan-settings-role-member-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.clan-settings-role-member-status {
+  display: block;
+  font-size: 9.5px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.clan-settings-role-member-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clan-settings-change-role-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 1px solid #fbbf24;
+  border-radius: 6px;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
+}
+
+.clan-settings-change-role-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+}
+
+.clan-roles-guide-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 10px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+

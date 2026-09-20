@@ -98,6 +98,7 @@ export interface ClanData {
   badge: string
   description: string
   leader: string
+  leaderId?: string
   members: ClanMember[]
   vaultUsd: number
   vaultGems?: number

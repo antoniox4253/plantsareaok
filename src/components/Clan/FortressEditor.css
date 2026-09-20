@@ -455,3 +455,171 @@
   text-overflow: ellipsis;
   width: 100%;
 }
+
+/* Shovel button */
+.fortress-editor-btn-shovel {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1.5px solid #64748b;
+  color: #e2e8f0;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fortress-editor-btn-shovel:hover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.fortress-editor-btn-shovel--active {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+  border-color: #fca5a5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+  animation: pulseShovel 1.5s infinite;
+}
+
+@keyframes pulseShovel {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+.fortress-editor-observer-badge {
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* Move Ribbon */
+.fortress-move-ribbon {
+  background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+  border-bottom: 2px solid #a855f7;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.25);
+  animation: slideDownRibbon 0.25s ease-out;
+  z-index: 9;
+}
+
+@keyframes slideDownRibbon {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fortress-move-ribbon__info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fortress-move-ribbon__icon {
+  font-size: 1.5rem;
+  animation: bounce 1s infinite alternate;
+}
+
+.fortress-move-ribbon__info strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #f3e8ff;
+}
+
+.fortress-move-ribbon__info small {
+  display: block;
+  font-size: 0.78rem;
+  color: #c084fc;
+}
+
+.fortress-move-ribbon__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fortress-move-ribbon__shovel-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fortress-move-ribbon__shovel-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.fortress-move-ribbon__cancel-btn {
+  background: rgba(100, 116, 139, 0.3);
+  border: 1px solid #94a3b8;
+  color: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fortress-move-ribbon__cancel-btn:hover {
+  background: #64748b;
+}
+
+/* Moving Tile Effects */
+.fortress-defense-tile--moving {
+  border: 2px solid #a855f7 !important;
+  background: rgba(168, 85, 247, 0.3) !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.7) !important;
+  transform: scale(1.06);
+  z-index: 7;
+}
+
+.fortress-defense-tile--shovel-target:hover {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.4) !important;
+  cursor: crosshair;
+}
+
+.fortress-placed-plant-wrapper--moving {
+  filter: drop-shadow(0 0 10px #a855f7);
+  animation: bobPlant 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes bobPlant {
+  from { transform: translateY(0); }
+  to { transform: translateY(-5px); }
+}
+
+.fortress-placed-move-tag {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #7e22ce;
+  border: 1px solid #d8b4fe;
+  color: #ffffff;
+  font-size: 0.58rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
