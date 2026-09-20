@@ -20,7 +20,6 @@ import {
 } from '../../utils/gameConstants'
 import type { FarmingInventory } from '../../utils/pvpRewardManager'
 import { navigateAndTrack, trackEvent } from '../../utils/analytics'
-import { adManager } from '../../utils/adManager'
 import './Shop.css'
 
 const commonSeedImg = '/game-assets/greenfoot/seed_pack_common_whitebg.webp'
@@ -149,48 +148,6 @@ export const EMOTE_ITEMS: EmoteItem[] = [
   },
 ]
 
-export const ADS_ENABLED = true
-
-export interface AdRewardSlot {
-  id: 'shop_channel_1' | 'shop_channel_2' | 'shop_channel_3'
-  slotNumber: number
-  rewardGold: number
-  title: string
-  desc: string
-  icon: string
-  badge: string
-}
-
-export const AD_REWARD_SLOTS: AdRewardSlot[] = [
-  {
-    id: 'shop_channel_1',
-    slotNumber: 1,
-    rewardGold: 10,
-    title: 'Canal Botánico 1',
-    desc: 'Mira un video y recibe +10 de Oro.',
-    icon: '🌱',
-    badge: 'CANAL #1',
-  },
-  {
-    id: 'shop_channel_2',
-    slotNumber: 2,
-    rewardGold: 10,
-    title: 'Canal Solar 2',
-    desc: 'Mira un video y recibe +10 de Oro.',
-    icon: '☀️',
-    badge: 'CANAL #2',
-  },
-  {
-    id: 'shop_channel_3',
-    slotNumber: 3,
-    rewardGold: 10,
-    title: 'Bóveda Mística 3',
-    desc: 'Mira un video y recibe +10 de Oro.',
-    icon: '💎',
-    badge: 'CANAL #3',
-  },
-]
-
 export interface ShopProps {
   initialTab?: 'packs' | 'pass' | 'gold' | 'energy' | 'market'
   userTokens: number
@@ -311,21 +268,6 @@ export default function Shop({
     }
   }, [])
 
-  // Estado de vistas de anuncios para los 3 canales de oro (máx 5 vistas c/u)
-  const [adViews, setAdViews] = useState<Record<string, number>>({})
-  const [isWatchingAd, setIsWatchingAd] = useState<string | null>(null)
-
-  useEffect(() => {
-    let mounted = true
-    adManager.getAdViewsStatus().then((res) => {
-      if (mounted && res.success) {
-        setAdViews(res.views)
-      }
-    })
-    return () => {
-      mounted = false
-    }
-  }, [])
 
   /** Precio del sobre. Respaldo en PACK_DEFINITIONS si el servidor no responde. */
   const packPrice = (packId: PackId): number =>
@@ -426,63 +368,6 @@ export default function Shop({
     }
   }
 
-  const handleWatchAd = async (adSlot: AdRewardSlot) => {
-    soundManager.playSound('click', 0.5)
-    const views = adViews[adSlot.id] || 0
-    if (views >= 5) {
-      setThemedAlert({
-        title: 'LÍMITE ALCANZADO',
-        message: 'Has alcanzado el límite diario de 5 anuncios para este canal. ¡Vuelve mañana para seguir ganando oro!',
-        icon: '⏳',
-      })
-      return
-    }
-
-    if (isWatchingAd) return
-    setIsWatchingAd(adSlot.id)
-
-    try {
-      const finished = await adManager.showAd(adSlot.id)
-      if (finished) {
-        const res = await adManager.claimAdReward(adSlot.id)
-        if (res.success) {
-          soundManager.playSound('points', 0.8)
-          setAdViews((prev) => ({
-            ...prev,
-            [adSlot.id]: res.viewsToday ?? (views + 1),
-          }))
-          setThemedAlert({
-            title: '¡RECOMPENSA OBTENIDA!',
-            message: `🎉 ¡Has completado el anuncio!\n+${res.goldAdded ?? 10} Monedas de Oro 🪙 acreditadas a tu cuenta.\n(Vistas hoy: ${res.viewsToday ?? (views + 1)}/5)`,
-            icon: '🪙',
-          })
-          if (onServerChange) {
-            onServerChange()
-          }
-        } else {
-          setThemedAlert({
-            title: 'AVISO DE RECOMPENSA',
-            message: res.error || 'No se pudo reclamar la recompensa.',
-            icon: '⚠️',
-          })
-        }
-      } else {
-        setThemedAlert({
-          title: 'ANUNCIO INCOMPLETO',
-          message: 'Debes ver el video completo para recibir la recompensa de 20 monedas de oro.',
-          icon: 'ℹ️',
-        })
-      }
-    } catch (err: any) {
-      setThemedAlert({
-        title: 'ERROR',
-        message: err?.message || 'Error al reproducir el anuncio.',
-        icon: '⚠️',
-      })
-    } finally {
-      setIsWatchingAd(null)
-    }
-  }
 
   const handleBuyVipFromShop = async () => {
     if (onBuyVipPass) {
@@ -647,7 +532,7 @@ export default function Shop({
             setActiveTab('gold')
           }}
         >
-          {ADS_ENABLED ? '💰 ORO, EMOTES & ADS' : '💰 ORO & EMOTES'}
+          💰 ORO & EMOTES
         </button>
 
         <button
@@ -937,7 +822,7 @@ export default function Shop({
                         <div>
                           <h2 className="shop-epic-section__title">BÓVEDA DE MONEDAS DE ORO</h2>
                           <span className="shop-epic-section__subtitle">
-                            Compra paquetes de oro o mira videos diarios para ganar monedas gratis.
+                            Compra paquetes de oro para potenciar tus cartas y acelerar tu progreso.
                           </span>
                         </div>
                       </div>
@@ -957,7 +842,7 @@ export default function Shop({
                       </div>
                     </div>
 
-                    <div className="shop-epic-gold-grid shop-epic-gold-grid--compact">
+                    <div className="shop-epic-gold-grid">
                       {GOLD_PACKAGES.map((pkg) => (
                         <div
                           key={pkg.id}
@@ -987,49 +872,6 @@ export default function Shop({
                           </button>
                         </div>
                       ))}
-                    </div>
-
-                    {/* 2. ZONA DE 3 BOTONES DE ANUNCIOS RECOMPENSADOS (+10 ORO, MÁX 5/5) */}
-                    <div className="shop-gold-ads-container">
-                      <div className="shop-gold-ads-title">
-                        <span>📺</span>
-                        <strong>VIDEOS RECOMPENSADOS (+10 ORO CADA UNO)</strong>
-                        <small>Hasta 50 de oro por canal cada día (5 vistas máx.)</small>
-                      </div>
-                      <div className="shop-gold-ads-grid">
-                        {AD_REWARD_SLOTS.map((ad) => {
-                          const views = adViews[ad.id] || 0
-                          const isMaxed = views >= 5
-                          const isCurrentWatching = isWatchingAd === ad.id
-
-                          return (
-                            <div key={ad.id} className={`shop-gold-ad-slot ${isMaxed ? 'shop-gold-ad-slot--maxed' : ''}`}>
-                              <div className="shop-gold-ad-slot__header">
-                                <span className="shop-gold-ad-slot__icon">{ad.icon}</span>
-                                <div className="shop-gold-ad-slot__info">
-                                  <strong className="shop-gold-ad-slot__title">{ad.title}</strong>
-                                  <span className="shop-gold-ad-slot__counter">
-                                    Vistas hoy: <strong>{views}/5</strong>
-                                  </span>
-                                </div>
-                              </div>
-
-                              <button
-                                type="button"
-                                className="shop-gold-ad-slot__btn"
-                                disabled={isMaxed || isWatchingAd !== null}
-                                onClick={() => handleWatchAd(ad)}
-                              >
-                                {isCurrentWatching
-                                  ? '⏳ REPRODUCIENDO...'
-                                  : isMaxed
-                                  ? '✅ AGOTADO (5/5)'
-                                  : '▶ VER VIDEO (+10 🪙)'}
-                              </button>
-                            </div>
-                          )
-                        })}
-                      </div>
                     </div>
                   </div>
                 </div>
