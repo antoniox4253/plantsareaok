@@ -235,18 +235,18 @@
   pointer-events: none;
 }
 
-.fortress-field-zone--attack {
-  left: 20px;
-  background: rgba(239, 68, 68, 0.3);
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  color: #fca5a5;
-}
-
 .fortress-field-zone--defense {
-  right: 20px;
+  left: 20px;
   background: rgba(34, 197, 94, 0.3);
   border: 1px solid rgba(34, 197, 94, 0.5);
   color: #86efac;
+}
+
+.fortress-field-zone--attack {
+  right: 20px;
+  background: rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
 }
 
 .fortress-field-half-line {
@@ -273,7 +273,7 @@
 
 .fortress-lane-tag {
   position: absolute;
-  left: 6px;
+  right: 8px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(148, 163, 184, 0.3);
   color: #94a3b8;
@@ -285,11 +285,11 @@
   z-index: 4;
 }
 
-/* Casillas defensivas (columnas 7 a 13) */
+/* Casillas defensivas (columnas 0 a 6, lado izquierdo) */
 .fortress-lane-tiles {
   position: absolute;
-  left: 50%;
-  right: 4%;
+  left: 4%;
+  right: 50%;
   height: 90%;
   display: grid;
   grid-template-columns: repeat(7, 1fr);

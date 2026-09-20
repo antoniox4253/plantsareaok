@@ -2051,6 +2051,23 @@ export const SupabaseService = {
     }
   },
 
+  async rerollClanFortressMatch(excludeClanId?: string): Promise<{ success: boolean; data?: ClanFortressMatchOpponent; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('reroll_clan_fortress_match', {
+        p_exclude_clan_id: excludeClanId || null,
+      })
+      if (error) {
+        logError('rerollClanFortressMatch', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data: data as ClanFortressMatchOpponent }
+    } catch (e: any) {
+      logError('rerollClanFortressMatch', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   async settleClanFortressRaid(
     targetClanId: string,
     damageDealt: number,

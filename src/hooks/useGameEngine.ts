@@ -228,6 +228,7 @@ export function useGameEngine() {
    */
   const soyP1Ref = useRef<boolean | null>(null)
   const asyncOpponentRef = useRef<AsyncOpponentController | null>(null)
+  const isPrepPhaseRef = useRef<boolean>(false)
 
   /**
    * Huellas tomadas y aún sin mandar.
@@ -486,10 +487,12 @@ export function useGameEngine() {
     lanesCount?: number,
     clanFortressLayout?: ClanFortressPlant[],
     targetBaseHp?: number,
-    initialAttackSuns?: number
+    initialAttackSuns?: number,
+    isPreparationPhase?: boolean
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
+    isPrepPhaseRef.current = Boolean(isPreparationPhase)
 
     const effectiveTreeBonusHp = typeof treeBonusHp === 'number'
       ? treeBonusHp
@@ -1659,6 +1662,13 @@ export function useGameEngine() {
       const state = stateRef.current
       if (state.status !== 'playing') return
 
+      if (isPrepPhaseRef.current) {
+        lastFrameMsRef.current = nowMs
+        accumulatorMsRef.current = 0
+        forceRender()
+        return
+      }
+
       // ── WATCHDOG DE AUTORREPARACIÓN RANKED ASYNC ───────────────────────────
       // Protege contra bloqueos permanentes causados por pérdida de paquetes,
       // latencia de red, intenciones tardías del bot o desincronizaciones de timeline.
@@ -1923,7 +1933,13 @@ export function useGameEngine() {
     forceRender()
   }, [forceRender])
 
+  const setPreparationPhase = useCallback((isPrep: boolean) => {
+    isPrepPhaseRef.current = isPrep
+    forceRender()
+  }, [forceRender])
+
   return {
+    setPreparationPhase,
     /**
      * El tic actual. Lo necesita la interfaz para pintar cualquier cosa que
      * dependa de un plazo del juego: el velo de enfriamiento de las cartas, la

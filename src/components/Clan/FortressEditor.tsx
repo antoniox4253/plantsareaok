@@ -58,8 +58,8 @@ export default function FortressEditor({
 
   const sunsRemaining = defenseSunsBudget - sunsSpent
 
-  // Grid defensivo: 5 carriles (0..4) x 7 columnas defensivas (7..13)
-  const defenseCols = [7, 8, 9, 10, 11, 12, 13]
+  // Grid defensivo: 5 carriles (0..4) x 7 columnas defensivas (0..6)
+  const defenseCols = [0, 1, 2, 3, 4, 5, 6]
 
   const handleTileClick = (lane: number, col: number) => {
     const existingIndex = layout.findIndex((p) => p.lane === lane && p.col === col)
@@ -123,7 +123,7 @@ export default function FortressEditor({
       setSelectedTileToMove(null)
       setSaveStatus({
         type: 'success',
-        message: `✓ ¡Planta reubicada al Carril ${lane + 1}, Casilla ${col - 6}!`,
+        message: `✓ ¡Planta reubicada al Carril ${lane + 1}, Casilla ${col + 1}!`,
       })
       return
     }
@@ -137,7 +137,7 @@ export default function FortressEditor({
       const name = PLANT_CONFIGS[plant.plantId]?.name || plant.plantId
       setSaveStatus({
         type: 'success',
-        message: `Moviendo "${name}" (Carril ${lane + 1}, C${col - 6}). Haz clic en cualquier casilla para reubicarla o intercambiarla.`,
+        message: `Moviendo "${name}" (Carril ${lane + 1}, C${col + 1}). Haz clic en cualquier casilla para reubicarla o intercambiarla.`,
       })
       return
     }
@@ -315,7 +315,7 @@ export default function FortressEditor({
               <div>
                 <strong>Moviendo: {movingCfg?.name || 'Planta'}</strong>
                 <small>
-                  Carril {selectedTileToMove.lane + 1}, Casilla {selectedTileToMove.col - 6} • Haz clic en cualquier casilla de la arena para reubicarla o intercambiarla
+                  Carril {selectedTileToMove.lane + 1}, Casilla {selectedTileToMove.col + 1} • Haz clic en cualquier casilla de la arena para reubicarla o intercambiarla
                 </small>
               </div>
             </div>
@@ -356,12 +356,12 @@ export default function FortressEditor({
           {/* Overlay de perspectiva y profundidad */}
           <div className="fortress-editor-depth-overlay" />
 
-          {/* División del campo: Zona Atacante vs Zona Defensora */}
-          <div className="fortress-field-zone fortress-field-zone--attack">
-            <span>🛡️ ZONA DE AVANCE ENEMIGO (C0 A C6)</span>
-          </div>
+          {/* División del campo: Zona Defensora (Izquierda) vs Zona Atacante (Derecha) */}
           <div className="fortress-field-zone fortress-field-zone--defense">
-            <span>🏰 TU BASTIÓN DEFENSIVO (C7 A C13)</span>
+            <span>🏰 TU BASTIÓN DEFENSIVO (C0 A C6)</span>
+          </div>
+          <div className="fortress-field-zone fortress-field-zone--attack">
+            <span>⚔️ ZONA DE AVANCE ENEMIGO (C7 A C13)</span>
           </div>
 
           {/* Línea divisoria central */}

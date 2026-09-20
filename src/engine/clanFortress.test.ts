@@ -309,4 +309,28 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
       pvpDamageBonusPct: 10,
     })
   })
+
+  it('respeta la perspectiva de defensa (0..6) y el sentido espejo hacia el atacante (13..7)', () => {
+    const state = createBattleState(777, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true)
+
+    // Formación configurada por el clan defensor en su Bastión (espacio local 0 a 6):
+    // - Peashooter en retaguardia: col 1
+    // - Tallnut en primera línea: col 5
+    const pRivalRetaguardia = crearPlantaDelRival(state, 'peashooter', 2, 1)
+    const pRivalVanguardia = crearPlantaDelRival(state, 'tallnut', 2, 5)
+
+    // En la pantalla del atacante (P1), las plantas del rival aparecen espejadas:
+    // col 1 -> 13 - 1 = 12 (fondo derecho)
+    // col 5 -> 13 - 5 = 8 (frente defensivo derecho)
+    expect(pRivalRetaguardia.col).toBe(12)
+    expect(pRivalVanguardia.col).toBe(8)
+    expect(pRivalRetaguardia.x).toBeGreaterThan(pRivalVanguardia.x) // La retaguardia está más a la derecha
+
+    // El atacante P1 planta desde la izquierda (col 1 retaguardia, col 4 vanguardia)
+    const pPropiaRetaguardia = crearPlantaPropia(state, 'peashooter', 2, 1)
+    const pPropiaVanguardia = crearPlantaPropia(state, 'wallnut', 2, 4)
+    expect(pPropiaRetaguardia.col).toBe(1)
+    expect(pPropiaVanguardia.col).toBe(4)
+    expect(pPropiaRetaguardia.x).toBeLessThan(pPropiaVanguardia.x) // La vanguardia aliada está más a la derecha
+  })
 })

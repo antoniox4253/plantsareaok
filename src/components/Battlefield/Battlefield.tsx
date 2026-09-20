@@ -315,6 +315,7 @@ export default function Battlefield({
     rankedAsyncInconsistency,
     sessionGeneration,
     updateInitialTreeBonusHp,
+    setPreparationPhase,
   } = useGameEngine()
 
   const { user } = useAuth()
@@ -557,6 +558,90 @@ export default function Battlefield({
     return matchMode === 'clan_fortress' ? LANES_CONFIG_5 : LANES_CONFIG
   }, [matchMode])
   const [clanRaidResult, setClanRaidResult] = useState<ClanFortressRaidResult | null>(null)
+  const [clanRaidPhase, setClanRaidPhase] = useState<'prep' | 'battle'>('prep')
+  const [clanRaidPrepTimer, setClanRaidPrepTimer] = useState<number>(120)
+  const [currentFortressOpponent, setCurrentFortressOpponent] = useState<ClanFortressMatchOpponent | null>(
+    () => clanFortressConfig?.targetClan || null
+  )
+  const [isRerollingTarget, setIsRerollingTarget] = useState<boolean>(false)
+  const [rerollError, setRerollError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (clanFortressConfig?.targetClan) {
+      setCurrentFortressOpponent(clanFortressConfig.targetClan)
+    }
+  }, [clanFortressConfig?.targetClan])
+
+  const handleStartClanRaidBattle = useCallback(() => {
+    soundManager.playSound('click', 0.8)
+    setClanRaidPhase('battle')
+    setPreparationPhase(false)
+  }, [setPreparationPhase])
+
+  const handleRerollClanRaidTarget = useCallback(async () => {
+    if (isRerollingTarget || !currentFortressOpponent) return
+    setIsRerollingTarget(true)
+    setRerollError(null)
+    soundManager.playSound('click', 0.4)
+
+    try {
+      const res = await supabaseService.rerollClanFortressMatch(currentFortressOpponent.targetClanId)
+      if (!res.success || !res.data) {
+        setRerollError(res.error || 'No se encontró otro rival disponible.')
+        setIsRerollingTarget(false)
+        return
+      }
+
+      const newOpponent = res.data
+      setCurrentFortressOpponent(newOpponent)
+      setClanRaidPrepTimer(120)
+      soundManager.playSound('plantation', 0.8)
+
+      startGame(
+        Math.floor(Math.random() * 1000000),
+        false,
+        undefined,
+        userElo,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        'auth-v2',
+        treeBonusHpRef.current,
+        0,
+        treeSkinRef.current,
+        null,
+        5,
+        newOpponent.layout,
+        newOpponent.targetBaseHp,
+        newOpponent.initialAttackSuns ?? 200,
+        true // isPreparationPhase
+      )
+    } catch (err: any) {
+      setRerollError(err?.message || 'Error al buscar otro rival')
+    } finally {
+      setIsRerollingTarget(false)
+    }
+  }, [currentFortressOpponent, isRerollingTarget, setPreparationPhase, startGame, userElo])
+
+  useEffect(() => {
+    if (matchMode !== 'clan_fortress' || clanRaidPhase !== 'prep') return
+
+    const intervalId = setInterval(() => {
+      setClanRaidPrepTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalId)
+          soundManager.playSound('click', 0.8)
+          setClanRaidPhase('battle')
+          setPreparationPhase(false)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(intervalId)
+  }, [matchMode, clanRaidPhase, setPreparationPhase])
 
   const allCatalogCards = useMemo(() => Object.keys(PLANT_CONFIGS) as PlantId[], [])
   const mazoMioParsed = useMemo(() => leerMazo(mazosDeLaSala?.mio), [mazosDeLaSala?.mio])
@@ -1354,8 +1439,8 @@ export default function Battlefield({
         }
       }
 
-      if (matchMode === 'clan_fortress' && clanFortressConfig?.targetClan) {
-        const target = clanFortressConfig.targetClan
+      if (matchMode === 'clan_fortress' && (currentFortressOpponent || clanFortressConfig?.targetClan)) {
+        const target = currentFortressOpponent || clanFortressConfig!.targetClan
         const isVic = gameStatus === 'victory'
         const maxHp = target.targetMaxBaseHp || 1000
         const curHp = Math.max(0, p2BaseHp)
@@ -1415,7 +1500,7 @@ export default function Battlefield({
         }
       }
     }
-  }, [gameStatus, onBattleComplete, onServerEloUpdated, matchMode, onColosseumComplete, roomId, opponentId, currentUserId, tournamentOpponent?.tournamentId, terminarPorOrdenDelServidor, isAsyncMatch, soyP1])
+  }, [gameStatus, onBattleComplete, onServerEloUpdated, matchMode, onColosseumComplete, roomId, opponentId, currentUserId, tournamentOpponent?.tournamentId, terminarPorOrdenDelServidor, isAsyncMatch, soyP1, currentFortressOpponent])
 
   useEffect(() => {
     if (practicePlantId) {
@@ -1425,7 +1510,8 @@ export default function Battlefield({
       }
     } else if (matchMode === 'strategic_test' && strategicPlaytestConfig) {
       startStrategicPlaytestGame(strategicPlaytestConfig, activeDeck)
-    } else if (matchMode === 'clan_fortress' && clanFortressConfig?.targetClan) {
+    } else if (matchMode === 'clan_fortress' && (currentFortressOpponent || clanFortressConfig?.targetClan)) {
+      const opp = currentFortressOpponent || clanFortressConfig!.targetClan
       startGame(
         seed || Math.floor(Math.random() * 1000000),
         false,
@@ -1441,10 +1527,13 @@ export default function Battlefield({
         treeSkinRef.current,
         null,
         5,
-        clanFortressConfig.targetClan.layout,
-        clanFortressConfig.targetClan.targetBaseHp,
-        clanFortressConfig.targetClan.initialAttackSuns ?? 200
+        opp.layout,
+        opp.targetBaseHp,
+        opp.initialAttackSuns ?? 200,
+        true // isPreparationPhase = true
       )
+      setClanRaidPhase('prep')
+      setClanRaidPrepTimer(120)
     } else if (gameStatus === 'ready') {
       hasHandledEndRef.current = false
 
@@ -1636,13 +1725,36 @@ export default function Battlefield({
       <BaseTower
         team="p2"
         hp={p2BaseHp}
-        maxHp={INITIAL_BASE_HP + rivalTreeBonusHp}
+        maxHp={
+          matchMode === 'clan_fortress'
+            ? (currentFortressOpponent?.targetMaxBaseHp || currentFortressOpponent?.targetBaseHp || 1000)
+            : INITIAL_BASE_HP + rivalTreeBonusHp
+        }
         sunBank={roomId ? undefined : p2SunBank}
-        nombre={nombres?.rival || tournamentOpponent?.name || (roomId ? 'Rival' : 'Bot Entrenador')}
+        nombre={
+          matchMode === 'clan_fortress'
+            ? (currentFortressOpponent?.targetClanName || 'Fortaleza Rival')
+            : (nombres?.rival || tournamentOpponent?.name || (roomId ? 'Rival' : 'Bot Entrenador'))
+        }
         level={rivalTreeLevel}
         skin={rivalTreeSkin}
         sideBadge={
-          matchMode === 'tournament' ? (
+          matchMode === 'clan_fortress' ? (
+            <div
+              className="battlefield-colosseum-header-pill"
+              style={{
+                borderColor: '#eab308',
+                boxShadow: '0 0 15px rgba(234, 179, 8, 0.4)',
+                background: 'rgba(15, 23, 42, 0.92)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span className="battlefield-colosseum-icon">{currentFortressOpponent?.targetBadge || '🏰'}</span>
+              <span>{currentFortressOpponent?.targetClanTag || '#FORT'}</span>
+              <span>•</span>
+              <span style={{ color: '#38bdf8' }}>💎 {Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} en juego</span>
+            </div>
+          ) : matchMode === 'tournament' ? (
             <div
               className="battlefield-colosseum-header-pill"
               style={{
@@ -1686,6 +1798,79 @@ export default function Battlefield({
         }
       />
 
+      {/* HUD DE PREPARACIÓN Y EXPLORACIÓN EN ASALTO A FORTALEZA (120S) */}
+      {matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && (
+        <div className="clan-raid-prep-hud">
+          <div className="clan-raid-prep-hud__target">
+            <span className="clan-raid-prep-hud__badge">{currentFortressOpponent?.targetBadge || '🏰'}</span>
+            <div>
+              <div className="clan-raid-prep-hud__title-row">
+                <span className="clan-raid-prep-hud__name">{currentFortressOpponent?.targetClanName}</span>
+                <span className="clan-raid-prep-hud__tag">{currentFortressOpponent?.targetClanTag}</span>
+                {currentFortressOpponent?.isNpc && (
+                  <span className="clan-raid-prep-hud__npc-tag">BOT CLAN</span>
+                )}
+              </div>
+              <div className="clan-raid-prep-hud__meta-row">
+                <span>❤️ Base: <strong>{currentFortressOpponent?.targetBaseHp} HP</strong></span>
+                <span>•</span>
+                <span>💎 Botín: <strong>{Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} Gemas</strong></span>
+                <span>•</span>
+                <span>🌱 Defensas: <strong>{currentFortressOpponent?.layout?.length || 0} Plantas</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="clan-raid-prep-hud__center">
+            <div className="clan-raid-prep-timer-box">
+              <span className="clan-raid-prep-timer-box__label">⏳ FASE DE PREPARACIÓN</span>
+              <strong className="clan-raid-prep-timer-box__val">
+                {Math.floor(clanRaidPrepTimer / 60).toString().padStart(2, '0')}:{(clanRaidPrepTimer % 60).toString().padStart(2, '0')}
+              </strong>
+            </div>
+            {rerollError && (
+              <span className="clan-raid-prep-hud__error">⚠️ {rerollError}</span>
+            )}
+          </div>
+
+          <div className="clan-raid-prep-hud__actions">
+            <button
+              type="button"
+              className="clan-raid-prep-btn clan-raid-prep-btn--reroll"
+              onClick={handleRerollClanRaidTarget}
+              disabled={isRerollingTarget}
+              title="Buscar otro bot o clan rival pagando 500 de Oro"
+            >
+              {isRerollingTarget ? (
+                <>
+                  <span className="clan-fortress-mini-spinner" /> BUSCANDO...
+                </>
+              ) : (
+                '🔄 BUSCAR OTRO (500 🪙)'
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="clan-raid-prep-btn clan-raid-prep-btn--start"
+              onClick={handleStartClanRaidBattle}
+              title="Comenzar el asalto inmediatamente"
+            >
+              ⚔️ ¡INICIAR ASALTO YA!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Banner de asalto activo durante el combate */}
+      {matchMode === 'clan_fortress' && clanRaidPhase === 'battle' && (
+        <div className="clan-raid-active-banner">
+          <span>⚔️</span>
+          <span>ASALTO EN CURSO: <strong>{currentFortressOpponent?.targetClanName}</strong> ({currentFortressOpponent?.targetClanTag})</span>
+          <span className="clan-raid-active-banner__loot">💎 {Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} Gemas en juego</span>
+        </div>
+      )}
+
       {/* DIAGNÓSTICO DEL PVP
           Sólo en partidas con sala. Está en pantalla y no en la consola a
           propósito: con una captura de las dos ventanas se ve qué pasa, sin tener
@@ -1700,7 +1885,7 @@ export default function Battlefield({
               por qué exactamente. */}
       {/* Contra la máquina se dice: así nadie juega media hora creyendo que
           está subiendo de rango. En PvP no hace falta, ahí está el nick del rival. */}
-      {!roomId && !isPracticeMode && (
+      {!roomId && !isPracticeMode && matchMode !== 'clan_fortress' && (
         <div className="entrenamiento-aviso">🤖 Entrenamiento · sin puntos ni cofre</div>
       )}
 
@@ -2570,7 +2755,7 @@ export default function Battlefield({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong style={{ color: '#fef08a', fontSize: '0.95rem' }}>
-                      🏰 ASALTO A LA FORTALEZA: {clanFortressConfig?.targetClan?.targetClanName}
+                      🏰 ASALTO A LA FORTALEZA: {currentFortressOpponent?.targetClanName || clanFortressConfig?.targetClan?.targetClanName}
                     </strong>
                     <span style={{ fontSize: '1.25rem', letterSpacing: '3px' }}>
                       {clanRaidResult && clanRaidResult.starsEarned > 0 ? '⭐'.repeat(clanRaidResult.starsEarned) : '💀 DERROTA'}
