@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { PlantId } from '../../types/game'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { supabaseService } from '../../services/supabaseService'
@@ -14,14 +14,6 @@ interface FortressDonateModalProps {
   userGold: number
   clanName: string
   currentBudget: number
-}
-
-const SUNS_BY_RARITY: Record<string, number> = {
-  common: 25,
-  uncommon: 40,
-  rare: 75,
-  epic: 150,
-  legendary: 300,
 }
 
 export default function FortressDonateModal({

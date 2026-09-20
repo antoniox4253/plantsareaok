@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import type { PlantId, ClanFortressPlant } from '../../types/game'
 import { PLANT_CONFIGS, LANES_CONFIG_5, FORTRESS_SUN_COSTS } from '../../utils/gameConstants'
 import { supabaseService } from '../../services/supabaseService'
@@ -19,20 +19,20 @@ const SELECTABLE_PLANTS: PlantId[] = [
   'wallnut',
   'peashooter',
   'repeater',
-  'snowpea',
   'tallnut',
   'bonkchoy',
-  'spikeweed',
   'chomper',
-  'torchwood',
   'kernelpult',
   'iceberglettuce',
   'jalapeno',
   'melonpult',
+  'squash',
+  'threepeater',
+  'garlic',
 ]
 
 export default function FortressEditor({
-  clanId,
+  clanId: _clanId,
   clanName,
   initialLayout,
   defenseSunsBudget,

@@ -8,7 +8,7 @@ import {
   type ClanDepositLog,
   type KickValidationResult,
 } from '../../utils/clanManager'
-import type { PlantId, ClanFortressData, ClanFortressMatchOpponent, ClanFortressPlant } from '../../types/game'
+import type { PlantId, ClanFortressData, ClanFortressMatchOpponent } from '../../types/game'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { SeasonManager } from '../../utils/seasonManager'
 import { UserManager } from '../../utils/userManager'

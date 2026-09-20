@@ -737,12 +737,12 @@ function App() {
     setSalaId(null)
     setRivalId(opponent.targetClanId)
     setNombresEnPartida({
-      mio: currentUsername || 'Comandante',
+      mio: profile?.username || UserManager.getProfile().name || 'Comandante',
       rival: opponent.targetClanName,
     })
     setPracticePlantId(null)
     setScreen('battle')
-  }, [currentUsername])
+  }, [profile?.username])
 
   /** Cancelar la búsqueda y volver al menú. */
   const salirDeLaCola = async () => {

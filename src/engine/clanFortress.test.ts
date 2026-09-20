@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createBattleState, stepTick, crearPlantaPropia, crearPlantaDelRival } from './simulate'
+import { NIVEL_POR_DEFECTO } from './bot'
 import { LANES_CONFIG_5, FORTRESS_SUN_COSTS } from '../utils/gameConstants'
 import type { ClanFortressPlant } from '../types/game'
 
@@ -9,7 +10,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA WEB3'
       12345,
       false,
       false,
-      'bronce',
+      NIVEL_POR_DEFECTO,
       'auth-v2',
       1000,
       1000,
@@ -27,7 +28,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA WEB3'
   })
 
   it('permite crear y posicionar plantas en los 5 carriles (0 a 4)', () => {
-    const state = createBattleState(12345, false, false, 'bronce', 'auth-v2', 1000, 1000, null, null, 5, true)
+    const state = createBattleState(12345, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true)
 
     for (let lane = 0; lane < 5; lane++) {
       const p1 = crearPlantaPropia(state, 'peashooter', lane, 1)
@@ -41,7 +42,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA WEB3'
   })
 
   it('Threepeater en carril 3 dispara a carriles 2, 3 y 4 en modo 5 carriles', () => {
-    const state = createBattleState(999, false, false, 'bronce', 'auth-v2', 1000, 1000, null, null, 5, true)
+    const state = createBattleState(999, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true)
 
     // Colocar Threepeater en carril 3
     const threepeater = crearPlantaPropia(state, 'threepeater', 3, 1)
