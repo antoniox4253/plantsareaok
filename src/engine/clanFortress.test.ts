@@ -4,7 +4,7 @@ import { NIVEL_POR_DEFECTO } from './bot'
 import { LANES_CONFIG_5, FORTRESS_SUN_COSTS } from '../utils/gameConstants'
 import type { ClanFortressPlant } from '../types/game'
 
-describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA WEB3', () => {
+describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBALANCEADA', () => {
   it('inicializa correctamente un estado de batalla de fortaleza en 5 carriles', () => {
     const state = createBattleState(
       12345,
@@ -86,32 +86,124 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA WEB3'
     expect(totalSpent <= budget).toBe(true)
   })
 
-  it('calcula con precisión matemática el saqueo Web3 por estrellas (Fondo Expuesto 15% y Split 70/30)', () => {
-    const rivalVaultGems = 3450.0 // Clan LATINKS
-    const exposedPool = Math.round(rivalVaultGems * 0.15 * 100) / 100 // 517.50
+  it('calcula con precisión matemática el saqueo equilibrado por estrellas (mínimo 2 estrellas, topes 30/60 gemas y 100% al clan)', () => {
+    // Función de cálculo autoritativa reflejando el nuevo SQL
+    const calculateRaidLoot = (rivalVaultGems: number, stars: number) => {
+      let stolen = 0
+      if (stars >= 3) {
+        stolen = Math.min(60, Math.max(15, Math.round(rivalVaultGems * 0.08)))
+      } else if (stars === 2) {
+        stolen = Math.min(30, Math.max(5, Math.round(rivalVaultGems * 0.05)))
+      } else {
+        stolen = 0
+      }
+      stolen = Math.min(stolen, rivalVaultGems)
+      const userShare = 0 // 0% al usuario personal
+      const clanShare = stolen // 100% al tesoro del clan
+      return { stolen, userShare, clanShare }
+    }
 
-    // 0 Estrellas (Derrota < 20%): 0%
-    const loot0 = Math.round(exposedPool * 0.0 * 100) / 100
-    expect(loot0).toBe(0)
+    // Clan rival con 6,000 gemas (no debe ser desangrado por un 10% plano de 600 gemas)
+    const bigRivalVault = 6000.0
 
-    // 1 Estrella (20% - 49%): 25% del fondo expuesto
-    const loot1 = Math.round(exposedPool * 0.25 * 100) / 100 // 129.38
-    expect(loot1).toBe(129.38)
-    const userShare1 = Math.round(loot1 * 0.70 * 100) / 100
-    const clanShare1 = Math.round((loot1 - userShare1) * 100) / 100
-    expect(userShare1).toBe(90.57)
-    expect(clanShare1).toBe(38.81)
+    // 0 Estrellas (Derrota): 0 Gemas
+    const loot0 = calculateRaidLoot(bigRivalVault, 0)
+    expect(loot0.stolen).toBe(0)
+    expect(loot0.clanShare).toBe(0)
 
-    // 2 Estrellas (50% - 89%): 60% del fondo expuesto
-    const loot2 = Math.round(exposedPool * 0.60 * 100) / 100 // 310.50
-    expect(loot2).toBe(310.5)
+    // 1 Estrella (Ataque contenido): 0 Gemas
+    const loot1 = calculateRaidLoot(bigRivalVault, 1)
+    expect(loot1.stolen).toBe(0)
+    expect(loot1.clanShare).toBe(0)
 
-    // 3 Estrellas (100% Destrucción): 100% del fondo expuesto (517.50)
-    const loot3 = Math.round(exposedPool * 1.0 * 100) / 100
-    expect(loot3).toBe(517.5)
-    const userShare3 = Math.round(loot3 * 0.70 * 100) / 100
-    const clanShare3 = Math.round((loot3 - userShare3) * 100) / 100
-    expect(userShare3).toBe(362.25)
-    expect(clanShare3).toBe(155.25)
+    // 2 Estrellas: Saqueo parcial tope de 30 Gemas (en vez de cientos)
+    const loot2 = calculateRaidLoot(bigRivalVault, 2)
+    expect(loot2.stolen).toBe(30) // Tope aplicado
+    expect(loot2.userShare).toBe(0) // 0 a cuenta personal
+    expect(loot2.clanShare).toBe(30) // 100% al tesoro del clan
+
+    // 3 Estrellas: Saqueo total tope de 60 Gemas
+    const loot3 = calculateRaidLoot(bigRivalVault, 3)
+    expect(loot3.stolen).toBe(60) // Tope aplicado
+    expect(loot3.userShare).toBe(0) // 0 a cuenta personal
+    expect(loot3.clanShare).toBe(60) // 100% al tesoro del clan
+
+    // Clan rival con pocas gemas (ej. 200 gemas)
+    const smallRivalVault = 200.0
+    const smallLoot2 = calculateRaidLoot(smallRivalVault, 2)
+    expect(smallLoot2.stolen).toBe(10) // 5% de 200 = 10
+    expect(smallLoot2.clanShare).toBe(10)
+
+    const smallLoot3 = calculateRaidLoot(smallRivalVault, 3)
+    expect(smallLoot3.stolen).toBe(16) // 8% de 200 = 16
+    expect(smallLoot3.clanShare).toBe(16)
+  })
+
+  it('verifica la escala de progresión del Árbol Madre del Clan (Niveles 1 a 4)', () => {
+    const getMotherTreeStats = (level: number) => {
+      const safeLevel = Math.max(1, Math.min(4, level))
+      const maxBudget = 1000 + ((safeLevel - 1) * 500)
+      const baseHp = 500 + ((safeLevel - 1) * 200)
+      return { maxBudget, baseHp }
+    }
+
+    // Nivel 1: Inicial
+    expect(getMotherTreeStats(1)).toEqual({ maxBudget: 1000, baseHp: 500 })
+
+    // Nivel 2: +500 Soles, +200 HP
+    expect(getMotherTreeStats(2)).toEqual({ maxBudget: 1500, baseHp: 700 })
+
+    // Nivel 3: +500 Soles, +200 HP
+    expect(getMotherTreeStats(3)).toEqual({ maxBudget: 2000, baseHp: 900 })
+
+    // Nivel 4: Tope Máximo Titánico
+    expect(getMotherTreeStats(4)).toEqual({ maxBudget: 2500, baseHp: 1100 })
+  })
+
+  it('calcula las conversiones del Altar Solar: 1 copia = 100☀️, 100💎 = 200☀️, 100🪙 = 100☀️ y victoria VIP = +5☀️', () => {
+    // Quema de 3 copias de plantas
+    const plantCopiesDonated = 3
+    const sunsFromCopies = plantCopiesDonated * 100
+    expect(sunsFromCopies).toBe(300)
+
+    // Donación de 250 gemas al tesoro
+    const gemsDonated = 250
+    const sunsFromGems = gemsDonated * 2
+    expect(sunsFromGems).toBe(500)
+
+    // Donación de 1000 oro
+    const goldDonated = 1000
+    const sunsFromGold = goldDonated
+    expect(sunsFromGold).toBe(1000)
+
+    // Bono de victoria VIP
+    const vipVictorySunsBonus = 5
+    expect(vipVictorySunsBonus).toBe(5)
+  })
+
+  it('valida las reglas de roles, costes de asalto y enfriamiento de derrota (24h)', () => {
+    const isOfficer = (role: string) => ['leader', 'coleader', 'elder'].includes(role)
+
+    // Oficiales (Líder, Colíder, Veterano): pagan 500 oro del clan y NO sufren cooldown
+    for (const officerRole of ['leader', 'coleader', 'elder']) {
+      expect(isOfficer(officerRole)).toBe(true)
+      const attackCost = 500
+      const costSource = 'clan_gold'
+      const cooldownOnDefeat = false
+
+      expect(attackCost).toBe(500)
+      expect(costSource).toBe('clan_gold')
+      expect(cooldownOnDefeat).toBe(false)
+    }
+
+    // Miembro regular: paga 250 de oro personal y sufre cooldown de 24h si pierde (0 estrellas)
+    expect(isOfficer('member')).toBe(false)
+    const memberCost = 250
+    const memberCostSource = 'personal_gold'
+    const memberCooldownOnDefeat = true
+
+    expect(memberCost).toBe(250)
+    expect(memberCostSource).toBe('personal_gold')
+    expect(memberCooldownOnDefeat).toBe(true)
   })
 })

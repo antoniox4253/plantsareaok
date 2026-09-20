@@ -127,6 +127,10 @@
   gap: 8px;
 }
 
+.fortress-modal-tabs--three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 .fortress-modal-tab {
   padding: 10px;
   background: rgba(30, 41, 59, 0.7);

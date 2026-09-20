@@ -12,8 +12,10 @@ interface FortressDonateModalProps {
   onSuccess: (newBudget: number, sunsGained: number) => void
   plantCopies: Record<PlantId, number>
   userGold: number
+  userGems?: number
   clanName: string
   currentBudget: number
+  maxBudget?: number
 }
 
 export default function FortressDonateModal({
@@ -22,13 +24,16 @@ export default function FortressDonateModal({
   onSuccess,
   plantCopies,
   userGold,
+  userGems = 0,
   clanName,
   currentBudget,
+  maxBudget = 1000,
 }: FortressDonateModalProps) {
-  const [donateTab, setDonateTab] = useState<'seeds' | 'gold'>('seeds')
+  const [donateTab, setDonateTab] = useState<'seeds' | 'gems' | 'gold'>('seeds')
   const [selectedPlant, setSelectedPlant] = useState<PlantId | null>(null)
   const [copiesToDonate, setCopiesToDonate] = useState<number>(1)
-  const [goldToDonate, setGoldToDonate] = useState<number>(1000)
+  const [gemsToDonate, setGemsToDonate] = useState<number>(100)
+  const [goldToDonate, setGoldToDonate] = useState<number>(500)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -39,21 +44,19 @@ export default function FortressDonateModal({
     (pid) => (plantCopies[pid] || 0) > 0
   )
 
-  const selectedConfig = selectedPlant ? PLANT_CONFIGS[selectedPlant] : null
   const selectedMaxCopies = selectedPlant ? (plantCopies[selectedPlant] || 0) : 0
 
-  // Cálculo de soles estimados
+  // Cálculo de soles estimados según las reglas del usuario:
+  // 1 copia = 100 soles
+  // 100 gemas = 200 soles
+  // 100 oro = 100 soles
   let estimatedSuns = 0
   if (donateTab === 'seeds' && selectedPlant) {
-    // Estimación por rareza según coste base
-    const baseCost = selectedConfig?.cost || 100
-    let sunsPerCopy = 25
-    if (baseCost >= 300) sunsPerCopy = 300
-    else if (baseCost >= 200) sunsPerCopy = 75
-    else if (baseCost >= 125) sunsPerCopy = 40
-    estimatedSuns = copiesToDonate * sunsPerCopy
+    estimatedSuns = copiesToDonate * 100
+  } else if (donateTab === 'gems') {
+    estimatedSuns = Math.floor(gemsToDonate * 2)
   } else if (donateTab === 'gold') {
-    estimatedSuns = Math.floor(goldToDonate / 10)
+    estimatedSuns = goldToDonate
   }
 
   const handleDonate = async () => {
@@ -68,10 +71,22 @@ export default function FortressDonateModal({
           setIsSubmitting(false)
           return
         }
-        res = await supabaseService.donateSunsToFortress(selectedPlant, copiesToDonate, 0)
+        res = await supabaseService.donateSunsToFortress(selectedPlant, copiesToDonate, 0, 0)
+      } else if (donateTab === 'gems') {
+        if (gemsToDonate < 50) {
+          setErrorMsg('La donación mínima de gemas es 50 💎')
+          setIsSubmitting(false)
+          return
+        }
+        if (userGems < gemsToDonate) {
+          setErrorMsg('No tienes suficientes gemas')
+          setIsSubmitting(false)
+          return
+        }
+        res = await supabaseService.donateSunsToFortress(undefined, 0, 0, gemsToDonate)
       } else {
-        if (goldToDonate < 500) {
-          setErrorMsg('La donación mínima de oro es 500 🪙')
+        if (goldToDonate < 100) {
+          setErrorMsg('La donación mínima de oro es 100 🪙')
           setIsSubmitting(false)
           return
         }
@@ -80,7 +95,7 @@ export default function FortressDonateModal({
           setIsSubmitting(false)
           return
         }
-        res = await supabaseService.donateSunsToFortress(undefined, 0, goldToDonate)
+        res = await supabaseService.donateSunsToFortress(undefined, 0, goldToDonate, 0)
       }
 
       if (!res.success) {
@@ -116,11 +131,11 @@ export default function FortressDonateModal({
         </div>
 
         <div className="fortress-modal-body">
-          {/* Indicador de presupuesto actual */}
+          {/* Indicador de presupuesto actual y límite del Árbol Madre */}
           <div className="fortress-budget-banner">
             <div className="fortress-budget-stat">
               <span className="label">Presupuesto Solar Actual</span>
-              <strong className="value">☀️ {currentBudget} Soles</strong>
+              <strong className="value">☀️ {currentBudget} / {maxBudget} Soles</strong>
             </div>
             {estimatedSuns > 0 && (
               <div className="fortress-budget-stat fortress-budget-stat--gain">
@@ -130,8 +145,8 @@ export default function FortressDonateModal({
             )}
           </div>
 
-          {/* Selector de tipo de donación */}
-          <div className="fortress-modal-tabs">
+          {/* Selector de 3 tipos de donación */}
+          <div className="fortress-modal-tabs fortress-modal-tabs--three">
             <button
               type="button"
               className={`fortress-modal-tab ${donateTab === 'seeds' ? 'fortress-modal-tab--active' : ''}`}
@@ -141,7 +156,18 @@ export default function FortressDonateModal({
                 setErrorMsg(null)
               }}
             >
-              🌱 QUEMA DE COPIAS DE PLANTAS
+              🌱 COPIAS (1 = 100☀️)
+            </button>
+            <button
+              type="button"
+              className={`fortress-modal-tab ${donateTab === 'gems' ? 'fortress-modal-tab--active' : ''}`}
+              onClick={() => {
+                soundManager.playSound('click', 0.3)
+                setDonateTab('gems')
+                setErrorMsg(null)
+              }}
+            >
+              💎 GEMAS (100 = 200☀️)
             </button>
             <button
               type="button"
@@ -152,7 +178,7 @@ export default function FortressDonateModal({
                 setErrorMsg(null)
               }}
             >
-              🪙 ORO DEL JUGADOR
+              🪙 ORO (100 = 100☀️)
             </button>
           </div>
 
@@ -160,14 +186,14 @@ export default function FortressDonateModal({
           {donateTab === 'seeds' && (
             <div className="fortress-donate-seeds-pane">
               <p className="fortress-donate-hint">
-                Dona copias duplicadas de tus cartas para quemarlas en el Altar Solar. Cada copia otorga Soles
-                permanentes al presupuesto de tu clan.
+                Dona copias sobrantes de tus plantas para consagrarlas en el Altar Solar. 
+                <strong> Cada copia donada otorga +100 Soles</strong> permanentes al presupuesto defensivo del clan.
               </p>
 
               {availableSeeds.length === 0 ? (
                 <div className="fortress-donate-empty">
                   <span>🍃 No tienes copias duplicadas de plantas en tu inventario.</span>
-                  <small>Consigue sobres en la tienda o partidas PvP para obtener más copias.</small>
+                  <small>Abre sobres en la tienda o gana partidas PvP para obtener más copias.</small>
                 </div>
               ) : (
                 <div className="fortress-seeds-grid">
@@ -226,11 +252,57 @@ export default function FortressDonateModal({
             </div>
           )}
 
-          {/* TAB 2: DONACIÓN DE ORO */}
+          {/* TAB 2: DONACIÓN DE GEMAS AL TESORO */}
+          {donateTab === 'gems' && (
+            <div className="fortress-donate-gold-pane">
+              <p className="fortress-donate-hint">
+                Dona gemas directamente al Tesoro del Clan. Por cada <strong>100 Gemas donadas recibes 200 Soles</strong> para la fortaleza y las gemas engrosan las reservas del clan.
+              </p>
+
+              <div className="fortress-gold-user-balance">
+                <span>Tus Gemas disponibles:</span>
+                <strong style={{ color: '#67e8f9' }}>
+                  💎 {userGems.toLocaleString()}
+                </strong>
+              </div>
+
+              <div className="fortress-gold-presets">
+                {[50, 100, 250, 500].map((amount) => (
+                  <button
+                    key={amount}
+                    type="button"
+                    className={`fortress-gold-preset-btn ${gemsToDonate === amount ? 'active' : ''}`}
+                    onClick={() => {
+                      soundManager.playSound('click', 0.2)
+                      setGemsToDonate(amount)
+                    }}
+                    disabled={userGems < amount}
+                  >
+                    💎 {amount.toLocaleString()} Gemas
+                    <small>+{amount * 2} ☀️</small>
+                  </button>
+                ))}
+              </div>
+
+              <div className="fortress-custom-gold-input">
+                <label>Cantidad personalizada de gemas:</label>
+                <input
+                  type="number"
+                  min={50}
+                  step={25}
+                  max={userGems}
+                  value={gemsToDonate}
+                  onChange={(e) => setGemsToDonate(Math.max(0, parseInt(e.target.value) || 0))}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: DONACIÓN DE ORO */}
           {donateTab === 'gold' && (
             <div className="fortress-donate-gold-pane">
               <p className="fortress-donate-hint">
-                Convierte tus monedas de oro en energía solar para el clan. <strong>1,000 Oro = 100 Soles</strong>.
+                Convierte tus monedas de oro en energía solar para el bastión. <strong>100 Oro = 100 Soles</strong> (Relación 1 a 1).
               </p>
 
               <div className="fortress-gold-user-balance">
@@ -241,7 +313,7 @@ export default function FortressDonateModal({
               </div>
 
               <div className="fortress-gold-presets">
-                {[500, 1000, 2500, 5000].map((amount) => (
+                {[100, 250, 500, 1000].map((amount) => (
                   <button
                     key={amount}
                     type="button"
@@ -253,7 +325,7 @@ export default function FortressDonateModal({
                     disabled={userGold < amount}
                   >
                     🪙 {amount.toLocaleString()} Oro
-                    <small>+{Math.floor(amount / 10)} ☀️</small>
+                    <small>+{amount} ☀️</small>
                   </button>
                 ))}
               </div>
@@ -262,7 +334,7 @@ export default function FortressDonateModal({
                 <label>Cantidad personalizada de oro:</label>
                 <input
                   type="number"
-                  min={500}
+                  min={100}
                   step={100}
                   max={userGold}
                   value={goldToDonate}
@@ -283,7 +355,12 @@ export default function FortressDonateModal({
             type="button"
             className="fortress-btn-confirm"
             onClick={handleDonate}
-            disabled={isSubmitting || (donateTab === 'seeds' && !selectedPlant) || (donateTab === 'gold' && userGold < goldToDonate)}
+            disabled={
+              isSubmitting ||
+              (donateTab === 'seeds' && !selectedPlant) ||
+              (donateTab === 'gems' && userGems < gemsToDonate) ||
+              (donateTab === 'gold' && userGold < goldToDonate)
+            }
           >
             {isSubmitting ? 'DONANDO...' : `☀️ DONAR Y SUMAR +${estimatedSuns} SOLES`}
           </button>

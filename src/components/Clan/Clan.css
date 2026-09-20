@@ -4554,5 +4554,371 @@
   line-height: 1.35;
 }
 
+/* ==============================================================================
+   ÁRBOL MADRE DEL CLAN & SISTEMA DE ROLES RPG
+   ============================================================================== */
 
+.clan-role-action-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fef08a;
+  background: linear-gradient(135deg, #854d0e 0%, #a16207 100%);
+  border: 1px solid #eab308;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
 
+.clan-role-action-btn:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #a16207 0%, #ca8a04 100%);
+  box-shadow: 0 4px 10px rgba(234, 179, 8, 0.35);
+  border-color: #fef08a;
+}
+
+/* Tarjeta del Árbol Madre del Clan */
+.clan-fortress-tree-card {
+  background: linear-gradient(135deg, rgba(20, 83, 45, 0.35) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid rgba(74, 222, 128, 0.4);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(34, 197, 94, 0.15);
+}
+
+.clan-ftree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.clan-ftree-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clan-ftree-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 8px #4ade80);
+}
+
+.clan-ftree-title h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #86efac;
+  letter-spacing: 0.5px;
+}
+
+.clan-ftree-title p {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.clan-ftree-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid #4ade80;
+  color: #bbf7d0;
+}
+
+.clan-ftree-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.clan-ftree-stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.clan-ftree-stat-item strong {
+  color: #facc15;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.clan-ftree-progress-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.clan-ftree-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.clan-ftree-progress-row > span {
+  width: 95px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.clan-ftree-progress-row > strong {
+  width: 70px;
+  text-align: right;
+  font-size: 11.5px;
+  color: #f8fafc;
+}
+
+.clan-ftree-bar-track {
+  flex: 1;
+  height: 10px;
+  background: #1e293b;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.clan-ftree-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.clan-ftree-bar-fill--water {
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+
+.clan-ftree-bar-fill--fert {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+
+.clan-ftree-bar-fill--gems {
+  background: linear-gradient(90deg, #9333ea, #c084fc);
+}
+
+.clan-ftree-nutrir-btn {
+  margin-top: 6px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
+  border: 1.5px solid #86efac;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+  transition: all 0.2s ease;
+  letter-spacing: 0.4px;
+}
+
+.clan-ftree-nutrir-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.5);
+  border-color: #bbf7d0;
+}
+
+.clan-ftree-maxed-banner {
+  padding: 12px;
+  text-align: center;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1.5px solid #eab308;
+  border-radius: 8px;
+  color: #fef08a;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* Modal Nutrir Árbol Madre */
+.clan-tree-modal-box {
+  max-width: 480px;
+}
+
+.clan-tree-inputs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.clan-tree-input-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.clan-tree-input-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clan-tree-input-info label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.clan-tree-input-info small {
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.clan-tree-input-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clan-tree-input-controls input {
+  width: 70px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  color: #facc15;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 6px;
+  text-align: center;
+}
+
+.clan-tree-max-btn {
+  padding: 4px 8px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: #334155;
+  border: 1px solid #64748b;
+  border-radius: 6px;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
+.clan-tree-max-btn:hover {
+  background: #0284c7;
+  border-color: #38bdf8;
+}
+
+/* Modal Asignar Roles */
+.clan-role-modal-box {
+  max-width: 500px;
+}
+
+.clan-role-select-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.clan-role-card-opt {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1.5px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clan-role-card-opt:hover {
+  border-color: #eab308;
+  background: rgba(51, 65, 85, 0.8);
+  transform: translateY(-2px);
+}
+
+.clan-role-card-opt--selected {
+  border-color: #eab308;
+  background: rgba(234, 179, 8, 0.15);
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.35);
+}
+
+.clan-role-card-opt h5 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fef08a;
+}
+
+.clan-role-card-opt p {
+  margin: 0;
+  font-size: 10.5px;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+/* Guía de Roles en Ajustes */
+.clan-roles-guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.clan-role-guide-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clan-role-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.clan-role-guide-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+  color: #facc15;
+}
+
+.clan-role-guide-perks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.clan-role-perk-badge {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+.clan-role-perk-badge strong {
+  color: #38bdf8;
+}

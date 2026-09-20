@@ -1960,14 +1960,16 @@ export const SupabaseService = {
   async donateSunsToFortress(
     plantId?: string,
     copies?: number,
-    goldAmount?: number
-  ): Promise<{ success: boolean; sunsGained?: number; newBudget?: number; error?: string }> {
+    goldAmount?: number,
+    gemsAmount?: number
+  ): Promise<{ success: boolean; sunsGained?: number; newBudget?: number; maxBudget?: number; error?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       const { data, error } = await (supabase.rpc as any)('donate_suns_to_fortress', {
         p_plant_id: plantId || null,
         p_copies: copies || 0,
         p_gold_amount: goldAmount || 0,
+        p_gems_amount: gemsAmount || 0,
       })
       if (error) {
         logError('donateSunsToFortress', error)
@@ -1976,6 +1978,60 @@ export const SupabaseService = {
       return { success: true, ...(data as any) }
     } catch (e: any) {
       logError('donateSunsToFortress', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async contributeClanMotherTree(
+    water: number = 0,
+    fertilizer: number = 0,
+    gems: number = 0
+  ): Promise<{
+    success: boolean
+    leveledUp?: boolean
+    newTreeLevel?: number
+    currentWater?: number
+    currentFert?: number
+    currentGems?: number
+    newBaseHp?: number
+    maxBudget?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('contribute_clan_mother_tree', {
+        p_water: water,
+        p_fertilizer: fertilizer,
+        p_gems: gems,
+      })
+      if (error) {
+        logError('contributeClanMotherTree', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('contributeClanMotherTree', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async setClanMemberRole(
+    targetUserId: string,
+    newRole: 'leader' | 'coleader' | 'elder' | 'member'
+  ): Promise<{ success: boolean; targetUserId?: string; newRole?: string; targetName?: string; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('set_clan_member_role', {
+        p_target_user_id: targetUserId,
+        p_new_role: newRole,
+      })
+      if (error) {
+        logError('setClanMemberRole', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('setClanMemberRole', e)
       return { success: false, error: e?.message }
     }
   },

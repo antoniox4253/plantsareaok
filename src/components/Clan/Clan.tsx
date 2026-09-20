@@ -82,6 +82,20 @@ export default function Clan({
   const [showFortressDonateModal, setShowFortressDonateModal] = useState(false)
   const [isSearchingRaid, setIsSearchingRaid] = useState(false)
 
+  // Mother Tree Contribution Modal State
+  const [showMotherTreeModal, setShowMotherTreeModal] = useState(false)
+  const [isSubmittingTree, setIsSubmittingTree] = useState(false)
+  const [motherTreeWaterInput, setMotherTreeWaterInput] = useState<number>(0)
+  const [motherTreeFertInput, setMotherTreeFertInput] = useState<number>(0)
+  const [motherTreeGemsInput, setMotherTreeGemsInput] = useState<number>(0)
+  const [userFarmingInv, setUserFarmingInv] = useState<{ water: number; fertilizer: number }>({ water: 0, fertilizer: 0 })
+
+  // Member Role Assignment Modal State
+  const [showRoleModal, setShowRoleModal] = useState(false)
+  const [isSubmittingRole, setIsSubmittingRole] = useState(false)
+  const [selectedMemberForRole, setSelectedMemberForRole] = useState<ClanMember | null>(null)
+  const [selectedRoleToAssign, setSelectedRoleToAssign] = useState<'leader' | 'coleader' | 'elder' | 'member'>('member')
+
   // Mini Sub-tabs state
   const [donationSubTab, setDonationSubTab] = useState<'seeds' | 'deposits'>('seeds')
   const [vaultRankingFilter, setVaultRankingFilter] = useState<'gems' | 'gold'>('gems')
@@ -101,7 +115,7 @@ export default function Clan({
   const [showKickModal, setShowKickModal] = useState(false)
 
   // Clan Settings State
-  const [settingsTab, setSettingsTab] = useState<'general' | 'competitive' | 'rewards'>('general')
+  const [settingsTab, setSettingsTab] = useState<'general' | 'competitive' | 'rewards' | 'roles'>('general')
   const [memberRewardShares, setMemberRewardShares] = useState<Record<string, number>>({})
   const [clanPrivacy, setClanPrivacy] = useState<'public' | 'request' | 'closed'>('public')
   const [clanMinElo, setClanMinElo] = useState<number>(1000)
@@ -193,6 +207,94 @@ export default function Clan({
         }
       },
     })
+  }
+
+  const handleOpenMotherTreeModal = async () => {
+    soundManager.playSound('click', 0.4)
+    let w = 0
+    let f = 0
+    try {
+      const raw = localStorage.getItem('plant_arena_farming_inventory')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        w = Number(parsed.water || 0)
+        f = Number(parsed.fertilizer || 0)
+      }
+      const remote = await supabaseService.myFarmingInventory()
+      if (remote) {
+        w = Number(remote.water || w)
+        f = Number(remote.fertilizer || f)
+      }
+    } catch {}
+    setUserFarmingInv({ water: w, fertilizer: f })
+    const neededWater = Math.max(0, (fortressData?.nextTreeWaterReq || 30) - (fortressData?.motherTreeWater || 0))
+    const neededFert = Math.max(0, (fortressData?.nextTreeFertReq || 20) - (fortressData?.motherTreeFertilizer || 0))
+    const neededGems = Math.max(0, (fortressData?.nextTreeGemsReq || 150) - (fortressData?.motherTreeGems || 0))
+
+    setMotherTreeWaterInput(Math.min(w, neededWater))
+    setMotherTreeFertInput(Math.min(f, neededFert))
+    setMotherTreeGemsInput(Math.min(userGems, neededGems))
+    setShowMotherTreeModal(true)
+  }
+
+  const handleContributeMotherTree = async () => {
+    if (motherTreeWaterInput <= 0 && motherTreeFertInput <= 0 && motherTreeGemsInput <= 0) {
+      showModalAlert('SIN RECURSOS', 'Indica al menos una cantidad de Agua, Fertilizante o Gemas para aportar.', '⚠️', 'warning')
+      return
+    }
+    setIsSubmittingTree(true)
+    try {
+      const res = await supabaseService.contributeClanMotherTree(motherTreeWaterInput, motherTreeFertInput, motherTreeGemsInput)
+      if (!res.success) {
+        showModalAlert('ERROR AL NUTRIR', res.error || 'No se pudo realizar el aporte.', '❌', 'error')
+        return
+      }
+      soundManager.playSound('click', 0.6)
+      if (res.leveledUp) {
+        soundManager.playSound('click', 0.8)
+        showModalAlert('¡ÁRBOL MADRE SUBIÓ DE NIVEL!', `¡El Árbol Madre del Clan ha alcanzado el NIVEL ${res.newTreeLevel}!\n\nSalud Máxima de la Base: ${res.newBaseHp} HP\nPresupuesto Máximo de Soles: ${res.maxBudget} ☀️`, '🌳', 'success')
+      } else {
+        showModalAlert('APORTE REGISTRADO', 'Los recursos han sido consagrados al Árbol Madre del Clan.', '🌱', 'success')
+      }
+      setShowMotherTreeModal(false)
+      await fetchFortressData()
+      if (onRefreshUserData) await onRefreshUserData()
+    } catch (e: any) {
+      showModalAlert('ERROR', e?.message || 'Error de conexión', '⚠️', 'error')
+    } finally {
+      setIsSubmittingTree(false)
+    }
+  }
+
+  const handleOpenRoleModal = (member: ClanMember) => {
+    soundManager.playSound('click', 0.4)
+    setSelectedMemberForRole(member)
+    const roleKey = member.role === 'Colíder' ? 'coleader' : member.role === 'Veterano' ? 'elder' : member.role === 'Líder' ? 'leader' : 'member'
+    setSelectedRoleToAssign(roleKey)
+    setShowRoleModal(true)
+  }
+
+  const handleConfirmChangeRole = async () => {
+    if (!selectedMemberForRole || !selectedRoleToAssign) return
+    soundManager.playSound('click', 0.5)
+    setIsSubmittingRole(true)
+    try {
+      const res = await supabaseService.setClanMemberRole(selectedMemberForRole.id, selectedRoleToAssign)
+      if (!res.success) {
+        showModalAlert('ERROR AL ASIGNAR ROL', res.error || 'No se pudo cambiar el rol.', '❌', 'error')
+        return
+      }
+      soundManager.playSound('click', 0.7)
+      setShowRoleModal(false)
+      const roleDisplayName = selectedRoleToAssign === 'coleader' ? 'Colíder' : selectedRoleToAssign === 'elder' ? 'Veterano' : selectedRoleToAssign === 'leader' ? 'Líder' : 'Miembro'
+      showModalAlert('ROL ACTUALIZADO', `Se ha asignado el rango de ${roleDisplayName} a ${selectedMemberForRole.name}.`, '👑', 'success')
+      setSelectedMemberForRole(null)
+      await refreshClanData()
+    } catch (e: any) {
+      showModalAlert('ERROR', e?.message || 'Error de conexión', '⚠️', 'error')
+    } finally {
+      setIsSubmittingRole(false)
+    }
   }
 
   const handleSearchFortressRaid = async () => {
@@ -2137,26 +2239,38 @@ export default function Clan({
                         <span className="clan-status-dot" /> En línea
                       </td>
                       <td>
-                        {!isMe && member.role !== 'Líder' && canKickMembers ? (
-                          <button
-                            type="button"
-                            className={`clan-kick-action-btn ${
-                              validation.canKick
-                                ? 'clan-kick-action-btn--eligible'
-                                : 'clan-kick-action-btn--protected'
-                            }`}
-                            onClick={() => handleOpenKickDialog(member)}
-                            title={
-                              validation.canKick
-                                ? 'Expulsar por faltas comprobadas al reglamento'
-                                : 'Ver motivo de protección o faltas acumuladas'
-                            }
-                          >
-                            {validation.canKick ? '👢 EXPULSAR' : '🛡️ DETALLES'}
-                          </button>
-                        ) : (
-                          <span className="clan-member-na-dash">—</span>
-                        )}
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
+                          {!isMe && (isLeader || (myRole === 'Colíder' && member.role !== 'Líder' && member.role !== 'Colíder')) && (
+                            <button
+                              type="button"
+                              className="clan-role-action-btn"
+                              onClick={() => handleOpenRoleModal(member)}
+                              title="Gestionar o cambiar rol en el clan"
+                            >
+                              👑 ROL
+                            </button>
+                          )}
+                          {!isMe && member.role !== 'Líder' && canKickMembers ? (
+                            <button
+                              type="button"
+                              className={`clan-kick-action-btn ${
+                                validation.canKick
+                                  ? 'clan-kick-action-btn--eligible'
+                                  : 'clan-kick-action-btn--protected'
+                              }`}
+                              onClick={() => handleOpenKickDialog(member)}
+                              title={
+                                validation.canKick
+                                  ? 'Expulsar por faltas comprobadas al reglamento'
+                                  : 'Ver motivo de protección o faltas acumuladas'
+                              }
+                            >
+                              {validation.canKick ? '👢 EXPULSAR' : '🛡️ DETALLES'}
+                            </button>
+                          ) : !(!isMe && (isLeader || (myRole === 'Colíder' && member.role !== 'Líder' && member.role !== 'Colíder'))) ? (
+                            <span className="clan-member-na-dash">—</span>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -2307,15 +2421,97 @@ export default function Clan({
                   {/* Gemas en Riesgo */}
                   <div className="clan-fstat-card">
                     <div className="clan-fstat-header">
-                      <span className="clan-fstat-label">💎 BOTÍN EN RIESGO (15%)</span>
+                      <span className="clan-fstat-label">💎 BOTÍN EN RIESGO (MÁX 60 💎)</span>
                       <span className="clan-fstat-num clan-fstat-num--gems">
-                        {Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.15).toLocaleString()} / {(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎
+                        {Math.min(60, Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.08))} / {(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎
                       </span>
                     </div>
                     <p className="clan-fstat-desc">
-                      Gemas del Tesoro expuestas a saqueo rival en caso de derrota.
+                      Saqueo por asalto: hasta 30💎 por 2⭐ y 60💎 por 3⭐. 100% va al Tesoro del Clan atacante (0 a cuenta personal).
                     </p>
                   </div>
+                </div>
+
+                {/* Árbol Madre del Clan */}
+                <div className="clan-fortress-tree-card">
+                  <div className="clan-ftree-header">
+                    <div className="clan-ftree-title">
+                      <span className="clan-ftree-icon">🌳</span>
+                      <div>
+                        <h4>ÁRBOL MADRE DEL CLAN (NIVEL {fortressData?.motherTreeLevel ?? 1} DE 4)</h4>
+                        <p>
+                          Aumenta el tope solar (+500☀️/nvl) y la salud de la base (+200 HP/nvl).
+                        </p>
+                      </div>
+                    </div>
+                    <span className="clan-ftree-badge">
+                      {(fortressData?.motherTreeLevel ?? 1) >= 4 ? '⭐ MÁXIMO NIVEL TITÁNICO' : `PRÓXIMO NIVEL: ${(fortressData?.motherTreeLevel ?? 1) + 1}`}
+                    </span>
+                  </div>
+
+                  <div className="clan-ftree-stats">
+                    <div className="clan-ftree-stat-item">
+                      <span>☀️ Límite Solar Defensivo:</span>
+                      <strong>{1000 + (((fortressData?.motherTreeLevel ?? 1) - 1) * 500)} Soles</strong>
+                    </div>
+                    <div className="clan-ftree-stat-item">
+                      <span>❤️ Salud Máxima de la Base:</span>
+                      <strong>{500 + (((fortressData?.motherTreeLevel ?? 1) - 1) * 200)} HP</strong>
+                    </div>
+                  </div>
+
+                  {(fortressData?.motherTreeLevel ?? 1) < 4 ? (
+                    <div className="clan-ftree-progress-box">
+                      <div className="clan-ftree-progress-row">
+                        <span>💧 Agua:</span>
+                        <div className="clan-ftree-bar-track">
+                          <div
+                            className="clan-ftree-bar-fill clan-ftree-bar-fill--water"
+                            style={{
+                              width: `${Math.min(100, (((fortressData?.motherTreeWater ?? 0) / (fortressData?.nextTreeWaterReq || 30)) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                        <strong>{fortressData?.motherTreeWater ?? 0} / {fortressData?.nextTreeWaterReq || 30}</strong>
+                      </div>
+                      <div className="clan-ftree-progress-row">
+                        <span>🧪 Fertilizante:</span>
+                        <div className="clan-ftree-bar-track">
+                          <div
+                            className="clan-ftree-bar-fill clan-ftree-bar-fill--fert"
+                            style={{
+                              width: `${Math.min(100, (((fortressData?.motherTreeFertilizer ?? 0) / (fortressData?.nextTreeFertReq || 20)) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                        <strong>{fortressData?.motherTreeFertilizer ?? 0} / {fortressData?.nextTreeFertReq || 20}</strong>
+                      </div>
+                      <div className="clan-ftree-progress-row">
+                        <span>💎 Gemas:</span>
+                        <div className="clan-ftree-bar-track">
+                          <div
+                            className="clan-ftree-bar-fill clan-ftree-bar-fill--gems"
+                            style={{
+                              width: `${Math.min(100, (((fortressData?.motherTreeGems ?? 0) / (fortressData?.nextTreeGemsReq || 150)) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                        <strong>{fortressData?.motherTreeGems ?? 0} / {fortressData?.nextTreeGemsReq || 150}</strong>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="clan-ftree-nutrir-btn"
+                        onClick={handleOpenMotherTreeModal}
+                      >
+                        💧🧪💎 NUTRIR Y SUBIR DE NIVEL EL ÁRBOL MADRE
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="clan-ftree-maxed-banner">
+                      <span>👑 ¡El Árbol Madre ha alcanzado su cúspide milenaria de poder (Nivel 4 Titánico)!</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Acciones Principales: Centro de Control */}
@@ -3079,6 +3275,16 @@ export default function Clan({
               >
                 <span>🎁</span> Rewards (%)
               </button>
+              <button
+                type="button"
+                className={`clan-settings-tab-btn ${settingsTab === 'roles' ? 'clan-settings-tab-btn--active' : ''}`}
+                onClick={() => {
+                  soundManager.playSound('click', 0.4)
+                  setSettingsTab('roles')
+                }}
+              >
+                <span>👑</span> Jerarquía & Roles
+              </button>
             </div>
 
             <div className="clan-settings-tab-content">
@@ -3393,6 +3599,79 @@ export default function Clan({
                         </div>
                       )
                     })}
+                  </div>
+                </div>
+              )}
+
+              {settingsTab === 'roles' && (
+                <div className="clan-settings-roles-pane">
+                  <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#cbd5e1' }}>
+                    Conoce las facultades, privilegios y costes de cada rango en la hermandad del clan:
+                  </p>
+                  <div className="clan-roles-guide-list">
+                    <div className="clan-role-guide-card">
+                      <div className="clan-role-guide-header">
+                        <h4>👑 LÍDER (LEADER)</h4>
+                        <span className="clan-role-badge clan-role--líder">Líder</span>
+                      </div>
+                      <p style={{ margin: '4px 0', fontSize: '11.5px', color: '#cbd5e1' }}>
+                        Máxima autoridad. Administra miembros, asigna roles, cuotas de reparto y ajustes de admisión.
+                      </p>
+                      <div className="clan-role-guide-perks">
+                        <span className="clan-role-perk-badge">🛠️ <strong>Edición Fortaleza:</strong> Total (5 carriles)</span>
+                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 500 Oro del Clan</span>
+                        <span className="clan-role-perk-badge">⏳ <strong>Cooldown Derrota:</strong> Ninguno</span>
+                        <span className="clan-role-perk-badge">🌳 <strong>Árbol Madre:</strong> Gestión Total</span>
+                      </div>
+                    </div>
+
+                    <div className="clan-role-guide-card">
+                      <div className="clan-role-guide-header">
+                        <h4>⚔️ COLÍDER (CO-LEADER)</h4>
+                        <span className="clan-role-badge clan-role--colíder">Colíder</span>
+                      </div>
+                      <p style={{ margin: '4px 0', fontSize: '11.5px', color: '#cbd5e1' }}>
+                        Mano derecha de gobernanza. Asistente oficial en defensa, ascensos a veterano y solicitudes.
+                      </p>
+                      <div className="clan-role-guide-perks">
+                        <span className="clan-role-perk-badge">🛠️ <strong>Edición Fortaleza:</strong> Sí</span>
+                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 500 Oro del Clan</span>
+                        <span className="clan-role-perk-badge">⏳ <strong>Cooldown Derrota:</strong> Ninguno</span>
+                        <span className="clan-role-perk-badge">👑 <strong>Roles:</strong> Ascender a Veterano / Degradar</span>
+                        <span className="clan-role-perk-badge">📬 <strong>Admisiones:</strong> Aceptar/Rechazar</span>
+                      </div>
+                    </div>
+
+                    <div className="clan-role-guide-card">
+                      <div className="clan-role-guide-header">
+                        <h4>🛡️ VETERANO (ELDER)</h4>
+                        <span className="clan-role-badge clan-role--veterano">Veterano</span>
+                      </div>
+                      <p style={{ margin: '4px 0', fontSize: '11.5px', color: '#cbd5e1' }}>
+                        Guerrero distinguido y leal. Rango de honor para combatientes activos en asaltos.
+                      </p>
+                      <div className="clan-role-guide-perks">
+                        <span className="clan-role-perk-badge">🛠️ <strong>Edición Fortaleza:</strong> Sí</span>
+                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 500 Oro del Clan</span>
+                        <span className="clan-role-perk-badge">⏳ <strong>Cooldown Derrota:</strong> Inmune a bloqueo de 24h</span>
+                      </div>
+                    </div>
+
+                    <div className="clan-role-guide-card">
+                      <div className="clan-role-guide-header">
+                        <h4>🌱 MIEMBRO (MEMBER)</h4>
+                        <span className="clan-role-badge clan-role--miembro">Miembro</span>
+                      </div>
+                      <p style={{ margin: '4px 0', fontSize: '11.5px', color: '#cbd5e1' }}>
+                        Rango inicial. Contribuye donando al Altar Solar y nutriendo el Árbol Madre del Clan.
+                      </p>
+                      <div className="clan-role-guide-perks">
+                        <span className="clan-role-perk-badge">🛠️ <strong>Edición Fortaleza:</strong> No</span>
+                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 250 Oro Personal</span>
+                        <span className="clan-role-perk-badge">⚠️ <strong>Cooldown Derrota:</strong> Bloqueo de 24h si pierde (0⭐)</span>
+                        <span className="clan-role-perk-badge">☀️ <strong>Donaciones:</strong> Altar Solar & Árbol</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3731,9 +4010,213 @@ export default function Clan({
           }}
           plantCopies={plantCopies}
           userGold={userGold}
+          userGems={userGems}
           clanName={userClan.name}
-          currentBudget={fortressData?.defenseSunsBudget || 2500}
+          currentBudget={fortressData?.defenseSunsBudget || 1000}
+          maxBudget={fortressData?.maxDefenseSunsBudget || (1000 + (((fortressData?.motherTreeLevel || 1) - 1) * 500))}
         />
+      )}
+
+      {/* MODAL NUTRIR ÁRBOL MADRE DEL CLAN */}
+      {showMotherTreeModal && userClan && fortressData && (
+        <div className="clan-modal-backdrop" onClick={() => !isSubmittingTree && setShowMotherTreeModal(false)}>
+          <div className="clan-modal-box clan-tree-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="clan-modal-header-row">
+              <div className="clan-modal-header-title">
+                <span className="clan-modal-header-icon">🌳</span>
+                <div>
+                  <h3>NUTRIR EL ÁRBOL MADRE</h3>
+                  <p>Aporta recursos para subirlo al Nivel {(fortressData.motherTreeLevel || 1) + 1}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="clan-modal-close-btn"
+                onClick={() => setShowMotherTreeModal(false)}
+                disabled={isSubmittingTree}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="clan-tree-inputs-grid">
+              {/* Agua */}
+              <div className="clan-tree-input-card">
+                <div className="clan-tree-input-info">
+                  <label>💧 Agua de Cultivo</label>
+                  <small>Tienes: {userFarmingInv.water} 💧 • Requerido: {fortressData.motherTreeWater || 0}/{fortressData.nextTreeWaterReq || 30}</small>
+                </div>
+                <div className="clan-tree-input-controls">
+                  <input
+                    type="number"
+                    min={0}
+                    max={userFarmingInv.water}
+                    value={motherTreeWaterInput}
+                    onChange={(e) => setMotherTreeWaterInput(Math.max(0, Math.min(userFarmingInv.water, parseInt(e.target.value) || 0)))}
+                  />
+                  <button
+                    type="button"
+                    className="clan-tree-max-btn"
+                    onClick={() => {
+                      const needed = Math.max(0, (fortressData.nextTreeWaterReq || 30) - (fortressData.motherTreeWater || 0))
+                      setMotherTreeWaterInput(Math.min(userFarmingInv.water, needed))
+                    }}
+                  >
+                    MÁX
+                  </button>
+                </div>
+              </div>
+
+              {/* Fertilizante */}
+              <div className="clan-tree-input-card">
+                <div className="clan-tree-input-info">
+                  <label>🧪 Fertilizante</label>
+                  <small>Tienes: {userFarmingInv.fertilizer} 🧪 • Requerido: {fortressData.motherTreeFertilizer || 0}/{fortressData.nextTreeFertReq || 20}</small>
+                </div>
+                <div className="clan-tree-input-controls">
+                  <input
+                    type="number"
+                    min={0}
+                    max={userFarmingInv.fertilizer}
+                    value={motherTreeFertInput}
+                    onChange={(e) => setMotherTreeFertInput(Math.max(0, Math.min(userFarmingInv.fertilizer, parseInt(e.target.value) || 0)))}
+                  />
+                  <button
+                    type="button"
+                    className="clan-tree-max-btn"
+                    onClick={() => {
+                      const needed = Math.max(0, (fortressData.nextTreeFertReq || 20) - (fortressData.motherTreeFertilizer || 0))
+                      setMotherTreeFertInput(Math.min(userFarmingInv.fertilizer, needed))
+                    }}
+                  >
+                    MÁX
+                  </button>
+                </div>
+              </div>
+
+              {/* Gemas */}
+              <div className="clan-tree-input-card">
+                <div className="clan-tree-input-info">
+                  <label>💎 Gemas</label>
+                  <small>Tienes: {userGems} 💎 • Requerido: {fortressData.motherTreeGems || 0}/{fortressData.nextTreeGemsReq || 150}</small>
+                </div>
+                <div className="clan-tree-input-controls">
+                  <input
+                    type="number"
+                    min={0}
+                    max={userGems}
+                    value={motherTreeGemsInput}
+                    onChange={(e) => setMotherTreeGemsInput(Math.max(0, Math.min(userGems, parseInt(e.target.value) || 0)))}
+                  />
+                  <button
+                    type="button"
+                    className="clan-tree-max-btn"
+                    onClick={() => {
+                      const needed = Math.max(0, (fortressData.nextTreeGemsReq || 150) - (fortressData.motherTreeGems || 0))
+                      setMotherTreeGemsInput(Math.min(userGems, needed))
+                    }}
+                  >
+                    MÁX
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="clan-modal-actions">
+              <button
+                type="button"
+                className="clan-cancel-btn"
+                onClick={() => setShowMotherTreeModal(false)}
+                disabled={isSubmittingTree}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className="clan-confirm-btn"
+                onClick={handleContributeMotherTree}
+                disabled={isSubmittingTree || (motherTreeWaterInput <= 0 && motherTreeFertInput <= 0 && motherTreeGemsInput <= 0)}
+              >
+                {isSubmittingTree ? 'NUTRINDO...' : '💧🧪💎 CONSAGRAR APORTE'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ASIGNAR ROL A MIEMBRO */}
+      {showRoleModal && selectedMemberForRole && (
+        <div className="clan-modal-backdrop" onClick={() => !isSubmittingRole && setShowRoleModal(false)}>
+          <div className="clan-modal-box clan-role-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="clan-modal-header-row">
+              <div className="clan-modal-header-title">
+                <span className="clan-modal-header-icon">👑</span>
+                <div>
+                  <h3>ASIGNAR ROL A {selectedMemberForRole.name.toUpperCase()}</h3>
+                  <p>Rango actual: <strong>{selectedMemberForRole.role}</strong> • {selectedMemberForRole.elo} Copas</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="clan-modal-close-btn"
+                onClick={() => setShowRoleModal(false)}
+                disabled={isSubmittingRole}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="clan-role-select-grid">
+              {/* Colíder (Solo Líder) */}
+              {isLeader && (
+                <div
+                  className={`clan-role-card-opt ${selectedRoleToAssign === 'coleader' ? 'clan-role-card-opt--selected' : ''}`}
+                  onClick={() => setSelectedRoleToAssign('coleader')}
+                >
+                  <h5>⚔️ Colíder</h5>
+                  <p>Mano derecha. Edita fortaleza, asalta con oro del clan (sin cooldown), acepta ingresos y promueve veteranos.</p>
+                </div>
+              )}
+
+              {/* Veterano (Líder y Colíder) */}
+              <div
+                className={`clan-role-card-opt ${selectedRoleToAssign === 'elder' ? 'clan-role-card-opt--selected' : ''}`}
+                onClick={() => setSelectedRoleToAssign('elder')}
+              >
+                <h5>🛡️ Veterano</h5>
+                <p>Guerrero de honor. Edita fortaleza y asalta con oro del clan sin bloqueo de 24h tras derrota.</p>
+              </div>
+
+              {/* Miembro (Líder y Colíder) */}
+              <div
+                className={`clan-role-card-opt ${selectedRoleToAssign === 'member' ? 'clan-role-card-opt--selected' : ''}`}
+                onClick={() => setSelectedRoleToAssign('member')}
+              >
+                <h5>🌱 Miembro</h5>
+                <p>Rango inicial. Asalta con oro propio (250🪙) y sufre bloqueo de 24h tras derrota. Puede donar al altar.</p>
+              </div>
+            </div>
+
+            <div className="clan-modal-actions">
+              <button
+                type="button"
+                className="clan-cancel-btn"
+                onClick={() => setShowRoleModal(false)}
+                disabled={isSubmittingRole}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className="clan-confirm-btn"
+                onClick={handleConfirmChangeRole}
+                disabled={isSubmittingRole}
+              >
+                {isSubmittingRole ? 'GUARDANDO...' : '👑 CONFIRMAR NUEVO ROL'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

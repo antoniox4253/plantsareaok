@@ -326,8 +326,16 @@ export interface ClanFortressData {
   isShielded: boolean
   isNpc: boolean
   defenseSunsBudget: number
+  maxDefenseSunsBudget?: number
   sunsSpent: number
   layout: ClanFortressPlant[]
+  motherTreeLevel?: number
+  motherTreeWater?: number
+  motherTreeFertilizer?: number
+  motherTreeGems?: number
+  nextTreeWaterReq?: number
+  nextTreeFertReq?: number
+  nextTreeGemsReq?: number
   isMine: boolean
   canEdit: boolean
 }
