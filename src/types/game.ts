@@ -336,6 +336,12 @@ export interface ClanFortressData {
   nextTreeWaterReq?: number
   nextTreeFertReq?: number
   nextTreeGemsReq?: number
+  maxMembers?: number
+  initialAttackSuns?: number
+  conquestDamageBonusPct?: number
+  pvpDamageBonusPct?: number
+  vipGoldBonusPct?: number
+  dailyPassiveSuns?: number
   isMine: boolean
   canEdit: boolean
 }
@@ -352,6 +358,7 @@ export interface ClanFortressMatchOpponent {
   layout: ClanFortressPlant[]
   paidWith: 'clan_gold' | 'personal_gold'
   costPaid: number
+  initialAttackSuns?: number
 }
 
 export interface ClanFortressRaidResult {

@@ -1442,7 +1442,8 @@ export default function Battlefield({
         null,
         5,
         clanFortressConfig.targetClan.layout,
-        clanFortressConfig.targetClan.targetBaseHp
+        clanFortressConfig.targetClan.targetBaseHp,
+        clanFortressConfig.targetClan.initialAttackSuns ?? 200
       )
     } else if (gameStatus === 'ready') {
       hasHandledEndRef.current = false
@@ -2578,21 +2579,21 @@ export default function Battlefield({
 
                   {clanRaidResult ? (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.85rem' }}>
-                      <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>💎 Gemas para ti (70%):</span>
-                        <strong style={{ color: '#4ade80', display: 'block', fontSize: '1.15rem' }}>
-                          +{clanRaidResult.stolenToUser} 💎
-                        </strong>
-                      </div>
                       <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>💎 Tesoro del Clan (30%):</span>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>💎 Saqueo al Tesoro del Clan:</span>
                         <strong style={{ color: '#facc15', display: 'block', fontSize: '1.15rem' }}>
                           +{clanRaidResult.stolenToClan} 💎
                         </strong>
                       </div>
+                      <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>💥 Daño a la Fortaleza:</span>
+                        <strong style={{ color: '#4ade80', display: 'block', fontSize: '1.15rem' }}>
+                          {clanRaidResult.damageDealt} pts
+                        </strong>
+                      </div>
                       {clanRaidResult.goldBonus > 0 && (
                         <div style={{ gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '6px', borderRadius: '8px', textAlign: 'center', color: '#fef08a', fontWeight: 'bold' }}>
-                          🪙 ¡Bonus de Victoria: +{clanRaidResult.goldBonus} Oro!
+                          🪙 ¡Bono Personal de Victoria: +{clanRaidResult.goldBonus} Oro!
                         </div>
                       )}
                       <div style={{ gridColumn: 'span 2', color: '#94a3b8', fontSize: '0.78rem', textAlign: 'center' }}>

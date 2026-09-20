@@ -485,7 +485,8 @@ export function useGameEngine() {
     rivalTreeSkin?: string | null,
     lanesCount?: number,
     clanFortressLayout?: ClanFortressPlant[],
-    targetBaseHp?: number
+    targetBaseHp?: number,
+    initialAttackSuns?: number
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
@@ -520,7 +521,8 @@ export function useGameEngine() {
       effectiveTreeSkin,
       rivalTreeSkin ?? null,
       effectiveLanes,
-      isFortress
+      isFortress,
+      initialAttackSuns
     )
 
     // Pre-instanciar las defensas de la fortaleza en el lado derecho (columnas 7 a 13)

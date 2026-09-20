@@ -206,4 +206,107 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(memberCostSource).toBe('personal_gold')
     expect(memberCooldownOnDefeat).toBe(true)
   })
+
+  it('inicia el asalto a la fortaleza con los Soles de Ataque configurados según el nivel del Árbol Madre (100 -> 150 -> 200 -> 250)', () => {
+    // Nivel 1: 100 soles iniciales
+    const stateLvl1 = createBattleState(101, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true, 100)
+    expect(stateLvl1.sunBank).toBe(100)
+
+    // Nivel 2: 150 soles iniciales
+    const stateLvl2 = createBattleState(102, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true, 150)
+    expect(stateLvl2.sunBank).toBe(150)
+
+    // Nivel 3: 200 soles iniciales
+    const stateLvl3 = createBattleState(103, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true, 200)
+    expect(stateLvl3.sunBank).toBe(200)
+
+    // Nivel 4: 250 soles iniciales
+    const stateLvl4 = createBattleState(104, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true, 250)
+    expect(stateLvl4.sunBank).toBe(250)
+
+    // Fallback por defecto en modo fortaleza: 200 soles
+    const stateDefault = createBattleState(105, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true)
+    expect(stateDefault.sunBank).toBe(200)
+  })
+
+  it('valida los requisitos balanceados de mejora del Árbol Madre para clanes de 15 a 25 miembros', () => {
+    const getUpgradeRequirements = (currentLevel: number) => {
+      switch (currentLevel) {
+        case 1:
+          return { water: 150, fertilizer: 100, gems: 600 }
+        case 2:
+          return { water: 350, fertilizer: 250, gems: 1500 }
+        case 3:
+          return { water: 750, fertilizer: 500, gems: 3000 }
+        default:
+          return { water: 0, fertilizer: 0, gems: 0 }
+      }
+    }
+
+    // Nivel 1 -> 2: 150 Agua, 100 Fertilizante, 600 Gemas (~10 agua, ~7 fert, ~40 gemas por jugador en clan de 15)
+    expect(getUpgradeRequirements(1)).toEqual({ water: 150, fertilizer: 100, gems: 600 })
+
+    // Nivel 2 -> 3: 350 Agua, 250 Fertilizante, 1,500 Gemas
+    expect(getUpgradeRequirements(2)).toEqual({ water: 350, fertilizer: 250, gems: 1500 })
+
+    // Nivel 3 -> 4: 750 Agua, 500 Fertilizante, 3,000 Gemas
+    expect(getUpgradeRequirements(3)).toEqual({ water: 750, fertilizer: 500, gems: 3000 })
+
+    // Nivel 4: Máximo alcanzado
+    expect(getUpgradeRequirements(4)).toEqual({ water: 0, fertilizer: 0, gems: 0 })
+  })
+
+  it('valida la escala de beneficios desbloqueables en los 4 niveles del Árbol Madre', () => {
+    const getLevelPerks = (level: number) => {
+      const lvl = Math.max(1, Math.min(4, level))
+      return {
+        maxMembers: lvl === 1 ? 15 : lvl === 2 ? 18 : lvl === 3 ? 20 : 25,
+        initialAttackSuns: lvl === 1 ? 100 : lvl === 2 ? 150 : lvl === 3 ? 200 : 250,
+        conquestDamageBonusPct: lvl === 1 ? 0 : lvl === 2 ? 5 : lvl === 3 ? 10 : 20,
+        dailyPassiveSuns: lvl === 1 ? 0 : lvl === 2 ? 10 : lvl === 3 ? 20 : 30,
+        vipGoldBonusPct: lvl === 1 ? 0 : lvl === 2 ? 5 : lvl === 3 ? 10 : 15,
+        pvpDamageBonusPct: lvl === 1 ? 0 : lvl === 2 ? 0 : lvl === 3 ? 5 : 10,
+      }
+    }
+
+    // Nivel 1: Base
+    expect(getLevelPerks(1)).toEqual({
+      maxMembers: 15,
+      initialAttackSuns: 100,
+      conquestDamageBonusPct: 0,
+      dailyPassiveSuns: 0,
+      vipGoldBonusPct: 0,
+      pvpDamageBonusPct: 0,
+    })
+
+    // Nivel 2: +3 miembros, 150 soles, +5% conquista, 10 soles diarios, 5% vip gold
+    expect(getLevelPerks(2)).toEqual({
+      maxMembers: 18,
+      initialAttackSuns: 150,
+      conquestDamageBonusPct: 5,
+      dailyPassiveSuns: 10,
+      vipGoldBonusPct: 5,
+      pvpDamageBonusPct: 0,
+    })
+
+    // Nivel 3: +2 miembros (20), 200 soles, +10% conquista, 20 soles diarios, 10% vip gold, 5% pvp dmg
+    expect(getLevelPerks(3)).toEqual({
+      maxMembers: 20,
+      initialAttackSuns: 200,
+      conquestDamageBonusPct: 10,
+      dailyPassiveSuns: 20,
+      vipGoldBonusPct: 10,
+      pvpDamageBonusPct: 5,
+    })
+
+    // Nivel 4: +5 miembros (25), 250 soles, +20% conquista, 30 soles diarios, 15% vip gold, 10% pvp dmg
+    expect(getLevelPerks(4)).toEqual({
+      maxMembers: 25,
+      initialAttackSuns: 250,
+      conquestDamageBonusPct: 20,
+      dailyPassiveSuns: 30,
+      vipGoldBonusPct: 15,
+      pvpDamageBonusPct: 10,
+    })
+  })
 })

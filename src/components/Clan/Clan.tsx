@@ -178,7 +178,7 @@ export default function Clan({
   }, [userClan?.id])
 
   useEffect(() => {
-    if (activeTab === 'fortress' && userClan?.id) {
+    if (userClan?.id) {
       void fetchFortressData(userClan.id)
     }
   }, [activeTab, userClan?.id, fetchFortressData])
@@ -227,9 +227,9 @@ export default function Clan({
       }
     } catch {}
     setUserFarmingInv({ water: w, fertilizer: f })
-    const neededWater = Math.max(0, (fortressData?.nextTreeWaterReq || 30) - (fortressData?.motherTreeWater || 0))
-    const neededFert = Math.max(0, (fortressData?.nextTreeFertReq || 20) - (fortressData?.motherTreeFertilizer || 0))
-    const neededGems = Math.max(0, (fortressData?.nextTreeGemsReq || 150) - (fortressData?.motherTreeGems || 0))
+    const neededWater = Math.max(0, (fortressData?.nextTreeWaterReq || 150) - (fortressData?.motherTreeWater || 0))
+    const neededFert = Math.max(0, (fortressData?.nextTreeFertReq || 100) - (fortressData?.motherTreeFertilizer || 0))
+    const neededGems = Math.max(0, (fortressData?.nextTreeGemsReq || 600) - (fortressData?.motherTreeGems || 0))
 
     setMotherTreeWaterInput(Math.min(w, neededWater))
     setMotherTreeFertInput(Math.min(f, neededFert))
@@ -932,8 +932,9 @@ export default function Clan({
       showModalAlert('ERROR', 'No puedes invitarte a ti mismo.', '⚠️', 'warning')
       return
     }
-    if (userClan.members.length >= 15) {
-      showModalAlert('CLAN LLENO', 'El clan ya alcanzó el cupo máximo de 15 miembros.', '⚠️', 'warning')
+    const maxMembers = fortressData?.maxMembers || 15
+    if (userClan.members.length >= maxMembers) {
+      showModalAlert('CLAN LLENO', `El clan ya alcanzó el cupo máximo de ${maxMembers} miembros.`, '⚠️', 'warning')
       return
     }
 
@@ -1067,8 +1068,9 @@ export default function Clan({
       showModalAlert('CLAN NO VÁLIDO', 'Este clan no existe en el servidor.', '⚠️', 'warning')
       return
     }
-    if (clan.members.length >= 15) {
-      showModalAlert('CLAN LLENO', 'Este clan ya ha alcanzado el límite máximo de 15/15 miembros.', '⚠️', 'warning')
+    const clanMaxMembers = clan.maxMembers || 15
+    if (clan.members.length >= clanMaxMembers) {
+      showModalAlert('CLAN LLENO', `Este clan ya ha alcanzado el límite máximo de ${clanMaxMembers}/${clanMaxMembers} miembros.`, '⚠️', 'warning')
       return
     }
     if (clan.settings?.privacy === 'closed') {
@@ -1629,7 +1631,7 @@ export default function Clan({
         {/* BROWSE CLANS - DUAL PANEL SHOWCASE */}
         {noClanTab === 'browse' && (() => {
           const selectedClan = allClans.find((c) => c.id === selectedBrowseClanId) || allClans[0]
-          const isSelectedFull = selectedClan ? selectedClan.members.length >= 15 : false
+          const isSelectedFull = selectedClan ? selectedClan.members.length >= (selectedClan.maxMembers || 15) : false
           const isSelectedDefeated = selectedClan
             ? selectedClan.status === 'defeated' && (selectedClan.vaultGems ?? selectedClan.vaultUsd ?? 0) <= 0
             : false
@@ -1661,7 +1663,8 @@ export default function Clan({
 
                 <div className="clan-browse-sidebar__list">
                   {allClans.map((clan, index) => {
-                    const isFull = clan.members.length >= 15
+                    const clanLimit = clan.maxMembers || 15
+                    const isFull = clan.members.length >= clanLimit
                     const isSelected = selectedClan?.id === clan.id
                     const currentVault = clan.vaultGems ?? clan.vaultUsd
                     const isClanDefeated = clan.status === 'defeated' && Number(currentVault ?? 0) <= 0
@@ -1683,7 +1686,7 @@ export default function Clan({
                             <span className="clan-sidebar-item__tag">{clan.tag}</span>
                           </div>
                           <div className="clan-sidebar-item__meta">
-                            <span>👥 {clan.members.length}/15</span>
+                            <span>👥 {clan.members.length}/{clanLimit}</span>
                             <span className="clan-sidebar-item__vault">💎 {Number(currentVault).toFixed(0)}</span>
                           </div>
                         </div>
@@ -1722,7 +1725,7 @@ export default function Clan({
                           {isSelectedDefeated ? (
                             <span className="clan-defeat-pill">🛑 EN DERROTA</span>
                           ) : isSelectedFull ? (
-                            <span className="clan-pill--full">🔒 LLENO (15/15)</span>
+                            <span className="clan-pill--full">🔒 LLENO ({selectedClan.members.length}/{selectedClan.maxMembers || 15})</span>
                           ) : selectedClan.settings?.privacy === 'closed' ? (
                             <span className="clan-pill--closed">🔒 CERRADO</span>
                           ) : selectedClan.settings?.privacy === 'request' ? (
@@ -1750,10 +1753,10 @@ export default function Clan({
 
                       <div className="clan-metric-card">
                         <span className="clan-metric-card__label">👥 MIEMBROS</span>
-                        <span className="clan-metric-card__value">{selectedClan.members.length} / 15</span>
+                        <span className="clan-metric-card__value">{selectedClan.members.length} / {selectedClan.maxMembers || 15}</span>
                         <small className="clan-metric-card__sub">
-                          {15 - selectedClan.members.length > 0
-                            ? `${15 - selectedClan.members.length} cupos libres`
+                          {(selectedClan.maxMembers || 15) - selectedClan.members.length > 0
+                            ? `${(selectedClan.maxMembers || 15) - selectedClan.members.length} cupos libres`
                             : 'Cupo completo'}
                         </small>
                       </div>
@@ -1784,7 +1787,7 @@ export default function Clan({
                     {/* Members Preview */}
                     <div className="clan-showcase-members-box">
                       <div className="clan-showcase-members-title">
-                        <span>👥 ROSTER DE JUGADORES ({selectedClan.members.length}/15)</span>
+                        <span>👥 ROSTER DE JUGADORES ({selectedClan.members.length}/{selectedClan.maxMembers || 15})</span>
                         <small>Top miembros destacados</small>
                       </div>
                       <div className="clan-showcase-members-list">
@@ -1807,7 +1810,7 @@ export default function Clan({
                         </button>
                       ) : isSelectedFull ? (
                         <button type="button" disabled className="clan-showcase-btn clan-showcase-btn--full">
-                          🔒 CLAN COMPLETO (15/15 MIEMBROS)
+                          🔒 CLAN COMPLETO ({selectedClan.maxMembers || 15}/{selectedClan.maxMembers || 15} MIEMBROS)
                         </button>
                       ) : selectedClan.settings?.privacy === 'closed' ? (
                         <button type="button" disabled className="clan-showcase-btn clan-showcase-btn--closed">
@@ -1959,7 +1962,7 @@ export default function Clan({
                   <span className="clan-shield-pill">🛡️ ESCUDO {shieldHours}H</span>
                 )}
               </div>
-              <span className="clan-leader-txt">Líder: {userClan.leader} | {userClan.members.length}/15 Miembros</span>
+              <span className="clan-leader-txt">Líder: {userClan.leader} | {userClan.members.length}/{fortressData?.maxMembers || 15} Miembros</span>
             </div>
           </div>
         </div>
@@ -2050,7 +2053,7 @@ export default function Clan({
           className={`clan-tab-btn ${activeTab === 'members' ? 'clan-tab-btn--active' : ''}`}
           onClick={() => setActiveTab('members')}
         >
-          👥 MIEMBROS ({userClan.members.length}/15)
+          👥 MIEMBROS ({userClan.members.length}/{fortressData?.maxMembers || 15})
         </button>
         <button
           type="button"
@@ -2143,8 +2146,8 @@ export default function Clan({
                     soundManager.playSound('click', 0.4)
                     setShowInviteModal(true)
                   }}
-                  disabled={userClan.members.length >= 15}
-                  title={userClan.members.length >= 15 ? 'El clan ya alcanzó el cupo máximo de 15 miembros' : 'Invitar jugador'}
+                  disabled={userClan.members.length >= (fortressData?.maxMembers || 15)}
+                  title={userClan.members.length >= (fortressData?.maxMembers || 15) ? `El clan ya alcanzó el cupo máximo de ${fortressData?.maxMembers || 15} miembros` : 'Invitar jugador'}
                 >
                   ✉️ INVITAR JUGADOR AL CLAN
                 </button>
@@ -2153,7 +2156,7 @@ export default function Clan({
           ) : (
             <div className="clan-members-toolbar">
               <span className="clan-members-toolbar__hint">
-                👥 Miembros del clan ({userClan.members.length}/15). Los nuevos ingresos se sincronizan en tiempo real.
+                👥 Miembros del clan ({userClan.members.length}/{fortressData?.maxMembers || 15}). Los nuevos ingresos se sincronizan en tiempo real.
               </span>
             </div>
           )}
@@ -2440,7 +2443,7 @@ export default function Clan({
                       <div>
                         <h4>ÁRBOL MADRE DEL CLAN (NIVEL {fortressData?.motherTreeLevel ?? 1} DE 4)</h4>
                         <p>
-                          Aumenta el tope solar (+500☀️/nvl) y la salud de la base (+200 HP/nvl).
+                          Aumenta soles (+500☀️), vida (+200 HP), cupos del clan, soles de asalto y bonificaciones.
                         </p>
                       </div>
                     </div>
@@ -2458,6 +2461,30 @@ export default function Clan({
                       <span>❤️ Salud Máxima de la Base:</span>
                       <strong>{500 + (((fortressData?.motherTreeLevel ?? 1) - 1) * 200)} HP</strong>
                     </div>
+                    <div className="clan-ftree-stat-item">
+                      <span>👥 Capacidad Máxima del Clan:</span>
+                      <strong>{fortressData?.maxMembers || 15} Miembros</strong>
+                    </div>
+                    <div className="clan-ftree-stat-item">
+                      <span>⚔️ Soles Iniciales en Asalto:</span>
+                      <strong>{fortressData?.initialAttackSuns || 100} Soles</strong>
+                    </div>
+                    <div className="clan-ftree-stat-item">
+                      <span>🚩 Estandarte de Conquista:</span>
+                      <strong>+{fortressData?.conquestDamageBonusPct || 0}% Daño Ranking</strong>
+                    </div>
+                    <div className="clan-ftree-stat-item">
+                      <span>⛲ Manantial Solar Diario:</span>
+                      <strong>+{fortressData?.dailyPassiveSuns || 0} Soles/Día</strong>
+                    </div>
+                    <div className="clan-ftree-stat-item">
+                      <span>👑 Bono VIP Oro Victoria:</span>
+                      <strong>+{fortressData?.vipGoldBonusPct || 0}% Oro</strong>
+                    </div>
+                    <div className="clan-ftree-stat-item">
+                      <span>🥊 Bono Daño en PvP:</span>
+                      <strong>+{fortressData?.pvpDamageBonusPct || 0}% Daño</strong>
+                    </div>
                   </div>
 
                   {(fortressData?.motherTreeLevel ?? 1) < 4 ? (
@@ -2468,11 +2495,11 @@ export default function Clan({
                           <div
                             className="clan-ftree-bar-fill clan-ftree-bar-fill--water"
                             style={{
-                              width: `${Math.min(100, (((fortressData?.motherTreeWater ?? 0) / (fortressData?.nextTreeWaterReq || 30)) * 100))}%`,
+                              width: `${Math.min(100, (((fortressData?.motherTreeWater ?? 0) / (fortressData?.nextTreeWaterReq || 150)) * 100))}%`,
                             }}
                           />
                         </div>
-                        <strong>{fortressData?.motherTreeWater ?? 0} / {fortressData?.nextTreeWaterReq || 30}</strong>
+                        <strong>{fortressData?.motherTreeWater ?? 0} / {fortressData?.nextTreeWaterReq || 150}</strong>
                       </div>
                       <div className="clan-ftree-progress-row">
                         <span>🧪 Fertilizante:</span>
@@ -2480,11 +2507,11 @@ export default function Clan({
                           <div
                             className="clan-ftree-bar-fill clan-ftree-bar-fill--fert"
                             style={{
-                              width: `${Math.min(100, (((fortressData?.motherTreeFertilizer ?? 0) / (fortressData?.nextTreeFertReq || 20)) * 100))}%`,
+                              width: `${Math.min(100, (((fortressData?.motherTreeFertilizer ?? 0) / (fortressData?.nextTreeFertReq || 100)) * 100))}%`,
                             }}
                           />
                         </div>
-                        <strong>{fortressData?.motherTreeFertilizer ?? 0} / {fortressData?.nextTreeFertReq || 20}</strong>
+                        <strong>{fortressData?.motherTreeFertilizer ?? 0} / {fortressData?.nextTreeFertReq || 100}</strong>
                       </div>
                       <div className="clan-ftree-progress-row">
                         <span>💎 Gemas:</span>
@@ -2492,11 +2519,11 @@ export default function Clan({
                           <div
                             className="clan-ftree-bar-fill clan-ftree-bar-fill--gems"
                             style={{
-                              width: `${Math.min(100, (((fortressData?.motherTreeGems ?? 0) / (fortressData?.nextTreeGemsReq || 150)) * 100))}%`,
+                              width: `${Math.min(100, (((fortressData?.motherTreeGems ?? 0) / (fortressData?.nextTreeGemsReq || 600)) * 100))}%`,
                             }}
                           />
                         </div>
-                        <strong>{fortressData?.motherTreeGems ?? 0} / {fortressData?.nextTreeGemsReq || 150}</strong>
+                        <strong>{fortressData?.motherTreeGems ?? 0} / {fortressData?.nextTreeGemsReq || 600}</strong>
                       </div>
 
                       <button
@@ -4044,7 +4071,7 @@ export default function Clan({
               <div className="clan-tree-input-card">
                 <div className="clan-tree-input-info">
                   <label>💧 Agua de Cultivo</label>
-                  <small>Tienes: {userFarmingInv.water} 💧 • Requerido: {fortressData.motherTreeWater || 0}/{fortressData.nextTreeWaterReq || 30}</small>
+                  <small>Tienes: {userFarmingInv.water} 💧 • Requerido: {fortressData.motherTreeWater || 0}/{fortressData.nextTreeWaterReq || 150}</small>
                 </div>
                 <div className="clan-tree-input-controls">
                   <input
@@ -4058,7 +4085,7 @@ export default function Clan({
                     type="button"
                     className="clan-tree-max-btn"
                     onClick={() => {
-                      const needed = Math.max(0, (fortressData.nextTreeWaterReq || 30) - (fortressData.motherTreeWater || 0))
+                      const needed = Math.max(0, (fortressData.nextTreeWaterReq || 150) - (fortressData.motherTreeWater || 0))
                       setMotherTreeWaterInput(Math.min(userFarmingInv.water, needed))
                     }}
                   >
@@ -4071,7 +4098,7 @@ export default function Clan({
               <div className="clan-tree-input-card">
                 <div className="clan-tree-input-info">
                   <label>🧪 Fertilizante</label>
-                  <small>Tienes: {userFarmingInv.fertilizer} 🧪 • Requerido: {fortressData.motherTreeFertilizer || 0}/{fortressData.nextTreeFertReq || 20}</small>
+                  <small>Tienes: {userFarmingInv.fertilizer} 🧪 • Requerido: {fortressData.motherTreeFertilizer || 0}/{fortressData.nextTreeFertReq || 100}</small>
                 </div>
                 <div className="clan-tree-input-controls">
                   <input
@@ -4085,7 +4112,7 @@ export default function Clan({
                     type="button"
                     className="clan-tree-max-btn"
                     onClick={() => {
-                      const needed = Math.max(0, (fortressData.nextTreeFertReq || 20) - (fortressData.motherTreeFertilizer || 0))
+                      const needed = Math.max(0, (fortressData.nextTreeFertReq || 100) - (fortressData.motherTreeFertilizer || 0))
                       setMotherTreeFertInput(Math.min(userFarmingInv.fertilizer, needed))
                     }}
                   >
@@ -4098,7 +4125,7 @@ export default function Clan({
               <div className="clan-tree-input-card">
                 <div className="clan-tree-input-info">
                   <label>💎 Gemas</label>
-                  <small>Tienes: {userGems} 💎 • Requerido: {fortressData.motherTreeGems || 0}/{fortressData.nextTreeGemsReq || 150}</small>
+                  <small>Tienes: {userGems} 💎 • Requerido: {fortressData.motherTreeGems || 0}/{fortressData.nextTreeGemsReq || 600}</small>
                 </div>
                 <div className="clan-tree-input-controls">
                   <input
@@ -4112,7 +4139,7 @@ export default function Clan({
                     type="button"
                     className="clan-tree-max-btn"
                     onClick={() => {
-                      const needed = Math.max(0, (fortressData.nextTreeGemsReq || 150) - (fortressData.motherTreeGems || 0))
+                      const needed = Math.max(0, (fortressData.nextTreeGemsReq || 600) - (fortressData.motherTreeGems || 0))
                       setMotherTreeGemsInput(Math.min(userGems, needed))
                     }}
                   >

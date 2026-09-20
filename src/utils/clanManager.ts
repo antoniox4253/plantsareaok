@@ -113,6 +113,7 @@ export interface ClanData {
   rewardShares?: Record<string, number>
   damageDealt?: number
   dailyDamageDealt?: number
+  maxMembers?: number
 }
 
 const STORAGE_KEYS = {

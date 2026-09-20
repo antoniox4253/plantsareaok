@@ -233,7 +233,8 @@ export function createBattleState(
   p1TreeSkin?: string | null,
   p2TreeSkin?: string | null,
   lanesCount = 3,
-  isFortressMode = false
+  isFortressMode = false,
+  initialAttackSuns?: number
 ): GameState {
   return {
     tick: 0,
@@ -264,7 +265,7 @@ export function createBattleState(
     p2BaseHp: p2BaseHp ?? INITIAL_BASE_HP,
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
-    sunBank: INITIAL_SUN,
+    sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isFortressMode ? 200 : INITIAL_SUN),
     // Paridad: los dos jugadores empiezan con los mismos soles.
     p2SunBank: INITIAL_SUN,
     plants: [],
