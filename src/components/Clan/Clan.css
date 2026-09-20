@@ -4477,9 +4477,109 @@
   max-height: 390px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px), (max-height: 620px) {
+  .clan-fortress-hub {
+    padding: 2px 4px;
+  }
   .clan-fortress-cards-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-height: none;
+  }
+  .clan-fhub-card {
+    padding: 8px 10px;
+    gap: 6px;
+    border-radius: 10px;
+    border-width: 1.5px;
+  }
+  .clan-fhub-card__top {
+    padding-bottom: 4px;
+    gap: 6px;
+  }
+  .clan-fhub-card__icon {
+    font-size: 18px;
+  }
+  .clan-fhub-card__title {
+    font-size: 12px;
+  }
+  .clan-fhub-card__tag {
+    font-size: 8.5px;
+  }
+  .clan-fhub-card__badge {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+  .clan-fhub-card__body {
+    gap: 5px;
+  }
+  .clan-fhub-stat-row {
+    font-size: 9.5px;
+  }
+  .clan-fhub-bar-track {
+    height: 5px;
+  }
+  .clan-fhub-pill-row {
+    gap: 4px;
+  }
+  .clan-fhub-pill {
+    font-size: 8.5px;
+    padding: 2px 5px;
+  }
+  .clan-fhub-nutrient-chip {
+    font-size: 8.5px;
+    padding: 2px 5px;
+  }
+  .clan-fhub-perk-item {
+    font-size: 8px;
+    padding: 2px 5px;
+  }
+  .clan-fhub-card__footer {
+    padding-top: 2px;
+  }
+  .clan-fhub-card__btn {
+    padding: 6px 10px;
+    font-size: 10.5px;
+    border-radius: 6px;
+  }
+}
+
+@media (max-height: 480px) {
+  .clan-fortress-cards-grid {
+    gap: 5px;
+  }
+  .clan-fhub-card {
+    padding: 5px 6px;
+    gap: 3px;
+    border-radius: 8px;
+  }
+  .clan-fhub-card__icon {
+    font-size: 15px;
+  }
+  .clan-fhub-card__title {
+    font-size: 10.5px;
+  }
+  .clan-fhub-card__tag {
+    font-size: 7.5px;
+  }
+  .clan-fhub-card__badge {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+  .clan-fhub-stat-row {
+    font-size: 8.5px;
+  }
+  .clan-fhub-bar-track {
+    height: 4px;
+  }
+  .clan-fhub-pill,
+  .clan-fhub-nutrient-chip,
+  .clan-fhub-perk-item {
+    font-size: 7.5px;
+    padding: 1px 4px;
+  }
+  .clan-fhub-card__btn {
+    padding: 4px 6px;
+    font-size: 9.5px;
   }
 }
 
@@ -5053,9 +5153,95 @@
   align-items: start;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px), (max-height: 620px) {
+  .clan-fortress-subview-topbar {
+    height: 44px;
+    padding: 0 14px;
+    gap: 12px;
+  }
+  .clan-fortress-back-btn {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+  .clan-fortress-subview-header-title h3 {
+    font-size: 13px;
+  }
+  .clan-fortress-subview-header-title small {
+    font-size: 9.5px;
+  }
+  .clan-fortress-fullscreen-content {
+    padding: 10px 14px 20px;
+    gap: 10px;
+  }
   .clan-bastion-layout-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .clan-bastion-col {
+    gap: 10px;
+  }
+  .clan-card,
+  .clan-bastion-link-defenses-card,
+  .clan-bastion-raid-hero,
+  .clan-fortress-rules-card {
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+  .clan-bld-icon {
+    font-size: 22px;
+  }
+  .clan-bld-header h4 {
+    font-size: 12px;
+  }
+  .clan-bld-header span {
+    font-size: 9.5px;
+  }
+  .clan-bld-desc {
+    font-size: 10px;
+    line-height: 1.3;
+  }
+  .clan-bld-badge {
+    font-size: 9.5px;
+    padding: 2px 6px;
+  }
+  .clan-bld-action-btn {
+    padding: 5px 10px;
+    font-size: 10.5px;
+  }
+  .clan-bastion-raid-icon {
+    font-size: 22px;
+  }
+  .clan-bastion-raid-title h4 {
+    font-size: 12.5px;
+  }
+  .clan-bastion-raid-title span {
+    font-size: 9.5px;
+  }
+  .clan-bastion-raid-cta {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+  .clan-fcta-cost-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+  .clan-frules-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .clan-frule-item {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .clan-frule-icon {
+    font-size: 16px;
+  }
+  .clan-frule-item strong {
+    font-size: 10.5px;
+  }
+  .clan-frule-item p {
+    font-size: 9.5px;
+    line-height: 1.25;
   }
 }
 
@@ -5383,9 +5569,119 @@
   box-sizing: border-box;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px), (max-height: 620px) {
   .clan-tree-sanctuary-body {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 10px;
+    padding: 8px 14px 20px;
+  }
+  .clan-tree-sanctuary-left {
+    gap: 6px;
+  }
+  .clan-tree-section-header h3 {
+    font-size: 11.5px;
+  }
+  .clan-tree-section-sub {
+    font-size: 9px;
+  }
+  .clan-tree-resource-grid {
+    gap: 4px;
+  }
+  .clan-tree-res-card {
+    padding: 4px 6px;
+    gap: 2px;
+    border-radius: 6px;
+  }
+  .clan-tree-res-card__icon {
+    font-size: 14px;
+  }
+  .clan-tree-res-card__name {
+    font-size: 10px;
+  }
+  .clan-tree-res-card__meta,
+  .clan-tree-res-card__balance {
+    font-size: 8.5px;
+  }
+  .clan-tree-feed-controls {
+    padding: 6px 8px;
+    gap: 5px;
+    border-radius: 8px;
+  }
+  .clan-tree-amount-header,
+  .clan-tree-amount-preview {
+    font-size: 10px;
+  }
+  .clan-tree-amount-row {
+    gap: 6px;
+  }
+  .clan-tree-amount-input {
+    width: 55px;
+    height: 26px;
+    font-size: 11px;
+    padding: 1px 4px;
+    border-radius: 6px;
+  }
+  .clan-tree-quick-buttons {
+    gap: 4px;
+  }
+  .clan-tree-quick-buttons button {
+    height: 26px;
+    font-size: 9px;
+    border-radius: 5px;
+  }
+  .clan-tree-submit-btn {
+    height: 30px;
+    font-size: 10.5px;
+    border-radius: 7px;
+  }
+  .clan-tree-impact-card {
+    padding: 6px 8px;
+    font-size: 9.5px;
+    gap: 3px;
+    border-radius: 7px;
+  }
+  .clan-tree-impact-title {
+    font-size: 10px;
+  }
+  .clan-tree-visual-card {
+    padding: 8px 10px;
+    gap: 6px;
+    border-radius: 10px;
+  }
+  .clan-tree-badge-lvl {
+    font-size: 8.5px;
+    padding: 1px 8px;
+  }
+  .clan-tree-badge-title {
+    font-size: 11.5px;
+  }
+  .clan-tree-img-container {
+    width: 75px;
+    height: 75px;
+  }
+  .clan-tree-req-labels {
+    font-size: 9px;
+  }
+  .clan-tree-pbar-track {
+    height: 5px;
+  }
+  .clan-tree-perks-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+  .clan-tree-perk-card {
+    padding: 3px 5px;
+    gap: 4px;
+    border-radius: 6px;
+  }
+  .clan-tree-perk-icon {
+    font-size: 12px;
+  }
+  .clan-tree-perk-title {
+    font-size: 9px;
+  }
+  .clan-tree-perk-desc {
+    font-size: 8px;
   }
 }
 

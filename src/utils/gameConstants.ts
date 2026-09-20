@@ -319,12 +319,28 @@ export const LANES_CONFIG = [
   { id: 2, topPct: 58.67, heightPct: 19.33 },
 ]
 
+export const LANES_CONFIG_4 = [
+  { id: 0, topPct: 14, heightPct: 16 },
+  { id: 1, topPct: 31, heightPct: 16.5 },
+  { id: 2, topPct: 48.5, heightPct: 17 },
+  { id: 3, topPct: 66.5, heightPct: 17.5 },
+]
+
 export const LANES_CONFIG_5 = [
-  { id: 0, topPct: 13, heightPct: 13 },
-  { id: 1, topPct: 27, heightPct: 14 },
-  { id: 2, topPct: 42, heightPct: 15 },
-  { id: 3, topPct: 58, heightPct: 16 },
-  { id: 4, topPct: 75, heightPct: 17 },
+  { id: 0, topPct: 11, heightPct: 13.5 },
+  { id: 1, topPct: 25, heightPct: 14 },
+  { id: 2, topPct: 39.5, heightPct: 14.5 },
+  { id: 3, topPct: 54.5, heightPct: 15 },
+  { id: 4, topPct: 70, heightPct: 15.5 },
+]
+
+/** Plantas que en el Taller de Defensas se programan como emboscadas tácticas con temporizador */
+export const TACTICAL_AMBUSH_PLANTS: PlantId[] = [
+  'jalapeno',
+  'iceberglettuce',
+  'squash',
+  'bonkchoy',
+  'chomper',
 ]
 
 export const FORTRESS_SUN_COSTS: Record<PlantId, number> = {

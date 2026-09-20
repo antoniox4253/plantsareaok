@@ -329,6 +329,8 @@ export interface ClanFortressData {
   maxDefenseSunsBudget?: number
   sunsSpent: number
   layout: ClanFortressPlant[]
+  ambushes?: ClanFortressAmbush[]
+  unlockedPlants?: PlantId[]
   motherTreeLevel?: number
   motherTreeWater?: number
   motherTreeFertilizer?: number
@@ -346,6 +348,14 @@ export interface ClanFortressData {
   canEdit: boolean
 }
 
+export interface ClanFortressAmbush {
+  plantId: PlantId
+  lane: number
+  triggerSec: number
+  col?: number
+  level?: number
+}
+
 export interface ClanFortressMatchOpponent {
   targetClanId: string
   targetClanName: string
@@ -356,6 +366,9 @@ export interface ClanFortressMatchOpponent {
   targetVaultGems: number
   isNpc: boolean
   layout: ClanFortressPlant[]
+  ambushes?: ClanFortressAmbush[]
+  targetTreeLevel?: number
+  activeLanes?: number
   paidWith: 'clan_gold' | 'personal_gold'
   costPaid: number
   initialAttackSuns?: number

@@ -19,7 +19,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 // ─────────────────────────────────────────────────────────────────────────────
 import { createRng } from '../engine/rng'
 import { TICK_MS, MAX_TICKS_PER_FRAME, msToTicks } from '../engine/time'
-import { stepTick, createBattleState, crearPlantaDelRival, type GameState, type EngineVersion } from '../engine/simulate'
+import { stepTick, createBattleState, crearPlantaPropia, crearPlantaDelRival, type GameState, type EngineVersion } from '../engine/simulate'
 import { MARGEN_DE_RED_TICS } from '../engine/pvp'
 import {
   huellaDeLaPartida,
@@ -73,6 +73,7 @@ import type {
   PlantEntity,
   PlantId,
   ClanFortressPlant,
+  ClanFortressAmbush,
 } from '../types/game'
 import {
   PLANT_CONFIGS,
@@ -399,6 +400,7 @@ export function useGameEngine() {
   const costeDeMisJugadasRef = useRef<Map<string, { coste: number; carta: PlantId; slot: number | null }>>(
     new Map()
   )
+  const clanFortressAmbushesRef = useRef<ClanFortressAmbush[]>([])
 
   const claveDeJugada = (tick: number, lane: number, col: number | null) => `${tick}:${lane}:${col}`
 
@@ -488,11 +490,13 @@ export function useGameEngine() {
     clanFortressLayout?: ClanFortressPlant[],
     targetBaseHp?: number,
     initialAttackSuns?: number,
-    isPreparationPhase?: boolean
+    isPreparationPhase?: boolean,
+    clanFortressAmbushes?: ClanFortressAmbush[]
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
     isPrepPhaseRef.current = Boolean(isPreparationPhase)
+    clanFortressAmbushesRef.current = clanFortressAmbushes ? [...clanFortressAmbushes] : []
 
     const effectiveTreeBonusHp = typeof treeBonusHp === 'number'
       ? treeBonusHp
@@ -511,7 +515,7 @@ export function useGameEngine() {
 
     const effectiveP2Hp = targetBaseHp || (INITIAL_BASE_HP + effectiveRivalTreeBonusHp)
     const effectiveLanes = lanesCount || 3
-    const isFortress = effectiveLanes === 5 || Boolean(clanFortressLayout && clanFortressLayout.length > 0)
+    const isFortress = effectiveLanes >= 4 || Boolean(clanFortressLayout && clanFortressLayout.length > 0) || Boolean(clanFortressAmbushes && clanFortressAmbushes.length > 0) || targetBaseHp !== undefined
 
     stateRef.current = createBattleState(
       seed,
@@ -1216,6 +1220,30 @@ export function useGameEngine() {
         return null
       }
 
+      // En fase de preparación (Fortaleza / Asalto previo):
+      // La planta se materializa de inmediato en reposo sin desfasajes de tiempo ni combate activo.
+      if (isPrepPhaseRef.current) {
+        state.sunBank -= config.cost
+        const nuevaPlanta = crearPlantaPropia(
+          state,
+          card,
+          lane,
+          col,
+          rolls,
+          cardLevel,
+          cardEquippedItem
+        )
+        nuevaPlanta.isWalking = false
+        nuevaPlanta.state = 'idle'
+        state.plants.push(nuevaPlanta)
+        state.stats.plantsPlaced += 1
+        state.selectedCard = null
+        state.selectedSlotIndex = null
+        soundManager.playSound('plantation', 0.6)
+        forceRender()
+        return state.tick
+      }
+
       const retardo = state.isPvpMode ? MARGEN_DE_RED_TICS : 0
       const enTic = state.tick + retardo
 
@@ -1410,10 +1438,14 @@ export function useGameEngine() {
     ): { lane: number; col: number; tick: number; seq?: number } | null => {
       const state = stateRef.current
       let casilla: { lane: number; col: number } | null = null
+      let removedPlant: PlantEntity | null = null
 
       if (typeof target === 'string') {
         const p = state.plants.find((x) => x.id === target)
-        if (p && p.col !== undefined && !p.isWalking) casilla = { lane: p.lane, col: p.col }
+        if (p && p.col !== undefined && !p.isWalking) {
+          casilla = { lane: p.lane, col: p.col }
+          removedPlant = p
+        }
       } else {
         const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
         const centro = BASE_LEFT_END_X + target.col * colWidth + colWidth / 2
@@ -1423,7 +1455,10 @@ export function useGameEngine() {
             !x.isWalking &&
             (x.col === target.col || Math.abs(x.x - centro) < colWidth * 0.8)
         )
-        if (p && p.col !== undefined) casilla = { lane: p.lane, col: p.col }
+        if (p && p.col !== undefined) {
+          casilla = { lane: p.lane, col: p.col }
+          removedPlant = p
+        }
       }
 
       state.selectedCard = null
@@ -1431,6 +1466,23 @@ export function useGameEngine() {
       if (!casilla) {
         forceRender()
         return null
+      }
+
+      // En fase de preparación (Fortaleza de Clan / Pre-asalto):
+      // Desenterrar es instantáneo y REEMBOLSA EL 100% DE LOS SOLES para que el jugador
+      // pueda repensar y recolocar libremente su estrategia antes de la batalla.
+      if (isPrepPhaseRef.current && removedPlant) {
+        const plantCost = PLANT_CONFIGS[removedPlant.plantId]?.cost || 100
+        state.plants = state.plants.filter((x) => x.id !== removedPlant!.id)
+        state.pending = state.pending.filter(
+          (p) => !(p.kind === 'own_plant' && p.lane === casilla!.lane && p.col === casilla!.col)
+        )
+        state.sunBank += plantCost
+        delete state.cooldowns[removedPlant.plantId]
+        state.slotCooldowns = {}
+        soundManager.playSound('plantation', 0.6)
+        forceRender()
+        return { ...casilla, tick: state.tick }
       }
 
       if (isAsyncMatchRef.current && (rankedAsyncInconsistencyRef.current || reconciliationStateRef.current !== 'healthy')) {
@@ -1733,6 +1785,16 @@ export function useGameEngine() {
         return
       }
 
+      // FASE DE PREPARACIÓN (Fortaleza de Clan / Asalto Previo):
+      // No hay respawn de enemigos, no caen soles del cielo, las plantas y enemigos
+      // no atacan ni avanzan. El combate se congela hasta que inicie la batalla.
+      if (isPrepPhaseRef.current) {
+        lastFrameMsRef.current = nowMs
+        accumulatorMsRef.current = 0
+        forceRender()
+        return
+      }
+
       // Tope de 5 s como antes: si la pestaña estuvo en segundo plano, se
       // descartan los tics de más para no congelar la interfaz.
       //
@@ -1780,6 +1842,36 @@ export function useGameEngine() {
         // engine/simulate.ts, sin React y sin navegador, para que el servidor y los
         // tests puedan ejecutarlo igual.
         stepTick(state, reproducirSonido)
+
+        // Procesar emboscadas tácticas de Fortaleza enemiga durante combate activo
+        if (!isPrepPhaseRef.current && clanFortressAmbushesRef.current.length > 0) {
+          const segundosTranscurridos = Math.floor(state.tick / 30)
+          const disparar: ClanFortressAmbush[] = []
+          const pendientes: ClanFortressAmbush[] = []
+          for (const amb of clanFortressAmbushesRef.current) {
+            if (amb.triggerSec <= segundosTranscurridos) {
+              disparar.push(amb)
+            } else {
+              pendientes.push(amb)
+            }
+          }
+          if (disparar.length > 0) {
+            clanFortressAmbushesRef.current = pendientes
+            for (const amb of disparar) {
+              const defPlant = crearPlantaDelRival(
+                state,
+                amb.plantId,
+                amb.lane,
+                amb.col,
+                [],
+                1,
+                null
+              )
+              state.enemyPlants.push(defPlant)
+              reproducirSonido('plantation', 0.9)
+            }
+          }
+        }
 
         // Compilar log de playtest estratégico si la partida ha finalizado
         if (
@@ -1935,6 +2027,24 @@ export function useGameEngine() {
 
   const setPreparationPhase = useCallback((isPrep: boolean) => {
     isPrepPhaseRef.current = isPrep
+    const st = stateRef.current
+    if (!isPrep && st) {
+      // Activar movimiento de unidades cuerpo a cuerpo aliadas al iniciar la batalla
+      st.plants.forEach((p) => {
+        const cfg = PLANT_CONFIGS[p.plantId]
+        if (cfg?.category === 'melee' || cfg?.moveSpeed || p.plantId === 'chomper') {
+          p.isWalking = true
+          p.state = 'walking'
+        }
+      })
+      // Reanclar temporizadores para que el combate arranque inmediatamente
+      st.timers.lastEnemySpawn = st.tick
+      st.timers.lastP2PassiveSun = st.tick
+      st.timers.lastSkySun = st.tick
+      st.timers.waveStart = st.tick
+      lastFrameMsRef.current = performance.now()
+      accumulatorMsRef.current = 0
+    }
     forceRender()
   }, [forceRender])
 

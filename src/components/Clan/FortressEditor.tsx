@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
-import type { PlantId, ClanFortressPlant } from '../../types/game'
-import { PLANT_CONFIGS, LANES_CONFIG_5, FORTRESS_SUN_COSTS } from '../../utils/gameConstants'
+import type { PlantId, ClanFortressPlant, ClanFortressAmbush } from '../../types/game'
+import { PLANT_CONFIGS, LANES_CONFIG_5, FORTRESS_SUN_COSTS, TACTICAL_AMBUSH_PLANTS } from '../../utils/gameConstants'
 import { supabaseService } from '../../services/supabaseService'
 import { soundManager } from '../../utils/audioManager'
 import arena1Bg from '../../assets/images/battlefield-bg.webp'
@@ -9,11 +9,14 @@ import './FortressEditor.css'
 interface FortressEditorProps {
   clanId: string
   clanName: string
+  treeLevel?: number
   initialLayout: ClanFortressPlant[]
+  initialAmbushes?: ClanFortressAmbush[]
+  initialUnlockedPlants?: PlantId[]
   defenseSunsBudget: number
   canEdit?: boolean
   onClose: () => void
-  onSaved: (newLayout: ClanFortressPlant[], sunsSpent: number) => void
+  onSaved: (newLayout: ClanFortressPlant[], newAmbushes: ClanFortressAmbush[], sunsSpent: number) => void
 }
 
 const SELECTABLE_PLANTS: PlantId[] = [
@@ -35,36 +38,77 @@ const SELECTABLE_PLANTS: PlantId[] = [
   'aloe',
 ]
 
+const DEFAULT_UNLOCKED: PlantId[] = ['sunflower', 'peashooter', 'wallnut']
+
 export default function FortressEditor({
   clanId: _clanId,
   clanName,
+  treeLevel = 1,
   initialLayout,
+  initialAmbushes = [],
+  initialUnlockedPlants,
   defenseSunsBudget,
   canEdit = true,
   onClose,
   onSaved,
 }: FortressEditorProps) {
   const [layout, setLayout] = useState<ClanFortressPlant[]>(() => [...initialLayout])
+  const [ambushes, setAmbushes] = useState<ClanFortressAmbush[]>(() => [...initialAmbushes])
+  const [unlockedPlants, setUnlockedPlants] = useState<PlantId[]>(() => {
+    if (initialUnlockedPlants && initialUnlockedPlants.length > 0) return initialUnlockedPlants
+    return DEFAULT_UNLOCKED
+  })
+
   const [selectedPlantId, setSelectedPlantId] = useState<PlantId>('peashooter')
   const [selectedTileToMove, setSelectedTileToMove] = useState<{ lane: number; col: number } | null>(null)
   const [isShovelActive, setIsShovelActive] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  // Calcular soles gastados en tiempo real
+  // Modal para programar emboscada táctica
+  const [ambushModalPlant, setAmbushModalPlant] = useState<PlantId | null>(null)
+  const [ambushLane, setAmbushLane] = useState<number>(1)
+  const [ambushTriggerSec, setAmbushTriggerSec] = useState<number>(45)
+
+  // Estado para donar carta al arsenal
+  const [isDonating, setIsDonating] = useState<string | null>(null)
+
+  // Determinación de carriles permitidos según el nivel del Árbol Madre
+  // Nivel 1 y 2: Carriles centrales 1, 2 y 3 (3 líneas)
+  // Nivel 3: Carriles 0, 1, 2 y 3 (4 líneas, carril 4 bloqueado)
+  // Nivel 4: 5 carriles completos (0..4)
+  const allowedLanes = useMemo(() => {
+    if (treeLevel >= 4) return [0, 1, 2, 3, 4]
+    if (treeLevel === 3) return [0, 1, 2, 3]
+    return [1, 2, 3]
+  }, [treeLevel])
+
+  // Calcular soles gastados en tiempo real (plantas en césped + emboscadas programadas)
   const sunsSpent = useMemo(() => {
-    return layout.reduce((total, item) => total + (FORTRESS_SUN_COSTS[item.plantId] || 100), 0)
-  }, [layout])
+    const layoutSuns = layout.reduce((total, item) => total + (FORTRESS_SUN_COSTS[item.plantId] || 100), 0)
+    const ambushSuns = ambushes.reduce((total, item) => total + (FORTRESS_SUN_COSTS[item.plantId] || 100), 0)
+    return layoutSuns + ambushSuns
+  }, [layout, ambushes])
 
   const sunsRemaining = defenseSunsBudget - sunsSpent
 
-  // Grid defensivo: 5 carriles (0..4) x 7 columnas defensivas (0..6)
+  // Grid defensivo: 7 columnas (0 a 6) en la mitad izquierda
   const defenseCols = [0, 1, 2, 3, 4, 5, 6]
 
+  // Clic en casillas del campo
   const handleTileClick = (lane: number, col: number) => {
+    if (!allowedLanes.includes(lane)) {
+      soundManager.playSound('click', 0.2)
+      setSaveStatus({
+        type: 'error',
+        message: `🔒 Este carril está bloqueado. Requiere Árbol Madre Nivel ${lane === 0 ? 3 : 4}.`,
+      })
+      return
+    }
+
     const existingIndex = layout.findIndex((p) => p.lane === lane && p.col === col)
 
-    // 1. Si la pala está activa
+    // 1. Modo pala
     if (isShovelActive) {
       if (existingIndex >= 0) {
         soundManager.playSound('click', 0.4)
@@ -73,22 +117,20 @@ export default function FortressEditor({
         setLayout((prev) => prev.filter((_, idx) => idx !== existingIndex))
         setSaveStatus({
           type: 'success',
-          message: `Planta desenterrada. Se reembolsaron +${cost} ☀️ al presupuesto.`,
+          message: `Planta desenterrada (+${cost} ☀️ reembolsados).`,
         })
       }
       return
     }
 
-    // 2. Si hay una planta seleccionada para MOVER
+    // 2. Traslado o Intercambio
     if (selectedTileToMove) {
-      // Clic en la misma casilla -> cancelar selección
       if (selectedTileToMove.lane === lane && selectedTileToMove.col === col) {
         setSelectedTileToMove(null)
         setSaveStatus(null)
         return
       }
 
-      // Clic en casilla con otra planta -> INTERCAMBIAR (SWAP)
       if (existingIndex >= 0) {
         soundManager.playSound('plantation', 0.7)
         setLayout((prev) => {
@@ -110,7 +152,6 @@ export default function FortressEditor({
         return
       }
 
-      // Clic en casilla vacía -> TRASLADAR PLANTA
       soundManager.playSound('plantation', 0.7)
       setLayout((prev) => {
         return prev.map((item) => {
@@ -128,8 +169,7 @@ export default function FortressEditor({
       return
     }
 
-    // 3. Si NO hay planta seleccionada para mover:
-    // 3a. Clic en casilla ocupada -> SELECCIONARLA PARA MOVER
+    // 3. Selección para mover
     if (existingIndex >= 0) {
       soundManager.playSound('click', 0.4)
       setSelectedTileToMove({ lane, col })
@@ -137,12 +177,18 @@ export default function FortressEditor({
       const name = PLANT_CONFIGS[plant.plantId]?.name || plant.plantId
       setSaveStatus({
         type: 'success',
-        message: `Moviendo "${name}" (Carril ${lane + 1}, C${col + 1}). Haz clic en cualquier casilla para reubicarla o intercambiarla.`,
+        message: `Moviendo "${name}" (Carril ${lane + 1}, C${col + 1}). Haz clic en otra casilla para reubicarla.`,
       })
       return
     }
 
-    // 3b. Clic en casilla vacía -> PLANTAR DESDE PALETA
+    // 4. Plantar estática desde paleta
+    if (TACTICAL_AMBUSH_PLANTS.includes(selectedPlantId)) {
+      setAmbushModalPlant(selectedPlantId)
+      setAmbushLane(lane)
+      return
+    }
+
     const cost = FORTRESS_SUN_COSTS[selectedPlantId] || 100
     if (sunsRemaining < cost) {
       soundManager.playSound('click', 0.2)
@@ -166,31 +212,88 @@ export default function FortressEditor({
     setSaveStatus(null)
   }
 
-  const handleRemovePlant = (lane: number, col: number) => {
-    const existingIndex = layout.findIndex((p) => p.lane === lane && p.col === col)
-    if (existingIndex >= 0) {
-      soundManager.playSound('click', 0.4)
-      const removed = layout[existingIndex]
-      const cost = FORTRESS_SUN_COSTS[removed.plantId] || 100
-      setLayout((prev) => prev.filter((_, idx) => idx !== existingIndex))
-      if (selectedTileToMove?.lane === lane && selectedTileToMove?.col === col) {
-        setSelectedTileToMove(null)
-      }
-      setSaveStatus({
-        type: 'success',
-        message: `Planta desenterrada (+${cost} ☀️ reembolsados).`,
-      })
-    }
-  }
-
   const handleClearAll = () => {
-    if (layout.length === 0) return
+    if (layout.length === 0 && ambushes.length === 0) return
     soundManager.playSound('click', 0.4)
     setLayout([])
+    setAmbushes([])
     setSelectedTileToMove(null)
     setSaveStatus(null)
   }
 
+  // Programar emboscada
+  const handleScheduleAmbush = () => {
+    if (!ambushModalPlant) return
+    const cost = FORTRESS_SUN_COSTS[ambushModalPlant] || 100
+    if (sunsRemaining < cost) {
+      setSaveStatus({
+        type: 'error',
+        message: `Presupuesto solar insuficiente para esta emboscada (requiere ${cost} ☀️).`,
+      })
+      setAmbushModalPlant(null)
+      return
+    }
+
+    soundManager.playSound('plantation', 0.8)
+    setAmbushes((prev) => [
+      ...prev,
+      {
+        plantId: ambushModalPlant,
+        lane: ambushLane,
+        triggerSec: ambushTriggerSec,
+        level: 1,
+      },
+    ])
+    setAmbushModalPlant(null)
+    setSaveStatus({
+      type: 'success',
+      message: `⚡ ¡Emboscada de ${PLANT_CONFIGS[ambushModalPlant]?.name} programada en Carril ${ambushLane + 1} a los ${Math.floor(ambushTriggerSec / 60)}m ${ambushTriggerSec % 60}s!`,
+    })
+  }
+
+  const handleRemoveAmbush = (index: number) => {
+    soundManager.playSound('click', 0.3)
+    const removed = ambushes[index]
+    const cost = FORTRESS_SUN_COSTS[removed.plantId] || 100
+    setAmbushes((prev) => prev.filter((_, i) => i !== index))
+    setSaveStatus({
+      type: 'success',
+      message: `Emboscada cancelada (+${cost} ☀️ reembolsados).`,
+    })
+  }
+
+  // Donar carta al arsenal del clan
+  const handleDonateToArsenal = async (plantId: PlantId) => {
+    setIsDonating(plantId)
+    setSaveStatus(null)
+    try {
+      const res = await supabaseService.donatePlantToClanArsenal(plantId)
+      if (!res.success) {
+        setSaveStatus({
+          type: 'error',
+          message: res.error || 'No tienes copias disponibles de esta planta en tu colección.',
+        })
+        return
+      }
+
+      soundManager.playSound('plantation', 0.9)
+      setUnlockedPlants((prev) => Array.from(new Set([...prev, plantId])))
+      setSelectedPlantId(plantId)
+      setSaveStatus({
+        type: 'success',
+        message: `🎉 ¡Has donado 1 copia de ${PLANT_CONFIGS[plantId]?.name}! Ahora está desbloqueada en el arsenal del clan.`,
+      })
+    } catch (e: any) {
+      setSaveStatus({
+        type: 'error',
+        message: e?.message || 'Error al donar carta al clan.',
+      })
+    } finally {
+      setIsDonating(null)
+    }
+  }
+
+  // Guardar en backend (layout 0..6 + ambushes)
   const handleSave = async () => {
     if (!canEdit) {
       setSaveStatus({
@@ -203,7 +306,7 @@ export default function FortressEditor({
     setIsSaving(true)
     setSaveStatus(null)
     try {
-      const res = await supabaseService.saveClanFortress(layout)
+      const res = await supabaseService.saveClanFortress(layout, ambushes)
       if (!res.success) {
         setSaveStatus({
           type: 'error',
@@ -216,9 +319,9 @@ export default function FortressEditor({
       soundManager.playSound('plantation', 0.8)
       setSaveStatus({
         type: 'success',
-        message: '¡Formación defensiva guardada con éxito! Las unidades defenderán el bastión en los próximos combates.',
+        message: `¡Formación defensiva guardada con éxito! (${res.plantsCount || layout.length} plantas y ${res.ambushesCount || ambushes.length} emboscadas registradas en la base de datos).`,
       })
-      onSaved(layout, sunsSpent)
+      onSaved(layout, ambushes, sunsSpent)
     } catch (e: any) {
       setSaveStatus({
         type: 'error',
@@ -231,31 +334,45 @@ export default function FortressEditor({
 
   return (
     <div className="fortress-editor-fullscreen">
-      {/* ── BARRA SUPERIOR DE CONTROL ────────────────────────────────────────── */}
+      {/* ── HEADER TÁCTICO ─────────────────────────────────────────────────── */}
       <header className="fortress-editor-header">
         <div className="fortress-editor-header__left">
-          <button type="button" className="fortress-editor-btn-back" onClick={onClose}>
-            ← VOLVER A FORTALEZA
+          <button
+            type="button"
+            className="fortress-editor-btn-back"
+            onClick={onClose}
+            title="Volver a la vista del Clan"
+          >
+            ← VOLVER
           </button>
           <div className="fortress-editor-title">
-            <h2>🛡️ PREPARACIÓN DE DEFENSAS: {clanName.toUpperCase()}</h2>
-            <small>Modo Arena 1 • 5 Carriles Defensivos • Despliega y mueve tus plantas</small>
+            <h2>TALLER DE DEFENSAS: {clanName.toUpperCase()}</h2>
+            <small>
+              Árbol Madre Nivel {treeLevel} • {allowedLanes.length} Líneas Defensivas Activas
+            </small>
           </div>
         </div>
 
         <div className="fortress-editor-header__center">
           <div className="fortress-sun-meter">
             <div className="fortress-sun-meter__info">
-              <span className="fortress-sun-icon">☀️</span>
-              <strong>{sunsSpent} / {defenseSunsBudget} Soles</strong>
-              <small>({sunsRemaining} restantes)</small>
+              <span>
+                <span className="fortress-sun-icon">☀️</span> Soles Disponibles:{' '}
+                <strong>{sunsRemaining} ☀️</strong>
+              </span>
+              <small>
+                {sunsSpent} / {defenseSunsBudget} ☀️
+              </small>
             </div>
             <div className="fortress-sun-meter__track">
               <div
                 className="fortress-sun-meter__fill"
                 style={{
-                  width: `${Math.min(100, (sunsSpent / Math.max(1, defenseSunsBudget)) * 100)}%`,
-                  backgroundColor: sunsRemaining < 100 ? '#ef4444' : '#facc15',
+                  width: `${Math.min(100, Math.max(0, (sunsSpent / defenseSunsBudget) * 100))}%`,
+                  background:
+                    sunsRemaining < 100
+                      ? 'linear-gradient(90deg, #ef4444, #f97316)'
+                      : 'linear-gradient(90deg, #eab308, #22c55e)',
                 }}
               />
             </div>
@@ -267,96 +384,80 @@ export default function FortressEditor({
             type="button"
             className={`fortress-editor-btn-shovel ${isShovelActive ? 'fortress-editor-btn-shovel--active' : ''}`}
             onClick={() => {
-              soundManager.playSound('click', 0.3)
-              setIsShovelActive((v) => !v)
+              soundManager.playSound('click', 0.4)
+              setIsShovelActive((prev) => !prev)
               setSelectedTileToMove(null)
             }}
-            title="Activar o desactivar pala para desenterrar y reembolsar soles"
+            title="Activar pala para desenterrar plantas y recuperar soles"
           >
-            {isShovelActive ? '🪓 PALA ACTIVA' : '🪓 PALA'}
+            🪓 {isShovelActive ? 'PALA ACTIVA' : 'DESENTERRAR'}
           </button>
 
           <button
             type="button"
             className="fortress-editor-btn-clear"
             onClick={handleClearAll}
-            disabled={layout.length === 0 || isSaving}
-            title="Quitar todas las plantas defensivas"
+            disabled={layout.length === 0 && ambushes.length === 0}
+            title="Limpiar todas las plantas y emboscadas"
           >
-            🗑️ VACIAR
+            🗑️ LIMPIAR
           </button>
 
-          {canEdit ? (
-            <button
-              type="button"
-              className="fortress-editor-btn-save"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? 'GUARDANDO...' : '💾 GUARDAR FORMACIÓN'}
-            </button>
-          ) : (
-            <span className="fortress-editor-observer-badge">
-              👁️ MODO OBSERVADOR
-            </span>
-          )}
+          <button
+            type="button"
+            className="fortress-editor-btn-save"
+            onClick={handleSave}
+            disabled={isSaving || !canEdit}
+            title={canEdit ? 'Guardar formación en la base de datos' : 'Solo oficiales pueden guardar'}
+          >
+            {isSaving ? 'GUARDANDO...' : '💾 GUARDAR DEFENSA'}
+          </button>
         </div>
       </header>
 
-      {/* Cinta de acción interactiva al mover planta */}
-      {selectedTileToMove && (() => {
-        const moving = layout.find((p) => p.lane === selectedTileToMove.lane && p.col === selectedTileToMove.col)
-        const movingCfg = moving ? PLANT_CONFIGS[moving.plantId] : null
-        const cost = moving ? (FORTRESS_SUN_COSTS[moving.plantId] || 100) : 100
-        return (
-          <div className="fortress-move-ribbon">
-            <div className="fortress-move-ribbon__info">
-              <span className="fortress-move-ribbon__icon">🎯</span>
-              <div>
-                <strong>Moviendo: {movingCfg?.name || 'Planta'}</strong>
-                <small>
-                  Carril {selectedTileToMove.lane + 1}, Casilla {selectedTileToMove.col + 1} • Haz clic en cualquier casilla de la arena para reubicarla o intercambiarla
-                </small>
-              </div>
-            </div>
-            <div className="fortress-move-ribbon__actions">
-              <button
-                type="button"
-                className="fortress-move-ribbon__shovel-btn"
-                onClick={() => handleRemovePlant(selectedTileToMove.lane, selectedTileToMove.col)}
-                title="Desenterrar y recuperar Soles"
-              >
-                🗑️ Desenterrar (+{cost} ☀️)
-              </button>
-              <button
-                type="button"
-                className="fortress-move-ribbon__cancel-btn"
-                onClick={() => setSelectedTileToMove(null)}
-              >
-                ✕ Cancelar
-              </button>
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* Alerta de feedback de guardado */}
-      {saveStatus && !selectedTileToMove && (
-        <div className={`fortress-editor-alert fortress-editor-alert--${saveStatus.type}`}>
-          {saveStatus.message}
+      {/* Ribbon interactivo de estado */}
+      {selectedTileToMove && (
+        <div className="fortress-move-ribbon">
+          <span className="fortress-move-ribbon__icon">🎯</span>
+          <span className="fortress-move-ribbon__text">
+            Moviendo planta de Carril {selectedTileToMove.lane + 1}, Casilla {selectedTileToMove.col + 1}. Haz clic en cualquier casilla defensiva para moverla o intercambiarla.
+          </span>
+          <button
+            type="button"
+            className="fortress-move-ribbon__shovel-btn"
+            onClick={() => {
+              handleTileClick(selectedTileToMove.lane, selectedTileToMove.col)
+              setIsShovelActive(true)
+            }}
+          >
+            🪓 Desenterrar
+          </button>
+          <button
+            type="button"
+            className="fortress-move-ribbon__cancel-btn"
+            onClick={() => setSelectedTileToMove(null)}
+          >
+            ✖ Cancelar
+          </button>
         </div>
       )}
 
-      {/* ── CAMPO DE BATALLA 5 CARRILES (ARENA 1 PERSPECTIVA) ─────────────────── */}
+      {/* Alertas dinámicas de guardado */}
+      {saveStatus && (
+        <div className={`fortress-editor-alert fortress-editor-alert--${saveStatus.type}`}>
+          <span>{saveStatus.message}</span>
+        </div>
+      )}
+
+      {/* ── CAMPO DE BATALLA (PERSPECTIVA DEFENSA IZQUIERDA C0..C6) ──────────── */}
       <div className="fortress-editor-field-container">
         <div
           className="fortress-editor-field"
           style={{ backgroundImage: `url(${arena1Bg})` }}
         >
-          {/* Overlay de perspectiva y profundidad */}
           <div className="fortress-editor-depth-overlay" />
 
-          {/* División del campo: Zona Defensora (Izquierda) vs Zona Atacante (Derecha) */}
+          {/* División visual del campo */}
           <div className="fortress-field-zone fortress-field-zone--defense">
             <span>🏰 TU BASTIÓN DEFENSIVO (C0 A C6)</span>
           </div>
@@ -364,105 +465,267 @@ export default function FortressEditor({
             <span>⚔️ ZONA DE AVANCE ENEMIGO (C7 A C13)</span>
           </div>
 
-          {/* Línea divisoria central */}
           <div className="fortress-field-half-line" />
 
-          {/* Renderizado de los 5 carriles en perspectiva */}
-          {LANES_CONFIG_5.map((laneCfg) => (
-            <div
-              key={laneCfg.id}
-              className="fortress-editor-lane"
-              style={{
-                top: `${laneCfg.topPct}%`,
-                height: `${laneCfg.heightPct}%`,
-              }}
-            >
-              <div className="fortress-lane-tag">LÍNEA {laneCfg.id + 1}</div>
+          {/* Renderizado de carriles */}
+          {LANES_CONFIG_5.map((laneCfg) => {
+            const isLaneLocked = !allowedLanes.includes(laneCfg.id)
 
-              {/* Grid de 7 columnas defensivas en este carril */}
-              <div className="fortress-lane-tiles">
-                {defenseCols.map((col) => {
-                  const placed = layout.find((p) => p.lane === laneCfg.id && p.col === col)
-                  const placedCfg = placed ? PLANT_CONFIGS[placed.plantId] : null
-                  const isBeingMoved = selectedTileToMove?.lane === laneCfg.id && selectedTileToMove?.col === col
+            return (
+              <div
+                key={laneCfg.id}
+                className={`fortress-editor-lane ${isLaneLocked ? 'fortress-editor-lane--locked' : ''}`}
+                style={{
+                  top: `${laneCfg.topPct}%`,
+                  height: `${laneCfg.heightPct}%`,
+                }}
+              >
+                <div className="fortress-lane-tag">
+                  {isLaneLocked ? '🔒 BLOQUEADO' : `LÍNEA ${laneCfg.id + 1}`}
+                </div>
 
-                  return (
-                    <div
-                      key={col}
-                      className={`fortress-defense-tile ${placed ? 'fortress-defense-tile--occupied' : ''} ${isBeingMoved ? 'fortress-defense-tile--moving' : ''} ${isShovelActive && placed ? 'fortress-defense-tile--shovel-target' : ''}`}
-                      onClick={() => handleTileClick(laneCfg.id, col)}
-                      title={
-                        isShovelActive
-                          ? placed ? `Pala: Clic para desenterrar ${placedCfg?.name} (+${FORTRESS_SUN_COSTS[placed.plantId] || 100} ☀️)` : 'Casilla vacía'
-                          : selectedTileToMove
-                          ? placed
-                            ? `Clic para intercambiar con ${placedCfg?.name}`
-                            : `Clic para trasladar planta a esta casilla`
-                          : placed
-                          ? `Clic para seleccionar y mover ${placedCfg?.name} entre carriles`
-                          : `Clic para plantar ${PLANT_CONFIGS[selectedPlantId]?.name} (-${FORTRESS_SUN_COSTS[selectedPlantId] || 100} ☀️)`
-                      }
-                    >
-                      {placed && placedCfg && (
-                        <div className={`fortress-placed-plant-wrapper ${isBeingMoved ? 'fortress-placed-plant-wrapper--moving' : ''}`}>
-                          <img
-                            src={placedCfg.sprite || placedCfg.icon}
-                            alt={placedCfg.name}
-                            className="fortress-placed-plant-sprite"
-                          />
-                          <span className="fortress-placed-cost-badge">
-                            {FORTRESS_SUN_COSTS[placed.plantId] || 100}☀️
-                          </span>
-                          {isBeingMoved && (
-                            <span className="fortress-placed-move-tag">MOVIENDO</span>
+                {isLaneLocked ? (
+                  <div className="fortress-lane-locked-overlay">
+                    <span className="fortress-locked-icon">🔒</span>
+                    <span>
+                      Línea {laneCfg.id + 1} Bloqueada • Desbloquea en Árbol Madre Nivel {laneCfg.id === 0 ? 3 : 4}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="fortress-lane-tiles">
+                    {defenseCols.map((col) => {
+                      const placed = layout.find((p) => p.lane === laneCfg.id && p.col === col)
+                      const placedCfg = placed ? PLANT_CONFIGS[placed.plantId] : null
+                      const isBeingMoved = selectedTileToMove?.lane === laneCfg.id && selectedTileToMove?.col === col
+
+                      return (
+                        <div
+                          key={col}
+                          className={`fortress-defense-tile ${placed ? 'fortress-defense-tile--occupied' : ''} ${isBeingMoved ? 'fortress-defense-tile--moving' : ''} ${isShovelActive && placed ? 'fortress-defense-tile--shovel-target' : ''}`}
+                          onClick={() => handleTileClick(laneCfg.id, col)}
+                          title={
+                            isShovelActive
+                              ? placed
+                                ? `Pala: Desenterrar ${placedCfg?.name} (+${FORTRESS_SUN_COSTS[placed.plantId] || 100} ☀️)`
+                                : 'Casilla vacía'
+                              : selectedTileToMove
+                              ? placed
+                                ? `Intercambiar con ${placedCfg?.name}`
+                                : `Mover a esta casilla`
+                              : placed
+                              ? `Clic para mover ${placedCfg?.name}`
+                              : `Plantar ${PLANT_CONFIGS[selectedPlantId]?.name} (-${FORTRESS_SUN_COSTS[selectedPlantId] || 100} ☀️)`
+                          }
+                        >
+                          {placed && placedCfg && (
+                            <div className={`fortress-placed-plant-wrapper ${isBeingMoved ? 'fortress-placed-plant-wrapper--moving' : ''}`}>
+                              <img
+                                src={placedCfg.sprite || placedCfg.icon}
+                                alt={placedCfg.name}
+                                className="fortress-placed-plant-sprite"
+                              />
+                              <span className="fortress-placed-cost-badge">
+                                {FORTRESS_SUN_COSTS[placed.plantId] || 100}☀️
+                              </span>
+                              {isBeingMoved && (
+                                <span className="fortress-placed-move-tag">MOVIENDO</span>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
-      {/* ── SELECTOR INFERIOR DE PLANTAS DEFENSIVAS ──────────────────────────── */}
+      {/* ── SECCIÓN DE EMBOSCADAS TÁCTICAS ACTIVAS ────────────────────────────── */}
+      {ambushes.length > 0 && (
+        <div className="fortress-ambushes-bar">
+          <div className="fortress-ambushes-bar__title">
+            <span>⚡ EMBOSCADAS DEFENSIVAS PROGRAMADAS ({ambushes.length}):</span>
+          </div>
+          <div className="fortress-ambushes-list">
+            {ambushes.map((amb, idx) => {
+              const cfg = PLANT_CONFIGS[amb.plantId]
+              const mins = Math.floor(amb.triggerSec / 60)
+              const secs = amb.triggerSec % 60
+              const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+
+              return (
+                <div key={idx} className="fortress-ambush-chip">
+                  <span className="fortress-ambush-chip__icon">⚡</span>
+                  <span className="fortress-ambush-chip__name">{cfg?.name || amb.plantId}</span>
+                  <span className="fortress-ambush-chip__lane">Línea {amb.lane + 1}</span>
+                  <span className="fortress-ambush-chip__time">a los {timeStr}</span>
+                  <button
+                    type="button"
+                    className="fortress-ambush-chip__del-btn"
+                    onClick={() => handleRemoveAmbush(idx)}
+                    title="Cancelar emboscada y reembolsar soles"
+                  >
+                    ✖
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL DE PROGRAMACIÓN DE EMBOSCADA TÁCTICA ───────────────────────── */}
+      {ambushModalPlant && (
+        <div className="fortress-ambush-modal-backdrop" onClick={() => setAmbushModalPlant(null)}>
+          <div className="fortress-ambush-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="fortress-ambush-modal__header">
+              <h3>⚡ PROGRAMAR EMBOSCADA TÁCTICA</h3>
+              <button
+                type="button"
+                className="fortress-ambush-modal__close-btn"
+                onClick={() => setAmbushModalPlant(null)}
+              >
+                ✖
+              </button>
+            </div>
+
+            <div className="fortress-ambush-modal__body">
+              <div className="fortress-ambush-modal__plant-preview">
+                <img
+                  src={PLANT_CONFIGS[ambushModalPlant]?.icon}
+                  alt={PLANT_CONFIGS[ambushModalPlant]?.name}
+                />
+                <div>
+                  <h4>{PLANT_CONFIGS[ambushModalPlant]?.name}</h4>
+                  <p>
+                    {ambushModalPlant === 'jalapeno'
+                      ? 'Arrasa con fuego toda la línea seleccionada en el segundo configurado.'
+                      : ambushModalPlant === 'iceberglettuce'
+                      ? 'Congela en seco al invasor rival que avance en ese instante.'
+                      : 'Entra como trampa o refuerzo sorpresa en combate.'}
+                  </p>
+                  <span className="fortress-ambush-modal__cost">
+                    Coste: <strong>{FORTRESS_SUN_COSTS[ambushModalPlant] || 100} ☀️</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="fortress-ambush-modal__form">
+                <div className="fortress-ambush-form-group">
+                  <label>Línea / Carril de Activación:</label>
+                  <div className="fortress-ambush-lanes-selector">
+                    {allowedLanes.map((laneIdx) => (
+                      <button
+                        key={laneIdx}
+                        type="button"
+                        className={`fortress-ambush-lane-btn ${ambushLane === laneIdx ? 'is-selected' : ''}`}
+                        onClick={() => setAmbushLane(laneIdx)}
+                      >
+                        Línea {laneIdx + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="fortress-ambush-form-group">
+                  <label>Momento de Detonación en Batalla:</label>
+                  <div className="fortress-ambush-time-selector">
+                    {[15, 30, 45, 60, 75, 90, 120].map((sec) => (
+                      <button
+                        key={sec}
+                        type="button"
+                        className={`fortress-ambush-time-btn ${ambushTriggerSec === sec ? 'is-selected' : ''}`}
+                        onClick={() => setAmbushTriggerSec(sec)}
+                      >
+                        {Math.floor(sec / 60)}:{(sec % 60).toString().padStart(2, '0')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="fortress-ambush-modal__footer">
+              <button
+                type="button"
+                className="fortress-ambush-modal__btn-cancel"
+                onClick={() => setAmbushModalPlant(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="fortress-ambush-modal__btn-confirm"
+                onClick={handleScheduleAmbush}
+              >
+                ⚡ Guardar Emboscada ({FORTRESS_SUN_COSTS[ambushModalPlant] || 100} ☀️)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PALETA INFERIOR CON DESBLOQUEO POR DONACIÓN ───────────────────────── */}
       <footer className="fortress-editor-footer">
         <div className="fortress-selector-hint">
           <span>
-            {selectedTileToMove
-              ? '🎯 MODO TRASLADO ACTIVO: Haz clic en cualquier casilla vacía o con otra planta para reubicarla.'
-              : isShovelActive
-              ? '🪓 MODO PALA ACTIVO: Haz clic en cualquier planta defensiva para desenterrarla y recuperar sus soles.'
-              : '🌱 MODO PREPARACIÓN: Selecciona una planta y haz clic en las casillas verdes, o haz clic en una planta colocada para moverla entre carriles:'}
+            {isShovelActive
+              ? '🪓 MODO PALA ACTIVO: Clic en cualquier planta para desenterrarla y recuperar soles.'
+              : '🌱 ARSENAL DEL CLAN: Clic en plantas desbloqueadas para colocar o programar emboscadas. Clic en cartas con 🔒 para donar 1 copia:'}
           </span>
         </div>
+
         <div className="fortress-plant-palette">
           {SELECTABLE_PLANTS.map((pid) => {
             const cfg = PLANT_CONFIGS[pid]
             const cost = FORTRESS_SUN_COSTS[pid] || 100
+            const isUnlocked = unlockedPlants.includes(pid)
+            const isAmbushType = TACTICAL_AMBUSH_PLANTS.includes(pid)
             const isSelected = selectedPlantId === pid && !selectedTileToMove && !isShovelActive
             const canAfford = sunsRemaining >= cost
 
             return (
-              <button
+              <div
                 key={pid}
-                type="button"
-                className={`fortress-palette-card ${isSelected ? 'fortress-palette-card--selected' : ''} ${!canAfford ? 'fortress-palette-card--disabled' : ''}`}
+                className={`fortress-palette-card ${isSelected ? 'fortress-palette-card--selected' : ''} ${!isUnlocked ? 'fortress-palette-card--locked' : ''} ${isUnlocked && !canAfford ? 'fortress-palette-card--disabled' : ''}`}
                 onClick={() => {
+                  if (!isUnlocked) {
+                    if (confirm(`¿Deseas donar 1 copia de ${cfg.name} de tu colección para desbloquearla permanentemente en el arsenal del clan?`)) {
+                      void handleDonateToArsenal(pid)
+                    }
+                    return
+                  }
                   soundManager.playSound('click', 0.2)
                   setSelectedPlantId(pid)
                   setSelectedTileToMove(null)
                   setIsShovelActive(false)
+
+                  if (isAmbushType) {
+                    setAmbushModalPlant(pid)
+                    setAmbushLane(allowedLanes[0] || 1)
+                  }
                 }}
               >
                 <div className="fortress-palette-img-wrap">
                   <img src={cfg.icon} alt={cfg.name} className="fortress-palette-img" />
                   <span className="fortress-palette-cost">☀️ {cost}</span>
+                  {isAmbushType && (
+                    <span className="fortress-palette-ambush-tag">⚡ TRAMPA</span>
+                  )}
+                  {!isUnlocked && (
+                    <div className="fortress-palette-lock-overlay">
+                      <span>🔒</span>
+                    </div>
+                  )}
                 </div>
-                <span className="fortress-palette-name">{cfg.name}</span>
-              </button>
+
+                <span className="fortress-palette-name">
+                  {!isUnlocked ? (isDonating === pid ? 'DONANDO...' : '🎁 DONAR') : cfg.name}
+                </span>
+              </div>
             )
           })}
         </div>

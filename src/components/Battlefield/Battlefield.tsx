@@ -14,6 +14,7 @@ import {
 import {
   PLANT_CONFIGS,
   LANES_CONFIG,
+  LANES_CONFIG_4,
   LANES_CONFIG_5,
   BASE_LEFT_END_X,
   FIELD_WIDTH_PCT,
@@ -40,7 +41,7 @@ import { TICK_MS } from '../../engine/time'
 import { soundManager } from '../../utils/audioManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
 import { resolverLiquidacionPartida } from '../../engine/asyncOpponent'
-import { leerMazo, mejorasDeLaCartaEnSlot } from '../../engine/mazoDeLaSala'
+import { leerMazo, mejorasDeLaCartaEnSlot, type CartaDeMazo } from '../../engine/mazoDeLaSala'
 import { StrategicPlaytestPostMatch } from '../StrategicPlaytest/StrategicPlaytestPostMatch'
 import type { StrategicPlaytestConfig } from '../../engine/strategicPlaytest'
 import { recordPlantPlacement } from '../../utils/plantUsageTracker'
@@ -554,9 +555,6 @@ export default function Battlefield({
 
   const activeArena = useMemo(() => getArenaForElo(userElo), [userElo])
   const activeBgImage = customBgImage || (matchMode === 'clan_fortress' ? arena1Bg : activeArena.bgImage)
-  const activeLanesConfig = useMemo(() => {
-    return matchMode === 'clan_fortress' ? LANES_CONFIG_5 : LANES_CONFIG
-  }, [matchMode])
   const [clanRaidResult, setClanRaidResult] = useState<ClanFortressRaidResult | null>(null)
   const [clanRaidPhase, setClanRaidPhase] = useState<'prep' | 'battle'>('prep')
   const [clanRaidPrepTimer, setClanRaidPrepTimer] = useState<number>(120)
@@ -566,14 +564,131 @@ export default function Battlefield({
   const [isRerollingTarget, setIsRerollingTarget] = useState<boolean>(false)
   const [rerollError, setRerollError] = useState<string | null>(null)
 
+  const activeLanesConfig = useMemo(() => {
+    if (matchMode !== 'clan_fortress') return LANES_CONFIG
+    const lanes = currentFortressOpponent?.activeLanes || 5
+    if (lanes === 4) return LANES_CONFIG_4
+    if (lanes === 3) return LANES_CONFIG
+    return LANES_CONFIG_5
+  }, [matchMode, currentFortressOpponent?.activeLanes])
+
   useEffect(() => {
     if (clanFortressConfig?.targetClan) {
       setCurrentFortressOpponent(clanFortressConfig.targetClan)
     }
   }, [clanFortressConfig?.targetClan])
 
+  const prepTargetTimeRef = useRef<number | null>(null)
+
+  const allCatalogCards = useMemo(() => Object.keys(PLANT_CONFIGS) as PlantId[], [])
+
+  const mazoMioParsed = useMemo<CartaDeMazo[] | null>(() => {
+    const fromRoom = leerMazo(mazosDeLaSala?.mio)
+    if (fromRoom && fromRoom.length > 0) return fromRoom
+
+    // En modos sin sala previa (como clan_fortress), construir el mazo con instancias reales del jugador
+    let deckCards: PlantId[] = []
+    if (matchMode === 'tournament' && tournamentDeck && tournamentDeck.length > 0) {
+      deckCards = tournamentDeck
+    } else if (activeDeck && activeDeck.length > 0) {
+      deckCards = activeDeck
+    } else {
+      try {
+        const rawDeck = localStorage.getItem('plant_arena_active_deck')
+        if (rawDeck) {
+          const parsed = JSON.parse(rawDeck)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            deckCards = parsed.filter((id) => id in PLANT_CONFIGS)
+          }
+        }
+      } catch {}
+    }
+
+    if (deckCards.length === 0) {
+      deckCards = allCatalogCards.slice(0, 6)
+    }
+
+    // Enriquecer con mejoras, niveles e ítems equipados por slot o instancia
+    try {
+      const sIds = localStorage.getItem('plant_arena_active_deck_instances')
+      const sInst = localStorage.getItem('plant_arena_plant_instances')
+      const pIds: string[] = sIds ? JSON.parse(sIds) : []
+      const pInst: any[] = sInst ? JSON.parse(sInst) : []
+
+      return deckCards.map((plantId, idx) => {
+        let level = 0
+        let statRolls: string[] = []
+        let equippedItem: string | null = null
+
+        // 1. Coincidencia por ID de instancia exacto en el slot
+        if (pIds[idx]) {
+          const f = pInst.find((i) => i.instanceId === pIds[idx] && i.plantId === plantId)
+          if (f) {
+            level = f.level ?? (f.statRolls?.length || 0)
+            statRolls = f.statRolls || []
+            equippedItem = f.equippedItem || null
+          }
+        }
+
+        // 2. Coincidencia de respaldo por plantId
+        if (statRolls.length === 0 && !equippedItem) {
+          const copies = pInst.filter((i) => i.plantId === plantId)
+          if (copies.length > 0) {
+            copies.sort((a, b) => {
+              if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
+                return a.equippedItem ? -1 : 1
+              }
+              const rA = a.statRolls?.length || 0
+              const rB = b.statRolls?.length || 0
+              if (rA !== rB) return rB - rA
+              return (b.level || 0) - (a.level || 0)
+            })
+            level = copies[0].level ?? (copies[0].statRolls?.length || 0)
+            statRolls = copies[0].statRolls || []
+            equippedItem = copies[0].equippedItem || null
+          }
+        }
+
+        return {
+          plantId,
+          slot: idx,
+          level,
+          statRolls,
+          equippedItem,
+        }
+      })
+    } catch {
+      return deckCards.map((plantId, idx) => ({
+        plantId,
+        slot: idx,
+        level: 0,
+        statRolls: [],
+        equippedItem: null,
+      }))
+    }
+  }, [mazosDeLaSala?.mio, matchMode, tournamentDeck, activeDeck, allCatalogCards])
+
+  const effectiveDeck = useMemo(() => {
+    if (matchMode === 'tournament' && tournamentDeck && tournamentDeck.length > 0) {
+      return tournamentDeck
+    }
+    if (mazoMioParsed && mazoMioParsed.length >= 3) {
+      const roomDeck = mazoMioParsed
+        .map((c) => c.plantId as PlantId)
+        .filter((id) => id in PLANT_CONFIGS)
+      if (roomDeck.length >= 3) {
+        return roomDeck
+      }
+    }
+    if (activeDeck && activeDeck.length > 0) {
+      return activeDeck
+    }
+    return allCatalogCards.slice(0, 6)
+  }, [matchMode, tournamentDeck, mazoMioParsed, activeDeck, allCatalogCards])
+
   const handleStartClanRaidBattle = useCallback(() => {
     soundManager.playSound('click', 0.8)
+    prepTargetTimeRef.current = null
     setClanRaidPhase('battle')
     setPreparationPhase(false)
   }, [setPreparationPhase])
@@ -594,8 +709,12 @@ export default function Battlefield({
 
       const newOpponent = res.data
       setCurrentFortressOpponent(newOpponent)
+      prepTargetTimeRef.current = Date.now() + 120_000
       setClanRaidPrepTimer(120)
+      setClanRaidPhase('prep')
       soundManager.playSound('plantation', 0.8)
+
+      const fortressAttackSuns = 300 + Math.max(0, treeLevel) * 100
 
       startGame(
         Math.floor(Math.random() * 1000000),
@@ -603,7 +722,7 @@ export default function Battlefield({
         undefined,
         userElo,
         true,
-        undefined,
+        { mio: mazoMioParsed, rival: null },
         undefined,
         undefined,
         'auth-v2',
@@ -611,57 +730,56 @@ export default function Battlefield({
         0,
         treeSkinRef.current,
         null,
-        5,
+        newOpponent.activeLanes || 5,
         newOpponent.layout,
         newOpponent.targetBaseHp,
-        newOpponent.initialAttackSuns ?? 200,
-        true // isPreparationPhase
+        fortressAttackSuns,
+        true, // isPreparationPhase
+        newOpponent.ambushes
       )
     } catch (err: any) {
       setRerollError(err?.message || 'Error al buscar otro rival')
     } finally {
       setIsRerollingTarget(false)
     }
-  }, [currentFortressOpponent, isRerollingTarget, setPreparationPhase, startGame, userElo])
+  }, [currentFortressOpponent, isRerollingTarget, mazoMioParsed, setPreparationPhase, startGame, treeLevel, userElo])
 
   useEffect(() => {
     if (matchMode !== 'clan_fortress' || clanRaidPhase !== 'prep') return
 
-    const intervalId = setInterval(() => {
-      setClanRaidPrepTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalId)
-          soundManager.playSound('click', 0.8)
-          setClanRaidPhase('battle')
-          setPreparationPhase(false)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(intervalId)
-  }, [matchMode, clanRaidPhase, setPreparationPhase])
-
-  const allCatalogCards = useMemo(() => Object.keys(PLANT_CONFIGS) as PlantId[], [])
-  const mazoMioParsed = useMemo(() => leerMazo(mazosDeLaSala?.mio), [mazosDeLaSala?.mio])
-  const effectiveDeck = useMemo(() => {
-    if (matchMode === 'tournament' && tournamentDeck && tournamentDeck.length > 0) {
-      return tournamentDeck
+    if (!prepTargetTimeRef.current) {
+      prepTargetTimeRef.current = Date.now() + 120_000
     }
-    if (mazoMioParsed && mazoMioParsed.length >= 3) {
-      const roomDeck = mazoMioParsed
-        .map((c) => c.plantId as PlantId)
-        .filter((id) => id in PLANT_CONFIGS)
-      if (roomDeck.length >= 3) {
-        return roomDeck
+
+    const checkAndAdvanceTimer = () => {
+      if (!prepTargetTimeRef.current) return
+      const remainingMs = prepTargetTimeRef.current - Date.now()
+      const remainingSecs = Math.max(0, Math.ceil(remainingMs / 1000))
+      setClanRaidPrepTimer(remainingSecs)
+      if (remainingSecs <= 0) {
+        prepTargetTimeRef.current = null
+        soundManager.playSound('click', 0.8)
+        setClanRaidPhase('battle')
+        setPreparationPhase(false)
       }
     }
-    if (activeDeck && activeDeck.length > 0) {
-      return activeDeck
+
+    checkAndAdvanceTimer()
+    const intervalId = setInterval(checkAndAdvanceTimer, 500)
+
+    const handleVisibilityOrFocus = () => {
+      checkAndAdvanceTimer()
     }
-    return allCatalogCards.slice(0, 6)
-  }, [matchMode, tournamentDeck, mazoMioParsed, activeDeck, allCatalogCards])
+
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus)
+    window.addEventListener('focus', handleVisibilityOrFocus)
+
+    return () => {
+      clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus)
+      window.removeEventListener('focus', handleVisibilityOrFocus)
+    }
+  }, [matchMode, clanRaidPhase, setPreparationPhase])
 
   // ── EL REGISTRO DE ACCIONES ────────────────────────────────────────────────
   //
@@ -1512,13 +1630,14 @@ export default function Battlefield({
       startStrategicPlaytestGame(strategicPlaytestConfig, activeDeck)
     } else if (matchMode === 'clan_fortress' && (currentFortressOpponent || clanFortressConfig?.targetClan)) {
       const opp = currentFortressOpponent || clanFortressConfig!.targetClan
+      const fortressAttackSuns = 300 + Math.max(0, treeLevel) * 100
       startGame(
         seed || Math.floor(Math.random() * 1000000),
         false,
         undefined,
         userElo,
         true,
-        undefined,
+        { mio: mazoMioParsed, rival: null },
         undefined,
         undefined,
         'auth-v2',
@@ -1526,12 +1645,14 @@ export default function Battlefield({
         0,
         treeSkinRef.current,
         null,
-        5,
+        opp.activeLanes || 5,
         opp.layout,
         opp.targetBaseHp,
-        opp.initialAttackSuns ?? 200,
-        true // isPreparationPhase = true
+        fortressAttackSuns,
+        true, // isPreparationPhase = true
+        opp.ambushes
       )
+      prepTargetTimeRef.current = Date.now() + 120_000
       setClanRaidPhase('prep')
       setClanRaidPrepTimer(120)
     } else if (gameStatus === 'ready') {
@@ -1560,7 +1681,7 @@ export default function Battlefield({
         )
       }
     }
-  }, [practicePlantId, seed, roomId, startGame, startPracticeGame, startStrategicPlaytestGame, setSelectedCard, gameStatus, userElo, syncAndStartMatchClock, matchMode, strategicPlaytestConfig, activeDeck])
+  }, [practicePlantId, seed, roomId, startGame, startPracticeGame, startStrategicPlaytestGame, setSelectedCard, gameStatus, userElo, syncAndStartMatchClock, matchMode, strategicPlaytestConfig, activeDeck, mazoMioParsed, treeLevel])
 
   /**
    * LA HUELLA DEL TABLERO
@@ -1669,7 +1790,7 @@ export default function Battlefield({
 
   return (
     <div
-      className={`battlefield ${selectedCard === 'shovel' ? 'battlefield--shovel-mode' : ''}`}
+      className={`battlefield ${matchMode === 'clan_fortress' ? 'battlefield--clan-fortress' : ''} ${selectedCard === 'shovel' ? 'battlefield--shovel-mode' : ''}`}
       style={{ backgroundImage: `url(${activeBgImage})` }}
       onPointerDown={(e) => {
         if (selectedCard && e.button === 0 && e.target === e.currentTarget) {
@@ -1798,32 +1919,36 @@ export default function Battlefield({
         }
       />
 
-      {/* HUD DE PREPARACIÓN Y EXPLORACIÓN EN ASALTO A FORTALEZA (120S) */}
+      {/* HUD ULTRA-SLIM DE PREPARACIÓN EN ASALTO A FORTALEZA (120S) */}
       {matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && (
         <div className="clan-raid-prep-hud">
           <div className="clan-raid-prep-hud__target">
             <span className="clan-raid-prep-hud__badge">{currentFortressOpponent?.targetBadge || '🏰'}</span>
-            <div>
+            <div className="clan-raid-prep-hud__info">
               <div className="clan-raid-prep-hud__title-row">
                 <span className="clan-raid-prep-hud__name">{currentFortressOpponent?.targetClanName}</span>
                 <span className="clan-raid-prep-hud__tag">{currentFortressOpponent?.targetClanTag}</span>
                 {currentFortressOpponent?.isNpc && (
-                  <span className="clan-raid-prep-hud__npc-tag">BOT CLAN</span>
+                  <span className="clan-raid-prep-hud__npc-tag">BOT</span>
                 )}
               </div>
               <div className="clan-raid-prep-hud__meta-row">
-                <span>❤️ Base: <strong>{currentFortressOpponent?.targetBaseHp} HP</strong></span>
+                <span>❤️ <strong>{currentFortressOpponent?.targetBaseHp} HP</strong></span>
                 <span>•</span>
-                <span>💎 Botín: <strong>{Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} Gemas</strong></span>
+                <span>💎 <strong>{Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} Gemas</strong></span>
                 <span>•</span>
-                <span>🌱 Defensas: <strong>{currentFortressOpponent?.layout?.length || 0} Plantas</strong></span>
+                <span>🌱 <strong>{currentFortressOpponent?.layout?.length || 0} Defensas</strong></span>
+                <span>•</span>
+                <span>☀️ <strong>{sunBank} Soles (Nv.{treeLevel} Árbol)</strong></span>
+                <span>•</span>
+                <span title="Desentierra con la pala para reembolsar el 100% de los soles gastados durante la fase de preparación">🧹 <strong>100% Reembolso Pala</strong></span>
               </div>
             </div>
           </div>
 
           <div className="clan-raid-prep-hud__center">
             <div className="clan-raid-prep-timer-box">
-              <span className="clan-raid-prep-timer-box__label">⏳ FASE DE PREPARACIÓN</span>
+              <span className="clan-raid-prep-timer-box__label">⏳ PREP</span>
               <strong className="clan-raid-prep-timer-box__val">
                 {Math.floor(clanRaidPrepTimer / 60).toString().padStart(2, '0')}:{(clanRaidPrepTimer % 60).toString().padStart(2, '0')}
               </strong>
@@ -1846,7 +1971,7 @@ export default function Battlefield({
                   <span className="clan-fortress-mini-spinner" /> BUSCANDO...
                 </>
               ) : (
-                '🔄 BUSCAR OTRO (500 🪙)'
+                '🔄 BUSCAR (500 🪙)'
               )}
             </button>
 
@@ -1856,7 +1981,7 @@ export default function Battlefield({
               onClick={handleStartClanRaidBattle}
               title="Comenzar el asalto inmediatamente"
             >
-              ⚔️ ¡INICIAR ASALTO YA!
+              ⚔️ ¡ASALTO YA!
             </button>
           </div>
         </div>

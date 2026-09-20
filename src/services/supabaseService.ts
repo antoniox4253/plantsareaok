@@ -6,7 +6,7 @@ import { type FreePackSlot, type PlayerRewardPack, normalizePackSlots } from '..
 import type { DatosDeRepeticion } from '../engine/replay'
 import { parseLeaderboardRow, type ParsedLeaderboardRow } from '../utils/leaderboardParser'
 import { validateMatchClock } from '../utils/matchClock'
-import type { EngineVersion, ClanFortressData, ClanFortressPlant, ClanFortressMatchOpponent, ClanFortressRaidResult } from '../types/game'
+import type { EngineVersion, ClanFortressData, ClanFortressPlant, ClanFortressAmbush, ClanFortressMatchOpponent, ClanFortressRaidResult } from '../types/game'
 import type { FarmingInventory, PvpRewardDrop } from '../utils/pvpRewardManager'
 import { FLASH_OFFER_PRICE_GEMS } from '../utils/gameConstants'
 
@@ -1940,11 +1940,15 @@ export const SupabaseService = {
     }
   },
 
-  async saveClanFortress(layout: ClanFortressPlant[]): Promise<{ success: boolean; sunsSpent?: number; defenseSunsBudget?: number; plantsCount?: number; error?: string }> {
+  async saveClanFortress(
+    layout: ClanFortressPlant[],
+    ambushes: ClanFortressAmbush[] = []
+  ): Promise<{ success: boolean; sunsSpent?: number; defenseSunsBudget?: number; plantsCount?: number; ambushesCount?: number; allowedLanes?: number[]; error?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       const { data, error } = await (supabase.rpc as any)('save_clan_fortress', {
         p_layout: layout,
+        p_ambushes: ambushes,
       })
       if (error) {
         logError('saveClanFortress', error)
@@ -1953,6 +1957,25 @@ export const SupabaseService = {
       return { success: true, ...(data as any) }
     } catch (e: any) {
       logError('saveClanFortress', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async donatePlantToClanArsenal(
+    plantId: string
+  ): Promise<{ success: boolean; alreadyUnlocked?: boolean; plantId?: string; unlockedPlants?: string[]; message?: string; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('donate_plant_to_clan_arsenal', {
+        p_plant_id: plantId,
+      })
+      if (error) {
+        logError('donatePlantToClanArsenal', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('donatePlantToClanArsenal', e)
       return { success: false, error: e?.message }
     }
   },

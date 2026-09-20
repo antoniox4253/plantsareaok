@@ -2685,14 +2685,14 @@ export default function Clan({
                   </div>
 
                   <div className="clan-fortress-fullscreen-content">
-                    {/* Dos Columnas Estratégicas */}
+                    {/* Dos Columnas Estratégicas: Gaming War Room */}
                     <div className="clan-bastion-layout-grid">
-                      {/* COLUMNA IZQUIERDA: ESTADO DEL CASTILLO & VÍNCULO DEFENSIVO */}
+                      {/* COLUMNA IZQUIERDA: BASTIÓN DEFENSIVO */}
                       <div className="clan-bastion-col">
-                        {/* 1. Salud de la Base */}
+                        {/* 1. Integridad del Castillo */}
                         <div className="clan-fstat-card clan-bastion-card--hp">
                           <div className="clan-fstat-header">
-                            <span className="clan-fstat-label">❤️ SALUD DEL BASTIÓN</span>
+                            <span className="clan-fstat-label">🏰 INTEGRIDAD DEL BASTIÓN</span>
                             <span className="clan-fstat-num">
                               {fortressData?.baseHp ?? 500} / {fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500} HP
                             </span>
@@ -2705,26 +2705,85 @@ export default function Clan({
                               }}
                             />
                           </div>
-                          {(fortressData?.baseHp ?? 500) < (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500) ? (
-                            <button
-                              type="button"
-                              className="clan-fstat-repair-btn"
-                              onClick={handleRepairBase}
-                            >
-                              🔧 Reparar Bastión (500 💎)
-                            </button>
-                          ) : (
-                            <span className="clan-bastion-status-pill">🛡️ Castillo al 100% de Integridad</span>
-                          )}
-                          <p className="clan-fstat-desc">
-                            Si tu Bastión sufre daño en un asalto enemigo, el clan rival saquea gemas. Mantén la estructura reparada para proteger la bóveda.
-                          </p>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                            {(() => {
+                              const isShieldActive = fortressData?.shieldUntil && new Date(fortressData.shieldUntil).getTime() > Date.now()
+                              if (isShieldActive) {
+                                const minsLeft = Math.ceil((new Date(fortressData!.shieldUntil!).getTime() - Date.now()) / 60000)
+                                const hrs = Math.floor(minsLeft / 60)
+                                const mins = minsLeft % 60
+                                return (
+                                  <span className="clan-bastion-status-pill" style={{ borderColor: '#38bdf8', color: '#7dd3fc', background: 'rgba(2, 132, 199, 0.2)' }}>
+                                    🛡️ DOMO ACTIVO ({hrs}h {mins}m)
+                                  </span>
+                                )
+                              }
+                              return (
+                                <span className="clan-bastion-status-pill">
+                                  🛡️ {((fortressData?.baseHp ?? 500) >= (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500)) ? 'Castillo al 100%' : 'Bastión Dañado'}
+                                </span>
+                              )
+                            })()}
+
+                            {(fortressData?.baseHp ?? 500) < (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500) && (
+                              <button
+                                type="button"
+                                className="clan-fstat-repair-btn"
+                                onClick={handleRepairBase}
+                              >
+                                🔧 Reparar (500 💎)
+                              </button>
+                            )}
+                          </div>
                         </div>
 
-                        {/* 2. Presupuesto Solar Defensivo */}
+                        {/* 2. Formación Defensiva y Taller de Defensas */}
+                        <div className="clan-bastion-link-defenses-card">
+                          <div className="clan-bld-header">
+                            <span className="clan-bld-icon">🛡️</span>
+                            <div>
+                              <h4>DEFENSA DE LA FORTALEZA</h4>
+                              <span>
+                                {fortressData?.motherTreeLevel && fortressData.motherTreeLevel >= 4
+                                  ? '5 Líneas Defensivas Activas (Nivel 4)'
+                                  : fortressData?.motherTreeLevel === 3
+                                  ? '4 Líneas Defensivas Activas (Nivel 3)'
+                                  : '3 Líneas Defensivas Activas (Nivel 1-2)'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="clan-bld-meta" style={{ marginTop: '2px' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              <span className="clan-bld-badge">
+                                🌱 <strong>{fortressData?.layout?.length || 0} Plantas</strong>
+                              </span>
+                              <span className="clan-bld-badge">
+                                ⚡ <strong>{fortressData?.ambushes?.length || 0} Emboscadas</strong>
+                              </span>
+                              <span className="clan-bld-badge">
+                                ☀️ <strong>{(fortressData?.defenseSunsBudget ?? 2500) - (fortressData?.sunsSpent ?? 0)} ☀️ Libres</strong>
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="clan-bld-action-btn"
+                              onClick={() => {
+                                soundManager.playSound('click', 0.4)
+                                setFortressSubView('defenses')
+                              }}
+                            >
+                              {isOfficer ? '🛠️ EDITAR DEFENSAS (ARENA 1) →' : '👁️ VER FORMACIÓN DEFENSIVA →'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 3. Altar Solar */}
                         <div className="clan-fstat-card">
                           <div className="clan-fstat-header">
-                            <span className="clan-fstat-label">☀️ PRESUPUESTO SOLAR PARA DEFENSAS</span>
+                            <span className="clan-fstat-label">☀️ PRESUPUESTO SOLAR DEFENSIVO</span>
                             <span className="clan-fstat-num">
                               {fortressData?.sunsSpent ?? 0} / {fortressData?.defenseSunsBudget ?? 2500} ☀️
                             </span>
@@ -2737,51 +2796,19 @@ export default function Clan({
                               }}
                             />
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
                             <button
                               type="button"
                               className="clan-fstat-donate-btn"
                               onClick={() => setShowFortressDonateModal(true)}
                             >
-                              ☀️ Altar Solar (+Ampliar Límite)
-                            </button>
-                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                              Disponible: <strong>{(fortressData?.defenseSunsBudget ?? 2500) - (fortressData?.sunsSpent ?? 0)} ☀️</strong>
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* 3. VÍNCULO CLAVE: ¿CÓMO DEFIENDE TU BASTIÓN? -> DEFENSAS */}
-                        <div className="clan-bastion-link-defenses-card">
-                          <div className="clan-bld-header">
-                            <span className="clan-bld-icon">🛡️</span>
-                            <div>
-                              <h4>¿CÓMO SE DEFIENDE TU BASTIÓN?</h4>
-                              <span>Custodiado por las tropas del Taller de Defensas</span>
-                            </div>
-                          </div>
-                          <p className="clan-bld-desc">
-                            El Bastión no pelea solo: resiste gracias a las plantas que organizas en los 5 carriles de la <strong>Arena 1</strong>. Cuando un clan rival lanza un asalto, sus tropas deberán derrotar primero a tu formación de plantas antes de tocar el castillo.
-                          </p>
-                          <div className="clan-bld-meta">
-                            <span className="clan-bld-badge">
-                              🌱 <strong>{fortressData?.layout?.length || 0} Plantas</strong> activas en los 5 carriles
-                            </span>
-                            <button
-                              type="button"
-                              className="clan-bld-action-btn"
-                              onClick={() => {
-                                soundManager.playSound('click', 0.4)
-                                setFortressSubView('defenses')
-                              }}
-                            >
-                              {isOfficer ? '🛠️ IR A EDITAR DEFENSAS (ARENA 1) →' : '👁️ VER FORMACIÓN DEFENSIVA →'}
+                              ☀️ Donar Soles (+Ampliar Límite)
                             </button>
                           </div>
                         </div>
                       </div>
 
-                      {/* COLUMNA DERECHA: SALA DE GUERRA & ASALTOS */}
+                      {/* COLUMNA DERECHA: SALA DE GUERRA & ASALTO */}
                       <div className="clan-bastion-col">
                         {/* 1. Centro de Asalto Ofensivo */}
                         <div className="clan-fstat-card clan-bastion-raid-hero">
@@ -2790,27 +2817,9 @@ export default function Clan({
                               <span className="clan-bastion-raid-icon">⚔️</span>
                               <div>
                                 <h4>ASALTO OFENSIVO A CLANES</h4>
-                                <span>Despliega tu ofensiva y saquea gemas enemigas</span>
+                                <span>Combate de guerra en tiempo real contra fortalezas rivales</span>
                               </div>
                             </div>
-                            {(() => {
-                              const isShieldActive = fortressData?.shieldUntil && new Date(fortressData.shieldUntil).getTime() > Date.now()
-                              if (isShieldActive) {
-                                const minsLeft = Math.ceil((new Date(fortressData!.shieldUntil!).getTime() - Date.now()) / 60000)
-                                const hrs = Math.floor(minsLeft / 60)
-                                const mins = minsLeft % 60
-                                return (
-                                  <div className="clan-fortress-shield-badge clan-fortress-shield--active" title="Protección activa post-asalto">
-                                    🛡️ DOMO ACTIVO ({hrs}h {mins}m)
-                                  </div>
-                                )
-                              }
-                              return (
-                                <div className="clan-fortress-shield-badge clan-fortress-shield--vulnerable" title="La fortaleza puede recibir asaltos de otros clanes">
-                                  ⚔️ VULNERABLE A ASALTOS
-                                </div>
-                              )
-                            })()}
                           </div>
 
                           <button
@@ -2829,61 +2838,56 @@ export default function Clan({
                             )}
                           </button>
 
-                          <div className="clan-fcta-cost-badge" style={{ textAlign: 'center' }}>
-                            {isOfficer ? (
-                              <span>🪙 <strong>500 Oro del Clan</strong> • Oficial/Líder (Sin enfriamiento)</span>
-                            ) : (
-                              <span>🪙 <strong>250 Oro Personal</strong> • Miembro (⚠️ 24h enfriamiento si pierdes)</span>
-                            )}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span className="clan-fcta-cost-badge">
+                              🪙 Coste: <strong>500 Oro</strong>
+                            </span>
+                            <span className="clan-fcta-cost-badge" style={{ color: '#86efac', borderColor: 'rgba(74, 222, 128, 0.3)' }}>
+                              💎 Botín: <strong>Hasta 60 Gemas al Clan</strong>
+                            </span>
+                            <span className="clan-fcta-cost-badge" style={{ color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
+                              ⏱️ 2 Minutos de Preparación
+                            </span>
                           </div>
                         </div>
 
-                        {/* 2. Botín en Riesgo */}
+                        {/* 2. Bóveda y Botín en Riesgo */}
                         <div className="clan-fstat-card">
                           <div className="clan-fstat-header">
-                            <span className="clan-fstat-label">💎 BOTÍN EN RIESGO DE LA BÓVEDA</span>
+                            <span className="clan-fstat-label">💎 TESORO Y BOTÍN EN RIESGO</span>
                             <span className="clan-fstat-num clan-fstat-num--gems">
                               {Math.min(60, Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.08))} / {(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎
                             </span>
                           </div>
-                          <p className="clan-fstat-desc">
-                            En cada asalto se arriesga hasta el 8% de la bóveda (máximo 60 💎). <strong>El 100% del botín saqueado va directo al Tesoro del Clan atacante</strong> (0 a cuenta personal) para obras comunitarias.
-                          </p>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                            <div className="clan-fhub-nutrient-chip" style={{ flex: 1, textAlign: 'center' }}>
+                              🏰 Bóveda del Clan: <strong>{(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎</strong>
+                            </div>
+                            <div className="clan-fhub-nutrient-chip" style={{ flex: 1, textAlign: 'center' }}>
+                              🛡️ Máximo Saqueo: <strong>60 💎 (8%)</strong>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* 3. Reglas de Guerra de Fortalezas */}
-                        <div className="clan-fortress-rules-card">
-                          <div className="clan-frules-title">
-                            <span>📜</span>
-                            <h4>REGLAS DE GUERRA & RECOMPENSAS</h4>
+                        {/* 3. Panel Táctico de Asedio */}
+                        <div className="clan-fortress-rules-card" style={{ padding: '12px 14px' }}>
+                          <div className="clan-frules-title" style={{ marginBottom: '8px' }}>
+                            <span>🎖️</span>
+                            <h4>MÉTRICAS TÁCTICAS DE GUERRA</h4>
                           </div>
-                          <div className="clan-frules-grid">
-                            <div className="clan-frule-item">
+                          <div className="clan-frules-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                            <div className="clan-frule-item" style={{ padding: '8px 10px' }}>
                               <div className="clan-frule-icon">⚔️</div>
                               <div>
-                                <strong>Arena 1 (5 Carriles)</strong>
-                                <p>Combate de asedio en mapa ampliado de 5 líneas continuas.</p>
+                                <strong>Arena Escalonada</strong>
+                                <p>3, 4 o 5 carriles según nivel de Árbol Madre.</p>
                               </div>
                             </div>
-                            <div className="clan-frule-item">
-                              <div className="clan-frule-icon">⭐</div>
+                            <div className="clan-frule-item" style={{ padding: '8px 10px' }}>
+                              <div className="clan-frule-icon">⚡</div>
                               <div>
-                                <strong>Escala de Estrellas</strong>
-                                <p>1★ (20% daño): 25% botín. 2★ (50% daño): 60% botín. 3★ (Destrucción total): 100% botín.</p>
-                              </div>
-                            </div>
-                            <div className="clan-frule-item">
-                              <div className="clan-frule-icon">💎</div>
-                              <div>
-                                <strong>100% al Tesoro</strong>
-                                <p>El saqueo financia las bendiciones y mejoras del Árbol y Fortaleza.</p>
-                              </div>
-                            </div>
-                            <div className="clan-frule-item">
-                              <div className="clan-frule-icon">🛡️</div>
-                              <div>
-                                <strong>Escudo de 4 Horas</strong>
-                                <p>Tras ser asaltado, el domo se activa para reparar y reorganizar tropas.</p>
+                                <strong>Emboscadas Ocultas</strong>
+                                <p>Trampas de Hielo y Fuego detonadas por tiempo.</p>
                               </div>
                             </div>
                           </div>
@@ -3225,12 +3229,15 @@ export default function Clan({
                 <FortressEditor
                   clanId={userClan.id}
                   clanName={userClan.name}
+                  treeLevel={fortressData.motherTreeLevel || 1}
                   initialLayout={fortressData.layout || []}
+                  initialAmbushes={fortressData.ambushes || []}
+                  initialUnlockedPlants={fortressData.unlockedPlants || ['sunflower', 'peashooter', 'wallnut']}
                   defenseSunsBudget={fortressData.defenseSunsBudget || 2500}
                   canEdit={isOfficer}
                   onClose={() => setFortressSubView('hub')}
-                  onSaved={(newLayout, sunsSpent) => {
-                    setFortressData((prev) => (prev ? { ...prev, layout: newLayout, sunsSpent } : null))
+                  onSaved={(newLayout, newAmbushes, sunsSpent) => {
+                    setFortressData((prev) => (prev ? { ...prev, layout: newLayout, ambushes: newAmbushes, sunsSpent } : null))
                     setFortressSubView('hub')
                   }}
                 />
@@ -4621,12 +4628,15 @@ export default function Clan({
         <FortressEditor
           clanId={userClan.id}
           clanName={userClan.name}
+          treeLevel={fortressData.motherTreeLevel || 1}
           initialLayout={fortressData.layout || []}
+          initialAmbushes={fortressData.ambushes || []}
+          initialUnlockedPlants={fortressData.unlockedPlants || ['sunflower', 'peashooter', 'wallnut']}
           defenseSunsBudget={fortressData.defenseSunsBudget || 2500}
           canEdit={isOfficer}
           onClose={() => setShowFortressEditor(false)}
-          onSaved={(newLayout, sunsSpent) => {
-            setFortressData((prev) => (prev ? { ...prev, layout: newLayout, sunsSpent } : null))
+          onSaved={(newLayout, newAmbushes, sunsSpent) => {
+            setFortressData((prev) => (prev ? { ...prev, layout: newLayout, ambushes: newAmbushes, sunsSpent } : null))
             setShowFortressEditor(false)
           }}
         />

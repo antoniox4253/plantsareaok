@@ -623,3 +623,436 @@
   pointer-events: none;
 }
 
+/* ── CARRILES BLOQUEADOS SEGÚN NIVEL DE ÁRBOL MADRE ────────────────────────── */
+.fortress-editor-lane--locked {
+  background: rgba(15, 23, 42, 0.75);
+  border-top-color: rgba(239, 68, 68, 0.4) !important;
+  border-bottom-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+.fortress-lane-locked-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fca5a5;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(15, 23, 42, 0.65),
+    rgba(15, 23, 42, 0.65) 12px,
+    rgba(239, 68, 68, 0.12) 12px,
+    rgba(239, 68, 68, 0.12) 24px
+  );
+  pointer-events: none;
+  z-index: 5;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.fortress-locked-icon {
+  font-size: 1rem;
+}
+
+/* ── BARRA DE EMBOSCADAS TÁCTICAS ACTIVAS ──────────────────────────────────── */
+.fortress-ambushes-bar {
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.98) 0%, rgba(88, 28, 135, 0.35) 100%);
+  border-top: 1.5px solid #a855f7;
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 8;
+  overflow-x: auto;
+  flex-shrink: 0;
+  min-height: 36px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.fortress-ambushes-bar__title {
+  font-size: 0.74rem;
+  font-weight: 900;
+  color: #d8b4fe;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.fortress-ambushes-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.fortress-ambush-chip {
+  background: rgba(126, 34, 206, 0.35);
+  border: 1px solid #c084fc;
+  border-radius: 6px;
+  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #f3e8ff;
+  white-space: nowrap;
+}
+
+.fortress-ambush-chip__lane {
+  color: #fde047;
+}
+
+.fortress-ambush-chip__time {
+  color: #93c5fd;
+}
+
+.fortress-ambush-chip__del-btn {
+  background: rgba(239, 68, 68, 0.3);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  line-height: 14px;
+  transition: all 0.15s;
+}
+
+.fortress-ambush-chip__del-btn:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* ── MODAL DE PROGRAMACIÓN DE EMBOSCADA ───────────────────────────────────── */
+.fortress-ambush-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fortress-ambush-modal {
+  background: linear-gradient(150deg, #1e1b4b 0%, #0f172a 100%);
+  border: 2px solid #a855f7;
+  border-radius: 14px;
+  width: 440px;
+  max-width: 90vw;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.4), 0 10px 30px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalPop 0.2s ease-out;
+}
+
+@keyframes modalPop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.fortress-ambush-modal__header {
+  padding: 12px 18px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fortress-ambush-modal__header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #e9d5ff;
+  letter-spacing: 0.5px;
+}
+
+.fortress-ambush-modal__close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.fortress-ambush-modal__body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fortress-ambush-modal__plant-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.fortress-ambush-modal__plant-preview img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}
+
+.fortress-ambush-modal__plant-preview h4 {
+  margin: 0 0 2px;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.fortress-ambush-modal__plant-preview p {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  color: #cbd5e1;
+  line-height: 1.3;
+}
+
+.fortress-ambush-modal__cost {
+  font-size: 0.78rem;
+  color: #fde047;
+}
+
+.fortress-ambush-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fortress-ambush-form-group label {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.fortress-ambush-lanes-selector,
+.fortress-ambush-time-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fortress-ambush-lane-btn,
+.fortress-ambush-time-btn {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #e2e8f0;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.fortress-ambush-lane-btn.is-selected,
+.fortress-ambush-time-btn.is-selected {
+  background: linear-gradient(135deg, #9333ea, #7e22ce);
+  border-color: #d8b4fe;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+
+.fortress-ambush-modal__footer {
+  padding: 12px 18px;
+  background: rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(168, 85, 247, 0.3);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.fortress-ambush-modal__btn-cancel {
+  background: rgba(51, 65, 85, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.fortress-ambush-modal__btn-confirm {
+  background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+  border: 1px solid #d8b4fe;
+  color: #ffffff;
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.4);
+  transition: all 0.15s;
+}
+
+.fortress-ambush-modal__btn-confirm:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+
+/* ── CARTAS BLOQUEADAS EN LA PALETA (ARSENAL) ──────────────────────────────── */
+.fortress-palette-card--locked {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: rgba(30, 27, 46, 0.85) !important;
+  cursor: pointer;
+}
+
+.fortress-palette-card--locked:hover {
+  border-color: #f87171 !important;
+  background: rgba(50, 30, 60, 0.95) !important;
+}
+
+.fortress-palette-lock-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border-radius: 6px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.fortress-palette-ambush-tag {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  background: #7e22ce;
+  border: 1px solid #d8b4fe;
+  color: #ffffff;
+  font-size: 0.52rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.4px;
+}
+
+/* ==============================================================================
+   ESCALADO PROPORCIONAL DE EDITOR DE FORTALEZA PARA PANTALLAS MÓVILES (LANDSCAPE)
+   (Mantiene el campo de batalla 5 carriles y paleta horizontal en escala compacta)
+   ============================================================================== */
+@media (max-width: 1024px), (max-height: 620px) {
+  .fortress-editor-header {
+    height: 44px;
+    padding: 0 12px;
+  }
+
+  .fortress-editor-btn-back {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    border-radius: 6px;
+  }
+
+  .fortress-editor-title h2 {
+    font-size: 0.95rem;
+  }
+
+  .fortress-editor-title small {
+    font-size: 0.62rem;
+  }
+
+  .fortress-editor-header__center {
+    max-width: 260px;
+    margin: 0 10px;
+  }
+
+  .fortress-sun-meter__info {
+    font-size: 0.72rem;
+  }
+
+  .fortress-sun-meter__track {
+    height: 6px;
+  }
+
+  .fortress-editor-btn-clear {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    border-radius: 6px;
+  }
+
+  .fortress-editor-btn-save {
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+  }
+
+  .fortress-editor-field-container {
+    padding: 4px;
+  }
+
+  .fortress-field-zone {
+    font-size: 0.6rem;
+    padding: 2px 8px;
+    top: 3px;
+  }
+
+  .fortress-lane-tag {
+    font-size: 0.55rem;
+    padding: 1px 4px;
+    right: 4px;
+  }
+
+  .fortress-editor-footer {
+    height: 74px;
+    padding: 4px 10px;
+    gap: 3px;
+  }
+
+  .fortress-selector-hint {
+    font-size: 0.68rem;
+  }
+
+  .fortress-palette-card {
+    flex: 0 0 54px;
+    height: 52px;
+    padding: 2px;
+    border-radius: 6px;
+  }
+
+  .fortress-palette-img-wrap {
+    width: 28px;
+    height: 28px;
+  }
+
+  .fortress-palette-cost {
+    font-size: 0.55rem;
+    padding: 0 3px;
+    bottom: -2px;
+    right: -4px;
+  }
+
+  .fortress-palette-name {
+    font-size: 0.55rem;
+  }
+
+  .fortress-move-ribbon {
+    padding: 3px 8px;
+    gap: 6px;
+  }
+
+  .fortress-move-ribbon__text {
+    font-size: 0.7rem;
+  }
+
+  .fortress-move-ribbon__shovel-btn,
+  .fortress-move-ribbon__cancel-btn {
+    padding: 3px 8px;
+    font-size: 0.68rem;
+  }
+}
+
+

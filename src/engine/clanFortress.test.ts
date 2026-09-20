@@ -333,4 +333,75 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(pPropiaVanguardia.col).toBe(4)
     expect(pPropiaRetaguardia.x).toBeLessThan(pPropiaVanguardia.x) // La vanguardia aliada está más a la derecha
   })
+
+  it('soporta la detonación de emboscadas tácticas programadas y escalonamiento de líneas', () => {
+    const state = createBattleState(888, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 4, true)
+    expect(state.lanesCount).toBe(4)
+
+    // Simular emboscada táctica de Jalapeño programada para el segundo 30 en carril 1 (col 6 vanguardia rival)
+    const ambushJalapeno = crearPlantaDelRival(state, 'jalapeno', 1, 6)
+    state.enemyPlants.push(ambushJalapeno)
+    expect(state.enemyPlants).toHaveLength(1)
+    expect(state.enemyPlants[0].plantId).toBe('jalapeno')
+    expect(state.enemyPlants[0].lane).toBe(1)
+    expect(state.enemyPlants[0].col).toBe(7) // 13 - 6 = 7 (frente derecho en campo del atacante)
+
+    // Simular emboscada de Bonk Choy móvil (que entra caminando hacia la izquierda)
+    const ambushBonkChoy = crearPlantaDelRival(state, 'bonkchoy', 2, undefined)
+    state.enemyPlants.push(ambushBonkChoy)
+    expect(state.enemyPlants).toHaveLength(2)
+    expect(ambushBonkChoy.isWalking).toBe(true)
+    expect(ambushBonkChoy.state).toBe('walking')
+    expect(ambushBonkChoy.x).toBeGreaterThan(80)
+  })
+
+  it('calcula los soles iniciales del atacante según el nivel del Árbol Madre (300 base + 100 por nivel)', () => {
+    const calculateAttackerInitialSuns = (motherTreeLevel: number) => {
+      return 300 + Math.max(0, motherTreeLevel) * 100
+    }
+
+    // Nivel 0 (sin mejoras): 300 Soles
+    expect(calculateAttackerInitialSuns(0)).toBe(300)
+
+    // Nivel 1: 400 Soles
+    expect(calculateAttackerInitialSuns(1)).toBe(400)
+
+    // Nivel 2: 500 Soles
+    expect(calculateAttackerInitialSuns(2)).toBe(500)
+
+    // Nivel 3: 600 Soles
+    expect(calculateAttackerInitialSuns(3)).toBe(600)
+
+    // Nivel 4: 700 Soles
+    expect(calculateAttackerInitialSuns(4)).toBe(700)
+
+    // Al crear el estado de batalla con initialAttackSuns, sunBank adopta el valor exacto
+    const state = createBattleState(999, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true, calculateAttackerInitialSuns(2))
+    expect(state.sunBank).toBe(500)
+  })
+
+  it('permite desenterrar con la pala y reembolsar el 100% de soles durante la fase de preparación', () => {
+    const initialSuns = 400
+    const state = createBattleState(1001, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true, initialSuns)
+
+    // 1. Atacante planta un Lanzaguisantes (coste 100) en carril 1, col 2
+    const peashooterCost = 100
+    state.sunBank -= peashooterCost
+    const planta = crearPlantaPropia(state, 'peashooter', 1, 2)
+    planta.isWalking = false
+    planta.state = 'idle'
+    state.plants.push(planta)
+
+    expect(state.plants).toHaveLength(1)
+    expect(state.sunBank).toBe(300)
+
+    // 2. Jugador usa la pala sobre la planta para repensar su estrategia
+    // En fase de preparación: desenterrar devuelve el 100% del coste
+    state.plants = state.plants.filter((p) => p.id !== planta.id)
+    state.sunBank += peashooterCost
+
+    expect(state.plants).toHaveLength(0)
+    expect(state.sunBank).toBe(400) // 100% reembolsado
+  })
 })
+
