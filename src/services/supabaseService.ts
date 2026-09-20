@@ -316,7 +316,15 @@ export const SupabaseService = {
         if (!Array.isArray(data)) {
           throw new Error('Respuesta de clasificación inválida: no es un array')
         }
-        return data.map((row) => parseLeaderboardRow(row))
+        const parsedRows: ParsedLeaderboardRow[] = []
+        for (const row of data) {
+          try {
+            parsedRows.push(parseLeaderboardRow(row))
+          } catch (parseErr: any) {
+            console.warn('[SupabaseService] Fila omitida en leaderboard por datos corruptos:', row, parseErr?.message)
+          }
+        }
+        return parsedRows
       }
 
       // Si no hay limit o limit > 1000, paginamos por rangos para superar el tope
@@ -362,7 +370,15 @@ export const SupabaseService = {
         }
       }
 
-      return allRows.map((row) => parseLeaderboardRow(row))
+      const parsedAllRows: ParsedLeaderboardRow[] = []
+      for (const row of allRows) {
+        try {
+          parsedAllRows.push(parseLeaderboardRow(row))
+        } catch (parseErr: any) {
+          console.warn('[SupabaseService] Fila omitida en leaderboard por datos corruptos:', row, parseErr?.message)
+        }
+      }
+      return parsedAllRows
     } catch (e: any) {
       logError('getGlobalLeaderboard', e)
       throw e
