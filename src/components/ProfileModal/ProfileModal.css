@@ -1551,7 +1551,8 @@
 }
 
 .crypto-tx-badge--requested,
-.crypto-tx-badge--processing {
+.crypto-tx-badge--processing,
+.crypto-tx-badge--pending_manual_review {
   background: rgba(245, 158, 11, 0.2);
   color: #fbbf24;
   border: 1px solid #f59e0b;
@@ -1565,7 +1566,8 @@
 }
 
 .crypto-tx-badge--failed,
-.crypto-tx-badge--rejected {
+.crypto-tx-badge--rejected,
+.crypto-tx-badge--cancelled {
   background: rgba(239, 68, 68, 0.2);
   color: #f87171;
   border: 1px solid #ef4444;

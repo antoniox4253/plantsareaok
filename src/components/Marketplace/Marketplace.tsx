@@ -177,7 +177,7 @@ export default function Marketplace({
   const [listings, setListings] = useState<OfertaDelMercado[]>([])
   const [transactions, setTransactions] = useState<GlobalTransactionItem[]>([])
   const [txLoading, setTxLoading] = useState(false)
-  const [txFilter, setTxFilter] = useState<'all' | 'marketplace' | 'withdrawal' | 'shop' | 'reward' | 'tournament'>('all')
+  const [txFilter, setTxFilter] = useState<'all' | 'marketplace' | 'shop' | 'reward' | 'tournament'>('all')
   /** La comisión la manda el servidor: así el número no vive duplicado aquí. */
   const [comisionPct, setComisionPct] = useState<number>(10)
   const [cargando, setCargando] = useState(true)
@@ -416,12 +416,20 @@ export default function Marketplace({
     }
   }, [activeTab])
 
+  const safeTransactions = useMemo(() => {
+    return transactions.filter(
+      (t) =>
+        t.type !== 'withdrawal' &&
+        !t.title?.toLowerCase().includes('retiro') &&
+        !t.description?.toLowerCase().includes('retiro')
+    )
+  }, [transactions])
+
   const filteredTransactions = useMemo(() => {
-    if (txFilter === 'all') return transactions
-    if (txFilter === 'marketplace') return transactions.filter((t) => t.type === 'marketplace_sale')
-    if (txFilter === 'withdrawal') return transactions.filter((t) => t.type === 'withdrawal')
+    if (txFilter === 'all') return safeTransactions
+    if (txFilter === 'marketplace') return safeTransactions.filter((t) => t.type === 'marketplace_sale')
     if (txFilter === 'shop')
-      return transactions.filter(
+      return safeTransactions.filter(
         (t) =>
           t.type === 'shop_pack' ||
           t.type === 'shop_gold' ||
@@ -438,7 +446,7 @@ export default function Marketplace({
           t.description?.toLowerCase().includes('pase vip')
       )
     if (txFilter === 'tournament')
-      return transactions.filter(
+      return safeTransactions.filter(
         (t) =>
           t.type === 'tournament_entry_fee' ||
           t.type === 'tournament_reentry' ||
@@ -447,33 +455,33 @@ export default function Marketplace({
           t.description?.toLowerCase().includes('torneo')
       )
     if (txFilter === 'reward')
-      return transactions.filter(
+      return safeTransactions.filter(
         (t) =>
           t.type === 'lottery_win' ||
           t.type === 'lottery_spin' ||
           t.type === 'reward_code' ||
           t.type === 'referral_reward'
       )
-    return transactions
-  }, [transactions, txFilter])
+    return safeTransactions
+  }, [safeTransactions, txFilter])
 
   const txStats = useMemo(() => {
     let totalP2pGems = 0
-    let totalWithdrawGems = 0
-    transactions.forEach((t) => {
+    let totalRewardGems = 0
+    safeTransactions.forEach((t) => {
       if (t.type === 'marketplace_sale' && t.amountGems) {
         totalP2pGems += t.amountGems
       }
-      if (t.type === 'withdrawal') {
-        totalWithdrawGems += t.amountGems || (t.amountUsd ? Math.round(t.amountUsd * 100) : 0)
+      if ((t.type === 'lottery_win' || t.type === 'tournament_reward' || t.type === 'referral_reward') && t.amountGems) {
+        totalRewardGems += t.amountGems
       }
     })
     return {
-      total: transactions.length,
+      total: safeTransactions.length,
       p2pGems: totalP2pGems,
-      withdrawGems: totalWithdrawGems,
+      rewardGems: totalRewardGems,
     }
-  }, [transactions])
+  }, [safeTransactions])
 
 
   // Sin servidor no hay mercado. Antes había una versión en localStorage y eso
@@ -2064,8 +2072,8 @@ export default function Marketplace({
                 <span className="market-tx-stat-chip__val">{txStats.p2pGems.toLocaleString()} 💎</span>
               </div>
               <div className="market-tx-stat-chip market-tx-stat-chip--emerald">
-                <span className="market-tx-stat-chip__label">RETIROS OFICIALES</span>
-                <span className="market-tx-stat-chip__val">{txStats.withdrawGems.toLocaleString()} 💎</span>
+                <span className="market-tx-stat-chip__label">PREMIOS ENTREGADOS</span>
+                <span className="market-tx-stat-chip__val">{txStats.rewardGems.toLocaleString()} 💎</span>
               </div>
             </div>
 
@@ -2090,14 +2098,14 @@ export default function Marketplace({
               className={`market-tx-filter-chip ${txFilter === 'all' ? 'market-tx-filter-chip--active' : ''}`}
               onClick={() => setTxFilter('all')}
             >
-              🌐 TODOS ({transactions.length})
+              🌐 TODOS ({safeTransactions.length})
             </button>
             <button
               type="button"
               className={`market-tx-filter-chip ${txFilter === 'marketplace' ? 'market-tx-filter-chip--active' : ''}`}
               onClick={() => setTxFilter('marketplace')}
             >
-              🛒 MERCADO P2P ({transactions.filter((t) => t.type === 'marketplace_sale').length})
+              🛒 MERCADO P2P ({safeTransactions.filter((t) => t.type === 'marketplace_sale').length})
             </button>
             <button
               type="button"
@@ -2106,7 +2114,7 @@ export default function Marketplace({
             >
               🏆 TORNEOS (
               {
-                transactions.filter(
+                safeTransactions.filter(
                   (t) =>
                     t.type === 'tournament_entry_fee' ||
                     t.type === 'tournament_reentry' ||
@@ -2124,7 +2132,7 @@ export default function Marketplace({
             >
               🎒 TIENDA & ORO (
               {
-                transactions.filter(
+                safeTransactions.filter(
                   (t) =>
                     t.type === 'shop_pack' ||
                     t.type === 'shop_gold' ||
@@ -2145,18 +2153,11 @@ export default function Marketplace({
             </button>
             <button
               type="button"
-              className={`market-tx-filter-chip ${txFilter === 'withdrawal' ? 'market-tx-filter-chip--active' : ''}`}
-              onClick={() => setTxFilter('withdrawal')}
-            >
-              💳 RETIROS VALIDADOS ({transactions.filter((t) => t.type === 'withdrawal').length})
-            </button>
-            <button
-              type="button"
               className={`market-tx-filter-chip ${txFilter === 'reward' ? 'market-tx-filter-chip--active' : ''}`}
               onClick={() => setTxFilter('reward')}
             >
               🎁 PREMIOS & RULETA ({
-                transactions.filter(
+                safeTransactions.filter(
                   (t) =>
                     t.type === 'lottery_win' ||
                     t.type === 'lottery_spin' ||
@@ -2285,7 +2286,6 @@ export default function Marketplace({
                     <div className="market-tx-card__left">
                       <span className={`market-tx-badge market-tx-badge--${cardClassModifier}`}>
                         {tx.type === 'marketplace_sale' && '🛒 MERCADO P2P'}
-                        {tx.type === 'withdrawal' && '💳 RETIRO BNB CHAIN'}
                         {isDeposit && '💎 RECARGA GEMAS'}
                         {isTournamentFee && '🏆 ENTRADA TORNEO'}
                         {isTournamentReentry && '🔄 REENTRADA TORNEO'}
@@ -2323,15 +2323,6 @@ export default function Marketplace({
                               </div>
                             </div>
                           )}
-                        </div>
-                      ) : tx.type === 'withdrawal' ? (
-                        <div className="market-tx-details-custom">
-                          <div className="market-tx-users-flow">
-                            <span className="market-tx-user-name">{tx.userName}</span>
-                            <span className="market-tx-action-text">realizó un retiro oficial</span>
-                          </div>
-                          <span className="market-tx-desc-text">{tx.description}</span>
-                          <span className="market-tx-validated-tag">✓ Retiro Oficial Validado</span>
                         </div>
                       ) : (
                         <div className="market-tx-details-custom">
@@ -2374,13 +2365,7 @@ export default function Marketplace({
 
                     {/* Right: Amount in Gems or Gold */}
                     <div className="market-tx-card__right">
-                      {tx.type === 'withdrawal' ? (
-                        <div className="market-tx-amount-box market-tx-amount-box--gems">
-                          <span className="market-tx-amount-num" style={{ color: '#f87171', fontWeight: 'bold' }}>
-                            -{(tx.amountGems || (tx.amountUsd ? Math.round(tx.amountUsd * 100) : 0)).toLocaleString()} 💎
-                          </span>
-                        </div>
-                      ) : isTournamentFee || isTournamentReentry ? (
+                      {isTournamentFee || isTournamentReentry ? (
                         <div className="market-tx-amount-box market-tx-amount-box--gems">
                           <span className="market-tx-amount-num" style={{ color: '#fb923c', fontWeight: 'bold' }}>
                             -{Math.abs(tx.amountGems || 0).toLocaleString()} 💎

@@ -4759,6 +4759,7 @@ export const SupabaseService = {
       destinationWallet: string
       status: string
       remainingBalance?: number
+      requiresManualReview?: boolean
     }
     error?: string
     message?: string
@@ -5159,7 +5160,12 @@ export const SupabaseService = {
         p_limit: limite,
       })
       if (!error && Array.isArray(data)) {
-        return data as GlobalTransactionItem[]
+        return (data as GlobalTransactionItem[]).filter(
+          (t) =>
+            t.type !== 'withdrawal' &&
+            !t.title?.toLowerCase().includes('retiro') &&
+            !t.description?.toLowerCase().includes('retiro')
+        )
       }
       if (error) {
         logError('getGlobalTransactions:rpc_fallback', error)
@@ -5275,9 +5281,9 @@ export const SupabaseService = {
         } else if (typeStr.startsWith('shop')) {
           txType = 'shop_purchase'
           title = 'Compra en Tienda'
-        } else if (typeStr === 'withdrawal') {
-          txType = 'withdrawal'
-          title = 'Retiro BNB Chain'
+        } else if (typeStr === 'withdrawal' || desc.toLowerCase().includes('retiro')) {
+          // Ocultar retiros de transacciones para evitar pánico
+          continue
         } else if (typeStr === 'deposit' || desc.toLowerCase().includes('depósito') || desc.toLowerCase().includes('deposito')) {
           txType = 'deposit'
           title = 'Depósito de Gemas'
@@ -5311,7 +5317,14 @@ export const SupabaseService = {
       }
 
       results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      return results.slice(0, limite)
+      return results
+        .filter(
+          (t) =>
+            t.type !== 'withdrawal' &&
+            !t.title?.toLowerCase().includes('retiro') &&
+            !t.description?.toLowerCase().includes('retiro')
+        )
+        .slice(0, limite)
     } catch (err) {
       logError('getGlobalTransactions:fallback_error', err)
       return []

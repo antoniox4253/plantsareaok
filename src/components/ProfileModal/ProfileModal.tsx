@@ -670,32 +670,40 @@ export default function ProfileModal({
         window.dispatchEvent(new Event('refresh_user_balance'))
         window.dispatchEvent(new Event('player_profile_updated'))
 
-        // Disparar inmediatamente el procesador de retiros on-chain
-        showFeedback(`⏳ Solicitud de ${withdrawalInfo.netAmountUsdt} USDT registrada. Transmitiendo a BNB Smart Chain...`, 'success')
-        
-        try {
-          const procRes = await accountService.triggerWithdrawalProcessor()
-          const matchedItem = (procRes.results || []).find((r: any) => r.id === withdrawalInfo.id)
-
-          if (matchedItem?.status === 'completed' && matchedItem.txHash) {
-            soundManager.playSound('victory', 0.9)
-            showFeedback(
-              `🎉 ¡RETIRO COMPLETADO CON ÉXITO! Se enviaron ${matchedItem.netAmountUsdt} USDT a tu wallet. (TX: ${matchedItem.txHash.slice(0, 10)}...)`,
-              'success'
-            )
-          } else if (matchedItem?.status === 'failed_and_refunded' || matchedItem?.error) {
-            soundManager.playSound('error', 0.5)
-            showFeedback(
-              `⚠️ El retiro en blockchain falló (${matchedItem.error || 'Error de red'}). Tus gemas han sido reembolsadas intactas a tu cuenta.`,
-              'error'
-            )
-          } else if (procRes.error) {
-            showFeedback(`⚠️ Retiro registrado en espera de confirmación: ${procRes.message || procRes.error}`, 'warning')
-          }
-        } catch {
-          // Si la edge function tarda, el retiro queda encolado de forma segura
+        if (withdrawalInfo.requiresManualReview || withdrawalInfo.status === 'pending_manual_review') {
           soundManager.playSound('click', 0.5)
-          showFeedback(`✓ Solicitud de retiro encolada correctamente. Recibirás ${withdrawalInfo.netAmountUsdt} USDT al confirmar el bloque.`, 'success')
+          showFeedback(
+            `🛡️ Solicitud de ${withdrawalInfo.netAmountUsdt} USDT registrada con éxito. Por protocolo de seguridad para montos mayores a 25 USDT, pasará por una breve auditoría de seguridad antes de ser emitida a la blockchain.`,
+            'success'
+          )
+        } else {
+          // Disparar inmediatamente el procesador de retiros on-chain
+          showFeedback(`⏳ Solicitud de ${withdrawalInfo.netAmountUsdt} USDT registrada. Transmitiendo a BNB Smart Chain...`, 'success')
+          
+          try {
+            const procRes = await accountService.triggerWithdrawalProcessor()
+            const matchedItem = (procRes.results || []).find((r: any) => r.id === withdrawalInfo.id)
+
+            if (matchedItem?.status === 'completed' && matchedItem.txHash) {
+              soundManager.playSound('victory', 0.9)
+              showFeedback(
+                `🎉 ¡RETIRO COMPLETADO CON ÉXITO! Se enviaron ${matchedItem.netAmountUsdt} USDT a tu wallet. (TX: ${matchedItem.txHash.slice(0, 10)}...)`,
+                'success'
+              )
+            } else if (matchedItem?.status === 'failed_and_refunded' || matchedItem?.error) {
+              soundManager.playSound('error', 0.5)
+              showFeedback(
+                `⚠️ El retiro en blockchain falló (${matchedItem.error || 'Error de red'}). Tus gemas han sido reembolsadas intactas a tu cuenta.`,
+                'error'
+              )
+            } else if (procRes.error) {
+              showFeedback(`⚠️ Retiro registrado en espera de confirmación: ${procRes.message || procRes.error}`, 'warning')
+            }
+          } catch {
+            // Si la edge function tarda, el retiro queda encolado de forma segura
+            soundManager.playSound('click', 0.5)
+            showFeedback(`✓ Solicitud de retiro encolada correctamente. Recibirás ${withdrawalInfo.netAmountUsdt} USDT al confirmar el bloque.`, 'success')
+          }
         }
 
         // Sincronizar nuevamente saldos e historial
@@ -1533,10 +1541,13 @@ export default function ProfileModal({
                           </span>
                           <span className={`crypto-tx-badge crypto-tx-badge--${w.status}`}>
                             {w.status === 'requested' && '⏳ Solicitado'}
+                            {w.status === 'pending_manual_review' && '🛡️ En Revisión'}
                             {w.status === 'processing' && '⚙️ Procesando'}
                             {w.status === 'broadcasted' && '📡 Transmitido'}
                             {w.status === 'completed' && '✓ Completado'}
                             {w.status === 'failed' && '❌ Fallido (Reembolsado)'}
+                            {w.status === 'rejected' && '⛔ Rechazado'}
+                            {w.status === 'cancelled' && '🚫 Cancelado'}
                           </span>
                         </div>
                       </div>
