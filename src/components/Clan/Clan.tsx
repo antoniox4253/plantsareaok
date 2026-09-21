@@ -3168,7 +3168,7 @@ export default function Clan({
                             <span className="clan-tree-perk-icon">⚔️</span>
                             <div className="clan-tree-perk-meta">
                               <span className="clan-tree-perk-label">Soles Iniciales en Asalto</span>
-                              <strong className="clan-tree-perk-val">{fortressData?.initialAttackSuns || 100} Soles</strong>
+                              <strong className="clan-tree-perk-val">{fortressData?.initialAttackSuns || 650} Soles</strong>
                             </div>
                           </div>
 

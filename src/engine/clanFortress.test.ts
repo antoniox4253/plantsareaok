@@ -263,7 +263,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
       const lvl = Math.max(1, Math.min(4, level))
       return {
         maxMembers: lvl === 1 ? 15 : lvl === 2 ? 18 : lvl === 3 ? 20 : 25,
-        initialAttackSuns: lvl === 1 ? 100 : lvl === 2 ? 150 : lvl === 3 ? 200 : 250,
+        initialAttackSuns: lvl === 1 ? 650 : lvl === 2 ? 800 : lvl === 3 ? 950 : 1100,
         conquestDamageBonusPct: lvl === 1 ? 0 : lvl === 2 ? 5 : lvl === 3 ? 10 : 20,
         dailyPassiveSuns: lvl === 1 ? 0 : lvl === 2 ? 10 : lvl === 3 ? 20 : 30,
         vipGoldBonusPct: lvl === 1 ? 0 : lvl === 2 ? 5 : lvl === 3 ? 10 : 15,
@@ -274,37 +274,37 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     // Nivel 1: Base
     expect(getLevelPerks(1)).toEqual({
       maxMembers: 15,
-      initialAttackSuns: 100,
+      initialAttackSuns: 650,
       conquestDamageBonusPct: 0,
       dailyPassiveSuns: 0,
       vipGoldBonusPct: 0,
       pvpDamageBonusPct: 0,
     })
 
-    // Nivel 2: +3 miembros, 150 soles, +5% conquista, 10 soles diarios, 5% vip gold
+    // Nivel 2: +3 miembros, 800 soles, +5% conquista, 10 soles diarios, 5% vip gold
     expect(getLevelPerks(2)).toEqual({
       maxMembers: 18,
-      initialAttackSuns: 150,
+      initialAttackSuns: 800,
       conquestDamageBonusPct: 5,
       dailyPassiveSuns: 10,
       vipGoldBonusPct: 5,
       pvpDamageBonusPct: 0,
     })
 
-    // Nivel 3: +2 miembros (20), 200 soles, +10% conquista, 20 soles diarios, 10% vip gold, 5% pvp dmg
+    // Nivel 3: +2 miembros (20), 950 soles, +10% conquista, 20 soles diarios, 10% vip gold, 5% pvp dmg
     expect(getLevelPerks(3)).toEqual({
       maxMembers: 20,
-      initialAttackSuns: 200,
+      initialAttackSuns: 950,
       conquestDamageBonusPct: 10,
       dailyPassiveSuns: 20,
       vipGoldBonusPct: 10,
       pvpDamageBonusPct: 5,
     })
 
-    // Nivel 4: +5 miembros (25), 250 soles, +20% conquista, 30 soles diarios, 15% vip gold, 10% pvp dmg
+    // Nivel 4: +5 miembros (25), 1100 soles, +20% conquista, 30 soles diarios, 15% vip gold, 10% pvp dmg
     expect(getLevelPerks(4)).toEqual({
       maxMembers: 25,
-      initialAttackSuns: 250,
+      initialAttackSuns: 1100,
       conquestDamageBonusPct: 20,
       dailyPassiveSuns: 30,
       vipGoldBonusPct: 15,
@@ -357,29 +357,29 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(ambushBonkChoy.x).toBeGreaterThan(80)
   })
 
-  it('calcula los soles iniciales del atacante según el nivel del Árbol Madre (300 base + 100 por nivel)', () => {
+  it('calcula los soles iniciales del atacante según el nivel del Árbol Madre (500 base + 150 por nivel)', () => {
     const calculateAttackerInitialSuns = (motherTreeLevel: number) => {
-      return 300 + Math.max(0, motherTreeLevel) * 100
+      return 500 + Math.max(0, motherTreeLevel) * 150
     }
 
-    // Nivel 0 (sin mejoras): 300 Soles
-    expect(calculateAttackerInitialSuns(0)).toBe(300)
+    // Nivel 0 (sin mejoras): 500 Soles
+    expect(calculateAttackerInitialSuns(0)).toBe(500)
 
-    // Nivel 1: 400 Soles
-    expect(calculateAttackerInitialSuns(1)).toBe(400)
+    // Nivel 1: 650 Soles
+    expect(calculateAttackerInitialSuns(1)).toBe(650)
 
-    // Nivel 2: 500 Soles
-    expect(calculateAttackerInitialSuns(2)).toBe(500)
+    // Nivel 2: 800 Soles
+    expect(calculateAttackerInitialSuns(2)).toBe(800)
 
-    // Nivel 3: 600 Soles
-    expect(calculateAttackerInitialSuns(3)).toBe(600)
+    // Nivel 3: 950 Soles
+    expect(calculateAttackerInitialSuns(3)).toBe(950)
 
-    // Nivel 4: 700 Soles
-    expect(calculateAttackerInitialSuns(4)).toBe(700)
+    // Nivel 4: 1100 Soles
+    expect(calculateAttackerInitialSuns(4)).toBe(1100)
 
     // Al crear el estado de batalla con initialAttackSuns, sunBank adopta el valor exacto
     const state = createBattleState(999, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true, calculateAttackerInitialSuns(2))
-    expect(state.sunBank).toBe(500)
+    expect(state.sunBank).toBe(800)
   })
 
   it('permite desenterrar con la pala y reembolsar el 100% de soles durante la fase de preparación', () => {

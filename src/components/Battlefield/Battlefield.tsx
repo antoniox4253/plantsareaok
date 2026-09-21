@@ -741,7 +741,7 @@ export default function Battlefield({
       setClanRaidPhase('prep')
       soundManager.playSound('plantation', 0.8)
 
-      const fortressAttackSuns = 300 + Math.max(0, treeLevel) * 100
+      const fortressAttackSuns = newOpponent.initialAttackSuns || (500 + Math.max(0, treeLevel) * 150)
 
       startGame(
         Math.floor(Math.random() * 1000000),
@@ -1663,7 +1663,7 @@ export default function Battlefield({
     ) {
       hasClanFortressStartedRef.current = true
       const opp = currentFortressOpponent || clanFortressConfig!.targetClan
-      const fortressAttackSuns = 300 + Math.max(0, treeLevel) * 100
+      const fortressAttackSuns = opp.initialAttackSuns || (500 + Math.max(0, treeLevel) * 150)
       startGame(
         seed || Math.floor(Math.random() * 1000000),
         false,
@@ -1788,7 +1788,7 @@ export default function Battlefield({
     }
   }
 
-  const handlePlayAgain = () => {
+  const handlePlayAgain = async () => {
     soundManager.stopBgm()
 
     hasHandledEndRef.current = false
@@ -1796,6 +1796,76 @@ export default function Battlefield({
     setBattleSummaryResult(null)
     setColosseumResult(null)
     setTournamentResult(null)
+    setClanRaidResult(null)
+
+    // ============================================================
+    // MODO ASALTO A FORTALEZA DE CLAN (clan_fortress)
+    // Busca automáticamente un nuevo objetivo y entra en fase de preparación (120s)
+    // ============================================================
+    if (matchMode === 'clan_fortress') {
+      setIsRerollingTarget(true)
+      setRerollError(null)
+      soundManager.playSound('click', 0.4)
+
+      try {
+        const res = await supabaseService.searchClanFortressMatch()
+        if (!res.success || !res.data) {
+          const rawErr = res.error || 'No se encontró otra fortaleza disponible.'
+          const friendlyMsg = rawErr.includes('ALL_FORTRESSES_UNDER_REPAIR') || rawErr.toLowerCase().includes('reparación')
+            ? 'Todas las fortalezas están en reparación. Intente más tarde.'
+            : rawErr
+          alert(friendlyMsg)
+          if (onBackToMenu) {
+            soundManager.playBgm('menu')
+            onBackToMenu()
+          }
+          return
+        }
+
+        const newOpponent = res.data
+        setCurrentFortressOpponent(newOpponent)
+        prepTargetTimeRef.current = Date.now() + 120_000
+        setClanRaidPrepTimer(120)
+        setClanRaidPhase('prep')
+        setPreparationPhase(true)
+        soundManager.playSound('plantation', 0.8)
+        soundManager.playBgm('battle')
+
+        const fortressAttackSuns = newOpponent.initialAttackSuns || (500 + Math.max(0, treeLevel) * 150)
+
+        startGame(
+          Math.floor(Math.random() * 1000000),
+          false,
+          undefined,
+          userElo,
+          true,
+          { mio: mazoMioParsed, rival: null },
+          undefined,
+          undefined,
+          'auth-v2',
+          treeBonusHpRef.current,
+          0,
+          treeSkinRef.current,
+          null,
+          5, // Option A: La arena de fortaleza siempre opera sobre 5 carriles
+          newOpponent.layout,
+          newOpponent.targetBaseHp,
+          fortressAttackSuns,
+          true, // isPreparationPhase = true
+          newOpponent.ambushes,
+          newOpponent.targetTreeLevel
+        )
+      } catch (err: any) {
+        alert(err?.message || 'Error al buscar otra fortaleza.')
+        if (onBackToMenu) {
+          soundManager.playBgm('menu')
+          onBackToMenu()
+        }
+      } finally {
+        setIsRerollingTarget(false)
+      }
+      return
+    }
 
     // ============================================================
     // ONLINE
@@ -3113,14 +3183,20 @@ export default function Battlefield({
                       <button
                         className="game-button"
                         type="button"
+                        disabled={isRerollingTarget}
                         onClick={handlePlayAgain}
                       >
-                        {matchMode === 'tournament' ? '🏆 VOLVER AL TORNEO' : '🎮 SEGUIR JUGANDO'}
+                        {matchMode === 'tournament'
+                          ? '🏆 VOLVER AL TORNEO'
+                          : isRerollingTarget
+                          ? '🔍 BUSCANDO FORTALEZA...'
+                          : '🎮 SEGUIR JUGANDO'}
                       </button>
                       {onBackToMenu && matchMode !== 'tournament' && (
                         <button
                           className="game-button game-button--secondary"
                           type="button"
+                          disabled={isRerollingTarget}
                           onClick={() => {
                             soundManager.playBgm('menu')
                             onBackToMenu()
