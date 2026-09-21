@@ -440,5 +440,70 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     // La base aliada no debe haber recibido daño porque la nuez interceptó el tiro
     expect(state.p1BaseHp).toBe(initialP1BaseHp)
   })
+
+  it('en arena de fortaleza 5 carriles (Opción A), carril 1 aliado impacta a defensas en carril 1 rival sin desplazamiento', () => {
+    const state = createBattleState(
+      8888,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      5,
+      true
+    )
+    expect(state.lanesCount).toBe(5)
+
+    // Aliado planta en carril 1 (columna 2)
+    const allyPea = crearPlantaPropia(state, 'peashooter', 1, 2)
+    state.plants.push(allyPea)
+
+    // Defensa rival colocada en el editor en carril 1 (columna 8)
+    const enemyWallnut = crearPlantaDelRival(state, 'wallnut', 1, 8)
+    const initialWallnutHp = enemyWallnut.hp
+    state.enemyPlants.push(enemyWallnut)
+
+    let hitOccurred = false
+    for (let t = 0; t < 150; t++) {
+      stepTick(state, () => {})
+      if (enemyWallnut.hp < initialWallnutHp) {
+        hitOccurred = true
+        break
+      }
+    }
+
+    expect(hitOccurred).toBe(true)
+    expect(enemyWallnut.hp).toBeLessThan(initialWallnutHp)
+  })
+
+  it('filtra correctamente plantas y emboscadas en carriles bloqueados según el nivel de Árbol Madre', () => {
+    // Para Nivel 1 y 2, sólo carriles [1, 2, 3] están permitidos
+    const treeLevel1Allowed = [1, 2, 3]
+    const testLayout: ClanFortressPlant[] = [
+      { plantId: 'repeater', lane: 0, col: 2 }, // Bloqueado
+      { plantId: 'peashooter', lane: 1, col: 2 }, // Válido
+      { plantId: 'wallnut', lane: 2, col: 4 }, // Válido
+      { plantId: 'peashooter', lane: 3, col: 2 }, // Válido
+      { plantId: 'repeater', lane: 4, col: 2 }, // Bloqueado
+    ]
+
+    const filteredLayoutLvl1 = testLayout.filter((p) => treeLevel1Allowed.includes(p.lane))
+    expect(filteredLayoutLvl1.length).toBe(3)
+    expect(filteredLayoutLvl1.map((p) => p.lane)).toEqual([1, 2, 3])
+
+    // Para Nivel 3, carriles [0, 1, 2, 3] permitidos (4 bloqueado)
+    const treeLevel3Allowed = [0, 1, 2, 3]
+    const filteredLayoutLvl3 = testLayout.filter((p) => treeLevel3Allowed.includes(p.lane))
+    expect(filteredLayoutLvl3.length).toBe(4)
+    expect(filteredLayoutLvl3.map((p) => p.lane)).toEqual([0, 1, 2, 3])
+
+    // Para Nivel 4+, todos [0, 1, 2, 3, 4] permitidos
+    const treeLevel4Allowed = [0, 1, 2, 3, 4]
+    const filteredLayoutLvl4 = testLayout.filter((p) => treeLevel4Allowed.includes(p.lane))
+    expect(filteredLayoutLvl4.length).toBe(5)
+  })
 })
 

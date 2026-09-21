@@ -565,13 +565,36 @@ export default function Battlefield({
   const [rerollError, setRerollError] = useState<string | null>(null)
   const hasClanFortressStartedRef = useRef<boolean>(false)
 
+  // En clan_fortress la arena siempre opera sobre 5 carriles (LANES_CONFIG_5),
+  // bloqueando visualmente los carriles no disponibles según el nivel del Árbol Madre rival.
   const activeLanesConfig = useMemo(() => {
-    if (matchMode !== 'clan_fortress') return LANES_CONFIG
-    const lanes = currentFortressOpponent?.activeLanes || 5
-    if (lanes === 4) return LANES_CONFIG_4
-    if (lanes === 3) return LANES_CONFIG
-    return LANES_CONFIG_5
-  }, [matchMode, currentFortressOpponent?.activeLanes])
+    if (matchMode === 'clan_fortress') return LANES_CONFIG_5
+    return LANES_CONFIG
+  }, [matchMode])
+
+  const fortressTargetTreeLevel = useMemo(() => {
+    if (currentFortressOpponent?.targetTreeLevel !== undefined) {
+      return currentFortressOpponent.targetTreeLevel
+    }
+    if (clanFortressConfig?.targetClan?.targetTreeLevel !== undefined) {
+      return clanFortressConfig.targetClan.targetTreeLevel
+    }
+    const lanes = currentFortressOpponent?.activeLanes || clanFortressConfig?.targetClan?.activeLanes
+    if (lanes === 5) return 4
+    if (lanes === 4) return 3
+    return 1
+  }, [currentFortressOpponent, clanFortressConfig])
+
+  // Carriles permitidos según el nivel de Árbol Madre de la fortaleza:
+  // Nivel 1 y 2: Carriles 1, 2 y 3 (0 y 4 bloqueados)
+  // Nivel 3: Carriles 0, 1, 2 y 3 (4 bloqueado)
+  // Nivel 4+: Carriles 0, 1, 2, 3, 4 (todos desbloqueados)
+  const allowedFortressLanes = useMemo(() => {
+    if (matchMode !== 'clan_fortress') return [0, 1, 2]
+    if (fortressTargetTreeLevel >= 4) return [0, 1, 2, 3, 4]
+    if (fortressTargetTreeLevel === 3) return [0, 1, 2, 3]
+    return [1, 2, 3]
+  }, [matchMode, fortressTargetTreeLevel])
 
   useEffect(() => {
     if (clanFortressConfig?.targetClan) {
@@ -731,12 +754,13 @@ export default function Battlefield({
         0,
         treeSkinRef.current,
         null,
-        newOpponent.activeLanes || 5,
+        5, // Option A: La arena de fortaleza siempre opera sobre 5 carriles
         newOpponent.layout,
         newOpponent.targetBaseHp,
         fortressAttackSuns,
         true, // isPreparationPhase
-        newOpponent.ambushes
+        newOpponent.ambushes,
+        newOpponent.targetTreeLevel
       )
     } catch (err: any) {
       setRerollError(err?.message || 'Error al buscar otro rival')
@@ -1651,12 +1675,13 @@ export default function Battlefield({
         0,
         treeSkinRef.current,
         null,
-        opp.activeLanes || 5,
+        5, // Option A: La arena de fortaleza siempre opera sobre 5 carriles
         opp.layout,
         opp.targetBaseHp,
         fortressAttackSuns,
         true, // isPreparationPhase = true
-        opp.ambushes
+        opp.ambushes,
+        opp.targetTreeLevel
       )
       prepTargetTimeRef.current = Date.now() + 120_000
       setClanRaidPhase('prep')
@@ -1863,7 +1888,7 @@ export default function Battlefield({
             ? (currentFortressOpponent?.targetClanName || 'Fortaleza Rival')
             : (nombres?.rival || tournamentOpponent?.name || (roomId ? 'Rival' : 'Bot Entrenador'))
         }
-        level={rivalTreeLevel}
+        level={matchMode === 'clan_fortress' ? fortressTargetTreeLevel : rivalTreeLevel}
         skin={rivalTreeSkin}
         sideBadge={
           matchMode === 'clan_fortress' ? (
@@ -2132,204 +2157,226 @@ export default function Battlefield({
         return null
       })()}
       <div className="lanes">
-        {activeLanesConfig.map((lane) => (
-          <div
-            key={lane.id}
-            className="lane"
-            style={{
-              top: `${lane.topPct}%`,
-              height: `${lane.heightPct}%`,
-              left: `${BASE_LEFT_END_X}%`,
-              width: `${FIELD_WIDTH_PCT}%`,
-            }}
-          >
-            {Array.from({ length: TOTAL_COLUMNS }).map((_, col) => {
-              const isP1Side = col < P1_COLUMNS
-              const isCellSelected = Boolean(selectedCard && isP1Side)
-              const isPlantCard = selectedCard && selectedCard !== 'shovel'
-              const selectedCardConfig = isPlantCard
-                ? (mazoMioParsed && mazoMioParsed.length > 0
-                    ? (() => {
-                        const m = mejorasDeLaCartaEnSlot(mazoMioParsed, selectedCard, selectedSlotIndex)
-                        return getScaledPlantConfig(selectedCard, m.statRolls, m.equippedItem)
-                      })()
-                    : (() => {
-                        let r: PlantStatKey[] = []
-                        let eq: string | null = null
-                        try {
-                          const sIds = localStorage.getItem('plant_arena_active_deck_instances')
-                          const sInst = localStorage.getItem('plant_arena_plant_instances')
-                          const pIds: string[] = sIds ? JSON.parse(sIds) : []
-                          const pInst: any[] = sInst ? JSON.parse(sInst) : []
-                          if (selectedSlotIndex !== null && pIds[selectedSlotIndex]) {
-                            const f = pInst.find((i) => i.instanceId === pIds[selectedSlotIndex] && i.plantId === selectedCard)
-                            if (f) {
-                              r = f.statRolls || []
-                              eq = f.equippedItem || null
+        {activeLanesConfig.map((lane) => {
+          const isLaneLocked = matchMode === 'clan_fortress' && !allowedFortressLanes.includes(lane.id)
+          const unlockLevelRequired = lane.id === 0 ? 3 : 4
+
+          return (
+            <div
+              key={lane.id}
+              className={`lane ${isLaneLocked ? 'lane--fortress-locked' : ''}`}
+              style={{
+                top: `${lane.topPct}%`,
+                height: `${lane.heightPct}%`,
+                left: `${BASE_LEFT_END_X}%`,
+                width: `${FIELD_WIDTH_PCT}%`,
+              }}
+            >
+              {isLaneLocked && (
+                <div className="fortress-battle-lane-locked-overlay">
+                  <span className="fortress-battle-locked-icon">🔒</span>
+                  <span className="fortress-battle-locked-text">
+                    LÍNEA {lane.id + 1} BLOQUEADA • DESBLOQUEA EN ÁRBOL MADRE NV. {unlockLevelRequired}
+                  </span>
+                </div>
+              )}
+
+              {Array.from({ length: TOTAL_COLUMNS }).map((_, col) => {
+                const isP1Side = col < P1_COLUMNS
+                const isCellSelected = Boolean(selectedCard && isP1Side && !isLaneLocked)
+                const isPlantCard = selectedCard && selectedCard !== 'shovel'
+                const selectedCardConfig = isPlantCard
+                  ? (mazoMioParsed && mazoMioParsed.length > 0
+                      ? (() => {
+                          const m = mejorasDeLaCartaEnSlot(mazoMioParsed, selectedCard, selectedSlotIndex)
+                          return getScaledPlantConfig(selectedCard, m.statRolls, m.equippedItem)
+                        })()
+                      : (() => {
+                          let r: PlantStatKey[] = []
+                          let eq: string | null = null
+                          try {
+                            const sIds = localStorage.getItem('plant_arena_active_deck_instances')
+                            const sInst = localStorage.getItem('plant_arena_plant_instances')
+                            const pIds: string[] = sIds ? JSON.parse(sIds) : []
+                            const pInst: any[] = sInst ? JSON.parse(sInst) : []
+                            if (selectedSlotIndex !== null && pIds[selectedSlotIndex]) {
+                              const f = pInst.find((i) => i.instanceId === pIds[selectedSlotIndex] && i.plantId === selectedCard)
+                              if (f) {
+                                r = f.statRolls || []
+                                eq = f.equippedItem || null
+                              }
                             }
-                          }
-                          if (r.length === 0 && !eq) {
-                            const copies = pInst.filter((i) => i.plantId === selectedCard)
-                            if (copies.length > 0) {
-                              copies.sort((a, b) => {
-                                if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
-                                  return a.equippedItem ? -1 : 1
-                                }
-                                const rA = a.statRolls?.length || 0
-                                const rB = b.statRolls?.length || 0
-                                if (rA !== rB) return rB - rA
-                                return (b.level || 0) - (a.level || 0)
-                              })
-                              r = copies[0].statRolls || []
-                              eq = copies[0].equippedItem || null
+                            if (r.length === 0 && !eq) {
+                              const copies = pInst.filter((i) => i.plantId === selectedCard)
+                              if (copies.length > 0) {
+                                copies.sort((a, b) => {
+                                  if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
+                                    return a.equippedItem ? -1 : 1
+                                  }
+                                  const rA = a.statRolls?.length || 0
+                                  const rB = b.statRolls?.length || 0
+                                  if (rA !== rB) return rB - rA
+                                  return (b.level || 0) - (a.level || 0)
+                                })
+                                r = copies[0].statRolls || []
+                                eq = copies[0].equippedItem || null
+                              }
                             }
-                          }
-                        } catch {}
-                        return getScaledPlantConfig(selectedCard, r, eq)
-                      })())
-                : null
-              const isWalkingPlantCard = Boolean(
-                selectedCardConfig &&
-                (selectedCardConfig.category === 'melee' ||
-                  Boolean(selectedCardConfig.moveSpeed) ||
-                  selectedCard === 'chomper')
-              )
+                          } catch {}
+                          return getScaledPlantConfig(selectedCard, r, eq)
+                        })())
+                  : null
+                const isWalkingPlantCard = Boolean(
+                  selectedCardConfig &&
+                  (selectedCardConfig.category === 'melee' ||
+                    Boolean(selectedCardConfig.moveSpeed) ||
+                    selectedCard === 'chomper')
+                )
 
-              // Detección estricta alineada al motor: sólo plantas estáticas bloquean el terreno
-              const isCellOccupiedByPlant = plants.some((p) => p.lane === lane.id && p.col === col && !p.isWalking)
-              const isCellPendingSprout = pendingOwnPlants.some((p) => p.lane === lane.id && p.col === col)
-              const isCellOccupied = isCellOccupiedByPlant || isCellPendingSprout
+                // Detección estricta alineada al motor: sólo plantas estáticas bloquean el terreno
+                const isCellOccupiedByPlant = plants.some((p) => p.lane === lane.id && p.col === col && !p.isWalking)
+                const isCellPendingSprout = pendingOwnPlants.some((p) => p.lane === lane.id && p.col === col)
+                const isCellOccupied = isCellOccupiedByPlant || isCellPendingSprout
 
-              // Para la pala sólo son válidas plantas ya materializadas (no brotes en vuelo)
-              // Para plantas caminantes/melee (Bonk Choy, Chomper), se pueden plantar en cualquier columna de nuestro lado
-              // Para plantas estáticas (Girasol, Nuez, Lanzaguisantes), la casilla debe estar libre
-              const isPlantDestination = isCellSelected && (
-                selectedCard === 'shovel'
-                  ? isCellOccupiedByPlant
-                  : isWalkingPlantCard
-                  ? true
-                  : !isCellOccupied
-              )
-              const previewPlantConfig = isPlantCard && isPlantDestination ? selectedCardConfig : null
+                // Para la pala sólo son válidas plantas ya materializadas (no brotes en vuelo)
+                // Para plantas caminantes/melee (Bonk Choy, Chomper), se pueden plantar en cualquier columna de nuestro lado
+                // Para plantas estáticas (Girasol, Nuez, Lanzaguisantes), la casilla debe estar libre
+                const isPlantDestination = isCellSelected && !isLaneLocked && (
+                  selectedCard === 'shovel'
+                    ? isCellOccupiedByPlant
+                    : isWalkingPlantCard
+                    ? true
+                    : !isCellOccupied
+                )
+                const previewPlantConfig = !isLaneLocked && isPlantCard && isPlantDestination ? selectedCardConfig : null
 
-              const handleCellAction = () => {
-                if (!isPlantDestination) return
-                if (roomId && inFlightCountRef.current >= MAX_IN_FLIGHT_ACTIONS) {
-                  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                    try { navigator.vibrate([20, 30]) } catch {}
+                const handleCellAction = () => {
+                  if (isLaneLocked || !isPlantDestination) return
+                  if (roomId && inFlightCountRef.current >= MAX_IN_FLIGHT_ACTIONS) {
+                    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                      try { navigator.vibrate([20, 30]) } catch {}
+                    }
+                    return
                   }
-                  return
-                }
-                if (isAsyncMatch && rankedAsyncInconsistency) return
-                if (selectedCard && isP1Side) {
-                  if (selectedCard === 'shovel') {
-                    // Igual que al plantar: sólo se registra si aquí de verdad
-                    // se excavó algo. Registrar un pico que no quitó nada haría
-                    // que el rival borrara una planta que en tu pantalla sigue.
-                    const nextSeq = roomId ? ordenRef.current + 1 : undefined
-                    const casilla = digPlant({ lane: lane.id, col }, nextSeq)
-                    if (casilla) {
-                      if (roomId && typeof nextSeq === 'number') ordenRef.current = nextSeq
-                      setSelectedCard(null, null)
-                      lastCellPlantTimeRef.current.delete(`${casilla.lane}-${casilla.col}`)
-                      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                        try { navigator.vibrate(15) } catch {}
-                      }
-                      registrarExcavacion(casilla.lane, casilla.col, casilla.tick, nextSeq)
-                    }
-                  } else {
-                    const carta = selectedCard
-                    const cellKey = `${lane.id}-${col}`
-                    if (!isWalkingPlantCard) {
-                      const lastTime = lastCellPlantTimeRef.current.get(cellKey) || 0
-                      if (Date.now() - lastTime < 750) {
-                        return
-                      }
-                    }
-
-                    let resolvedSlot = 0
-                    if (mazoMioParsed && mazoMioParsed.length > 0) {
-                      if (
-                        selectedSlotIndex !== null &&
-                        mazoMioParsed[selectedSlotIndex]?.plantId === carta &&
-                        typeof mazoMioParsed[selectedSlotIndex]?.slot === 'number'
-                      ) {
-                        resolvedSlot = mazoMioParsed[selectedSlotIndex].slot!
-                      } else {
-                        const encontrada = mazoMioParsed.find((c) => c.plantId === carta)
-                        if (encontrada && typeof encontrada.slot === 'number') {
-                          resolvedSlot = encontrada.slot
-                        } else {
-                          const slot = selectedSlotIndex !== null
-                            ? selectedSlotIndex
-                            : (carta ? effectiveDeck.indexOf(carta) : 0)
-                          resolvedSlot = slot >= 0 ? slot : 0
+                  if (isAsyncMatch && rankedAsyncInconsistency) return
+                  if (selectedCard && isP1Side) {
+                    if (selectedCard === 'shovel') {
+                      // Igual que al plantar: sólo se registra si aquí de verdad
+                      // se excavó algo. Registrar un pico que no quitó nada haría
+                      // que el rival borrara una planta que en tu pantalla sigue.
+                      const nextSeq = roomId ? ordenRef.current + 1 : undefined
+                      const casilla = digPlant({ lane: lane.id, col }, nextSeq)
+                      if (casilla) {
+                        if (roomId && typeof nextSeq === 'number') ordenRef.current = nextSeq
+                        setSelectedCard(null, null)
+                        lastCellPlantTimeRef.current.delete(`${casilla.lane}-${casilla.col}`)
+                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                          try { navigator.vibrate(15) } catch {}
                         }
+                        registrarExcavacion(casilla.lane, casilla.col, casilla.tick, nextSeq)
                       }
                     } else {
-                      const slot = selectedSlotIndex !== null
-                        ? selectedSlotIndex
-                        : (carta ? effectiveDeck.indexOf(carta) : 0)
-                      resolvedSlot = slot >= 0 ? slot : 0
-                    }
-                    const nextSeq = roomId ? ordenRef.current + 1 : undefined
-                    const enTic = placePlant(lane.id, col, carta, resolvedSlot, nextSeq)
-                    if (enTic !== null) {
-                      if (roomId && typeof nextSeq === 'number') ordenRef.current = nextSeq
-                      setSelectedCard(null, null)
+                      const carta = selectedCard
+                      const cellKey = `${lane.id}-${col}`
                       if (!isWalkingPlantCard) {
-                        lastCellPlantTimeRef.current.set(cellKey, Date.now())
+                        const lastTime = lastCellPlantTimeRef.current.get(cellKey) || 0
+                        if (Date.now() - lastTime < 750) {
+                          return
+                        }
                       }
-                      recordPlantPlacement(carta)
-                      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                        try { navigator.vibrate(15) } catch {}
+
+                      let resolvedSlot = 0
+                      if (mazoMioParsed && mazoMioParsed.length > 0) {
+                        if (
+                          selectedSlotIndex !== null &&
+                          mazoMioParsed[selectedSlotIndex]?.plantId === carta &&
+                          typeof mazoMioParsed[selectedSlotIndex]?.slot === 'number'
+                        ) {
+                          resolvedSlot = mazoMioParsed[selectedSlotIndex].slot!
+                        } else {
+                          const encontrada = mazoMioParsed.find((c) => c.plantId === carta)
+                          if (encontrada && typeof encontrada.slot === 'number') {
+                            resolvedSlot = encontrada.slot
+                          } else {
+                            const slot = selectedSlotIndex !== null
+                              ? selectedSlotIndex
+                              : (carta ? effectiveDeck.indexOf(carta) : 0)
+                            resolvedSlot = slot >= 0 ? slot : 0
+                          }
+                        }
+                      } else {
+                        const slot = selectedSlotIndex !== null
+                          ? selectedSlotIndex
+                          : (carta ? effectiveDeck.indexOf(carta) : 0)
+                        resolvedSlot = slot >= 0 ? slot : 0
                       }
-                      registrarPlantacion(carta, lane.id, col, enTic, resolvedSlot, nextSeq)
+                      const nextSeq = roomId ? ordenRef.current + 1 : undefined
+                      const enTic = placePlant(lane.id, col, carta, resolvedSlot, nextSeq)
+                      if (enTic !== null) {
+                        if (roomId && typeof nextSeq === 'number') ordenRef.current = nextSeq
+                        setSelectedCard(null, null)
+                        if (!isWalkingPlantCard) {
+                          lastCellPlantTimeRef.current.set(cellKey, Date.now())
+                        }
+                        recordPlantPlacement(carta)
+                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                          try { navigator.vibrate(15) } catch {}
+                        }
+                        registrarPlantacion(carta, lane.id, col, enTic, resolvedSlot, nextSeq)
+                      }
                     }
                   }
                 }
-              }
 
-              return (
-                <div
-                  key={col}
-                  className={`lane__cell ${
-                    isP1Side ? 'lane__cell--p1' : 'lane__cell--p2'
-                  } ${isPlantDestination ? 'lane__cell--selectable' : ''}`}
-                  style={{
-                    width: `${100 / TOTAL_COLUMNS}%`,
-                    zIndex: isPlantDestination ? (selectedCard === 'shovel' ? 10 : 70) : (selectedCard ? 5 : 1),
-                    pointerEvents: selectedCard || isP1Side ? 'auto' : 'none',
-                  }}
-                  onClick={() => {
-                    if (isPlantDestination) {
-                      handleCellAction()
-                    } else if (selectedCard) {
-                      if (!isP1Side) {
-                        // Tocar el lado rival cancela la selección de forma natural
-                        setSelectedCard(null, null)
-                      } else if (isCellOccupied) {
-                        // Feedback háptico ligero de rechazo en casilla ocupada para plantas estáticas
-                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                          try { navigator.vibrate([15, 20]) } catch {}
+                return (
+                  <div
+                    key={col}
+                    className={`lane__cell ${
+                      isP1Side ? 'lane__cell--p1' : 'lane__cell--p2'
+                    } ${isPlantDestination ? 'lane__cell--selectable' : ''} ${
+                      isLaneLocked ? 'lane__cell--fortress-locked' : ''
+                    }`}
+                    style={{
+                      width: `${100 / TOTAL_COLUMNS}%`,
+                      zIndex: isPlantDestination ? (selectedCard === 'shovel' ? 10 : 70) : (selectedCard ? 5 : 1),
+                      pointerEvents: isLaneLocked ? 'none' : (selectedCard || isP1Side ? 'auto' : 'none'),
+                    }}
+                    onClick={() => {
+                      if (isLaneLocked) return
+                      if (isPlantDestination) {
+                        handleCellAction()
+                      } else if (selectedCard) {
+                        if (!isP1Side) {
+                          // Tocar el lado rival cancela la selección de forma natural
+                          setSelectedCard(null, null)
+                        } else if (isCellOccupied) {
+                          // Feedback háptico ligero de rechazo en casilla ocupada para plantas estáticas
+                          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                            try { navigator.vibrate([15, 20]) } catch {}
+                          }
                         }
                       }
+                    }}
+                    title={
+                      isLaneLocked
+                        ? `🔒 Línea ${lane.id + 1} bloqueada • Requiere Árbol Madre Nivel ${unlockLevelRequired}`
+                        : undefined
                     }
-                  }}
-                >
-                  {previewPlantConfig && (
-                    <img
-                      className="lane__cell-ghost-preview"
-                      src={previewPlantConfig.sprite || previewPlantConfig.icon}
-                      alt=""
-                      aria-hidden="true"
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ))}
+                  >
+                    {previewPlantConfig && (
+                      <img
+                        className="lane__cell-ghost-preview"
+                        src={previewPlantConfig.sprite || previewPlantConfig.icon}
+                        alt=""
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
       </div>
 
       {/* Center Dividing Line */}

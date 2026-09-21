@@ -491,7 +491,8 @@ export function useGameEngine() {
     targetBaseHp?: number,
     initialAttackSuns?: number,
     isPreparationPhase?: boolean,
-    clanFortressAmbushes?: ClanFortressAmbush[]
+    clanFortressAmbushes?: ClanFortressAmbush[],
+    targetTreeLevel?: number
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
@@ -531,10 +532,15 @@ export function useGameEngine() {
       initialAttackSuns
     )
 
+    // Determinar carriles permitidos de la fortaleza objetivo
+    // Nivel 1 y 2: Carriles centrales 1, 2 y 3 (0 y 4 bloqueados)
+    // Nivel 3: Carriles 0, 1, 2 y 3 (4 bloqueado)
+    // Nivel 4+: 5 carriles completos (0..4)
+    const fortressLanesAllowed = isFortress && targetTreeLevel !== undefined
+      ? (targetTreeLevel >= 4 ? [0, 1, 2, 3, 4] : targetTreeLevel === 3 ? [0, 1, 2, 3] : [1, 2, 3])
+      : [0, 1, 2, 3, 4]
+
     // Helper para normalizar el carril defensivo al espacio de combate activo (0..effectiveLanes-1)
-    // En batallas de 3 carriles (Árbol Nv. 1-2), si la defensa se diseñó con carriles 1, 2, 3
-    // (los carriles centrales del editor de 5), se mapea 1->0, 2->1, 3->2 para que coincida exactamente
-    // con las 3 líneas reales del césped (0, 1 y 2).
     const normalizeFortressLane = (rawLane: number): number => {
       if (effectiveLanes === 3) {
         const hasLane3 = (clanFortressLayout || []).some((p) => p.lane === 3) || (clanFortressAmbushes || []).some((a) => a.lane === 3)
@@ -551,15 +557,18 @@ export function useGameEngine() {
     }
 
     clanFortressAmbushesRef.current = clanFortressAmbushes
-      ? clanFortressAmbushes.map((amb) => ({
-          ...amb,
-          lane: normalizeFortressLane(amb.lane),
-        }))
+      ? clanFortressAmbushes
+          .filter((amb) => fortressLanesAllowed.includes(amb.lane))
+          .map((amb) => ({
+            ...amb,
+            lane: normalizeFortressLane(amb.lane),
+          }))
       : []
 
     // Pre-instanciar las defensas de la fortaleza en el lado derecho (columnas 7 a 13)
     if (clanFortressLayout && clanFortressLayout.length > 0) {
       for (const defPlant of clanFortressLayout) {
+        if (!fortressLanesAllowed.includes(defPlant.lane)) continue
         const targetLane = normalizeFortressLane(defPlant.lane)
         stateRef.current.enemyPlants.push(
           crearPlantaDelRival(
