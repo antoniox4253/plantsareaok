@@ -403,5 +403,42 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(state.plants).toHaveLength(0)
     expect(state.sunBank).toBe(400) // 100% reembolsado
   })
+
+  it('en combate de 3 carriles (Árbol Nv.1), las plantas enemigas y proyectiles en carril normalizado 0 colisionan contra la Nuez aliada', () => {
+    // Estado de batalla de fortaleza en 3 carriles
+    const state = createBattleState(2002, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 600, 800, null, null, 3, true, 300)
+    expect(state.lanesCount).toBe(3)
+
+    // 1. Nuez aliada colocada en carril 0 (columna 3, x ~ 32)
+    const wallnut = crearPlantaPropia(state, 'wallnut', 0, 3)
+    wallnut.isWalking = false
+    wallnut.state = 'idle'
+    const initialHp = wallnut.hp
+    state.plants.push(wallnut)
+
+    // 2. Peashooter enemigo en carril 0 (columna 10, x ~ 78)
+    const peashooter = crearPlantaDelRival(state, 'peashooter', 0, 3) // col 3 espejada = 8
+    peashooter.isWalking = false
+    peashooter.state = 'idle'
+    state.enemyPlants.push(peashooter)
+
+    const initialP1BaseHp = state.p1BaseHp
+
+    // 3. Simular ticks hasta que el peashooter dispare y el guisante alcance la nuez
+    let impactoDetectado = false
+    for (let t = 0; t < 150; t++) {
+      stepTick(state, () => {})
+      if (wallnut.hp < initialHp) {
+        impactoDetectado = true
+        break
+      }
+    }
+
+    // El proyectil debe haber colisionado e impactado a la nuez en el mismo carril 0
+    expect(impactoDetectado).toBe(true)
+    expect(wallnut.hp).toBeLessThan(initialHp)
+    // La base aliada no debe haber recibido daño porque la nuez interceptó el tiro
+    expect(state.p1BaseHp).toBe(initialP1BaseHp)
+  })
 })
 

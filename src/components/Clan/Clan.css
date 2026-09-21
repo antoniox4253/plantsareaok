@@ -6123,6 +6123,19 @@
   background: linear-gradient(90deg, #9333ea, #c084fc);
 }
 
+.clan-tree-single-xp-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 4px;
+}
+
+.clan-tree-pbar-fill--xp {
+  background: linear-gradient(90deg, #10b981, #facc15);
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.45);
+}
+
 .clan-tree-max-perks-badge {
   font-size: 11px;
   font-weight: 900;

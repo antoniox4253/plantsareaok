@@ -3098,8 +3098,34 @@ export default function Clan({
                           />
                         </div>
 
-                        {/* Insignia de Nivel Máximo */}
-                        {(fortressData?.motherTreeLevel ?? 1) >= 4 && (
+                        {/* Barra Única de Experiencia del Árbol */}
+                        {(fortressData?.motherTreeLevel ?? 1) < 4 ? (() => {
+                          const wCur = fortressData?.motherTreeWater ?? 0
+                          const wReq = fortressData?.nextTreeWaterReq || 150
+                          const fCur = fortressData?.motherTreeFertilizer ?? 0
+                          const fReq = fortressData?.nextTreeFertReq || 100
+                          const gCur = fortressData?.motherTreeGems ?? 0
+                          const gReq = fortressData?.nextTreeGemsReq || 600
+
+                          const totalCur = wCur + fCur + gCur
+                          const totalReq = wReq + fReq + gReq
+                          const pct = Math.min(100, Math.round(((Math.min(1, wCur / wReq) + Math.min(1, fCur / fReq) + Math.min(1, gCur / gReq)) / 3) * 100))
+
+                          return (
+                            <div className="clan-tree-single-xp-wrap">
+                              <div className="clan-tree-req-labels">
+                                <span>⭐ Experiencia:</span>
+                                <strong>{totalCur} / {totalReq} XP ({pct}%)</strong>
+                              </div>
+                              <div className="clan-tree-pbar-track">
+                                <div
+                                  className="clan-tree-pbar-fill clan-tree-pbar-fill--xp"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })() : (
                           <div className="clan-tree-max-perks-badge">
                             ⭐ ¡MÁXIMO PODER MILENARIO ALCANZADO!
                           </div>

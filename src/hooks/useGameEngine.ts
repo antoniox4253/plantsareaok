@@ -496,7 +496,6 @@ export function useGameEngine() {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
     isPrepPhaseRef.current = Boolean(isPreparationPhase)
-    clanFortressAmbushesRef.current = clanFortressAmbushes ? [...clanFortressAmbushes] : []
 
     const effectiveTreeBonusHp = typeof treeBonusHp === 'number'
       ? treeBonusHp
@@ -532,14 +531,41 @@ export function useGameEngine() {
       initialAttackSuns
     )
 
+    // Helper para normalizar el carril defensivo al espacio de combate activo (0..effectiveLanes-1)
+    // En batallas de 3 carriles (Árbol Nv. 1-2), si la defensa se diseñó con carriles 1, 2, 3
+    // (los carriles centrales del editor de 5), se mapea 1->0, 2->1, 3->2 para que coincida exactamente
+    // con las 3 líneas reales del césped (0, 1 y 2).
+    const normalizeFortressLane = (rawLane: number): number => {
+      if (effectiveLanes === 3) {
+        const hasLane3 = (clanFortressLayout || []).some((p) => p.lane === 3) || (clanFortressAmbushes || []).some((a) => a.lane === 3)
+        const hasLane0 = (clanFortressLayout || []).some((p) => p.lane === 0) || (clanFortressAmbushes || []).some((a) => a.lane === 0)
+        if (hasLane3 && !hasLane0) {
+          return Math.max(0, Math.min(2, rawLane - 1))
+        }
+        return Math.max(0, Math.min(2, rawLane))
+      }
+      if (effectiveLanes === 4) {
+        return Math.max(0, Math.min(3, rawLane))
+      }
+      return Math.max(0, Math.min(4, rawLane))
+    }
+
+    clanFortressAmbushesRef.current = clanFortressAmbushes
+      ? clanFortressAmbushes.map((amb) => ({
+          ...amb,
+          lane: normalizeFortressLane(amb.lane),
+        }))
+      : []
+
     // Pre-instanciar las defensas de la fortaleza en el lado derecho (columnas 7 a 13)
     if (clanFortressLayout && clanFortressLayout.length > 0) {
       for (const defPlant of clanFortressLayout) {
+        const targetLane = normalizeFortressLane(defPlant.lane)
         stateRef.current.enemyPlants.push(
           crearPlantaDelRival(
             stateRef.current,
             defPlant.plantId,
-            defPlant.lane,
+            targetLane,
             defPlant.col,
             defPlant.statRolls || [],
             defPlant.level || 1,

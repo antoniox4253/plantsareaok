@@ -52,8 +52,27 @@ export default function FortressEditor({
   onClose,
   onSaved,
 }: FortressEditorProps) {
-  const [layout, setLayout] = useState<ClanFortressPlant[]>(() => [...initialLayout])
-  const [ambushes, setAmbushes] = useState<ClanFortressAmbush[]>(() => [...initialAmbushes])
+  // Determinación de carriles permitidos según el nivel del Árbol Madre
+  // Nivel 1 y 2: Carriles centrales 1, 2 y 3 (3 líneas)
+  // Nivel 3: Carriles 0, 1, 2 y 3 (4 líneas, carril 4 bloqueado)
+  // Nivel 4: 5 carriles completos (0..4)
+  const allowedLanes = useMemo(() => {
+    if (treeLevel >= 4) return [0, 1, 2, 3, 4]
+    if (treeLevel === 3) return [0, 1, 2, 3]
+    return [1, 2, 3]
+  }, [treeLevel])
+
+  const [layout, setLayout] = useState<ClanFortressPlant[]>(() => {
+    return (initialLayout || [])
+      .map((p) => ({
+        ...p,
+        col: p.col >= 7 ? p.col - 7 : p.col,
+      }))
+      .filter((p) => allowedLanes.includes(p.lane))
+  })
+  const [ambushes, setAmbushes] = useState<ClanFortressAmbush[]>(() => {
+    return (initialAmbushes || []).filter((a) => allowedLanes.includes(a.lane))
+  })
   const [unlockedPlants, setUnlockedPlants] = useState<PlantId[]>(() => {
     if (initialUnlockedPlants && initialUnlockedPlants.length > 0) return initialUnlockedPlants
     return DEFAULT_UNLOCKED
@@ -67,21 +86,11 @@ export default function FortressEditor({
 
   // Modal para programar emboscada táctica
   const [ambushModalPlant, setAmbushModalPlant] = useState<PlantId | null>(null)
-  const [ambushLane, setAmbushLane] = useState<number>(1)
+  const [ambushLane, setAmbushLane] = useState<number>(allowedLanes[0] || 1)
   const [ambushTriggerSec, setAmbushTriggerSec] = useState<number>(45)
 
   // Estado para donar carta al arsenal
   const [isDonating, setIsDonating] = useState<string | null>(null)
-
-  // Determinación de carriles permitidos según el nivel del Árbol Madre
-  // Nivel 1 y 2: Carriles centrales 1, 2 y 3 (3 líneas)
-  // Nivel 3: Carriles 0, 1, 2 y 3 (4 líneas, carril 4 bloqueado)
-  // Nivel 4: 5 carriles completos (0..4)
-  const allowedLanes = useMemo(() => {
-    if (treeLevel >= 4) return [0, 1, 2, 3, 4]
-    if (treeLevel === 3) return [0, 1, 2, 3]
-    return [1, 2, 3]
-  }, [treeLevel])
 
   // Calcular soles gastados en tiempo real (plantas en césped + emboscadas programadas)
   const sunsSpent = useMemo(() => {
@@ -306,7 +315,15 @@ export default function FortressEditor({
     setIsSaving(true)
     setSaveStatus(null)
     try {
-      const res = await supabaseService.saveClanFortress(layout, ambushes)
+      const sanitizedLayout = layout
+        .filter((p) => allowedLanes.includes(p.lane))
+        .map((p) => ({
+          ...p,
+          col: p.col >= 7 ? p.col - 7 : p.col,
+        }))
+      const sanitizedAmbushes = ambushes.filter((a) => allowedLanes.includes(a.lane))
+
+      const res = await supabaseService.saveClanFortress(sanitizedLayout, sanitizedAmbushes)
       if (!res.success) {
         setSaveStatus({
           type: 'error',
@@ -319,9 +336,9 @@ export default function FortressEditor({
       soundManager.playSound('plantation', 0.8)
       setSaveStatus({
         type: 'success',
-        message: `¡Formación defensiva guardada con éxito! (${res.plantsCount || layout.length} plantas y ${res.ambushesCount || ambushes.length} emboscadas registradas en la base de datos).`,
+        message: `¡Formación defensiva guardada con éxito! (${res.plantsCount || sanitizedLayout.length} plantas y ${res.ambushesCount || sanitizedAmbushes.length} emboscadas registradas en la base de datos).`,
       })
-      onSaved(layout, ambushes, sunsSpent)
+      onSaved(sanitizedLayout, sanitizedAmbushes, sunsSpent)
     } catch (e: any) {
       setSaveStatus({
         type: 'error',
@@ -711,12 +728,11 @@ export default function FortressEditor({
               >
                 <div className="fortress-palette-img-wrap">
                   <img src={cfg.icon} alt={cfg.name} className="fortress-palette-img" />
-                  <span className="fortress-palette-cost">☀️ {cost}</span>
                   {isAmbushType && (
                     <span className="fortress-palette-ambush-tag">⚡ TRAMPA</span>
                   )}
                   {!isUnlocked && (
-                    <div className="fortress-palette-lock-overlay">
+                    <div className="fortress-palette-lock-overlay" title="Bloqueada. Clic para donar 1 copia">
                       <span>🔒</span>
                     </div>
                   )}

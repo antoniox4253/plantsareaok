@@ -2338,7 +2338,8 @@ export default function Battlefield({
       {/* Player 1 Plants */}
       {plants.map((plant) => {
         const config = getScaledPlantConfig(plant.plantId, plant.statRolls ?? [], plant.equippedItem)
-        const laneConfig = activeLanesConfig[plant.lane] || activeLanesConfig[0]
+        const safePlantLane = Math.min(Math.max(0, plant.lane), activeLanesConfig.length - 1)
+        const laneConfig = activeLanesConfig[safePlantLane] || activeLanesConfig[0]
         const hpPct = (plant.hp / plant.maxHp) * 100
         const isShovelTarget = selectedCard === 'shovel' && !plant.isWalking
         const isFrozen = plant.frozenUntil ? tick < plant.frozenUntil : false
@@ -2476,7 +2477,8 @@ export default function Battlefield({
       {/* Plantas Propias en fase de Brote / Siembra (Feedback visual instantáneo a 0ms) */}
       {pendingOwnPlants.map((pp, idx) => {
         const config = getScaledPlantConfig(pp.plantId, pp.statRolls ?? [], pp.equippedItem)
-        const laneConfig = activeLanesConfig[pp.lane] || activeLanesConfig[0]
+        const safePendingLane = Math.min(Math.max(0, pp.lane), activeLanesConfig.length - 1)
+        const laneConfig = activeLanesConfig[safePendingLane] || activeLanesConfig[0]
         if (!laneConfig || !config) return null
         const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
         const x = BASE_LEFT_END_X + pp.col * colWidth + colWidth / 2
@@ -2522,7 +2524,8 @@ export default function Battlefield({
         // Ya no hay catálogo enemigo: las plantas de los dos lados son la misma
         // cosa y salen del mismo sitio. El bot también planta cartas de verdad.
         const config = getScaledPlantConfig(enemy.plantId, enemy.statRolls ?? [], enemy.equippedItem)
-        const laneConfig = activeLanesConfig[enemy.lane] || activeLanesConfig[0]
+        const safeEnemyLane = Math.min(Math.max(0, enemy.lane), activeLanesConfig.length - 1)
+        const laneConfig = activeLanesConfig[safeEnemyLane] || activeLanesConfig[0]
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100)
         // frozenUntil es un TIC, no un instante de reloj. Comparado con Date.now()
         // esto era siempre falso y la congelación del hielo no se veía nunca.
@@ -2581,7 +2584,8 @@ export default function Battlefield({
       {projectiles.map((proj) => {
         const isCatapult = proj.type === 'kernel' || proj.type === 'butter' || proj.type === 'melon' || proj.id.startsWith('tree-')
         const isTreeShot = proj.id.startsWith('tree-')
-        const targetLaneCfg = activeLanesConfig[proj.lane] || activeLanesConfig[0]
+        const safeProjLane = Math.min(Math.max(0, proj.lane), activeLanesConfig.length - 1)
+        const targetLaneCfg = activeLanesConfig[safeProjLane] || activeLanesConfig[0]
         let currentY = targetLaneCfg.topPct + targetLaneCfg.heightPct / 2
         let scale = 1
         if (isCatapult) {
@@ -2596,7 +2600,8 @@ export default function Battlefield({
           const arcHeight = 4 * t * (1 - t) * maxArc
 
           const originLane = proj.originLane ?? proj.lane
-          const originLaneCfg = activeLanesConfig[originLane] || activeLanesConfig[0]
+          const safeOriginLane = Math.min(Math.max(0, originLane), activeLanesConfig.length - 1)
+          const originLaneCfg = activeLanesConfig[safeOriginLane] || activeLanesConfig[0]
           const startY = isTreeShot ? 22 : (originLaneCfg.topPct + originLaneCfg.heightPct / 2)
           const endY = targetLaneCfg.topPct + targetLaneCfg.heightPct / 2
 
