@@ -725,7 +725,11 @@ export default function Battlefield({
     try {
       const res = await supabaseService.rerollClanFortressMatch(currentFortressOpponent.targetClanId)
       if (!res.success || !res.data) {
-        setRerollError(res.error || 'No se encontró otro rival disponible.')
+        const rawErr = res.error || 'No se encontró otro rival disponible.'
+        const friendlyMsg = rawErr.includes('ALL_FORTRESSES_UNDER_REPAIR') || rawErr.toLowerCase().includes('reparación')
+          ? 'Todas las fortalezas están en reparación. Intente más tarde.'
+          : rawErr
+        setRerollError(friendlyMsg)
         setIsRerollingTarget(false)
         return
       }
@@ -1903,7 +1907,7 @@ export default function Battlefield({
               <span className="battlefield-colosseum-icon">{currentFortressOpponent?.targetBadge || '🏰'}</span>
               <span>{currentFortressOpponent?.targetClanTag || '#FORT'}</span>
               <span>•</span>
-              <span style={{ color: '#38bdf8' }}>💎 {Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} en juego</span>
+              <span style={{ color: '#38bdf8' }}>💎 {Math.min(60, currentFortressOpponent?.targetVaultGems ?? 60)} en juego</span>
             </div>
           ) : matchMode === 'tournament' ? (
             <div
@@ -2008,7 +2012,7 @@ export default function Battlefield({
           {/* Fila Táctica: Estadísticas, Soles y Reembolso de Pala */}
           <div className="clan-raid-prep-hud__meta-row">
             <span className="clan-raid-meta-pill">❤️ <strong>{currentFortressOpponent?.targetBaseHp} HP</strong></span>
-            <span className="clan-raid-meta-pill">💎 <strong>{Math.min(60, Math.floor((currentFortressOpponent?.targetVaultGems || 1000) * 0.08))} Gemas</strong></span>
+            <span className="clan-raid-meta-pill">💎 <strong>{Math.min(60, currentFortressOpponent?.targetVaultGems ?? 60)} Gemas (3⭐)</strong></span>
             <span className="clan-raid-meta-pill">🌱 <strong>{currentFortressOpponent?.layout?.length || 0} Defensas</strong></span>
             <span className="clan-raid-meta-pill clan-raid-meta-pill--sun">☀️ <strong>{sunBank} Soles (Nv.{treeLevel} Árbol)</strong></span>
             <span className="clan-raid-meta-pill clan-raid-meta-pill--shovel" title="Desentierra con la pala para reembolsar el 100% de los soles gastados durante la fase de preparación">🧹 <strong>100% Reembolso Pala</strong></span>

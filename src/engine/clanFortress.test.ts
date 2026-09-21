@@ -86,57 +86,59 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(totalSpent <= budget).toBe(true)
   })
 
-  it('calcula con precisión matemática el saqueo equilibrado por estrellas (mínimo 2 estrellas, topes 30/60 gemas y 100% al clan)', () => {
-    // Función de cálculo autoritativa reflejando el nuevo SQL
+  it('calcula con precisión matemática el saqueo fijo por estrellas (3⭐ = 60💎, 2⭐ = 30💎, 100% al clan y bono de oro)', () => {
+    // Función de cálculo autoritativa reflejando el SQL de migración 211
     const calculateRaidLoot = (rivalVaultGems: number, stars: number) => {
       let stolen = 0
+      let goldBonus = 0
       if (stars >= 3) {
-        stolen = Math.min(60, Math.max(15, Math.round(rivalVaultGems * 0.08)))
+        stolen = Math.min(60, Math.max(0, rivalVaultGems))
+        goldBonus = 500
       } else if (stars === 2) {
-        stolen = Math.min(30, Math.max(5, Math.round(rivalVaultGems * 0.05)))
+        stolen = Math.min(30, Math.max(0, rivalVaultGems))
+        goldBonus = 200
       } else {
         stolen = 0
+        goldBonus = 0
       }
-      stolen = Math.min(stolen, rivalVaultGems)
-      const userShare = 0 // 0% al usuario personal
-      const clanShare = stolen // 100% al tesoro del clan
-      return { stolen, userShare, clanShare }
+      const userShare = 0 // 0% gemas al usuario personal
+      const clanShare = stolen // 100% gemas al tesoro del clan
+      return { stolen, userShare, clanShare, goldBonus }
     }
 
-    // Clan rival con 6,000 gemas (no debe ser desangrado por un 10% plano de 600 gemas)
-    const bigRivalVault = 6000.0
+    // Bot o clan rival con 500 o 1,000 gemas
+    const rivalVault = 1000.0
 
-    // 0 Estrellas (Derrota): 0 Gemas
-    const loot0 = calculateRaidLoot(bigRivalVault, 0)
+    // 0 Estrellas (Derrota): 0 Gemas, 0 Oro
+    const loot0 = calculateRaidLoot(rivalVault, 0)
     expect(loot0.stolen).toBe(0)
     expect(loot0.clanShare).toBe(0)
+    expect(loot0.goldBonus).toBe(0)
 
-    // 1 Estrella (Ataque contenido): 0 Gemas
-    const loot1 = calculateRaidLoot(bigRivalVault, 1)
+    // 1 Estrella: 0 Gemas, 0 Oro
+    const loot1 = calculateRaidLoot(rivalVault, 1)
     expect(loot1.stolen).toBe(0)
     expect(loot1.clanShare).toBe(0)
+    expect(loot1.goldBonus).toBe(0)
 
-    // 2 Estrellas: Saqueo parcial tope de 30 Gemas (en vez de cientos)
-    const loot2 = calculateRaidLoot(bigRivalVault, 2)
-    expect(loot2.stolen).toBe(30) // Tope aplicado
-    expect(loot2.userShare).toBe(0) // 0 a cuenta personal
-    expect(loot2.clanShare).toBe(30) // 100% al tesoro del clan
+    // 2 Estrellas: Saqueo fijo de 30 Gemas y +200 de Oro
+    const loot2 = calculateRaidLoot(rivalVault, 2)
+    expect(loot2.stolen).toBe(30)
+    expect(loot2.clanShare).toBe(30)
+    expect(loot2.goldBonus).toBe(200)
 
-    // 3 Estrellas: Saqueo total tope de 60 Gemas
-    const loot3 = calculateRaidLoot(bigRivalVault, 3)
-    expect(loot3.stolen).toBe(60) // Tope aplicado
-    expect(loot3.userShare).toBe(0) // 0 a cuenta personal
-    expect(loot3.clanShare).toBe(60) // 100% al tesoro del clan
+    // 3 Estrellas: Saqueo fijo de 60 Gemas y +500 de Oro
+    const loot3 = calculateRaidLoot(rivalVault, 3)
+    expect(loot3.stolen).toBe(60)
+    expect(loot3.clanShare).toBe(60)
+    expect(loot3.goldBonus).toBe(500)
 
-    // Clan rival con pocas gemas (ej. 200 gemas)
-    const smallRivalVault = 200.0
-    const smallLoot2 = calculateRaidLoot(smallRivalVault, 2)
-    expect(smallLoot2.stolen).toBe(10) // 5% de 200 = 10
-    expect(smallLoot2.clanShare).toBe(10)
-
-    const smallLoot3 = calculateRaidLoot(smallRivalVault, 3)
-    expect(smallLoot3.stolen).toBe(16) // 8% de 200 = 16
-    expect(smallLoot3.clanShare).toBe(16)
+    // Si el rival tuviera menos gemas que el valor fijo (ej. 20 gemas disponibles)
+    const poorRivalVault = 20.0
+    const poorLoot3 = calculateRaidLoot(poorRivalVault, 3)
+    expect(poorLoot3.stolen).toBe(20) // Se lleva hasta agotar el saldo disponible
+    expect(poorLoot3.clanShare).toBe(20)
+    expect(poorLoot3.goldBonus).toBe(500)
   })
 
   it('verifica la escala de progresión del Árbol Madre del Clan (Niveles 1 a 4)', () => {

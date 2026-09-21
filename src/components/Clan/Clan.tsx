@@ -457,7 +457,14 @@ export default function Clan({
       if (!res.success || !res.data) {
         setIsSearchingRaid(false)
         const errMsg = res.error || 'No se encontró ninguna fortaleza rival disponible.'
-        if (errMsg.includes('DEFEAT_COOLDOWN_ACTIVE')) {
+        if (errMsg.includes('ALL_FORTRESSES_UNDER_REPAIR') || errMsg.toLowerCase().includes('reparación')) {
+          setActiveDialog({
+            title: 'Fortalezas en Reparación',
+            message: 'Todas las fortalezas están en reparación. Intente más tarde.',
+            icon: '🛡️',
+            type: 'warning',
+          })
+        } else if (errMsg.includes('DEFEAT_COOLDOWN_ACTIVE')) {
           setActiveDialog({
             title: 'Enfriamiento de 24 Horas Activo',
             message: 'Has sufrido una derrota recientemente. Debes esperar 24 horas antes de poder volver a asaltar otra fortaleza.',
