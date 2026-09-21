@@ -517,6 +517,22 @@ export function useGameEngine() {
     const effectiveLanes = lanesCount || 3
     const isFortress = effectiveLanes >= 4 || Boolean(clanFortressLayout && clanFortressLayout.length > 0) || Boolean(clanFortressAmbushes && clanFortressAmbushes.length > 0) || targetBaseHp !== undefined
 
+    // Determinar carriles permitidos de la fortaleza objetivo
+    // Nivel 1 y 2: Carriles centrales 1, 2 y 3 (0 y 4 bloqueados)
+    // Nivel 3: Carriles 0, 1, 2 y 3 (4 bloqueado)
+    // Nivel 4+: 5 carriles completos (0..4)
+    const fortressLanesAllowed = isFortress && targetTreeLevel !== undefined
+      ? (targetTreeLevel >= 4 ? [0, 1, 2, 3, 4] : targetTreeLevel === 3 ? [0, 1, 2, 3] : [1, 2, 3])
+      : [0, 1, 2, 3, 4]
+
+    const effectiveFortressLanesAllowed = isFortress && targetTreeLevel !== undefined
+      ? (effectiveLanes === 3 ? [0, 1, 2] : (targetTreeLevel >= 4 ? [0, 1, 2, 3, 4] : targetTreeLevel === 3 ? [0, 1, 2, 3] : [1, 2, 3]))
+      : Array.from({ length: effectiveLanes }, (_, i) => i)
+
+    const fortressLayoutPlants = (clanFortressLayout || []).map((p) => p.plantId)
+    const baseFortressPlants: PlantId[] = ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
+    const effectiveFortressRoster: PlantId[] = Array.from(new Set([...fortressLayoutPlants, ...baseFortressPlants]))
+
     stateRef.current = createBattleState(
       seed,
       false,
@@ -529,16 +545,10 @@ export function useGameEngine() {
       rivalTreeSkin ?? null,
       effectiveLanes,
       isFortress,
-      initialAttackSuns
+      initialAttackSuns,
+      effectiveFortressLanesAllowed,
+      effectiveFortressRoster
     )
-
-    // Determinar carriles permitidos de la fortaleza objetivo
-    // Nivel 1 y 2: Carriles centrales 1, 2 y 3 (0 y 4 bloqueados)
-    // Nivel 3: Carriles 0, 1, 2 y 3 (4 bloqueado)
-    // Nivel 4+: 5 carriles completos (0..4)
-    const fortressLanesAllowed = isFortress && targetTreeLevel !== undefined
-      ? (targetTreeLevel >= 4 ? [0, 1, 2, 3, 4] : targetTreeLevel === 3 ? [0, 1, 2, 3] : [1, 2, 3])
-      : [0, 1, 2, 3, 4]
 
     // Helper para normalizar el carril defensivo al espacio de combate activo (0..effectiveLanes-1)
     const normalizeFortressLane = (rawLane: number): number => {

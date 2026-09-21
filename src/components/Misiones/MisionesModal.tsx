@@ -619,7 +619,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                               <div className="weekly-col-chest-text">
                                 <span className="weekly-col-chest-name">Cofre de Bronce</span>
                                 <span className="weekly-col-chest-pts">70 Pts Requeridos</span>
-                                <span className="weekly-col-chest-desc">150 Oro + 1 Sobre Básico</span>
+                                <span className="weekly-col-chest-desc">100 Oro + 1 Sobre Básico</span>
                               </div>
                             </div>
                             {isClaimable ? (
@@ -650,7 +650,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                               <div className="weekly-col-chest-text">
                                 <span className="weekly-col-chest-name">Cofre de Plata</span>
                                 <span className="weekly-col-chest-pts">140 Pts Requeridos</span>
-                                <span className="weekly-col-chest-desc">400 Oro + 20 Gemas + 1⚡</span>
+                                <span className="weekly-col-chest-desc">200 Oro + 20 Gemas + 1⚡</span>
                               </div>
                             </div>
                             {isClaimable ? (
@@ -910,7 +910,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                           return (
                             <div
                               className={`chest-node chest-node--bronze ${weeklyPts >= 70 ? 'unlocked' : ''} ${isClaimed ? 'claimed' : ''} ${isClaimable ? 'claimable' : ''}`}
-                              title="Cofre de Bronce (70 Pts): 150 Oro + 1 Sobre Básico"
+                              title="Cofre de Bronce (70 Pts): 100 Oro + 1 Sobre Básico"
                               onClick={() => {
                                 if (isClaimable && !actionLoading) handleClaimChest('bronze')
                               }}
@@ -945,7 +945,7 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
                           return (
                             <div
                               className={`chest-node chest-node--silver ${weeklyPts >= 140 ? 'unlocked' : ''} ${isClaimed ? 'claimed' : ''} ${isClaimable ? 'claimable' : ''}`}
-                              title="Cofre de Plata (140 Pts): 400 Oro + 20 Gemas + 1 Poción 5⚡"
+                              title="Cofre de Plata (140 Pts): 200 Oro + 20 Gemas + 1 Poción 5⚡"
                               onClick={() => {
                                 if (isClaimable && !actionLoading) handleClaimChest('silver')
                               }}

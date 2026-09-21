@@ -1977,6 +1977,8 @@ export default function Battlefield({
               <span className="battlefield-colosseum-icon">{currentFortressOpponent?.targetBadge || '🏰'}</span>
               <span>{currentFortressOpponent?.targetClanTag || '#FORT'}</span>
               <span>•</span>
+              <span style={{ color: '#facc15', fontWeight: 'bold' }}>☀️ {p2SunBank} Def</span>
+              <span>•</span>
               <span style={{ color: '#38bdf8' }}>💎 {Math.min(60, currentFortressOpponent?.targetVaultGems ?? 60)} en juego</span>
             </div>
           ) : matchMode === 'tournament' ? (

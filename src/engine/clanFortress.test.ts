@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createBattleState, stepTick, crearPlantaPropia, crearPlantaDelRival } from './simulate'
+import { createBattleState, stepTick, crearPlantaPropia, crearPlantaDelRival, simularDefensaDeFortaleza } from './simulate'
 import { NIVEL_POR_DEFECTO } from './bot'
 import { LANES_CONFIG_5, FORTRESS_SUN_COSTS } from '../utils/gameConstants'
 import type { ClanFortressPlant } from '../types/game'
@@ -506,6 +506,138 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     const treeLevel4Allowed = [0, 1, 2, 3, 4]
     const filteredLayoutLvl4 = testLayout.filter((p) => treeLevel4Allowed.includes(p.lane))
     expect(filteredLayoutLvl4.length).toBe(5)
+  })
+
+  it('IA defensiva reactiva: cubre brechas vacías creadas por Jalapeño cuando el atacante avanza por ese carril', () => {
+    const state = createBattleState(
+      42,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      5,
+      true,
+      500,
+      [0, 1, 2, 3, 4],
+      ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
+    )
+
+    // Supongamos que Jalapeño limpió el carril 2 por completo.
+    // El atacante despliega una unidad marchando en carril 2
+    const allyAttacker = crearPlantaPropia(state, 'bonkchoy', 2, 3)
+    state.plants.push(allyAttacker)
+
+    expect(state.p2SunBank).toBe(150)
+    expect(state.enemyPlants.filter((e) => e.lane === 2).length).toBe(0)
+
+    // La IA detecta la brecha indefensa y despliega refuerzos
+    simularDefensaDeFortaleza(state)
+
+    const defensasCarril2 = state.enemyPlants.filter((e) => e.lane === 2)
+    expect(defensasCarril2.length).toBeGreaterThan(0)
+    expect(state.p2SunBank).toBeLessThan(150)
+  })
+
+  it('IA defensiva reactiva: respeta estrictamente el presupuesto solar de la fortaleza', () => {
+    const state = createBattleState(
+      42,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      5,
+      true,
+      500,
+      [0, 1, 2, 3, 4],
+      ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
+    )
+
+    // Vaciamos el banco de soles a 20 (< 50 coste mínimo de Wallnut)
+    state.p2SunBank = 20
+    const allyAttacker = crearPlantaPropia(state, 'peashooter', 1, 3)
+    state.plants.push(allyAttacker)
+
+    const enemyCountBefore = state.enemyPlants.length
+    simularDefensaDeFortaleza(state)
+
+    // Sin fondos suficientes, no puede plantar
+    expect(state.enemyPlants.length).toBe(enemyCountBefore)
+    expect(state.p2SunBank).toBe(20)
+  })
+
+  it('IA defensiva reactiva: respeta allowedLanes y no planta en carriles bloqueados', () => {
+    // Fortaleza Nivel 1 (carriles 1, 2, 3 permitidos; 0 y 4 bloqueados)
+    const state = createBattleState(
+      42,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      5,
+      true,
+      500,
+      [1, 2, 3],
+      ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
+    )
+
+    // Atacantes marchando en todos los carriles
+    for (let lane = 0; lane < 5; lane++) {
+      state.plants.push(crearPlantaPropia(state, 'peashooter', lane, 2))
+    }
+
+    state.p2SunBank = 500
+
+    // Ejecutar varias decisiones defensivas
+    for (let i = 0; i < 5; i++) {
+      simularDefensaDeFortaleza(state)
+    }
+
+    // Ninguna planta defensiva debe haber sido colocada en carril 0 ni en carril 4
+    const defensasCarril0 = state.enemyPlants.filter((e) => e.lane === 0)
+    const defensasCarril4 = state.enemyPlants.filter((e) => e.lane === 4)
+    expect(defensasCarril0.length).toBe(0)
+    expect(defensasCarril4.length).toBe(0)
+  })
+
+  it('los girasoles defensivos en la fortaleza acumulan soles directamente en p2SunBank', () => {
+    const state = createBattleState(
+      42,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      5,
+      true,
+      500
+    )
+
+    state.fortressRoster = ['melonpult']
+    const initialP2Sun = state.p2SunBank
+    const girasolDef = crearPlantaDelRival(state, 'sunflower', 2, 12)
+    girasolDef.lastActionTime = -1000
+    state.enemyPlants.push(girasolDef)
+
+    for (let t = 0; t < 35; t++) {
+      stepTick(state, () => {})
+    }
+
+    expect(state.p2SunBank).toBeGreaterThan(initialP2Sun)
   })
 })
 

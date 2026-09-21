@@ -234,7 +234,9 @@ export function createBattleState(
   p2TreeSkin?: string | null,
   lanesCount = 3,
   isFortressMode = false,
-  initialAttackSuns?: number
+  initialAttackSuns?: number,
+  allowedLanes?: number[],
+  fortressRoster?: PlantId[]
 ): GameState {
   return {
     tick: 0,
@@ -244,6 +246,8 @@ export function createBattleState(
     engineVersion,
     lanesCount,
     isFortressMode,
+    allowedLanes,
+    fortressRoster,
     // El cartel de la primera oleada se oculta a los 3 s (4 en práctica). Antes lo
     // hacía un setTimeout tras el arranque; ahora es un tic concreto.
     pending: [{ atTick: msToTicks(isPracticeMode ? 4000 : 3000), kind: 'clear_wave_banner' }],
@@ -266,8 +270,7 @@ export function createBattleState(
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
     sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isFortressMode ? 200 : INITIAL_SUN),
-    // Paridad: los dos jugadores empiezan con los mismos soles.
-    p2SunBank: INITIAL_SUN,
+    p2SunBank: isFortressMode ? 150 : INITIAL_SUN,
     plants: [],
     enemyPlants: [],
     projectiles: [],
@@ -461,6 +464,8 @@ export interface GameState {
   isPvpMode?: boolean
   lanesCount?: number
   isFortressMode?: boolean
+  allowedLanes?: number[]
+  fortressRoster?: PlantId[]
   /**
    * Lo que el bot lleva en la cabeza: los soles que aún no ha recogido, lo que
    * cree que está pasando, y cuándo se plantea su próxima jugada.
@@ -1148,6 +1153,215 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
   state.projectiles = siguientes
 }
 
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * DEFENSOR DE FORTALEZA DE CLAN (IA TÁCTICA DEFENSIVA Y COBERTURA DE BRECHAS)
+ *
+ * En Asaltos a Fortaleza de Clan, el bot del defensor no juega a invadir la base
+ * del jugador: su objetivo prioritario es PROTEGER SU BASTIÓN Y CUBRIR HUECOS.
+ *
+ * Si el atacante lanza un Jalapeño o barre una línea con fuego pesado:
+ *   1. La fortaleza detecta la brecha en esa línea (0 defensores, o sin muro).
+ *   2. Reacciona priorizando reponer el muro (Nuez/Tallnut) o unidades de contención.
+ *   3. Si hay emergencia (atacante a menos de 40% de distancia de la base),
+ *      despliega interceptores de combate cercano o tiradores de apoyo.
+ *   4. Respeta rigurosamente su economía solar (p2SunBank): los soles provienen de
+ *      sus Girasoles en campo y de la recolección periódica.
+ *   5. Respeta los carriles permitidos de la fortaleza (3, 4 o 5 según nivel).
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+export function simularDefensaDeFortaleza(
+  state: GameState,
+  sonar: SonarFn = () => {}
+): void {
+  if (!state.isFortressMode || state.status !== 'playing') return
+
+  const mente = state.bot ?? (state.bot = menteNueva())
+  const nivel = state.nivelBot ?? NIVEL_POR_DEFECTO
+
+  // 1. Ingreso pasivo de soles del rival (sincronizado con SOL_DEL_CIELO_MS)
+  if (state.tick - state.timers.lastP2PassiveSun > msToTicks(SOL_DEL_CIELO_MS)) {
+    state.timers.lastP2PassiveSun = state.tick
+    producirSol(mente, state.rng, nivel, state.tick, 25)
+  }
+  state.p2SunBank += recogerSoles(mente, state.tick)
+
+  // 2. Cadencia de evaluación táctica: cada 2.0s aprox
+  const spawnInterval = 2000
+  if (!leTocaJugar(mente, state.rng, nivel, state.tick, spawnInterval)) {
+    return
+  }
+  state.timers.lastEnemySpawn = state.tick
+
+  // 3. Carriles permitidos para esta fortaleza
+  const totalLanes = state.lanesCount || 5
+  const allowedLanes = state.allowedLanes && state.allowedLanes.length > 0
+    ? state.allowedLanes
+    : Array.from({ length: totalLanes }, (_, i) => i)
+
+  // 4. Catálogo de plantas disponibles para la fortaleza
+  const clanRoster: PlantId[] = state.fortressRoster && state.fortressRoster.length > 0
+    ? state.fortressRoster
+    : ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
+
+  // Filtrar lo que el bot puede costear en este instante con su p2SunBank
+  const affordableRoster = clanRoster.filter((pId) => {
+    const cost = PLANT_CONFIGS[pId]?.cost ?? 999
+    return cost <= state.p2SunBank
+  })
+
+  if (affordableRoster.length === 0) {
+    return // No alcanza para ninguna planta
+  }
+
+  // 5. Evaluar amenazas y brechas por carril permitido
+  interface LaneThreat {
+    lane: number
+    attackerCount: number
+    maxAttackerX: number
+    hasBlocker: boolean
+    hasShooter: boolean
+    defenderCount: number
+    urgencyScore: number
+  }
+
+  const laneThreats: LaneThreat[] = allowedLanes.map((lane) => {
+    const attackers = state.plants.filter((p) => p.lane === lane && p.hp > 0)
+    const defenders = state.enemyPlants.filter((e) => e.lane === lane && e.hp > 0 && !e.isWalking)
+    const hasBlocker = defenders.some((e) => e.plantId === 'wallnut' || e.plantId === 'tallnut')
+    const hasShooter = defenders.some((e) =>
+      ['peashooter', 'repeater', 'melonpult', 'cabbagepult', 'kernelpult', 'snowpea'].includes(e.plantId)
+    )
+
+    let maxAttackerX = 0
+    for (const a of attackers) {
+      if (a.x > maxAttackerX) maxAttackerX = a.x
+    }
+
+    let urgencyScore = 0
+    if (attackers.length > 0) {
+      // Línea bajo asalto activo
+      urgencyScore = 100 + maxAttackerX * 1.5
+      // Brecha crítica: carril completamente barrido (0 defensores, ej. tras Jalapeño)
+      if (defenders.length === 0) urgencyScore += 120
+      // Línea sin muro de contención frontal
+      if (!hasBlocker) urgencyScore += 80
+      // Alerta de emergencia: atacante a punto de alcanzar la base (x > 60)
+      if (maxAttackerX > 60) urgencyScore += 150
+    } else {
+      // Línea tranquila: sin atacantes, urgencia cero
+      urgencyScore = 0
+    }
+
+    return {
+      lane,
+      attackerCount: attackers.length,
+      maxAttackerX,
+      hasBlocker,
+      hasShooter,
+      defenderCount: defenders.length,
+      urgencyScore,
+    }
+  })
+
+  // Ordenar por mayor urgencia
+  laneThreats.sort((a, b) => b.urgencyScore - a.urgencyScore)
+
+  // 6. Intentar reforzar la línea más vulnerable
+  for (const threat of laneThreats) {
+    const targetLane = threat.lane
+    let chosenPlantId: PlantId | null = null
+
+    // CASO 1: Línea bajo ataque y sin muro protector -> Priorizar Muro
+    if (threat.attackerCount > 0 && !threat.hasBlocker) {
+      if (affordableRoster.includes('tallnut')) chosenPlantId = 'tallnut'
+      else if (affordableRoster.includes('wallnut')) chosenPlantId = 'wallnut'
+    }
+
+    // CASO 2: Emergencia (atacante muy avanzado, x > 60) -> Interceptor o Muro urgente
+    if (!chosenPlantId && threat.maxAttackerX > 60) {
+      if (affordableRoster.includes('bonkchoy')) chosenPlantId = 'bonkchoy'
+      else if (affordableRoster.includes('chomper')) chosenPlantId = 'chomper'
+      else if (affordableRoster.includes('wallnut')) chosenPlantId = 'wallnut'
+    }
+
+    // CASO 3: Línea bajo ataque con muro pero falta daño -> Refuerzo de ataque
+    if (!chosenPlantId && threat.attackerCount > 0) {
+      if (affordableRoster.includes('melonpult')) chosenPlantId = 'melonpult'
+      else if (affordableRoster.includes('repeater')) chosenPlantId = 'repeater'
+      else if (affordableRoster.includes('peashooter')) chosenPlantId = 'peashooter'
+      else if (affordableRoster.includes('bonkchoy')) chosenPlantId = 'bonkchoy'
+    }
+
+    // CASO 4: Carril completamente vacío y bajo ataque (tras barrido de Jalapeño) -> Nuez o Lanzaguisantes urgente
+    if (!chosenPlantId && threat.attackerCount > 0 && threat.defenderCount === 0) {
+      if (affordableRoster.includes('wallnut')) chosenPlantId = 'wallnut'
+      else if (affordableRoster.includes('peashooter')) chosenPlantId = 'peashooter'
+      else if (affordableRoster.includes('bonkchoy')) chosenPlantId = 'bonkchoy'
+    }
+
+    // CASO 5: Líneas seguras y pocos girasoles (< 2 en total) -> Girasol económico si hay reserva
+    const totalGirasoles = state.enemyPlants.filter(
+      (e) => (e.plantId === 'sunflower' || e.plantId === 'twinsunflower') && e.hp > 0
+    ).length
+    if (!chosenPlantId && totalGirasoles < 2 && threat.attackerCount === 0 && state.p2SunBank >= 200 && affordableRoster.includes('sunflower')) {
+      chosenPlantId = 'sunflower'
+    }
+
+    // Si la línea no tiene atacantes y no se requiere girasol, preservar los soles para la defensa activa
+    if (!chosenPlantId) {
+      continue
+    }
+
+    const plantConf = PLANT_CONFIGS[chosenPlantId]
+    if (!plantConf || state.p2SunBank < plantConf.cost) continue
+
+    // 7. Determinar la columna más idónea para esta planta
+    // Marco local del rival (0..5):
+    // 0, 1 = fondo (seguro, para girasoles)
+    // 2, 3 = retaguardia media (lanzadores y tiradores)
+    // 4, 5 = frente defensivo (muros e interceptores cuerpo a cuerpo)
+    const isMelee = plantConf.category === 'melee' || !!plantConf.moveSpeed || chosenPlantId === 'chomper'
+    let preferredCols: number[]
+
+    if (chosenPlantId === 'sunflower') {
+      preferredCols = [0, 1, 2]
+    } else if (chosenPlantId === 'wallnut' || chosenPlantId === 'tallnut') {
+      preferredCols = [5, 4, 3]
+    } else if (isMelee) {
+      preferredCols = [4, 5, 3]
+    } else {
+      preferredCols = [2, 3, 1, 4]
+    }
+
+    // Buscar celda libre en la columna preferida (o en cualquier columna defensiva libre si las preferidas están llenas)
+    const allDefCols = Array.from(new Set([...preferredCols, 5, 4, 3, 2, 1, 0]))
+    const freeCol = allDefCols.find((localCol) => {
+      const colEnCampo = TOTAL_COLUMNS - 1 - localCol
+      return !state.enemyPlants.some(
+        (e) => e.lane === targetLane && e.col === colEnCampo && e.hp > 0 && !e.isWalking
+      )
+    })
+
+    if (freeCol === undefined) {
+      continue // Carril completamente lleno, evaluar siguiente carril amenazado
+    }
+
+    // 8. Plantar en la fortaleza y descontar soles estrictamente
+    const nuevaPlanta = crearPlantaDelRival(
+      state,
+      chosenPlantId,
+      targetLane,
+      freeCol
+    )
+
+    state.enemyPlants.push(nuevaPlanta)
+    state.p2SunBank = Math.max(0, state.p2SunBank - plantConf.cost)
+    sonar('plantation', 0.9)
+    break
+  }
+}
+
 export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   state.tick += 1
 
@@ -1312,168 +1526,177 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     }
   }
 
-  // 1. PC AI SKY SUN RECOVERY (Synchronized with sky sun drop every 6.0s for 100% fair parity)
-  // El bot no juega si hay un rival de verdad al otro lado: sus plantas llegan
-  // por el registro de acciones. Sin esta guarda, en una partida contra otro
-  // jugador seguirías peleando contra la máquina — que es exactamente el fallo
-  // que apareció al probarlo con dos cuentas.
-  const juegaElBot = !state.isPracticeMode && !state.isPvpMode
-
-  const mente = state.bot ?? (state.bot = menteNueva())
-  const nivel = state.nivelBot ?? NIVEL_POR_DEFECTO
-
-  if (juegaElBot) {
-    // Su ingreso base, al mismo ritmo que cae el sol del cielo para ti.
-    if (state.tick - state.timers.lastP2PassiveSun > msToTicks(SOL_DEL_CIELO_MS)) {
-      state.timers.lastP2PassiveSun = state.tick
-      // AL SUELO, no al banco. Antes era un +25 automático y por eso no fallaba
-      // ni un sol mientras el jugador tenía que pulsar cada uno: era lo que más
-      // delataba que enfrente había una máquina.
-      producirSol(mente, state.rng, nivel, state.tick, 25)
+  // ── GESTIÓN DE LA IA ENEMIGA ───────────────────────────────────────────────
+  // En Asalto a Fortaleza de Clan, la IA defiende activamente el bastión,
+  // cubriendo brechas y líneas vaciadas (anti-Jalapeño) con su economía solar.
+  if (state.isFortressMode) {
+    if (!state.isPracticeMode && !state.isPvpMode) {
+      simularDefensaDeFortaleza(state, sonar)
     }
-    // Y recoge lo que le toque en este tic. Llega a rachas, no a compás.
-    state.p2SunBank += recogerSoles(mente, state.tick)
-  }
+  } else {
+    // 1. PC AI SKY SUN RECOVERY (Synchronized with sky sun drop every 6.0s for 100% fair parity)
+    // El bot no juega si hay un rival de verdad al otro lado: sus plantas llegan
+    // por el registro de acciones. Sin esta guarda, en una partida contra otro
+    // jugador seguirías peleando contra la máquina — que es exactamente el fallo
+    // que apareció al probarlo con dos cuentas.
+    const juegaElBot = !state.isPracticeMode && !state.isPvpMode
 
-  // 2. PC AI TACTICAL PURCHASING & PLANT SPAWNING (SUNFLOWER-FIRST RULE + THREAT ASSESSMENT)
-  // El intervalo base ya no acelera con las oleadas: eso hacía que el bot fuera
-  // cada vez más máquina justo cuando la partida se pone tensa. Ahora es fijo y
-  // lo que varía es el ritmo, con la irregularidad de su nivel.
-  const spawnInterval = 2000
-  if (juegaElBot && leTocaJugar(mente, state.rng, nivel, state.tick, spawnInterval)) {
-    state.timers.lastEnemySpawn = state.tick
+    const mente = state.bot ?? (state.bot = menteNueva())
+    const nivel = state.nivelBot ?? NIVEL_POR_DEFECTO
 
-    const p2Sunflowers = state.enemyPlants.filter(
-      (e) => e.plantId === 'sunflower' && e.hp > 0
-    ).length
-
-    // Lo que está pasando DE VERDAD…
-    const totalLanes = state.lanesCount || 3
-    const amenazaAhora = Array.from({ length: totalLanes }, (_, i) => i).filter((l) =>
-      state.plants.some((pl) => pl.lane === l && pl.hp > 0 && pl.x > 25)
-    )
-    // …y lo que el bot alcanza a ver, que llega con retraso. Ese medio segundo
-    // es lo que permite sorprenderle, y lo que un rival que reacciona en el mismo
-    // fotograma no concede nunca.
-    echarUnVistazo(mente, nivel, state.tick, amenazaAhora)
-    const activeThreatLanes = mente.carrilesVistos
-
-    // La emergencia sí la ve al momento: cuando algo está a punto de llegarle a
-    // la base, hasta el jugador más distraído lo nota.
-    const isEmergency = state.plants.some((pl) => pl.hp > 0 && pl.x > 60)
-
-    let chosenType: PlantId | null = null
-
-    // REGLA 1: GIRASOLES PRIMERO PARA ESTABLECER ECONOMÍA DE SOLES (Si no hay emergencia)
-    if (p2Sunflowers === 0 && !isEmergency) {
-      if (state.p2SunBank >= PLANT_CONFIGS.sunflower.cost) {
-        chosenType = 'sunflower'
+    if (juegaElBot) {
+      // Su ingreso base, al mismo ritmo que cae el sol del cielo para ti.
+      if (state.tick - state.timers.lastP2PassiveSun > msToTicks(SOL_DEL_CIELO_MS)) {
+        state.timers.lastP2PassiveSun = state.tick
+        // AL SUELO, no al banco. Antes era un +25 automático y por eso no fallaba
+        // ni un sol mientras el jugador tenía que pulsar cada uno: era lo que más
+        // delataba que enfrente había una máquina.
+        producirSol(mente, state.rng, nivel, state.tick, 25)
       }
-    } else if (
-      p2Sunflowers === 1 &&
-      !isEmergency &&
-      chance(state.rng, 0.60) &&
-      state.p2SunBank >= PLANT_CONFIGS.sunflower.cost
-    ) {
-      chosenType = 'sunflower'
-    } else {
-      // REGLA 2: FILTRAR ÚNICAMENTE PLANTAS QUE EL BOT REALMENTE PUEDA PAGAR AHORA MISMO
-      const affordableTypes: PlantId[] = ([
-        'wallnut',
-        'peashooter',
-        'chomper',
-        'melonpult',
-        'sunflower',
-      ] as PlantId[]).filter((t) => PLANT_CONFIGS[t].cost <= state.p2SunBank)
+      // Y recoge lo que le toque en este tic. Llega a rachas, no a compás.
+      state.p2SunBank += recogerSoles(mente, state.tick)
+    }
 
-      if (affordableTypes.length > 0) {
-        if (activeThreatLanes.length > 0) {
-          // MODO DEFENSA: Si el jugador está atacando, priorizar Tanque (Wallnut) o Atacante de carril
-          const wallnutCost = PLANT_CONFIGS.wallnut.cost
-          if (state.p2SunBank >= wallnutCost && chance(state.rng, 0.5)) {
-            chosenType = 'wallnut'
+    // 2. PC AI TACTICAL PURCHASING & PLANT SPAWNING (SUNFLOWER-FIRST RULE + THREAT ASSESSMENT)
+    // El intervalo base ya no acelera con las oleadas: eso hacía que el bot fuera
+    // cada vez más máquina justo cuando la partida se pone tensa. Ahora es fijo y
+    // lo que varía es el ritmo, con la irregularidad de su nivel.
+    const spawnInterval = 2000
+    if (juegaElBot && leTocaJugar(mente, state.rng, nivel, state.tick, spawnInterval)) {
+      state.timers.lastEnemySpawn = state.tick
+
+      const p2Sunflowers = state.enemyPlants.filter(
+        (e) => e.plantId === 'sunflower' && e.hp > 0
+      ).length
+
+      // Lo que está pasando DE VERDAD…
+      const totalLanes = state.lanesCount || 3
+      const amenazaAhora = Array.from({ length: totalLanes }, (_, i) => i).filter((l) =>
+        state.plants.some((pl) => pl.lane === l && pl.hp > 0 && pl.x > 25)
+      )
+      // …y lo que el bot alcanza a ver, que llega con retraso. Ese medio segundo
+      // es lo que permite sorprenderle, y lo que un rival que reacciona en el mismo
+      // fotograma no concede nunca.
+      echarUnVistazo(mente, nivel, state.tick, amenazaAhora)
+      const activeThreatLanes = mente.carrilesVistos
+
+      // La emergencia sí la ve al momento: cuando algo está a punto de llegarle a
+      // la base, hasta el jugador más distraído lo nota.
+      const isEmergency = state.plants.some((pl) => pl.hp > 0 && pl.x > 60)
+
+      let chosenType: PlantId | null = null
+
+      // REGLA 1: GIRASOLES PRIMERO PARA ESTABLECER ECONOMÍA DE SOLES (Si no hay emergencia)
+      if (p2Sunflowers === 0 && !isEmergency) {
+        if (state.p2SunBank >= PLANT_CONFIGS.sunflower.cost) {
+          chosenType = 'sunflower'
+        }
+      } else if (
+        p2Sunflowers === 1 &&
+        !isEmergency &&
+        chance(state.rng, 0.60) &&
+        state.p2SunBank >= PLANT_CONFIGS.sunflower.cost
+      ) {
+        chosenType = 'sunflower'
+      } else {
+        // REGLA 2: FILTRAR ÚNICAMENTE PLANTAS QUE EL BOT REALMENTE PUEDA PAGAR AHORA MISMO
+        const affordableTypes: PlantId[] = ([
+          'wallnut',
+          'peashooter',
+          'chomper',
+          'melonpult',
+          'sunflower',
+        ] as PlantId[]).filter((t) => PLANT_CONFIGS[t].cost <= state.p2SunBank)
+
+        if (affordableTypes.length > 0) {
+          if (activeThreatLanes.length > 0) {
+            // MODO DEFENSA: Si el jugador está atacando, priorizar Tanque (Wallnut) o Atacante de carril
+            const wallnutCost = PLANT_CONFIGS.wallnut.cost
+            if (state.p2SunBank >= wallnutCost && chance(state.rng, 0.5)) {
+              chosenType = 'wallnut'
+            } else {
+              const combatTypes = affordableTypes.filter((t) => t !== 'sunflower')
+              if (combatTypes.length > 0) {
+                chosenType = combatTypes[nextInt(state.rng, combatTypes.length)]
+              } else {
+                chosenType = affordableTypes[nextInt(state.rng, affordableTypes.length)]
+              }
+            }
           } else {
-            const combatTypes = affordableTypes.filter((t) => t !== 'sunflower')
-            if (combatTypes.length > 0) {
-              chosenType = combatTypes[nextInt(state.rng, combatTypes.length)]
+            // MODO ATAQUE: Lanzar unidades ofensivas contra el jugador
+            const attackTypes = affordableTypes.filter(
+              (t) => t !== 'sunflower' && t !== 'wallnut'
+            )
+            // Una parte de sus jugadas es mediocre a propósito: elige entre lo que
+            // puede pagar en lugar de lo mejor. Un rival que SIEMPRE acierta se nota
+            // más que uno que pierde.
+            if (attackTypes.length > 0 && !jugadaMediocre(state.rng, nivel)) {
+              chosenType = attackTypes[nextInt(state.rng, attackTypes.length)]
             } else {
               chosenType = affordableTypes[nextInt(state.rng, affordableTypes.length)]
             }
           }
-        } else {
-          // MODO ATAQUE: Lanzar unidades ofensivas contra el jugador
-          const attackTypes = affordableTypes.filter(
-            (t) => t !== 'sunflower' && t !== 'wallnut'
-          )
-          // Una parte de sus jugadas es mediocre a propósito: elige entre lo que
-          // puede pagar en lugar de lo mejor. Un rival que SIEMPRE acierta se nota
-          // más que uno que pierde.
-          if (attackTypes.length > 0 && !jugadaMediocre(state.rng, nivel)) {
-            chosenType = attackTypes[nextInt(state.rng, attackTypes.length)]
-          } else {
-            chosenType = affordableTypes[nextInt(state.rng, affordableTypes.length)]
-          }
         }
       }
-    }
 
-    // GUARDIA ESTRICTO: VERIFICAR QUE EL BOT REALMENTE TIENE SOLES SUFICIENTES AHORA MISMO
-    if (chosenType) {
-      const eConfig = PLANT_CONFIGS[chosenType]
+      // GUARDIA ESTRICTO: VERIFICAR QUE EL BOT REALMENTE TIENE SOLES SUFICIENTES AHORA MISMO
+      if (chosenType) {
+        const eConfig = PLANT_CONFIGS[chosenType]
 
-      if (state.p2SunBank < eConfig.cost) {
-        // NO TIENE SOLES SUFICIENTES -> CANCELAR COLOCACIÓN
-        chosenType = null
-      } else {
-        const isWalking = eConfig.category === 'melee'
-
-        // Con la foto que tiene en la cabeza, y a veces equivocándose de carril.
-        const lane = elegirCarril(mente, state.rng, nivel)
-
-        if (isWalking) {
-          // Por la misma vía que la planta de un rival humano: así el bot juega
-          // con EXACTAMENTE las mismas reglas. Antes plantaba los 5 tipos del
-          // catálogo enemigo, con sus estadísticas aparte, y de ahí salía la
-          // sensación de que "se nota que es un bot".
-          state.enemyPlants.push(crearPlantaDelRival(state, chosenType, lane, undefined))
-          // DEDUCIR SOLES RIGUROSAMENTE
-          state.p2SunBank = Math.max(0, state.p2SunBank - eConfig.cost)
+        if (state.p2SunBank < eConfig.cost) {
+          // NO TIENE SOLES SUFICIENTES -> CANCELAR COLOCACIÓN
+          chosenType = null
         } else {
-          // OJO CON EL MARCO DE REFERENCIA.
-          //
-          // crearPlantaDelRival recibe la columna VISTA POR SU DUEÑO —contada desde
-          // SU base— y la espeja. El bot es dueño de este lado, así que tiene que
-          // hablar en su propio marco: su columna 0 es la pegada a su base.
-          //
-          // Antes estas listas estaban en coordenadas absolutas del campo (6 a 11,
-          // la mitad derecha). Al empezar a espejar, el 11 pasó a ser el 0 y las
-          // plantas del bot aparecían dentro de la mitad del jugador: había 17
-          // enemigos y ninguno atacaba. Lo cazó el test de sonidos.
-          //
-          //   0,1 = detrás, junto a su base    ·    4,5 = delante, en la frontera
-          const preferredCols =
-            chosenType === 'sunflower'
-              ? [0, 1, 2, 3]          // los girasoles, protegidos detrás
-              : eConfig.category === 'defensive'
-              ? [5, 4, 3]             // los muros, delante
-              : [3, 2, 1, 0, 4, 5]    // los atacantes, a media altura
+          const isWalking = eConfig.category === 'melee'
 
-          const availableCols = preferredCols.filter((propia) => {
-            // La ocupación se compara con la columna YA espejada, que es la que se
-            // guarda en la entidad.
-            const enElCampo = TOTAL_COLUMNS - 1 - propia
-            return !state.enemyPlants.some(
-              (e) => e.lane === lane && e.col === enElCampo && !e.isWalking
-            )
-          })
+          // Con la foto que tiene en la cabeza, y a veces equivocándose de carril.
+          const lane = elegirCarril(mente, state.rng, nivel)
 
-          if (availableCols.length > 0) {
-            const targetCol = availableCols[0]
-            // La posición la calcula crearPlantaDelRival a partir de la columna.
-
-            state.enemyPlants.push(crearPlantaDelRival(state, chosenType, lane, targetCol))
+          if (isWalking) {
+            // Por la misma vía que la planta de un rival humano: así el bot juega
+            // con EXACTAMENTE las mismas reglas. Antes plantaba los 5 tipos del
+            // catálogo enemigo, con sus estadísticas aparte, y de ahí salía la
+            // sensación de que "se nota que es un bot".
+            state.enemyPlants.push(crearPlantaDelRival(state, chosenType, lane, undefined))
             // DEDUCIR SOLES RIGUROSAMENTE
             state.p2SunBank = Math.max(0, state.p2SunBank - eConfig.cost)
+          } else {
+            // OJO CON EL MARCO DE REFERENCIA.
+            //
+            // crearPlantaDelRival recibe la columna VISTA POR SU DUEÑO —contada desde
+            // SU base— y la espeja. El bot es dueño de este lado, así que tiene que
+            // hablar en su propio marco: su columna 0 es la pegada a su base.
+            //
+            // Antes estas listas estaban en coordenadas absolutas del campo (6 a 11,
+            // la mitad derecha). Al empezar a espejar, el 11 pasó a ser el 0 y las
+            // plantas del bot aparecían dentro de la mitad del jugador: había 17
+            // enemigos y ninguno atacaba. Lo cazó el test de sonidos.
+            //
+            //   0,1 = detrás, junto a su base    ·    4,5 = delante, en la frontera
+            const preferredCols =
+              chosenType === 'sunflower'
+                ? [0, 1, 2, 3]          // los girasoles, protegidos detrás
+                : eConfig.category === 'defensive'
+                ? [5, 4, 3]             // los muros, delante
+                : [3, 2, 1, 0, 4, 5]    // los atacantes, a media altura
+
+            const availableCols = preferredCols.filter((propia) => {
+              // La ocupación se compara con la columna YA espejada, que es la que se
+              // guarda en la entidad.
+              const enElCampo = TOTAL_COLUMNS - 1 - propia
+              return !state.enemyPlants.some(
+                (e) => e.lane === lane && e.col === enElCampo && !e.isWalking
+              )
+            })
+
+            if (availableCols.length > 0) {
+              const targetCol = availableCols[0]
+              // La posición la calcula crearPlantaDelRival a partir de la columna.
+
+              state.enemyPlants.push(crearPlantaDelRival(state, chosenType, lane, targetCol))
+              // DEDUCIR SOLES RIGUROSAMENTE
+              state.p2SunBank = Math.max(0, state.p2SunBank - eConfig.cost)
+            }
           }
         }
       }
