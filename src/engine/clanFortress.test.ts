@@ -531,7 +531,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     const allyAttacker = crearPlantaPropia(state, 'bonkchoy', 2, 3)
     state.plants.push(allyAttacker)
 
-    expect(state.p2SunBank).toBe(150)
+    expect(state.p2SunBank).toBe(250)
     expect(state.enemyPlants.filter((e) => e.lane === 2).length).toBe(0)
 
     // La IA detecta la brecha indefensa y despliega refuerzos
@@ -539,7 +539,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
 
     const defensasCarril2 = state.enemyPlants.filter((e) => e.lane === 2)
     expect(defensasCarril2.length).toBeGreaterThan(0)
-    expect(state.p2SunBank).toBeLessThan(150)
+    expect(state.p2SunBank).toBeLessThan(250)
   })
 
   it('IA defensiva reactiva: respeta estrictamente el presupuesto solar de la fortaleza', () => {
@@ -638,6 +638,36 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     }
 
     expect(state.p2SunBank).toBeGreaterThan(initialP2Sun)
+  })
+
+  it('IA defensiva de fortaleza: asegura economía plantando girasoles si tiene menos de 2', () => {
+    const state = createBattleState(
+      42,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      5,
+      true,
+      500,
+      [0, 1, 2, 3, 4],
+      ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
+    )
+
+    expect(state.p2SunBank).toBe(250)
+    expect(state.enemyPlants.filter((e) => e.plantId === 'sunflower').length).toBe(0)
+
+    // La IA evalúa la fortaleza sin amenazas y planta girasol en retaguardia
+    simularDefensaDeFortaleza(state)
+
+    const girasoles = state.enemyPlants.filter((e) => e.plantId === 'sunflower')
+    expect(girasoles.length).toBe(1)
+    expect(girasoles[0].col).toBe(13) // col 0 local = col 13 en campo
+    expect(state.p2SunBank).toBe(200) // 250 - 50 = 200
   })
 })
 

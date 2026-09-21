@@ -270,7 +270,7 @@ export function createBattleState(
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
     sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isFortressMode ? 200 : INITIAL_SUN),
-    p2SunBank: isFortressMode ? 150 : INITIAL_SUN,
+    p2SunBank: isFortressMode ? 250 : INITIAL_SUN,
     plants: [],
     enemyPlants: [],
     projectiles: [],
@@ -1300,11 +1300,17 @@ export function simularDefensaDeFortaleza(
       else if (affordableRoster.includes('bonkchoy')) chosenPlantId = 'bonkchoy'
     }
 
-    // CASO 5: Líneas seguras y pocos girasoles (< 2 en total) -> Girasol económico si hay reserva
+    // CASO 5: Prioridad de solvencia solar: si la fortaleza tiene < 2 girasoles, asegurar economía
     const totalGirasoles = state.enemyPlants.filter(
       (e) => (e.plantId === 'sunflower' || e.plantId === 'twinsunflower') && e.hp > 0
     ).length
-    if (!chosenPlantId && totalGirasoles < 2 && threat.attackerCount === 0 && state.p2SunBank >= 200 && affordableRoster.includes('sunflower')) {
+    if (
+      !chosenPlantId &&
+      totalGirasoles < 2 &&
+      (threat.attackerCount === 0 || threat.maxAttackerX < 45) &&
+      state.p2SunBank >= PLANT_CONFIGS.sunflower.cost &&
+      affordableRoster.includes('sunflower')
+    ) {
       chosenPlantId = 'sunflower'
     }
 
@@ -1558,10 +1564,9 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     }
 
     // 2. PC AI TACTICAL PURCHASING & PLANT SPAWNING (SUNFLOWER-FIRST RULE + THREAT ASSESSMENT)
-    // El intervalo base ya no acelera con las oleadas: eso hacía que el bot fuera
-    // cada vez más máquina justo cuando la partida se pone tensa. Ahora es fijo y
-    // lo que varía es el ritmo, con la irregularidad de su nivel.
-    const spawnInterval = 2000
+    // El intervalo base escala con el nivel: jugadores de alto ELO (Arenas 4 y 5) tienen mayor cadencia (1400ms)
+    // mientras que novatos juegan a un ritmo más pausado (2000ms).
+    const spawnInterval = nivel.reaccionMs <= 800 ? 1400 : 2000
     if (juegaElBot && leTocaJugar(mente, state.rng, nivel, state.tick, spawnInterval)) {
       state.timers.lastEnemySpawn = state.tick
 
@@ -1650,7 +1655,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
           const isWalking = eConfig.category === 'melee'
 
           // Con la foto que tiene en la cabeza, y a veces equivocándose de carril.
-          const lane = elegirCarril(mente, state.rng, nivel)
+          const lane = elegirCarril(mente, state.rng, nivel, totalLanes)
 
           if (isWalking) {
             // Por la misma vía que la planta de un rival humano: así el bot juega
@@ -1689,11 +1694,33 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
               )
             })
 
-            if (availableCols.length > 0) {
-              const targetCol = availableCols[0]
+            let finalLane = lane
+            let finalCol = availableCols[0]
+
+            // Si el carril elegido está lleno en sus columnas preferidas, probar los otros carriles
+            // para no perder el turno de colocación
+            if (finalCol === undefined) {
+              for (let altLane = 0; altLane < totalLanes; altLane++) {
+                if (altLane === lane) continue
+                const altAvailable = preferredCols.filter((propia) => {
+                  const enElCampo = TOTAL_COLUMNS - 1 - propia
+                  return !state.enemyPlants.some(
+                    (e) => e.lane === altLane && e.col === enElCampo && !e.isWalking
+                  )
+                })
+                if (altAvailable.length > 0) {
+                  finalLane = altLane
+                  finalCol = altAvailable[0]
+                  break
+                }
+              }
+            }
+
+            if (finalCol !== undefined) {
+              const targetCol = finalCol
               // La posición la calcula crearPlantaDelRival a partir de la columna.
 
-              state.enemyPlants.push(crearPlantaDelRival(state, chosenType, lane, targetCol))
+              state.enemyPlants.push(crearPlantaDelRival(state, chosenType, finalLane, targetCol))
               // DEDUCIR SOLES RIGUROSAMENTE
               state.p2SunBank = Math.max(0, state.p2SunBank - eConfig.cost)
             }

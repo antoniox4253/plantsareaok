@@ -205,10 +205,10 @@ export function jugadaMediocre(rng: Rng, nivel: NivelDelBot): boolean {
  * de carril: mira el que estaba amenazado hace un momento en lugar del que lo
  * está ahora.
  */
-export function elegirCarril(mente: MenteDelBot, rng: Rng, nivel: NivelDelBot): number {
+export function elegirCarril(mente: MenteDelBot, rng: Rng, nivel: NivelDelBot, totalLanes: number = 3): number {
   const vistos = mente.carrilesVistos
-  if (vistos.length === 0) return nextInt(rng, 3)
+  if (vistos.length === 0) return nextInt(rng, totalLanes)
   // Aun viendo la amenaza, no siempre acude: a veces sigue con su plan.
-  if (chance(rng, 0.15 + nivel.jugadasMalas)) return nextInt(rng, 3)
+  if (chance(rng, 0.15 + nivel.jugadasMalas)) return nextInt(rng, totalLanes)
   return vistos[nextInt(rng, vistos.length)]
 }

@@ -594,6 +594,40 @@ export function useGameEngine() {
       }
     }
 
+    // GARANTÍA SOLAR DE FORTALEZA: Si la fortaleza no cuenta con girasoles en su layout,
+    // pre-instanciar 2 girasoles en la columna de retaguardia (col 0 local = col 13 en campo)
+    // para asegurar que la defensa disponga de economía solar continua.
+    if (isFortress) {
+      const tieneGirasoles = stateRef.current.enemyPlants.some(
+        (p) => (p.plantId === 'sunflower' || p.plantId === 'twinsunflower') && p.hp > 0
+      )
+      if (!tieneGirasoles) {
+        const sunflowerId = (targetTreeLevel && targetTreeLevel >= 3) ? 'twinsunflower' : 'sunflower'
+        const candidateLanes = effectiveFortressLanesAllowed.length >= 3
+          ? [effectiveFortressLanesAllowed[0], effectiveFortressLanesAllowed[effectiveFortressLanesAllowed.length - 1]]
+          : effectiveFortressLanesAllowed
+
+        let agregados = 0
+        for (const sLane of candidateLanes) {
+          if (agregados >= 2) break
+          const ocupada = stateRef.current.enemyPlants.some(
+            (e) => e.lane === sLane && e.col === 13 && !e.isWalking
+          )
+          if (!ocupada) {
+            stateRef.current.enemyPlants.push(
+              crearPlantaDelRival(
+                stateRef.current,
+                sunflowerId,
+                sLane,
+                0 // columna 0 local
+              )
+            )
+            agregados++
+          }
+        }
+      }
+    }
+
     ancoraMsRef.current = ancoraMs ?? null
     soyP1Ref.current = soyP1 === undefined ? null : soyP1
     mazoMioRef.current = leerMazo(mazos?.mio)
