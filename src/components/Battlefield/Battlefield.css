@@ -976,132 +976,207 @@
    HORIZONTAL WIDESCREEN LAYOUT (OPTIMIZED FOR LANDSCAPE)
    ========================================================= */
 .game-card--horizontal {
-  max-width: 760px;
-  width: min(95vw, 760px);
-  padding: 12px 20px;
+  max-width: 740px;
+  width: min(94vw, 740px);
+  padding: 14px 22px;
   box-sizing: border-box;
 }
 
-.game-card--horizontal .game-card__title {
-  font-size: 22px;
-  margin: 0 0 8px 0;
+.game-card--horizontal .game-card__header-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 8px;
 }
 
-.game-card__horizontal-layout {
+.game-card--horizontal .game-card__title {
+  font-size: 24px;
+  margin: 0 0 6px 0;
+  text-align: center;
+}
+
+.game-card__hero-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.game-card__hero-banner .elo-result-badge {
+  margin-bottom: 4px;
+  padding: 6px 20px;
+  font-size: 15px;
+}
+
+.game-card__hero-banner .resultado-servidor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.game-card__body-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-  align-items: start;
-  text-align: left;
+  align-items: stretch;
+  width: 100%;
+  margin-bottom: 12px;
 }
 
 @media (max-width: 680px) and (orientation: portrait) {
-  .game-card__horizontal-layout {
+  .game-card__body-grid {
     grid-template-columns: 1fr;
     gap: 10px;
   }
 }
 
-.game-card__col-results {
+.game-card__panel {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  min-height: 120px;
 }
 
-.game-card__col-actions {
+.game-card__panel--fortress {
+  grid-column: 1 / -1;
+  min-height: auto;
+  padding: 10px 14px;
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.game-card__panel-title {
+  font-family: 'Arial Black', sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.game-card__stats-grid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
+}
+
+.game-card__stat-row {
+  display: flex;
   justify-content: space-between;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 5px 10px;
 }
 
-.game-card--horizontal .game-card__stats {
-  margin-bottom: 0;
-  padding: 6px 12px;
+.game-card__stat-label {
   display: flex;
-  justify-content: space-around;
-  gap: 8px;
-}
-
-.game-card--horizontal .game-card__stats p {
-  margin: 0;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
-  white-space: nowrap;
+  color: #cbd5e1;
+  font-weight: 600;
 }
 
-.game-card--horizontal .battle-ad-bonus-box {
-  margin: 0;
-  padding: 8px 12px;
-  gap: 8px;
+.game-card__stat-value {
+  font-family: 'Arial Black', sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  color: #f8fafc;
 }
 
-.game-card--horizontal .battle-ad-bonus-icon {
-  font-size: 1.4rem;
-}
-
-.game-card--horizontal .battle-ad-bonus-text strong {
-  font-size: 0.85rem;
-}
-
-.game-card--horizontal .battle-ad-bonus-text p {
-  font-size: 0.72rem;
-  margin: 1px 0 0;
-}
-
-.game-card--horizontal .battle-ad-bonus-btn {
-  padding: 7px 12px;
-  font-size: 0.82rem;
-}
-
-.game-card--horizontal .game-card__prompt {
-  margin: 2px 0;
-  font-size: 11px;
-  text-align: center;
+.defeat-summary-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px 12px;
   color: #94a3b8;
+  font-size: 11.5px;
+  line-height: 1.4;
+  height: 100%;
+  box-sizing: border-box;
 }
 
-.game-card--horizontal .game-card__actions {
+.defeat-summary-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.defeat-summary-text {
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.game-card__footer-actions {
   display: flex;
-  gap: 8px;
   justify-content: center;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
 }
 
-.game-card--horizontal .game-button {
-  padding: 8px 14px;
-  font-size: 12px;
-  flex: 1;
+.game-card__footer-actions .game-button {
+  padding: 9px 24px;
+  font-size: 13px;
+  min-width: 160px;
   text-align: center;
 }
 
 .game-card--horizontal .victory-pack-reward {
-  margin-top: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .game-card--horizontal .victory-pack-reward__box {
-  padding: 6px 10px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  width: 100%;
 }
 
 .game-card--horizontal .victory-pack-reward__card {
-  padding: 4px 8px;
-  gap: 8px;
+  padding: 6px 10px;
+  gap: 10px;
 }
 
 .game-card--horizontal .victory-pack-reward__img {
-  width: 32px;
-  height: 40px;
+  width: 36px;
+  height: 44px;
 }
 
 .game-card--horizontal .victory-pack-reward__name {
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .game-card--horizontal .victory-pack-reward__timer,
 .game-card--horizontal .victory-pack-reward__loc {
-  font-size: 9px;
+  font-size: 9.5px;
+}
+
+.game-card--horizontal .victory-vip-gold-box {
+  margin: 6px 0 0 0;
 }
 
 .game-card--horizontal .victory-vip-gold-badge {
-  padding: 4px 10px;
+  padding: 3px 10px;
   font-size: 11px;
 }
 
@@ -1113,10 +1188,20 @@
   }
   .game-card--horizontal .game-card__title {
     font-size: 18px;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
-  .game-card__horizontal-layout {
+  .game-card__body-grid {
     gap: 8px;
+    margin-bottom: 8px;
+  }
+  .game-card__panel {
+    padding: 6px 10px;
+    min-height: auto;
+  }
+  .game-card__footer-actions .game-button {
+    padding: 6px 14px;
+    font-size: 11px;
+    min-width: 130px;
   }
 }
 

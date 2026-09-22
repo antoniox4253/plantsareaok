@@ -867,27 +867,10 @@ export default function MainMenu({
         className="play-button"
         type="button"
         onClick={handlePlayClick}
-        title="Seleccionar Modo: Ranked, Amistoso, Torneos o Coliseo"
+        title="Seleccionar Modo: Ranked, Amistoso o Torneos"
       >
         <img className="play-button__art" src={play} alt="" />
         <span className="play-button__label">PLAY</span>
-        {userElo >= 1601 && (
-          <span style={{
-            position: 'absolute',
-            bottom: '-18px',
-            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-            color: '#000',
-            fontWeight: 800,
-            fontSize: '0.65rem',
-            padding: '2px 8px',
-            borderRadius: '999px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-            border: '1px solid #fde047',
-            whiteSpace: 'nowrap'
-          }}>
-            🏛️ COLISEO DISPONIBLE
-          </span>
-        )}
       </button>
 
       {/* 4 FREE BATTLE PACK SLOTS (CLASH ROYALE STYLE) */}

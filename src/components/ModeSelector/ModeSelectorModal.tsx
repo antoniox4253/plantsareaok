@@ -54,7 +54,7 @@ export default function ModeSelectorModal({
   playerEnergy = 20,
   maxPlayerEnergy = 20,
   onSelectRanked,
-  onSelectColosseum,
+  onSelectColosseum: _onSelectColosseum,
   onSelectTournament,
   onSelectFriendly,
   onOpenShop,
@@ -68,8 +68,6 @@ export default function ModeSelectorModal({
 
   if (!isOpen) return null
 
-  const isColosseumUnlocked = userElo >= 1601
-  const eloNeeded = Math.max(0, 1601 - userElo)
 
   const handleClose = () => {
     setSubModal('none')
@@ -232,54 +230,39 @@ export default function ModeSelectorModal({
                 </button>
               </div>
 
-              {/* 4. EL COLISEO (1601+ COPAS) */}
+              {/* 4. EL COLISEO (BLOQUEADO - COMING SOON) */}
               <div
-                className={`mode-card mode-card--colosseum ${!isColosseumUnlocked ? 'mode-card--locked' : ''}`}
+                className="mode-card mode-card--colosseum mode-card--locked"
                 onClick={() => {
-                  if (isColosseumUnlocked) {
-                    soundManager.playSound('click', 0.5)
-                    onClose()
-                    onSelectColosseum()
-                  } else {
-                    soundManager.playSound('click', 0.3)
-                  }
+                  soundManager.playSound('click', 0.3)
                 }}
               >
                 <div
-                  className={`mode-card__badge ${
-                    isColosseumUnlocked ? 'mode-card__badge--comp' : 'mode-card__badge--locked'
-                  }`}
+                  className="mode-card__badge mode-card__badge--locked"
+                  style={{
+                    background: 'rgba(234, 179, 8, 0.15)',
+                    color: '#facc15',
+                    borderColor: 'rgba(234, 179, 8, 0.5)',
+                  }}
                 >
-                  {isColosseumUnlocked ? '💎 COMPETITIVO' : '🔒 1,601 🏆'}
+                  ⏳ COMING SOON
                 </div>
-                <div className="mode-card__icon">{isColosseumUnlocked ? '🏛️' : '🔒'}</div>
+                <div className="mode-card__icon" style={{ opacity: 0.6 }}>🏛️</div>
                 <h3 className="mode-card__name">EL COLISEO</h3>
                 <p className="mode-card__desc">
-                  Duelos PvP de alto nivel por Gemas 💎 y Tickets. El ganador se lleva el 80% del pozo y escala el Top de Rachas.
+                  Duelos PvP de alto nivel por Gemas 💎 y Tickets con pozo acumulado para el ganador.
                 </p>
                 <div className="mode-card__perks">
-                  {isColosseumUnlocked ? (
-                    <>
-                      <span>💎 Salas de 0.5, 1.0 y 2.0 Gemas</span>
-                      <span>🎟️ Válido con Tickets de Coliseo ({colosseumTickets})</span>
-                      <span>🔥 Top 1: 20 💎 | Top 2: 10 💎 | Top 3: 5 💎</span>
-                    </>
-                  ) : (
-                    <>
-                      <span style={{ color: '#f87171' }}>🔒 Bloqueado: Requiere 1,601 🏆</span>
-                      <span style={{ color: '#fbbf24' }}>Te faltan {eloNeeded} copas de ELO</span>
-                      <span>Juega Ranked para desbloquearlo</span>
-                    </>
-                  )}
+                  <span style={{ color: '#facc15', fontWeight: 800 }}>⏳ Próximamente en actualización</span>
+                  <span style={{ color: '#94a3b8' }}>🎟️ Entradas por Tickets de Coliseo o Gemas</span>
+                  <span style={{ color: '#94a3b8' }}>🔥 Top de Rachas con recompensas exclusivas</span>
                 </div>
                 <button
                   type="button"
-                  className={`mode-card__action-btn ${
-                    isColosseumUnlocked ? 'mode-card__action-btn--colosseum' : 'mode-card__action-btn--disabled'
-                  }`}
-                  disabled={!isColosseumUnlocked}
+                  className="mode-card__action-btn mode-card__action-btn--disabled"
+                  disabled
                 >
-                  {isColosseumUnlocked ? '🏛️ ENTRAR AL COLISEO' : `🔒 BLOQUEADO (${eloNeeded} 🏆)`}
+                  🔒 COMING SOON
                 </button>
               </div>
             </div>
