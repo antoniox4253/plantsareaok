@@ -385,5 +385,6 @@ export interface ClanFortressRaidResult {
   targetClanName: string
   shieldHoursGranted: number
   cooldownApplied: boolean
+  lootMessage?: string
 }
 

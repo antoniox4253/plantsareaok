@@ -3014,9 +3014,14 @@ export default function Battlefield({
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.85rem' }}>
                       <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
                         <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>💎 Saqueo al Tesoro del Clan:</span>
-                        <strong style={{ color: '#facc15', display: 'block', fontSize: '1.15rem' }}>
-                          +{clanRaidResult.stolenToClan} 💎
+                        <strong style={{ color: clanRaidResult.stolenToClan > 0 ? '#facc15' : '#94a3b8', display: 'block', fontSize: '1.15rem' }}>
+                          {clanRaidResult.stolenToClan > 0 ? `+${clanRaidResult.stolenToClan} 💎` : '0 💎'}
                         </strong>
+                        {clanRaidResult.lootMessage && (
+                          <span style={{ color: clanRaidResult.stolenToClan > 0 ? '#4ade80' : '#f87171', fontSize: '0.73rem', display: 'block', marginTop: '2px', fontWeight: 600 }}>
+                            {clanRaidResult.lootMessage}
+                          </span>
+                        )}
                       </div>
                       <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
                         <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>💥 Daño a la Fortaleza:</span>
