@@ -80,7 +80,10 @@ export default function FortressEditor({
     return DEFAULT_UNLOCKED
   })
 
-  const [selectedPlantId, setSelectedPlantId] = useState<PlantId>('peashooter')
+  const [selectedPlantId, setSelectedPlantId] = useState<PlantId>(() => {
+    const list = (initialUnlockedPlants && initialUnlockedPlants.length > 0) ? initialUnlockedPlants : DEFAULT_UNLOCKED
+    return list[0] || 'peashooter'
+  })
   const [selectedTileToMove, setSelectedTileToMove] = useState<{ lane: number; col: number } | null>(null)
   const [isShovelActive, setIsShovelActive] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -365,9 +368,9 @@ export default function FortressEditor({
             ← VOLVER
           </button>
           <div className="fortress-editor-title">
-            <h2>TALLER DE DEFENSAS: {clanName.toUpperCase()}</h2>
+            <h2>DEFENSAS: {clanName.toUpperCase()}</h2>
             <small>
-              Árbol Madre Nivel {treeLevel} • {allowedLanes.length} Líneas Defensivas Activas
+              Árbol Madre Nv. {treeLevel} • {allowedLanes.length} Líneas Activas
             </small>
           </div>
         </div>
@@ -376,7 +379,7 @@ export default function FortressEditor({
           <div className="fortress-sun-meter">
             <div className="fortress-sun-meter__info">
               <span>
-                <span className="fortress-sun-icon">☀️</span> Soles Disponibles:{' '}
+                <span className="fortress-sun-icon">☀️</span> Soles:{' '}
                 <strong>{sunsRemaining} ☀️</strong>
               </span>
               <small>
@@ -714,7 +717,14 @@ export default function FortressEditor({
           </span>
         </div>
 
-        <div className="fortress-plant-palette">
+        <div
+          className="fortress-plant-palette"
+          onWheel={(e) => {
+            if (e.deltaY !== 0) {
+              e.currentTarget.scrollLeft += e.deltaY
+            }
+          }}
+        >
           {SELECTABLE_PLANTS.map((pid) => {
             const cfg = PLANT_CONFIGS[pid]
             const cost = FORTRESS_SUN_COSTS[pid] || 100
@@ -749,6 +759,9 @@ export default function FortressEditor({
                   <img src={cfg.icon} alt={cfg.name} className="fortress-palette-img" />
                   {isAmbushType && (
                     <span className="fortress-palette-ambush-tag">⚡ TRAMPA</span>
+                  )}
+                  {isUnlocked && (
+                    <span className="fortress-palette-cost">{cost}☀️</span>
                   )}
                   {!isUnlocked && (
                     <div className="fortress-palette-lock-overlay" title="Bloqueada. Clic para donar 1 copia">
