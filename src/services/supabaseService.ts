@@ -173,8 +173,16 @@ export const SupabaseService = {
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData?.session?.user) {
+        return null
+      }
+
       const { data, error } = await (supabase.rpc as any)('my_balance')
       if (error) {
+        if (error.message?.includes('No autenticado') || error.code === 'P0001') {
+          return null
+        }
         logError('myBalance', error)
         // Fallback de resiliencia directa si la RPC falla temporalmente
         try {
@@ -217,7 +225,10 @@ export const SupabaseService = {
         }
       }
       return data
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.message?.includes('No autenticado') || e?.code === 'P0001') {
+        return null
+      }
       logError('myBalance', e)
       return null
     }
@@ -3660,13 +3671,18 @@ export const SupabaseService = {
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData?.session?.user) return null
+
       const { data, error } = await (supabase.rpc as any)('my_inventory')
       if (error) {
+        if (error.message?.includes('No autenticado') || error.code === 'P0001') return null
         logError('myInventory', error)
         return null
       }
       return data
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.message?.includes('No autenticado') || e?.code === 'P0001') return null
       logError('myInventory', e)
       return null
     }
@@ -4205,6 +4221,9 @@ export const SupabaseService = {
   async myFarmingInventory(): Promise<FarmingInventory | null> {
     if (!isSupabaseConfigured()) return null
     try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData?.session?.user) return null
+
       const { data, error } = await (supabase.rpc as any)('my_farming_inventory')
       if (error) {
         // Compatibilidad durante despliegue: una base que aún no tenga la migración
@@ -5054,8 +5073,12 @@ export const SupabaseService = {
   async getMyRewardPacks(): Promise<PlayerRewardPack[]> {
     if (!isSupabaseConfigured()) return []
     try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData?.session?.user) return []
+
       const { data, error } = await (supabase.rpc as any)('get_my_reward_packs')
       if (error || !data) {
+        if (error?.message?.includes('No autenticado') || error?.code === 'P0001') return []
         logError('getMyRewardPacks', error)
         return []
       }
@@ -5352,6 +5375,15 @@ export const SupabaseService = {
     }
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData?.session?.user) {
+        try {
+          const raw = localStorage.getItem('plant_arena_mother_tree')
+          if (raw) return JSON.parse(raw)
+        } catch {}
+        return { success: true, treeLevel: 0, treeXp: 0, nextLevelXp: 100, hpBonus: 0, equippedTreeSkin: null }
+      }
+
       const { data, error } = await (supabase.rpc as any)('get_tree_state')
       if (!error && data?.success) {
         try {
@@ -5534,6 +5566,59 @@ export const SupabaseService = {
       }>
     } catch (e: any) {
       logError('getMotherTreeTop5', e)
+      return []
+    }
+  },
+
+  /**
+   * Suspende o reactiva una cuenta de jugador (solo administradores).
+   */
+  async adminToggleUserBan(
+    targetUserId: string,
+    isBanned: boolean,
+    reason?: string
+  ): Promise<{ success: boolean; error?: string; username?: string; isBanned?: boolean }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('admin_toggle_user_ban', {
+        p_target_user_id: targetUserId,
+        p_is_banned: isBanned,
+        p_reason: reason || null,
+      })
+      if (error) {
+        logError('adminToggleUserBan', error)
+        return { success: false, error: error.message }
+      }
+      return {
+        success: Boolean(data?.success),
+        username: data?.username,
+        isBanned: data?.isBanned,
+        error: data?.error,
+      }
+    } catch (e: any) {
+      logError('adminToggleUserBan', e)
+      return { success: false, error: e?.message || 'Error al modificar estado de ban' }
+    }
+  },
+
+  /**
+   * Lista todos los jugadores baneados para auditoría y gestión de desbaneos.
+   */
+  async adminGetBannedPlayers(): Promise<ProfileRow[]> {
+    if (!isSupabaseConfigured()) return []
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('is_banned', true)
+        .order('updated_at', { ascending: false })
+      if (error) {
+        logError('adminGetBannedPlayers', error)
+        return []
+      }
+      return (data || []) as ProfileRow[]
+    } catch (e: any) {
+      logError('adminGetBannedPlayers', e)
       return []
     }
   },

@@ -286,8 +286,10 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [top2ColoReward, setTop2ColoReward] = useState(25)
   const [top3ColoReward, setTop3ColoReward] = useState(10)
 
-  // Player search
+  // Player search & Ban management
   const [searchQuery, setSearchQuery] = useState('')
+  const [playerFilter, setPlayerFilter] = useState<'all' | 'active' | 'banned'>('all')
+  const [bannedPlayers, setBannedPlayers] = useState<ProfileRow[]>([])
   const [selectedPlayer, setSelectedPlayer] = useState<ProfileRow | null>(null)
   const [adjustGems, setAdjustGems] = useState(0)
   const [adjustGold, setAdjustGold] = useState(0)
@@ -460,13 +462,14 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     }
     setIsLoading(true)
     try {
-      const [tRes, sRes, pRes, lData, spData, bpData] = await Promise.all([
+      const [tRes, sRes, pRes, lData, spData, bpData, bannedData] = await Promise.all([
         supabase.from('tournaments').select('*').order('created_at', { ascending: false }),
         supabase.from('seasons').select('*').order('created_at', { ascending: false }),
-        supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(30),
+        supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(60),
         adminService.adminGetLotterySectors(),
         adminService.adminGetShopPacks(),
         adminService.adminGetBattlePassLevels(),
+        adminService.adminGetBannedPlayers(),
       ])
 
       if (tRes.data) setTournaments(tRes.data)
@@ -485,6 +488,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         }
       }
       if (pRes.data) setPlayers(pRes.data)
+      if (bannedData) setBannedPlayers(bannedData)
       if (lData) setLotterySectors(lData)
       if (spData) {
         setShopPacks(spData)
@@ -811,6 +815,65 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     setIsLoading(false)
   }
 
+  // UNBAN PLAYER (QUITAR BAN Y REACTIVAR)
+  const handleUnbanPlayer = async (userId: string, username: string) => {
+    if (
+      !confirm(
+        `¿Confirmas quitar la suspensión a "${username}"?\n\nLa cuenta podrá volver a iniciar sesión, participar en partidas y acceder al juego con normalidad.`
+      )
+    ) {
+      return
+    }
+    setIsLoading(true)
+    try {
+      const res = await adminService.adminToggleUserBan(userId, false)
+      if (res.success) {
+        soundManager.playSound('victory', 0.8)
+        showNotice(`✅ Suspensión removida. "${username}" ya puede seguir jugando.`)
+        await loadAllData()
+      } else {
+        alert('Error al desbanear jugador: ' + (res.error || 'Error desconocido'))
+      }
+    } catch (e: any) {
+      alert('Excepción al desbanear: ' + e.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // BAN PLAYER (SUSPENDER CUENTA)
+  const handleBanPlayer = async (userId: string, username: string) => {
+    const reason = prompt(
+      `Ingresa el motivo de la suspensión para "${username}":`,
+      'Uso de multicuentas / farmeo irregular de recursos'
+    )
+    if (reason === null) return
+    const trimmedReason = reason.trim() || 'Suspendido por administración'
+
+    if (
+      !confirm(
+        `¿Confirmas suspender la cuenta de "${username}"?\n\nMotivo: ${trimmedReason}\n\nEl jugador será expulsado de colas y partidas activas inmediatamente.`
+      )
+    ) {
+      return
+    }
+    setIsLoading(true)
+    try {
+      const res = await adminService.adminToggleUserBan(userId, true, trimmedReason)
+      if (res.success) {
+        soundManager.playSound('error', 0.8)
+        showNotice(`🚫 Cuenta de "${username}" suspendida exitosamente.`)
+        await loadAllData()
+      } else {
+        alert('Error al suspender cuenta: ' + (res.error || 'Error desconocido'))
+      }
+    } catch (e: any) {
+      alert('Excepción al suspender cuenta: ' + e.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -862,7 +925,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             className={`admin-tab-btn ${activeTab === 'players' ? 'admin-tab-btn--active' : ''}`}
             onClick={() => setActiveTab('players')}
           >
-            👥 Jugadores y Economía
+            👥 Jugadores y Baneos {bannedPlayers.length > 0 && <span style={{ color: '#f87171', fontWeight: 800 }}>({bannedPlayers.length} 🚫)</span>}
           </button>
           <button
             type="button"
@@ -2088,47 +2151,145 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         )}
 
         {/* TAB 3: PLAYERS & ECONOMY */}
-        {activeTab === 'players' && (
-          <div className="admin-content-section">
-            <div className="admin-card">
-              <h3>👥 Gestión de Jugadores y Saldo</h3>
-              <div className="admin-search-row">
-                <input
-                  type="text"
-                  placeholder="Buscar jugador por username..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+        {activeTab === 'players' && (() => {
+          // Unir jugadores recientes y lista completa de baneados sin duplicados
+          const map = new Map<string, ProfileRow>()
+          players.forEach((p) => map.set(p.id, p))
+          bannedPlayers.forEach((p) => map.set(p.id, p))
+          const allKnownPlayers = Array.from(map.values())
 
-              <div className="admin-players-table">
-                <div className="admin-table-row admin-table-row--head">
-                  <span>Username</span>
-                  <span>Copas ELO</span>
-                  <span>Gemas 💎</span>
-                  <span>Oro 💰</span>
-                  <span>Acción</span>
+          let filteredList: ProfileRow[] = []
+          if (playerFilter === 'banned') {
+            filteredList = allKnownPlayers.filter((p) => p.is_banned)
+          } else if (playerFilter === 'active') {
+            filteredList = allKnownPlayers.filter((p) => !p.is_banned)
+          } else {
+            filteredList = allKnownPlayers
+          }
+
+          if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim()
+            filteredList = filteredList.filter(
+              (p) =>
+                p.username.toLowerCase().includes(q) ||
+                ((p as any).ban_reason && (p as any).ban_reason.toLowerCase().includes(q))
+            )
+          }
+
+          const totalBannedCount = allKnownPlayers.filter((p) => p.is_banned).length
+          const totalActiveCount = allKnownPlayers.filter((p) => !p.is_banned).length
+
+          return (
+            <div className="admin-content-section">
+              <div className="admin-card">
+                <h3>👥 Gestión de Jugadores, Baneos y Saldo</h3>
+
+                {/* FILTROS DE ESTADO */}
+                <div className="admin-players-filter-bar">
+                  <button
+                    type="button"
+                    className={`admin-filter-pill ${playerFilter === 'all' ? 'admin-filter-pill--active' : ''}`}
+                    onClick={() => setPlayerFilter('all')}
+                  >
+                    👥 Todos ({allKnownPlayers.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`admin-filter-pill ${playerFilter === 'active' ? 'admin-filter-pill--active' : ''}`}
+                    onClick={() => setPlayerFilter('active')}
+                  >
+                    🟢 Activos ({totalActiveCount})
+                  </button>
+                  <button
+                    type="button"
+                    className={`admin-filter-pill admin-filter-pill--banned ${playerFilter === 'banned' ? 'admin-filter-pill--active' : ''}`}
+                    onClick={() => setPlayerFilter('banned')}
+                  >
+                    🚫 Cuentas Baneadas ({totalBannedCount})
+                  </button>
                 </div>
-                {players
-                  .filter((p) => p.username.toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map((p) => (
-                    <div key={p.id} className="admin-table-row">
-                      <span><strong>{p.username}</strong></span>
-                      <span>{p.elo_rating} 🏆</span>
-                      <span style={{ color: '#c084fc' }}>{p.gems_balance} 💎</span>
-                      <span style={{ color: '#fbbf24' }}>{p.gold_balance} 💰</span>
-                      <span>
-                        <button
-                          type="button"
-                          className="admin-edit-player-btn"
-                          onClick={() => setSelectedPlayer(p)}
-                        >
-                          Ajustar Saldo
-                        </button>
-                      </span>
+
+                <div className="admin-search-row">
+                  <input
+                    type="text"
+                    placeholder="Buscar jugador por username o motivo..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <div className="admin-players-table">
+                  <div className="admin-table-row admin-table-row--head">
+                    <span>Username</span>
+                    <span>Copas ELO</span>
+                    <span>Gemas 💎</span>
+                    <span>Oro 💰</span>
+                    <span>Estado</span>
+                    <span>Acciones</span>
+                  </div>
+
+                  {filteredList.length === 0 ? (
+                    <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>
+                      {playerFilter === 'banned'
+                        ? 'No se encontraron jugadores baneados.'
+                        : 'No se encontraron jugadores que coincidan con la búsqueda.'}
                     </div>
-                  ))}
-              </div>
+                  ) : (
+                    filteredList.map((p) => (
+                      <div key={p.id} className="admin-table-row">
+                        <span>
+                          <strong>{p.username}</strong>
+                          {p.is_banned && (
+                            <small className="admin-player-reason-tag" title={(p as any).ban_reason || ''}>
+                              Motivo: {(p as any).ban_reason || 'Sin motivo especificado'}
+                            </small>
+                          )}
+                        </span>
+                        <span>{p.elo_rating} 🏆</span>
+                        <span style={{ color: '#c084fc' }}>{p.gems_balance} 💎</span>
+                        <span style={{ color: '#fbbf24' }}>{p.gold_balance} 💰</span>
+                        <span>
+                          {p.is_banned ? (
+                            <span className="admin-badge-status admin-badge-status--banned">🔴 BANEADO</span>
+                          ) : (
+                            <span className="admin-badge-status admin-badge-status--active">🟢 ACTIVO</span>
+                          )}
+                        </span>
+                        <span className="admin-player-actions">
+                          {p.is_banned ? (
+                            <button
+                              type="button"
+                              className="admin-unban-btn"
+                              onClick={() => handleUnbanPlayer(p.id, p.username)}
+                              disabled={isLoading}
+                              title="Quitar ban y permitir que el jugador vuelva a jugar"
+                            >
+                              🟢 Quitar Ban
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="admin-ban-btn"
+                              onClick={() => handleBanPlayer(p.id, p.username)}
+                              disabled={isLoading}
+                              title="Suspender cuenta del jugador"
+                            >
+                              🔴 Banear
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="admin-edit-player-btn"
+                            onClick={() => setSelectedPlayer(p)}
+                            title="Ajustar gemas, oro o copas manualmente"
+                          >
+                            Ajustar
+                          </button>
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
 
               {selectedPlayer && (
                 <div className="admin-adjust-box">
@@ -2179,7 +2340,8 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
               )}
             </div>
           </div>
-        )}
+          )
+        })()}
 
         {/* TAB: PREMIOS, RULETA Y TIENDA (SQL 09) */}
         {activeTab === 'rewards' && (() => {

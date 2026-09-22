@@ -38,6 +38,10 @@ export interface Database {
           referred_by: string | null
           energy_current: number
           energy_last_reset_utc: string
+          is_banned?: boolean
+          ban_reason?: string | null
+          is_ip_exempt?: boolean
+          exemption_reason?: string | null
           created_at: string
           updated_at: string
         }
@@ -61,6 +65,10 @@ export interface Database {
           referred_by?: string | null
           energy_current?: number
           energy_last_reset_utc?: string
+          is_banned?: boolean
+          ban_reason?: string | null
+          is_ip_exempt?: boolean
+          exemption_reason?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -84,6 +92,10 @@ export interface Database {
           referred_by?: string | null
           energy_current?: number
           energy_last_reset_utc?: string
+          is_banned?: boolean
+          ban_reason?: string | null
+          is_ip_exempt?: boolean
+          exemption_reason?: string | null
           created_at?: string
           updated_at?: string
         }

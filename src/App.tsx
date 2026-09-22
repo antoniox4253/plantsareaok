@@ -33,6 +33,7 @@ import { MatchmakingService } from './services/matchmakingService'
 import { useAuth } from './hooks/useAuth'
 import AuthModal from './components/Auth/AuthModal'
 import AdminPanel from './components/Admin/AdminPanel'
+import BannedScreen from './components/Common/BannedScreen'
 import { supabaseService, isSupabaseConfigured } from './services/supabaseService'
 import { ClanManager } from './utils/clanManager'
 
@@ -1226,6 +1227,20 @@ function App() {
   const hasMorePacksOfSameType = lastOpenedPackType
     ? inventoryPacks.some((p) => p.packId === lastOpenedPackType)
     : false
+
+  // Bloqueo total de cuentas suspendidas: no pueden jugar
+  if (profile?.is_banned && !isAdmin) {
+    return (
+      <BannedScreen
+        username={profile.username}
+        banReason={(profile as any).ban_reason}
+        onSignOut={async () => {
+          await signOut()
+          setScreen('landing')
+        }}
+      />
+    )
+  }
 
   if (screen === 'landing') {
     return (

@@ -368,13 +368,13 @@
 
 .admin-table-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr 1.2fr;
+  grid-template-columns: 1.4fr 0.8fr 0.8fr 0.8fr 0.9fr 1.6fr;
   align-items: center;
   background: rgba(30, 41, 59, 0.5);
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 0.82rem;
-  min-width: 520px;
+  min-width: 640px;
 }
 
 .admin-table-row--head {
@@ -745,3 +745,120 @@
 }
 
 .admin-p2p-tabla tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
+ 
+/* PLAYER BAN & FILTER STYLES */
+.admin-players-filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-filter-pill {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-filter-pill:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.admin-filter-pill--active {
+  background: #4f46e5 !important;
+  border-color: #6366f1 !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+}
+
+.admin-filter-pill--banned.admin-filter-pill--active {
+  background: #dc2626 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.admin-badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  width: fit-content;
+}
+
+.admin-badge-status--active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.admin-badge-status--banned {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+}
+
+.admin-player-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-unban-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1px solid #34d399;
+  color: #fff;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.admin-unban-btn:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  transform: translateY(-1px);
+}
+
+.admin-ban-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #f87171;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-ban-btn:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+.admin-player-reason-tag {
+  display: block;
+  font-size: 0.68rem;
+  color: #fca5a5;
+  margin-top: 3px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
