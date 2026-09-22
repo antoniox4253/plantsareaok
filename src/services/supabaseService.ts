@@ -6,7 +6,7 @@ import { type FreePackSlot, type PlayerRewardPack, normalizePackSlots } from '..
 import type { DatosDeRepeticion } from '../engine/replay'
 import { parseLeaderboardRow, type ParsedLeaderboardRow } from '../utils/leaderboardParser'
 import { validateMatchClock } from '../utils/matchClock'
-import type { EngineVersion, ClanFortressData, ClanFortressPlant, ClanFortressAmbush, ClanFortressMatchOpponent, ClanFortressRaidResult } from '../types/game'
+import type { EngineVersion, ClanFortressData, ClanFortressPlant, ClanFortressAmbush, ClanFortressMatchOpponent, ClanFortressRaidResult, ClanRaidHistoryEntry } from '../types/game'
 import type { FarmingInventory, PvpRewardDrop } from '../utils/pvpRewardManager'
 import { FLASH_OFFER_PRICE_GEMS } from '../utils/gameConstants'
 
@@ -57,7 +57,7 @@ export interface MisReferidos {
   validos: number
   validosTemporada?: number
   copasNecesarias: number
-  /** Oro que se puede cobrar ahora mismo (100 por cada amigo que llegó a 1100 copas). */
+  /** Oro que se puede cobrar ahora mismo (100 por cada amigo que llegó a 1300 copas). */
   oroPorCobrar: number
   amigosSinCobrar: number
   oroPorAmigo: number
@@ -2121,6 +2121,23 @@ export const SupabaseService = {
       return { success: true, data: data as ClanFortressRaidResult }
     } catch (e: any) {
       logError('settleClanFortressRaid', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async getClanRaidHistory(clanId: string): Promise<{ success: boolean; data?: ClanRaidHistoryEntry[]; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_clan_raid_history', {
+        p_clan_id: clanId,
+      })
+      if (error) {
+        logError('getClanRaidHistory', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data: (data || []) as ClanRaidHistoryEntry[] }
+    } catch (e: any) {
+      logError('getClanRaidHistory', e)
       return { success: false, error: e?.message }
     }
   },

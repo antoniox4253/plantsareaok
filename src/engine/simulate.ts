@@ -498,7 +498,7 @@ export interface GameState {
  * Es todo lo que cambia entre jugar de p1 o de p2. Que sea tan poco es el punto:
  * si hubiera más, volveríamos a tener dos juegos distintos.
  */
-interface Lado {
+export interface Lado {
   equipo: 'p1' | 'p2'
   /** Hacia dónde avanzan sus plantas: +1 a la derecha, −1 a la izquierda. */
   sentido: 1 | -1
@@ -506,8 +506,8 @@ interface Lado {
   objetivo: 'p1' | 'p2'
 }
 
-const LADO_P1: Lado = { equipo: 'p1', sentido: 1, objetivo: 'p2' }
-const LADO_P2: Lado = { equipo: 'p2', sentido: -1, objetivo: 'p1' }
+export const LADO_P1: Lado = { equipo: 'p1', sentido: 1, objetivo: 'p2' }
+export const LADO_P2: Lado = { equipo: 'p2', sentido: -1, objetivo: 'p1' }
 
 /**
  * EL JALAPEÑO ARRASA UN CARRIL
@@ -530,7 +530,7 @@ const DAÑO_DEL_JALAPENO = 1000
 const FUEGO_DEL_JALAPENO =
   '/game-assets/plants/jalapeno_flame_fx.webp'
 
-function aplicarJalapeno(
+export function aplicarJalapeno(
   state: GameState,
   lado: Lado,
   lane: number,

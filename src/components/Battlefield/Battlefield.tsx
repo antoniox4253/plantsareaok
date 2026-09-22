@@ -562,6 +562,7 @@ export default function Battlefield({
   )
   const [isRerollingTarget, setIsRerollingTarget] = useState<boolean>(false)
   const [rerollError, setRerollError] = useState<string | null>(null)
+  const [raidPrepNotice, setRaidPrepNotice] = useState<string | null>(null)
   const hasClanFortressStartedRef = useRef<boolean>(false)
 
   // En clan_fortress la arena siempre opera sobre 5 carriles (LANES_CONFIG_5),
@@ -2084,11 +2085,17 @@ export default function Battlefield({
           {/* Fila Táctica: Estadísticas, Soles y Reembolso de Pala */}
           <div className="clan-raid-prep-hud__meta-row">
             <span className="clan-raid-meta-pill">❤️ <strong>{currentFortressOpponent?.targetBaseHp} HP</strong></span>
-            <span className="clan-raid-meta-pill">💎 <strong>{Math.min(60, currentFortressOpponent?.targetVaultGems ?? 60)} Gemas (3⭐)</strong></span>
+            <span className="clan-raid-meta-pill">💎 <strong>{Math.min(30, currentFortressOpponent?.targetVaultGems ?? 30)} Gemas (3⭐)</strong></span>
             <span className="clan-raid-meta-pill">🌱 <strong>{currentFortressOpponent?.layout?.length || 0} Defensas</strong></span>
             <span className="clan-raid-meta-pill clan-raid-meta-pill--sun">☀️ <strong>{sunBank} Soles (Nv.{treeLevel} Árbol)</strong></span>
             <span className="clan-raid-meta-pill clan-raid-meta-pill--shovel" title="Desentierra con la pala para reembolsar el 100% de los soles gastados durante la fase de preparación">🧹 <strong>100% Reembolso Pala</strong></span>
           </div>
+
+          {raidPrepNotice && (
+            <div style={{ background: 'rgba(239, 68, 68, 0.25)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, textAlign: 'center', marginTop: '6px', animation: 'fortressFadeIn 0.2s ease-out' }}>
+              {raidPrepNotice}
+            </div>
+          )}
         </div>
       )}
 
@@ -2385,6 +2392,15 @@ export default function Battlefield({
                           : (carta ? effectiveDeck.indexOf(carta) : 0)
                         resolvedSlot = slot >= 0 ? slot : 0
                       }
+
+                      if (matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && carta === 'jalapeno') {
+                        setRaidPrepNotice('⚠️ Jalapeño es de acción inmediata: úsalo durante el combate activo para arrasar un carril.')
+                        setTimeout(() => setRaidPrepNotice(null), 4000)
+                        soundManager.playSound('click', 0.3)
+                        setSelectedCard(null, null)
+                        return
+                      }
+
                       const nextSeq = roomId ? ordenRef.current + 1 : undefined
                       const enTic = placePlant(lane.id, col, carta, resolvedSlot, nextSeq)
                       if (enTic !== null) {

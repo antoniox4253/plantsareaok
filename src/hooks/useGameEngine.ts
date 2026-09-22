@@ -19,7 +19,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 // ─────────────────────────────────────────────────────────────────────────────
 import { createRng } from '../engine/rng'
 import { TICK_MS, MAX_TICKS_PER_FRAME, msToTicks } from '../engine/time'
-import { stepTick, createBattleState, crearPlantaPropia, crearPlantaDelRival, type GameState, type EngineVersion } from '../engine/simulate'
+import { stepTick, createBattleState, crearPlantaPropia, crearPlantaDelRival, aplicarJalapeno, LADO_P2, type GameState, type EngineVersion } from '../engine/simulate'
 import { MARGEN_DE_RED_TICS } from '../engine/pvp'
 import {
   huellaDeLaPartida,
@@ -1302,6 +1302,10 @@ export function useGameEngine() {
       // En fase de preparación (Fortaleza / Asalto previo):
       // La planta se materializa de inmediato en reposo sin desfasajes de tiempo ni combate activo.
       if (isPrepPhaseRef.current) {
+        if (card === 'jalapeno') {
+          // Jalapeño es de acción inmediata: no se permite plantar en el tablero durante preparación
+          return null
+        }
         state.sunBank -= config.cost
         const nuevaPlanta = crearPlantaPropia(
           state,
@@ -1937,17 +1941,28 @@ export function useGameEngine() {
           if (disparar.length > 0) {
             clanFortressAmbushesRef.current = pendientes
             for (const amb of disparar) {
-              const defPlant = crearPlantaDelRival(
-                state,
-                amb.plantId,
-                amb.lane,
-                amb.col,
-                [],
-                1,
-                null
-              )
-              state.enemyPlants.push(defPlant)
-              reproducirSonido('plantation', 0.9)
+              if (amb.plantId === 'jalapeno') {
+                aplicarJalapeno(
+                  state,
+                  LADO_P2,
+                  amb.lane,
+                  reproducirSonido,
+                  [],
+                  1
+                )
+              } else {
+                const defPlant = crearPlantaDelRival(
+                  state,
+                  amb.plantId,
+                  amb.lane,
+                  amb.col !== undefined ? amb.col : undefined,
+                  [],
+                  1,
+                  null
+                )
+                state.enemyPlants.push(defPlant)
+                reproducirSonido('plantation', 0.9)
+              }
             }
           }
         }

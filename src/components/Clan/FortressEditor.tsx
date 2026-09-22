@@ -16,6 +16,7 @@ interface FortressEditorProps {
   defenseSunsBudget: number
   canEdit?: boolean
   onClose: () => void
+  onOpenAltar?: () => void
   onSaved: (newLayout: ClanFortressPlant[], newAmbushes: ClanFortressAmbush[], sunsSpent: number) => void
 }
 
@@ -50,6 +51,7 @@ export default function FortressEditor({
   defenseSunsBudget,
   canEdit = true,
   onClose,
+  onOpenAltar,
   onSaved,
 }: FortressEditorProps) {
   // Determinación de carriles permitidos según el nivel del Árbol Madre
@@ -394,6 +396,17 @@ export default function FortressEditor({
               />
             </div>
           </div>
+
+          {onOpenAltar && (
+            <button
+              type="button"
+              className="fortress-editor-btn-altar"
+              onClick={onOpenAltar}
+              title="Donar y ampliar presupuesto en el Altar Solar"
+            >
+              ☀️ ALTAR SOLAR
+            </button>
+          )}
         </div>
 
         <div className="fortress-editor-header__right">
@@ -622,6 +635,12 @@ export default function FortressEditor({
                       ? 'Arrasa con fuego toda la línea seleccionada en el segundo configurado.'
                       : ambushModalPlant === 'iceberglettuce'
                       ? 'Congela en seco al invasor rival que avance en ese instante.'
+                      : ambushModalPlant === 'squash'
+                      ? 'Potato Mine oculta: se arma bajo tierra y detona cuando el enemigo la pisa.'
+                      : ambushModalPlant === 'garlic'
+                      ? 'Squash aplastador: cae sobre el invasor rival y lo aplasta por completo.'
+                      : ambushModalPlant === 'bonkchoy'
+                      ? 'Bonk Choy emboscador: salta al carril lanzando puñetazos implacables.'
                       : 'Entra como trampa o refuerzo sorpresa en combate.'}
                   </p>
                   <span className="fortress-ambush-modal__cost">
@@ -650,7 +669,7 @@ export default function FortressEditor({
                 <div className="fortress-ambush-form-group">
                   <label>Momento de Detonación en Batalla:</label>
                   <div className="fortress-ambush-time-selector">
-                    {[15, 30, 45, 60, 75, 90, 120].map((sec) => (
+                    {[15, 30, 45, 60, 75, 90, 105, 120, 150, 180].map((sec) => (
                       <button
                         key={sec}
                         type="button"

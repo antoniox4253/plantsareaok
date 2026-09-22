@@ -4,18 +4,19 @@ import * as path from 'path'
 import { PREMIOS_OFICIALES } from './PanelDeReferidos'
 
 describe('Sistema de Referidos - Auditoría y Reglas Canónicas', () => {
-  describe('1. Criterio de Amigo Válido (Regla B)', () => {
-    const esAmigoValido = (copas: number) => copas >= 1100
+  describe('1. Criterio de Amigo Válido (Regla B - Umbral 1,300 Copas)', () => {
+    const esAmigoValido = (copas: number, umbral = 1300) => copas >= umbral
 
-    it('un amigo con menos de 1100 copas no califica como válido', () => {
+    it('un amigo con menos de 1300 copas no califica como válido', () => {
       expect(esAmigoValido(0)).toBe(false)
       expect(esAmigoValido(1000)).toBe(false)
-      expect(esAmigoValido(1099)).toBe(false)
+      expect(esAmigoValido(1100)).toBe(false)
+      expect(esAmigoValido(1299)).toBe(false)
     })
 
-    it('un amigo con 1100 o más copas califica como válido', () => {
-      expect(esAmigoValido(1100)).toBe(true)
-      expect(esAmigoValido(1150)).toBe(true)
+    it('un amigo con 1300 o más copas califica como válido', () => {
+      expect(esAmigoValido(1300)).toBe(true)
+      expect(esAmigoValido(1350)).toBe(true)
       expect(esAmigoValido(2500)).toBe(true)
     })
   })
@@ -193,6 +194,49 @@ describe('Sistema de Referidos - Auditoría y Reglas Canónicas', () => {
       const sql = fs.readFileSync(migration149Path, 'utf8')
       expect(sql).toContain('CREATE OR REPLACE FUNCTION public.my_referrals()')
       expect(sql).toContain('v_oro_por_amigo := COALESCE(v_oro_por_amigo, 100);')
+    })
+  })
+
+  describe('7. Auditoría de la Migración SQL 218 (Umbral 1,300 Copas y Seguridad Anti-Granjas)', () => {
+    const migration218Path = path.resolve(
+      __dirname,
+      '../../../supabase/migrations/218-ban-referral-farms-and-adjust-1300-threshold.sql'
+    )
+
+    it('el archivo de migración 218 existe', () => {
+      expect(fs.existsSync(migration218Path)).toBe(true)
+    })
+
+    it('eleva el umbral de copas a 1300 en shop_config', () => {
+      const sql = fs.readFileSync(migration218Path, 'utf8')
+      expect(sql).toContain("('ref_copas_validas', '1300')")
+    })
+
+    it('actualiza _sellar_referido_valido y claim_referral_gold con umbral 1300', () => {
+      const sql = fs.readFileSync(migration218Path, 'utf8')
+      expect(sql).toContain('v_umbral INTEGER := 1300;')
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public._sellar_referido_valido()')
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public.claim_referral_gold()')
+    })
+
+    it('actualiza my_referrals para retornar copasNecesarias dinámico con base 1300', () => {
+      const sql = fs.readFileSync(migration218Path, 'utf8')
+      expect(sql).toContain("'copasNecesarias', v_umbral")
+    })
+
+    it('limpia publicaciones activas de comercio para elcruel y CristianCJ5', () => {
+      const sql = fs.readFileSync(migration218Path, 'utf8')
+      expect(sql).toContain('DELETE FROM public.marketplace_listings')
+      expect(sql).toContain("username ILIKE 'elcruel'")
+      expect(sql).toContain("username ILIKE 'CristianCJ5'")
+    })
+
+    it('aplica baneo a las granjas de cuentas de referidos identificadas', () => {
+      const sql = fs.readFileSync(migration218Path, 'utf8')
+      expect(sql).toContain('UPDATE public.profiles')
+      expect(sql).toContain('SET is_banned = TRUE')
+      expect(sql).toContain('xandao2000')
+      expect(sql).toContain('Balto')
     })
   })
 })

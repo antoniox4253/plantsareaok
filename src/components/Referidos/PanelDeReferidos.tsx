@@ -10,7 +10,7 @@ import './PanelDeReferidos.css'
  * PANEL DE REFERIDOS ACTUALIZADO
  *
  * 1. Recompensas Permanentes:
- *    - 100 de oro por única vez por cada amigo que alcance 1,100 copas por primera vez.
+ *    - 100 de oro por única vez por cada amigo que alcance 1,300 copas por primera vez.
  *    - 5% en gemas de cada depósito que realicen tus amigos referidos (acumulable y retirable).
  * 2. Metas de Temporada (se renuevan cada 15 días):
  *    - 10 amigos válidos en la temporada: 1 Sobre Básico de cartas.
@@ -27,7 +27,7 @@ const POR_QUE_NO: Record<string, string> = {
   cuenta_demasiado_antigua:
     'Tu cuenta tiene más de 7 días. El código de un amigo solo se puede usar al empezar.',
   ya_pasaste_las_copas:
-    'Ya pasaste las 1,100 copas a las que un invitado empieza a contar, por lo que este código ya no aplica.',
+    'Ya pasaste las copas requeridas a las que un invitado empieza a contar (1,300 copas), por lo que este código ya no aplica.',
   ya_tienes_referidor: 'Ya estás vinculado con quien te invitó.',
   sin_perfil: 'No se encontró tu perfil.',
 }
@@ -196,9 +196,10 @@ export default function PanelDeReferidos() {
       window.dispatchEvent(new Event('refresh_user_inventory'))
       void cargar()
     } else {
+      const copasMeta = datos?.copasNecesarias ?? 1300
       decir(
         r.motivo === 'nada_que_cobrar'
-          ? 'No tienes amigos nuevos que hayan alcanzado las 1,100 copas.'
+          ? `No tienes amigos nuevos que hayan alcanzado las ${copasMeta.toLocaleString()} copas.`
           : `No se pudo cobrar el oro: ${r.motivo ?? 'error'}`,
         false
       )
@@ -231,8 +232,7 @@ export default function PanelDeReferidos() {
     }
   }
 
-
-
+  const copasMeta = datos.copasNecesarias ?? 1300
   const gemasDeposito = Number(datos.gemasDepositoPorCobrar ?? 0)
   const oroACobrar =
     Number(datos.oroPorCobrar ?? 0) > 0
@@ -252,7 +252,7 @@ export default function PanelDeReferidos() {
         <h3 className="ref-titulo">🔗 Tu Enlace de Invitación</h3>
         <p className="ref-sub">
           Comparte tu enlace con amigos. Quien se registre queda vinculado a tu cuenta y se considerará
-          un amigo válido cuando alcance <strong>1,100 copas</strong> en la Arena por primera vez.
+          un amigo válido cuando alcance <strong>{copasMeta.toLocaleString()} copas</strong> en la Arena por primera vez.
         </p>
         <div className="ref-enlace">
           <code>{enlace}</code>
@@ -325,13 +325,13 @@ export default function PanelDeReferidos() {
       <div className="ref-cifras">
         <div className="ref-cifra">
           <span className="ref-cifra__num">{datos.validos}</span>
-          <span className="ref-cifra__lbl">Amigos Válidos (1,100+ Copas)</span>
+          <span className="ref-cifra__lbl">Amigos Válidos ({copasMeta.toLocaleString()}+ Copas)</span>
         </div>
         <div className="ref-cifra">
           <span className="ref-cifra__num ref-cifra__num--gris">
             {Math.max(0, datos.total - datos.validos)}
           </span>
-          <span className="ref-cifra__lbl">En Progreso (&lt; 1,100 Copas)</span>
+          <span className="ref-cifra__lbl">En Progreso (&lt; {copasMeta.toLocaleString()} Copas)</span>
         </div>
         <div className="ref-cifra">
           <span className="ref-cifra__num ref-cifra__num--oro">
@@ -357,7 +357,7 @@ export default function PanelDeReferidos() {
             </strong>
             <small>
               {datos.amigosSinCobrar > 0
-                ? `${datos.amigosSinCobrar} amigo(s) en 1,100+ copas listos para cobrar (+${oroACobrar} 💰)`
+                ? `${datos.amigosSinCobrar} amigo(s) en ${copasMeta.toLocaleString()}+ copas listos para cobrar (+${oroACobrar} 💰)`
                 : 'Todo el oro acumulado ha sido cobrado.'}
             </small>
           </div>
@@ -581,8 +581,8 @@ export default function PanelDeReferidos() {
               {amigosPaginados.map((a, i) => {
                 const copas = a.copas ?? 1000
                 const esValido = a.valido
-                const falta = Math.max(0, 1100 - copas)
-                const progresoPct = Math.min(100, Math.round((copas / 1100) * 100))
+                const falta = Math.max(0, copasMeta - copas)
+                const progresoPct = Math.min(100, Math.round((copas / copasMeta) * 100))
 
                 return (
                   <div
@@ -600,7 +600,7 @@ export default function PanelDeReferidos() {
                           className={`ref-amigo-card__indicator ${
                             esValido ? 'ref-amigo-card__indicator--ok' : 'ref-amigo-card__indicator--wait'
                           }`}
-                          title={esValido ? 'Meta de 1,100 superada' : 'En progreso hacia 1,100'}
+                          title={esValido ? `Meta de ${copasMeta.toLocaleString()} superada` : `En progreso hacia ${copasMeta.toLocaleString()}`}
                         />
                       </div>
 
@@ -642,12 +642,12 @@ export default function PanelDeReferidos() {
                             ? '✓ 100 Oro Cobrado'
                             : esValido
                             ? '💰 100 Oro Listo'
-                            : '💰 100 Oro a 1100'}
+                            : `💰 100 Oro a ${copasMeta}`}
                         </span>
                       </div>
                     </div>
 
-                    {/* Barra de progreso estilo gaming hacia las 1,100 copas */}
+                    {/* Barra de progreso estilo gaming hacia las copas objetivo */}
                     <div className="ref-amigo-card__progress-wrap">
                       <div className="ref-amigo-card__bar-bg">
                         <div
@@ -656,7 +656,7 @@ export default function PanelDeReferidos() {
                         />
                       </div>
                       <span className="ref-amigo-card__progress-text">
-                        {esValido ? '1,100 / 1,100 Copas (Completado)' : `${copas} / 1,100 Copas (${progresoPct}%)`}
+                        {esValido ? `${copasMeta.toLocaleString()} / ${copasMeta.toLocaleString()} Copas (Completado)` : `${copas} / ${copasMeta.toLocaleString()} Copas (${progresoPct}%)`}
                       </span>
                     </div>
                   </div>

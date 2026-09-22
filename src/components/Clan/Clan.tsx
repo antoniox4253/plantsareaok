@@ -8,7 +8,7 @@ import {
   type ClanDepositLog,
   type KickValidationResult,
 } from '../../utils/clanManager'
-import type { PlantId, ClanFortressData, ClanFortressMatchOpponent } from '../../types/game'
+import type { PlantId, ClanFortressData, ClanFortressMatchOpponent, ClanRaidHistoryEntry } from '../../types/game'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { SeasonManager } from '../../utils/seasonManager'
 import { UserManager } from '../../utils/userManager'
@@ -81,6 +81,9 @@ export default function Clan({
   const [showFortressEditor, setShowFortressEditor] = useState(false)
   const [showFortressDonateModal, setShowFortressDonateModal] = useState(false)
   const [isSearchingRaid, setIsSearchingRaid] = useState(false)
+  const [raidHistory, setRaidHistory] = useState<ClanRaidHistoryEntry[]>([])
+  const [isLoadingRaidHistory, setIsLoadingRaidHistory] = useState(false)
+  const [raidHistoryFilter, setRaidHistoryFilter] = useState<'all' | 'wins' | 'defeats'>('all')
   // Fortress SubView State ('hub' | 'bastion' | 'tree' | 'defenses')
   const [fortressSubView, setFortressSubView] = useState<'hub' | 'bastion' | 'tree' | 'defenses'>('hub')
 
@@ -244,6 +247,99 @@ export default function Clan({
       void loadUserFarmingInv()
     }
   }, [activeTab, fortressSubView, loadUserFarmingInv])
+
+  const formatRaidTime = (isoString: string): string => {
+    try {
+      const diffMs = Date.now() - new Date(isoString).getTime()
+      const diffSec = Math.floor(diffMs / 1000)
+      if (diffSec < 60) return 'Hace unos segundos'
+      const diffMin = Math.floor(diffSec / 60)
+      if (diffMin < 60) return `Hace ${diffMin} min`
+      const diffHours = Math.floor(diffMin / 60)
+      if (diffHours < 24) return `Hace ${diffHours} h`
+      const diffDays = Math.floor(diffHours / 24)
+      return `Hace ${diffDays} d`
+    } catch {
+      return 'Reciente'
+    }
+  }
+
+  const [, setRegenTick] = useState(0)
+
+  useEffect(() => {
+    if (fortressData?.shieldUntil && new Date(fortressData.shieldUntil).getTime() > Date.now()) {
+      const timer = setInterval(() => {
+        setRegenTick((t) => t + 1)
+      }, 4000)
+      return () => clearInterval(timer)
+    }
+  }, [fortressData?.shieldUntil])
+
+  const calculateCurrentRegenHp = (fortress: ClanFortressData | null) => {
+    if (!fortress) return { currentHp: 500, maxHp: 500, isRegenerating: false, regenRatePerMin: 0, hrsLeft: 0, minsLeft: 0, pct: 100 }
+    const maxHp = fortress.maxBaseHp ?? fortress.maxHp ?? 500
+    const isShieldActive = Boolean(fortress.shieldUntil && new Date(fortress.shieldUntil).getTime() > Date.now())
+
+    if (!isShieldActive) {
+      const currentHp = Math.min(maxHp, Math.max(0, fortress.baseHp ?? maxHp))
+      const pct = Math.max(0, Math.min(100, Math.round((currentHp / maxHp) * 100)))
+      return {
+        currentHp,
+        maxHp,
+        isRegenerating: false,
+        regenRatePerMin: 0,
+        hrsLeft: 0,
+        minsLeft: 0,
+        pct,
+      }
+    }
+
+    const msLeft = Math.max(0, new Date(fortress.shieldUntil!).getTime() - Date.now())
+    const minsLeftTotal = Math.ceil(msLeft / 60000)
+    const hrsLeft = Math.floor(minsLeftTotal / 60)
+    const minsLeft = minsLeftTotal % 60
+
+    const totalMs = 4 * 60 * 60 * 1000 // 4 horas
+    const elapsedMs = Math.max(0, Math.min(totalMs, totalMs - msLeft))
+    const progress = elapsedMs / totalMs
+
+    const startHp = Math.min(maxHp, Math.max(0, fortress.shieldStartHp ?? fortress.baseHp ?? 0))
+    const hpToRecover = maxHp - startHp
+    const currentHp = Math.min(maxHp, Math.max(startHp, Math.round(startHp + (hpToRecover * progress))))
+    const regenRatePerMin = Number((hpToRecover / 240).toFixed(1))
+    const pct = Math.max(0, Math.min(100, Math.round((currentHp / maxHp) * 100)))
+
+    return {
+      currentHp,
+      maxHp,
+      isRegenerating: currentHp < maxHp,
+      regenRatePerMin,
+      hrsLeft,
+      minsLeft,
+      pct,
+    }
+  }
+
+  const loadRaidHistory = useCallback(async () => {
+    if (!userClan?.id) return
+    setIsLoadingRaidHistory(true)
+    try {
+      const res = await supabaseService.getClanRaidHistory(userClan.id)
+      if (res.success && res.data) {
+        setRaidHistory(res.data)
+      }
+    } catch (e) {
+      console.error('Error cargando historial de asaltos:', e)
+    } finally {
+      setIsLoadingRaidHistory(false)
+    }
+  }, [userClan?.id])
+
+  useEffect(() => {
+    if (activeTab === 'wars' && userClan?.id) {
+      void loadRaidHistory()
+    }
+  }, [activeTab, userClan?.id, loadRaidHistory])
 
   const getTreeResourceBalance = (res: 'water' | 'fertilizer' | 'gems'): number => {
     switch (res) {
@@ -484,6 +580,8 @@ export default function Clan({
 
       soundManager.playSound('click', 0.8)
       setIsSearchingRaid(false)
+      if (onRefreshUserData) void onRefreshUserData()
+      void refreshClanData()
       onStartClanFortressRaid(res.data)
     } catch (e: any) {
       setIsSearchingRaid(false)
@@ -2432,46 +2530,174 @@ export default function Clan({
         </div>
       )}
 
-      {/* TAB 2: ASALTOS (MUY PRONTO) */}
-      {activeTab === 'wars' && (
-        <div className="clan-coming-soon-pane">
-          <div className="clan-coming-soon-card clan-coming-soon-card--raids">
-            <div className="clan-coming-soon-left">
-              <span className="clan-coming-soon-badge">⏳ MUY PRONTO</span>
-              <div className="clan-coming-soon-icon">⚔️</div>
-              <h3>MODO ASALTOS DE CLAN</h3>
-              <p className="clan-coming-soon-desc">
-                ¡El nuevo sistema competitivo de Asaltos de Clan está en desarrollo!
-                Próximamente tu clan podrá coordinar ataques tácticos contra bases enemigas,
-                saquear botines protegidos y defender el Tesoro del Clan con escudos y muros fortificados.
-              </p>
+      {/* TAB 2: HISTORIAL DE ASALTOS Y GUERRA */}
+      {activeTab === 'wars' && (() => {
+        const filteredRaidHistory = raidHistory.filter((r) => {
+          if (raidHistoryFilter === 'wins') return r.is_win
+          if (raidHistoryFilter === 'defeats') return !r.is_win
+          return true
+        })
+
+        const winsCount = raidHistory.filter((r) => r.is_win).length
+        const defeatsCount = raidHistory.filter((r) => !r.is_win).length
+        const totalDamage = raidHistory
+          .filter((r) => r.type === 'attack')
+          .reduce((sum, r) => sum + (r.damage_dealt || 0), 0)
+        const totalGemsStolen = raidHistory
+          .filter((r) => r.type === 'attack')
+          .reduce((sum, r) => sum + Number(r.stolen_gems || 0), 0)
+
+        return (
+          <div className="clan-raids-history-pane">
+            {/* Header con estadísticas rápidas */}
+            <div className="clan-raids-history-header">
+              <div className="clan-raids-history-title-group">
+                <div className="clan-raids-history-title">
+                  <span className="clan-raids-history-icon">⚔️</span>
+                  <div>
+                    <h3>HISTORIAL DE ASALTOS DE GUERRA</h3>
+                    <p>Registro táctico de incursiones ofensivas y defensas del bastión del clan</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="clan-raids-refresh-btn"
+                  onClick={() => void loadRaidHistory()}
+                  disabled={isLoadingRaidHistory}
+                  title="Actualizar registro de asaltos"
+                >
+                  {isLoadingRaidHistory ? '⏳ Actualizando...' : '🔄 Actualizar'}
+                </button>
+              </div>
+
+              {/* Grid de Métricas de Guerra */}
+              <div className="clan-raids-stats-grid">
+                <div className="clan-raid-stat-card clan-raid-stat-card--wins">
+                  <span className="stat-label">🏆 Victorias</span>
+                  <strong className="stat-val">{winsCount}</strong>
+                </div>
+                <div className="clan-raid-stat-card clan-raid-stat-card--defeats">
+                  <span className="stat-label">💀 Derrotas</span>
+                  <strong className="stat-val">{defeatsCount}</strong>
+                </div>
+                <div className="clan-raid-stat-card clan-raid-stat-card--damage">
+                  <span className="stat-label">💥 Daño Infligido</span>
+                  <strong className="stat-val">{totalDamage.toLocaleString()} HP</strong>
+                </div>
+                <div className="clan-raid-stat-card clan-raid-stat-card--gems">
+                  <span className="stat-label">💎 Gemas Saqueadas</span>
+                  <strong className="stat-val">{totalGemsStolen.toLocaleString()} 💎</strong>
+                </div>
+              </div>
+
+              {/* Filtros de Historial */}
+              <div className="clan-raids-filters">
+                <button
+                  type="button"
+                  className={`clan-raid-filter-btn ${raidHistoryFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setRaidHistoryFilter('all')}
+                >
+                  Todos ({raidHistory.length})
+                </button>
+                <button
+                  type="button"
+                  className={`clan-raid-filter-btn ${raidHistoryFilter === 'wins' ? 'active' : ''}`}
+                  onClick={() => setRaidHistoryFilter('wins')}
+                >
+                  Victorias ({winsCount})
+                </button>
+                <button
+                  type="button"
+                  className={`clan-raid-filter-btn ${raidHistoryFilter === 'defeats' ? 'active' : ''}`}
+                  onClick={() => setRaidHistoryFilter('defeats')}
+                >
+                  Derrotas ({defeatsCount})
+                </button>
+              </div>
             </div>
-            <div className="clan-coming-soon-features">
-              <div className="clan-cs-feat">
-                <span className="clan-cs-feat-icon">🛡️</span>
-                <div>
-                  <strong>Defensas de Clan</strong>
-                  <small>Construye muros defensivos y protege el botín de tu clan.</small>
-                </div>
+
+            {/* Listado de Asaltos */}
+            {isLoadingRaidHistory && raidHistory.length === 0 ? (
+              <div className="clan-fortress-loading">
+                <div className="clan-fortress-spinner" />
+                <p>Cargando registro de asaltos...</p>
               </div>
-              <div className="clan-cs-feat">
-                <span className="clan-cs-feat-icon">💣</span>
-                <div>
-                  <strong>Saqueos de Tesoro</strong>
-                  <small>Asalta clanes rivales para arrebatarles Oro y Gemas.</small>
-                </div>
+            ) : filteredRaidHistory.length === 0 ? (
+              <div className="clan-raids-empty">
+                <div className="clan-raids-empty-icon">🏰</div>
+                <h4>¡Aún no hay asaltos registrados!</h4>
+                <p>
+                  {raidHistoryFilter !== 'all'
+                    ? 'No hay batallas que coincidan con el filtro seleccionado.'
+                    : 'Dirígete al Bastión para iniciar un asalto contra un clan enemigo y conquistar botines.'}
+                </p>
+                <button
+                  type="button"
+                  className="clan-raids-go-bastion-btn"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setActiveTab('fortress')
+                    setFortressSubView('bastion')
+                  }}
+                >
+                  ⚔️ IR AL BASTIÓN PARA ASALTAR →
+                </button>
               </div>
-              <div className="clan-cs-feat">
-                <span className="clan-cs-feat-icon">🏆</span>
-                <div>
-                  <strong>Ranking de Conquistadores</strong>
-                  <small>Compite por la cima y gana recompensas de temporada.</small>
-                </div>
+            ) : (
+              <div className="clan-raids-list">
+                {filteredRaidHistory.map((entry) => {
+                  const isAttack = entry.type === 'attack'
+                  const rivalName = isAttack ? entry.target_clan_name : entry.attacker_clan_name
+                  const rivalTag = isAttack ? entry.target_clan_tag : entry.attacker_clan_tag
+                  const timeAgo = formatRaidTime(entry.created_at)
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`clan-raid-item-card ${entry.is_win ? 'clan-raid-item-card--win' : 'clan-raid-item-card--defeat'}`}
+                    >
+                      <div className="clan-raid-item-left">
+                        <span className={`clan-raid-item-type-badge ${isAttack ? 'is-attack' : 'is-defense'}`}>
+                          {isAttack ? '⚔️ ATAQUE' : '🛡️ DEFENSA'}
+                        </span>
+                        <div className="clan-raid-item-clans">
+                          <div className="clan-raid-item-target">
+                            <strong>{rivalName || 'Clan Rival'}</strong>
+                            {rivalTag && <span className="clan-raid-item-tag">{rivalTag}</span>}
+                          </div>
+                          <span className="clan-raid-item-attacker">
+                            👤 Jugador: <strong>{entry.attacker_username}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="clan-raid-item-middle">
+                        <div className="clan-raid-stars">
+                          {entry.stars_earned > 0
+                            ? '⭐'.repeat(entry.stars_earned)
+                            : <span className="no-stars">0 ⭐ (Derrota)</span>}
+                        </div>
+                        <span className="clan-raid-damage">💥 {entry.damage_dealt.toLocaleString()} Daño</span>
+                      </div>
+
+                      <div className="clan-raid-item-right">
+                        <div className="clan-raid-loot">
+                          {Number(entry.stolen_gems) > 0 ? (
+                            <strong className="loot-positive">+{Number(entry.stolen_gems).toFixed(0)} 💎</strong>
+                          ) : (
+                            <span className="loot-zero">0 💎</span>
+                          )}
+                        </div>
+                        <span className="clan-raid-time">⏱️ {timeAgo}</span>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            </div>
+            )}
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* TAB 5: FORTALEZA DEL CLAN */}
       {activeTab === 'fortress' && (
@@ -2498,42 +2724,54 @@ export default function Clan({
                       role="button"
                       tabIndex={0}
                     >
-                      <div className="clan-fhub-card__top">
-                        <span className="clan-fhub-card__icon">🏰</span>
-                        <div className="clan-fhub-card__header-text">
-                          <h3 className="clan-fhub-card__title">BASTIÓN</h3>
-                          <span className="clan-fhub-card__tag">Salud de Base & Asaltos</span>
-                        </div>
-                        <span className="clan-fhub-card__badge clan-fhub-card__badge--bastion">
-                          {fortressData?.baseHp ?? 500} / {fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500} HP
-                        </span>
-                      </div>
+                      {(() => {
+                        const { currentHp, maxHp, isRegenerating, pct, hrsLeft, minsLeft } = calculateCurrentRegenHp(fortressData)
+                        return (
+                          <>
+                            <div className="clan-fhub-card__top">
+                              <span className="clan-fhub-card__icon">🏰</span>
+                              <div className="clan-fhub-card__header-text">
+                                <h3 className="clan-fhub-card__title">BASTIÓN</h3>
+                                <span className="clan-fhub-card__tag">Salud de Base & Asaltos</span>
+                              </div>
+                              <span className="clan-fhub-card__badge clan-fhub-card__badge--bastion">
+                                {currentHp} / {maxHp} HP {isRegenerating && `(+${pct}%)`}
+                              </span>
+                            </div>
 
-                      <div className="clan-fhub-card__body">
-                        <div className="clan-fhub-stat-row">
-                          <span className="clan-fhub-stat-label">❤️ Salud de la Base:</span>
-                          <span className="clan-fhub-stat-val">
-                            {fortressData?.baseHp ?? 500} / {fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500} HP
-                          </span>
-                        </div>
-                        <div className="clan-fhub-bar-track">
-                          <div
-                            className="clan-fhub-bar-fill clan-fhub-bar-fill--hp"
-                            style={{
-                              width: `${Math.max(0, Math.min(100, (((fortressData?.baseHp ?? 500) / (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500)) * 100)))}%`,
-                            }}
-                          />
-                        </div>
+                            <div className="clan-fhub-card__body">
+                              <div className="clan-fhub-stat-row">
+                                <span className="clan-fhub-stat-label">❤️ Salud de la Base:</span>
+                                <span className="clan-fhub-stat-val">
+                                  {currentHp} / {maxHp} HP {isRegenerating && <span style={{ color: '#38bdf8', fontSize: '11px', fontWeight: 800 }}>({pct}%)</span>}
+                                </span>
+                              </div>
+                              <div className="clan-fhub-bar-track">
+                                <div
+                                  className="clan-fhub-bar-fill clan-fhub-bar-fill--hp"
+                                  style={{
+                                    width: `${pct}%`,
+                                    transition: 'width 0.5s ease',
+                                  }}
+                                />
+                              </div>
 
-                        <div className="clan-fhub-pill-row">
-                          <span className="clan-fhub-pill">
-                            💎 En Riesgo: <strong>{Math.min(60, Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.08))} 💎</strong>
-                          </span>
-                          <span className="clan-fhub-pill">
-                            ⚔️ Asaltos: <strong>Disponibles</strong>
-                          </span>
-                        </div>
-                      </div>
+                              <div className="clan-fhub-pill-row">
+                                <span className="clan-fhub-pill">
+                                  💎 En Riesgo: <strong>{Math.min(30, Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.08))} 💎</strong>
+                                </span>
+                                <span className="clan-fhub-pill">
+                                  {isRegenerating ? (
+                                    <strong style={{ color: '#7dd3fc' }}>🛡️ Regenerando ({hrsLeft}h {minsLeft}m)</strong>
+                                  ) : (
+                                    <>⚔️ Asaltos: <strong>Disponibles</strong></>
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        )
+                      })()}
 
                       <div className="clan-fhub-card__footer">
                         <button
@@ -2696,98 +2934,58 @@ export default function Clan({
                     <div className="clan-bastion-layout-grid">
                       {/* COLUMNA IZQUIERDA: BASTIÓN DEFENSIVO */}
                       <div className="clan-bastion-col">
-                        {/* 1. Integridad del Castillo */}
-                        <div className="clan-fstat-card clan-bastion-card--hp">
-                          <div className="clan-fstat-header">
-                            <span className="clan-fstat-label">🏰 INTEGRIDAD DEL BASTIÓN</span>
-                            <span className="clan-fstat-num">
-                              {fortressData?.baseHp ?? 500} / {fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500} HP
-                            </span>
-                          </div>
-                          <div className="clan-fstat-bar-track">
-                            <div
-                              className="clan-fstat-bar-fill clan-fstat-bar-fill--hp"
-                              style={{
-                                width: `${Math.max(0, Math.min(100, (((fortressData?.baseHp ?? 500) / (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500)) * 100)))}%`,
-                              }}
-                            />
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                            {(() => {
-                              const isShieldActive = fortressData?.shieldUntil && new Date(fortressData.shieldUntil).getTime() > Date.now()
-                              if (isShieldActive) {
-                                const minsLeft = Math.ceil((new Date(fortressData!.shieldUntil!).getTime() - Date.now()) / 60000)
-                                const hrs = Math.floor(minsLeft / 60)
-                                const mins = minsLeft % 60
-                                return (
-                                  <span className="clan-bastion-status-pill" style={{ borderColor: '#38bdf8', color: '#7dd3fc', background: 'rgba(2, 132, 199, 0.2)' }}>
-                                    🛡️ DOMO ACTIVO ({hrs}h {mins}m)
-                                  </span>
-                                )
-                              }
-                              return (
-                                <span className="clan-bastion-status-pill">
-                                  🛡️ {((fortressData?.baseHp ?? 500) >= (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500)) ? 'Castillo al 100%' : 'Bastión Dañado'}
+                        {/* 1. Integridad del Castillo con Regeneración Progresiva */}
+                        {(() => {
+                          const { currentHp, maxHp, isRegenerating, regenRatePerMin, hrsLeft, minsLeft, pct } = calculateCurrentRegenHp(fortressData)
+                          return (
+                            <div className="clan-fstat-card clan-bastion-card--hp">
+                              <div className="clan-fstat-header">
+                                <span className="clan-fstat-label">🏰 INTEGRIDAD DEL BASTIÓN</span>
+                                <span className="clan-fstat-num">
+                                  {currentHp} / {maxHp} HP {isRegenerating && <span style={{ color: '#38bdf8', fontSize: '11px', fontWeight: 800 }}>({pct}%)</span>}
                                 </span>
-                              )
-                            })()}
+                              </div>
+                              <div className="clan-fstat-bar-track">
+                                <div
+                                  className="clan-fstat-bar-fill clan-fstat-bar-fill--hp"
+                                  style={{
+                                    width: `${pct}%`,
+                                    transition: 'width 0.5s ease',
+                                  }}
+                                />
+                              </div>
 
-                            {(fortressData?.baseHp ?? 500) < (fortressData?.maxBaseHp ?? fortressData?.maxHp ?? 500) && (
-                              <button
-                                type="button"
-                                className="clan-fstat-repair-btn"
-                                onClick={handleRepairBase}
-                              >
-                                🔧 Reparar (500 💎)
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap', gap: '6px' }}>
+                                {isRegenerating ? (
+                                  <span className="clan-bastion-status-pill" style={{ borderColor: '#38bdf8', color: '#7dd3fc', background: 'rgba(2, 132, 199, 0.2)' }}>
+                                    🛡️ REGENERANDO: +{regenRatePerMin} HP/min ({hrsLeft}h {minsLeft}m)
+                                  </span>
+                                ) : currentHp >= maxHp ? (
+                                  <span className="clan-bastion-status-pill">
+                                    🛡️ Castillo al 100%
+                                  </span>
+                                ) : (
+                                  <span className="clan-bastion-status-pill">
+                                    🛡️ Bastión Dañado
+                                  </span>
+                                )}
 
-                        {/* 2. Formación Defensiva y Taller de Defensas */}
-                        <div className="clan-bastion-link-defenses-card">
-                          <div className="clan-bld-header">
-                            <span className="clan-bld-icon">🛡️</span>
-                            <div>
-                              <h4>DEFENSA DE LA FORTALEZA</h4>
-                              <span>
-                                {fortressData?.motherTreeLevel && fortressData.motherTreeLevel >= 4
-                                  ? '5 Líneas Defensivas Activas (Nivel 4)'
-                                  : fortressData?.motherTreeLevel === 3
-                                  ? '4 Líneas Defensivas Activas (Nivel 3)'
-                                  : '3 Líneas Defensivas Activas (Nivel 1-2)'}
-                              </span>
+                                {currentHp < maxHp && (
+                                  <button
+                                    type="button"
+                                    className="clan-fstat-repair-btn"
+                                    onClick={handleRepairBase}
+                                    title="Restaurar de inmediato al 100% de HP sin esperar el tiempo del escudo"
+                                  >
+                                    🔧 Reparar Inmediato (500 💎)
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          )
+                        })()}
 
-                          <div className="clan-bld-meta" style={{ marginTop: '2px' }}>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                              <span className="clan-bld-badge">
-                                🌱 <strong>{fortressData?.layout?.length || 0} Plantas</strong>
-                              </span>
-                              <span className="clan-bld-badge">
-                                ⚡ <strong>{fortressData?.ambushes?.length || 0} Emboscadas</strong>
-                              </span>
-                              <span className="clan-bld-badge">
-                                ☀️ <strong>{(fortressData?.defenseSunsBudget ?? 2500) - (fortressData?.sunsSpent ?? 0)} ☀️ Libres</strong>
-                              </span>
-                            </div>
-
-                            <button
-                              type="button"
-                              className="clan-bld-action-btn"
-                              onClick={() => {
-                                soundManager.playSound('click', 0.4)
-                                setFortressSubView('defenses')
-                              }}
-                            >
-                              {isOfficer ? '🛠️ EDITAR DEFENSAS (ARENA 1) →' : '👁️ VER FORMACIÓN DEFENSIVA →'}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* 3. Altar Solar */}
+                        {/* 2. Altar Solar */}
                         <div className="clan-fstat-card">
                           <div className="clan-fstat-header">
                             <span className="clan-fstat-label">☀️ PRESUPUESTO SOLAR DEFENSIVO</span>
@@ -2847,10 +3045,10 @@ export default function Clan({
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span className="clan-fcta-cost-badge">
-                              🪙 Coste: <strong>500 Oro</strong>
+                              🪙 Coste: <strong>{isOfficer ? '500 Oro del Clan' : '250 Oro Propio'}</strong>
                             </span>
                             <span className="clan-fcta-cost-badge" style={{ color: '#86efac', borderColor: 'rgba(74, 222, 128, 0.3)' }}>
-                              💎 Botín: <strong>Hasta 60 Gemas al Clan</strong>
+                              💎 Botín: <strong>Hasta 30 Gemas al Clan</strong>
                             </span>
                             <span className="clan-fcta-cost-badge" style={{ color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>
                               ⏱️ 2 Minutos de Preparación
@@ -2863,7 +3061,7 @@ export default function Clan({
                           <div className="clan-fstat-header">
                             <span className="clan-fstat-label">💎 TESORO Y BOTÍN EN RIESGO</span>
                             <span className="clan-fstat-num clan-fstat-num--gems">
-                              {Math.min(60, Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.08))} / {(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎
+                              {Math.min(30, Math.floor((fortressData?.vaultGems ?? userClan.vaultGems ?? 0) * 0.08))} / {(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎
                             </span>
                           </div>
                           <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
@@ -2871,31 +3069,7 @@ export default function Clan({
                               🏰 Bóveda del Clan: <strong>{(fortressData?.vaultGems ?? userClan.vaultGems ?? 0).toLocaleString()} 💎</strong>
                             </div>
                             <div className="clan-fhub-nutrient-chip" style={{ flex: 1, textAlign: 'center' }}>
-                              🛡️ Máximo Saqueo: <strong>60 💎 (8%)</strong>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 3. Panel Táctico de Asedio */}
-                        <div className="clan-fortress-rules-card" style={{ padding: '12px 14px' }}>
-                          <div className="clan-frules-title" style={{ marginBottom: '8px' }}>
-                            <span>🎖️</span>
-                            <h4>MÉTRICAS TÁCTICAS DE GUERRA</h4>
-                          </div>
-                          <div className="clan-frules-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                            <div className="clan-frule-item" style={{ padding: '8px 10px' }}>
-                              <div className="clan-frule-icon">⚔️</div>
-                              <div>
-                                <strong>Arena Escalonada</strong>
-                                <p>3, 4 o 5 carriles según nivel de Árbol Madre.</p>
-                              </div>
-                            </div>
-                            <div className="clan-frule-item" style={{ padding: '8px 10px' }}>
-                              <div className="clan-frule-icon">⚡</div>
-                              <div>
-                                <strong>Emboscadas Ocultas</strong>
-                                <p>Trampas de Hielo y Fuego detonadas por tiempo.</p>
-                              </div>
+                              🛡️ Máximo Saqueo Rival: <strong>30 💎</strong>
                             </div>
                           </div>
                         </div>
@@ -3222,6 +3396,7 @@ export default function Clan({
                   defenseSunsBudget={fortressData.defenseSunsBudget || 2500}
                   canEdit={isOfficer}
                   onClose={() => setFortressSubView('hub')}
+                  onOpenAltar={() => setShowFortressDonateModal(true)}
                   onSaved={(newLayout, newAmbushes, sunsSpent) => {
                     setFortressData((prev) => (prev ? { ...prev, layout: newLayout, ambushes: newAmbushes, sunsSpent } : null))
                     setFortressSubView('hub')
@@ -4621,6 +4796,7 @@ export default function Clan({
           defenseSunsBudget={fortressData.defenseSunsBudget || 2500}
           canEdit={isOfficer}
           onClose={() => setShowFortressEditor(false)}
+          onOpenAltar={() => setShowFortressDonateModal(true)}
           onSaved={(newLayout, newAmbushes, sunsSpent) => {
             setFortressData((prev) => (prev ? { ...prev, layout: newLayout, ambushes: newAmbushes, sunsSpent } : null))
             setShowFortressEditor(false)
@@ -4642,6 +4818,8 @@ export default function Clan({
           clanName={userClan.name}
           currentBudget={fortressData?.defenseSunsBudget || 1000}
           maxBudget={fortressData?.maxDefenseSunsBudget || (1000 + (((fortressData?.motherTreeLevel || 1) - 1) * 500))}
+          sunsSpent={fortressData?.sunsSpent ?? 0}
+          motherTreeLevel={fortressData?.motherTreeLevel ?? 1}
         />
       )}
 

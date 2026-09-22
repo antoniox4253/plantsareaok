@@ -339,6 +339,7 @@ export const TACTICAL_AMBUSH_PLANTS: PlantId[] = [
   'jalapeno',
   'iceberglettuce',
   'squash',
+  'garlic',
   'bonkchoy',
   'chomper',
 ]

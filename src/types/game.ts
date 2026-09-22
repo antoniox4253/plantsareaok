@@ -323,6 +323,7 @@ export interface ClanFortressData {
   vaultGems: number
   vaultGold: number
   shieldUntil: string | null
+  shieldStartHp?: number
   isShielded: boolean
   isNpc: boolean
   defenseSunsBudget: number
@@ -386,5 +387,23 @@ export interface ClanFortressRaidResult {
   shieldHoursGranted: number
   cooldownApplied: boolean
   lootMessage?: string
+}
+
+export interface ClanRaidHistoryEntry {
+  id: string
+  type: 'attack' | 'defense'
+  attacker_clan_id: string
+  attacker_clan_name: string
+  attacker_clan_tag: string
+  target_clan_id: string
+  target_clan_name: string
+  target_clan_tag: string
+  attacker_user_id: string
+  attacker_username: string
+  damage_dealt: number
+  stars_earned: number
+  stolen_gems: number
+  is_win: boolean
+  created_at: string
 }
 
