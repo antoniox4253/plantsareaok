@@ -469,15 +469,63 @@ export function useInventory() {
     return await openPackByInstanceId(targetPack.instanceId)
   }
 
-  const openMultiplePacksByInstanceIds = async (instanceIds: string[]): Promise<PackDropResult[]> => {
-    const allDrops: PackDropResult[] = []
-    // En serie y no en paralelo: cada apertura mueve saldo y tickets, y así el
-    // refresco de estado de una no se pisa con el de la siguiente.
-    for (const id of instanceIds) {
-      const res = await openPackOnServer(id)
-      if (res) allDrops.push(...res.drops)
+  const openMultiplePacksByInstanceIds = async (
+    instanceIds: string[]
+  ): Promise<{ drops: PackDropResult[]; packsOpened: number }> => {
+    if (!instanceIds || instanceIds.length === 0) {
+      return { drops: [], packsOpened: 0 }
     }
-    return allDrops
+
+    try {
+      // 1. Intentar ejecución atómica mediante RPC open_multiple_packs en PostgreSQL
+      const batchRes = await inventoryService.openMultiplePacks(instanceIds)
+      if (batchRes.success && Array.isArray(batchRes.drops)) {
+        await refreshFromServer()
+        const drops: PackDropResult[] = batchRes.drops.map((d: any) => ({
+          plantId: d.plantId as PlantId,
+          rarityLabel: RARITY_LABEL[d.rarity] ?? 'COMÚN',
+          rarityColor: RARITY_COLOR[d.rarity] ?? '#4ade80',
+          isNew: Boolean(d.isNew),
+        }))
+        return {
+          drops,
+          packsOpened: typeof batchRes.packsOpened === 'number' ? batchRes.packsOpened : instanceIds.length,
+        }
+      }
+    } catch (err) {
+      console.warn('[useInventory] openMultiplePacks RPC falló o no disponible, usando fallback secuencial:', err)
+    }
+
+    // 2. Fallback resiliente: abrir uno a uno llamando directamente a inventoryService.openPack
+    // IMPORTANTE: NO llamar a refreshFromServer() en cada iteración para evitar desmontar la UI ni saturar de peticiones.
+    const allDrops: PackDropResult[] = []
+    let openedCount = 0
+
+    for (const id of instanceIds) {
+      try {
+        const res = await inventoryService.openPack(id)
+        if (res.success && Array.isArray(res.drops)) {
+          openedCount++
+          for (const d of res.drops) {
+            allDrops.push({
+              plantId: d.plantId as PlantId,
+              rarityLabel: RARITY_LABEL[d.rarity] ?? 'COMÚN',
+              rarityColor: RARITY_COLOR[d.rarity] ?? '#4ade80',
+              isNew: Boolean(d.isNew),
+            })
+          }
+        }
+      } catch (err) {
+        console.warn(`[useInventory] Error abriendo sobre ${id} en fallback:`, err)
+      }
+    }
+
+    // Refrescar el estado UNA SOLA VEZ al finalizar todas las aperturas
+    if (openedCount > 0) {
+      await refreshFromServer()
+    }
+
+    return { drops: allDrops, packsOpened: openedCount }
   }
 
   // FUSES 5 COPIES & ADDS +1 LEVEL WITH A RANDOM STAT ROLL TO A SPECIFIC INSTANCE CARD

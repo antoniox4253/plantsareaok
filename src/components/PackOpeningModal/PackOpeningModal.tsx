@@ -6,6 +6,7 @@ import './PackOpeningModal.css'
 
 interface PackOpeningModalProps {
   result: PackDropResult | PackDropResult[]
+  packsOpened?: number
   onClose: () => void
   onOpenAnother?: () => void
   hasMorePacks?: boolean
@@ -13,6 +14,7 @@ interface PackOpeningModalProps {
 
 export default function PackOpeningModal({
   result,
+  packsOpened,
   onClose,
   onOpenAnother,
   hasMorePacks = false,
@@ -21,106 +23,17 @@ export default function PackOpeningModal({
     soundManager.playSound('plantation', 1.0)
   }, [])
 
-  const isMulti = Array.isArray(result)
-  const resultsList: PackDropResult[] = isMulti ? result : [result]
+  const isArray = Array.isArray(result)
+  const resultsList: PackDropResult[] = isArray ? result : [result]
 
   if (resultsList.length === 0) return null
 
-  if (!isMulti) {
-    const single = resultsList[0]
-    const config = PLANT_CONFIGS[single.plantId]
-    if (!config) return null
+  // Determinar con certeza la cantidad de sobres abiertos
+  const packCount = typeof packsOpened === 'number' && packsOpened > 0
+    ? packsOpened
+    : (isArray && resultsList.length > 4 ? Math.round(resultsList.length / 3) : 1)
 
-    return (
-      <div className="pack-reveal-overlay">
-        <div className="pack-reveal-card">
-          <div className="pack-reveal-card__rays" />
-
-          <div className="pack-reveal-card__header">
-            <span
-              className="pack-reveal-card__rarity"
-              style={{
-                backgroundColor: `${single.rarityColor}33`,
-                borderColor: single.rarityColor,
-                color: single.rarityColor,
-                border: `1px solid ${single.rarityColor}`,
-              }}
-            >
-              ⭐ PLANTA {single.rarityLabel} ⭐
-            </span>
-
-            {single.isNew ? (
-              <div className="pack-reveal-card__new-tag">
-                ✨ ¡NUEVA PLANTA DESBLOQUEADA EN MI JARDÍN!
-              </div>
-            ) : (
-              <div className="pack-reveal-card__new-tag" style={{ borderColor: '#60a5fa', color: '#60a5fa' }}>
-                🃏 +1 COPIA ALMACENADA (LISTO PARA FUSIÓN)
-              </div>
-            )}
-          </div>
-
-          <div className="pack-reveal-card__img-wrap">
-            <img
-              src={config.sprite || config.icon}
-              alt={config.name}
-              className="pack-reveal-card__sprite"
-            />
-          </div>
-
-          <h2 className="pack-reveal-card__name">{config?.name || 'Planta'}</h2>
-          <span className="pack-reveal-card__cat">
-            {config?.category === 'producer'
-              ? '☀️ Productora de Soles'
-              : config?.category === 'ranged'
-              ? '🏹 Atacante a Distancia'
-              : config?.category === 'defensive'
-              ? '🛡️ Tanque Defensivo'
-              : '🥊 Atacante Mele'}
-          </span>
-
-          <div className="pack-reveal-card__stats">
-            <div className="pack-reveal-stat">
-              <span className="pack-reveal-stat__label">COSTO</span>
-              <span className="pack-reveal-stat__val">☀️ {config?.cost ?? 0}</span>
-            </div>
-            <div className="pack-reveal-stat">
-              <span className="pack-reveal-stat__label">SALUD</span>
-              <span className="pack-reveal-stat__val">❤️ {config?.maxHp ?? 100} HP</span>
-            </div>
-            <div className="pack-reveal-stat">
-              <span className="pack-reveal-stat__label">DAÑO</span>
-              <span className="pack-reveal-stat__val">
-                ⚔️ {config?.damage ?? (config?.category === 'producer' ? '0' : 'Especial')}
-              </span>
-            </div>
-          </div>
-
-          <div className="pack-reveal-card__actions">
-            {hasMorePacks && onOpenAnother && (
-              <button
-                type="button"
-                className="pack-reveal-btn pack-reveal-btn--sec"
-                onClick={onOpenAnother}
-              >
-                ✨ ABRIR OTRO SOBRE
-              </button>
-            )}
-
-            <button
-              type="button"
-              className="pack-reveal-btn pack-reveal-btn--primary"
-              onClick={onClose}
-            >
-              🎒 RECLAMAR Y GUARDAR EN MI JARDÍN
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Multi-Open Reveal Grid Modal
+  const isMulti = packCount > 1
   const newCount = resultsList.filter((r) => r.isNew).length
 
   return (
@@ -129,17 +42,28 @@ export default function PackOpeningModal({
         <div className="pack-reveal-card__rays" />
 
         <div className="pack-reveal-card__header">
-          <span className="pack-reveal-card__rarity" style={{ backgroundColor: '#fbbf2433', color: '#fbbf24', borderColor: '#fbbf24' }}>
-            💥 ¡APERTURA MÚLTIPLE DE {resultsList.length} SOBRES! 💥
+          <span
+            className="pack-reveal-card__rarity"
+            style={{
+              backgroundColor: isMulti ? '#fbbf2433' : '#10b98133',
+              color: isMulti ? '#fbbf24' : '#34d399',
+              borderColor: isMulti ? '#fbbf24' : '#34d399',
+            }}
+          >
+            {isMulti
+              ? `💥 ¡APERTURA MÚLTIPLE DE ${packCount} SOBRES! 💥`
+              : '🎉 ¡SOBRE ABIERTO CON ÉXITO! 🎉'}
           </span>
           <div className="pack-reveal-card__new-tag">
             {newCount > 0
-              ? `✨ ¡${newCount} NUEVAS PLANTAS DESBLOQUEADAS!`
+              ? `✨ ¡${newCount} NUEVA${newCount > 1 ? 'S' : ''} PLANTA${newCount > 1 ? 'S' : ''} DESBLOQUEADA${newCount > 1 ? 'S' : ''}!`
+              : isMulti
+              ? `🃏 ${resultsList.length} CARTAS OBTENIDAS EN TOTAL`
               : `🃏 ${resultsList.length} CARTAS OBTENIDAS`}
           </div>
         </div>
 
-        {/* Grid of opened rewards */}
+        {/* Grid de cartas obtenidas */}
         <div className="pack-reveal-multi-grid">
           {resultsList.map((drop, idx) => {
             const cfg = PLANT_CONFIGS[drop.plantId]
@@ -166,12 +90,24 @@ export default function PackOpeningModal({
         </div>
 
         <div className="pack-reveal-card__actions" style={{ marginTop: 16 }}>
+          {!isMulti && hasMorePacks && onOpenAnother && (
+            <button
+              type="button"
+              className="pack-reveal-btn pack-reveal-btn--sec"
+              onClick={onOpenAnother}
+            >
+              ✨ ABRIR OTRO SOBRE
+            </button>
+          )}
+
           <button
             type="button"
             className="pack-reveal-btn pack-reveal-btn--primary"
             onClick={onClose}
           >
-            🎒 RECLAMAR TODOS LOS RECOMPENSAS ({resultsList.length})
+            {isMulti
+              ? `🎒 RECLAMAR TODAS LAS RECOMPENSAS (${resultsList.length} CARTAS)`
+              : '🎒 RECLAMAR Y GUARDAR EN MI JARDÍN'}
           </button>
         </div>
       </div>

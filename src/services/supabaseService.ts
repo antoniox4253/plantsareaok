@@ -4287,6 +4287,30 @@ export const SupabaseService = {
     }
   },
 
+  /** Abre múltiples sobres en lote en una sola transacción atómica en Postgres. */
+  async openMultiplePacks(packRowIds: string[]): Promise<{
+    success: boolean
+    packsOpened?: number
+    drops?: { plantId: string; rarity: string; isNew: boolean }[]
+    ticketsWon?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('open_multiple_packs', {
+        p_pack_row_ids: packRowIds,
+      })
+      if (error) {
+        logError('openMultiplePacks', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('openMultiplePacks', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   /** Inventario farming autoritativo. Los consumibles nunca se leen de localStorage. */
   async myFarmingInventory(): Promise<FarmingInventory | null> {
     if (!isSupabaseConfigured()) return null

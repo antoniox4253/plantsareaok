@@ -425,6 +425,14 @@
   transform: scale(0.96);
 }
 
+.jardin-pack-card__open-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: grayscale(0.5);
+}
+
 /* Streamer / PvP Reward Packs Styling */
 .jardin-pack-card--pvp-reward {
   background: linear-gradient(135deg, rgba(20, 25, 45, 0.95) 0%, rgba(30, 20, 50, 0.95) 100%);

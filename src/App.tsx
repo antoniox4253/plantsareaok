@@ -86,6 +86,7 @@ function App() {
   })
   const [practicePlantId, setPracticePlantId] = useState<string | null>(null)
   const [activeOpeningResult, setActiveOpeningResult] = useState<PackDropResult | PackDropResult[] | null>(null)
+  const [openedPacksCount, setOpenedPacksCount] = useState<number>(1)
   const [activePvpRewardDrops, setActivePvpRewardDrops] = useState<PvpRewardDrop[] | null>(null)
   const [lastOpenedPackType, setLastOpenedPackType] = useState<PackId | null>(null)
   const [activeAppAlert, setActiveAppAlert] = useState<{
@@ -1129,6 +1130,7 @@ function App() {
     }
     const drop = await openPackByInstanceId(instanceId)
     if (drop) {
+      setOpenedPacksCount(1)
       setActiveOpeningResult(drop)
     }
   }
@@ -1139,9 +1141,10 @@ function App() {
     if (packObj) {
       setLastOpenedPackType(packObj.packId)
     }
-    const drops = await openMultiplePacksByInstanceIds(instanceIds)
-    if (drops.length > 0) {
-      setActiveOpeningResult(drops)
+    const result = await openMultiplePacksByInstanceIds(instanceIds)
+    if (result.drops.length > 0) {
+      setOpenedPacksCount(result.packsOpened || instanceIds.length)
+      setActiveOpeningResult(result.drops)
     }
   }
 
@@ -1149,9 +1152,11 @@ function App() {
     if (!lastOpenedPackType) return
     const drop = await openPackByType(lastOpenedPackType)
     if (drop) {
+      setOpenedPacksCount(1)
       setActiveOpeningResult(drop)
     } else {
       setActiveOpeningResult(null)
+      setOpenedPacksCount(1)
     }
   }
 
@@ -1168,6 +1173,7 @@ function App() {
       if (res.drops && Array.isArray(res.drops)) {
         setActivePvpRewardDrops(res.drops)
       } else {
+        setOpenedPacksCount(1)
         setActiveOpeningResult(res)
       }
     }
@@ -1733,8 +1739,10 @@ function App() {
         {activeOpeningResult && (
           <PackOpeningModal
             result={activeOpeningResult}
+            packsOpened={openedPacksCount}
             onClose={() => {
               setActiveOpeningResult(null)
+              setOpenedPacksCount(1)
               setScreen('jardin')
             }}
             onOpenAnother={handleOpenAnotherPack}

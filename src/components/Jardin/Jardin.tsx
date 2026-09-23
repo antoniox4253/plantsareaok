@@ -67,10 +67,10 @@ interface JardinProps {
   onPlay: (instanceIds?: string[]) => void | Promise<void>
   onOpenCollection: () => void
   onOpenShop: () => void
-  onOpenPack: (instanceId: string) => void
+  onOpenPack: (instanceId: string) => void | Promise<void>
   isAdmin?: boolean
   onOpenAdmin?: () => void
-  onOpenMultiplePacks?: (instanceIds: string[]) => void
+  onOpenMultiplePacks?: (instanceIds: string[]) => void | Promise<void>
   onStartUnlockRewardPack?: (packId: string) => Promise<{ success: boolean; error?: string }>
   onInstantUnlockRewardPack?: (packId: string) => Promise<{ success: boolean; goldSpent?: number; error?: string }>
   onOpenRewardPack?: (packId: string) => void
@@ -635,6 +635,7 @@ export default function Jardin({
   }
 
   const [openQuantities, setOpenQuantities] = useState<Record<string, number>>({})
+  const [isOpeningPacks, setIsOpeningPacks] = useState<boolean>(false)
   const [isFarmingCollapsed, setIsFarmingCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('plant_arena_jardin_farming_collapsed') === 'true'
@@ -1163,7 +1164,7 @@ export default function Jardin({
                         <button
                           type="button"
                           className="jardin-pack-qty-btn"
-                          disabled={currentQty <= 1}
+                          disabled={isOpeningPacks || currentQty <= 1}
                           onClick={() => {
                             soundManager.playSound('click', 0.4)
                             setQty(group.packId, currentQty - 1, maxCount)
@@ -1176,7 +1177,7 @@ export default function Jardin({
                         <button
                           type="button"
                           className="jardin-pack-qty-btn"
-                          disabled={currentQty >= maxCount}
+                          disabled={isOpeningPacks || currentQty >= maxCount}
                           onClick={() => {
                             soundManager.playSound('click', 0.4)
                             setQty(group.packId, currentQty + 1, maxCount)
@@ -1188,12 +1189,12 @@ export default function Jardin({
                         <button
                           type="button"
                           className="jardin-pack-qty-max"
-                          disabled={currentQty >= maxCount}
+                          disabled={isOpeningPacks || currentQty >= maxCount}
                           onClick={() => {
                             soundManager.playSound('click', 0.4)
                             setQty(group.packId, maxCount, maxCount)
                           }}
-                          title="Abrir todos"
+                          title="Seleccionar todos"
                         >
                           MÁX
                         </button>
@@ -1202,17 +1203,30 @@ export default function Jardin({
                       <button
                         type="button"
                         className="jardin-pack-card__open-btn"
-                        onClick={() => {
+                        disabled={isOpeningPacks}
+                        onClick={async () => {
+                          if (isOpeningPacks) return
                           soundManager.playSound('plantation', 0.8)
-                          if (currentQty === 1) {
-                            onOpenPack(group.instances[0].instanceId)
-                          } else if (onOpenMultiplePacks) {
-                            const ids = group.instances.slice(0, currentQty).map((p) => p.instanceId)
-                            onOpenMultiplePacks(ids)
+                          setIsOpeningPacks(true)
+                          try {
+                            if (currentQty === 1) {
+                              await onOpenPack(group.instances[0].instanceId)
+                            } else if (onOpenMultiplePacks) {
+                              const ids = group.instances.slice(0, currentQty).map((p) => p.instanceId)
+                              await onOpenMultiplePacks(ids)
+                            }
+                          } finally {
+                            setIsOpeningPacks(false)
                           }
                         }}
                       >
-                        {currentQty === 1 ? '✨ ABRIR SOBRE' : `✨ ABRIR (${currentQty})`}
+                        {isOpeningPacks
+                          ? '⏳ ABRIENDO...'
+                          : currentQty === 1
+                          ? '✨ ABRIR SOBRE'
+                          : currentQty === maxCount
+                          ? `✨ ABRIR TODOS (${currentQty})`
+                          : `✨ ABRIR (${currentQty})`}
                       </button>
                     </div>
                   </div>

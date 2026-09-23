@@ -16,6 +16,7 @@ export const inventoryService = {
   buyGold: SupabaseService.buyGold.bind(SupabaseService),
   buyVipPass: SupabaseService.buyVipPass.bind(SupabaseService),
   openPack: SupabaseService.openPack.bind(SupabaseService),
+  openMultiplePacks: SupabaseService.openMultiplePacks.bind(SupabaseService),
   fusePlant: SupabaseService.fusePlant.bind(SupabaseService),
   sproutPlantInstance: SupabaseService.sproutPlantInstance.bind(SupabaseService),
   equipPlantItem: SupabaseService.equipPlantItem.bind(SupabaseService),
