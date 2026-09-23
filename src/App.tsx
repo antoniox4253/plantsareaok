@@ -50,6 +50,7 @@ import { useOnlineUsers } from './hooks/useOnlineUsers'
 import { VIP_PASS_PRECIO_GEMAS } from './utils/gameConstants'
 import type { ArenaAdsRun, ArenaAdsLoot } from './utils/arenaAdsManager'
 import { ArenaAdsManager, getBotStatsForLevel } from './utils/arenaAdsManager'
+import { arenaAdsService } from './services/arenaAdsService'
 import {
   trackPageView,
   type GameScreen,
@@ -1104,6 +1105,20 @@ function App() {
     if (loot.gems > 0) {
       addUserTokens(loot.gems)
     }
+    if (loot.items && Object.keys(loot.items).length > 0) {
+      try {
+        const raw = localStorage.getItem('plant_arena_farming_inventory') || '{}'
+        const inv = JSON.parse(raw)
+        for (const [itemId, qty] of Object.entries(loot.items)) {
+          inv[itemId] = (inv[itemId] || 0) + Number(qty || 0)
+        }
+        localStorage.setItem('plant_arena_farming_inventory', JSON.stringify(inv))
+        window.dispatchEvent(new Event('plant_arena_farming_inventory_updated'))
+      } catch (e) {
+        console.error('Error al guardar items de cultivo en inventario:', e)
+      }
+    }
+    void arenaAdsService.claimLoot(loot)
     setArenaAdsRun(null)
     ArenaAdsManager.clearRun()
     void refreshFromServer()

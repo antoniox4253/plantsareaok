@@ -40,11 +40,12 @@ export interface ArenaAdsRun {
   level: number
   seed: number
   status: 'prep' | 'battle' | 'level_cleared' | 'game_over'
+  baseDeck: CartaDeMazo[]
   deck: CartaDeMazo[]
   accumulatedRewards: ArenaAdsLoot
   currentPrepChoice: ArenaAdsPrepChoice | null
   chosenAdvantage?: {
-    type: 'reward' | 'plant_normal' | 'plant_fused'
+    type: 'none' | 'reward' | 'plant_normal' | 'plant_fused'
     rewardClaimed?: ArenaAdsRewardOption
     plantChosen?: ArenaAdsPlantOption
   }
@@ -69,7 +70,7 @@ const ALL_NON_SUNFLOWER_PLANTS: PlantId[] = [
   'kernelpult',
 ]
 
-const FARMING_REWARD_ITEMS: Array<{ id: FarmingItemId; label: string; icon: string }> = [
+export const FARMING_REWARD_ITEMS: Array<{ id: FarmingItemId; label: string; icon: string }> = [
   { id: 'water', label: 'Agua Mágica', icon: '💧' },
   { id: 'fertilizer', label: 'Super Fertilizante', icon: '🌱' },
   { id: 'shovel_fragment', label: 'Fragmento de Pala', icon: '⛏️' },
@@ -92,7 +93,7 @@ function shuffleArray<T>(array: T[]): T[] {
 export function generateRewardOption(level: number): ArenaAdsRewardOption {
   const roll = Math.random()
   if (roll < 0.45) {
-    // Oro
+    // Oro (45%)
     const amount = 50 + level * 25
     return {
       type: 'gold',
@@ -101,7 +102,7 @@ export function generateRewardOption(level: number): ArenaAdsRewardOption {
       icon: '🪙',
     }
   } else if (roll < 0.75) {
-    // Gemas
+    // Gemas (30%)
     const amount = 5 + Math.floor(level * 2.5)
     return {
       type: 'gems',
@@ -110,7 +111,7 @@ export function generateRewardOption(level: number): ArenaAdsRewardOption {
       icon: '💎',
     }
   } else {
-    // Ítem de cultivo
+    // Ítem de cultivo (25%)
     const item = FARMING_REWARD_ITEMS[Math.floor(Math.random() * FARMING_REWARD_ITEMS.length)]
     const amount = 1 + (level >= 5 ? 1 : 0)
     return {
@@ -124,7 +125,7 @@ export function generateRewardOption(level: number): ArenaAdsRewardOption {
 }
 
 /**
- * Genera opciones de plantas normales (3 opciones aleatorias).
+ * Genera opciones de plantas normales (3 opciones aleatorias a Nivel 1).
  */
 export function generateNormalPlantOptions(): ArenaAdsPlantOption[] {
   const picked = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
@@ -136,13 +137,14 @@ export function generateNormalPlantOptions(): ArenaAdsPlantOption[] {
       isFused: false,
       level: 1,
       statRolls: [],
-      description: cfg?.description || 'Planta de combate estándar.',
+      description: 'Nivel 1 básico (Sin fusiones)',
     }
   })
 }
 
 /**
  * Genera opciones de plantas fusionadas con estadísticas potenciadas (3 opciones).
+ * Sincroniza exactamente el número de estrellas con las tiradas de fusión.
  */
 export function generateFusedPlantOptions(level: number): ArenaAdsPlantOption[] {
   const picked = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
@@ -150,27 +152,32 @@ export function generateFusedPlantOptions(level: number): ArenaAdsPlantOption[] 
 
   return picked.map((plantId) => {
     const cfg = PLANT_CONFIGS[plantId]
-    // 2 o 3 mejoras aleatorias según el nivel
+    // 2 a 4 mejoras según el nivel
     const rollCount = Math.min(4, 2 + Math.floor(level / 3))
     const statRolls: PlantStatKey[] = []
     for (let i = 0; i < rollCount; i++) {
       statRolls.push(rollPool[Math.floor(Math.random() * rollPool.length)])
     }
 
-    const bonusSummary = statRolls.map((s) => {
-      if (s === 'damage') return '+15% Daño'
-      if (s === 'hp') return '+15% Vida'
-      if (s === 'attackSpeed') return '+15% Cadencia'
-      return '-15% Recarga'
-    }).join(' • ')
+    const bonusSummary = statRolls
+      .map((s) => {
+        if (s === 'damage') return '+15% Daño'
+        if (s === 'hp') return '+15% Vida'
+        if (s === 'attackSpeed') return '+15% Cadencia'
+        return '-15% Recarga'
+      })
+      .join(' • ')
+
+    // Nivel sincronizado con el conteo de mejoras de fusión (estrellas)
+    const fusionLevel = Math.max(2, statRolls.length)
 
     return {
       plantId,
-      name: `${cfg?.name || plantId} [FUSIÓN]`,
+      name: cfg?.name || plantId,
       isFused: true,
-      level: 2 + Math.floor(level / 4),
+      level: fusionLevel,
       statRolls,
-      description: `Versión mejorada: ${bonusSummary}`,
+      description: `⭐${fusionLevel} Fusión: ${bonusSummary}`,
     }
   })
 }
@@ -187,13 +194,42 @@ export function generateLevelPrep(level: number): ArenaAdsPrepChoice {
 }
 
 /**
- * Genera un mazo de 5 cartas garantizando siempre el Girasol.
- * Si se incluye una planta elegida (normal o fusionada), se asegura en el mazo.
+ * Genera o sincroniza el mazo de 5 cartas garantizando siempre el Girasol.
+ * - Si se pasa baseDeck y chosenPlant:
+ *   Sincroniza el mazo reemplazando o actualizando exactamente esa planta
+ *   sin borrar las demás cartas obtenidas.
  */
-export function buildArenaAdsDeck(chosenPlant?: ArenaAdsPlantOption): CartaDeMazo[] {
+export function buildArenaAdsDeck(
+  chosenPlant?: ArenaAdsPlantOption,
+  baseDeck?: CartaDeMazo[]
+): CartaDeMazo[] {
+  // 1. Sincronización sobre un mazo ya existente
+  if (baseDeck && baseDeck.length === 5 && chosenPlant) {
+    const deck = baseDeck.map((c) => ({ ...c }))
+    const existingIdx = deck.findIndex((c) => c.plantId === chosenPlant.plantId)
+    if (existingIdx > 0) {
+      // Sincronizar la carta existente en el mazo con las estrellas y stats de la elegida
+      deck[existingIdx] = {
+        ...deck[existingIdx],
+        level: chosenPlant.level,
+        statRolls: [...chosenPlant.statRolls],
+      }
+    } else {
+      // Reemplazar la carta del slot 1 (primer slot no-girasol) conservando el resto del mazo
+      deck[1] = {
+        plantId: chosenPlant.plantId,
+        slot: 1,
+        level: chosenPlant.level,
+        statRolls: [...chosenPlant.statRolls],
+      }
+    }
+    return deck
+  }
+
+  // 2. Generación de mazo nuevo desde cero (Nivel 1 o nuevo nivel sin ventaja)
   const deck: CartaDeMazo[] = []
 
-  // 1. Girasol SIEMPRE en el primer slot (slot 0)
+  // Girasol SIEMPRE en el primer slot (slot 0)
   deck.push({
     plantId: 'sunflower',
     slot: 0,
@@ -201,19 +237,17 @@ export function buildArenaAdsDeck(chosenPlant?: ArenaAdsPlantOption): CartaDeMaz
     statRolls: [],
   })
 
-  // 2. Si eligió una planta especial, entra al slot 1
   const usedPlantIds = new Set<string>(['sunflower'])
   if (chosenPlant) {
     deck.push({
       plantId: chosenPlant.plantId,
       slot: 1,
       level: chosenPlant.level,
-      statRolls: chosenPlant.statRolls,
+      statRolls: [...chosenPlant.statRolls],
     })
     usedPlantIds.add(chosenPlant.plantId)
   }
 
-  // 3. Completar las restantes hasta 5 con plantas aleatorias únicas
   const availablePool = ALL_NON_SUNFLOWER_PLANTS.filter((p) => !usedPlantIds.has(p))
   const randomFill = shuffleArray(availablePool)
 
@@ -266,7 +300,6 @@ export function getBotStatsForLevel(level: number): {
   botName: string
   botDeck: CartaDeMazo[]
 } {
-  // Nivel 1 = 1000 Elo, Nivel 2 = 1200, Nivel 3 = 1400... Nivel 10+ = 2800+
   const botElo = Math.min(3200, 1000 + (level - 1) * 200)
   const botBaseHp = 600 + (level - 1) * 60
   const botDeck = generateBotDeckForLevel(level)
@@ -288,6 +321,9 @@ export class ArenaAdsManager {
       if (!raw) return null
       const parsed: ArenaAdsRun = JSON.parse(raw)
       if (parsed && typeof parsed.level === 'number' && parsed.status) {
+        if (!parsed.baseDeck || parsed.baseDeck.length === 0) {
+          parsed.baseDeck = parsed.deck ? [...parsed.deck] : buildArenaAdsDeck()
+        }
         return parsed
       }
     } catch (e) {
@@ -331,6 +367,7 @@ export class ArenaAdsManager {
       level: 1,
       seed,
       status: 'prep',
+      baseDeck: initialDeck,
       deck: initialDeck,
       accumulatedRewards: {
         gold: 0,
@@ -338,6 +375,9 @@ export class ArenaAdsManager {
         items: {},
       },
       currentPrepChoice: prep,
+      chosenAdvantage: {
+        type: 'none',
+      },
       updatedAt: Date.now(),
     }
 
@@ -347,8 +387,9 @@ export class ArenaAdsManager {
 
   /**
    * Aplica la elección de ventaja hecha por el jugador en la fase de preparación:
-   * - Si eligió 'reward', acumula el recurso y regenera el mazo con Sunflower + aleatorias.
-   * - Si eligió 'plant_normal' o 'plant_fused', inyecta la planta elegida al mazo.
+   * - Si elige 'reward': El mazo se mantiene como el baseDeck y se guarda el premio para sumarse al entrar a batalla.
+   * - Si elige 'plant_normal' o 'plant_fused': Sincroniza e inyecta la planta elegida al mazo sobre baseDeck.
+   * Ambas opciones son ESTRICTAMENTE MUTUAMENTE EXCLUYENTES.
    */
   static applyAdvantageChoice(
     run: ArenaAdsRun,
@@ -357,25 +398,25 @@ export class ArenaAdsManager {
       | { type: 'plant_normal'; option: ArenaAdsPlantOption }
       | { type: 'plant_fused'; option: ArenaAdsPlantOption }
   ): ArenaAdsRun {
+    if (!run.baseDeck || run.baseDeck.length === 0) {
+      run.baseDeck = run.deck ? [...run.deck] : buildArenaAdsDeck()
+    }
+
     if (choice.type === 'reward') {
-      const opt = choice.option
-      if (opt.type === 'gold') {
-        run.accumulatedRewards.gold += opt.amount
-      } else if (opt.type === 'gems') {
-        run.accumulatedRewards.gems += opt.amount
-      } else if (opt.type === 'item' && opt.itemId) {
-        run.accumulatedRewards.items[opt.itemId] = (run.accumulatedRewards.items[opt.itemId] || 0) + opt.amount
-      }
-      run.deck = buildArenaAdsDeck()
+      // Revertir mazo al baseDeck (sin planta especial agregada)
+      run.deck = run.baseDeck.map((c) => ({ ...c }))
       run.chosenAdvantage = {
         type: 'reward',
-        rewardClaimed: opt,
+        rewardClaimed: choice.option,
+        plantChosen: undefined,
       }
     } else {
-      run.deck = buildArenaAdsDeck(choice.option)
+      // Sincronizar la planta elegida sobre el baseDeck
+      run.deck = buildArenaAdsDeck(choice.option, run.baseDeck)
       run.chosenAdvantage = {
         type: choice.type,
         plantChosen: choice.option,
+        rewardClaimed: undefined,
       }
     }
 
@@ -385,9 +426,24 @@ export class ArenaAdsManager {
 
   /**
    * Marca el inicio del combate para el nivel actual.
+   * Si la ventaja elegida fue 'reward', ahora se consolida en accumulatedRewards.
    */
   static startBattle(run: ArenaAdsRun): ArenaAdsRun {
     run.status = 'battle'
+
+    // Consolidar botín si se eligió la Opción A (Recompensa)
+    if (run.chosenAdvantage?.type === 'reward' && run.chosenAdvantage.rewardClaimed) {
+      const opt = run.chosenAdvantage.rewardClaimed
+      if (opt.type === 'gold') {
+        run.accumulatedRewards.gold += opt.amount
+      } else if (opt.type === 'gems') {
+        run.accumulatedRewards.gems += opt.amount
+      } else if (opt.type === 'item' && opt.itemId) {
+        run.accumulatedRewards.items[opt.itemId] =
+          (run.accumulatedRewards.items[opt.itemId] || 0) + opt.amount
+      }
+    }
+
     this.saveRun(run)
     return run
   }
@@ -410,9 +466,13 @@ export class ArenaAdsManager {
     run.level += 1
     run.status = 'prep'
     run.currentPrepChoice = generateLevelPrep(run.level)
-    run.chosenAdvantage = undefined
-    // Regenerar mazo para nuevo nivel con girasol siempre presente
-    run.deck = buildArenaAdsDeck()
+    run.chosenAdvantage = { type: 'none' }
+
+    // Generar nuevo mazo base con girasol siempre presente
+    const newBaseDeck = buildArenaAdsDeck()
+    run.baseDeck = newBaseDeck
+    run.deck = newBaseDeck
+
     this.saveRun(run)
     return run
   }

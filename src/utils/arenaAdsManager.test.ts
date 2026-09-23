@@ -62,17 +62,18 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     expect(uniqueIds.size).toBe(5)
   })
 
-  it('3. Genera opciones válidas en la fase de preparación', () => {
+  it('3. Genera opciones válidas en la fase de preparación con estrellas sincronizadas', () => {
     const prep = generateLevelPrep(1)
     expect(prep.rewardOption).toBeDefined()
     expect(['gold', 'gems', 'item']).toContain(prep.rewardOption.type)
     expect(prep.normalPlantOptions.length).toBe(3)
     expect(prep.fusedPlantOptions.length).toBe(3)
 
-    // Las fusionadas deben tener statRolls y flag isFused
+    // Las fusionadas deben tener statRolls y su nivel sincronizado con la cantidad de estrellas
     for (const fused of prep.fusedPlantOptions) {
       expect(fused.isFused).toBe(true)
       expect(fused.statRolls.length).toBeGreaterThan(0)
+      expect(fused.level).toBe(Math.max(2, fused.statRolls.length))
     }
   })
 
@@ -97,40 +98,83 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     expect(localStorage.getItem(ARENA_ADS_STORAGE_KEY)).toBeNull()
   })
 
-  it('5. Aplicar ventaja: acumula recompensas o integra plantas fusionadas', () => {
+  it('5. Exclusividad mutua estricta: Opción A (Botín) u Opción B (Planta) no se pueden elegir ambas', () => {
     let run = ArenaAdsManager.startNewRun()
 
-    // Caso A: Elegir Recompensa de Oro
     const rewardGold: ArenaAdsRewardOption = {
       type: 'gold',
       amount: 150,
       label: '+150 Oro',
       icon: '🪙',
     }
-    run = ArenaAdsManager.applyAdvantageChoice(run, { type: 'reward', option: rewardGold })
-    expect(run.accumulatedRewards.gold).toBe(150)
-    expect(run.chosenAdvantage?.type).toBe('reward')
-
-    // Caso B: Elegir Planta Fusionada para el siguiente nivel
-    run = ArenaAdsManager.advanceToNextLevel(run)
-    expect(run.level).toBe(2)
-
     const fusedOpt: ArenaAdsPlantOption = {
       plantId: 'bonkchoy',
-      name: 'Bonk Choy [FUSIÓN]',
+      name: 'Bonk Choy',
       isFused: true,
       level: 3,
-      statRolls: ['damage', 'attackSpeed'],
+      statRolls: ['damage', 'attackSpeed', 'hp'],
       description: 'Potente',
     }
+
+    // Paso 1: Usuario elige primero Opción A (Botín)
+    run = ArenaAdsManager.applyAdvantageChoice(run, { type: 'reward', option: rewardGold })
+    expect(run.chosenAdvantage?.type).toBe('reward')
+    expect(run.chosenAdvantage?.rewardClaimed).toEqual(rewardGold)
+
+    // Paso 2: Usuario cambia de opinión y elige Opción B (Planta Fusionada)
     run = ArenaAdsManager.applyAdvantageChoice(run, { type: 'plant_fused', option: fusedOpt })
-    expect(run.deck[0].plantId).toBe('sunflower')
-    expect(run.deck[1].plantId).toBe('bonkchoy')
-    expect(run.deck[1].level).toBe(3)
-    expect(run.deck[1].statRolls).toEqual(['damage', 'attackSpeed'])
+    expect(run.chosenAdvantage?.type).toBe('plant_fused')
+    expect(run.chosenAdvantage?.rewardClaimed).toBeUndefined()
+    expect(run.chosenAdvantage?.plantChosen).toEqual(fusedOpt)
+
+    // Al entrar a batalla, SOLO se aplica la planta elegida y NO el botín de la opción A cancelada
+    const initialGold = run.accumulatedRewards.gold
+    run = ArenaAdsManager.startBattle(run)
+    expect(run.accumulatedRewards.gold).toBe(initialGold) // No se cobró el botín de la opción A cancelada
+    expect(run.deck.some((c) => c.plantId === 'bonkchoy' && c.level === 3)).toBe(true)
   })
 
-  it('6. Escalado de bots según el nivel de la mazmorra', () => {
+  it('6. Sincronización de estrellas entre la planta elegida y el mazo activo', () => {
+    let run = ArenaAdsManager.startNewRun()
+
+    // Supongamos que el mazo tiene Bonk Choy nivel 1
+    run.baseDeck = [
+      { plantId: 'sunflower', slot: 0, level: 1, statRolls: [] },
+      { plantId: 'bonkchoy', slot: 1, level: 1, statRolls: [] },
+      { plantId: 'wallnut', slot: 2, level: 1, statRolls: [] },
+      { plantId: 'peashooter', slot: 3, level: 1, statRolls: [] },
+      { plantId: 'melonpult', slot: 4, level: 1, statRolls: [] },
+    ]
+    run.deck = [...run.baseDeck]
+
+    // En el cambio se ofrece Bonk Choy ⭐3 Fusión
+    const bonkChoyLvl3: ArenaAdsPlantOption = {
+      plantId: 'bonkchoy',
+      name: 'Bonk Choy',
+      isFused: true,
+      level: 3,
+      statRolls: ['damage', 'hp', 'attackSpeed'],
+      description: '⭐3 Fusión',
+    }
+
+    // Al elegirla, el Bonk Choy del mazo se sincroniza inmediatamente a ⭐3 y adopta las tiradas
+    run = ArenaAdsManager.applyAdvantageChoice(run, { type: 'plant_fused', option: bonkChoyLvl3 })
+    const deckBonk = run.deck.find((c) => c.plantId === 'bonkchoy')
+    expect(deckBonk).toBeDefined()
+    expect(deckBonk?.level).toBe(3)
+    expect(deckBonk?.statRolls).toHaveLength(3)
+
+    // Si luego cambia a opción A (Botín), el mazo se resetea al baseDeck donde Bonk Choy vuelve a ser ⭐1
+    run = ArenaAdsManager.applyAdvantageChoice(run, {
+      type: 'reward',
+      option: { type: 'gold', amount: 50, label: '+50 Oro', icon: '🪙' },
+    })
+    const revertedBonk = run.deck.find((c) => c.plantId === 'bonkchoy')
+    expect(revertedBonk?.level).toBe(1)
+    expect(revertedBonk?.statRolls).toHaveLength(0)
+  })
+
+  it('7. Escalado de bots según el nivel de la mazmorra', () => {
     const botLvl1 = getBotStatsForLevel(1)
     const botLvl5 = getBotStatsForLevel(5)
     const botLvl10 = getBotStatsForLevel(10)
@@ -146,7 +190,7 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     expect(botLvl10.botBaseHp).toBeGreaterThan(botLvl5.botBaseHp)
   })
 
-  it('7. Flujo completo: victoria de nivel y avance o liquidación', () => {
+  it('8. Flujo completo: victoria de nivel y avance o liquidación', () => {
     let run = ArenaAdsManager.startNewRun()
     run = ArenaAdsManager.startBattle(run)
     expect(run.status).toBe('battle')

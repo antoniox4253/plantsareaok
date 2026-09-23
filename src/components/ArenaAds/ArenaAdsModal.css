@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 6px 10px;
   animation: arenaAdsFadeIn 0.2s ease-out;
 }
 
@@ -27,11 +27,11 @@
 .arena-ads-modal {
   background: linear-gradient(180deg, #182234 0%, #0d1522 100%);
   border: 2px solid #38bdf8;
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: 0 0 35px rgba(56, 189, 248, 0.35), 0 20px 50px rgba(0, 0, 0, 0.85);
   width: 100%;
   max-width: 880px;
-  max-height: min(520px, 96vh);
+  max-height: min(500px, 96vh);
   display: flex;
   flex-direction: column;
   color: #fff;
@@ -45,7 +45,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 6px 14px;
   background: linear-gradient(90deg, rgba(56, 189, 248, 0.18) 0%, rgba(14, 165, 233, 0.06) 100%);
   border-bottom: 1px solid rgba(56, 189, 248, 0.3);
 }
@@ -53,17 +53,17 @@
 .arena-ads-title-box {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .arena-ads-icon {
-  font-size: 26px;
+  font-size: 22px;
   filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
 }
 
 .arena-ads-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   letter-spacing: 0.8px;
   color: #f0f9ff;
@@ -73,7 +73,7 @@
 
 .arena-ads-subtitle {
   margin: 1px 0 0 0;
-  font-size: 11px;
+  font-size: 10px;
   color: #7dd3fc;
   font-weight: 600;
   line-height: 1.1;
@@ -82,18 +82,18 @@
 .arena-ads-header-badges {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .arena-ads-badge {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 4px 9px;
-  font-size: 12px;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -111,10 +111,10 @@
   background: rgba(239, 68, 68, 0.2);
   border: 1px solid rgba(239, 68, 68, 0.5);
   color: #fca5a5;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   cursor: pointer;
   display: flex;
@@ -129,21 +129,21 @@
   transform: scale(1.08);
 }
 
-/* Content Principal - Flex 1 con soporte de scroll suave solo si es estrictamente necesario */
+/* Content Principal */
 .arena-ads-content {
   flex: 1;
   min-height: 0;
-  padding: 10px 16px;
+  padding: 8px 14px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(56, 189, 248, 0.4) transparent;
 }
 
 .arena-ads-content::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 .arena-ads-content::-webkit-scrollbar-thumb {
   background: rgba(56, 189, 248, 0.4);
@@ -154,26 +154,26 @@
 .arena-ads-banner-ad-box--slim {
   background: rgba(2, 6, 23, 0.85);
   border: 1px dashed rgba(56, 189, 248, 0.45);
-  border-radius: 8px;
-  padding: 4px 10px;
+  border-radius: 6px;
+  padding: 3px 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .arena-ads-banner-ad-tag {
-  font-size: 9.5px;
+  font-size: 9px;
   color: #38bdf8;
-  letter-spacing: 1.2px;
+  letter-spacing: 1px;
   font-weight: 900;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .arena-ads-banner-ad-text {
-  font-size: 11px;
+  font-size: 10.5px;
   color: #cbd5e1;
   font-weight: 600;
   white-space: nowrap;
@@ -181,11 +181,11 @@
   text-overflow: ellipsis;
 }
 
-/* Lobby 2-Column Grid Layout para Modo Horizontal */
+/* Lobby 2-Column Grid Layout */
 .arena-ads-lobby-columns {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
   min-height: 0;
 }
@@ -200,36 +200,36 @@
 .arena-ads-rules-card {
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
 .arena-ads-rules-title {
-  margin: 0 0 8px 0;
-  font-size: 13.5px;
+  margin: 0 0 6px 0;
+  font-size: 12.5px;
   font-weight: 800;
   color: #38bdf8;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .arena-ads-rules-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 5px;
 }
 
 .arena-ads-rule-item {
   background: rgba(30, 41, 59, 0.65);
-  border-radius: 8px;
-  padding: 6px 8px;
-  border-left: 2.5px solid #38bdf8;
-  font-size: 11px;
-  line-height: 1.35;
+  border-radius: 6px;
+  padding: 5px 7px;
+  border-left: 2px solid #38bdf8;
+  font-size: 10px;
+  line-height: 1.3;
   color: #e2e8f0;
 }
 
@@ -241,8 +241,8 @@
 .arena-ads-sponsor-box {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
   border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -250,9 +250,9 @@
 }
 
 .arena-ads-sponsor-badge {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   color: #38bdf8;
   text-transform: uppercase;
 }
@@ -260,45 +260,45 @@
 .arena-ads-sponsor-content {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   text-align: left;
-  margin: 6px 0;
+  margin: 4px 0;
 }
 
 .arena-ads-sponsor-icon {
-  font-size: 28px;
+  font-size: 24px;
   flex-shrink: 0;
 }
 
 .arena-ads-sponsor-info strong {
-  font-size: 12px;
+  font-size: 11px;
   color: #f8fafc;
   display: block;
 }
 
 .arena-ads-sponsor-info p {
-  margin: 2px 0 0 0;
-  font-size: 10px;
+  margin: 1px 0 0 0;
+  font-size: 9.5px;
   color: #94a3b8;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .arena-ads-sponsor-status {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  font-size: 10px;
+  gap: 5px;
+  font-size: 9.5px;
   color: #34d399;
   font-weight: 600;
 }
 
 .arena-ads-sponsor-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: #34d399;
-  box-shadow: 0 0 6px #34d399;
+  box-shadow: 0 0 5px #34d399;
   animation: pulseDot 1.5s infinite;
 }
 
@@ -311,12 +311,12 @@
 .arena-ads-active-run-card {
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(56, 189, 248, 0.15) 100%);
   border: 1.5px solid #a855f7;
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 6px;
+  gap: 5px;
 }
 
 .arena-ads-run-header {
@@ -326,30 +326,30 @@
 }
 
 .arena-ads-run-title {
-  font-size: 13.5px;
+  font-size: 12px;
   font-weight: 900;
   color: #f5d0fe;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .arena-ads-cache-tag {
-  font-size: 10px;
+  font-size: 9.5px;
   color: #cbd5e1;
 }
 
 .arena-ads-run-desc {
   margin: 0;
-  font-size: 11px;
+  font-size: 10px;
   color: #e2e8f0;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .arena-ads-loot-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .arena-ads-loot-pills--center {
@@ -358,14 +358,14 @@
 
 .arena-ads-loot-pill {
   background: rgba(15, 23, 42, 0.9);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 11px;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 10.5px;
   font-weight: 800;
   border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .arena-ads-loot-pill--gold {
@@ -383,20 +383,24 @@
   border-color: rgba(34, 197, 94, 0.5);
 }
 
-/* Preparation Phase - Ultra Compact */
+/* =========================================================================
+   FASE DE PREPARACIÓN ULTRA COMPACTA (ZERO SCROLL)
+   ========================================================================= */
 .arena-ads-prep-layout {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
 }
 
-.arena-ads-prep-intro {
+.arena-ads-prep-ticker {
   display: flex;
   align-items: center;
   gap: 8px;
   background: rgba(15, 23, 42, 0.7);
-  padding: 4px 10px;
-  border-radius: 8px;
+  padding: 3px 8px;
+  border-radius: 6px;
   border: 1px solid rgba(56, 189, 248, 0.2);
   flex-shrink: 0;
 }
@@ -404,38 +408,50 @@
 .arena-ads-prep-level-badge {
   background: #9333ea;
   color: #fff;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 900;
-  padding: 2px 7px;
-  border-radius: 5px;
+  padding: 1px 6px;
+  border-radius: 4px;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
-.arena-ads-prep-intro-text {
-  font-size: 11px;
+.arena-ads-prep-instruction {
+  font-size: 10.5px;
   color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arena-ads-prep-instruction strong {
+  color: #facc15;
 }
 
 .arena-ads-choice-columns {
   display: grid;
   grid-template-columns: 1fr 1.15fr;
-  gap: 10px;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
 }
 
 .arena-ads-choice-card {
   background: rgba(15, 23, 42, 0.75);
   border: 1.5px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 8px 10px;
+  border-radius: 10px;
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   position: relative;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .arena-ads-choice-card--active {
   border-color: #38bdf8;
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
   background: rgba(15, 23, 42, 0.95);
 }
 
@@ -444,7 +460,7 @@
 }
 .arena-ads-choice-card--reward.arena-ads-choice-card--active {
   border-color: #facc15;
-  box-shadow: 0 0 15px rgba(250, 204, 21, 0.3);
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
 }
 
 .arena-ads-choice-header {
@@ -454,60 +470,72 @@
 }
 
 .arena-ads-choice-title {
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 800;
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
-.arena-ads-choice-selected-tag {
-  color: #facc15;
-  font-size: 10px;
+.arena-ads-choice-indicator {
+  font-size: 9px;
   font-weight: 800;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #94a3b8;
 }
 
-.arena-ads-choice-selected-tag--blue {
-  color: #38bdf8;
+.arena-ads-choice-indicator--active {
+  background: #facc15;
+  color: #422006;
+}
+
+.arena-ads-choice-indicator--blue.arena-ads-choice-indicator--active {
+  background: #38bdf8;
+  color: #032030;
 }
 
 .arena-ads-reward-preview {
   background: rgba(30, 41, 59, 0.7);
   border-radius: 8px;
-  padding: 8px;
+  padding: 6px 8px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: 2px;
   border: 1px solid rgba(234, 179, 8, 0.25);
+  flex: 1;
 }
 
 .arena-ads-reward-icon {
-  font-size: 26px;
+  font-size: 22px;
 }
 
 .arena-ads-reward-val {
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 900;
   color: #fef08a;
 }
 
 .arena-ads-reward-desc {
-  font-size: 10px;
+  font-size: 9.5px;
   color: #94a3b8;
   margin: 0;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 /* Plant SubTabs */
 .arena-ads-subtabs {
   display: flex;
   background: rgba(2, 6, 23, 0.8);
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 2px;
-  gap: 3px;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .arena-ads-subtab-btn {
@@ -515,10 +543,10 @@
   background: transparent;
   border: none;
   color: #94a3b8;
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 700;
-  padding: 3px;
-  border-radius: 4px;
+  padding: 2px;
+  border-radius: 3px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -532,23 +560,26 @@
   background: #9333ea;
 }
 
-/* Plant Options Grid */
+/* Plant Options List */
 .arena-ads-plant-options-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  flex: 1;
+  min-height: 0;
+  justify-content: space-around;
 }
 
 .arena-ads-plant-option-item {
   background: rgba(30, 41, 59, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 4px 8px;
+  border-radius: 5px;
+  padding: 2px 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
 }
 
 .arena-ads-plant-option-item:hover {
@@ -557,19 +588,20 @@
 }
 
 .arena-ads-plant-option-item--selected {
-  background: rgba(14, 165, 233, 0.2);
+  background: rgba(14, 165, 233, 0.25);
   border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
 }
 
 .arena-ads-plant-info {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .arena-ads-plant-icon {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
 }
 
@@ -579,24 +611,26 @@
 }
 
 .arena-ads-plant-name {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   color: #fff;
+  line-height: 1.1;
 }
 
 .arena-ads-plant-fused-badge {
-  font-size: 9px;
+  font-size: 8.5px;
   color: #d8b4fe;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .arena-ads-plant-select-btn {
   background: rgba(255, 255, 255, 0.1);
   border: none;
   color: #fff;
-  border-radius: 4px;
-  padding: 2px 7px;
-  font-size: 9.5px;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 8.5px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -606,15 +640,15 @@
   color: #032030;
 }
 
-/* Final Deck Preview Bar */
+/* Final Deck Preview Bar Sincronizado */
 .arena-ads-deck-preview {
   background: rgba(2, 6, 23, 0.85);
   border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 10px;
-  padding: 6px 10px;
+  border-radius: 8px;
+  padding: 4px 8px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
   flex-shrink: 0;
 }
 
@@ -622,13 +656,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   color: #7dd3fc;
 }
 
 .arena-ads-deck-preview-sub {
-  font-size: 9.5px;
+  font-size: 8.5px;
   color: #94a3b8;
 }
 
@@ -636,43 +670,44 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .arena-ads-deck-card {
-  width: 44px;
-  height: 56px;
+  width: 36px;
+  height: 48px;
   background: rgba(30, 41, 59, 0.9);
   border: 1.5px solid #52b788;
-  border-radius: 6px;
+  border-radius: 5px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .arena-ads-deck-card--sunflower {
   border-color: #facc15;
-  box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.4);
 }
 
 .arena-ads-deck-card--fused {
   border-color: #c084fc;
-  box-shadow: 0 0 8px rgba(192, 132, 252, 0.5);
+  box-shadow: 0 0 6px rgba(192, 132, 252, 0.5);
 }
 
 .arena-ads-deck-card-img {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
 .arena-ads-deck-card-tag {
-  font-size: 8px;
+  font-size: 7.5px;
   font-weight: 800;
   text-align: center;
-  max-width: 40px;
+  max-width: 34px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -683,16 +718,29 @@
   position: absolute;
   top: 1px;
   left: 1px;
-  font-size: 7.5px;
+  font-size: 7px;
   background: rgba(0, 0, 0, 0.7);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.arena-ads-deck-card-stars {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  font-size: 7.5px;
+  font-weight: 900;
+  color: #fef08a;
+  background: rgba(0, 0, 0, 0.75);
   border-radius: 3px;
   padding: 0 2px;
+  line-height: 1;
 }
 
 /* Cashout View */
 .arena-ads-cashout-view {
   text-align: center;
-  padding: 20px 10px;
+  padding: 16px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -700,45 +748,45 @@
 }
 
 .arena-ads-cashout-icon {
-  font-size: 36px;
-  margin-bottom: 6px;
+  font-size: 32px;
+  margin-bottom: 4px;
 }
 
 .arena-ads-cashout-title {
   color: #facc15;
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
 }
 
 .arena-ads-cashout-desc {
   color: #94a3b8;
-  font-size: 11px;
-  max-width: 420px;
-  margin: 4px auto 14px;
+  font-size: 10.5px;
+  max-width: 400px;
+  margin: 3px auto 10px;
 }
 
-/* Footer & Buttons - Siempre Fijo al Fondo */
+/* Footer & Buttons */
 .arena-ads-footer {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 6px 14px;
   background: rgba(2, 6, 23, 0.95);
   border-top: 1px solid rgba(56, 189, 248, 0.3);
-  gap: 10px;
+  gap: 8px;
 }
 
 .arena-ads-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 18px;
-  font-size: 13px;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
   font-weight: 900;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
   border: none;
@@ -753,7 +801,7 @@
 .arena-ads-btn--primary {
   background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
   color: #032030;
-  box-shadow: 0 3px 12px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
 }
 
 .arena-ads-btn--primary:hover:not(:disabled) {
@@ -764,17 +812,12 @@
 .arena-ads-btn--cashout {
   background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%);
   color: #422006;
-  box-shadow: 0 3px 12px rgba(250, 204, 21, 0.35);
+  box-shadow: 0 2px 10px rgba(250, 204, 21, 0.35);
 }
 
 .arena-ads-btn--cashout:hover:not(:disabled) {
   transform: translateY(-1px);
   background: linear-gradient(180deg, #fde047 0%, #a16207 100%);
-}
-
-.arena-ads-btn--compact {
-  padding: 4px 10px;
-  font-size: 11px;
 }
 
 .arena-ads-btn--secondary {
@@ -786,125 +829,4 @@
 .arena-ads-btn--secondary:hover:not(:disabled) {
   background: rgba(71, 85, 105, 0.95);
   color: #fff;
-}
-
-/* Interstitial Modal (Pop-up Cascarón) */
-.arena-ads-interstitial-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.92);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  animation: arenaAdsFadeIn 0.2s ease-out;
-}
-
-.arena-ads-interstitial-card {
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  border: 2px solid #38bdf8;
-  border-radius: 16px;
-  max-width: 520px;
-  width: 100%;
-  padding: 16px 20px;
-  box-shadow: 0 0 40px rgba(56, 189, 248, 0.4);
-  text-align: center;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.arena-ads-interstitial-title {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 900;
-  color: #f0f9ff;
-}
-
-.arena-ads-interstitial-ad-shell {
-  background: rgba(2, 6, 23, 0.9);
-  border: 1.5px dashed rgba(56, 189, 248, 0.5);
-  border-radius: 10px;
-  padding: 18px 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.arena-ads-interstitial-ad-tag {
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  color: #38bdf8;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.arena-ads-interstitial-ad-mock {
-  font-size: 32px;
-}
-
-.arena-ads-interstitial-ad-text {
-  font-size: 12px;
-  color: #94a3b8;
-  margin: 0;
-}
-
-/* =========================================================================
-   REGLAS ESPECÍFICAS PARA MODO HORIZONTAL / MOBILE LANDSCAPE (ZERO SCROLL)
-   ========================================================================= */
-@media (orientation: landscape), (max-height: 560px) {
-  .arena-ads-backdrop {
-    padding: 4px 6px;
-  }
-
-  .arena-ads-modal {
-    max-height: min(510px, 98vh);
-    border-radius: 12px;
-  }
-
-  .arena-ads-header {
-    padding: 5px 12px;
-  }
-
-  .arena-ads-title {
-    font-size: 16px;
-  }
-
-  .arena-ads-subtitle {
-    font-size: 10px;
-  }
-
-  .arena-ads-icon {
-    font-size: 22px;
-  }
-
-  .arena-ads-badge {
-    padding: 3px 7px;
-    font-size: 11px;
-  }
-
-  .arena-ads-close-btn {
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-  }
-
-  .arena-ads-content {
-    padding: 6px 12px;
-    gap: 6px;
-  }
-
-  .arena-ads-footer {
-    padding: 6px 12px;
-  }
-
-  .arena-ads-btn {
-    padding: 6px 14px;
-    font-size: 12px;
-    border-radius: 6px;
-  }
 }

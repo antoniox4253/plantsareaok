@@ -48,12 +48,22 @@ export default function ArenaAdsModal({
       } else {
         setActiveView('lobby')
       }
+      if (stored.chosenAdvantage?.type === 'reward') {
+        setChosenAdvantageType('reward')
+        setSelectedPlantOption(null)
+      } else if (stored.chosenAdvantage?.type?.startsWith('plant')) {
+        setChosenAdvantageType('plant')
+        setSelectedPlantOption(stored.chosenAdvantage.plantChosen || null)
+      } else {
+        setChosenAdvantageType('none')
+        setSelectedPlantOption(null)
+      }
     } else {
       setActiveRun(null)
       setActiveView('lobby')
+      setChosenAdvantageType('none')
+      setSelectedPlantOption(null)
     }
-    setChosenAdvantageType('none')
-    setSelectedPlantOption(null)
   }, [isOpen])
 
   const totalAccumulatedLoot = useMemo(() => {
@@ -103,7 +113,7 @@ export default function ArenaAdsModal({
     setActiveView('prep')
   }
 
-  // Elegir Recompensa como ventaja
+  // Elegir Recompensa como ventaja (MUTUAMENTE EXCLUYENTE CON PLANTA)
   const handleSelectRewardAdvantage = (reward: ArenaAdsRewardOption) => {
     if (!activeRun) return
     soundManager.playSound('click', 0.5)
@@ -113,9 +123,10 @@ export default function ArenaAdsModal({
     })
     setActiveRun({ ...updated })
     setChosenAdvantageType('reward')
+    setSelectedPlantOption(null) // Deselecciona planta de forma estricta
   }
 
-  // Elegir Planta (Normal o Fusionada) como ventaja
+  // Elegir Planta como ventaja (MUTUAMENTE EXCLUYENTE CON RECOMPENSA)
   const handleSelectPlantAdvantage = (plant: ArenaAdsPlantOption) => {
     if (!activeRun) return
     soundManager.playSound('click', 0.5)
@@ -125,10 +136,10 @@ export default function ArenaAdsModal({
       option: plant,
     })
     setActiveRun({ ...updated })
-    setChosenAdvantageType('plant')
+    setChosenAdvantageType('plant') // Cancela la recompensa de forma estricta
   }
 
-  // Retirarse y reclamar botín (guardando en backend y cliente)
+  // Retirarse y reclamar botín (guardando en backend y en inventario local)
   const handleCashout = async () => {
     if (!activeRun) return
     setIsProcessing(true)
@@ -136,8 +147,23 @@ export default function ArenaAdsModal({
       soundManager.playSound('victory', 0.8)
       const loot = { ...activeRun.accumulatedRewards }
 
-      // Acreditar botín autoritativamente en Supabase
+      // 1. Acreditar en backend Supabase (oro, gemas, e items de cultivo)
       await arenaAdsService.claimLoot(loot)
+
+      // 2. Acreditar ítems de cultivo en localStorage
+      if (loot.items && Object.keys(loot.items).length > 0) {
+        try {
+          const raw = localStorage.getItem('plant_arena_farming_inventory') || '{}'
+          const inv = JSON.parse(raw)
+          for (const [itemId, qty] of Object.entries(loot.items)) {
+            inv[itemId] = (inv[itemId] || 0) + Number(qty || 0)
+          }
+          localStorage.setItem('plant_arena_farming_inventory', JSON.stringify(inv))
+          window.dispatchEvent(new Event('plant_arena_farming_inventory_updated'))
+        } catch (e) {
+          console.error('Error al guardar items de cultivo en inventario:', e)
+        }
+      }
 
       ArenaAdsManager.clearRun()
       setActiveRun(null)
@@ -193,7 +219,7 @@ export default function ArenaAdsModal({
             <div className="arena-ads-cashout-icon">🎉</div>
             <h2 className="arena-ads-cashout-title">¡TE HAS RETIRADO CON ÉXITO!</h2>
             <p className="arena-ads-cashout-desc">
-              Has asegurado tu botín acumulado antes de caer en combate. Todo lo obtenido se ha sumado a tu cuenta.
+              Has asegurado tu botín acumulado antes de caer en combate. Todos los recursos se han sumado a tu cuenta.
             </p>
 
             <div className="arena-ads-loot-pills arena-ads-loot-pills--center">
@@ -243,11 +269,11 @@ export default function ArenaAdsModal({
                       <span>⚔️</span>
                       <span>EXPEDICIÓN EN CURSO — NIVEL {activeRun.level}</span>
                     </div>
-                    <span className="arena-ads-cache-tag">Guardada en caché local</span>
+                    <span className="arena-ads-cache-tag">Guardada en caché</span>
                   </div>
 
                   <p className="arena-ads-run-desc">
-                    Tienes una expedición en curso. Puedes continuar enfrentando bots o retirarte para reclamar tu botín acumulado.
+                    Tienes una expedición activa. Puedes continuar luchando o retirarte para reclamar tu botín acumulado.
                   </p>
 
                   {totalAccumulatedLoot && (
@@ -274,13 +300,13 @@ export default function ArenaAdsModal({
                   </h3>
                   <div className="arena-ads-rules-grid">
                     <div className="arena-ads-rule-item">
-                      <strong>1. Paga 100 🪙:</strong> Inicia tu expedición infinita contra bots.
+                      <strong>1. Entrada 100 🪙:</strong> Inicia tu expedición infinita contra bots.
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>2. Preparación:</strong> Elige Botín extra o Plantas (normales/fusiones).
+                      <strong>2. Preparación:</strong> Elige Botín extra O Reforzar mazo (1 sola opción).
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>3. 🌻 Girasol Fijo:</strong> Garantizado en tu mazo de 5 cartas.
+                      <strong>3. 🌻 Girasol Fijo:</strong> Siempre presente en tu mazo de 5 cartas.
                     </div>
                     <div className="arena-ads-rule-item">
                       <strong>4. ⚠️ Retírate a Tiempo:</strong> ¡Si caes derrotado pierdes todo tu botín!
@@ -307,30 +333,39 @@ export default function ArenaAdsModal({
             </div>
           </div>
         ) : (
-          /* ── VISTA FASE DE PREPARACIÓN (NIVEL X) ── */
+          /* ── VISTA FASE DE PREPARACIÓN ULTRA COMPACTA (ZERO SCROLL) ── */
           <div className="arena-ads-content arena-ads-prep-layout">
-            <div className="arena-ads-prep-intro">
-              <span className="arena-ads-prep-level-badge">NIVEL {activeRun?.level}</span>
-              <span className="arena-ads-prep-intro-text">
-                Elige tu ventaja: puedes asegurar recursos al botín o reforzar tu mazo con una planta clave.
+            {/* Ticker Slim de Instrucciones */}
+            <div className="arena-ads-prep-ticker">
+              <span className="arena-ads-prep-level-badge">⚔️ NIVEL {activeRun?.level}</span>
+              <span className="arena-ads-prep-instruction">
+                Elige <strong>1 SOLA OPCIÓN</strong> para este nivel: 🎁 Botín Extra <em>O</em> 🌱 Reforzar Mazo
               </span>
             </div>
 
-            {/* Columnas de Elección: RECOMPENSA vs PLANTA */}
+            {/* Columnas de Elección: RECOMPENSA vs PLANTA (MUTUAMENTE EXCLUYENTES) */}
             <div className="arena-ads-choice-columns">
               {/* OPCIÓN 1: RECOMPENSA */}
               <div
                 className={`arena-ads-choice-card arena-ads-choice-card--reward ${
                   chosenAdvantageType === 'reward' ? 'arena-ads-choice-card--active' : ''
                 }`}
+                onClick={() =>
+                  activeRun?.currentPrepChoice &&
+                  handleSelectRewardAdvantage(activeRun.currentPrepChoice.rewardOption)
+                }
               >
                 <div className="arena-ads-choice-header">
                   <span className="arena-ads-choice-title">
                     <span>🎁</span> Opción A: Botín Extra
                   </span>
-                  {chosenAdvantageType === 'reward' && (
-                    <span className="arena-ads-choice-selected-tag">✓ ELEGIDA</span>
-                  )}
+                  <span
+                    className={`arena-ads-choice-indicator ${
+                      chosenAdvantageType === 'reward' ? 'arena-ads-choice-indicator--active' : ''
+                    }`}
+                  >
+                    {chosenAdvantageType === 'reward' ? '✓ ELEGIDA' : 'ELEGIR'}
+                  </span>
                 </div>
 
                 {activeRun?.currentPrepChoice && (
@@ -341,18 +376,9 @@ export default function ArenaAdsModal({
                     <strong className="arena-ads-reward-val">
                       {activeRun.currentPrepChoice.rewardOption.label}
                     </strong>
-                    <p className="arena-ads-reward-desc">
-                      Se suma a tu botín. Mazo: Girasol + 4 aleatorias.
-                    </p>
-                    <button
-                      type="button"
-                      className="arena-ads-btn arena-ads-btn--cashout arena-ads-btn--compact"
-                      onClick={() =>
-                        handleSelectRewardAdvantage(activeRun.currentPrepChoice!.rewardOption)
-                      }
-                    >
-                      🎁 SUMAR AL BOTÍN
-                    </button>
+                    <span className="arena-ads-reward-desc">
+                      Se suma a tu botín • Tu mazo combate con plantas estándar
+                    </span>
                   </div>
                 )}
               </div>
@@ -367,11 +393,13 @@ export default function ArenaAdsModal({
                   <span className="arena-ads-choice-title">
                     <span>🌱</span> Opción B: Reforzar Mazo
                   </span>
-                  {chosenAdvantageType === 'plant' && (
-                    <span className="arena-ads-choice-selected-tag arena-ads-choice-selected-tag--blue">
-                      ✓ ELEGIDA
-                    </span>
-                  )}
+                  <span
+                    className={`arena-ads-choice-indicator arena-ads-choice-indicator--blue ${
+                      chosenAdvantageType === 'plant' ? 'arena-ads-choice-indicator--active' : ''
+                    }`}
+                  >
+                    {chosenAdvantageType === 'plant' ? '✓ ELEGIDA' : 'ELEGIR'}
+                  </span>
                 </div>
 
                 {/* SubTabs: Normal vs Fused */}
@@ -381,24 +409,26 @@ export default function ArenaAdsModal({
                     className={`arena-ads-subtab-btn ${
                       selectedPlantSubTab === 'normal' ? 'arena-ads-subtab-btn--active' : ''
                     }`}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       soundManager.playSound('click', 0.3)
                       setSelectedPlantSubTab('normal')
                     }}
                   >
-                    🌿 Normal
+                    🌿 Normal (⭐1)
                   </button>
                   <button
                     type="button"
                     className={`arena-ads-subtab-btn arena-ads-subtab-btn--fused ${
                       selectedPlantSubTab === 'fused' ? 'arena-ads-subtab-btn--active' : ''
                     }`}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       soundManager.playSound('click', 0.3)
                       setSelectedPlantSubTab('fused')
                     }}
                   >
-                    ⚡ Fusión
+                    ⚡ Fusión (⭐+)
                   </button>
                 </div>
 
@@ -408,11 +438,14 @@ export default function ArenaAdsModal({
                     ? activeRun?.currentPrepChoice?.normalPlantOptions
                     : activeRun?.currentPrepChoice?.fusedPlantOptions
                   )?.map((plantOpt) => {
-                    const isSelected = selectedPlantOption?.plantId === plantOpt.plantId
+                    const isSelected =
+                      chosenAdvantageType === 'plant' &&
+                      selectedPlantOption?.plantId === plantOpt.plantId &&
+                      selectedPlantOption?.isFused === plantOpt.isFused
                     const cfg = PLANT_CONFIGS[plantOpt.plantId]
                     return (
                       <div
-                        key={plantOpt.plantId}
+                        key={`${plantOpt.plantId}-${plantOpt.isFused ? 'fused' : 'normal'}`}
                         className={`arena-ads-plant-option-item ${
                           plantOpt.isFused ? 'arena-ads-plant-option-item--fused' : ''
                         } ${isSelected ? 'arena-ads-plant-option-item--selected' : ''}`}
@@ -425,14 +458,19 @@ export default function ArenaAdsModal({
                             className="arena-ads-plant-icon"
                           />
                           <div className="arena-ads-plant-names">
-                            <span className="arena-ads-plant-name">{plantOpt.name}</span>
+                            <span className="arena-ads-plant-name">
+                              {cfg?.name || plantOpt.name}{' '}
+                              <strong style={{ color: plantOpt.isFused ? '#c084fc' : '#4ade80' }}>
+                                ⭐{plantOpt.level}
+                              </strong>
+                            </span>
                             <span className="arena-ads-plant-fused-badge">
                               {plantOpt.description}
                             </span>
                           </div>
                         </div>
                         <button type="button" className="arena-ads-plant-select-btn">
-                          {isSelected ? '✓ ELEGIDA' : 'ELEGIR'}
+                          {isSelected ? '✓ ACTIVA' : 'ELEGIR'}
                         </button>
                       </div>
                     )
@@ -441,13 +479,13 @@ export default function ArenaAdsModal({
               </div>
             </div>
 
-            {/* Deck Preview Row */}
+            {/* Mazo Sincronizado en Tiempo Real con Indicadores de Estrellas */}
             {activeRun?.deck && (
               <div className="arena-ads-deck-preview">
                 <div className="arena-ads-deck-preview-title">
                   <span>🃏 Tu Mazo (Nivel {activeRun.level}):</span>
                   <span className="arena-ads-deck-preview-sub">
-                    🌻 Girasol fijo • 4 aleatorias / elegidas
+                    🌻 Girasol fijo • {chosenAdvantageType === 'plant' ? 'Planta sincronizada' : '4 aleatorias'}
                   </span>
                 </div>
                 <div className="arena-ads-deck-cards-row">
@@ -455,15 +493,17 @@ export default function ArenaAdsModal({
                     const cfg = (PLANT_CONFIGS as any)[card.plantId] || PLANT_CONFIGS.peashooter
                     const isSunflower = card.plantId === 'sunflower'
                     const isFused = Boolean(card.statRolls && card.statRolls.length > 0)
+                    const cardStars = card.level || (isFused ? card.statRolls?.length : 1)
                     return (
                       <div
                         key={`${card.plantId}-${idx}`}
                         className={`arena-ads-deck-card ${
                           isSunflower ? 'arena-ads-deck-card--sunflower' : ''
                         } ${isFused ? 'arena-ads-deck-card--fused' : ''}`}
-                        title={`${cfg.name}${isSunflower ? ' (Fijo)' : ''}${isFused ? ' (Fusión)' : ''}`}
+                        title={`${cfg.name} (⭐${cardStars})${isSunflower ? ' (Fijo)' : ''}${isFused ? ' (Fusión)' : ''}`}
                       >
                         {isSunflower && <span className="arena-ads-deck-card-lock">🔒</span>}
+                        <span className="arena-ads-deck-card-stars">⭐{cardStars}</span>
                         <img
                           src={cfg.icon || cfg.sprite}
                           alt={cfg.name}
