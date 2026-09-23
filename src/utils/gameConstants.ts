@@ -427,12 +427,11 @@ export function getFusionGoldCost(plantId: PlantId, level: number): number {
 }
 
 export function getScaledPlantConfig(
-  plantId: PlantId,
+  plantId: PlantId | string,
   levelOrRolls: number | PlantStatKey[] = 0,
   equippedItem?: string | null
 ): PlantConfig {
-  const base = PLANT_CONFIGS[plantId]
-  if (!base) return base
+  const base = (PLANT_CONFIGS as Record<string, PlantConfig>)[plantId] || PLANT_CONFIGS.peashooter
 
   let scaled: PlantConfig
 
