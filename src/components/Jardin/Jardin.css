@@ -853,6 +853,18 @@
   box-shadow: 0 0 10px rgba(82, 224, 97, 0.3);
 }
 
+.jardin-card--listed {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, rgba(45, 30, 10, 0.88) 0%, rgba(20, 15, 8, 0.92) 100%);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+}
+
+.jardin-card--listed:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: #fbbf24;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.5);
+}
+
 .jardin-card--locked {
   opacity: 0.65;
   background: rgba(15, 23, 42, 0.8);
@@ -897,6 +909,45 @@
   border: 1px solid #52e061;
   padding: 1px 4px;
   border-radius: 6px;
+}
+
+.jardin-card-badge--market {
+  font-size: 8px;
+  font-weight: 900;
+  color: #fde047;
+  background: rgba(245, 158, 11, 0.25);
+  border: 1px solid #f59e0b;
+  padding: 1px 5px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+.jardin-card-market-notice {
+  margin-top: 4px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px dashed rgba(245, 158, 11, 0.5);
+  border-radius: 6px;
+  padding: 3px 4px;
+  box-sizing: border-box;
+}
+
+.jardin-card-market-notice__text {
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #fde047;
+  letter-spacing: 0.3px;
+}
+
+.jardin-card-market-notice__sub {
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #cbd5e1;
 }
 
 .jardin-card__badge-locked {

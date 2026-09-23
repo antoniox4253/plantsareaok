@@ -6,7 +6,8 @@ import { type FreePackSlot, type PlayerRewardPack, normalizePackSlots } from '..
 import type { DatosDeRepeticion } from '../engine/replay'
 import { parseLeaderboardRow, type ParsedLeaderboardRow } from '../utils/leaderboardParser'
 import { validateMatchClock } from '../utils/matchClock'
-import type { EngineVersion, ClanFortressData, ClanFortressPlant, ClanFortressAmbush, ClanFortressMatchOpponent, ClanFortressRaidResult, ClanRaidHistoryEntry } from '../types/game'
+import type { EngineVersion, ClanFortressData, ClanFortressPlant, ClanFortressAmbush, ClanFortressMatchOpponent, ClanFortressRaidResult, ClanRaidHistoryEntry, MyMarketplaceListingsResponse, MyMarketplaceItem, MyMarketplaceStats } from '../types/game'
+export type { MyMarketplaceListingsResponse, MyMarketplaceItem, MyMarketplaceStats }
 import type { FarmingInventory, PvpRewardDrop } from '../utils/pvpRewardManager'
 import { FLASH_OFFER_PRICE_GEMS } from '../utils/gameConstants'
 
@@ -1594,12 +1595,12 @@ export const SupabaseService = {
 
   /**
    * Las ofertas activas con lo que hace falta para pintarlas.
-   *
-   * getMarketplaceListings devuelve las filas crudas, sin la carta ni el nick del
-   * vendedor, así que la pantalla no podía usarlas: por eso seguía leyendo de
-   * localStorage. Esta trae todo junto y sin identificadores de usuario.
+   * Ahora soporta filtro por categoría para evitar truncamientos en la pizarra.
    */
-  async marketplaceBoard(limite = 60): Promise<{
+  async marketplaceBoard(
+    limite = 80,
+    category?: 'plant' | 'farming' | 'gold' | null
+  ): Promise<{
     comisionPct: number
     ofertas: Array<{
       id: string
@@ -1614,13 +1615,16 @@ export const SupabaseService = {
       esMia: boolean
       desde: string
       germinationsCount?: number
+      equippedItem?: string | null
     }>
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
-      const { data, error } = await (supabase.rpc as any)('marketplace_board', {
-        p_limite: limite,
-      })
+      const rpcArgs: any = { p_limite: limite }
+      if (category) {
+        rpcArgs.p_category = category
+      }
+      const { data, error } = await (supabase.rpc as any)('marketplace_board', rpcArgs)
       if (error) {
         logError('marketplaceBoard', error)
         return null
@@ -1628,6 +1632,27 @@ export const SupabaseService = {
       return data
     } catch (e) {
       logError('marketplaceBoard', e)
+      return null
+    }
+  },
+
+  /**
+   * Consulta autoritativa de las publicaciones del usuario (Mis Ventas):
+   * activas en custodia e historial de ventas/cancelaciones con comprador y netos.
+   */
+  async getMyMarketplaceListings(limiteHistorial = 50): Promise<MyMarketplaceListingsResponse | null> {
+    if (!isSupabaseConfigured()) return null
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_my_marketplace_listings', {
+        p_limite_historial: limiteHistorial,
+      })
+      if (error) {
+        logError('getMyMarketplaceListings', error)
+        return null
+      }
+      return data as MyMarketplaceListingsResponse
+    } catch (e) {
+      logError('getMyMarketplaceListings', e)
       return null
     }
   },

@@ -1190,6 +1190,7 @@ export function useInventory() {
         isBase: i.isBase,
         germinationsCount: i.germinationsCount ?? 0,
         equippedItem: (i as any).equippedItem || null,
+        isListed: Boolean((i as any).isListed),
         obtainedAt: i.obtainedAt,
       }))
     )

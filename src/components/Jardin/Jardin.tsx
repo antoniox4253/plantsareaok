@@ -696,6 +696,7 @@ export default function Jardin({
       isUnlocked: boolean
       germinationsCount: number
       equippedItem?: string | null
+      isListed?: boolean
     }[] = []
 
     ALL_PLANTS.forEach((plantId) => {
@@ -711,6 +712,7 @@ export default function Jardin({
           isUnlocked: false,
           germinationsCount: 0,
           equippedItem: null,
+          isListed: false,
         })
         return
       }
@@ -727,6 +729,7 @@ export default function Jardin({
             isUnlocked: true,
             germinationsCount: inst.germinationsCount ?? 0,
             equippedItem: inst.equippedItem || null,
+            isListed: Boolean(inst.isListed),
           })
         })
       } else {
@@ -740,6 +743,7 @@ export default function Jardin({
           isUnlocked: true,
           germinationsCount: 0,
           equippedItem: null,
+          isListed: false,
         })
       }
     })
@@ -754,7 +758,7 @@ export default function Jardin({
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const valid = parsed.filter((id) => displayedCards.some((c) => c.instanceId === id && c.isUnlocked))
+          const valid = parsed.filter((id) => displayedCards.some((c) => c.instanceId === id && c.isUnlocked && !c.isListed))
           if (valid.length > 0) return valid
         }
       }
@@ -763,7 +767,7 @@ export default function Jardin({
     const result: string[] = []
     const used = new Set<string>()
     activeDeck.forEach((pId) => {
-      const inst = displayedCards.find((c) => c.plantId === pId && !used.has(c.instanceId) && c.isUnlocked)
+      const inst = displayedCards.find((c) => c.plantId === pId && !used.has(c.instanceId) && c.isUnlocked && !c.isListed)
       if (inst) {
         result.push(inst.instanceId)
         used.add(inst.instanceId)
@@ -779,9 +783,21 @@ export default function Jardin({
     } catch {}
   }, [deckInstanceIds])
 
+  // Si alguna carta en el mazo fue puesta en venta en el mercado, se retira de la selección activa
   useEffect(() => {
-    setDeck(activeDeck)
-  }, [activeDeck])
+    const unlistedDeck = deckInstanceIds.filter((id) => {
+      const card = displayedCards.find((c) => c.instanceId === id)
+      return card && !card.isListed
+    })
+    if (unlistedDeck.length !== deckInstanceIds.length) {
+      setDeckInstanceIds(unlistedDeck)
+      const plantIds = unlistedDeck
+        .map((id) => displayedCards.find((c) => c.instanceId === id)?.plantId)
+        .filter(Boolean) as PlantId[]
+      setDeck(plantIds)
+      onUpdateDeck(plantIds, unlistedDeck)
+    }
+  }, [displayedCards, deckInstanceIds, onUpdateDeck])
 
   const handleRemoveSlotInstance = (slotIdx: number) => {
     soundManager.playSound('plantation', 0.4)
@@ -798,6 +814,16 @@ export default function Jardin({
   const handleToggleCardInstance = (card: typeof displayedCards[0]) => {
     if (!card.isUnlocked) {
       soundManager.playSound('plantation', 0.2)
+      return
+    }
+
+    if (card.isListed) {
+      soundManager.playSound('plantation', 0.2)
+      setFuseAlert({
+        title: 'PLANTA EN VENTA EN EL MERCADO',
+        message: `🏷️ ${card.plantId ? PLANT_CONFIGS[card.plantId]?.name : 'Esta planta'} se encuentra actualmente listada para la venta en el Comercio P2P.\n\nPara poder equiparla en tu mazo de batalla o mejorarla, puedes retirarla en cualquier momento desde:\nComercio > Mis Ventas > Recuperar.`,
+        icon: '🏷️',
+      })
       return
     }
 
@@ -1474,6 +1500,8 @@ export default function Jardin({
                   className={`jardin-card ${
                     !isUnlocked
                       ? 'jardin-card--locked'
+                      : card.isListed
+                      ? 'jardin-card--listed'
                       : inDeck
                       ? 'jardin-card--indeck'
                       : 'jardin-card--unlocked'
@@ -1501,14 +1529,19 @@ export default function Jardin({
                       <span>{config.cost}</span>
                     </div>
                     <div className="jardin-card__header-right">
-                      {inDeck && <span className="jardin-card__badge">EN MAZO ✓</span>}
-                      {isUnlocked && !inDeck && (
+                      {card.isListed && (
+                        <span className="jardin-card-badge--market" title="En venta en Comercio P2P. Retírala desde Mis Ventas si deseas usarla.">
+                          🏷️ EN VENTA
+                        </span>
+                      )}
+                      {inDeck && !card.isListed && <span className="jardin-card__badge">EN MAZO ✓</span>}
+                      {isUnlocked && !inDeck && !card.isListed && (
                         <span className="jardin-card__badge" style={{ color: '#60a5fa', borderColor: '#60a5fa' }}>
                           OBTENIDA ✓
                         </span>
                       )}
                       {!isUnlocked && <span className="jardin-card__badge-locked">🔒 BLOQUEADA</span>}
-                      {isUnlocked && (
+                      {isUnlocked && !card.isListed && (
                         <button
                           type="button"
                           className={`jardin-card__trash-btn ${instancesOfThisPlant.length < 2 ? 'jardin-card__trash-btn--disabled' : ''}`}
@@ -1588,7 +1621,7 @@ export default function Jardin({
                   )}
 
                   {/* BOTONES DE DECISIÓN: GERMINAR O FUSIONAR */}
-                  {isUnlocked && (
+                  {isUnlocked && !card.isListed && (
                     <div className="jardin-card-decision-row">
                       {canSproutThisCard && (
                         <button
@@ -1636,9 +1669,16 @@ export default function Jardin({
                     </div>
                   )}
 
+                  {isUnlocked && card.isListed && (
+                    <div className="jardin-card-market-notice">
+                      <span className="jardin-card-market-notice__text">🏷️ En venta en Mercado P2P</span>
+                      <span className="jardin-card-market-notice__sub">Recupérala en 'Mis Ventas' para usarla</span>
+                    </div>
+                  )}
+
                   {/* EQUIPAR / DESEQUIPAR ÍTEM EXCLUSIVO */}
                   {(() => {
-                    if (!isUnlocked) return null
+                    if (!isUnlocked || card.isListed) return null
                     const itemDef = getEquippableItemForPlant(plantId)
                     if (!itemDef) return null
                     const isItemEquippedOnCard = Boolean(equippedItem && equippedItem === itemDef.id)

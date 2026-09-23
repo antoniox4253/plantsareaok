@@ -193,6 +193,40 @@ export interface PlantCardInstance {
   obtainedAt?: number
   germinationsCount?: number
   equippedItem?: string | null
+  isListed?: boolean
+}
+
+export interface MyMarketplaceItem {
+  id: string
+  itemType: 'plant' | 'farming' | 'gold'
+  itemId: string
+  quantity: number
+  plantId?: PlantId | null
+  nivel: number
+  statRolls: import('../utils/gameConstants').PlantStatKey[]
+  germinationsCount?: number
+  equippedItem?: string | null
+  precio: number
+  neto: number
+  status: 'active' | 'sold' | 'cancelled'
+  desde: string
+  comprador?: string | null
+  cerradaEn?: string | null
+}
+
+export interface MyMarketplaceStats {
+  totalActive: number
+  totalValueGems: number
+  totalSold: number
+  totalEarnedGems: number
+}
+
+export interface MyMarketplaceListingsResponse {
+  success: boolean
+  error?: string
+  active: MyMarketplaceItem[]
+  history: MyMarketplaceItem[]
+  stats: MyMarketplaceStats
 }
 
 export type ColosseumBetAmount = 50 | 100 | 200

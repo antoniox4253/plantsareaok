@@ -10,7 +10,12 @@ import {
   type FarmingInventory,
   type FarmingItemId,
 } from '../../utils/pvpRewardManager'
-import { marketplaceService, type GlobalTransactionItem } from '../../services/marketplaceService'
+import {
+  marketplaceService,
+  type GlobalTransactionItem,
+  type MyMarketplaceListingsResponse,
+  type MyMarketplaceItem,
+} from '../../services/marketplaceService'
 import { isSupabaseConfigured } from '../../lib/supabaseClient'
 import type { PlantId, PlantCardInstance } from '../../types/game'
 import { PLANT_CONFIGS, STAT_LABELS, VIP_PASS_PRECIO_GEMAS, type PlantStatKey } from '../../utils/gameConstants'
@@ -69,14 +74,6 @@ interface MarketplaceProps {
 
 /**
  * Una oferta tal como la devuelve marketplace_board().
- *
- * Antes esta pantalla leía las ofertas de localStorage y cobraba en dólares de
- * mentira: las RPC de comprar, publicar y cancelar existían desde la primera
- * migración y NADIE las llamaba. O sea que ni el vendedor cobraba de verdad ni
- * la comisión del 10 % se aplicaba a nada, porque no había ventas reales.
- *
- * Ahora el mercado es del servidor: los precios van en GEMAS, el saldo lo mueve
- * buy_marketplace_card y cada venta deja su fila en el registro del panel.
  */
 interface OfertaDelMercado {
   id: string
@@ -87,6 +84,7 @@ interface OfertaDelMercado {
   nivel: number
   statRolls: PlantStatKey[]
   germinationsCount?: number
+  equippedItem?: string | null
   precio: number
   vendedor: string | null
   esMia: boolean
@@ -168,7 +166,7 @@ export default function Marketplace({
   onBuyVipPass,
   onBackToMenu,
 }: MarketplaceProps) {
-  const [activeTab, setActiveTab] = useState<'browse' | 'sell' | 'transactions'>('browse')
+  const [activeTab, setActiveTab] = useState<'browse' | 'sell' | 'my_sales' | 'transactions'>('browse')
   const [selectedCategory, setSelectedCategory] = useState<'plants' | 'farming' | 'gold' | null>(null)
   const [sellCategory, setSellCategory] = useState<'plants' | 'farming' | 'gold'>('plants')
   const [goldSellQty, setGoldSellQty] = useState<number>(1000)
@@ -178,6 +176,16 @@ export default function Marketplace({
   const [transactions, setTransactions] = useState<GlobalTransactionItem[]>([])
   const [txLoading, setTxLoading] = useState(false)
   const [txFilter, setTxFilter] = useState<'all' | 'marketplace' | 'shop' | 'reward' | 'tournament'>('all')
+  const [mySalesData, setMySalesData] = useState<MyMarketplaceListingsResponse | null>(null)
+  const [mySalesLoading, setMySalesLoading] = useState<boolean>(false)
+  const [mySalesSubTab, setMySalesSubTab] = useState<'active' | 'history'>('active')
+
+  // Filtros y búsqueda para la pestaña Comercio
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [filterOnlyMine, setFilterOnlyMine] = useState<boolean>(false)
+  const [sortBy, setSortBy] = useState<'newest' | 'price_asc' | 'price_desc' | 'level_desc' | 'sprouts_asc' | 'gold_rate'>('newest')
+  const [rarityFilter, setRarityFilter] = useState<'all' | 'COMÚN' | 'RARA' | 'ÉPICA' | 'LEGENDARIA'>('all')
+
   /** La comisión la manda el servidor: así el número no vive duplicado aquí. */
   const [comisionPct, setComisionPct] = useState<number>(10)
   const [cargando, setCargando] = useState(true)
@@ -205,6 +213,7 @@ export default function Marketplace({
     if (plantInstances && plantInstances.length > 0) {
       plantInstances.forEach((inst) => {
         if (!unlocked.includes(inst.plantId)) return
+        if (inst.isListed) return // Ya está listada para venta en el mercado
         const rInfo = getPlantRarityAndMinPrice(inst.plantId)
         const inDeck = Boolean(
           activeDeckInstances?.includes(inst.instanceId) ||
@@ -312,6 +321,66 @@ export default function Marketplace({
     return listings.filter((item) => item.itemType === 'gold' || item.itemId === 'gold')
   }, [listings])
 
+  const filteredPlantOffers = useMemo(() => {
+    const list = plantOffers.filter((item) => {
+      if (filterOnlyMine && !item.esMia) return false
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim()
+        const pDef = item.plantId ? PLANT_CONFIGS[item.plantId] : null
+        const name = (pDef?.name || item.plantId || '').toLowerCase()
+        if (!name.includes(query)) return false
+      }
+      if (rarityFilter !== 'all' && item.plantId) {
+        const rInfo = getPlantRarityAndMinPrice(item.plantId)
+        if (rInfo.rarity !== rarityFilter) return false
+      }
+      return true
+    })
+
+    return [...list].sort((a, b) => {
+      if (sortBy === 'price_asc') return a.precio - b.precio
+      if (sortBy === 'price_desc') return b.precio - a.precio
+      if (sortBy === 'level_desc') return b.nivel - a.nivel
+      if (sortBy === 'sprouts_asc') return (a.germinationsCount ?? 0) - (b.germinationsCount ?? 0)
+      return new Date(b.desde).getTime() - new Date(a.desde).getTime()
+    })
+  }, [plantOffers, filterOnlyMine, searchQuery, rarityFilter, sortBy])
+
+  const filteredFarmingOffers = useMemo(() => {
+    const list = farmingOffers.filter((item) => {
+      if (filterOnlyMine && !item.esMia) return false
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim()
+        const fDef = item.itemId ? FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId] : null
+        const name = (fDef?.label || item.itemId || '').toLowerCase()
+        if (!name.includes(query)) return false
+      }
+      return true
+    })
+
+    return [...list].sort((a, b) => {
+      if (sortBy === 'price_asc') return a.precio - b.precio
+      if (sortBy === 'price_desc') return b.precio - a.precio
+      return new Date(b.desde).getTime() - new Date(a.desde).getTime()
+    })
+  }, [farmingOffers, filterOnlyMine, searchQuery, sortBy])
+
+  const filteredGoldOffers = useMemo(() => {
+    const list = goldOffers.filter((item) => {
+      if (filterOnlyMine && !item.esMia) return false
+      return true
+    })
+
+    return [...list].sort((a, b) => {
+      const rateA = a.precio > 0 ? (a.quantity || 1) / a.precio : 0
+      const rateB = b.precio > 0 ? (b.quantity || 1) / b.precio : 0
+      if (sortBy === 'gold_rate') return rateB - rateA
+      if (sortBy === 'price_asc') return a.precio - b.precio
+      if (sortBy === 'price_desc') return b.precio - a.precio
+      return new Date(b.desde).getTime() - new Date(a.desde).getTime()
+    })
+  }, [goldOffers, filterOnlyMine, sortBy])
+
   const sellablePlants = useMemo(() => sellableItems.filter((c) => c.kind === 'plant'), [sellableItems])
   const sellableFarming = useMemo(() => sellableItems.filter((c) => c.kind === 'farming'), [sellableItems])
 
@@ -384,13 +453,27 @@ export default function Marketplace({
     })
   }
 
-  const refreshListings = async () => {
-    const tablero = await marketplaceService.marketplaceBoard(60)
+  const refreshListings = async (categoryFilter?: 'plant' | 'farming' | 'gold' | null) => {
+    const tablero = await marketplaceService.marketplaceBoard(80, categoryFilter)
     if (tablero) {
       setListings(tablero.ofertas)
       setComisionPct(Number(tablero.comisionPct ?? 10))
     }
     setCargando(false)
+  }
+
+  const refreshMyListings = async () => {
+    setMySalesLoading(true)
+    try {
+      const data = await marketplaceService.getMyMarketplaceListings(50)
+      if (data && data.success) {
+        setMySalesData(data)
+      }
+    } catch (e) {
+      console.warn('Error cargando mis publicaciones:', e)
+    } finally {
+      setMySalesLoading(false)
+    }
   }
 
   const refreshTransactions = async () => {
@@ -406,15 +489,20 @@ export default function Marketplace({
   }
 
   useEffect(() => {
-    void refreshListings()
+    void refreshListings(selectedCategory === 'plants' ? 'plant' : selectedCategory)
     void refreshTransactions()
+    void refreshMyListings()
   }, [])
 
   useEffect(() => {
-    if (activeTab === 'transactions') {
+    if (activeTab === 'browse') {
+      void refreshListings(selectedCategory === 'plants' ? 'plant' : selectedCategory)
+    } else if (activeTab === 'my_sales') {
+      void refreshMyListings()
+    } else if (activeTab === 'transactions') {
       void refreshTransactions()
     }
-  }, [activeTab])
+  }, [activeTab, selectedCategory])
 
   const safeTransactions = useMemo(() => {
     return transactions.filter(
@@ -738,7 +826,7 @@ export default function Marketplace({
   }
 
   // RETIRAR MI OFERTA
-  const handleCancelListing = (item: OfertaDelMercado) => {
+  const handleCancelListing = (item: OfertaDelMercado | MyMarketplaceItem) => {
     const isGold = item.itemType === 'gold' || item.itemId === 'gold'
     const isFarming = !isGold && (item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId]))
     const qty = Math.max(1, Number(item.quantity) || 1)
@@ -754,8 +842,8 @@ export default function Marketplace({
       : `"${nombre}"`
 
     showModalConfirm(
-      'RETIRAR OFERTA DEL MERCADO',
-      `¿Deseas retirar ${detalle} del mercado y recuperar ${isGold ? 'el oro en tu cuenta' : isFarming ? 'los recursos en tu inventario' : 'la planta en tu Jardín'}?`,
+      'RECUPERAR ÍTEM A TU INVENTARIO',
+      `¿Deseas retirar ${detalle} del mercado y recuperar ${isGold ? 'el oro en tu cuenta' : isFarming ? 'los recursos en tu inventario' : 'la planta en tu Jardín'} de inmediato?`,
       '📦',
       async () => {
         const r = await marketplaceService.cancelMarketplaceListing(item.id)
@@ -765,18 +853,200 @@ export default function Marketplace({
         }
         soundManager.playSound('plantation', 0.8)
         showModalAlert(
-          'OFERTA RETIRADA',
-          `${detalle} ha vuelto a tu ${isGold ? 'saldo de oro' : isFarming ? 'inventario de cultivo' : 'Jardín'}.`,
+          '¡ÍTEM RECUPERADO CON ÉXITO!',
+          `${detalle} ha vuelto de inmediato a tu ${isGold ? 'saldo de oro' : isFarming ? 'inventario de cultivo' : 'Jardín'}.`,
           '📦',
-          'info'
+          'success'
         )
-        await refreshListings()
+        await refreshListings(selectedCategory === 'plants' ? 'plant' : selectedCategory)
+        await refreshMyListings()
         window.dispatchEvent(new Event('refresh_user_balance'))
         window.dispatchEvent(new Event('refresh_user_inventory'))
         onServerChange?.()
       },
-      'RETIRAR Y RECUPERAR',
+      'SÍ, RECUPERAR AHORA',
       'MANTENER EN VENTA'
+    )
+  }
+
+  const renderMyActiveSaleCard = (item: MyMarketplaceItem) => {
+    const isGold = item.itemType === 'gold' || item.itemId === 'gold'
+    const isFarming = !isGold && (item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId]))
+    const plantDef = !isGold && !isFarming && item.plantId ? PLANT_CONFIGS[item.plantId as PlantId] : undefined
+    const farmingDef = isFarming && item.itemId ? FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId] : undefined
+
+    const rInfo = !isGold && !isFarming && item.plantId
+      ? getPlantRarityAndMinPrice(item.plantId as PlantId)
+      : isFarming
+      ? { rarity: 'FARMING', minPrice: 10, color: '#4ade80' }
+      : { rarity: 'ORO P2P', minPrice: 1, color: '#facc15' }
+
+    const itemName = isGold
+      ? `${(item.quantity || 1).toLocaleString('en-US')} ORO`
+      : isFarming
+      ? (farmingDef?.label || item.itemId || 'Recurso')
+      : (plantDef?.name || item.plantId || 'Carta de Planta')
+
+    const itemIcon = isGold
+      ? monedaImg
+      : isFarming
+      ? farmingDef?.icon
+      : (plantDef?.packetActive || plantDef?.icon)
+
+    const split = calculateMarketplaceSplit(item.precio, comisionPct)
+
+    return (
+      <div key={item.id} className="market-my-card market-my-card--active">
+        <div className="market-item-card__header">
+          {isGold ? (
+            <span className="market-item-level-tag market-item-level-tag--gold" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <GoldIcon size={14} /> LOTE DE ORO
+            </span>
+          ) : isFarming ? (
+            <span className="market-item-level-tag">
+              🌾 LOTE x{item.quantity}
+            </span>
+          ) : (
+            <div className="market-item-tags-row">
+              <span className="market-item-level-tag" title={getFusionTooltip(item.nivel)}>
+                ⭐{item.nivel}
+              </span>
+              <span
+                className={`market-item-sprouts-tag market-item-sprouts-tag--${
+                  (item.germinationsCount ?? 0) >= 2
+                    ? 'max'
+                    : (item.germinationsCount ?? 0) === 1
+                    ? 'mid'
+                    : 'fresh'
+                }`}
+                title={getSproutTooltip(item.germinationsCount ?? 0)}
+              >
+                🌱{item.germinationsCount ?? 0}
+              </span>
+            </div>
+          )}
+
+          <span className="market-item-rarity-badge" style={{ color: rInfo.color, borderColor: rInfo.color }}>
+            {rInfo.rarity}
+          </span>
+          <span className="market-my-custody-tag">🛡️ EN CUSTODIA</span>
+        </div>
+
+        <div className="market-item-card__img-wrap">
+          {itemIcon ? (
+            <img src={itemIcon} alt={itemName} className="market-item-icon" />
+          ) : (
+            <span style={{ fontSize: '3rem' }}>{farmingDef?.fallback || '🌾'}</span>
+          )}
+        </div>
+
+        <h4 className="market-item-name" style={{ color: isGold ? '#facc15' : '#ffffff' }}>
+          {isFarming && (item.quantity || 1) > 1 ? `${item.quantity}x ${itemName}` : itemName}
+        </h4>
+
+        <div className="market-item-stats-box">
+          {isGold ? (
+            <span className="market-stat-pill market-stat-pill--gold">
+              Tasa: ≈ {item.precio > 0 ? Math.round((item.quantity || 0) / item.precio).toLocaleString('en-US') : 0} Oro / 💎
+            </span>
+          ) : isFarming ? (
+            <span className="market-stat-pill market-stat-pill--none">
+              {farmingDef?.description || 'Recurso oficial de cultivo.'}
+            </span>
+          ) : item.statRolls && item.statRolls.length > 0 ? (
+            formatStatRolls(item.statRolls)
+          ) : (
+            <span className="market-stat-pill market-stat-pill--none">Stats estándar de fábrica</span>
+          )}
+        </div>
+
+        <div className="market-my-finance-box">
+          <div className="market-my-finance-row">
+            <span>Precio en venta:</span>
+            <strong>{item.precio} 💎</strong>
+          </div>
+          <div className="market-my-finance-row">
+            <span>Comisión ({split.comisionPct}%):</span>
+            <span style={{ color: '#ef4444' }}>-{split.comision} 💎</span>
+          </div>
+          <div className="market-my-finance-row market-my-finance-row--net">
+            <span>Cobrarás al venderse:</span>
+            <strong style={{ color: '#4ade80' }}>+{split.neto} 💎 neto</strong>
+          </div>
+          <div className="market-my-finance-time">
+            🕒 Publicado: {formatTxTime(item.desde)}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="market-recover-btn"
+          onClick={() => handleCancelListing(item)}
+          title="Recuperar de inmediato a tu inventario"
+        >
+          📦 RECUPERAR A MI INVENTARIO
+        </button>
+      </div>
+    )
+  }
+
+  const renderMyClosedSaleCard = (item: MyMarketplaceItem) => {
+    const isSold = item.status === 'sold'
+    const isGold = item.itemType === 'gold' || item.itemId === 'gold'
+    const isFarming = !isGold && (item.itemType === 'farming' || Boolean(item.itemId && FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId]))
+    const plantDef = !isGold && !isFarming && item.plantId ? PLANT_CONFIGS[item.plantId as PlantId] : undefined
+    const farmingDef = isFarming && item.itemId ? FARMING_ITEM_DEFINITIONS[item.itemId as FarmingItemId] : undefined
+
+    const itemName = isGold
+      ? `${(item.quantity || 1).toLocaleString('en-US')} ORO`
+      : isFarming
+      ? (farmingDef?.label || item.itemId || 'Recurso')
+      : (plantDef?.name || item.plantId || 'Carta de Planta')
+
+    const itemIcon = isGold
+      ? monedaImg
+      : isFarming
+      ? farmingDef?.icon
+      : (plantDef?.packetActive || plantDef?.icon)
+
+    return (
+      <div key={item.id} className={`market-my-card ${isSold ? 'market-my-card--sold' : 'market-my-card--cancelled'}`}>
+        <div className="market-item-card__header">
+          <span className={`market-my-status-pill ${isSold ? 'market-my-status-pill--sold' : 'market-my-status-pill--cancelled'}`}>
+            {isSold ? '✅ VENDIDO CON ÉXITO' : '⚪ RETIRADO (RECUPERADO)'}
+          </span>
+          <span className="market-tx-time">{formatTxTime(item.cerradaEn || item.desde)}</span>
+        </div>
+
+        <div className="market-my-closed-body">
+          <div className="market-my-closed-img-wrap">
+            {itemIcon ? (
+              <img src={itemIcon} alt={itemName} className="market-my-closed-img" />
+            ) : (
+              <span style={{ fontSize: '2.5rem' }}>{farmingDef?.fallback || '🌾'}</span>
+            )}
+          </div>
+          <div className="market-my-closed-info">
+            <h4 className="market-my-closed-title">
+              {isFarming && (item.quantity || 1) > 1 ? `${item.quantity}x ${itemName}` : itemName}
+            </h4>
+            {isSold ? (
+              <>
+                <div className="market-my-closed-buyer">
+                  👤 Comprador: <strong>{item.comprador || 'Jugador'}</strong>
+                </div>
+                <div className="market-my-closed-net">
+                  💰 Cobraste neto: <strong style={{ color: '#4ade80' }}>+{item.neto} 💎</strong> (Precio: {item.precio} 💎)
+                </div>
+              </>
+            ) : (
+              <div className="market-my-closed-cancelled-note">
+                📦 Reincorporado con éxito a tu {isGold ? 'saldo de oro' : isFarming ? 'inventario de cultivo' : 'Jardín'}.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     )
   }
 
@@ -1154,6 +1424,16 @@ export default function Marketplace({
         </button>
         <button
           type="button"
+          className={`market-tab-btn market-tab-btn--my-sales ${activeTab === 'my_sales' ? 'market-tab-btn--active' : ''}`}
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            setActiveTab('my_sales')
+          }}
+        >
+          📦 MIS VENTAS ({mySalesData?.active?.length || 0})
+        </button>
+        <button
+          type="button"
           className={`market-tab-btn ${activeTab === 'sell' ? 'market-tab-btn--active' : ''} ${!canSell ? 'market-tab-btn--locked' : ''}`}
           onClick={() => {
             soundManager.playSound('click', 0.5)
@@ -1364,15 +1644,104 @@ export default function Marketplace({
                 </div>
               </div>
 
+              {/* BARRA DE FILTROS Y BÚSQUEDA HORIZONTAL */}
+              <div className="market-filter-toolbar">
+                {/* 1. BUSCADOR POR TEXTO */}
+                {selectedCategory !== 'gold' && (
+                  <div className="market-search-box-wrap">
+                    <span className="market-search-icon">🔍</span>
+                    <input
+                      type="text"
+                      className="market-search-input"
+                      placeholder={selectedCategory === 'plants' ? 'Buscar planta por nombre...' : 'Buscar recurso por nombre...'}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        className="market-search-clear-btn"
+                        onClick={() => setSearchQuery('')}
+                        title="Limpiar búsqueda"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* 2. FILTRO SOLO MIS OFERTAS */}
+                <button
+                  type="button"
+                  className={`market-filter-pill-btn ${filterOnlyMine ? 'market-filter-pill-btn--active' : ''}`}
+                  onClick={() => setFilterOnlyMine(!filterOnlyMine)}
+                  title="Mostrar únicamente las ofertas publicadas por ti"
+                >
+                  👤 Solo mis ofertas
+                </button>
+
+                {/* 3. FILTRO DE RAREZA (SOLO PARA PLANTAS) */}
+                {selectedCategory === 'plants' && (
+                  <div className="market-filter-select-wrap">
+                    <span className="market-filter-select-label">Rareza:</span>
+                    <select
+                      className="market-filter-select"
+                      value={rarityFilter}
+                      onChange={(e) => setRarityFilter(e.target.value as any)}
+                    >
+                      <option value="all">Todas las rarezas</option>
+                      <option value="COMÚN">Común</option>
+                      <option value="RARA">Rara</option>
+                      <option value="ÉPICA">Épica</option>
+                      <option value="LEGENDARIA">Legendaria</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* 4. ORDENAMIENTO */}
+                <div className="market-filter-select-wrap">
+                  <span className="market-filter-select-label">Ordenar:</span>
+                  <select
+                    className="market-filter-select"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                  >
+                    <option value="newest">🕒 Más recientes</option>
+                    <option value="price_asc">💎 Precio: Menor a Mayor</option>
+                    <option value="price_desc">💎 Precio: Mayor a Menor</option>
+                    {selectedCategory === 'plants' && (
+                      <>
+                        <option value="level_desc">⭐ Nivel de Fusión</option>
+                        <option value="sprouts_asc">🌱 Germinaciones (Frescas)</option>
+                      </>
+                    )}
+                    {selectedCategory === 'gold' && (
+                      <option value="gold_rate">🪙 Mejor tasa (Oro / 💎)</option>
+                    )}
+                  </select>
+                </div>
+
+                {/* CONTADOR DE RESULTADOS */}
+                <div className="market-filter-count-badge">
+                  {selectedCategory === 'plants' && `${filteredPlantOffers.length} de ${plantOffers.length}`}
+                  {selectedCategory === 'farming' && `${filteredFarmingOffers.length} de ${farmingOffers.length}`}
+                  {selectedCategory === 'gold' && `${filteredGoldOffers.length} de ${goldOffers.length}`}
+                </div>
+              </div>
+
               {/* LISTA DE OFERTAS DE LA CATEGORÍA */}
               {selectedCategory === 'plants' && (
                 plantOffers.length === 0 ? (
                   <div className="market-empty-state">
                     <span>🌿 No hay plantas en venta en este momento. ¡Sé el primero en publicar una carta!</span>
                   </div>
+                ) : filteredPlantOffers.length === 0 ? (
+                  <div className="market-empty-state">
+                    <span>🔍 No se encontraron plantas con los filtros aplicados. Intenta cambiar la búsqueda o rareza.</span>
+                  </div>
                 ) : (
                   <div className="market-listings-grid">
-                    {plantOffers.map(renderPlantOfferCard)}
+                    {filteredPlantOffers.map(renderPlantOfferCard)}
                   </div>
                 )
               )}
@@ -1382,9 +1751,13 @@ export default function Marketplace({
                   <div className="market-empty-state">
                     <span>🌾 No hay recursos de cultivo en venta en este momento. ¡Sé el primero en vender un lote!</span>
                   </div>
+                ) : filteredFarmingOffers.length === 0 ? (
+                  <div className="market-empty-state">
+                    <span>🔍 No se encontraron recursos con los filtros aplicados.</span>
+                  </div>
                 ) : (
                   <div className="market-listings-grid">
-                    {farmingOffers.map(renderFarmingOfferCard)}
+                    {filteredFarmingOffers.map(renderFarmingOfferCard)}
                   </div>
                 )
               )}
@@ -1394,9 +1767,13 @@ export default function Marketplace({
                   <div className="market-empty-state">
                     <span><GoldIcon size={18} /> No hay ofertas de oro activas en este momento. ¡Sé el primero en vender tu oro por gemas!</span>
                   </div>
+                ) : filteredGoldOffers.length === 0 ? (
+                  <div className="market-empty-state">
+                    <span>🔍 No se encontraron ofertas de oro con los filtros aplicados.</span>
+                  </div>
                 ) : (
                   <div className="market-listings-grid">
-                    {goldOffers.map(renderGoldOfferCard)}
+                    {filteredGoldOffers.map(renderGoldOfferCard)}
                   </div>
                 )
               )}
@@ -2054,6 +2431,131 @@ export default function Marketplace({
           <button className="market-vip-buy-btn" type="button" onClick={handleDirectBuyVip}>
             👑 ACTIVAR PASE PVP ({VIP_PASS_PRECIO_GEMAS} 💎)
           </button>
+        </div>
+      )}
+
+      {/* TAB 4: MIS VENTAS (MY LISTINGS & ESCROW) */}
+      {activeTab === 'my_sales' && (
+        <div className="market-my-sales-container">
+          {/* Ribbon de Métricas Horizontales */}
+          <div className="market-my-sales-ribbon">
+            <div className="market-my-sales-stat-card market-my-sales-stat-card--active">
+              <span className="market-my-sales-stat-icon">🛡️</span>
+              <div className="market-my-sales-stat-info">
+                <span className="market-my-sales-stat-label">EN CUSTODIA SEGURA</span>
+                <span className="market-my-sales-stat-value">
+                  {mySalesData?.stats.totalActive || 0} {mySalesData?.stats.totalActive === 1 ? 'oferta' : 'ofertas'}
+                </span>
+              </div>
+            </div>
+            <div className="market-my-sales-stat-card market-my-sales-stat-card--value">
+              <span className="market-my-sales-stat-icon">💎</span>
+              <div className="market-my-sales-stat-info">
+                <span className="market-my-sales-stat-label">VALOR PUBLICADO</span>
+                <span className="market-my-sales-stat-value">
+                  {(mySalesData?.stats.totalValueGems || 0).toLocaleString()} 💎
+                </span>
+              </div>
+            </div>
+            <div className="market-my-sales-stat-card market-my-sales-stat-card--earned">
+              <span className="market-my-sales-stat-icon">🏆</span>
+              <div className="market-my-sales-stat-info">
+                <span className="market-my-sales-stat-label">VENTAS CONCRETADAS</span>
+                <span className="market-my-sales-stat-value">
+                  {mySalesData?.stats.totalSold || 0} (+{(mySalesData?.stats.totalEarnedGems || 0).toLocaleString()} 💎 cobrados)
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="market-tx-refresh-btn"
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                void refreshMyListings()
+              }}
+              disabled={mySalesLoading}
+              title="Refrescar mis ventas"
+            >
+              {mySalesLoading ? '⏳ ACTUALIZANDO...' : '🔄 ACTUALIZAR'}
+            </button>
+          </div>
+
+          {/* Sub-Tabs: Activas vs Historial */}
+          <div className="market-my-sales-subtabs">
+            <button
+              type="button"
+              className={`market-my-sales-subtab-btn ${mySalesSubTab === 'active' ? 'market-my-sales-subtab-btn--active' : ''}`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setMySalesSubTab('active')
+              }}
+            >
+              🟡 ACTIVAS EN CUSTODIA ({mySalesData?.active?.length || 0})
+            </button>
+            <button
+              type="button"
+              className={`market-my-sales-subtab-btn ${mySalesSubTab === 'history' ? 'market-my-sales-subtab-btn--active' : ''}`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setMySalesSubTab('history')
+              }}
+            >
+              🟢 HISTORIAL DE VENTAS ({mySalesData?.history?.length || 0})
+            </button>
+          </div>
+
+          {/* Banner de Garantía y Custodia */}
+          <div className="market-my-sales-custody-banner">
+            <span className="market-custody-shield">🛡️</span>
+            <div className="market-custody-text">
+              <strong>Depósito de Custodia Oficial:</strong> Tus plantas, recursos de cultivo y oro están bajo custodia segura en la base de datos.
+              {' '}<em>Nadie puede quitártelos y puedes recuperarlos de inmediato a tu inventario con el botón "RECUPERAR" mientras sigan activos.</em>
+            </div>
+          </div>
+
+          {/* Contenido de la Sub-Tab */}
+          {mySalesLoading && !mySalesData ? (
+            <div className="market-empty-state">
+              <span>⏳ Cargando tus publicaciones y ventas…</span>
+            </div>
+          ) : mySalesSubTab === 'active' ? (
+            mySalesData?.active && mySalesData.active.length > 0 ? (
+              <div className="market-my-sales-grid">
+                {mySalesData.active.map(renderMyActiveSaleCard)}
+              </div>
+            ) : (
+              <div className="market-my-sales-empty">
+                <span className="market-empty-icon">📦</span>
+                <h4>No tienes ofertas activas en este momento</h4>
+                <p>
+                  Todos tus recursos, cartas y oro se encuentran 100% seguros en tu cuenta.
+                  Si deseas poner en venta una carta, recursos de cultivo o vender oro por gemas, hazlo desde la pestaña VENDER.
+                </p>
+                <button
+                  type="button"
+                  className="market-empty-action-btn"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setActiveTab('sell')
+                  }}
+                >
+                  ➕ PUBLICAR EN EL MERCADO
+                </button>
+              </div>
+            )
+          ) : (
+            mySalesData?.history && mySalesData.history.length > 0 ? (
+              <div className="market-my-sales-grid">
+                {mySalesData.history.map(renderMyClosedSaleCard)}
+              </div>
+            ) : (
+              <div className="market-my-sales-empty">
+                <span className="market-empty-icon">📜</span>
+                <h4>Sin historial de ventas aún</h4>
+                <p>Aquí quedará registrado cada ítem que vendas con el nombre del comprador y las gemas netas (+90%) acreditadas.</p>
+              </div>
+            )
+          )}
         </div>
       )}
 
