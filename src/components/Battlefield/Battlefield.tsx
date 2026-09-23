@@ -3021,35 +3021,44 @@ export default function Battlefield({
                         </span>
                       </div>
 
-                      {clanRaidResult ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.82rem' }}>
-                          <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '6px 8px', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
-                            <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>💎 Saqueo de Clan:</span>
-                            <strong style={{ color: clanRaidResult.stolenToClan > 0 ? '#facc15' : '#94a3b8', display: 'block', fontSize: '1.05rem' }}>
-                              {clanRaidResult.stolenToClan > 0 ? `+${clanRaidResult.stolenToClan} 💎` : '0 💎'}
-                            </strong>
-                            {clanRaidResult.lootMessage && (
-                              <span style={{ color: clanRaidResult.stolenToClan > 0 ? '#4ade80' : '#f87171', fontSize: '0.7rem', display: 'block', marginTop: '2px', fontWeight: 600 }}>
-                                {clanRaidResult.lootMessage}
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '6px 8px', borderRadius: '8px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
-                            <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>💥 Daño al Bastión:</span>
-                            <strong style={{ color: '#4ade80', display: 'block', fontSize: '1.05rem' }}>
-                              {clanRaidResult.damageDealt} pts
-                            </strong>
-                          </div>
-                          {clanRaidResult.goldBonus > 0 && (
-                            <div style={{ gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '4px 6px', borderRadius: '6px', textAlign: 'center', color: '#fef08a', fontWeight: 'bold', fontSize: '0.78rem' }}>
-                              🪙 Bono Personal: +{clanRaidResult.goldBonus} Oro
+                      {clanRaidResult ? (() => {
+                        const stolenGems = Number(
+                          clanRaidResult.stolenToClan ??
+                          (clanRaidResult as any).stolenGems ??
+                          clanRaidResult.stolenTotal ??
+                          0
+                        )
+                        const damagePts = Number(
+                          clanRaidResult.damageDealt ??
+                          (clanRaidResult as any).effectiveDamage ??
+                          (clanRaidResult as any).damage_dealt ??
+                          0
+                        )
+                        return (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.82rem' }}>
+                            <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '6px 8px', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
+                              <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>💎 Saqueo de Clan:</span>
+                              <strong style={{ color: stolenGems > 0 ? '#facc15' : '#94a3b8', display: 'block', fontSize: '1.05rem', marginTop: '2px' }}>
+                                {stolenGems > 0 ? `${Math.round(stolenGems)} gemas` : 'sigue intentando'}
+                              </strong>
                             </div>
-                          )}
-                          <div style={{ gridColumn: 'span 2', color: '#94a3b8', fontSize: '0.72rem', textAlign: 'center' }}>
-                            🛡️ Escudo de protección activado por 4h.
+                            <div style={{ background: 'rgba(30, 41, 59, 0.7)', padding: '6px 8px', borderRadius: '8px', border: '1px solid rgba(74, 222, 128, 0.3)' }}>
+                              <span style={{ color: '#94a3b8', fontSize: '0.72rem' }}>💥 Daño al Bastión:</span>
+                              <strong style={{ color: '#4ade80', display: 'block', fontSize: '1.05rem', marginTop: '2px' }}>
+                                {damagePts} pts
+                              </strong>
+                            </div>
+                            {clanRaidResult.goldBonus > 0 && (
+                              <div style={{ gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '4px 6px', borderRadius: '6px', textAlign: 'center', color: '#fef08a', fontWeight: 'bold', fontSize: '0.78rem' }}>
+                                🪙 Bono Personal: +{clanRaidResult.goldBonus} Oro
+                              </div>
+                            )}
+                            <div style={{ gridColumn: 'span 2', color: '#94a3b8', fontSize: '0.72rem', textAlign: 'center' }}>
+                              🛡️ Escudo de protección activado por 4h.
+                            </div>
                           </div>
-                        </div>
-                      ) : (
+                        )
+                      })() : (
                         <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.82rem' }}>Liquidando botín de guerra con el tesoro...</p>
                       )}
                     </div>

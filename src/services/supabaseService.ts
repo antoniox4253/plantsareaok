@@ -2118,6 +2118,24 @@ export const SupabaseService = {
         logError('settleClanFortressRaid', error)
         return { success: false, error: error.message }
       }
+      if (data) {
+        const normalized: ClanFortressRaidResult = {
+          success: Boolean(data.success),
+          starsEarned: Number(data.starsEarned ?? data.stars_earned ?? starsEarned),
+          damageDealt: Number(data.damageDealt ?? data.effectiveDamage ?? data.damage_dealt ?? damageDealt),
+          effectiveDamage: Number(data.effectiveDamage ?? data.damageDealt ?? damageDealt),
+          stolenTotal: Number(data.stolenTotal ?? data.stolenGems ?? data.stolenToClan ?? 0),
+          stolenToClan: Number(data.stolenToClan ?? data.stolenGems ?? data.stolenTotal ?? 0),
+          stolenGems: Number(data.stolenGems ?? data.stolenToClan ?? data.stolenTotal ?? 0),
+          goldBonus: Number(data.goldBonus ?? data.gold_bonus ?? 0),
+          targetClanName: data.targetClanName ?? '',
+          shieldHoursGranted: Number(data.shieldDurationHours ?? data.shieldHoursGranted ?? 4),
+          cooldownApplied: Boolean(data.cooldownApplied),
+          lootMessage: data.lootMessage,
+          remainingTargetHp: data.remainingTargetHp,
+        }
+        return { success: true, data: normalized }
+      }
       return { success: true, data: data as ClanFortressRaidResult }
     } catch (e: any) {
       logError('settleClanFortressRaid', e)
@@ -2358,13 +2376,15 @@ export const SupabaseService = {
       }
 
       try {
-        const { data: clansTableData } = await supabase
-          .from('clans')
+        const { data: clansTableData } = await (supabase
+          .from('clans') as any)
           .select('*')
+          .eq('is_npc', false)
           .order('damage_dealt', { ascending: false })
           .limit(50)
         if (Array.isArray(clansTableData) && clansTableData.length > 0) {
-          return clansTableData.map((c: any, idx: number) => ({
+          const filtered = clansTableData.filter((c: any) => !c.is_npc)
+          return filtered.map((c: any, idx: number) => ({
             rank: idx + 1,
             id: c.id,
             name: c.name,

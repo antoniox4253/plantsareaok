@@ -379,14 +379,17 @@ export interface ClanFortressRaidResult {
   success: boolean
   starsEarned: number
   damageDealt: number
+  effectiveDamage?: number
   stolenTotal: number
-  stolenToUser: number
+  stolenToUser?: number
   stolenToClan: number
+  stolenGems?: number
   goldBonus: number
-  targetClanName: string
-  shieldHoursGranted: number
-  cooldownApplied: boolean
+  targetClanName?: string
+  shieldHoursGranted?: number
+  cooldownApplied?: boolean
   lootMessage?: string
+  remainingTargetHp?: number
 }
 
 export interface ClanRaidHistoryEntry {
