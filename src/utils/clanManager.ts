@@ -86,9 +86,12 @@ export interface ClanInvitation {
   clanBadge: string
   clanDescription: string
   leaderName: string
+  inviterName?: string
   invitedUsername: string
   status: 'pending' | 'accepted' | 'rejected'
   createdAt: number
+  isSponsored?: boolean
+  amountGems?: number
 }
 
 export interface ClanData {
@@ -949,18 +952,19 @@ export class ClanManager {
   }
 
   /**
-   * Send direct invitation from clan leader to a player
+   * Send direct invitation from any clan member to a player (with optional sponsorship)
    */
   static sendClanInvitation(
     clanId: string,
     targetUsername: string,
-    senderLeaderName: string
-  ): { success: boolean; invitationId?: string; error?: string } {
+    senderName: string,
+    sponsor = false
+  ): { success: boolean; invitationId?: string; sponsored?: boolean; error?: string } {
     const clans = this.getClans()
     const clan = clans.find((c) => c.id === clanId)
     if (!clan) return { success: false, error: 'Clan no encontrado.' }
     if (clan.members.length >= 15) return { success: false, error: 'El clan ya alcanzó el máximo de 15 miembros.' }
-    if (targetUsername.toLowerCase() === senderLeaderName.toLowerCase()) {
+    if (targetUsername.toLowerCase() === senderName.toLowerCase()) {
       return { success: false, error: 'No puedes invitarte a ti mismo.' }
     }
     const targetAlreadyInClan = clans.some((c) => c.members.some((m) => m.name.toLowerCase() === targetUsername.toLowerCase()))
@@ -991,13 +995,16 @@ export class ClanManager {
       clanBadge: clan.badge,
       clanDescription: clan.description,
       leaderName: clan.leader,
+      inviterName: senderName,
       invitedUsername: targetUsername,
       status: 'pending',
       createdAt: Date.now(),
+      isSponsored: Boolean(sponsor),
+      amountGems: sponsor ? 200 : 0,
     }
     invs.unshift(newInv)
     localStorage.setItem(STORAGE_KEYS.CLAN_INVITATIONS, JSON.stringify(invs))
-    return { success: true, invitationId: newInv.id }
+    return { success: true, invitationId: newInv.id, sponsored: newInv.isSponsored }
   }
 
   /**
@@ -1021,7 +1028,7 @@ export class ClanManager {
     invitationId: string,
     accept: boolean,
     playerElo = 1000
-  ): { success: boolean; clanId?: string; clanName?: string; error?: string } {
+  ): { success: boolean; clanId?: string; clanName?: string; isSponsored?: boolean; error?: string } {
     const saved = localStorage.getItem(STORAGE_KEYS.CLAN_INVITATIONS)
     if (!saved) return { success: false, error: 'Invitación no encontrada.' }
     let invs: ClanInvitation[] = []
@@ -1037,7 +1044,7 @@ export class ClanManager {
     if (!accept) {
       inv.status = 'rejected'
       localStorage.setItem(STORAGE_KEYS.CLAN_INVITATIONS, JSON.stringify(invs))
-      return { success: true }
+      return { success: true, isSponsored: inv.isSponsored }
     }
 
     const clans = this.getClans()
@@ -1050,7 +1057,7 @@ export class ClanManager {
 
     inv.status = 'accepted'
     localStorage.setItem(STORAGE_KEYS.CLAN_INVITATIONS, JSON.stringify(invs))
-    return { success: true, clanId: inv.clanId, clanName: inv.clanName }
+    return { success: true, clanId: inv.clanId, clanName: inv.clanName, isSponsored: inv.isSponsored }
   }
 
   /**

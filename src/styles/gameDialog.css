@@ -601,6 +601,37 @@
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
 }
 
+.clan-invitation-dialog-cost-box--sponsored {
+  background: rgba(6, 78, 59, 0.4);
+  border: 1.5px solid #10b981;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+
+.clan-invitation-sponsored-tag {
+  font-size: 13px;
+  font-weight: 900;
+  color: #34d399;
+  letter-spacing: 0.5px;
+}
+
+.clan-invitation-cost-gems--free {
+  color: #4ade80 !important;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.6) !important;
+}
+
+.clan-invitation-btn--accept-sponsored {
+  background: linear-gradient(135deg, #10b981 0%, #047857 50%, #d97706 100%);
+  border: 1.5px solid #6ee7b7;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.5);
+  animation: pulse-sponsor 2s infinite ease-in-out;
+}
+
+@keyframes pulse-sponsor {
+  0%, 100% { box-shadow: 0 4px 18px rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 4px 26px rgba(245, 158, 11, 0.6); }
+}
+
 .clan-invitation-btn--reject {
   background: rgba(239, 68, 68, 0.18);
   border: 1.5px solid #ef4444;

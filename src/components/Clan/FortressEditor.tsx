@@ -454,12 +454,12 @@ export default function FortressEditor({
 
           <button
             type="button"
-            className="fortress-editor-btn-save"
+            className={`fortress-editor-btn-save ${!canEdit ? 'fortress-editor-btn-save--readonly' : ''}`}
             onClick={handleSave}
-            disabled={isSaving || !canEdit}
-            title={canEdit ? 'Guardar formación en la base de datos' : 'Solo oficiales pueden guardar'}
+            disabled={isSaving}
+            title={canEdit ? 'Guardar formación en la base de datos' : 'Solo oficiales (Líder, Colíder, Veterano) pueden guardar. Haz clic para más información.'}
           >
-            {isSaving ? 'GUARDANDO...' : '💾 GUARDAR DEFENSA'}
+            {isSaving ? 'GUARDANDO...' : canEdit ? '💾 GUARDAR DEFENSA' : '🔒 SOLO OFICIALES'}
           </button>
         </div>
       </header>
@@ -495,6 +495,12 @@ export default function FortressEditor({
       {saveStatus && (
         <div className={`fortress-editor-alert fortress-editor-alert--${saveStatus.type}`}>
           <span>{saveStatus.message}</span>
+        </div>
+      )}
+
+      {!canEdit && !saveStatus && (
+        <div className="fortress-editor-alert fortress-editor-alert--warning" style={{ background: '#78350f', border: '1px solid #f59e0b', color: '#fef3c7' }}>
+          <span>👁️ MODO OBSERVADOR: Tu rango es Miembro. Solo el Líder, Colíderes y Veteranos tienen permiso para guardar cambios en la defensa.</span>
         </div>
       )}
 

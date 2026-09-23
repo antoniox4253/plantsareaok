@@ -235,5 +235,26 @@ describe('ClanManager & Gem Valuations', () => {
     expect(sql).toMatch(/FUNCTION public\.kick_clan_member/i)
     expect(sql).toMatch(/GRANT EXECUTE ON FUNCTION public\.kick_clan_member/i)
   })
+
+  it('handles sponsored invitations correctly (sponsor flag, amountGems, rejection & acceptance)', () => {
+    const clan = ClanManager.createClan('Titanes', 'TIT', '🛡️', 'Clan patrocinado', 'Líder Titan', 1600)
+
+    // A regular member invites with sponsor = true
+    const sendRes = ClanManager.sendClanInvitation(clan.id, 'NovatoAmigo', 'MiembroVeterano', true)
+    expect(sendRes.success).toBe(true)
+    expect(sendRes.sponsored).toBe(true)
+    expect(sendRes.invitationId).toBeDefined()
+
+    const myInvs = ClanManager.getMyClanInvitations('NovatoAmigo')
+    expect(myInvs.length).toBe(1)
+    expect(myInvs[0].isSponsored).toBe(true)
+    expect(myInvs[0].amountGems).toBe(200)
+    expect(myInvs[0].inviterName).toBe('MiembroVeterano')
+
+    // Rejecting returns isSponsored = true so client knows to refund escrow
+    const rejectRes = ClanManager.respondClanInvitation(sendRes.invitationId!, false)
+    expect(rejectRes.success).toBe(true)
+    expect(rejectRes.isSponsored).toBe(true)
+  })
 })
 

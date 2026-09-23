@@ -103,6 +103,9 @@ function App() {
     clanBadge: string
     clanDescription: string
     leaderName: string
+    inviterName?: string
+    isSponsored?: boolean
+    amountGems?: number
   } | null>(null)
   const [isProcessingClanInvitation, setIsProcessingClanInvitation] = useState(false)
 
@@ -348,7 +351,9 @@ function App() {
     if (!activeClanInvitation) return
 
     if (accept) {
-      if (userTokens < 200.0) {
+      const isSponsored = Boolean(activeClanInvitation.isSponsored)
+
+      if (!isSponsored && userTokens < 200.0) {
         soundManager.playSound('surrender', 0.6)
         setActiveAppAlert({
           title: 'SALDO INSUFICIENTE',
@@ -386,15 +391,19 @@ function App() {
           }
         }
 
-        // Deduct 200 gems
-        deductUserTokens(200.0)
+        // Deduct 200 gems ONLY if not sponsored
+        if (!isSponsored) {
+          deductUserTokens(200.0)
+        }
         soundManager.playSound('plantation', 0.9)
         ClanManager.setUserClanId(activeClanInvitation.clanId)
         void refreshFromServer()
 
         setActiveAppAlert({
           title: '¡BIENVENIDO AL CLAN!',
-          message: `Te has unido exitosamente al clan "${activeClanInvitation.clanName}".\nSe transfirieron 200 Gemas 💎 al Tesoro del Clan.`,
+          message: isSponsored
+            ? `¡Te has unido exitosamente al clan "${activeClanInvitation.clanName}"!\nTu cuota de 200 Gemas 💎 fue totalmente patrocinada por ${activeClanInvitation.inviterName || 'tu clan'}.`
+            : `Te has unido exitosamente al clan "${activeClanInvitation.clanName}".\nSe transfirieron 200 Gemas 💎 al Tesoro del Clan.`,
           icon: '🎉',
         })
         setActiveClanInvitation(null)
@@ -1758,34 +1767,55 @@ function App() {
 
               <div className="clan-invitation-dialog-body">
                 <div className="clan-invitation-dialog-leader-box">
-                  <span className="clan-invitation-crown">👑</span>
-                  <span>El Líder <strong>{activeClanInvitation.leaderName}</strong> te ha invitado a unirte a su Clan.</span>
+                  <span className="clan-invitation-crown">{activeClanInvitation.isSponsored ? '🎁' : '👑'}</span>
+                  <span>
+                    {activeClanInvitation.inviterName
+                      ? <><strong>{activeClanInvitation.inviterName}</strong> te ha invitado a unirte a su Clan.</>
+                      : <>El Líder <strong>{activeClanInvitation.leaderName}</strong> te ha invitado a unirte a su Clan.</>}
+                  </span>
                 </div>
                 {activeClanInvitation.clanDescription && (
                   <p className="clan-invitation-dialog-desc">«{activeClanInvitation.clanDescription}»</p>
                 )}
-                <div className="clan-invitation-dialog-cost-box">
-                  <div className="clan-invitation-cost-row">
-                    <span>Cuota de entrada al Tesoro:</span>
-                    <strong className="clan-invitation-cost-gems">200 Gemas 💎</strong>
+
+                {activeClanInvitation.isSponsored ? (
+                  <div className="clan-invitation-dialog-cost-box clan-invitation-dialog-cost-box--sponsored">
+                    <div className="clan-invitation-cost-row">
+                      <span className="clan-invitation-sponsored-tag">✨ ¡CUOTA 100% PATROCINADA! ✨</span>
+                      <strong className="clan-invitation-cost-gems clan-invitation-cost-gems--free">0 💎 GRATIS</strong>
+                    </div>
+                    <div className="clan-invitation-cost-row clan-invitation-cost-row--sub">
+                      <span>Tu cuota de ingreso de 200 Gemas ya fue abonada por {activeClanInvitation.inviterName || 'un compañero'}. ¡No gastas nada!</span>
+                    </div>
                   </div>
-                  <div className="clan-invitation-cost-row clan-invitation-cost-row--sub">
-                    <span>Tu saldo disponible:</span>
-                    <span className={userTokens < 200 ? 'clan-invitation-gems--low' : ''}>
-                      {Math.floor(userTokens)} Gemas 💎 {userTokens < 200 ? '(Insuficiente)' : '✓'}
-                    </span>
+                ) : (
+                  <div className="clan-invitation-dialog-cost-box">
+                    <div className="clan-invitation-cost-row">
+                      <span>Cuota de entrada al Tesoro:</span>
+                      <strong className="clan-invitation-cost-gems">200 Gemas 💎</strong>
+                    </div>
+                    <div className="clan-invitation-cost-row clan-invitation-cost-row--sub">
+                      <span>Tu saldo disponible:</span>
+                      <span className={userTokens < 200 ? 'clan-invitation-gems--low' : ''}>
+                        {Math.floor(userTokens)} Gemas 💎 {userTokens < 200 ? '(Insuficiente)' : '✓'}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="clan-invitation-dialog-actions">
                 <button
                   type="button"
-                  className="clan-invitation-btn clan-invitation-btn--accept"
+                  className={`clan-invitation-btn ${activeClanInvitation.isSponsored ? 'clan-invitation-btn--accept-sponsored' : 'clan-invitation-btn--accept'}`}
                   onClick={() => handleRespondClanInvitation(true)}
                   disabled={isProcessingClanInvitation}
                 >
-                  {isProcessingClanInvitation ? 'UNIENDO...' : '✓ UNIRSE AL CLAN (200 💎)'}
+                  {isProcessingClanInvitation
+                    ? 'UNIENDO...'
+                    : activeClanInvitation.isSponsored
+                    ? '🎉 UNIRME GRATIS (0 💎)'
+                    : '✓ UNIRSE AL CLAN (200 💎)'}
                 </button>
                 <button
                   type="button"

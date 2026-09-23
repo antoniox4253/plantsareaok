@@ -134,9 +134,10 @@ export default function Clan({
   const [clanAutoAccept, setClanAutoAccept] = useState<boolean>(true)
   const [pendingRequests, setPendingRequests] = useState<any[]>([])
 
-  // Direct Clan Invitation Modal State (Solo Líder)
+  // Direct Clan Invitation Modal State (Cualquier Miembro)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [inviteTargetUsername, setInviteTargetUsername] = useState('')
+  const [isSponsoringInvite, setIsSponsoringInvite] = useState(false)
   const [isSendingInvite, setIsSendingInvite] = useState(false)
 
   // Creation form state
@@ -1162,7 +1163,7 @@ export default function Clan({
     setKickValidation(null)
   }
 
-  // SEND DIRECT INVITATION (Solo Líder)
+  // SEND DIRECT INVITATION (Cualquier Miembro con opción de Patrocinio)
   const handleSendInvitation = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!userClan) return
@@ -1181,17 +1182,28 @@ export default function Clan({
       return
     }
 
+    if (isSponsoringInvite && userTokens < 200.0) {
+      soundManager.playSound('surrender', 0.5)
+      showModalAlert(
+        'GEMAS INSUFICIENTES',
+        `Requieres 200 Gemas 💎 para patrocinar la cuota de ingreso de tu amigo.\nTu saldo disponible actual es de ${Math.floor(userTokens)} Gemas 💎.`,
+        '💎',
+        'warning'
+      )
+      return
+    }
+
     setIsSendingInvite(true)
     try {
       if (ClanManager.isValidUuid(userClan.id)) {
-        const res = await supabaseService.sendClanInvitation(userClan.id, target)
+        const res = await supabaseService.sendClanInvitation(userClan.id, target, isSponsoringInvite)
         if (!res.success) {
           showModalAlert('NO SE PUDO ENVIAR', res.message || res.error || 'Error al enviar invitación.', '❌', 'error')
           setIsSendingInvite(false)
           return
         }
       } else {
-        const res = ClanManager.sendClanInvitation(userClan.id, target, playerName)
+        const res = ClanManager.sendClanInvitation(userClan.id, target, playerName, isSponsoringInvite)
         if (!res.success) {
           showModalAlert('NO SE PUDO ENVIAR', res.error || 'Error al enviar invitación.', '❌', 'error')
           setIsSendingInvite(false)
@@ -1199,15 +1211,23 @@ export default function Clan({
         }
       }
 
+      if (isSponsoringInvite) {
+        onDeductTokens(200.0)
+      }
+
       soundManager.playSound('plantation', 0.8)
       showModalAlert(
-        '¡INVITACIÓN ENVIADA!',
-        `Se ha enviado la invitación directa a "${target}".\nAl jugador le aparecerá un pop-up en su Lobby para unirse por 200 Gemas 💎.`,
-        '✉️',
+        isSponsoringInvite ? '¡INVITACIÓN PATROCINADA ENVIADA!' : '¡INVITACIÓN ENVIADA!',
+        isSponsoringInvite
+          ? `Se ha enviado la invitación PATROCINADA a "${target}".\nPagaste 200 Gemas 💎 para que tu amigo ingrese 100% GRATIS.\n🛡️ Si el jugador rechaza o el clan se llena, tus 200 Gemas serán reembolsadas automáticamente.`
+          : `Se ha enviado la invitación directa a "${target}".\nAl jugador le aparecerá un pop-up en su Lobby para unirse por 200 Gemas 💎.`,
+        isSponsoringInvite ? '🎁' : '✉️',
         'success'
       )
       setInviteTargetUsername('')
+      setIsSponsoringInvite(false)
       setShowInviteModal(false)
+      if (onRefreshUserData) void onRefreshUserData()
     } catch (err: any) {
       showModalAlert('ERROR', err?.message || 'Error de conexión al enviar invitación.', '❌', 'error')
     } finally {
@@ -2378,34 +2398,28 @@ export default function Clan({
             </div>
           )}
 
-          {/* Barra de herramientas para el Líder: Invitar Jugador */}
-          {isLeader ? (
-            <div className="clan-members-toolbar">
-              <span className="clan-members-toolbar__hint">
-                👥 Administra los miembros de tu clan o invita jugadores directamente por nombre de usuario.
-              </span>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className="clan-invite-open-btn"
-                  onClick={() => {
-                    soundManager.playSound('click', 0.4)
-                    setShowInviteModal(true)
-                  }}
-                  disabled={userClan.members.length >= (fortressData?.maxMembers || 15)}
-                  title={userClan.members.length >= (fortressData?.maxMembers || 15) ? `El clan ya alcanzó el cupo máximo de ${fortressData?.maxMembers || 15} miembros` : 'Invitar jugador'}
-                >
-                  ✉️ INVITAR JUGADOR AL CLAN
-                </button>
-              </div>
+          {/* Barra de herramientas para miembros: Invitar Jugador */}
+          <div className="clan-members-toolbar">
+            <span className="clan-members-toolbar__hint">
+              👥 Miembros del clan ({userClan.members.length}/{fortressData?.maxMembers || 15}). ¡Invita a tus amigos directamente o patrocina su entrada gratis!
+            </span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button
+                type="button"
+                className="clan-invite-open-btn"
+                onClick={() => {
+                  soundManager.playSound('click', 0.4)
+                  setInviteTargetUsername('')
+                  setIsSponsoringInvite(false)
+                  setShowInviteModal(true)
+                }}
+                disabled={userClan.members.length >= (fortressData?.maxMembers || 15)}
+                title={userClan.members.length >= (fortressData?.maxMembers || 15) ? `El clan ya alcanzó el cupo máximo de ${fortressData?.maxMembers || 15} miembros` : 'Invitar jugador al clan'}
+              >
+                ✉️ INVITAR AL CLAN
+              </button>
             </div>
-          ) : (
-            <div className="clan-members-toolbar">
-              <span className="clan-members-toolbar__hint">
-                👥 Miembros del clan ({userClan.members.length}/{fortressData?.maxMembers || 15}). Los nuevos ingresos se sincronizan en tiempo real.
-              </span>
-            </div>
-          )}
+          </div>
 
           <div className="clan-members-table-wrap">
             <table className="clan-members-table">
@@ -4649,34 +4663,29 @@ export default function Clan({
         </div>
       )}
 
-      {/* DIRECT INVITATION MODAL (Solo Líder) */}
+      {/* DIRECT INVITATION MODAL (Cualquier Miembro con opción de Patrocinio) */}
       {showInviteModal && userClan && (
-        <div className="clan-modal-backdrop" onClick={() => setShowInviteModal(false)}>
+        <div className="clan-modal-backdrop" onClick={() => !isSendingInvite && setShowInviteModal(false)}>
           <div className="clan-modal-box clan-invite-modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="clan-modal-header-row">
               <div className="clan-modal-header-title">
-                <span className="clan-modal-header-icon">✉️</span>
+                <span className="clan-modal-header-icon">{isSponsoringInvite ? '🎁' : '✉️'}</span>
                 <div>
                   <h3>INVITAR JUGADOR AL CLAN</h3>
-                  <p>Envía una invitación directa al Lobby de otro jugador</p>
+                  <p>Invita a un amigo directamente a <strong>{userClan.name}</strong></p>
                 </div>
               </div>
               <button
                 type="button"
                 className="clan-modal-close-btn"
                 onClick={() => setShowInviteModal(false)}
+                disabled={isSendingInvite}
               >
                 ✕
               </button>
             </div>
 
             <form onSubmit={handleSendInvitation} className="clan-invite-form">
-              <div className="clan-invite-notice">
-                <p>
-                  El jugador recibirá un <strong>pop-up interactivo en su Lobby</strong> para unirse a <strong>{userClan.name}</strong> por <strong>200 Gemas 💎</strong> (las cuales se sumarán al Tesoro de tu Clan).
-                </p>
-              </div>
-
               <div className="clan-invite-field">
                 <label htmlFor="invite-target-input">Nombre exacto del jugador:</label>
                 <input
@@ -4691,18 +4700,92 @@ export default function Clan({
                 />
               </div>
 
+              {/* Selector de Modalidad: Estándar vs Patrocinada */}
+              <div className="clan-invite-options-group">
+                <label className="clan-invite-options-label">Modalidad de Cuota de Ingreso:</label>
+                
+                {/* Opción 1: El invitado paga su cuota */}
+                <div
+                  className={`clan-invite-option-card ${!isSponsoringInvite ? 'clan-invite-option-card--active' : ''}`}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.2)
+                    setIsSponsoringInvite(false)
+                  }}
+                >
+                  <div className="clan-invite-option-radio">
+                    <input
+                      type="radio"
+                      name="inviteSponsorMode"
+                      checked={!isSponsoringInvite}
+                      onChange={() => setIsSponsoringInvite(false)}
+                    />
+                  </div>
+                  <div className="clan-invite-option-content">
+                    <div className="clan-invite-option-title">
+                      <span>🪙 El invitado paga su cuota (200 💎)</span>
+                      <span className="clan-invite-cost-tag">Costo: 0 💎 para ti</span>
+                    </div>
+                    <p className="clan-invite-option-desc">
+                      Tu amigo recibe la invitación en su Lobby y abona las 200 Gemas requeridas para ingresar.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Opción 2: Patrocinar cuota de ingreso */}
+                <div
+                  className={`clan-invite-option-card clan-invite-option-card--sponsor ${isSponsoringInvite ? 'clan-invite-option-card--active-sponsor' : ''} ${userTokens < 200 ? 'clan-invite-option-card--disabled' : ''}`}
+                  onClick={() => {
+                    if (userTokens >= 200) {
+                      soundManager.playSound('click', 0.2)
+                      setIsSponsoringInvite(true)
+                    }
+                  }}
+                >
+                  <div className="clan-invite-option-radio">
+                    <input
+                      type="radio"
+                      name="inviteSponsorMode"
+                      checked={isSponsoringInvite}
+                      disabled={userTokens < 200}
+                      onChange={() => {
+                        if (userTokens >= 200) setIsSponsoringInvite(true)
+                      }}
+                    />
+                  </div>
+                  <div className="clan-invite-option-content">
+                    <div className="clan-invite-option-title">
+                      <span>🎁 Patrocinar cuota (Entra 100% GRATIS)</span>
+                      <span className="clan-invite-cost-tag clan-invite-cost-tag--sponsor">
+                        Costo: 200 💎 (Tu saldo: {Math.floor(userTokens)} 💎)
+                      </span>
+                    </div>
+                    <p className="clan-invite-option-desc">
+                      Pagas 200 Gemas por tu amigo para que ingrese inmediatamente sin gastar gemas.
+                    </p>
+                    <div className="clan-invite-guarantee-badge">
+                      🛡️ <strong>Garantía de Reembolso:</strong> Si el jugador rechaza o el clan se llena, tus 200 Gemas se reembolsan inmediatamente a tu saldo.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="clan-modal-actions">
                 <button
                   type="submit"
-                  className="clan-confirm-btn clan-confirm-btn--invite"
-                  disabled={isSendingInvite || !inviteTargetUsername.trim()}
+                  className={`clan-confirm-btn ${isSponsoringInvite ? 'clan-confirm-btn--sponsor' : 'clan-confirm-btn--invite'}`}
+                  disabled={isSendingInvite || !inviteTargetUsername.trim() || (isSponsoringInvite && userTokens < 200)}
                 >
-                  {isSendingInvite ? 'ENVIANDO...' : '✉️ ENVIAR INVITACIÓN'}
+                  {isSendingInvite
+                    ? 'ENVIANDO...'
+                    : isSponsoringInvite
+                    ? '🎁 ENVIAR Y PATROCINAR (200 💎)'
+                    : '✉️ ENVIAR INVITACIÓN (0 💎)'}
                 </button>
                 <button
                   type="button"
                   className="clan-cancel-btn"
                   onClick={() => setShowInviteModal(false)}
+                  disabled={isSendingInvite}
                 >
                   CANCELAR
                 </button>

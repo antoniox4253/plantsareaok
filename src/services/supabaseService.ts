@@ -2252,19 +2252,21 @@ export const SupabaseService = {
 
   async sendClanInvitation(
     clanId: string,
-    targetUsername: string
-  ): Promise<{ success: boolean; invitation_id?: string; target_username?: string; error?: string; message?: string }> {
+    targetUsername: string,
+    sponsor = false
+  ): Promise<{ success: boolean; invitation_id?: string; target_username?: string; sponsored?: boolean; error?: string; message?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       const { data, error } = await (supabase.rpc as any)('send_clan_invitation', {
         p_clan_id: clanId,
         p_target_username: targetUsername.trim(),
+        p_sponsor: Boolean(sponsor),
       })
       if (error) {
         logError('sendClanInvitation', error)
         return { success: false, error: error.message, message: error.message }
       }
-      return data as { success: boolean; invitation_id?: string; target_username?: string; error?: string; message?: string }
+      return data as { success: boolean; invitation_id?: string; target_username?: string; sponsored?: boolean; error?: string; message?: string }
     } catch (e: any) {
       logError('sendClanInvitation', e)
       return { success: false, error: e?.message, message: e?.message }
@@ -2274,7 +2276,7 @@ export const SupabaseService = {
   async respondClanInvitation(
     invitationId: string,
     accept: boolean
-  ): Promise<{ success: boolean; status?: string; clan_id?: string; clan_name?: string; error?: string; message?: string }> {
+  ): Promise<{ success: boolean; status?: string; clan_id?: string; clan_name?: string; is_sponsored?: boolean; error?: string; message?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       const { data, error } = await (supabase.rpc as any)('respond_clan_invitation', {
@@ -2285,7 +2287,7 @@ export const SupabaseService = {
         logError('respondClanInvitation', error)
         return { success: false, error: error.message, message: error.message }
       }
-      return data as { success: boolean; status?: string; clan_id?: string; clan_name?: string; error?: string; message?: string }
+      return data as { success: boolean; status?: string; clan_id?: string; clan_name?: string; is_sponsored?: boolean; error?: string; message?: string }
     } catch (e: any) {
       logError('respondClanInvitation', e)
       return { success: false, error: e?.message, message: e?.message }
@@ -2300,6 +2302,9 @@ export const SupabaseService = {
     clanBadge: string
     clanDescription: string
     leaderName: string
+    inviterName?: string
+    isSponsored?: boolean
+    amountGems?: number
     createdAt: string
   }>> {
     if (!isSupabaseConfigured()) return []
@@ -2317,6 +2322,9 @@ export const SupabaseService = {
         clanBadge: string
         clanDescription: string
         leaderName: string
+        inviterName?: string
+        isSponsored?: boolean
+        amountGems?: number
         createdAt: string
       }>
     } catch (e: any) {

@@ -207,9 +207,18 @@
   box-shadow: 0 5px 15px rgba(34, 197, 94, 0.5);
 }
 
-.fortress-editor-btn-save:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.fortress-editor-btn-save--readonly {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  border: 1px solid #94a3b8;
+  color: #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.fortress-editor-btn-save--readonly:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+  border-color: #fbbf24;
+  color: #fef3c7;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
 }
 
 .fortress-editor-alert {
@@ -241,6 +250,12 @@
   background: #7f1d1d;
   border: 1px solid #f87171;
   color: #fecaca;
+}
+
+.fortress-editor-alert--warning {
+  background: #78350f;
+  border: 1px solid #f59e0b;
+  color: #fef3c7;
 }
 
 /* ── CAMPO DE BATALLA 5 CARRILES ───────────────────────────────────────────── */
