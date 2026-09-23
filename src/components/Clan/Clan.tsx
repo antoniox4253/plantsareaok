@@ -527,17 +527,17 @@ export default function Clan({
       if (clanGold < 500) {
         setActiveDialog({
           title: 'Oro del Clan Insuficiente',
-          message: 'Se requieren 500 monedas de Oro en el Tesoro del Clan para buscar un asalto como Oficial/Líder.',
+          message: 'Se requieren al menos 500 monedas (recomendado 5,000) de Oro en el Tesoro del Clan para buscar un asalto como Oficial/Líder.',
           icon: '🪙',
           type: 'warning',
         })
         return
       }
     } else {
-      if ((userGold || 0) < 250) {
+      if ((userGold || 0) < 500) {
         setActiveDialog({
           title: 'Oro Insuficiente',
-          message: 'Se requieren 250 monedas de tu Oro personal para buscar un asalto.',
+          message: 'Se requieren 500 monedas de tu Oro personal para buscar un asalto.',
           icon: '🪙',
           type: 'warning',
         })
@@ -3045,7 +3045,7 @@ export default function Clan({
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <span className="clan-fcta-cost-badge">
-                              🪙 Coste: <strong>{isOfficer ? '500 Oro del Clan' : '250 Oro Propio'}</strong>
+                              🪙 Coste: <strong>{isOfficer ? '5,000 Oro del Clan' : '500 Oro Propio'}</strong>
                             </span>
                             <span className="clan-fcta-cost-badge" style={{ color: '#86efac', borderColor: 'rgba(74, 222, 128, 0.3)' }}>
                               💎 Botín: <strong>Hasta 30 Gemas al Clan</strong>
@@ -4418,7 +4418,7 @@ export default function Clan({
                       </p>
                       <div className="clan-role-guide-perks">
                         <span className="clan-role-perk-badge">🛠️ <strong>Edición Fortaleza:</strong> Total (5 carriles)</span>
-                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 500 Oro del Clan</span>
+                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 5,000 Oro del Clan</span>
                         <span className="clan-role-perk-badge">⏳ <strong>Cooldown Derrota:</strong> Ninguno</span>
                         <span className="clan-role-perk-badge">🌳 <strong>Árbol Madre:</strong> Gestión Total</span>
                       </div>
@@ -4434,7 +4434,7 @@ export default function Clan({
                       </p>
                       <div className="clan-role-guide-perks">
                         <span className="clan-role-perk-badge">🛠️ <strong>Edición Fortaleza:</strong> Sí</span>
-                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 500 Oro del Clan</span>
+                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 5,000 Oro del Clan</span>
                         <span className="clan-role-perk-badge">⏳ <strong>Cooldown Derrota:</strong> Ninguno</span>
                         <span className="clan-role-perk-badge">👑 <strong>Roles:</strong> Ascender a Veterano / Degradar</span>
                         <span className="clan-role-perk-badge">📬 <strong>Admisiones:</strong> Aceptar/Rechazar</span>
@@ -4451,7 +4451,7 @@ export default function Clan({
                       </p>
                       <div className="clan-role-guide-perks">
                         <span className="clan-role-perk-badge">🛠️ <strong>Edición Fortaleza:</strong> Sí</span>
-                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 500 Oro del Clan</span>
+                        <span className="clan-role-perk-badge">⚔️ <strong>Asaltos:</strong> 5,000 Oro del Clan</span>
                         <span className="clan-role-perk-badge">⏳ <strong>Cooldown Derrota:</strong> Inmune a bloqueo de 24h</span>
                       </div>
                     </div>
