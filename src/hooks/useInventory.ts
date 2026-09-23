@@ -279,7 +279,9 @@ export function useInventory() {
   const plantLevels = useMemo<Record<PlantId, number>>(() => {
     const out = { ...DEFAULT_PLANT_LEVELS }
     for (const inst of plantInstances) {
-      if (inst.isBase) out[inst.plantId] = inst.level
+      if (inst.isBase || out[inst.plantId] === undefined || (inst.level ?? 0) > out[inst.plantId]) {
+        out[inst.plantId] = inst.level
+      }
     }
     return out
   }, [plantInstances])
@@ -288,7 +290,9 @@ export function useInventory() {
     const out = {} as Record<PlantId, PlantStatKey[]>
     for (const id of ALL_15_PLANTS) out[id] = []
     for (const inst of plantInstances) {
-      if (inst.isBase) out[inst.plantId] = inst.statRolls || []
+      if (inst.isBase || !out[inst.plantId] || out[inst.plantId].length === 0) {
+        out[inst.plantId] = inst.statRolls || []
+      }
     }
     return out
   }, [plantInstances])
@@ -1239,6 +1243,8 @@ export function useInventory() {
         germinationsCount: i.germinationsCount ?? 0,
         equippedItem: (i as any).equippedItem || null,
         isListed: Boolean((i as any).isListed),
+        isInDeck: Boolean(i.isInDeck),
+        deckSlot: typeof i.deckSlot === 'number' ? i.deckSlot : null,
         obtainedAt: i.obtainedAt,
       }))
     )

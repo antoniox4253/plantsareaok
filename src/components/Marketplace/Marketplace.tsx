@@ -199,9 +199,9 @@ export default function Marketplace({
   const canSell = accessInfo.canSell
   const copasActuales = accessInfo.copasActuales
 
-  // Total de cartas de plantas disponibles que posee el jugador
+  // Total de cartas de plantas disponibles no listadas que posee el jugador
   const availablePlantsCount = useMemo(() => {
-    return (plantInstances || []).length
+    return (plantInstances || []).filter((i) => !i.isListed).length
   }, [plantInstances])
 
   // Lista unificada de cartas de plantas e ítems de farming vendibles
@@ -211,14 +211,22 @@ export default function Marketplace({
 
     // 1. Cartas de Plantas
     if (plantInstances && plantInstances.length > 0) {
+      const deckPlantIdsSeen = new Set<string>()
       plantInstances.forEach((inst) => {
         if (!unlocked.includes(inst.plantId)) return
         if (inst.isListed) return // Ya está listada para venta en el mercado
         const rInfo = getPlantRarityAndMinPrice(inst.plantId)
-        const inDeck = Boolean(
-          activeDeckInstances?.includes(inst.instanceId) ||
-          activeDeck?.includes(inst.plantId)
-        )
+        
+        let inDeck = false
+        if (activeDeckInstances && activeDeckInstances.length > 0) {
+          inDeck = activeDeckInstances.includes(inst.instanceId)
+        } else if (inst.isInDeck !== undefined) {
+          inDeck = Boolean(inst.isInDeck)
+        } else if (activeDeck && activeDeck.includes(inst.plantId) && !deckPlantIdsSeen.has(inst.plantId)) {
+          inDeck = true
+          deckPlantIdsSeen.add(inst.plantId)
+        }
+
         const pConfig = PLANT_CONFIGS[inst.plantId]
         items.push({
           kind: 'plant',
@@ -752,7 +760,18 @@ export default function Marketplace({
     }
 
     // Carta de Planta
-    if (!/^[0-9a-f-]{36}$/i.test(selectedItem.instanceId)) {
+    let targetInstanceId = selectedItem.instanceId
+    if (!/^[0-9a-f-]{36}$/i.test(targetInstanceId)) {
+      // Intentar resolver UUID físico real si es un id virtual inst_base_<plantId>
+      const realCandidate = (plantInstances || []).find(
+        (i) => i.plantId === selectedItem.plantId && /^[0-9a-f-]{36}$/i.test(i.instanceId) && !i.isListed
+      )
+      if (realCandidate) {
+        targetInstanceId = realCandidate.instanceId
+      }
+    }
+
+    if (!/^[0-9a-f-]{36}$/i.test(targetInstanceId) && !targetInstanceId.startsWith('inst_base_')) {
       showModalAlert(
         'ESTA CARTA NO SE PUEDE VENDER',
         'Es una carta base del juego, no una instancia de tu inventario. Vende cartas obtenidas en sobres o cofres.',
@@ -784,7 +803,7 @@ export default function Marketplace({
       return
     }
 
-    const sameSpeciesCount = (plantInstances || []).filter((i) => i.plantId === selectedItem.plantId).length
+    const sameSpeciesCount = (plantInstances || []).filter((i) => i.plantId === selectedItem.plantId && !i.isListed).length
     const isLastInstance = sameSpeciesCount <= 1
 
     const copyWarning = isLastInstance
@@ -802,7 +821,7 @@ export default function Marketplace({
         `¿Estás seguro de que deseas ponerla en venta?`,
       '🏷️',
       async () => {
-        const r = await marketplaceService.listMarketplaceItem('plant', selectedItem.instanceId, sellPriceGems, 1)
+        const r = await marketplaceService.listMarketplaceItem('plant', targetInstanceId, sellPriceGems, 1)
         if (!r.success) {
           showModalAlert('NO SE PUDO PUBLICAR', r.error || 'Inténtalo de nuevo.', '⚠️', 'error')
           return

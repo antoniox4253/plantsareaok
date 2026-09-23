@@ -46,6 +46,9 @@ import type { StrategicPlaytestConfig } from '../../engine/strategicPlaytest'
 import { recordPlantPlacement } from '../../utils/plantUsageTracker'
 import { trackGameOver, trackGameStart } from '../../utils/analytics'
 import GoldIcon from '../Common/GoldIcon'
+import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
+import { ArenaAdsManager } from '../../utils/arenaAdsManager'
+import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
 import './Battlefield.css'
 
 /** Un segundo antes de que el sol se recoja solo: momento de avisar. */
@@ -179,7 +182,10 @@ interface BattlefieldProps {
   activeDeck?: PlantId[]
   userElo?: number
   customBgImage?: string
-  matchMode?: 'ranked' | 'colosseum' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress'
+  matchMode?: 'ranked' | 'colosseum' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads'
+  arenaAdsRun?: ArenaAdsRun | null
+  onArenaAdsAdvance?: (run: ArenaAdsRun) => void
+  onArenaAdsRetreat?: (loot: ArenaAdsLoot) => void
   friendlyBetGems?: number
   colosseumConfig?: ColosseumMatchConfig | null
   tournamentOpponent?: { name: string; tournamentId: string } | null
@@ -268,6 +274,9 @@ export default function Battlefield({
   onPlayAgainPlaytest,
   clanFortressConfig = null,
   onClanFortressComplete,
+  arenaAdsRun = null,
+  onArenaAdsAdvance,
+  onArenaAdsRetreat,
   treeLevels = null,
   treeSkins = null,
 }: BattlefieldProps) {
@@ -438,6 +447,7 @@ export default function Battlefield({
   const [resultadoServidor, setResultadoServidor] = useState<{
     success?: boolean
     status?: string
+    resultadoFinal?: 'victory' | 'defeat' | 'draw' | 'hold'
     eloBefore?: number
     opponentElo?: number
     eloDelta?: number
@@ -565,6 +575,17 @@ export default function Battlefield({
   const [raidPrepNotice, setRaidPrepNotice] = useState<string | null>(null)
   const hasClanFortressStartedRef = useRef<boolean>(false)
 
+  const [showArenaAdsInterstitial, setShowArenaAdsInterstitial] = useState<boolean>(false)
+  const [currentArenaAdsRun, setCurrentArenaAdsRun] = useState<ArenaAdsRun | null>(
+    () => arenaAdsRun || ArenaAdsManager.getStoredRun()
+  )
+
+  useEffect(() => {
+    if (arenaAdsRun) {
+      setCurrentArenaAdsRun(arenaAdsRun)
+    }
+  }, [arenaAdsRun])
+
   // En clan_fortress la arena siempre opera sobre 5 carriles (LANES_CONFIG_5),
   // bloqueando visualmente los carriles no disponibles según el nivel del Árbol Madre rival.
   const activeLanesConfig = useMemo(() => {
@@ -607,6 +628,9 @@ export default function Battlefield({
   const allCatalogCards = useMemo(() => Object.keys(PLANT_CONFIGS) as PlantId[], [])
 
   const mazoMioParsed = useMemo<CartaDeMazo[] | null>(() => {
+    if (matchMode === 'arena_ads' && currentArenaAdsRun?.deck && currentArenaAdsRun.deck.length > 0) {
+      return currentArenaAdsRun.deck
+    }
     const fromRoom = leerMazo(mazosDeLaSala?.mio)
     if (fromRoom && fromRoom.length > 0) return fromRoom
 
@@ -690,7 +714,7 @@ export default function Battlefield({
         equippedItem: null,
       }))
     }
-  }, [mazosDeLaSala?.mio, matchMode, tournamentDeck, activeDeck, allCatalogCards])
+  }, [mazosDeLaSala?.mio, matchMode, tournamentDeck, activeDeck, allCatalogCards, currentArenaAdsRun])
 
   const effectiveDeck = useMemo(() => {
     if (matchMode === 'tournament' && tournamentDeck && tournamentDeck.length > 0) {
@@ -1476,6 +1500,7 @@ export default function Battlefield({
           setResultadoServidor({
             success: liq.statusServidor === 'liquidada' || liq.statusServidor === 'empate_verificado' || liq.statusServidor === 'verificacion_pendiente',
             status: liq.statusServidor,
+            resultadoFinal: liq.resultadoFinal,
             eloBefore: liq.eloBefore,
             opponentElo: liq.opponentElo,
             eloDelta: liq.eloDelta,
@@ -1613,11 +1638,24 @@ export default function Battlefield({
         })
       }
 
+      if (matchMode === 'arena_ads') {
+        if (gameStatus === 'victory') {
+          const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
+          if (run) {
+            const updated = ArenaAdsManager.completeLevelVictory(run)
+            setCurrentArenaAdsRun(updated)
+            setShowArenaAdsInterstitial(true)
+          }
+        } else if (gameStatus === 'defeat') {
+          ArenaAdsManager.clearRun()
+        }
+      }
+
       // Partida local sin roomId = entrenamiento / bot / PvE (el cliente calcula ELO local y sobre).
       // Partida con roomId = el servidor liquida autoritativamente arriba; no ejecutar aquí para no duplicar ni otorgar sobres en derrotas.
       if (!roomId) {
         if (gameStatus === 'victory') {
-          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress') {
+          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress' && matchMode !== 'arena_ads') {
             void (async () => {
               const res = await onBattleComplete(true)
               if (res) {
@@ -1632,7 +1670,7 @@ export default function Battlefield({
             })()
           }
         } else if (gameStatus === 'defeat') {
-          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress') {
+          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress' && matchMode !== 'arena_ads') {
             void (async () => {
               const res = await onBattleComplete(false)
               if (res) {
@@ -1868,6 +1906,22 @@ export default function Battlefield({
       return
     }
 
+    if (matchMode === 'arena_ads') {
+      soundManager.playBgm('menu')
+      if (gameStatus === 'victory') {
+        const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
+        if (run && onArenaAdsAdvance) {
+          const nextRun = ArenaAdsManager.advanceToNextLevel(run)
+          onArenaAdsAdvance(nextRun)
+          return
+        }
+      }
+      if (onBackToMenu) {
+        onBackToMenu()
+      }
+      return
+    }
+
     // ============================================================
     // ONLINE
     //
@@ -1895,7 +1949,7 @@ export default function Battlefield({
 
   return (
     <div
-      className={`battlefield ${matchMode === 'clan_fortress' ? 'battlefield--clan-fortress' : ''} ${selectedCard === 'shovel' ? 'battlefield--shovel-mode' : ''}`}
+      className={`battlefield ${matchMode === 'clan_fortress' ? 'battlefield--clan-fortress' : ''} ${matchMode === 'arena_ads' ? 'battlefield--arena-ads' : ''} ${selectedCard === 'shovel' ? 'battlefield--shovel-mode' : ''}`}
       style={{ backgroundImage: `url(${activeBgImage})` }}
       onPointerDown={(e) => {
         if (selectedCard && e.button === 0 && e.target === e.currentTarget) {
@@ -1909,6 +1963,44 @@ export default function Battlefield({
         }
       }}
     >
+      {/* ── ARENA ADS: BANNERS DE PUBLICIDAD (CASCARÓN) ── */}
+      {matchMode === 'arena_ads' && (
+        <>
+          <div className="arena-ads-layout-header">
+            <span className="arena-ads-layout-ad-badge">[ PUBLICIDAD / AD ] - HEADER BANNER</span>
+            <div className="arena-ads-layout-ad-content">
+              <span>📢</span> Anuncio Patrocinado • Mazmorra Infinita
+            </div>
+          </div>
+
+          <div className="arena-ads-layout-lateral arena-ads-layout-lateral--left">
+            <span className="arena-ads-layout-ad-badge">[ AD ]</span>
+            <div className="arena-ads-layout-ad-vertical">
+              <span>📺</span>
+              <span>A</span>
+              <span>D</span>
+              <span>S</span>
+            </div>
+          </div>
+
+          <div className="arena-ads-layout-lateral arena-ads-layout-lateral--right">
+            <span className="arena-ads-layout-ad-badge">[ AD ]</span>
+            <div className="arena-ads-layout-ad-vertical">
+              <span>🎯</span>
+              <span>A</span>
+              <span>D</span>
+              <span>S</span>
+            </div>
+          </div>
+
+          <div className="arena-ads-layout-footer">
+            <span className="arena-ads-layout-ad-badge">[ PUBLICIDAD / AD ] - FOOTER</span>
+            <div className="arena-ads-layout-ad-content">
+              <span>🛡️</span> Progreso guardado en caché • Retírate a tiempo o lo perderás todo
+            </div>
+          </div>
+        </>
+      )}
       {/* Practice / Sandbox Mode Bar */}
       {isPracticeMode && (
         <div className="practice-bar">
@@ -2839,13 +2931,15 @@ export default function Battlefield({
       {matchMode !== 'strategic_test' && (gameStatus === 'victory' || gameStatus === 'defeat') && (() => {
         const esDerrotaServidor = Boolean(
           resultadoServidor?.status === 'liquidada' && (
+            resultadoServidor?.resultadoFinal === 'defeat' ||
             (typeof resultadoServidor.eloDelta === 'number' && resultadoServidor.eloDelta < 0) ||
             (typeof resultadoServidor.eloLost === 'number' && resultadoServidor.eloLost > 0)
           )
         )
         const esVictoriaServidor = Boolean(
           resultadoServidor?.status === 'liquidada' && (
-            (typeof resultadoServidor.eloDelta === 'number' && resultadoServidor.eloDelta >= 0) ||
+            resultadoServidor?.resultadoFinal === 'victory' ||
+            (typeof resultadoServidor.eloDelta === 'number' && resultadoServidor.eloDelta > 0) ||
             (typeof resultadoServidor.eloGained === 'number' && resultadoServidor.eloGained > 0)
           )
         )
@@ -3063,6 +3157,53 @@ export default function Battlefield({
                       )}
                     </div>
                   </div>
+                ) : matchMode === 'arena_ads' ? (
+                  /* ARENA ADS MATCH REWARD CARD */
+                  <div className="game-card__panel game-card__panel--arena-ads">
+                    <div className="game-card__panel-title">
+                      <span>🏰</span> Resultado Arena ADS
+                    </div>
+                    <div className="colosseum-battle-payout-box" style={{ borderColor: '#38bdf8', boxShadow: '0 0 20px rgba(56, 189, 248, 0.35)', margin: 0 }}>
+                      {gameStatus === 'victory' ? (
+                        <>
+                          <div className="colosseum-payout-header" style={{ color: '#38bdf8' }}>
+                            <span>🎉 ¡NIVEL {currentArenaAdsRun?.level || 1} SUPERADO!</span>
+                          </div>
+                          <div className="colosseum-payout-gems" style={{ color: '#facc15' }}>
+                            💰 BOTÍN ACUMULADO ACTUAL:
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '6px' }}>
+                            <span style={{ color: '#fef08a', fontWeight: 800, fontSize: '0.85rem' }}>
+                              🪙 {currentArenaAdsRun?.accumulatedRewards.gold || 0} Oro
+                            </span>
+                            <span style={{ color: '#bae6fd', fontWeight: 800, fontSize: '0.85rem' }}>
+                              💎 {currentArenaAdsRun?.accumulatedRewards.gems || 0} Gemas
+                            </span>
+                            {currentArenaAdsRun && Object.entries(currentArenaAdsRun.accumulatedRewards.items).map(([id, qty]) => (
+                              <span key={id} style={{ color: '#86efac', fontWeight: 800, fontSize: '0.85rem' }}>
+                                🎒 +{qty} {id}
+                              </span>
+                            ))}
+                          </div>
+                          <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
+                            🛡️ Progreso guardado. Retírate ahora para cobrarlo o continúa arriesgando.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="colosseum-payout-header colosseum-payout-header--defeat">
+                            <span>💀 DERROTA EN LA MAZMORRA</span>
+                          </div>
+                          <div className="colosseum-payout-loss">
+                            Perdiste todo el botín acumulado en esta expedición.
+                          </div>
+                          <div className="colosseum-payout-streak" style={{ color: '#ef4444' }}>
+                            ⚠️ Has caído en el Nivel {currentArenaAdsRun?.level || 1}.
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 ) : matchMode === 'colosseum' && colosseumResult ? (
                   /* COLOSSEUM MATCH REWARD CARD */
                   <div className="game-card__panel game-card__panel--colosseum">
@@ -3254,10 +3395,34 @@ export default function Battlefield({
                 >
                   {matchMode === 'tournament'
                     ? '🏆 VOLVER AL TORNEO'
+                    : matchMode === 'arena_ads'
+                    ? (gameStatus === 'victory' ? `⚔️ AVANZAR AL NIVEL ${(currentArenaAdsRun?.level || 1) + 1}` : '🔄 VOLVER AL LOBBY')
                     : isRerollingTarget
                     ? '🔍 BUSCANDO FORTALEZA...'
                     : '🎮 SEGUIR JUGANDO'}
                 </button>
+                {matchMode === 'arena_ads' && gameStatus === 'victory' && (
+                  <button
+                    className="game-button"
+                    style={{
+                      background: 'linear-gradient(180deg, #facc15 0%, #ca8a04 100%)',
+                      color: '#422006',
+                      fontWeight: 900,
+                      border: '1px solid #fde047',
+                    }}
+                    type="button"
+                    onClick={() => {
+                      soundManager.playBgm('menu')
+                      if (currentArenaAdsRun && onArenaAdsRetreat) {
+                        onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards)
+                      } else if (onBackToMenu) {
+                        onBackToMenu()
+                      }
+                    }}
+                  >
+                    💰 RETIRARSE ({currentArenaAdsRun?.accumulatedRewards.gold || 0} 🪙)
+                  </button>
+                )}
                 {onBackToMenu && matchMode !== 'tournament' && (
                   <button
                     className="game-button game-button--secondary"
@@ -3275,6 +3440,28 @@ export default function Battlefield({
             </div>
           </div>
       )})()}
+
+      {/* ARENA ADS INTERSTITIAL POPUP (CASCARÓN ENTRE NIVELES) */}
+      {matchMode === 'arena_ads' && showArenaAdsInterstitial && currentArenaAdsRun && (
+        <ArenaAdsInterstitialModal
+          isOpen={showArenaAdsInterstitial}
+          levelCleared={currentArenaAdsRun.level}
+          accumulatedLoot={currentArenaAdsRun.accumulatedRewards}
+          onNextLevel={() => {
+            setShowArenaAdsInterstitial(false)
+            if (onArenaAdsAdvance) {
+              const nextRun = ArenaAdsManager.advanceToNextLevel(currentArenaAdsRun)
+              onArenaAdsAdvance(nextRun)
+            }
+          }}
+          onCashout={() => {
+            setShowArenaAdsInterstitial(false)
+            if (onArenaAdsRetreat) {
+              onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards)
+            }
+          }}
+        />
+      )}
 
       {/* Strategic Playtest Post-Match Evaluation Modal */}
       {matchMode === 'strategic_test' && currentPlaytestLog && (

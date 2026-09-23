@@ -228,5 +228,84 @@ describe('Marketplace Selling Safeties & Deck Auto-Heal', () => {
     // Caso D: Venta concretada y era su única carta física (quedan 0) -> Copias quemadas (0)
     expect(evaluateSellerCopiesOnEvent('sold', 4, 0)).toBe(0)
   })
+
+  it('7. Valida que cartas duplicadas de plantas base NO se marquen como en mazo y puedan venderse libremente', () => {
+    // Simular el cálculo de inDeck implementado en Marketplace.tsx
+    function computeInDeck(
+      inst: { instanceId: string; plantId: string; isInDeck?: boolean },
+      activeDeckInstances: string[],
+      activeDeck: string[],
+      deckPlantIdsSeen: Set<string>
+    ): boolean {
+      if (activeDeckInstances && activeDeckInstances.length > 0) {
+        return activeDeckInstances.includes(inst.instanceId)
+      } else if (inst.isInDeck !== undefined) {
+        return Boolean(inst.isInDeck)
+      } else if (activeDeck && activeDeck.includes(inst.plantId) && !deckPlantIdsSeen.has(inst.plantId)) {
+        deckPlantIdsSeen.add(inst.plantId)
+        return true
+      }
+      return false
+    }
+
+    // Usuario con 2 Lanzaguisantes: p1 equipado en mazo, p2 duplicado fuera de mazo
+    const p1 = { instanceId: 'pea-uuid-1', plantId: 'peashooter', isInDeck: true }
+    const p2 = { instanceId: 'pea-uuid-2', plantId: 'peashooter', isInDeck: false }
+    const deckInstances = ['pea-uuid-1', 'sun-uuid-1', 'wall-uuid-1', 'chomper-uuid-1']
+    const deckPlantIds = ['peashooter', 'sunflower', 'wallnut', 'chomper']
+
+    const seen = new Set<string>()
+    const p1InDeck = computeInDeck(p1, deckInstances, deckPlantIds, seen)
+    const p2InDeck = computeInDeck(p2, deckInstances, deckPlantIds, seen)
+
+    // p1 está en el mazo -> no se puede vender mientras esté equipado
+    expect(p1InDeck).toBe(true)
+    // p2 es el duplicado -> NO está en el mazo y SÍ se puede vender
+    expect(p2InDeck).toBe(false)
+
+    // Si el usuario swappea el mazo y equipa p2 en vez de p1:
+    const deckInstancesSwapped = ['pea-uuid-2', 'sun-uuid-1', 'wall-uuid-1', 'chomper-uuid-1']
+    const seenSwapped = new Set<string>()
+    const p1InDeckAfterSwap = computeInDeck(p1, deckInstancesSwapped, deckPlantIds, seenSwapped)
+    const p2InDeckAfterSwap = computeInDeck(p2, deckInstancesSwapped, deckPlantIds, seenSwapped)
+
+    expect(p1InDeckAfterSwap).toBe(false) // Ahora la carta base puede venderse
+    expect(p2InDeckAfterSwap).toBe(true)  // Y la duplicada está en el mazo
+  })
+
+  it('8. Valida resolución de IDs virtuales inst_base_<plantId> a UUIDs reales no listados', () => {
+    const instances = [
+      { instanceId: 'pea-uuid-real', plantId: 'peashooter', isListed: false },
+      { instanceId: 'sun-uuid-real', plantId: 'sunflower', isListed: false },
+    ]
+
+    function resolveInstanceId(targetId: string, plantId: string): string {
+      if (/^[0-9a-f-]{36}$/i.test(targetId)) return targetId
+      const found = instances.find((i) => i.plantId === plantId && !i.isListed)
+      return found ? found.instanceId : targetId
+    }
+
+    expect(resolveInstanceId('pea-uuid-real', 'peashooter')).toBe('pea-uuid-real')
+    expect(resolveInstanceId('inst_base_peashooter', 'peashooter')).toBe('pea-uuid-real')
+    expect(resolveInstanceId('inst_base_sunflower', 'sunflower')).toBe('sun-uuid-real')
+  })
+
+  it('9. Auditoría estática de la Migración 233 para soporte de venta de plantas base y resolución virtual', () => {
+    const migrationPath = join(process.cwd(), 'supabase', 'migrations', '233-fix-marketplace-list-duplicate-base-plants.sql')
+    expect(existsSync(migrationPath)).toBe(true)
+
+    const content = readFileSync(migrationPath, 'utf8')
+
+    // Debe contener soporte para inst_base_%
+    expect(content).toMatch(/inst_base_%/i)
+    // Debe buscar instancias fuera de mazo
+    expect(content).toMatch(/is_in_deck IS FALSE OR is_in_deck IS NULL/i)
+    // Debe verificar permiso VIP o copas
+    expect(content).toMatch(/1350/i)
+    // Debe salvaguardar cartas con ítems equipados
+    expect(content).toMatch(/equipped_item IS NOT NULL/i)
+    // Debe respetar regla de 3 plantas mínimas
+    expect(content).toMatch(/v_total_playable\s*<=\s*3/i)
+  })
 })
 

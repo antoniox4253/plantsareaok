@@ -162,6 +162,9 @@ export interface ShopProps {
   plantStatRolls?: Partial<Record<PlantId, PlantStatKey[]>>
   plantInstances?: PlantCardInstance[]
   farmingItems?: FarmingInventory
+  unlockedPlants?: PlantId[]
+  activeDeck?: PlantId[]
+  activeDeckInstances?: string[]
   onBack: () => void
   onBuyPack: (packId: PackId, qty?: number) => Promise<{ success: boolean; packs?: InventoryPack[]; goldAdded?: number; error?: string }>
   onBuyGold?: (packageId: string) => Promise<{ success: boolean; goldAdded?: number; error?: string }>
@@ -192,6 +195,9 @@ export default function Shop({
   plantStatRolls = {},
   plantInstances = [],
   farmingItems,
+  unlockedPlants,
+  activeDeck = [],
+  activeDeckInstances = [],
   onBack,
   onBuyPack,
   onBuyGold,
@@ -1130,6 +1136,9 @@ export default function Shop({
               plantStatRolls={plantStatRolls as Record<PlantId, PlantStatKey[]>}
               plantInstances={plantInstances}
               farmingItems={farmingItems}
+              unlockedPlants={unlockedPlants}
+              activeDeck={activeDeck}
+              activeDeckInstances={activeDeckInstances}
               onDeductTokens={onDeductTokens || (() => false)}
               onDonatePlant={onDonatePlant || (() => false)}
               onReceivePlant={onReceivePlant || (() => {})}

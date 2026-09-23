@@ -1441,6 +1441,31 @@ export const SupabaseService = {
     // Reintentamos hasta 25 veces (~30-35s) y cotejamos contra la DB ante cualquier respuesta.
     for (let intento = 0; intento < 25; intento += 1) {
       try {
+        // 1. Revisar INMEDIATAMENTE si la sala ya liquidó en DB (por consenso mutuo o abandono)
+        const dbResolved = await checkDbSettled()
+        if (dbResolved) {
+          return dbResolved
+        }
+
+        // 2. Para salas de torneo o amistosas, la liquidación se procesa 100% autoritativamente en Postgres
+        // por consenso mutuo en report_match_result. NUNCA se invoca la Edge Function verify-match (exclusiva de replay ranked).
+        const currentRoom = await this.getGameRoom(roomId)
+        if (currentRoom?.mode === 'tournament' || currentRoom?.mode === 'friendly') {
+          if ((intento === 5 || intento === 10 || intento === 15) && reportedWinnerId !== undefined) {
+            try {
+              const reReport = await this.reportMatchResult(roomId, reportedWinnerId)
+              if (reReport && (reReport.status === 'liquidada' || reReport.status === 'ya_liquidada')) {
+                const reResolved = await checkDbSettled()
+                if (reResolved) return reResolved
+              }
+            } catch {
+              // silencioso
+            }
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          continue
+        }
+
         const { data, error } = await supabase.functions.invoke('verify-match', {
           body: { roomId },
         })
@@ -1450,14 +1475,14 @@ export const SupabaseService = {
             // Si verify-match responde 'settled' pero sin settlement completo de ELO,
             // enriquecerlo desde game_rooms si ya tiene settled_at
             if (data.status === 'settled' && (!data.settlement || !(data.settlement as any).rawElo)) {
-              const dbResolved = await checkDbSettled()
-              if (dbResolved) {
+              const dbResolvedAfter = await checkDbSettled()
+              if (dbResolvedAfter) {
                 return {
                   ...data,
-                  ...dbResolved,
+                  ...dbResolvedAfter,
                   settlement: {
                     ...(data.settlement || {}),
-                    ...(dbResolved.settlement || {}),
+                    ...(dbResolvedAfter.settlement || {}),
                   },
                 }
               }
@@ -1467,9 +1492,9 @@ export const SupabaseService = {
         }
 
         // Si la función responde pending o falló, verificar si ya liquidó en DB
-        const dbResolved = await checkDbSettled()
-        if (dbResolved) {
-          return dbResolved
+        const dbResolvedFallback = await checkDbSettled()
+        if (dbResolvedFallback) {
+          return dbResolvedFallback
         }
 
         // Si tras ~12-15 segundos el rival no ha reportado, re-enviar el reporte local

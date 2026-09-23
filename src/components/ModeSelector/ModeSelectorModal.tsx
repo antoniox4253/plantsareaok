@@ -26,6 +26,7 @@ interface ModeSelectorModalProps {
   maxPlayerEnergy?: number
   onSelectRanked: () => void
   onSelectColosseum: () => void
+  onSelectArenaAds?: () => void
   onSelectTournament?: () => void
   onSelectStrategicPlaytest?: () => void
   onOpenShop?: (tab?: 'packs' | 'pass' | 'gold' | 'energy' | 'market') => void
@@ -55,6 +56,7 @@ export default function ModeSelectorModal({
   maxPlayerEnergy = 20,
   onSelectRanked,
   onSelectColosseum: _onSelectColosseum,
+  onSelectArenaAds,
   onSelectTournament,
   onSelectFriendly,
   onOpenShop,
@@ -230,39 +232,54 @@ export default function ModeSelectorModal({
                 </button>
               </div>
 
-              {/* 4. EL COLISEO (BLOQUEADO - COMING SOON) */}
+              {/* 4. ARENA ADS - MAZMORRA INFINITA (REEMPLAZA EL COLISEO) */}
               <div
-                className="mode-card mode-card--colosseum mode-card--locked"
+                className="mode-card mode-card--arena-ads"
                 onClick={() => {
-                  soundManager.playSound('click', 0.3)
+                  soundManager.playSound('click', 0.5)
+                  onClose()
+                  if (onSelectArenaAds) {
+                    onSelectArenaAds()
+                  } else {
+                    _onSelectColosseum()
+                  }
                 }}
               >
                 <div
-                  className="mode-card__badge mode-card__badge--locked"
+                  className="mode-card__badge"
                   style={{
-                    background: 'rgba(234, 179, 8, 0.15)',
-                    color: '#facc15',
-                    borderColor: 'rgba(234, 179, 8, 0.5)',
+                    background: 'rgba(56, 189, 248, 0.2)',
+                    color: '#38bdf8',
+                    borderColor: 'rgba(56, 189, 248, 0.6)',
                   }}
                 >
-                  ⏳ COMING SOON
+                  🏰 MAZMORRA INFINITA
                 </div>
-                <div className="mode-card__icon" style={{ opacity: 0.6 }}>🏛️</div>
-                <h3 className="mode-card__name">EL COLISEO</h3>
+                <div className="mode-card__icon">🏰</div>
+                <h3 className="mode-card__name">Arena ADS</h3>
                 <p className="mode-card__desc">
-                  Duelos PvP de alto nivel por Gemas 💎 y Tickets con pozo acumulado para el ganador.
+                  mazmorra infinita. juega contra bots y acumula recompensas asegurate cuando retirarte o perderas todo.
                 </p>
                 <div className="mode-card__perks">
-                  <span style={{ color: '#facc15', fontWeight: 800 }}>⏳ Próximamente en actualización</span>
-                  <span style={{ color: '#94a3b8' }}>🎟️ Entradas por Tickets de Coliseo o Gemas</span>
-                  <span style={{ color: '#94a3b8' }}>🔥 Top de Rachas con recompensas exclusivas</span>
+                  <span>🪙 Entrada: 100 de Oro</span>
+                  <span>🤖 Duelos contra Bots con Dificultad Progresiva</span>
+                  <span>💰 Botín Acumulado: Oro, Gemas e Ítems</span>
                 </div>
                 <button
                   type="button"
-                  className="mode-card__action-btn mode-card__action-btn--disabled"
-                  disabled
+                  className="mode-card__action-btn mode-card__action-btn--arena-ads"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    soundManager.playSound('click', 0.5)
+                    onClose()
+                    if (onSelectArenaAds) {
+                      onSelectArenaAds()
+                    } else {
+                      _onSelectColosseum()
+                    }
+                  }}
                 >
-                  🔒 COMING SOON
+                  🎮 PLAY
                 </button>
               </div>
             </div>

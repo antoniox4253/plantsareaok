@@ -1,0 +1,705 @@
+/* ArenaAdsModal.css - Modern RPG / PvZ aesthetic */
+
+.arena-ads-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 18, 0.88);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: arenaAdsFadeIn 0.25s ease-out;
+}
+
+@keyframes arenaAdsFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.arena-ads-modal {
+  background: linear-gradient(180deg, #182234 0%, #0d1522 100%);
+  border: 2px solid #38bdf8;
+  border-radius: 20px;
+  box-shadow: 0 0 35px rgba(56, 189, 248, 0.35), 0 20px 50px rgba(0, 0, 0, 0.8);
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header */
+.arena-ads-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.arena-ads-title-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.arena-ads-icon {
+  font-size: 36px;
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+}
+
+.arena-ads-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #f0f9ff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.arena-ads-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 13px;
+  color: #7dd3fc;
+  font-weight: 600;
+}
+
+.arena-ads-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.arena-ads-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.arena-ads-badge--gold {
+  border-color: rgba(234, 179, 8, 0.5);
+  color: #fef08a;
+}
+
+.arena-ads-badge--gems {
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #bae6fd;
+}
+
+.arena-ads-badge--level {
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #e9d5ff;
+}
+
+.arena-ads-close-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.arena-ads-close-btn:hover {
+  background: #ef4444;
+  color: #fff;
+  transform: scale(1.08);
+}
+
+/* Content Area */
+.arena-ads-content {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+/* Lobby View */
+.arena-ads-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.arena-ads-banner-ad-box {
+  background: rgba(2, 6, 23, 0.7);
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.arena-ads-banner-ad-label {
+  font-size: 11px;
+  color: #38bdf8;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.arena-ads-banner-placeholder {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 8px;
+}
+
+.arena-ads-rules-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.arena-ads-rules-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arena-ads-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.arena-ads-rule-item {
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 10px;
+  padding: 12px;
+  border-left: 3px solid #38bdf8;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #e2e8f0;
+}
+
+.arena-ads-rule-item strong {
+  color: #facc15;
+}
+
+/* Active Run Banner */
+.arena-ads-active-run-card {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(56, 189, 248, 0.15) 100%);
+  border: 2px solid #a855f7;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+}
+
+.arena-ads-run-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.arena-ads-run-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #f5d0fe;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.arena-ads-loot-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.arena-ads-loot-pill {
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arena-ads-loot-pill--gold {
+  color: #fef08a;
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.arena-ads-loot-pill--gems {
+  color: #bae6fd;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.arena-ads-loot-pill--items {
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+/* Preparation Phase */
+.arena-ads-prep-box {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.arena-ads-prep-intro {
+  text-align: center;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.arena-ads-prep-intro h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #f0f9ff;
+}
+
+.arena-ads-prep-intro p {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.arena-ads-choice-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .arena-ads-choice-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.arena-ads-choice-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.arena-ads-choice-card--active {
+  border-color: #38bdf8;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.arena-ads-choice-card--reward {
+  border-color: rgba(234, 179, 8, 0.4);
+}
+.arena-ads-choice-card--reward.arena-ads-choice-card--active {
+  border-color: #facc15;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.3);
+}
+
+.arena-ads-choice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.arena-ads-choice-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arena-ads-reward-preview {
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.arena-ads-reward-icon {
+  font-size: 38px;
+}
+
+.arena-ads-reward-val {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fef08a;
+}
+
+.arena-ads-reward-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Plant SubTabs */
+.arena-ads-subtabs {
+  display: flex;
+  background: rgba(2, 6, 23, 0.8);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.arena-ads-subtab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.arena-ads-subtab-btn--active {
+  background: #0284c7;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.arena-ads-subtab-btn--fused.arena-ads-subtab-btn--active {
+  background: #9333ea;
+  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.4);
+}
+
+/* Plant Options Grid */
+.arena-ads-plant-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.arena-ads-plant-option-item {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.arena-ads-plant-option-item:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateX(3px);
+}
+
+.arena-ads-plant-option-item--selected {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.arena-ads-plant-option-item--fused.arena-ads-plant-option-item--selected {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+}
+
+.arena-ads-plant-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.arena-ads-plant-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.arena-ads-plant-names {
+  display: flex;
+  flex-direction: column;
+}
+
+.arena-ads-plant-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.arena-ads-plant-fused-badge {
+  font-size: 10px;
+  color: #d8b4fe;
+  font-weight: 700;
+}
+
+.arena-ads-plant-select-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.arena-ads-plant-option-item--selected .arena-ads-plant-select-btn {
+  background: #38bdf8;
+  color: #032030;
+}
+
+/* Final Deck Preview Bar */
+.arena-ads-deck-preview {
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.arena-ads-deck-preview-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 800;
+  color: #7dd3fc;
+}
+
+.arena-ads-deck-cards-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.arena-ads-deck-card {
+  width: 60px;
+  height: 80px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 2px solid #52b788;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.arena-ads-deck-card--sunflower {
+  border-color: #facc15;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
+}
+
+.arena-ads-deck-card--fused {
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.5);
+}
+
+.arena-ads-deck-card-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.arena-ads-deck-card-tag {
+  font-size: 9px;
+  font-weight: 800;
+  text-align: center;
+  max-width: 56px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #e2e8f0;
+}
+
+.arena-ads-deck-card-lock {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 9px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
+  padding: 1px 3px;
+}
+
+/* Footer & Buttons */
+.arena-ads-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(2, 6, 23, 0.9);
+  border-top: 1px solid rgba(56, 189, 248, 0.3);
+  gap: 12px;
+}
+
+.arena-ads-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 900;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.arena-ads-btn--primary {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  color: #032030;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.arena-ads-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+  background: linear-gradient(180deg, #7dd3fc 0%, #0369a1 100%);
+}
+
+.arena-ads-btn--cashout {
+  background: linear-gradient(180deg, #facc15 0%, #ca8a04 100%);
+  color: #422006;
+  box-shadow: 0 4px 15px rgba(250, 204, 21, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.arena-ads-btn--cashout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(250, 204, 21, 0.5);
+  background: linear-gradient(180deg, #fde047 0%, #a16207 100%);
+}
+
+.arena-ads-btn--secondary {
+  background: rgba(51, 65, 85, 0.8);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.arena-ads-btn--secondary:hover {
+  background: rgba(71, 85, 105, 0.95);
+  color: #fff;
+}
+
+/* Interstitial Modal (Pop-up Cascarón) */
+.arena-ads-interstitial-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: arenaAdsFadeIn 0.25s ease-out;
+}
+
+.arena-ads-interstitial-card {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #38bdf8;
+  border-radius: 20px;
+  max-width: 560px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 0 50px rgba(56, 189, 248, 0.4);
+  text-align: center;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.arena-ads-interstitial-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #f0f9ff;
+}
+
+.arena-ads-interstitial-ad-shell {
+  background: rgba(2, 6, 23, 0.9);
+  border: 2px dashed rgba(56, 189, 248, 0.5);
+  border-radius: 14px;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.arena-ads-interstitial-ad-tag {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #38bdf8;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.arena-ads-interstitial-ad-mock {
+  font-size: 42px;
+}
+
+.arena-ads-interstitial-ad-text {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 0;
+}

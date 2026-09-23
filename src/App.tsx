@@ -48,6 +48,8 @@ import BetaPhaseModal from './components/BetaPhaseModal/BetaPhaseModal'
 import { isStrategicPlaytestAuthorized } from './utils/strategicPlaytestAuth'
 import { useOnlineUsers } from './hooks/useOnlineUsers'
 import { VIP_PASS_PRECIO_GEMAS } from './utils/gameConstants'
+import type { ArenaAdsRun, ArenaAdsLoot } from './utils/arenaAdsManager'
+import { ArenaAdsManager, getBotStatsForLevel } from './utils/arenaAdsManager'
 import {
   trackPageView,
   type GameScreen,
@@ -524,7 +526,8 @@ function App() {
     }
   }, [loading, user])
 
-  const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'colosseum' | 'tournament' | 'strategic_test' | 'clan_fortress'>('ranked')
+  const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'colosseum' | 'tournament' | 'strategic_test' | 'clan_fortress' | 'arena_ads'>('ranked')
+  const [arenaAdsRun, setArenaAdsRun] = useState<ArenaAdsRun | null>(() => ArenaAdsManager.getStoredRun())
   const [friendlyBet, setFriendlyBet] = useState<number>(0)
   const [colosseumConfig, setColosseumConfig] = useState<import('./types/game').ColosseumMatchConfig | null>(null)
   const [tournamentOpponent, setTournamentOpponent] = useState<{ name: string; tournamentId: string } | null>(null)
@@ -1071,6 +1074,47 @@ function App() {
     void buscar('tournament', { roomCode: tournamentId, tournamentId })
   }
 
+  const handleStartArenaAdsMatch = (run: ArenaAdsRun) => {
+    setBattleMatchMode('arena_ads')
+    setArenaAdsRun(run)
+    setPartidaAsincrona(false)
+    setColosseumConfig(null)
+    setTournamentOpponent(null)
+    setTournamentDeck(null)
+    setPracticePlantId(null)
+    setCustomArenaBg(undefined)
+    setSalaId(null)
+    setRivalId(null)
+    setSemillaPartida(run.seed + run.level)
+    const miNombre = profile?.username || UserManager.getProfile().name || 'Tú'
+    const botStats = getBotStatsForLevel(run.level)
+    setNombresEnPartida({ mio: miNombre, rival: botStats.botName })
+    setMazosDeLaSala({
+      mio: run.deck,
+      rival: botStats.botDeck,
+    })
+    setEngineVersionSala('auth-v2')
+    setScreen('battle')
+  }
+
+  const handleClaimArenaAdsLoot = (loot: ArenaAdsLoot) => {
+    if (loot.gold > 0) {
+      addGold(loot.gold)
+    }
+    if (loot.gems > 0) {
+      addUserTokens(loot.gems)
+    }
+    setArenaAdsRun(null)
+    ArenaAdsManager.clearRun()
+    void refreshFromServer()
+    setScreen('menu')
+  }
+
+  const handleArenaAdsAdvance = (run: ArenaAdsRun) => {
+    setArenaAdsRun(run)
+    handleStartArenaAdsMatch(run)
+  }
+
   const handleStartStrategicPlaytest = (config: StrategicPlaytestConfig) => {
     // Gate estricto: denegar si el usuario no está explícitamente autorizado
     if (!isStrategicPlaytestAuthorized({ user, profile, isAdmin })) {
@@ -1327,6 +1371,8 @@ function App() {
             onPlay={handlePlayNormal}
             onPlayFriendly={handlePlayFriendly}
             onStartColosseumMatch={handleStartColosseumMatch}
+            onStartArenaAdsBattle={handleStartArenaAdsMatch}
+            onClaimArenaAdsLoot={handleClaimArenaAdsLoot}
             onOpenMisPartidas={() => setScreen('partidas')}
             onStartTournamentMatch={handleStartTournamentMatch}
             onOpenCollection={handleOpenCollection}
@@ -1439,6 +1485,9 @@ function App() {
               treeSkinsEnPartida ?? (equippedTreeSkin ? { mio: equippedTreeSkin, rival: null } : null)
             }
             clanFortressConfig={clanFortressConfig}
+            arenaAdsRun={arenaAdsRun}
+            onArenaAdsAdvance={handleArenaAdsAdvance}
+            onArenaAdsRetreat={handleClaimArenaAdsLoot}
             onClanFortressComplete={() => {
               void refreshFromServer()
             }}
@@ -1510,6 +1559,9 @@ function App() {
             plantStatRolls={plantStatRolls}
             plantInstances={plantInstances}
             farmingItems={farmingItems}
+            unlockedPlants={unlockedPlants}
+            activeDeck={activeDeck}
+            activeDeckInstances={activeDeckInstances}
             initialTab={shopInitialTab}
             playerEnergy={playerEnergy}
             maxPlayerEnergy={maxPlayerEnergy}

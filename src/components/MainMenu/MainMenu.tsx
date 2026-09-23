@@ -25,6 +25,8 @@ import { UserManager, type PlayerProfile } from '../../utils/userManager'
 import ProfileModal, { type ProfileTab } from '../ProfileModal/ProfileModal'
 import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
 import ColosseumModal from '../Colosseum/ColosseumModal'
+import ArenaAdsModal from '../ArenaAds/ArenaAdsModal'
+import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import TournamentModal from '../Tournament/TournamentModal'
 import GlobalChat from '../GlobalChat/GlobalChat'
 import AuctionModal from '../Auction/AuctionModal'
@@ -61,6 +63,8 @@ interface MainMenuProps {
   /** Duelo amistoso: código de sala privada y apuesta opcional. */
   onPlayFriendly?: (roomCode: string, betGems: number) => void
   onStartColosseumMatch?: (betGems: ColosseumBetAmount, usedTicket: boolean) => void
+  onStartArenaAdsBattle?: (run: ArenaAdsRun) => void
+  onClaimArenaAdsLoot?: (loot: ArenaAdsLoot) => void
   onStartTournamentMatch?: (opponentName: string, tournamentId: string, tournamentDeck?: PlantId[]) => void
   onOpenCollection?: () => void
   onOpenJardin?: () => void
@@ -112,6 +116,8 @@ export default function MainMenu({
   onPlay,
   onPlayFriendly,
   onStartColosseumMatch,
+  onStartArenaAdsBattle,
+  onClaimArenaAdsLoot,
   onStartTournamentMatch,
   onOpenCollection,
   onOpenJardin,
@@ -142,6 +148,7 @@ export default function MainMenu({
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>('profile')
   const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false)
   const [isColosseumModalOpen, setIsColosseumModalOpen] = useState(false)
+  const [isArenaAdsModalOpen, setIsArenaAdsModalOpen] = useState(false)
   const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false)
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
   const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
@@ -1197,11 +1204,33 @@ export default function MainMenu({
         playerEnergy={playerEnergy}
         maxPlayerEnergy={maxPlayerEnergy}
         onSelectRanked={onPlay}
-        onSelectColosseum={() => setIsColosseumModalOpen(true)}
+        onSelectArenaAds={() => setIsArenaAdsModalOpen(true)}
+        onSelectColosseum={() => setIsArenaAdsModalOpen(true)}
         onSelectTournament={() => setIsTournamentModalOpen(true)}
         onSelectFriendly={onPlayFriendly}
         onSelectStrategicPlaytest={onOpenStrategicPlaytest}
         onOpenShop={onOpenShop}
+      />
+
+      {/* ARENA ADS MODAL (MAZMORRA INFINITA) */}
+      <ArenaAdsModal
+        isOpen={isArenaAdsModalOpen}
+        onClose={() => setIsArenaAdsModalOpen(false)}
+        userGold={userGold}
+        onDeductGold={(amount) => {
+          if (onDeductGold) return onDeductGold(amount)
+          return false
+        }}
+        onStartArenaAdsBattle={(run) => {
+          if (onStartArenaAdsBattle) {
+            onStartArenaAdsBattle(run)
+          }
+        }}
+        onClaimLoot={(loot) => {
+          if (onClaimArenaAdsLoot) {
+            onClaimArenaAdsLoot(loot)
+          }
+        }}
       />
 
       {/* COLOSSEUM MODAL */}

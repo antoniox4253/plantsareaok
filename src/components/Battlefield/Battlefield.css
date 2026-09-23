@@ -2275,4 +2275,107 @@
   }
 }
 
+/* ── MODO ARENA ADS: CAMPO CENTRADO Y BANNERS DE PUBLICIDAD ── */
+.battlefield--arena-ads {
+  box-shadow: inset 0 0 80px rgba(56, 189, 248, 0.2);
+}
+
+.arena-ads-layout-header {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(580px, 85%);
+  height: 32px;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+  border-radius: 6px;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.arena-ads-layout-footer {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(580px, 85%);
+  height: 24px;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+  border-radius: 6px;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.arena-ads-layout-lateral {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 55%;
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px dashed rgba(56, 189, 248, 0.5);
+  border-radius: 6px;
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.arena-ads-layout-lateral--left {
+  left: 6px;
+}
+
+.arena-ads-layout-lateral--right {
+  right: 6px;
+}
+
+.arena-ads-layout-ad-badge {
+  font-size: 8px;
+  color: #38bdf8;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.arena-ads-layout-ad-content {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arena-ads-layout-ad-vertical {
+  font-size: 8px;
+  color: #94a3b8;
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.game-card__panel--arena-ads {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%);
+  border: 2px solid #38bdf8;
+}
+
+
 

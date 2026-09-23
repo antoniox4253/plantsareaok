@@ -194,6 +194,8 @@ export interface PlantCardInstance {
   germinationsCount?: number
   equippedItem?: string | null
   isListed?: boolean
+  isInDeck?: boolean
+  deckSlot?: number | null
 }
 
 export interface MyMarketplaceItem {

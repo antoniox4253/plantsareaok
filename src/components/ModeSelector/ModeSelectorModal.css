@@ -240,6 +240,29 @@
   border: 1px solid #fde047;
 }
 
+.mode-card--arena-ads {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.mode-card--arena-ads:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 10px 25px rgba(56, 189, 248, 0.35);
+  transform: translateY(-4px);
+}
+
+.mode-card__action-btn--arena-ads {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #fff;
+  border: 1px solid #38bdf8;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+
+.mode-card__action-btn--arena-ads:hover {
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  color: #032030;
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.5);
+}
+
 .mode-card__action-btn--disabled {
   background: #334155;
   color: #94a3b8;
