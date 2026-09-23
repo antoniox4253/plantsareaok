@@ -451,24 +451,71 @@
   border-radius: 20px;
   padding: 22px 24px;
   width: 100%;
-  max-width: 440px;
-  max-height: min(92vh, 560px);
+  max-width: 480px;
+  max-height: min(94vh, 600px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
   box-shadow: 0 16px 50px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.35);
   animation: gameDialogPopIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
   box-sizing: border-box;
+}
+
+.clan-invitation-dialog-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 5;
+}
+
+.clan-invitation-dialog-close:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.clan-invitation-dialog-content-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.clan-invitation-dialog-col-main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clan-invitation-dialog-col-side {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .clan-invitation-dialog-header {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 16px;
   width: 100%;
+  text-align: left;
 }
 
 .clan-invitation-dialog-badge {
@@ -478,11 +525,13 @@
   border-radius: 16px;
   padding: 8px 12px;
   box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+  line-height: 1;
 }
 
 .clan-invitation-dialog-titles {
   text-align: left;
   flex: 1;
+  min-width: 0;
 }
 
 .clan-invitation-dialog-tag {
@@ -499,14 +548,9 @@
   font-weight: 900;
   color: #ffffff;
   text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-}
-
-.clan-invitation-dialog-body {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .clan-invitation-dialog-leader-box {
@@ -520,10 +564,12 @@
   padding: 10px 14px;
   font-size: 13px;
   color: #fef08a;
+  text-align: center;
 }
 
 .clan-invitation-crown {
   font-size: 18px;
+  flex-shrink: 0;
 }
 
 .clan-invitation-dialog-desc {
@@ -532,6 +578,7 @@
   color: #94a3b8;
   font-style: italic;
   line-height: 1.4;
+  text-align: center;
 }
 
 .clan-invitation-dialog-cost-box {
@@ -565,40 +612,12 @@
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
   padding-top: 6px;
   margin-top: 2px;
+  text-align: left;
 }
 
 .clan-invitation-gems--low {
   color: #ef4444;
   font-weight: 900;
-}
-
-.clan-invitation-dialog-actions {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
-
-.clan-invitation-btn {
-  flex: 1;
-  padding: 12px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: transform 0.15s, filter 0.15s;
-  border: none;
-}
-
-.clan-invitation-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  filter: brightness(1.15);
-}
-
-.clan-invitation-btn--accept {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: 1.5px solid #6ee7b7;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
 }
 
 .clan-invitation-dialog-cost-box--sponsored {
@@ -617,6 +636,44 @@
 .clan-invitation-cost-gems--free {
   color: #4ade80 !important;
   text-shadow: 0 0 10px rgba(74, 222, 128, 0.6) !important;
+}
+
+.clan-invitation-dialog-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.clan-invitation-btn {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+  border: none;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.clan-invitation-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+}
+
+.clan-invitation-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.clan-invitation-btn--accept {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid #6ee7b7;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
 }
 
 .clan-invitation-btn--accept-sponsored {
@@ -640,4 +697,151 @@
 
 .clan-invitation-btn--reject:hover {
   background: rgba(239, 68, 68, 0.35);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN FOR CLAN INVITATION (MOBILE LANDSCAPE & PHONES)
+   ========================================================================== */
+
+/* Mobile landscape (Height <= 540px, e.g. phones in horizontal landscape mode) */
+@media (max-height: 540px) {
+  .clan-invitation-dialog-card {
+    max-width: min(96vw, 650px);
+    max-height: 96vh;
+    padding: 12px 18px;
+    border-radius: 16px;
+    overflow-y: auto;
+  }
+
+  .clan-invitation-dialog-content-wrap {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .clan-invitation-dialog-col-main {
+    gap: 6px;
+    text-align: left;
+  }
+
+  .clan-invitation-dialog-col-side {
+    gap: 8px;
+  }
+
+  .clan-invitation-dialog-header {
+    gap: 10px;
+    margin-bottom: 0;
+  }
+
+  .clan-invitation-dialog-badge {
+    font-size: 26px;
+    padding: 4px 8px;
+    border-radius: 10px;
+  }
+
+  .clan-invitation-dialog-title {
+    font-size: 16px;
+  }
+
+  .clan-invitation-dialog-tag {
+    font-size: 10px;
+  }
+
+  .clan-invitation-dialog-leader-box {
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 8px;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 6px;
+  }
+
+  .clan-invitation-crown {
+    font-size: 14px;
+  }
+
+  .clan-invitation-dialog-desc {
+    font-size: 10px;
+    line-height: 1.3;
+    text-align: left;
+  }
+
+  .clan-invitation-dialog-cost-box {
+    padding: 8px 10px;
+    border-radius: 10px;
+    gap: 4px;
+  }
+
+  .clan-invitation-cost-row {
+    font-size: 11px;
+  }
+
+  .clan-invitation-sponsored-tag {
+    font-size: 11px;
+  }
+
+  .clan-invitation-cost-gems {
+    font-size: 13px;
+  }
+
+  .clan-invitation-cost-row--sub {
+    font-size: 10px;
+    padding-top: 4px;
+  }
+
+  .clan-invitation-dialog-actions {
+    gap: 8px;
+  }
+
+  .clan-invitation-btn {
+    min-height: 38px;
+    padding: 8px 10px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+
+  .clan-invitation-dialog-close {
+    top: 6px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+}
+
+/* Very narrow / small mobile screens (Width <= 420px in portrait) */
+@media (max-width: 420px) and (min-height: 541px) {
+  .clan-invitation-dialog-card {
+    padding: 16px;
+    max-width: 95vw;
+  }
+
+  .clan-invitation-dialog-header {
+    gap: 10px;
+  }
+
+  .clan-invitation-dialog-badge {
+    font-size: 28px;
+    padding: 6px 10px;
+  }
+
+  .clan-invitation-dialog-title {
+    font-size: 17px;
+  }
+
+  .clan-invitation-dialog-leader-box {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .clan-invitation-dialog-cost-box {
+    padding: 10px 12px;
+  }
+
+  .clan-invitation-btn {
+    font-size: 12px;
+    padding: 10px 8px;
+  }
 }
