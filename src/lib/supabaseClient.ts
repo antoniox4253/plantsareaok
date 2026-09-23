@@ -27,3 +27,40 @@ export const supabase = createClient<Database>(
     },
   }
 )
+
+// Gestión limpia del ciclo de vida del navegador (Back-Forward Cache / bfcache):
+// Al congelar o cambiar de página, desconectamos el WebSocket de forma ordenada
+// para evitar que el navegador reporte "WebSocket connection failed: Page entered Back-Forward Cache".
+// Al regresar a la página, se reconecta automáticamente sin interrupciones.
+if (typeof window !== 'undefined') {
+  const disconnectRealtime = () => {
+    try {
+      if (supabase && (supabase as any).realtime) {
+        void (supabase as any).realtime.disconnect()
+      }
+    } catch {
+      // Ignorar
+    }
+  }
+
+  const connectRealtime = () => {
+    try {
+      if (supabase && (supabase as any).realtime) {
+        void (supabase as any).realtime.connect()
+      }
+    } catch {
+      // Ignorar
+    }
+  }
+
+  window.addEventListener('pagehide', disconnectRealtime)
+  document.addEventListener('freeze', disconnectRealtime)
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      connectRealtime()
+    }
+  })
+  document.addEventListener('resume', connectRealtime)
+}
+
