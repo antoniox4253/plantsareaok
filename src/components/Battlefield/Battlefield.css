@@ -973,27 +973,40 @@
 }
 
 /* =========================================================
-   HORIZONTAL WIDESCREEN LAYOUT (OPTIMIZED FOR LANDSCAPE)
+   FULLSCREEN UNIFORM LAYOUT (OPTIMIZED FOR PC & MOBILE)
    ========================================================= */
-.game-card--horizontal {
-  max-width: 740px;
-  width: min(94vw, 740px);
-  padding: 14px 22px;
+.game-card--horizontal,
+.game-card--fullscreen {
+  width: 900px;
+  max-width: 95%;
+  height: 485px;
+  max-height: 93%;
+  padding: 14px 24px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.game-card--horizontal .game-card__header-zone {
+.game-card--horizontal .game-card__header-zone,
+.game-card--fullscreen .game-card__header-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  margin-bottom: 8px;
+  flex-shrink: 0;
+  margin-bottom: 6px;
 }
 
-.game-card--horizontal .game-card__title {
-  font-size: 24px;
-  margin: 0 0 6px 0;
+.game-card--horizontal .game-card__title,
+.game-card--fullscreen .game-card__title {
+  font-family: 'Arial Black', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  margin: 0 0 4px 0;
   text-align: center;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 .game-card__hero-banner {
@@ -1004,8 +1017,8 @@
 }
 
 .game-card__hero-banner .elo-result-badge {
-  margin-bottom: 4px;
-  padding: 6px 20px;
+  margin-bottom: 2px;
+  padding: 5px 22px;
   font-size: 15px;
 }
 
@@ -1020,56 +1033,51 @@
 .game-card__body-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
   align-items: stretch;
   width: 100%;
-  margin-bottom: 12px;
-}
-
-@media (max-width: 680px) and (orientation: portrait) {
-  .game-card__body-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 8px;
 }
 
 .game-card__panel {
   background: rgba(15, 23, 42, 0.75);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   box-sizing: border-box;
-  min-height: 120px;
+  min-height: 0;
 }
 
 .game-card__panel--fortress {
-  grid-column: 1 / -1;
-  min-height: auto;
-  padding: 10px 14px;
   border-color: rgba(234, 179, 8, 0.4);
 }
 
 .game-card__panel-title {
   font-family: 'Arial Black', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
   color: #fbbf24;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .game-card__stats-grid {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
+  justify-content: center;
+  flex: 1;
 }
 
 .game-card__stat-row {
@@ -1079,21 +1087,21 @@
   background: rgba(30, 41, 59, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 5px 10px;
+  padding: 8px 12px;
 }
 
 .game-card__stat-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 12px;
   color: #cbd5e1;
   font-weight: 600;
 }
 
 .game-card__stat-value {
   font-family: 'Arial Black', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
   color: #f8fafc;
 }
@@ -1101,25 +1109,25 @@
 .defeat-summary-box {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   background: rgba(30, 41, 59, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 14px 16px;
   color: #94a3b8;
-  font-size: 11.5px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.45;
   height: 100%;
   box-sizing: border-box;
 }
 
 .defeat-summary-icon {
-  font-size: 20px;
+  font-size: 24px;
   flex-shrink: 0;
 }
 
 .defeat-summary-text {
-  font-size: 11px;
+  font-size: 12px;
   color: #cbd5e1;
 }
 
@@ -1127,21 +1135,27 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   width: 100%;
+  flex-shrink: 0;
+  margin-top: 4px;
 }
 
 .game-card__footer-actions .game-button {
-  padding: 9px 24px;
-  font-size: 13px;
-  min-width: 160px;
+  padding: 11px 28px;
+  font-size: 13.5px;
+  min-width: 180px;
+  border-radius: 10px;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .game-card--horizontal .victory-pack-reward {
   margin: 0;
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .game-card--horizontal .victory-pack-reward__box {
@@ -1153,56 +1167,38 @@
 }
 
 .game-card--horizontal .victory-pack-reward__card {
-  padding: 6px 10px;
-  gap: 10px;
+  padding: 10px 14px;
+  gap: 14px;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .game-card--horizontal .victory-pack-reward__img {
-  width: 36px;
-  height: 44px;
+  width: 44px;
+  height: 52px;
 }
 
 .game-card--horizontal .victory-pack-reward__name {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fef08a;
 }
 
 .game-card--horizontal .victory-pack-reward__timer,
 .game-card--horizontal .victory-pack-reward__loc {
-  font-size: 9.5px;
+  font-size: 10.5px;
 }
 
 .game-card--horizontal .victory-vip-gold-box {
-  margin: 6px 0 0 0;
+  margin: 8px 0 0 0;
 }
 
 .game-card--horizontal .victory-vip-gold-badge {
-  padding: 3px 10px;
-  font-size: 11px;
-}
-
-@media (max-height: 480px) {
-  .game-card--horizontal {
-    padding: 8px 14px;
-    max-height: 96vh;
-    overflow-y: auto;
-  }
-  .game-card--horizontal .game-card__title {
-    font-size: 18px;
-    margin-bottom: 2px;
-  }
-  .game-card__body-grid {
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-  .game-card__panel {
-    padding: 6px 10px;
-    min-height: auto;
-  }
-  .game-card__footer-actions .game-button {
-    padding: 6px 14px;
-    font-size: 11px;
-    min-width: 130px;
-  }
+  padding: 4px 12px;
+  font-size: 11.5px;
 }
 
 .game-card__title {

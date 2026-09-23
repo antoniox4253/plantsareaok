@@ -2860,7 +2860,7 @@ export default function Battlefield({
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div
-              className={`game-card game-card--horizontal ${
+              className={`game-card game-card--horizontal game-card--fullscreen ${
                 esperandoConfirmacionServidor
                   ? 'game-card--loading'
                   : resultadoEmpatado
@@ -3008,6 +3008,9 @@ export default function Battlefield({
                 {/* SI ES ASALTO A LA FORTALEZA: PANEL DE ASALTO A LA FORTALEZA */}
                 {matchMode === 'clan_fortress' ? (
                   <div className="game-card__panel game-card__panel--fortress">
+                    <div className="game-card__panel-title">
+                      <span>🏰</span> Resultado del Asalto
+                    </div>
                     <div className="clan-raid-victory-box" style={{ background: 'transparent', border: 'none', padding: 0, margin: 0, boxShadow: 'none' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <strong style={{ color: '#fef08a', fontSize: '0.9rem' }}>
@@ -3054,6 +3057,9 @@ export default function Battlefield({
                 ) : matchMode === 'colosseum' && colosseumResult ? (
                   /* COLOSSEUM MATCH REWARD CARD */
                   <div className="game-card__panel game-card__panel--colosseum">
+                    <div className="game-card__panel-title">
+                      <span>🏛️</span> Resultado del Coliseo
+                    </div>
                     <div className="colosseum-battle-payout-box" style={{ margin: 0 }}>
                       {gameStatus === 'victory' ? (
                         <>
@@ -3092,6 +3098,9 @@ export default function Battlefield({
                 ) : matchMode === 'tournament' && tournamentResult ? (
                   /* TOURNAMENT ROUND REWARD CARD */
                   <div className="game-card__panel game-card__panel--tournament">
+                    <div className="game-card__panel-title">
+                      <span>🏆</span> Ronda del Torneo
+                    </div>
                     <div
                       className="colosseum-battle-payout-box"
                       style={{ borderColor: '#a855f7', boxShadow: '0 0 20px rgba(168, 85, 247, 0.35)', margin: 0 }}
