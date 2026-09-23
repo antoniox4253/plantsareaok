@@ -767,7 +767,7 @@ export function useGameEngine() {
     if (initialCard) {
       const config = PLANT_CONFIGS[initialCard]
       if (config) {
-        const isWalkingUnit = config.category === 'melee' || !!config.moveSpeed || initialCard === 'chomper'
+        const isWalkingUnit = config?.category === 'melee' || !!config?.moveSpeed || initialCard === 'chomper'
         const targetLane = 1
         const targetCol = 1
         const cellCenterX = BASE_LEFT_END_X + targetCol * colWidth + colWidth / 2
@@ -1269,7 +1269,7 @@ export function useGameEngine() {
       }
 
       // Check cell occupancy for static plants (already sprouted, pending in engine, or pending in outbox)
-      const isWalkingUnit = config.category === 'melee' || !!config.moveSpeed || card === 'chomper'
+      const isWalkingUnit = config?.category === 'melee' || !!config?.moveSpeed || card === 'chomper'
       if (!isWalkingUnit) {
         const existing = state.plants.find((p) => p.lane === lane && p.col === col && !p.isWalking && p.hp > 0)
         const pendingSprout = state.pending.find((p) => p.kind === 'own_plant' && p.lane === lane && p.col === col)

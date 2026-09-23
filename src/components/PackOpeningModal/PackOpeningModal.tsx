@@ -68,13 +68,13 @@ export default function PackOpeningModal({
             />
           </div>
 
-          <h2 className="pack-reveal-card__name">{config.name}</h2>
+          <h2 className="pack-reveal-card__name">{config?.name || 'Planta'}</h2>
           <span className="pack-reveal-card__cat">
-            {config.category === 'producer'
+            {config?.category === 'producer'
               ? '☀️ Productora de Soles'
-              : config.category === 'ranged'
+              : config?.category === 'ranged'
               ? '🏹 Atacante a Distancia'
-              : config.category === 'defensive'
+              : config?.category === 'defensive'
               ? '🛡️ Tanque Defensivo'
               : '🥊 Atacante Mele'}
           </span>
@@ -82,16 +82,16 @@ export default function PackOpeningModal({
           <div className="pack-reveal-card__stats">
             <div className="pack-reveal-stat">
               <span className="pack-reveal-stat__label">COSTO</span>
-              <span className="pack-reveal-stat__val">☀️ {config.cost}</span>
+              <span className="pack-reveal-stat__val">☀️ {config?.cost ?? 0}</span>
             </div>
             <div className="pack-reveal-stat">
               <span className="pack-reveal-stat__label">SALUD</span>
-              <span className="pack-reveal-stat__val">❤️ {config.maxHp} HP</span>
+              <span className="pack-reveal-stat__val">❤️ {config?.maxHp ?? 100} HP</span>
             </div>
             <div className="pack-reveal-stat">
               <span className="pack-reveal-stat__label">DAÑO</span>
               <span className="pack-reveal-stat__val">
-                ⚔️ {config.damage ?? (config.category === 'producer' ? '0' : 'Especial')}
+                ⚔️ {config?.damage ?? (config?.category === 'producer' ? '0' : 'Especial')}
               </span>
             </div>
           </div>

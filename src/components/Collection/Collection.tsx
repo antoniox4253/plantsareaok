@@ -71,29 +71,29 @@ const LORE_MAP: Record<string, string> = {
 export const CATALOG: CollectionPlant[] = (Object.keys(PLANT_CONFIGS) as PlantId[]).map((id) => {
   const c = PLANT_CONFIGS[id]
   const catLabel =
-    c.category === 'producer'
+    c?.category === 'producer'
       ? 'Productora'
-      : c.category === 'ranged'
+      : c?.category === 'ranged'
       ? 'Ataque a Distancia'
-      : c.category === 'defensive'
+      : c?.category === 'defensive'
       ? 'Tanque Defensivo'
       : 'Mele / Cuerpo a Cuerpo'
 
-  const isInstant = c.id === 'jalapeno' || c.id === 'iceberglettuce' || c.id === 'squash'
+  const isInstant = c?.id === 'jalapeno' || c?.id === 'iceberglettuce' || c?.id === 'squash'
 
   return {
-    id: c.id,
-    name: c.name,
-    category: c.category,
+    id: c?.id || id,
+    name: c?.name || id,
+    category: c?.category || 'melee',
     categoryLabel: catLabel,
-    cost: c.cost,
-    cooldownSec: c.cooldownMs / 1000,
-    hp: isInstant ? 'Un Solo Uso' : c.maxHp,
-    damage: c.id === 'kernelpult' ? '30 / 60 🧈' : (c.damage !== undefined ? c.damage : (c.category === 'producer' ? '0 (Produce Soles)' : 'Especial')),
-    sprite: c.sprite,
-    cardImage: c.packetActive || c.icon,
-    description: c.description,
-    lore: LORE_MAP[c.id] || `${c.name} es una valiosa planta aliada lista para defender el jardín.`,
+    cost: c?.cost ?? 100,
+    cooldownSec: (c?.cooldownMs ?? 5000) / 1000,
+    hp: isInstant ? 'Un Solo Uso' : (c?.maxHp ?? 100),
+    damage: c?.id === 'kernelpult' ? '30 / 60 🧈' : (c?.damage !== undefined ? c.damage : (c?.category === 'producer' ? '0 (Produce Soles)' : 'Especial')),
+    sprite: c?.sprite || '',
+    cardImage: c?.packetActive || c?.icon || '',
+    description: c?.description || '',
+    lore: (c?.id && LORE_MAP[c.id]) || `${c?.name || id} es una valiosa planta aliada lista para defender el jardín.`,
   }
 })
 
@@ -124,7 +124,7 @@ export default function Collection({
 
   const filteredCatalog = CATALOG.filter((p) => {
     if (activeTab === 'all') return true
-    return p.category === activeTab
+    return p?.category === activeTab
   })
 
   const playPreviewSound = () => {

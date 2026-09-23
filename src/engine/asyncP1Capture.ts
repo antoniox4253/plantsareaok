@@ -140,7 +140,7 @@ export function ejecutarCapturaPlantP1(
   }
 
   // Prevenir colocación duplicada o concurrente en casillas estáticas ya ocupadas
-  const isWalkingUnit = config.category === 'melee' || !!config.moveSpeed || card === 'chomper'
+  const isWalkingUnit = config?.category === 'melee' || !!config?.moveSpeed || card === 'chomper'
   if (!isWalkingUnit) {
     const isOccupiedByPlant = state.plants.some(
       (p) => p.lane === lane && p.col === col && !p.isWalking && p.hp > 0

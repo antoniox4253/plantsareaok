@@ -685,7 +685,7 @@ function intentarEjecutarPlant(
   }
 
   // 3. Comprobar casilla
-  const camina = config.category === 'melee' || !!config.moveSpeed || plantId === 'chomper'
+  const camina = config?.category === 'melee' || !!config?.moveSpeed || plantId === 'chomper'
   let targetCol = intent.col ?? 0
 
   if (!camina) {
@@ -1172,7 +1172,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
           continue
         }
 
-        const camina = config.category === 'melee' || !!config.moveSpeed || plantIdValido === 'chomper'
+        const camina = config?.category === 'melee' || !!config?.moveSpeed || plantIdValido === 'chomper'
         if (!camina) {
           const ocupada = state.plants.some(
             (p) => p.lane === j.lane && p.col === j.col && !p.isWalking

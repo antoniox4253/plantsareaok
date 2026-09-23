@@ -515,7 +515,7 @@ function validarYAplicarIntencion(
     return
   }
 
-  const camina = config.category === 'melee' || !!config.moveSpeed || carta.plantId === 'chomper'
+  const camina = config?.category === 'melee' || !!config?.moveSpeed || carta.plantId === 'chomper'
   if (!camina) {
     const ocupada = propia.plants.some(
       (p) => p.lane === j.lane && p.col === j.col && !p.isWalking

@@ -697,5 +697,36 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(girasoles[0].col).toBe(13) // col 0 local = col 13 en campo
     expect(state.p2SunBank).toBe(200) // 250 - 50 = 200
   })
+
+  it('auditoría estática Migración 226: coste unificado y validación de asalto a 500 Oro', async () => {
+    const { readFileSync, existsSync } = await import('fs')
+    const { join } = await import('path')
+
+    const migrationPath = join(process.cwd(), 'supabase', 'migrations', '226-fix-clan-raid-cost-500-gold.sql')
+    expect(existsSync(migrationPath)).toBe(true)
+
+    const sql = readFileSync(migrationPath, 'utf8')
+    expect(sql).toContain('v_cost_clan_gold      CONSTANT BIGINT := 500')
+    expect(sql).toContain('v_cost_user_gold      CONSTANT BIGINT := 500')
+    expect(sql).toContain('v_actual_cost         BIGINT := 500')
+    expect(sql).toContain('INSUFFICIENT_CLAN_GOLD: Se requieren 500 de Oro')
+    expect(sql).not.toContain('v_cost_clan_gold      CONSTANT BIGINT := 5000')
+  })
+
+  it('auditoría estática Migración 227: selección robusta de NPCs con ORDER BY random() y recuperación de base_hp', async () => {
+    const { readFileSync, existsSync } = await import('fs')
+    const { join } = await import('path')
+
+    const migrationPath = join(process.cwd(), 'supabase', 'migrations', '227-fix-npc-fortress-matchmaking-random-and-hp.sql')
+    expect(existsSync(migrationPath)).toBe(true)
+
+    const sql = readFileSync(migrationPath, 'utf8')
+    expect(sql).toContain('ORDER BY random()')
+    expect(sql).toContain('LIMIT 1')
+    expect(sql).toContain('COALESCE(v_target_clan.base_hp, 0) <= 0')
+    expect(sql).toContain('v_target_clan.base_hp := COALESCE(v_target_clan.max_base_hp, 500)')
+    expect(sql).not.toContain('v_candidate_ids[1 + floor(random()')
+  })
 })
+
 

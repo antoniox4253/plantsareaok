@@ -114,7 +114,7 @@ export function crearPlantaDelRival(
   equippedItem?: string | null
 ): PlantEntity {
   const config = getScaledPlantConfig(plantId, statRolls, equippedItem)
-  const camina = config.category === 'melee' || !!config.moveSpeed || plantId === 'chomper'
+  const camina = config?.category === 'melee' || !!config?.moveSpeed || plantId === 'chomper'
 
   // ── LA COLUMNA SE ESPEJA ───────────────────────────────────────────────────
   //
@@ -174,7 +174,7 @@ export function crearPlantaPropia(
   equippedItem?: string | null
 ): PlantEntity {
   const config = getScaledPlantConfig(plantId, statRolls, equippedItem)
-  const camina = config.category === 'melee' || !!config.moveSpeed || plantId === 'chomper'
+  const camina = config?.category === 'melee' || !!config?.moveSpeed || plantId === 'chomper'
   const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
 
   return {
@@ -811,7 +811,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
     }
 
     // ── DISPARO A DISTANCIA ───────────────────────────────────────────────────
-    if (config.category === 'ranged') {
+    if (config?.category === 'ranged') {
       if (state.tick - planta.lastActionTime > msToTicks(config.attackSpeedMs || 1200)) {
         planta.lastActionTime = state.tick
 
@@ -1034,7 +1034,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
     } else {
       // ── LAS ESTÁTICAS CUERPO A CUERPO ──────────────────────────────────────
       // Sólo las que no son a distancia: un lanzaguisantes ya disparó arriba.
-      if (config.category !== 'ranged') {
+      if (config?.category !== 'ranged') {
         const pegada = susPlantas.find(
           (a) => a.lane === planta.lane && estaDelante(planta, a, 3.0, lado.sentido) && a.hp > 0
         )
@@ -1327,7 +1327,7 @@ export function simularDefensaDeFortaleza(
     // 0, 1 = fondo (seguro, para girasoles)
     // 2, 3 = retaguardia media (lanzadores y tiradores)
     // 4, 5 = frente defensivo (muros e interceptores cuerpo a cuerpo)
-    const isMelee = plantConf.category === 'melee' || !!plantConf.moveSpeed || chosenPlantId === 'chomper'
+    const isMelee = plantConf?.category === 'melee' || !!plantConf?.moveSpeed || chosenPlantId === 'chomper'
     let preferredCols: number[]
 
     if (chosenPlantId === 'sunflower') {
@@ -1652,7 +1652,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
           // NO TIENE SOLES SUFICIENTES -> CANCELAR COLOCACIÓN
           chosenType = null
         } else {
-          const isWalking = eConfig.category === 'melee'
+          const isWalking = eConfig?.category === 'melee'
 
           // Con la foto que tiene en la cabeza, y a veces equivocándose de carril.
           const lane = elegirCarril(mente, state.rng, nivel, totalLanes)
@@ -1681,7 +1681,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
             const preferredCols =
               chosenType === 'sunflower'
                 ? [0, 1, 2, 3]          // los girasoles, protegidos detrás
-                : eConfig.category === 'defensive'
+                : eConfig?.category === 'defensive'
                 ? [5, 4, 3]             // los muros, delante
                 : [3, 2, 1, 0, 4, 5]    // los atacantes, a media altura
 

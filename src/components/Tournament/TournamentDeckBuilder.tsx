@@ -362,7 +362,7 @@ export default function TournamentDeckBuilder({
                         ? `${itemDef.emoji} Con Ítem`
                         : rolls.length > 0
                         ? `⭐ Fusionada (+${rolls.length})`
-                        : scaledConfig.category}
+                        : scaledConfig?.category ?? 'Combatiente'}
                     </span>
                     {isSelected && (
                       <span className="tourney-catalog-card-status">✓ En Mazo</span>

@@ -1591,11 +1591,11 @@ export default function Jardin({
                   <span className="jardin-card__cat">
                     {!isUnlocked
                       ? '🔒 Bloqueada'
-                      : config.category === 'producer'
+                      : config?.category === 'producer'
                       ? '☀️ Productora'
-                      : config.category === 'ranged'
+                      : config?.category === 'ranged'
                       ? '🏹 Atacante'
-                      : config.category === 'defensive'
+                      : config?.category === 'defensive'
                       ? '🛡️ Tanque'
                       : '🥊 Mele'}
                   </span>
