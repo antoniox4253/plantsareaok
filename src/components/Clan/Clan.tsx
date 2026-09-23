@@ -3395,11 +3395,16 @@ export default function Clan({
                   initialUnlockedPlants={fortressData.unlockedPlants || ['sunflower', 'peashooter', 'wallnut']}
                   defenseSunsBudget={fortressData.defenseSunsBudget || 2500}
                   canEdit={isOfficer}
+                  plantCopies={plantCopies}
                   onClose={() => setFortressSubView('hub')}
                   onOpenAltar={() => setShowFortressDonateModal(true)}
                   onSaved={(newLayout, newAmbushes, sunsSpent) => {
                     setFortressData((prev) => (prev ? { ...prev, layout: newLayout, ambushes: newAmbushes, sunsSpent } : null))
                     setFortressSubView('hub')
+                  }}
+                  onArsenalUpdated={(newUnlocked) => {
+                    setFortressData((prev) => (prev ? { ...prev, unlockedPlants: newUnlocked } : null))
+                    if (onRefreshUserData) void onRefreshUserData()
                   }}
                 />
               )}
@@ -4795,11 +4800,16 @@ export default function Clan({
           initialUnlockedPlants={fortressData.unlockedPlants || ['sunflower', 'peashooter', 'wallnut']}
           defenseSunsBudget={fortressData.defenseSunsBudget || 2500}
           canEdit={isOfficer}
+          plantCopies={plantCopies}
           onClose={() => setShowFortressEditor(false)}
           onOpenAltar={() => setShowFortressDonateModal(true)}
           onSaved={(newLayout, newAmbushes, sunsSpent) => {
             setFortressData((prev) => (prev ? { ...prev, layout: newLayout, ambushes: newAmbushes, sunsSpent } : null))
             setShowFortressEditor(false)
+          }}
+          onArsenalUpdated={(newUnlocked) => {
+            setFortressData((prev) => (prev ? { ...prev, unlockedPlants: newUnlocked } : null))
+            if (onRefreshUserData) void onRefreshUserData()
           }}
         />
       )}

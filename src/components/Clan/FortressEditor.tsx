@@ -15,9 +15,11 @@ interface FortressEditorProps {
   initialUnlockedPlants?: PlantId[]
   defenseSunsBudget: number
   canEdit?: boolean
+  plantCopies?: Record<string, number>
   onClose: () => void
   onOpenAltar?: () => void
   onSaved: (newLayout: ClanFortressPlant[], newAmbushes: ClanFortressAmbush[], sunsSpent: number) => void
+  onArsenalUpdated?: (newUnlocked: PlantId[]) => void
 }
 
 const SELECTABLE_PLANTS: PlantId[] = [
@@ -50,9 +52,11 @@ export default function FortressEditor({
   initialUnlockedPlants,
   defenseSunsBudget,
   canEdit = true,
+  plantCopies,
   onClose,
   onOpenAltar,
   onSaved,
+  onArsenalUpdated,
 }: FortressEditorProps) {
   // Determinación de carriles permitidos según el nivel del Árbol Madre
   // Nivel 1 y 2: Carriles centrales 1, 2 y 3 (3 líneas)
@@ -278,6 +282,16 @@ export default function FortressEditor({
 
   // Donar carta al arsenal del clan
   const handleDonateToArsenal = async (plantId: PlantId) => {
+    const userCopies = plantCopies ? (plantCopies[plantId] || 0) : 1
+    if (plantCopies && userCopies <= 0) {
+      soundManager.playSound('click', 0.2)
+      setSaveStatus({
+        type: 'error',
+        message: `⚠️ No posees copias extra de ${PLANT_CONFIGS[plantId]?.name} para donar (tienes 0). Obtén copias en sobres para desbloquearla en el clan.`,
+      })
+      return
+    }
+
     setIsDonating(plantId)
     setSaveStatus(null)
     try {
@@ -291,11 +305,13 @@ export default function FortressEditor({
       }
 
       soundManager.playSound('plantation', 0.9)
-      setUnlockedPlants((prev) => Array.from(new Set([...prev, plantId])))
+      const nextUnlocked = Array.from(new Set([...unlockedPlants, plantId]))
+      setUnlockedPlants(nextUnlocked)
       setSelectedPlantId(plantId)
+      onArsenalUpdated?.(nextUnlocked)
       setSaveStatus({
         type: 'success',
-        message: `🎉 ¡Has donado 1 copia de ${PLANT_CONFIGS[plantId]?.name}! Ahora está desbloqueada en el arsenal del clan.`,
+        message: `🎉 ¡Has donado 1 copia de ${PLANT_CONFIGS[plantId]?.name}! Ahora está desbloqueada permanentemente en el arsenal del clan.`,
       })
     } catch (e: any) {
       setSaveStatus({
@@ -732,6 +748,7 @@ export default function FortressEditor({
             const isAmbushType = TACTICAL_AMBUSH_PLANTS.includes(pid)
             const isSelected = selectedPlantId === pid && !selectedTileToMove && !isShovelActive
             const canAfford = sunsRemaining >= cost
+            const copiesAvailable = plantCopies ? (plantCopies[pid] || 0) : 0
 
             return (
               <div
@@ -739,7 +756,15 @@ export default function FortressEditor({
                 className={`fortress-palette-card ${isSelected ? 'fortress-palette-card--selected' : ''} ${!isUnlocked ? 'fortress-palette-card--locked' : ''} ${isUnlocked && !canAfford ? 'fortress-palette-card--disabled' : ''}`}
                 onClick={() => {
                   if (!isUnlocked) {
-                    if (confirm(`¿Deseas donar 1 copia de ${cfg.name} de tu colección para desbloquearla permanentemente en el arsenal del clan?`)) {
+                    if (plantCopies && copiesAvailable <= 0) {
+                      soundManager.playSound('click', 0.2)
+                      setSaveStatus({
+                        type: 'error',
+                        message: `⚠️ No posees copias extra de ${cfg.name} para donar (tienes 0). Abre sobres en el Menú para conseguir copias.`,
+                      })
+                      return
+                    }
+                    if (confirm(`¿Deseas donar 1 copia de ${cfg.name} de tu colección para desbloquearla permanentemente en el arsenal del clan? (Tienes ${copiesAvailable} copia${copiesAvailable === 1 ? '' : 's'})`)) {
                       void handleDonateToArsenal(pid)
                     }
                     return
@@ -764,14 +789,20 @@ export default function FortressEditor({
                     <span className="fortress-palette-cost">{cost}☀️</span>
                   )}
                   {!isUnlocked && (
-                    <div className="fortress-palette-lock-overlay" title="Bloqueada. Clic para donar 1 copia">
+                    <div className="fortress-palette-lock-overlay" title={`Bloqueada. ${copiesAvailable > 0 ? `Clic para donar 1 de tus ${copiesAvailable} copias` : 'No posees copias para donar'}`}>
                       <span>🔒</span>
                     </div>
                   )}
                 </div>
 
                 <span className="fortress-palette-name">
-                  {!isUnlocked ? (isDonating === pid ? 'DONANDO...' : '🎁 DONAR') : cfg.name}
+                  {!isUnlocked
+                    ? isDonating === pid
+                      ? 'DONANDO...'
+                      : copiesAvailable > 0
+                      ? `🎁 DONAR (${copiesAvailable})`
+                      : '🔒 SIN COPIAS'
+                    : cfg.name}
                 </span>
               </div>
             )
