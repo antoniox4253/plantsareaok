@@ -43,7 +43,7 @@ class MockElement {
     }
   }
 
-  closest(selector: string) {
+  closest(_selector: string) {
     return null
   }
 }
@@ -51,17 +51,15 @@ class MockElement {
 describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
   let mockHead: MockElement
   let mockBody: MockElement
-  let elementsMap: Map<string, MockElement>
 
   beforeEach(() => {
     mockHead = new MockElement()
     mockBody = new MockElement()
-    elementsMap = new Map()
 
     const mockDocument = {
       head: mockHead,
       body: mockBody,
-      createElement: (tag: string) => {
+      createElement: (_tag: string) => {
         const el = new MockElement()
         return el
       },
