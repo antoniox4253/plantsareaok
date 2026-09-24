@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { soundManager } from '../../utils/audioManager'
 import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
+import GoldIcon from '../Common/GoldIcon'
 import './ArenaAdsModal.css'
 
 interface ArenaAdsInterstitialModalProps {
@@ -79,7 +80,7 @@ export default function ArenaAdsInterstitialModal({
           </div>
           <div className="arena-ads-loot-pills" style={{ justifyContent: 'center' }}>
             <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
-              <span>🪙</span> {accumulatedLoot.gold} Oro
+              <GoldIcon size={16} /> {accumulatedLoot.gold} Oro
             </div>
             <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
               <span>💎</span> {accumulatedLoot.gems} Gemas

@@ -14,6 +14,7 @@ import { soundManager } from '../../utils/audioManager'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { activateArenaAdsNetwork, deactivateArenaAdsNetwork, resetPopunderQuota } from '../../utils/arenaAdsNetwork'
 import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
+import GoldIcon from '../Common/GoldIcon'
 import './ArenaAdsModal.css'
 
 interface ArenaAdsModalProps {
@@ -255,7 +256,7 @@ export default function ArenaAdsModal({
           <div className="arena-ads-header-right">
             <div className="arena-ads-header-badges">
               <div className="arena-ads-badge arena-ads-badge--gold" title="Tu saldo de Oro">
-                <span>🪙</span>
+                <GoldIcon size={16} />
                 <strong>{userGold}</strong>
               </div>
               <div className="arena-ads-badge arena-ads-badge--gems" title="Tu saldo de Gemas">
@@ -293,7 +294,7 @@ export default function ArenaAdsModal({
 
             <div className="arena-ads-loot-pills arena-ads-loot-pills--center">
               <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
-                <span>🪙</span> +{claimSummary.gold} Oro
+                <GoldIcon size={16} /> +{claimSummary.gold} Oro
               </div>
               <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
                 <span>💎</span> +{claimSummary.gems} Gemas
@@ -348,7 +349,7 @@ export default function ArenaAdsModal({
                   {totalAccumulatedLoot && (
                     <div className="arena-ads-loot-pills">
                       <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
-                        <span>🪙</span> {totalAccumulatedLoot.gold} Oro
+                        <GoldIcon size={16} /> {totalAccumulatedLoot.gold} Oro
                       </div>
                       <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
                         <span>💎</span> {totalAccumulatedLoot.gems} Gemas
@@ -369,7 +370,7 @@ export default function ArenaAdsModal({
                   </h3>
                   <div className="arena-ads-rules-grid">
                     <div className="arena-ads-rule-item">
-                      <strong>1. Entrada:</strong> 100 🪙 (1x) o 200 💎 (⚡ 2x botín).
+                      <strong>1. Entrada:</strong> 100 <GoldIcon size={14} /> (1x) o 200 💎 (⚡ 2x botín).
                     </div>
                     <div className="arena-ads-rule-item">
                       <strong>2. Preparación:</strong> Botín Extra O Reforzar Mazo.
@@ -384,9 +385,9 @@ export default function ArenaAdsModal({
                 </div>
               )}
 
-              {/* Contenedor de Banner Nativo Oficial (Informativo en lobby para no disparar anuncios en el click de Play) */}
+              {/* Contenedor de Banner Nativo Oficial */}
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <ArenaAdsNativeBanner fallbackText="Patrocinador Oficial • Arena ADS" enabled={false} />
+                <ArenaAdsNativeBanner fallbackText="Patrocinador Oficial • Arena ADS" enabled={true} />
               </div>
             </div>
           </div>
@@ -440,7 +441,9 @@ export default function ArenaAdsModal({
                           className={`arena-ads-reward-card-item ${opt.isExclusiveItem ? 'arena-ads-reward-card-item--exclusive' : ''}`}
                         >
                           <div className="arena-ads-reward-card-icon-wrap">
-                            <span className="arena-ads-reward-card-icon">{opt.icon}</span>
+                            <span className="arena-ads-reward-card-icon">
+                              {opt.type === 'gold' ? <GoldIcon size={24} /> : opt.icon}
+                            </span>
                           </div>
                           <div className="arena-ads-reward-card-info">
                             <strong className="arena-ads-reward-card-label">{opt.label}</strong>
@@ -563,13 +566,22 @@ export default function ArenaAdsModal({
               </div>
             </div>
 
-            {/* PREVISUALIZACIÓN HORIZONTAL SLIM DEL MAZO ACTIVO */}
+            {/* DOCK TÁCTICO DEL MAZO ACTIVO (GAMING RACK) */}
             {activeRun && (
-              <div className="arena-ads-deck-preview-bar">
-                <span className="arena-ads-deck-bar-label">
-                  TU MAZO (5 CARTAS):
-                </span>
-                <div className="arena-ads-deck-strip">
+              <div className="arena-ads-deck-rack">
+                <div className="arena-ads-deck-rack-header">
+                  <div className="arena-ads-deck-rack-title">
+                    <span className="arena-ads-deck-rack-icon">🎴</span>
+                    <strong>MAZO DE COMBATE (5/5 PLANTAS)</strong>
+                  </div>
+                  <span className="arena-ads-deck-rack-subtitle">
+                    {activeRun.deck.some(c => (c.statRolls?.length || 0) > 0 || (c.level || 1) > 1)
+                      ? '⚡ Mejoras de fusión listas para el combate'
+                      : '🌻 Girasol + 4 unidades de asalto'}
+                  </span>
+                </div>
+
+                <div className="arena-ads-deck-slots">
                   {activeRun.deck.map((card, idx) => {
                     const cfg = PLANT_CONFIGS[card.plantId as PlantId]
                     if (!cfg) return null
@@ -580,21 +592,33 @@ export default function ArenaAdsModal({
                     return (
                       <div
                         key={`${card.plantId}-${idx}`}
-                        className={`arena-ads-deck-card ${
-                          isSunflower ? 'arena-ads-deck-card--sunflower' : ''
-                        } ${isFused ? 'arena-ads-deck-card--fused' : ''}`}
-                        title={`${cfg.name} (⭐${cardStars})${isSunflower ? ' (Fijo)' : ''}${isFused ? ' (Fusión)' : ''}`}
+                        className={`arena-ads-deck-slot ${
+                          isSunflower ? 'arena-ads-deck-slot--sunflower' : ''
+                        } ${isFused ? 'arena-ads-deck-slot--fused' : ''}`}
+                        title={`${cfg.name} (⭐${cardStars})${isSunflower ? ' • Fijo en ranura 1' : ''}${isFused ? ' • Fusión con stats mejorados' : ''}`}
                       >
-                        {isSunflower && <span className="arena-ads-deck-card-lock">🔒</span>}
-                        <span className="arena-ads-deck-card-stars">⭐{cardStars}</span>
-                        <img
-                          src={cfg.icon || cfg.sprite}
-                          alt={cfg.name}
-                          className="arena-ads-deck-card-img"
-                        />
-                        <span className="arena-ads-deck-card-tag">
-                          {isSunflower ? 'Girasol' : cfg.name}
-                        </span>
+                        <div className="arena-ads-deck-slot-top">
+                          {isSunflower ? (
+                            <span className="arena-ads-deck-slot-lock" title="Girasol fijo">🔒</span>
+                          ) : (
+                            <span className="arena-ads-deck-slot-num">#{idx + 1}</span>
+                          )}
+                          <span className="arena-ads-deck-slot-stars">⭐{cardStars}</span>
+                        </div>
+
+                        <div className="arena-ads-deck-slot-avatar">
+                          <img
+                            src={cfg.icon || cfg.sprite}
+                            alt={cfg.name}
+                            className="arena-ads-deck-slot-img"
+                          />
+                        </div>
+
+                        <div className="arena-ads-deck-slot-footer">
+                          <span className="arena-ads-deck-slot-name">
+                            {isSunflower ? 'Girasol' : cfg.name}
+                          </span>
+                        </div>
                       </div>
                     )
                   })}
@@ -624,7 +648,7 @@ export default function ArenaAdsModal({
                       onClick={handleCashout}
                       disabled={isProcessing}
                     >
-                      💰 RETIRARSE ({activeRun.accumulatedRewards.gold} 🪙)
+                      💰 RETIRARSE ({activeRun.accumulatedRewards.gold} <GoldIcon size={14} />)
                     </button>
                     <button
                       type="button"
@@ -642,7 +666,7 @@ export default function ArenaAdsModal({
                       onClick={() => handleStartNewRun('gold')}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? '⏳...' : '🎮 100 🪙 ORO'}
+                      {isProcessing ? '⏳...' : <>🎮 100 <GoldIcon size={16} style={{ margin: '0 3px' }} /> ORO</>}
                     </button>
                     <button
                       type="button"
@@ -666,7 +690,7 @@ export default function ArenaAdsModal({
                   disabled={isProcessing}
                   title="Retírate ahora con todo lo que has acumulado"
                 >
-                  💰 RETIRARSE ({activeRun.accumulatedRewards.gold} 🪙)
+                  💰 RETIRARSE ({activeRun.accumulatedRewards.gold} <GoldIcon size={14} />)
                 </button>
               ) : (
                 <button

@@ -8,6 +8,7 @@ interface ArenaAdsNativeBannerProps {
   fallbackText?: string
   enabled?: boolean
   lateral?: boolean
+  refreshKey?: string | number
 }
 
 export default function ArenaAdsNativeBanner({
@@ -15,6 +16,7 @@ export default function ArenaAdsNativeBanner({
   fallbackText = 'Patrocinador Oficial • Arena ADS',
   enabled = true,
   lateral = false,
+  refreshKey,
 }: ArenaAdsNativeBannerProps) {
   if (!enabled) {
     return (
@@ -26,6 +28,10 @@ export default function ArenaAdsNativeBanner({
       </div>
     )
   }
+
+  const cacheBusterSrc = refreshKey !== undefined
+    ? `${ARENA_ADS_NATIVE_SRC}?t=${encodeURIComponent(String(refreshKey))}`
+    : ARENA_ADS_NATIVE_SRC
 
   const iframeSrcDoc = `<!DOCTYPE html>
 <html>
@@ -54,7 +60,7 @@ export default function ArenaAdsNativeBanner({
       justify-content: center;
     }
   </style>
-  <script async="async" data-cfasync="false" src="${ARENA_ADS_NATIVE_SRC}"></script>
+  <script async="async" data-cfasync="false" src="${cacheBusterSrc}"></script>
 </head>
 <body>
   <div id="${ARENA_ADS_NATIVE_CONTAINER_ID}"></div>
@@ -65,6 +71,7 @@ export default function ArenaAdsNativeBanner({
     return (
       <div className={`arena-ads-native-lateral-wrap ${className}`} style={{ width: '100%', height: '100%' }}>
         <iframe
+          key={refreshKey !== undefined ? String(refreshKey) : undefined}
           title="Arena Ads Lateral Native Banner"
           className="arena-ads-combat-flank-iframe"
           srcDoc={iframeSrcDoc}
@@ -83,10 +90,11 @@ export default function ArenaAdsNativeBanner({
 
       <div className="arena-ads-native-container">
         <iframe
+          key={refreshKey !== undefined ? String(refreshKey) : undefined}
           title="Arena Ads Native Banner"
           className="arena-ads-combat-flank-iframe"
           srcDoc={iframeSrcDoc}
-          style={{ width: '100%', minHeight: '60px', border: 'none', overflow: 'hidden' }}
+          style={{ width: '100%', minHeight: '85px', height: '90px', border: 'none', overflow: 'hidden' }}
         />
       </div>
     </div>

@@ -116,6 +116,8 @@
 .arena-ads-badge--gold {
   border-color: rgba(234, 179, 8, 0.5);
   color: #fef08a;
+  background: rgba(234, 179, 8, 0.14);
+  gap: 5px;
 }
 
 .arena-ads-badge--gems {
@@ -222,7 +224,8 @@
 
 .arena-ads-native-container {
   width: 100%;
-  min-height: 50px;
+  min-height: 85px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -806,39 +809,153 @@
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
-/* ── PREVISUALIZACIÓN HORIZONTAL SLIM DEL MAZO ACTIVO (ANCLADO Y SIEMPRE VISIBLE) ── */
-.arena-ads-deck-preview-bar {
+/* ── DOCK TÁCTICO DEL MAZO ACTIVO (GAMING RACK) ── */
+.arena-ads-deck-rack {
   flex-shrink: 0;
-  height: 52px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(8, 14, 26, 0.98) 100%);
-  border: 1.5px solid rgba(56, 189, 248, 0.35);
-  border-radius: 10px;
-  padding: 3px 10px;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+  flex-direction: column;
+  gap: 4px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(6, 11, 20, 0.98) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  border-radius: 12px;
+  padding: 6px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   box-sizing: border-box;
 }
 
-.arena-ads-deck-bar-label {
-  font-size: 10.5px;
-  font-weight: 900;
-  color: #7dd3fc;
-  letter-spacing: 0.6px;
-  white-space: nowrap;
+.arena-ads-deck-rack-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.arena-ads-deck-rack-title {
   display: flex;
   align-items: center;
   gap: 5px;
+  font-size: 10px;
+  color: #7dd3fc;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  font-weight: 900;
 }
 
-.arena-ads-deck-strip {
+.arena-ads-deck-rack-icon {
+  font-size: 12px;
+}
+
+.arena-ads-deck-rack-subtitle {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.arena-ads-deck-slots {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.arena-ads-deck-slot {
+  width: 62px;
+  height: 64px;
+  background: radial-gradient(circle at 50% 30%, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.45);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 4px;
+  box-sizing: border-box;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.arena-ads-deck-slot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.7);
+  border-color: #38bdf8;
+}
+
+.arena-ads-deck-slot--sunflower {
+  border-color: #eab308;
+  background: radial-gradient(circle at 50% 30%, rgba(66, 32, 6, 0.9) 0%, rgba(24, 17, 7, 0.98) 100%);
+  box-shadow: 0 3px 10px rgba(234, 179, 8, 0.25);
+}
+
+.arena-ads-deck-slot--fused {
+  border-color: #c084fc;
+  background: radial-gradient(circle at 50% 30%, rgba(59, 7, 100, 0.9) 0%, rgba(18, 9, 36, 0.98) 100%);
+  box-shadow: 0 3px 12px rgba(192, 132, 252, 0.35);
+}
+
+.arena-ads-deck-slot-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.arena-ads-deck-slot-num {
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.arena-ads-deck-slot-lock {
+  font-size: 8px;
+  line-height: 1;
+}
+
+.arena-ads-deck-slot-stars {
+  font-size: 8px;
+  font-weight: 900;
+  color: #facc15;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0 3px;
+  border-radius: 3px;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.arena-ads-deck-slot-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex: 1;
+  width: 100%;
+  position: relative;
+}
+
+.arena-ads-deck-slot-img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.arena-ads-deck-slot-footer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.arena-ads-deck-slot-name {
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #f1f5f9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  letter-spacing: 0.2px;
 }
 
 
@@ -1075,24 +1192,24 @@
     font-size: 10.5px;
   }
 
-  .arena-ads-deck-preview-bar {
-    height: 44px;
-    padding: 2px 6px;
+  .arena-ads-deck-rack {
+    padding: 3px 6px;
+    gap: 2px;
   }
 
-  .arena-ads-deck-card {
-    width: 32px;
-    height: 38px;
+  .arena-ads-deck-slot {
+    width: 48px;
+    height: 52px;
+    padding: 2px;
   }
 
-  .arena-ads-deck-card-img {
-    width: 17px;
-    height: 17px;
+  .arena-ads-deck-slot-img {
+    width: 24px;
+    height: 24px;
   }
 
-  .arena-ads-deck-card-tag {
+  .arena-ads-deck-slot-name {
     font-size: 6.5px;
-    max-width: 30px;
   }
 }
 
@@ -1161,19 +1278,24 @@
     font-size: 11.5px;
   }
 
-  .arena-ads-deck-preview-bar {
-    height: 46px;
-    padding: 2px 8px;
+  .arena-ads-deck-rack {
+    padding: 3px 6px;
+    gap: 2px;
   }
 
-  .arena-ads-deck-card {
-    width: 36px;
-    height: 40px;
+  .arena-ads-deck-slot {
+    width: 50px;
+    height: 54px;
+    padding: 2px;
   }
 
-  .arena-ads-deck-card-img {
-    width: 20px;
-    height: 20px;
+  .arena-ads-deck-slot-img {
+    width: 25px;
+    height: 25px;
+  }
+
+  .arena-ads-deck-slot-name {
+    font-size: 7px;
   }
 
   .arena-ads-footer {

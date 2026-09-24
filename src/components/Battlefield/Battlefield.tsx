@@ -3582,7 +3582,10 @@ export default function Battlefield({
             <span className="arena-ads-combat-flank__tag">PATROCINADOR</span>
           </div>
           <div className="arena-ads-combat-flank__body">
-            <ArenaAdsNativeBanner lateral />
+            <ArenaAdsNativeBanner
+              lateral
+              refreshKey={`flank-left-lvl-${currentArenaAdsRun?.level || 1}-${currentArenaAdsRun?.updatedAt || 0}`}
+            />
           </div>
         </aside>
 
@@ -3596,7 +3599,10 @@ export default function Battlefield({
             <span className="arena-ads-combat-flank__tag">PATROCINADOR</span>
           </div>
           <div className="arena-ads-combat-flank__body">
-            <ArenaAdsNativeBanner lateral />
+            <ArenaAdsNativeBanner
+              lateral
+              refreshKey={`flank-right-lvl-${currentArenaAdsRun?.level || 1}-${currentArenaAdsRun?.updatedAt || 0}`}
+            />
           </div>
         </aside>
       </div>
