@@ -50,6 +50,7 @@ import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { ArenaAdsManager } from '../../utils/arenaAdsManager'
 import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
 import { arenaAdsService } from '../../services/arenaAdsService'
+import { activateArenaAdsNetwork, deactivateArenaAdsNetwork } from '../../utils/arenaAdsNetwork'
 import './Battlefield.css'
 
 /** Un segundo antes de que el sol se recoja solo: momento de avisar. */
@@ -588,6 +589,16 @@ export default function Battlefield({
       setCurrentArenaAdsRun(arenaAdsRun)
     }
   }, [arenaAdsRun])
+
+  // Activar y desactivar red publicitaria exclusiva de Arena ADS durante el combate
+  useEffect(() => {
+    if (matchMode === 'arena_ads') {
+      activateArenaAdsNetwork()
+      return () => {
+        deactivateArenaAdsNetwork()
+      }
+    }
+  }, [matchMode])
 
   // En clan_fortress la arena siempre opera sobre 5 carriles (LANES_CONFIG_5),
   // bloqueando visualmente los carriles no disponibles según el nivel del Árbol Madre rival.

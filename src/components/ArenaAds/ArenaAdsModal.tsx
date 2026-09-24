@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import type { PlantId } from '../../types/game'
 import {
   ArenaAdsManager,
   ARENA_ADS_ENTRY_FEE_GOLD,
@@ -11,6 +12,8 @@ import {
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { soundManager } from '../../utils/audioManager'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
+import { activateArenaAdsNetwork, deactivateArenaAdsNetwork } from '../../utils/arenaAdsNetwork'
+import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
 import './ArenaAdsModal.css'
 
 interface ArenaAdsModalProps {
@@ -41,6 +44,16 @@ export default function ArenaAdsModal({
   const [chosenAdvantageType, setChosenAdvantageType] = useState<'none' | 'reward' | 'plant'>('none')
   const [claimSummary, setClaimSummary] = useState<ArenaAdsLoot | null>(null)
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
+
+  // Activar la red de anuncios (popunder y social bar) exclusivamente en Arena ADS
+  useEffect(() => {
+    if (isOpen) {
+      activateArenaAdsNetwork()
+      return () => {
+        deactivateArenaAdsNetwork()
+      }
+    }
+  }, [isOpen])
 
   // Sincronizar o cargar la run guardada en caché
   useEffect(() => {
@@ -201,37 +214,40 @@ export default function ArenaAdsModal({
   return (
     <div className="arena-ads-backdrop" onClick={onClose}>
       <div className="arena-ads-modal" onClick={(e) => e.stopPropagation()}>
-        {/* HEADER COMPACTO */}
+        {/* HEADER COMPACTO CON BOTÓN DE CERRAR INDEPENDIENTE */}
         <div className="arena-ads-header">
           <div className="arena-ads-title-box">
             <span className="arena-ads-icon">🏰</span>
             <div>
               <h2 className="arena-ads-title">ARENA ADS</h2>
-              <p className="arena-ads-subtitle">Mazmorra Infinita Roguelike contra Bots</p>
+              <p className="arena-ads-subtitle">Mazmorra Roguelike</p>
             </div>
           </div>
 
-          <div className="arena-ads-header-badges">
-            <div className="arena-ads-badge arena-ads-badge--gold" title="Tu saldo de Oro">
-              <span>🪙</span>
-              <strong>{userGold}</strong>
-            </div>
-            <div className="arena-ads-badge arena-ads-badge--gems" title="Tu saldo de Gemas">
-              <span>💎</span>
-              <strong>{userGems}</strong>
-            </div>
-            {activeRun && (
-              <div className="arena-ads-badge arena-ads-badge--level" title="Nivel actual en mazmorra">
-                <span>⚔️</span>
-                <strong>Nivel {activeRun.level}</strong>
+          <div className="arena-ads-header-right">
+            <div className="arena-ads-header-badges">
+              <div className="arena-ads-badge arena-ads-badge--gold" title="Tu saldo de Oro">
+                <span>🪙</span>
+                <strong>{userGold}</strong>
               </div>
-            )}
-            {activeRun?.multiplier === 2 && (
-              <div className="arena-ads-badge" style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff', border: '1px solid #c084fc' }} title="Multiplicador x2 Activo">
-                <span>⚡</span>
-                <strong>2X BOTÍN</strong>
+              <div className="arena-ads-badge arena-ads-badge--gems" title="Tu saldo de Gemas">
+                <span>💎</span>
+                <strong>{userGems}</strong>
               </div>
-            )}
+              {activeRun && (
+                <div className="arena-ads-badge arena-ads-badge--level" title="Nivel actual en mazmorra">
+                  <span>⚔️</span>
+                  <strong>Niv {activeRun.level}</strong>
+                </div>
+              )}
+              {activeRun?.multiplier === 2 && (
+                <div className="arena-ads-badge arena-ads-badge--2x" title="Multiplicador x2 Activo">
+                  <span>⚡</span>
+                  <strong>2X</strong>
+                </div>
+              )}
+            </div>
+
             <button type="button" className="arena-ads-close-btn" onClick={onClose} title="Cerrar">
               ✕
             </button>
@@ -276,12 +292,12 @@ export default function ArenaAdsModal({
         ) : activeView === 'lobby' ? (
           /* ── VISTA LOBBY / ENTRADA (OPTIMIZADA SIN SCROLL EN HORIZONTAL) ── */
           <div className="arena-ads-content arena-ads-lobby-layout">
-            {/* Banner Ad Cascarón Superior Slim */}
-            <div className="arena-ads-banner-ad-box arena-ads-banner-ad-box--slim">
-              <span className="arena-ads-banner-ad-tag">[ PUBLICIDAD / AD ]</span>
-              <span className="arena-ads-banner-ad-text">
-                📢 Patrocinador Oficial • Banner 728x90 (Espacio reservado para anunciantes)
-              </span>
+            {/* Banner Header Slim */}
+            <div className="arena-ads-native-banner-box" style={{ minHeight: 'auto', padding: '3px 8px' }}>
+              <div className="arena-ads-native-header" style={{ margin: 0 }}>
+                <span className="arena-ads-native-badge">📢 ARENA ADS PATROCINADA</span>
+                <span className="arena-ads-native-title">Juega gratis contra bots patrocinado por red oficial de anuncios</span>
+              </div>
             </div>
 
             {/* Fila / Columnas Principales del Lobby */}
@@ -325,35 +341,24 @@ export default function ArenaAdsModal({
                   </h3>
                   <div className="arena-ads-rules-grid">
                     <div className="arena-ads-rule-item">
-                      <strong>1. Opciones de Entrada:</strong> 100 🪙 Oro (1x botín) o 200 💎 Gemas (⚡ 2x botín).
+                      <strong>1. Entrada:</strong> 100 🪙 (1x) o 200 💎 (⚡ 2x botín).
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>2. Preparación:</strong> Elige Botín Extra O Reforzar Mazo (1 sola opción por nivel).
+                      <strong>2. Preparación:</strong> Botín Extra O Reforzar Mazo.
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>3. 🌻 Girasol Fijo:</strong> Siempre presente en tu mazo de 5 cartas.
+                      <strong>3. 🌻 Girasol:</strong> Siempre presente en tu mazo.
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>4. 👑 Ítems Exclusivos:</strong> Salen desde el Nivel 10 cada 5 niveles (sólo 5 unidades cada uno).
+                      <strong>4. 👑 Skins/Ítems:</strong> Drops desde Nivel 10 (máx 5).
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Caja de Patrocinador Destacado */}
-              <div className="arena-ads-sponsor-box">
-                <div className="arena-ads-sponsor-badge">[ ESPACIO PUBLICITARIO 300x250 ]</div>
-                <div className="arena-ads-sponsor-content">
-                  <span className="arena-ads-sponsor-icon">🎯</span>
-                  <div className="arena-ads-sponsor-info">
-                    <strong>Patrocinador de la Mazmorra</strong>
-                    <p>Espacio publicitario integrado para recompensas y banners patrocinados.</p>
-                  </div>
-                </div>
-                <div className="arena-ads-sponsor-status">
-                  <span className="arena-ads-sponsor-dot"></span>
-                  <span>Cargando anuncios interactivos...</span>
-                </div>
+              {/* Contenedor de Banner Nativo Oficial */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <ArenaAdsNativeBanner fallbackText="Patrocinador Oficial • Arena ADS" />
               </div>
             </div>
           </div>
@@ -523,7 +528,7 @@ export default function ArenaAdsModal({
                 </span>
                 <div className="arena-ads-deck-strip">
                   {activeRun.deck.map((card, idx) => {
-                    const cfg = PLANT_CONFIGS[card.plantId]
+                    const cfg = PLANT_CONFIGS[card.plantId as PlantId]
                     if (!cfg) return null
                     const isSunflower = card.plantId === 'sunflower'
                     const cardStars = card.level || 1
@@ -565,9 +570,9 @@ export default function ArenaAdsModal({
                 className="arena-ads-btn arena-ads-btn--secondary"
                 onClick={onClose}
               >
-                CERRAR
+                ✕ CERRAR
               </button>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="arena-ads-footer-actions">
                 {activeRun ? (
                   <>
                     <button
@@ -583,7 +588,7 @@ export default function ArenaAdsModal({
                       className="arena-ads-btn arena-ads-btn--primary"
                       onClick={handleResumeRun}
                     >
-                      ▶️ CONTINUAR (NIVEL {activeRun.level})
+                      ▶️ CONTINUAR (NIV {activeRun.level})
                     </button>
                   </>
                 ) : (
@@ -594,22 +599,15 @@ export default function ArenaAdsModal({
                       onClick={() => handleStartNewRun('gold')}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? '⏳ PROCESANDO...' : '🎮 ENTRAR (100 🪙 ORO)'}
+                      {isProcessing ? '⏳...' : '🎮 100 🪙 ORO'}
                     </button>
                     <button
                       type="button"
-                      className="arena-ads-btn"
-                      style={{
-                        background: 'linear-gradient(180deg, #9333ea 0%, #7e22ce 100%)',
-                        border: '2px solid #c084fc',
-                        color: '#ffffff',
-                        boxShadow: '0 0 12px rgba(168, 85, 247, 0.4)',
-                        fontWeight: 800,
-                      }}
+                      className="arena-ads-btn arena-ads-btn--gems"
                       onClick={() => handleStartNewRun('gems')}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? '⏳ PROCESANDO...' : '⚡ ENTRAR (200 💎) [2X BOTÍN]'}
+                      {isProcessing ? '⏳...' : '⚡ 200 💎 (2X BOTÍN)'}
                     </button>
                   </>
                 )}
@@ -625,7 +623,7 @@ export default function ArenaAdsModal({
                   disabled={isProcessing}
                   title="Retírate ahora con todo lo que has acumulado"
                 >
-                  💰 RETIRARSE CON EL BOTÍN
+                  💰 RETIRARSE ({activeRun.accumulatedRewards.gold} 🪙)
                 </button>
               ) : (
                 <button
@@ -633,17 +631,19 @@ export default function ArenaAdsModal({
                   className="arena-ads-btn arena-ads-btn--secondary"
                   onClick={() => setActiveView('lobby')}
                 >
-                  VOLVER AL LOBBY
+                  ← LOBBY
                 </button>
               )}
 
-              <button
-                type="button"
-                className="arena-ads-btn arena-ads-btn--primary"
-                onClick={handleEnterBattle}
-              >
-                ⚔️ COMBATIR (NIVEL {activeRun?.level})
-              </button>
+              <div className="arena-ads-footer-actions">
+                <button
+                  type="button"
+                  className="arena-ads-btn arena-ads-btn--primary"
+                  onClick={handleEnterBattle}
+                >
+                  ⚔️ COMBATIR (NIVEL {activeRun?.level})
+                </button>
+              </div>
             </>
           )}
         </div>

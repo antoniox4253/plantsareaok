@@ -6,7 +6,6 @@ import {
   getFusionGoldCost,
   getScaledPlantConfig,
   getEquippableItemDef,
-  getEquippableItemForPlant,
   getEquippableItemsForPlant,
   type PlantStatKey,
 } from '../../utils/gameConstants'

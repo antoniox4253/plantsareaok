@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { soundManager } from '../../utils/audioManager'
+import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
 import './ArenaAdsModal.css'
 
 interface ArenaAdsInterstitialModalProps {
@@ -58,18 +59,10 @@ export default function ArenaAdsInterstitialModal({
           {isDefeat ? `💀 ¡HAS CAÍDO EN EL NIVEL ${levelCleared}!` : `🎉 ¡NIVEL ${levelCleared} SUPERADO!`}
         </h3>
 
-        {/* CASCARÓN DE ANUNCIO ENTRE NIVELES */}
+        {/* CASCARÓN DE ANUNCIO ENTRE NIVELES CON BANNER NATIVO */}
         <div className="arena-ads-interstitial-ad-shell">
-          <span className="arena-ads-interstitial-ad-tag">[ PUBLICIDAD / AD INTERSTITIAL ]</span>
-          <div className="arena-ads-interstitial-ad-mock">{isDefeat ? '💔' : '📺'}</div>
-          <p className="arena-ads-interstitial-ad-text">
-            <strong>{isDefeat ? '¡Tu botín acumulado está en grave peligro!' : 'Espacio de Publicidad Patrocinada'}</strong>
-            <br />
-            {isDefeat
-              ? 'Puedes pagar 150 Gemas para revivir con 1 vida extra y salvar tus recompensas.'
-              : '(Contenedor preparado para red de anuncios interactivos)'}
-          </p>
-          <span style={{ fontSize: '11px', color: isDefeat ? '#f87171' : '#64748b' }}>
+          <ArenaAdsNativeBanner fallbackText={isDefeat ? 'Zona de Riesgo • Anuncio Patrocinado' : 'Recompensa Patrocinada • Anuncio'} />
+          <span style={{ fontSize: '10.5px', color: isDefeat ? '#f87171' : '#94a3b8' }}>
             {isDefeat ? '⚠️ Si abandonas ahora, perderás todo el botín acumulado.' : '🛡️ Tu progreso y botín están 100% blindados en caché.'}
           </span>
         </div>

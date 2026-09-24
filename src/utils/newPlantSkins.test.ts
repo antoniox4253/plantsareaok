@@ -8,7 +8,6 @@ import {
 import {
   ArenaAdsManager,
   generateRewardOptions,
-  generateLevelPrep,
 } from './arenaAdsManager'
 
 describe('Nuevas Skins e Ítems Equipables (Protocolo 7 Capas)', () => {
@@ -18,7 +17,6 @@ describe('Nuevas Skins e Ítems Equipables (Protocolo 7 Capas)', () => {
     expect(itemDef?.targetPlantId).toBe('sunflower')
     expect(itemDef?.statBonusText).toBe('+5 Soles')
 
-    const base = PLANT_CONFIGS.sunflower
     const equipped = getScaledPlantConfig('sunflower', 0, 'sunflower_glasses')
     expect(equipped.sprite).toBe('/game-assets/skins/gafasgirasol.webp')
     expect(equipped.icon).toBe('/game-assets/skins/gafasgirasol.webp')
