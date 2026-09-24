@@ -57,6 +57,8 @@ export interface ArenaAdsRun {
     plantChosen?: ArenaAdsPlantOption
   }
   updatedAt: number
+  createdAt?: number
+  reviveCount?: number
 }
 
 const ALL_NON_SUNFLOWER_PLANTS: PlantId[] = [
@@ -108,21 +110,40 @@ function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
+let _cachedStock: Record<string, { remainingStock: number }> | null = null
+
+export function setCachedStock(stock: Record<string, { remainingStock: number }> | null) {
+  _cachedStock = stock
+}
+
 /**
  * Genera una sola opción individual de recompensa según los pools balanceados
  */
 export function generateSingleRewardItem(level: number, multiplier = 1): ArenaAdsRewardOption {
-  // A partir de nivel 10 y cada 5 niveles (10, 15, 20, 25...), tirar probabilidad de ítem exclusivo
+  // A partir de nivel 10:
+  // - Niveles de Hito / Jefes (cada 5 niveles: 10, 15, 20, 25...): 65% probabilidad de drop exclusivo
+  // - Otros niveles >= 10: 15% probabilidad de drop exclusivo
+  // - Niveles < 10: 0% probabilidad de drop exclusivo
   const isMilestoneLevel = level >= 10 && level % 5 === 0
-  if (isMilestoneLevel && Math.random() < 0.65) {
-    const exclusive = randomPick(EXCLUSIVE_ARENA_ITEMS)
-    return {
-      type: 'item',
-      amount: 1, // Los ítems exclusivos se entregan de 1 en 1
-      itemId: exclusive.id,
-      label: `${exclusive.label} (Exclusivo)`,
-      icon: exclusive.icon,
-      isExclusiveItem: true,
+  const exclusiveChance = isMilestoneLevel ? 0.65 : (level >= 10 ? 0.15 : 0)
+
+  if (exclusiveChance > 0 && Math.random() < exclusiveChance) {
+    const availablePool = EXCLUSIVE_ARENA_ITEMS.filter((item) => {
+      if (!_cachedStock) return true
+      const s = _cachedStock[item.id]
+      return s ? s.remainingStock > 0 : true
+    })
+
+    if (availablePool.length > 0) {
+      const exclusive = randomPick(availablePool)
+      return {
+        type: 'item',
+        amount: 1, // Los ítems exclusivos se entregan de 1 en 1
+        itemId: exclusive.id,
+        label: `${exclusive.label} (Exclusivo)`,
+        icon: exclusive.icon,
+        isExclusiveItem: true,
+      }
     }
   }
 
@@ -311,10 +332,18 @@ export function buildArenaAdsDeck(
     const deck = baseDeck.map((c) => ({ ...c }))
     const existingIdx = deck.findIndex((c) => c.plantId === chosenPlant.plantId)
     if (existingIdx > 0) {
-      deck[existingIdx] = {
-        ...deck[existingIdx],
+      const prevSlot1 = deck[1]
+      deck[1] = {
+        plantId: chosenPlant.plantId,
+        slot: 1,
         level: chosenPlant.level,
         statRolls: [...chosenPlant.statRolls],
+      }
+      if (existingIdx !== 1) {
+        deck[existingIdx] = {
+          ...prevSlot1,
+          slot: existingIdx,
+        }
       }
     } else {
       deck[1] = {
@@ -489,10 +518,16 @@ export class ArenaAdsManager {
         type: 'none',
       },
       updatedAt: Date.now(),
+      createdAt: Date.now(),
+      reviveCount: 0,
     }
 
     this.saveRun(run)
     return run
+  }
+
+  static setCachedStock(stock: Record<string, { remainingStock: number }> | null): void {
+    setCachedStock(stock)
   }
 
   /**
@@ -571,6 +606,7 @@ export class ArenaAdsManager {
    */
   static reviveRun(run: ArenaAdsRun): ArenaAdsRun {
     run.lives = (run.lives || 1) + 1
+    run.reviveCount = (run.reviveCount || 0) + 1
     run.status = 'prep'
     this.saveRun(run)
     return run

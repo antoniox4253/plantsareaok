@@ -2397,5 +2397,19 @@ div[style*="fixed"][style*="bottom:1"] {
   border: 2px solid #38bdf8;
 }
 
+@media (max-width: 768px), (max-height: 520px) {
+  .battlefield-arena-ads-frame {
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 100 !important;
+  }
+  .arena-ads-combat-flank {
+    width: 90px !important;
+    padding: 3px 2px !important;
+  }
+}
+
 
 

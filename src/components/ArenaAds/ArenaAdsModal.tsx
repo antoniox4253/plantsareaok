@@ -90,9 +90,13 @@ export default function ArenaAdsModal({
     }
   }, [isOpen])
 
-  // Sincronizar o cargar la run guardada en caché
+  // Sincronizar o cargar la run guardada en caché y stock disponible
   useEffect(() => {
     if (!isOpen) return
+    arenaAdsService.getStock().then((stock) => {
+      ArenaAdsManager.setCachedStock(stock)
+    }).catch((err) => console.warn('[ArenaAdsModal] Error fetching stock:', err))
+
     const stored = ArenaAdsManager.getStoredRun()
     if (stored) {
       setActiveRun(stored)
@@ -208,12 +212,36 @@ export default function ArenaAdsModal({
     if (!activeRun) return
     setIsProcessing(true)
     try {
-      soundManager.playSound('victory', 0.8)
       const loot = { ...activeRun.accumulatedRewards }
       const mult = activeRun.multiplier || 1
 
       // Sincronizar centralizadamente en backend y perfiles
       await onClaimLoot(loot, mult)
+
+      // Registrar el récord en el leaderboard del backend
+      const playtimeSeconds = activeRun.createdAt
+        ? Math.max(1, Math.round((Date.now() - activeRun.createdAt) / 1000))
+        : 60
+      const spentGems = activeRun.paymentType === 'gems'
+      const gemsSpent = (spentGems ? 200 : 0) + ((activeRun.reviveCount || 0) * 150)
+      const revived = (activeRun.reviveCount || 0) > 0
+
+      arenaAdsService
+        .recordRun({
+          level: activeRun.level,
+          playtimeSeconds,
+          spentGems,
+          gemsSpent,
+          revived,
+          reviveCount: activeRun.reviveCount || 0,
+          totalRewards: {
+            gold: (loot.gold || 0) * mult,
+            gems: (loot.gems || 0) * mult,
+            items: loot.items,
+          },
+          status: 'retired',
+        })
+        .catch((err) => console.warn('[ArenaAdsModal] recordRun error:', err))
 
       // Mostrar el resumen con el multiplicador aplicado para feedback visual exacto
       setClaimSummary({

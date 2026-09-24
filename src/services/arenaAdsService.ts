@@ -35,6 +35,25 @@ export interface ArenaAdsItemStockDef {
   claimedCount: number
 }
 
+export interface ArenaAdsLeaderboardEntry {
+  rank: number
+  userId: string
+  username: string
+  avatar: string
+  levelReached: number
+  playtimeSeconds: number
+  spentGems: boolean
+  gemsSpent: number
+  revived: boolean
+  reviveCount: number
+  totalRewards: {
+    gold: number
+    gems: number
+    items?: Record<string, number>
+  }
+  updatedAt: string
+}
+
 export const arenaAdsService = {
   /**
    * Valida en el backend y descuenta atómicamente la entrada a Arena ADS:
@@ -196,6 +215,73 @@ export const arenaAdsService = {
     } catch (err) {
       console.error('[arenaAdsService] getStock exception:', err)
       return {}
+    }
+  },
+
+  /**
+   * Obtiene la tabla de líderes de Arena ADS ordenada por nivel alcanzado
+   */
+  async getLeaderboard(limit = 50): Promise<ArenaAdsLeaderboardEntry[]> {
+    if (!isSupabaseConfigured()) {
+      return []
+    }
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_arena_ads_leaderboard', {
+        p_limit: limit,
+      })
+      if (error) {
+        console.error('[arenaAdsService] get_arena_ads_leaderboard error:', error)
+        return []
+      }
+      return (data as ArenaAdsLeaderboardEntry[]) || []
+    } catch (err) {
+      console.error('[arenaAdsService] getLeaderboard exception:', err)
+      return []
+    }
+  },
+
+  /**
+   * Registra o actualiza el récord personal del usuario en Arena ADS
+   */
+  async recordRun(params: {
+    level: number
+    playtimeSeconds?: number
+    spentGems?: boolean
+    gemsSpent?: number
+    revived?: boolean
+    reviveCount?: number
+    totalRewards?: { gold: number; gems: number; items?: Record<string, number> }
+    status?: 'completed' | 'active' | 'retired'
+  }): Promise<{ success: boolean; newBest?: boolean; error?: string }> {
+    if (!isSupabaseConfigured()) {
+      return { success: true }
+    }
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('record_arena_ads_run', {
+        p_level: params.level,
+        p_playtime_seconds: params.playtimeSeconds || 0,
+        p_spent_gems: Boolean(params.spentGems),
+        p_gems_spent: params.gemsSpent || 0,
+        p_revived: Boolean(params.revived),
+        p_revive_count: params.reviveCount || 0,
+        p_total_rewards: params.totalRewards || { gold: 0, gems: 0, items: {} },
+        p_status: params.status || 'completed',
+      })
+
+      if (error) {
+        console.error('[arenaAdsService] record_arena_ads_run error:', error)
+        return { success: false, error: error.message }
+      }
+
+      return {
+        success: Boolean(data?.success),
+        newBest: Boolean(data?.new_best),
+      }
+    } catch (err: any) {
+      console.error('[arenaAdsService] recordRun exception:', err)
+      return { success: false, error: err?.message || 'Error al registrar récord' }
     }
   },
 }

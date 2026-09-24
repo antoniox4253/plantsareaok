@@ -10,6 +10,9 @@ import type { PlantId } from '../../types/game'
 import { getMostPlantedPlant } from '../../utils/plantUsageTracker'
 import { supabase } from '../../lib/supabaseClient'
 import { ClanManager, type ClanRankingEntry } from '../../utils/clanManager'
+import { arenaAdsService, type ArenaAdsLeaderboardEntry } from '../../services/arenaAdsService'
+import { FARMING_ITEM_DEFINITIONS } from '../../utils/pvpRewardManager'
+import GoldIcon from '../Common/GoldIcon'
 import './Ranking.css'
 
 import type { Database } from '../../types/database.types'
@@ -253,7 +256,7 @@ export function getReferralRankReward(rank: number): RankRewardInfo | null {
 }
 
 export default function Ranking({ userElo, userProfile, hasVipPass = false, onBack }: RankingProps) {
-  const [activeTab, setActiveTab] = useState<'arenas' | 'leaderboard' | 'referrals' | 'clans'>('arenas')
+  const [activeTab, setActiveTab] = useState<'arenas' | 'leaderboard' | 'referrals' | 'clans' | 'arena_ads'>('arenas')
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
 
   const currentArena = getArenaForElo(userElo)
@@ -300,6 +303,15 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
   const [clanLeaderboard, setClanLeaderboard] = useState<ClanRankingEntry[]>([])
   const [isLoadingClans, setIsLoadingClans] = useState<boolean>(false)
   const [clansError, setClansError] = useState<string | null>(null)
+
+  // Arena ADS leaderboard state
+  const [arenaAdsLeaderboard, setArenaAdsLeaderboard] = useState<ArenaAdsLeaderboardEntry[]>([])
+  const [isLoadingArenaAds, setIsLoadingArenaAds] = useState<boolean>(false)
+  const [arenaAdsSearch, setArenaAdsSearch] = useState<string>('')
+  const [arenaAdsPage, setArenaAdsPage] = useState<number>(1)
+  const [arenaAdsPageSize, setArenaAdsPageSize] = useState<number | 'all'>(20)
+  const [selectedArenaAdsUser, setSelectedArenaAdsUser] = useState<ArenaAdsLeaderboardEntry | null>(null)
+  const arenaAdsTableRef = useRef<HTMLDivElement>(null)
 
   // Recompensas pendientes y contador regresivo UTC
   const [utcCountdown, setUtcCountdown] = useState<string>('')
@@ -549,6 +561,26 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
     }
   }, [activeTab, loadClansRanking])
 
+  const loadArenaAdsLeaderboard = useCallback(() => {
+    setIsLoadingArenaAds(true)
+    arenaAdsService
+      .getLeaderboard(100)
+      .then((data) => {
+        setArenaAdsLeaderboard(data)
+        setIsLoadingArenaAds(false)
+      })
+      .catch((err) => {
+        console.error('Error fetching arena ads leaderboard:', err)
+        setIsLoadingArenaAds(false)
+      })
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'arena_ads') {
+      loadArenaAdsLeaderboard()
+    }
+  }, [activeTab, loadArenaAdsLeaderboard])
+
   const myClanRankEntry = useMemo(() => {
     return clanLeaderboard.find((c) => c.isUserClan) || null
   }, [clanLeaderboard])
@@ -654,6 +686,33 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
     referralTableRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Arena ADS Leaderboard Filtered and Paginated
+  const filteredArenaAdsUsers = useMemo(() => {
+    const query = arenaAdsSearch.trim().toLowerCase()
+    if (!query) return arenaAdsLeaderboard
+    return arenaAdsLeaderboard.filter((u) => u.username.toLowerCase().includes(query))
+  }, [arenaAdsLeaderboard, arenaAdsSearch])
+
+  const totalArenaAdsCount = filteredArenaAdsUsers.length
+  const arenaAdsItemsPerPage = arenaAdsPageSize === 'all' ? (totalArenaAdsCount || 1) : arenaAdsPageSize
+  const totalArenaAdsPages = Math.max(1, Math.ceil(totalArenaAdsCount / arenaAdsItemsPerPage))
+  const currentArenaAdsPage = Math.min(arenaAdsPage, totalArenaAdsPages)
+
+  const paginatedArenaAdsUsers = useMemo(() => {
+    if (arenaAdsPageSize === 'all') return filteredArenaAdsUsers
+    const start = (currentArenaAdsPage - 1) * arenaAdsItemsPerPage
+    return filteredArenaAdsUsers.slice(start, start + arenaAdsItemsPerPage)
+  }, [filteredArenaAdsUsers, currentArenaAdsPage, arenaAdsItemsPerPage, arenaAdsPageSize])
+
+  const arenaAdsStartIdx = totalArenaAdsCount === 0 ? 0 : (currentArenaAdsPage - 1) * arenaAdsItemsPerPage + 1
+  const arenaAdsEndIdx = arenaAdsPageSize === 'all' ? totalArenaAdsCount : Math.min(currentArenaAdsPage * arenaAdsItemsPerPage, totalArenaAdsCount)
+
+  const handleArenaAdsPageChange = (newPage: number) => {
+    soundManager.playSound('click', 0.3)
+    setArenaAdsPage(newPage)
+    arenaAdsTableRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div className="ranking-screen" style={{ backgroundImage: `url(${background})` }}>
       {/* COMPACT TOP HEADER */}
@@ -722,6 +781,16 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
           }}
         >
           🛡️ RANKING CLANES
+        </button>
+        <button
+          type="button"
+          className={`ranking-nav-tab ${activeTab === 'arena_ads' ? 'ranking-nav-tab--active' : ''}`}
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            setActiveTab('arena_ads')
+          }}
+        >
+          ⚔️ ARENA ADS
         </button>
       </div>
 
@@ -1989,9 +2058,528 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
             </div>
           </div>
         )}
+
+        {/* TAB 5: ARENA ADS INFINITE DUNGEON LEADERBOARD */}
+        {activeTab === 'arena_ads' && (
+          <div className="ranking-tab-pane">
+            <div className="leaderboard-container">
+              {isLoadingArenaAds ? (
+                <div className="leaderboard-loading-state">
+                  <span>⏳ Cargando clasificación de Arena ADS...</span>
+                </div>
+              ) : arenaAdsLeaderboard.length === 0 ? (
+                <div className="leaderboard-empty-state">
+                  <span>⚔️ Aún no hay expediciones registradas en Arena ADS. ¡Sé el primero en entrar a la mazmorra!</span>
+                </div>
+              ) : (
+                <div className="leaderboard-split-layout">
+                  {/* LEFT COLUMN: PODIUM TOP 3 */}
+                  <div className="leaderboard-podium-col">
+                    {/* 1st Place Golden Card */}
+                    {arenaAdsLeaderboard[0] ? (
+                      <div
+                        className={`podium-card-v2 podium-card-v2--gold ${
+                          isCurrentLeaderboardUser(arenaAdsLeaderboard[0].userId, userProfile?.id)
+                            ? 'podium-card-v2--user'
+                            : ''
+                        }`}
+                        onClick={() => {
+                          soundManager.playSound('click', 0.4)
+                          setSelectedArenaAdsUser(arenaAdsLeaderboard[0])
+                        }}
+                        style={{ cursor: 'pointer' }}
+                        title="Click para ver estadísticas de expedición"
+                      >
+                        <div className="podium-v2-top">
+                          <span className="podium-v2-star">★</span>
+                          <span className="podium-v2-rank-gold">#1 CAMPEÓN</span>
+                          <span className="podium-v2-star">★</span>
+                        </div>
+
+                        <div className="podium-v2-avatar-wrapper">
+                          <svg className="podium-v2-laurel-svg" viewBox="0 0 160 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M 32 96 C 18 68 22 38 46 14" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" />
+                            <path d="M 24 84 C 14 81 12 71 20 70 C 26 70 27 78 24 84 Z" fill="#fbbf24" />
+                            <path d="M 20 66 C 10 62 9 52 17 50 C 24 49 25 59 20 66 Z" fill="#f59e0b" />
+                            <path d="M 22 46 C 14 39 16 29 24 30 C 30 31 29 41 22 46 Z" fill="#fbbf24" />
+                            <path d="M 30 28 C 24 20 29 11 37 14 C 42 17 39 25 30 28 Z" fill="#fde047" />
+                            <path d="M 42 14 C 39 6 46 0 52 4 C 57 8 52 15 42 14 Z" fill="#fbbf24" />
+                            <path d="M 128 96 C 142 68 138 38 114 14" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" />
+                            <path d="M 136 84 C 146 81 148 71 140 70 C 134 70 133 78 136 84 Z" fill="#fbbf24" />
+                            <path d="M 140 66 C 150 62 151 52 143 50 C 136 49 135 59 140 66 Z" fill="#f59e0b" />
+                            <path d="M 138 46 C 146 39 144 29 136 30 C 130 31 131 41 138 46 Z" fill="#fbbf24" />
+                            <path d="M 130 28 C 136 20 131 11 123 14 C 118 17 121 25 130 28 Z" fill="#fde047" />
+                            <path d="M 118 14 C 121 6 114 0 108 4 C 103 8 108 15 118 14 Z" fill="#fbbf24" />
+                          </svg>
+                          <img
+                            src={getPlayerAvatarUrl(arenaAdsLeaderboard[0].avatar)}
+                            alt={arenaAdsLeaderboard[0].username}
+                            className="podium-v2-avatar-img podium-v2-avatar-img--gold"
+                            onError={(e) => {
+                              e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.png'
+                            }}
+                          />
+                        </div>
+
+                        <div className="podium-v2-username">
+                          {arenaAdsLeaderboard[0].username}{' '}
+                          {isCurrentLeaderboardUser(arenaAdsLeaderboard[0].userId, userProfile?.id) && '(TÚ)'}
+                        </div>
+
+                        <div className="referral-tier-pill" style={{ marginBottom: '4px', background: 'linear-gradient(90deg, #9333ea, #7c3aed)' }}>
+                          ⚔️ Nivel {arenaAdsLeaderboard[0].levelReached}
+                        </div>
+
+                        <div className="podium-v2-prize-box podium-v2-prize-box--gold">
+                          <div className="podium-v2-gems-val">🎁 VER BOTÍN DE MAZMORRA</div>
+                          <div className="podium-v2-pack-val">
+                            🪙 {arenaAdsLeaderboard[0].totalRewards?.gold ?? 0} | 💎 {arenaAdsLeaderboard[0].totalRewards?.gems ?? 0}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Sub Podium #2 & #3 */}
+                    <div className="podium-v2-sub-row">
+                      {arenaAdsLeaderboard[1] ? (
+                        <div
+                          className={`podium-card-v2 podium-card-v2--silver ${
+                            isCurrentLeaderboardUser(arenaAdsLeaderboard[1].userId, userProfile?.id)
+                              ? 'podium-card-v2--user'
+                              : ''
+                          }`}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.4)
+                            setSelectedArenaAdsUser(arenaAdsLeaderboard[1])
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="podium-v2-sub-rank podium-v2-sub-rank--silver">🏆 #2</div>
+                          <div className="podium-v2-sub-avatar-wrap">
+                            <img
+                              src={getPlayerAvatarUrl(arenaAdsLeaderboard[1].avatar)}
+                              alt={arenaAdsLeaderboard[1].username}
+                              className="podium-v2-sub-avatar podium-v2-sub-avatar--silver"
+                              onError={(e) => {
+                                e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.png'
+                              }}
+                            />
+                          </div>
+                          <div className="podium-v2-sub-username">{arenaAdsLeaderboard[1].username}</div>
+                          <div className="referral-tier-pill" style={{ fontSize: '8.5px', padding: '1px 6px', marginBottom: '2px' }}>
+                            ⚔️ Nivel {arenaAdsLeaderboard[1].levelReached}
+                          </div>
+                          <div className="podium-v2-prize-box podium-v2-prize-box--silver">
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">🎁 Ver Botín</div>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {arenaAdsLeaderboard[2] ? (
+                        <div
+                          className={`podium-card-v2 podium-card-v2--bronze ${
+                            isCurrentLeaderboardUser(arenaAdsLeaderboard[2].userId, userProfile?.id)
+                              ? 'podium-card-v2--user'
+                              : ''
+                          }`}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.4)
+                            setSelectedArenaAdsUser(arenaAdsLeaderboard[2])
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="podium-v2-sub-rank podium-v2-sub-rank--bronze">🏆 #3</div>
+                          <div className="podium-v2-sub-avatar-wrap">
+                            <img
+                              src={getPlayerAvatarUrl(arenaAdsLeaderboard[2].avatar)}
+                              alt={arenaAdsLeaderboard[2].username}
+                              className="podium-v2-sub-avatar podium-v2-sub-avatar--bronze"
+                              onError={(e) => {
+                                e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.png'
+                              }}
+                            />
+                          </div>
+                          <div className="podium-v2-sub-username">{arenaAdsLeaderboard[2].username}</div>
+                          <div className="referral-tier-pill" style={{ fontSize: '8.5px', padding: '1px 6px', marginBottom: '2px' }}>
+                            ⚔️ Nivel {arenaAdsLeaderboard[2].levelReached}
+                          </div>
+                          <div className="podium-v2-prize-box podium-v2-prize-box--bronze">
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">🎁 Ver Botín</div>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* RIGHT COLUMN: SEARCH, TABLE & FOOTER */}
+                  <div className="leaderboard-table-col">
+                    <div className="lb-search-container">
+                      <span className="lb-search-icon">🔍</span>
+                      <input
+                        type="text"
+                        className="lb-search-input"
+                        placeholder="Buscar jugador en Arena ADS..."
+                        value={arenaAdsSearch}
+                        onChange={(e) => {
+                          setArenaAdsSearch(e.target.value)
+                          setArenaAdsPage(1)
+                        }}
+                      />
+                      {arenaAdsSearch && (
+                        <button
+                          type="button"
+                          className="lb-search-clear"
+                          onClick={() => {
+                            setArenaAdsSearch('')
+                            setArenaAdsPage(1)
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="lb-table-wrapper" ref={arenaAdsTableRef}>
+                      {paginatedArenaAdsUsers.length > 0 ? (
+                        <table className="lb-table">
+                          <thead>
+                            <tr>
+                              <th style={{ width: '60px' }}>#</th>
+                              <th>JUGADOR</th>
+                              <th style={{ width: '130px', textAlign: 'center' }}>NIVEL</th>
+                              <th style={{ width: '150px', textAlign: 'center' }}>BOTÍN</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paginatedArenaAdsUsers.map((usr) => {
+                              const isMe = isCurrentLeaderboardUser(usr.userId, userProfile?.id)
+                              return (
+                                <tr
+                                  key={`${usr.rank}-${usr.userId}`}
+                                  className={isMe ? 'lb-row--user' : ''}
+                                  onClick={() => {
+                                    soundManager.playSound('click', 0.3)
+                                    setSelectedArenaAdsUser(usr)
+                                  }}
+                                  style={{ cursor: 'pointer' }}
+                                  title="Click para ver detalles de la expedición"
+                                >
+                                  <td className="lb-col-rank">
+                                    {usr.rank === 1 ? '🥇 #1' : usr.rank === 2 ? '🥈 #2' : usr.rank === 3 ? '🥉 #3' : `#${usr.rank}`}
+                                  </td>
+                                  <td className="lb-col-player">
+                                    <div className="lb-player-cell">
+                                      <img
+                                        src={getPlayerAvatarUrl(usr.avatar)}
+                                        alt={usr.username}
+                                        className="lb-avatar-circle"
+                                        onError={(e) => {
+                                          e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.png'
+                                        }}
+                                      />
+                                      <span className={`lb-player-name ${isMe && hasVipPass ? 'vip-gold-text' : ''}`}>
+                                        {isMe && hasVipPass && '👑 '}
+                                        {usr.username}
+                                        {isMe && <span className="user-self-badge" style={{ marginLeft: '6px' }}>TÚ</span>}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    <span
+                                      style={{
+                                        background: 'linear-gradient(90deg, rgba(147, 51, 234, 0.3) 0%, rgba(124, 58, 237, 0.4) 100%)',
+                                        border: '1px solid #c084fc',
+                                        color: '#f5d0fe',
+                                        padding: '3px 8px',
+                                        borderRadius: '6px',
+                                        fontWeight: 900,
+                                        fontSize: '11px',
+                                      }}
+                                    >
+                                      ⚔️ Nivel {usr.levelReached}
+                                    </span>
+                                  </td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    <button
+                                      type="button"
+                                      className="arena-ads-loot-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        soundManager.playSound('click', 0.4)
+                                        setSelectedArenaAdsUser(usr)
+                                      }}
+                                    >
+                                      🎁 Ver Botín
+                                    </button>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="leaderboard-empty-state" style={{ padding: '32px 16px' }}>
+                          <span>🔎 No se encontraron expediciones con "{arenaAdsSearch}".</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Pagination Footer */}
+                    <div className="lb-table-footer">
+                      <div className="lb-page-size-picker">
+                        <span className="lb-footer-label">Ver:</span>
+                        {[10, 20, 50].map((size) => (
+                          <button
+                            key={size}
+                            type="button"
+                            className={`lb-size-btn ${arenaAdsPageSize === size ? 'lb-size-btn--active' : ''}`}
+                            onClick={() => {
+                              soundManager.playSound('click', 0.2)
+                              setArenaAdsPageSize(size)
+                              setArenaAdsPage(1)
+                            }}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          className={`lb-size-btn ${arenaAdsPageSize === 'all' ? 'lb-size-btn--active' : ''}`}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.2)
+                            setArenaAdsPageSize('all')
+                            setArenaAdsPage(1)
+                          }}
+                        >
+                          Todos
+                        </button>
+                      </div>
+
+                      <div className="lb-pagination-controls">
+                        <span className="lb-footer-label">
+                          {totalArenaAdsCount === 0
+                            ? '0 de 0'
+                            : `${arenaAdsStartIdx}-${arenaAdsEndIdx} de ${totalArenaAdsCount}`}
+                        </span>
+
+                        <div className="lb-page-buttons">
+                          <button
+                            type="button"
+                            className="lb-page-arrow"
+                            disabled={currentArenaAdsPage <= 1}
+                            onClick={() => handleArenaAdsPageChange(currentArenaAdsPage - 1)}
+                          >
+                            ‹
+                          </button>
+                          <span className="lb-current-page-text">
+                            {currentArenaAdsPage} / {totalArenaAdsPages}
+                          </span>
+                          <button
+                            type="button"
+                            className="lb-page-arrow"
+                            disabled={currentArenaAdsPage >= totalArenaAdsPages}
+                            onClick={() => handleArenaAdsPageChange(currentArenaAdsPage + 1)}
+                          >
+                            ›
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* INSPECTION MODAL */}
+      {/* MODAL: DETALLES DE EXPEDICIÓN ARENA ADS */}
+      {selectedArenaAdsUser && (
+        <div className="lb-modal-backdrop" onClick={() => setSelectedArenaAdsUser(null)}>
+          <div className="lb-inspect-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lb-modal-header">
+              <h3 className="lb-modal-title">🎁 DETALLES DE EXPEDICIÓN • ARENA ADS</h3>
+              <button
+                type="button"
+                className="lb-modal-close"
+                onClick={() => setSelectedArenaAdsUser(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="lb-modal-body">
+              {/* User Hero Bar */}
+              <div className="lb-modal-user-bar">
+                <div className="lb-modal-avatar-box">
+                  <img
+                    src={getPlayerAvatarUrl(selectedArenaAdsUser.avatar)}
+                    alt={selectedArenaAdsUser.username}
+                    className="lb-modal-avatar"
+                    onError={(e) => {
+                      e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.png'
+                    }}
+                  />
+                  <span className="lb-modal-rank-badge">#{selectedArenaAdsUser.rank}</span>
+                </div>
+                <div className="lb-modal-user-info">
+                  <h4 className="lb-modal-username">
+                    {selectedArenaAdsUser.username}
+                    {isCurrentLeaderboardUser(selectedArenaAdsUser.userId, userProfile?.id) && (
+                      <span className="user-self-badge">TÚ</span>
+                    )}
+                  </h4>
+                  <div className="lb-modal-badges">
+                    <span className="lb-modal-arena-tag" style={{ background: '#7c3aed', color: '#fff' }}>
+                      ⚔️ Nivel Máximo: {selectedArenaAdsUser.levelReached}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="lb-modal-stats-grid">
+                {/* 1. Tiempo de Juego */}
+                <div className="lb-stat-card">
+                  <span className="lb-stat-label">⏱️ Tiempo de Juego</span>
+                  <strong className="lb-stat-value lb-stat-value--gold">
+                    {Math.floor(selectedArenaAdsUser.playtimeSeconds / 60)}m {selectedArenaAdsUser.playtimeSeconds % 60}s
+                  </strong>
+                </div>
+
+                {/* 2. Entrada: ¿Gastó gemas? */}
+                <div className="lb-stat-card">
+                  <span className="lb-stat-label">💎 Entrada Mazmorra</span>
+                  <strong className="lb-stat-value" style={{ color: selectedArenaAdsUser.spentGems ? '#38bdf8' : '#fef08a' }}>
+                    {selectedArenaAdsUser.spentGems ? '200 💎 (⚡ 2X Botín)' : '100 🪙 (1X Normal)'}
+                  </strong>
+                </div>
+
+                {/* 3. Reanimación: ¿Revivió? */}
+                <div className="lb-stat-card">
+                  <span className="lb-stat-label">💖 Reanimación</span>
+                  <strong
+                    className="lb-stat-value"
+                    style={{
+                      color:
+                        selectedArenaAdsUser.revived || selectedArenaAdsUser.reviveCount > 0
+                          ? '#f43f5e'
+                          : '#22c55e',
+                    }}
+                  >
+                    {selectedArenaAdsUser.revived || selectedArenaAdsUser.reviveCount > 0
+                      ? `Revivió (${selectedArenaAdsUser.reviveCount || 1}x) • 150 💎`
+                      : '🛡️ No revivió'}
+                  </strong>
+                </div>
+
+                {/* 4. Total Gastado */}
+                <div className="lb-stat-card">
+                  <span className="lb-stat-label">💎 Gemas Gastadas Total</span>
+                  <strong className="lb-stat-value lb-stat-value--sub">
+                    {selectedArenaAdsUser.gemsSpent || (selectedArenaAdsUser.spentGems ? 200 : 0)} 💎
+                  </strong>
+                </div>
+              </div>
+
+              {/* Recompensa Total */}
+              <div className="lb-modal-plant-section">
+                <div className="lb-modal-section-title">🎁 BOTÍN TOTAL ACUMULADO</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div
+                      style={{
+                        flex: '1 1 auto',
+                        background: 'rgba(234, 179, 8, 0.15)',
+                        border: '1.5px solid rgba(234, 179, 8, 0.4)',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: '#fef08a',
+                        fontWeight: 900,
+                        fontSize: '13px',
+                      }}
+                    >
+                      <GoldIcon size={18} /> {selectedArenaAdsUser.totalRewards?.gold?.toLocaleString() ?? 0} Oro
+                    </div>
+
+                    <div
+                      style={{
+                        flex: '1 1 auto',
+                        background: 'rgba(56, 189, 248, 0.15)',
+                        border: '1.5px solid rgba(56, 189, 248, 0.4)',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: '#bae6fd',
+                        fontWeight: 900,
+                        fontSize: '13px',
+                      }}
+                    >
+                      <span>💎</span> {selectedArenaAdsUser.totalRewards?.gems?.toLocaleString() ?? 0} Gemas
+                    </div>
+                  </div>
+
+                  {/* Ítems Exclusivos Obtenidos */}
+                  {selectedArenaAdsUser.totalRewards?.items &&
+                  Object.keys(selectedArenaAdsUser.totalRewards.items).length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 800 }}>
+                        🎒 ÍTEMS EQUIPABLES CONSEGUIDOS:
+                      </span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {Object.entries(selectedArenaAdsUser.totalRewards.items).map(([id, qty]) => {
+                          const def = FARMING_ITEM_DEFINITIONS[id as keyof typeof FARMING_ITEM_DEFINITIONS]
+                          return (
+                            <span
+                              key={id}
+                              style={{
+                                background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(161, 98, 7, 0.35) 100%)',
+                                border: '1px solid #facc15',
+                                borderRadius: '6px',
+                                padding: '3px 8px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                color: '#fef08a',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                            >
+                              <span>{def?.fallback || '🎒'}</span>
+                              <span>
+                                {def?.label || id} {qty > 1 ? `x${qty}` : ''}
+                              </span>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '10px', color: '#64748b', fontStyle: 'italic', textAlign: 'center' }}>
+                      Sin ítems legendarios equipables en esta expedición
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="lb-modal-footer">
+              <button
+                type="button"
+                className="game-button lb-modal-btn"
+                onClick={() => setSelectedArenaAdsUser(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {selectedInspectUser && (
         <div className="lb-modal-backdrop" onClick={() => setSelectedInspectUser(null)}>
           <div className="lb-inspect-modal" onClick={(e) => e.stopPropagation()}>
