@@ -1665,8 +1665,9 @@ export default function Battlefield({
             setArenaAdsModalMode('victory')
             setShowArenaAdsInterstitial(true)
 
-            const playtimeSeconds = updated.createdAt
-              ? Math.max(1, Math.round((Date.now() - updated.createdAt) / 1000))
+            const runStarted = updated.startedAt || updated.createdAt
+            const playtimeSeconds = runStarted
+              ? Math.max(1, Math.round((Date.now() - runStarted) / 1000))
               : 60
             void arenaAdsService.recordRun({
               level: updated.level,
@@ -1691,8 +1692,9 @@ export default function Battlefield({
             setArenaAdsModalMode('defeat')
             setShowArenaAdsInterstitial(true)
 
-            const playtimeSeconds = run.createdAt
-              ? Math.max(1, Math.round((Date.now() - run.createdAt) / 1000))
+            const runStarted = run.startedAt || run.createdAt
+            const playtimeSeconds = runStarted
+              ? Math.max(1, Math.round((Date.now() - runStarted) / 1000))
               : 60
             void arenaAdsService.recordRun({
               level: run.level,

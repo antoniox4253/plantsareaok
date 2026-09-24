@@ -24,6 +24,29 @@ export const ARENA_ADS_NATIVE_CONTAINER_ID = 'container-13fe7b3f4a20a01079a149b2
 export const ARENA_ADS_NATIVE_SRC =
   'https://pl31424406.profitableratecpmnetwork.com/13fe7b3f4a20a01079a149b2ec1c1061/invoke.js'
 
+export const ARENA_ADS_SMARTLINK_URL =
+  'https://www.profitablecpmrate.com/r0w5qgzk?key=0358fcd5e615f7daaddf8b75555dfa78'
+
+/**
+ * Dispara el Smartlink / DirectLink de alto CPM cuando el jugador reclama botín o duplica recompensa.
+ * Abre la oferta patrocinada en una nueva pestaña sin bloquear la jugabilidad.
+ */
+export function triggerArenaAdsSmartlink(customUrl?: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    const targetUrl = customUrl || ARENA_ADS_SMARTLINK_URL
+    const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer')
+    if (newWindow) {
+      try {
+        newWindow.blur()
+        window.focus()
+      } catch {}
+    }
+  } catch (err) {
+    console.warn('[ArenaAdsNetwork] Error al disparar Smartlink:', err)
+  }
+}
+
 let isNetworkActive = false
 let activeConsumersCount = 0
 let isCombatActive = false

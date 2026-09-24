@@ -49,7 +49,7 @@ import { isStrategicPlaytestAuthorized } from './utils/strategicPlaytestAuth'
 import { useOnlineUsers } from './hooks/useOnlineUsers'
 import { VIP_PASS_PRECIO_GEMAS } from './utils/gameConstants'
 import type { ArenaAdsRun, ArenaAdsLoot } from './utils/arenaAdsManager'
-import { ArenaAdsManager, getBotStatsForLevel, EXCLUSIVE_ARENA_ITEM_IDS } from './utils/arenaAdsManager'
+import { ArenaAdsManager, getBotStatsForLevel } from './utils/arenaAdsManager'
 import { arenaAdsService } from './services/arenaAdsService'
 import { resetPopunderQuota } from './utils/arenaAdsNetwork'
 import {
@@ -1126,10 +1126,11 @@ function App() {
       }
     }
     if (arenaAdsRun) {
+      const runStarted = arenaAdsRun.startedAt || arenaAdsRun.createdAt
       void arenaAdsService.recordRun({
         level: arenaAdsRun.level,
-        playtimeSeconds: arenaAdsRun.createdAt
-          ? Math.max(1, Math.round((Date.now() - arenaAdsRun.createdAt) / 1000))
+        playtimeSeconds: runStarted
+          ? Math.max(1, Math.round((Date.now() - runStarted) / 1000))
           : 60,
         spentGems: arenaAdsRun.paymentType === 'gems',
         gemsSpent: (arenaAdsRun.paymentType === 'gems' ? 200 : 0) + ((arenaAdsRun.reviveCount || 0) * 150),
@@ -1161,10 +1162,11 @@ function App() {
   const handleArenaAdsAdvance = (run: ArenaAdsRun) => {
     resetPopunderQuota()
     setArenaAdsRun(run)
+    const runStarted = run.startedAt || run.createdAt
     void arenaAdsService.recordRun({
       level: run.level,
-      playtimeSeconds: run.createdAt
-        ? Math.max(1, Math.round((Date.now() - run.createdAt) / 1000))
+      playtimeSeconds: runStarted
+        ? Math.max(1, Math.round((Date.now() - runStarted) / 1000))
         : 60,
       spentGems: run.paymentType === 'gems',
       gemsSpent: (run.paymentType === 'gems' ? 200 : 0) + ((run.reviveCount || 0) * 150),

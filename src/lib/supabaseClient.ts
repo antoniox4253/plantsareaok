@@ -53,14 +53,17 @@ if (typeof window !== 'undefined') {
     }
   }
 
-  window.addEventListener('pagehide', disconnectRealtime)
-  document.addEventListener('freeze', disconnectRealtime)
-
-  window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-      connectRealtime()
-    }
-  })
-  document.addEventListener('resume', connectRealtime)
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('pagehide', disconnectRealtime)
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        connectRealtime()
+      }
+    })
+  }
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('freeze', disconnectRealtime)
+    document.addEventListener('resume', connectRealtime)
+  }
 }
 

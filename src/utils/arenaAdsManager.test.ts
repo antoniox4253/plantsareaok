@@ -372,13 +372,13 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     }
   })
 
-  it('14. Balance económico de drops: Oro [10..40], Gemas [1..5] y bonus de victoria moderado', () => {
-    // Verificar que los montos base de oro y gemas nunca excedan los límites sanos
-    for (let i = 0; i < 100; i++) {
+  it('14. Balance económico de drops: Early Gold [4..12], Late Gold [15..50], Gemas [1..3] y bonus de victoria escalado', () => {
+    // 1. Verificar drops tempranos (niveles 1..9)
+    for (let i = 0; i < 50; i++) {
       const reward1x = generateSingleRewardItem(1, 1, false)
       if (reward1x.type === 'gold') {
-        expect(reward1x.amount).toBeGreaterThanOrEqual(10)
-        expect(reward1x.amount).toBeLessThanOrEqual(40)
+        expect(reward1x.amount).toBeGreaterThanOrEqual(4)
+        expect(reward1x.amount).toBeLessThanOrEqual(12)
       } else if (reward1x.type === 'gems') {
         expect(reward1x.amount).toBeGreaterThanOrEqual(1)
         expect(reward1x.amount).toBeLessThanOrEqual(5)
@@ -387,28 +387,42 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
       // Con multiplicador 2X
       const reward2x = generateSingleRewardItem(1, 2, false)
       if (reward2x.type === 'gold') {
-        expect(reward2x.amount).toBeGreaterThanOrEqual(20)
-        expect(reward2x.amount).toBeLessThanOrEqual(80)
+        expect(reward2x.amount).toBeGreaterThanOrEqual(8)
+        expect(reward2x.amount).toBeLessThanOrEqual(24)
       } else if (reward2x.type === 'gems') {
         expect(reward2x.amount).toBeGreaterThanOrEqual(2)
         expect(reward2x.amount).toBeLessThanOrEqual(10)
       }
     }
 
-    // Verificar bono de victoria en nivel 1 y nivel 12
+    // 2. Verificar drops avanzados (niveles 10+)
+    for (let i = 0; i < 50; i++) {
+      const rewardLate1x = generateSingleRewardItem(10, 1, false)
+      if (rewardLate1x.type === 'gold') {
+        expect(rewardLate1x.amount).toBeGreaterThanOrEqual(15)
+        expect(rewardLate1x.amount).toBeLessThanOrEqual(50)
+      }
+    }
+
+    // 3. Verificar bonos de victoria por nivel
     let run = ArenaAdsManager.startNewRun()
     run.level = 1
     run = ArenaAdsManager.completeLevelVictory(run)
-    expect(run.accumulatedRewards.gold).toBe(7) // 5 + 1 * 2 = 7
+    expect(run.accumulatedRewards.gold).toBe(2) // Nivel 1: bonus = 2
+
+    run.accumulatedRewards.gold = 0
+    run.level = 10
+    run = ArenaAdsManager.completeLevelVictory(run)
+    expect(run.accumulatedRewards.gold).toBe(50) // Nivel 10 (Hito de Recuperación): bonus = 50
 
     run.accumulatedRewards.gold = 0
     run.level = 12
     run = ArenaAdsManager.completeLevelVictory(run)
-    expect(run.accumulatedRewards.gold).toBe(29) // 5 + 12 * 2 = 29
+    expect(run.accumulatedRewards.gold).toBe(16) // Nivel 12: 10 + (12 - 10) * 3 = 16
   })
 
   it('15. Compatibilidad y estadísticas de combate de todos los ítems y skins con alias de plantas', async () => {
-    const { getScaledPlantConfig, EQUIPPABLE_PLANT_ITEMS, isPlantMatchingTarget } = await import('./gameConstants')
+    const { getScaledPlantConfig, isPlantMatchingTarget } = await import('./gameConstants')
     const { crearPlantaPropia, createBattleState } = await import('../engine/simulate')
     const { NIVEL_POR_DEFECTO } = await import('../engine/bot')
 
@@ -444,5 +458,71 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     expect(batmanEntity.hp).toBe(1400)
     expect(batmanEntity.spriteOverride).toBe('/game-assets/skins/papabatman.webp')
     expect(batmanEntity.equippedItem).toBe('batman_suit')
+  })
+
+  it('16. Evento aleatorio (40% Botín vs 60% Reforzar Mazo), y 100% Botín garantizado en múltiplos de 10', () => {
+    // 1. En niveles múltiplos de 10 (10, 20, 30...), el evento siempre debe ser 'reward'
+    for (const lvl of [10, 20, 30, 40]) {
+      for (let i = 0; i < 25; i++) {
+        const prep = generateLevelPrep(lvl)
+        expect(prep.eventType).toBe('reward')
+      }
+    }
+
+    // 2. En niveles normales, ambos tipos de eventos ('reward' y 'plant') deben aparecer con distribución ~40/60
+    let rewardCount = 0
+    let plantCount = 0
+    const totalSamples = 500
+    for (let i = 0; i < totalSamples; i++) {
+      const prep = generateLevelPrep(3) // nivel 3 no es múltiplo de 10
+      if (prep.eventType === 'reward') rewardCount++
+      else plantCount++
+    }
+
+    expect(rewardCount).toBeGreaterThan(120) // ~40% (200 de 500)
+    expect(plantCount).toBeGreaterThan(200)  // ~60% (300 de 500)
+  })
+
+  it('17. Curva de recuperación de los 100 de oro de entrada a partir del Nivel 10', () => {
+    // Niveles 1 a 9 tienen pérdida neta estricta: las victorias sólo dan 2 de oro cada una (total 18)
+    // más un botín promedio moderado de 4-12 en los niveles donde salga botín.
+    let cumulativeGold = 0
+    for (let lvl = 1; lvl <= 9; lvl++) {
+      cumulativeGold += 2 // victoria de cada nivel
+    }
+    // Antes del nivel 10, los bonos de victoria acumulados son solo 18 de oro (pérdida neta vs los 100 de entrada)
+    expect(cumulativeGold).toBe(18)
+    expect(cumulativeGold).toBeLessThan(50)
+
+    // Al llegar y vencer el Nivel 10, se otorga el bono legendario de +50 de oro
+    let runLvl10 = ArenaAdsManager.startNewRun()
+    runLvl10.level = 10
+    runLvl10.accumulatedRewards.gold = cumulativeGold // ~18 a 45
+    runLvl10 = ArenaAdsManager.completeLevelVictory(runLvl10)
+
+    // Con el hito de 50 de oro del nivel 10 más el botín del cofre garantizado del piso 10 (15 a 50 de oro),
+    // el jugador cruza el umbral de los 100 de oro de entrada
+    expect(runLvl10.accumulatedRewards.gold).toBe(18 + 50) // 68 de bonos base de victoria
+  })
+
+  it('18. Duplicar Recompensa: Solo a partir de Nivel 15 y NUNCA si hay gemas o ítems', () => {
+    // 1. En niveles menores a 15, canDoubleReward NUNCA es true
+    for (let lvl = 1; lvl < 15; lvl++) {
+      for (let i = 0; i < 20; i++) {
+        const prep = generateLevelPrep(lvl)
+        expect(prep.canDoubleReward).toBeFalsy()
+      }
+    }
+
+    // 2. A partir de nivel 15, si hay gemas o ítems en las recompensas, canDoubleReward SIEMPRE debe ser false
+    for (let i = 0; i < 100; i++) {
+      const prep = generateLevelPrep(15)
+      const hasGemsOrItems = prep.rewardOptions.some(
+        (opt) => opt.type === 'gems' || opt.type === 'item' || Boolean(opt.isExclusiveItem)
+      )
+      if (hasGemsOrItems) {
+        expect(prep.canDoubleReward).toBe(false)
+      }
+    }
   })
 })

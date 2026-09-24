@@ -27,10 +27,12 @@ export interface ArenaAdsPlantOption {
 }
 
 export interface ArenaAdsPrepChoice {
+  eventType: 'reward' | 'plant'
   rewardOption: ArenaAdsRewardOption
   rewardOptions: ArenaAdsRewardOption[]
   normalPlantOptions: ArenaAdsPlantOption[]
   fusedPlantOptions: ArenaAdsPlantOption[]
+  canDoubleReward?: boolean
 }
 
 export interface ArenaAdsLoot {
@@ -57,6 +59,7 @@ export interface ArenaAdsRun {
     plantChosen?: ArenaAdsPlantOption
   }
   updatedAt: number
+  startedAt?: number
   createdAt?: number
   reviveCount?: number
 }
@@ -95,8 +98,9 @@ export const EXCLUSIVE_ARENA_ITEM_IDS = new Set<FarmingItemId>(
   EXCLUSIVE_ARENA_ITEMS.map((item) => item.id)
 )
 
-// Pools de recompensas balanceadas para economía sana
-const GOLD_POOL = [10, 15, 25, 40]
+// Pools de recompensas balanceadas: en niveles 1..9 la pérdida es neta y solo se recupera el oro en nivel 10+
+const GOLD_POOL_EARLY = [4, 6, 8, 12] // Niveles 1 al 9: Pérdida neta estricta
+const GOLD_POOL_LATE = [15, 25, 35, 50] // Niveles 10+: Ganancia neta y recuperación
 const GEMS_POOL = [1, 2, 3, 5]
 const WATER_POOL = [2, 3, 4, 6]
 const FERTILIZER_POOL = [1, 2, 3, 5]
@@ -163,7 +167,8 @@ export function generateSingleRewardItem(
   const categoryRoll = Math.random()
   if (categoryRoll < 0.35) {
     // Oro (35%)
-    const baseGold = randomPick(GOLD_POOL)
+    const goldPool = level < 10 ? GOLD_POOL_EARLY : GOLD_POOL_LATE
+    const baseGold = randomPick(goldPool)
     const amount = baseGold * multiplier
     return {
       type: 'gold',
@@ -385,11 +390,28 @@ export function generateLevelPrep(
     fusedPool = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
   }
 
+  // ── SORTEO DE EVENTO ALEATORIO (40% Botín vs 60% Reforzar Plantas) ───────────
+  // En múltiplos de 10 (10, 20, 30...) es SIEMPRE 'reward' para garantizar el cofre de skin exclusiva
+  const isMilestoneEvery10 = level >= 10 && level % 10 === 0
+  const eventType: 'reward' | 'plant' = isMilestoneEvery10
+    ? 'reward'
+    : Math.random() < 0.40
+    ? 'reward'
+    : 'plant'
+
+  // Duplicar recompensa: A partir de nivel 15, aleatoriamente, PERO NUNCA si salieron gemas o ítems
+  const hasGemsOrItems = rewardOptions.some(
+    (opt) => opt.type === 'gems' || opt.type === 'item' || Boolean(opt.isExclusiveItem)
+  )
+  const canDoubleReward = !hasGemsOrItems && level >= 15 && Math.random() < 0.50
+
   return {
+    eventType,
     rewardOption: rewardOptions[0],
     rewardOptions,
     normalPlantOptions: generateNormalPlantOptions(normalPool),
     fusedPlantOptions: generateFusedPlantOptions(level, fusedPool),
+    canDoubleReward,
   }
 }
 
@@ -605,7 +627,7 @@ export class ArenaAdsManager {
         type: 'none',
       },
       updatedAt: Date.now(),
-      createdAt: Date.now(),
+      startedAt: Date.now(),
       reviveCount: 0,
     }
 
@@ -693,7 +715,13 @@ export class ArenaAdsManager {
    */
   static completeLevelVictory(run: ArenaAdsRun): ArenaAdsRun {
     run.status = 'level_cleared'
-    const bonusGold = 5 + run.level * 2
+    let bonusGold = 2
+    if (run.level === 10) {
+      // Hito Legendario de Recuperación: Cruza el umbral de los 100 de oro de entrada
+      bonusGold = 50
+    } else if (run.level > 10) {
+      bonusGold = 10 + (run.level - 10) * 3
+    }
     run.accumulatedRewards.gold += bonusGold
     this.saveRun(run)
     return run
