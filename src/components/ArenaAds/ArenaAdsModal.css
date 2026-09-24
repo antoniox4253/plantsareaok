@@ -578,6 +578,42 @@
   margin: 2px 0 0 0;
 }
 
+.arena-ads-btn--claim-reward {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid #34d399;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+.arena-ads-btn--claim-reward:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.6);
+  transform: translateY(-1px);
+}
+
+.arena-ads-btn--double-reward {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 1.5px solid #fbbf24;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45);
+  animation: doubleRewardGlow 2s infinite alternate ease-in-out;
+}
+
+.arena-ads-btn--double-reward:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.7);
+  transform: translateY(-1px) scale(1.02);
+}
+
+@keyframes doubleRewardGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.7), 0 0 30px rgba(245, 158, 11, 0.4);
+  }
+}
+
 /* Columnas de Elección (Recompensa vs Planta) - Más anchas y balanceadas 50/50 */
 .arena-ads-choice-columns {
   display: grid;

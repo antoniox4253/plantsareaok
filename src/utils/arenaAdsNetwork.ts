@@ -28,20 +28,21 @@ export const ARENA_ADS_SMARTLINK_URL =
   'https://www.profitablecpmrate.com/r0w5qgzk?key=0358fcd5e615f7daaddf8b75555dfa78'
 
 /**
+ * Script oficial de Monetag Vignette (Interstitials de alto CPM para juegos)
+ * Zone ID: 11883853
+ */
+export const MONETAG_VIGNETTE_SRC = 'https://n6wxm.com/vignette.min.js'
+export const MONETAG_ZONE_ID = '11883853'
+
+/**
  * Dispara el Smartlink / DirectLink de alto CPM cuando el jugador reclama botín o duplica recompensa.
- * Abre la oferta patrocinada en una nueva pestaña sin bloquear la jugabilidad.
+ * Abre la oferta patrocinada en una nueva pestaña limpia para que la red no penalice el tiempo de permanencia.
  */
 export function triggerArenaAdsSmartlink(customUrl?: string): void {
   if (typeof window === 'undefined') return
   try {
     const targetUrl = customUrl || ARENA_ADS_SMARTLINK_URL
-    const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer')
-    if (newWindow) {
-      try {
-        newWindow.blur()
-        window.focus()
-      } catch {}
-    }
+    window.open(targetUrl, '_blank', 'noopener,noreferrer')
   } catch (err) {
     console.warn('[ArenaAdsNetwork] Error al disparar Smartlink:', err)
   }
@@ -67,8 +68,51 @@ export function isPopunderQuotaReached(): boolean {
 }
 
 /**
+ * Activa el formato Vignette de Monetag (interstitials de alto CPM optimizados para juegos).
+ */
+export function activateMonetagVignette(): void {
+  if (typeof document === 'undefined') return
+  if (isCombatActive) return
+  if (document.getElementById('monetag-vignette-script')) return
+
+  try {
+    const s = document.createElement('script')
+    s.id = 'monetag-vignette-script'
+    s.dataset.zone = MONETAG_ZONE_ID
+    s.src = MONETAG_VIGNETTE_SRC
+    s.async = true
+    const target = [document.documentElement, document.body].filter(Boolean).pop()
+    if (target) {
+      target.appendChild(s)
+    }
+  } catch (err) {
+    console.warn('[ArenaAdsNetwork] Error al activar Monetag Vignette:', err)
+  }
+}
+
+/**
+ * Desactiva y limpia Monetag Vignette al salir de Arena ADS para no interferir en el resto del juego.
+ */
+export function deactivateMonetagVignette(): void {
+  if (typeof document === 'undefined') return
+  try {
+    const s = document.getElementById('monetag-vignette-script')
+    if (s) s.remove()
+
+    // Limpiar posibles overlays o iframes que Monetag pudiera haber dejado
+    const elements = document.querySelectorAll(
+      '[id*="monetag"], [class*="monetag"], [data-zone="11883853"], div[class*="vignette"], iframe[src*="n6wxm.com"]'
+    )
+    elements.forEach((el) => el.remove())
+  } catch (err) {
+    console.warn('[ArenaAdsNetwork] Error al limpiar Monetag Vignette:', err)
+  }
+}
+
+/**
  * Instala un interceptor autoritativo para garantizar que NINGUNA red de anuncios
  * pueda abrir más de 1 popunder en toda la fase previa, bloqueando llamadas subsiguientes a window.open.
+ * No destruye prematuramente el script para permitir que el ping de tracking confirme la impresión.
  */
 function installPopunderLimiter(): void {
   if (typeof window === 'undefined' || (window as any).__arenaAdsLimiterInstalled) return
@@ -81,10 +125,6 @@ function installPopunderLimiter(): void {
         return null
       }
       popunderTriggeredInPhase = true
-      setTimeout(() => {
-        const p = typeof document !== 'undefined' ? document.getElementById('arena-ads-popunder-script') : null
-        if (p) p.remove()
-      }, 50)
       return rawOpen(...args)
     }
   }
@@ -103,26 +143,18 @@ function installPopunderLimiter(): void {
           return
         }
         popunderTriggeredInPhase = true
-        setTimeout(() => {
-          const p = document.getElementById('arena-ads-popunder-script')
-          if (p) p.remove()
-        }, 50)
       }
       return originalAnchorClick?.apply(this)
     }
   }
 
-  // Escuchar el primer click para retirar el script y marcar la cuota cumplida
+  // Escuchar el primer click para marcar la cuota cumplida sin cortar la llamada HTTP
   if (typeof window.addEventListener === 'function') {
     window.addEventListener(
       'click',
       () => {
         if (!popunderTriggeredInPhase) {
-          setTimeout(() => {
-            popunderTriggeredInPhase = true
-            const p = document.getElementById('arena-ads-popunder-script')
-            if (p) p.remove()
-          }, 150)
+          popunderTriggeredInPhase = true
         }
       },
       { capture: true, passive: true }
@@ -174,8 +206,8 @@ export function activateArenaAdsNetwork(): void {
       document.head.appendChild(popunderScript)
     }
 
-    // 2. Nota: La red Social Bar (esquina flotante) se omite completamente para no tapar ni dañar
-    // la experiencia de combate en la arena táctica.
+    // 2. Inyectar Monetag Vignette (Interstitials de alto CPM para juegos)
+    activateMonetagVignette()
   } catch (err) {
     console.warn('[ArenaAdsNetwork] Error al inicializar red de anuncios:', err)
   }
@@ -205,6 +237,9 @@ export function deactivateArenaAdsNetwork(force = false): void {
 
     const socialbar = document.getElementById('arena-ads-socialbar-script')
     if (socialbar) socialbar.remove()
+
+    // 2. Limpiar Monetag Vignette
+    deactivateMonetagVignette()
 
     const native = document.getElementById('arena-ads-native-invoke-script')
     if (native) native.remove()

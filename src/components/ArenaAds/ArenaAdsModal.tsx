@@ -14,7 +14,6 @@ import { soundManager } from '../../utils/audioManager'
 import { isFullscreen, toggleFullscreen } from '../../utils/fullscreen'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { activateArenaAdsNetwork, deactivateArenaAdsNetwork, resetPopunderQuota, triggerArenaAdsSmartlink } from '../../utils/arenaAdsNetwork'
-import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
 import GoldIcon from '../Common/GoldIcon'
 import './ArenaAdsModal.css'
 
@@ -506,11 +505,6 @@ export default function ArenaAdsModal({
                   </div>
                 </div>
               )}
-
-              {/* Contenedor de Banner Nativo Oficial */}
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <ArenaAdsNativeBanner fallbackText="Patrocinador Oficial • Arena ADS" enabled={true} />
-              </div>
             </div>
           </div>
         ) : (
@@ -576,8 +570,8 @@ export default function ArenaAdsModal({
 
                     <p className="arena-ads-reward-hint">
                       {activeRun.currentPrepChoice.canDoubleReward
-                        ? '¡Oportunidad Especial! Puedes duplicar tu oro antes de combatir.'
-                        : 'Haz clic en reclamar para apoyar el juego con el patrocinador y sumar el botín.'}
+                        ? '🔥 ¡OFERTA PATROCINADA DISPONIBLE! Duplica el botín al 100% apoyando con el patrocinador.'
+                        : '🎁 Reclama tu botín patrocinado para sumarlo a tu cuenta y entrar a combatir.'}
                     </p>
 
                     <div className="arena-ads-event-actions">
@@ -595,7 +589,7 @@ export default function ArenaAdsModal({
                           className="arena-ads-btn arena-ads-btn--double-reward"
                           onClick={() => handleClaimRewardAndBattle(true)}
                         >
-                          ⚡ DUPLICAR X2 Y COMBATIR
+                          ⚡ ¡DUPLICAR 2X BOTÍN Y COMBATIR!
                         </button>
                       )}
                     </div>
