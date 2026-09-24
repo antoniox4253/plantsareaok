@@ -124,7 +124,8 @@ export function mejorasDeLaCartaEnSlot(
   if (!carta || carta.plantId !== plantId) return SIN_MEJORAS
 
   const statRolls = (carta.statRolls ?? []) as PlantStatKey[]
-  const level = statRolls.length > 0 ? statRolls.length : carta.level ?? 0
+  const cardLevelNum = typeof carta.level === 'number' && carta.level > 0 ? carta.level : 0
+  const level = Math.max(cardLevelNum, statRolls.length)
   const mejoras: MejorasDeCarta = { statRolls, level }
   if (carta.equippedItem) {
     mejoras.equippedItem = carta.equippedItem

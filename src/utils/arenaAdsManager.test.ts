@@ -205,4 +205,41 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     expect(run.status).toBe('prep')
     expect(run.deck[0].plantId).toBe('sunflower')
   })
+
+  it('9. Consistencia estricta de niveles: ⭐1 base y ⭐3 fusión se preservan en deck y mejorasDeLaCartaEnSlot', async () => {
+    const { mejorasDeLaCartaEnSlot } = await import('../engine/mazoDeLaSala')
+    const { crearPlantaPropia, createBattleState } = await import('../engine/simulate')
+
+    let run = ArenaAdsManager.startNewRun()
+    // Elegir fusión Bonk Choy ⭐3 con 2 rolls
+    run = ArenaAdsManager.applyAdvantageChoice(run, {
+      type: 'plant_fused',
+      option: {
+        plantId: 'bonkchoy',
+        name: 'Bonk Choy',
+        isFused: true,
+        level: 3,
+        statRolls: ['damage', 'hp'],
+        description: '⭐3 Fusión',
+      },
+    })
+
+    // 1. Sunflower base: debe tener level 1 en el mazo y en mejorasDeLaCartaEnSlot
+    const sunflowerMejoras = mejorasDeLaCartaEnSlot(run.deck, 'sunflower', 0)
+    expect(sunflowerMejoras.level).toBe(1)
+
+    // 2. Bonk Choy fusión: debe tener level 3 en el mazo y en mejorasDeLaCartaEnSlot aunque tenga 2 statRolls
+    const bonkMejoras = mejorasDeLaCartaEnSlot(run.deck, 'bonkchoy', 1)
+    expect(bonkMejoras.level).toBe(3)
+    expect(bonkMejoras.statRolls).toEqual(['damage', 'hp'])
+
+    // 3. Al instanciar las plantas en combate, conservan exactamente los niveles del deck
+    const { NIVEL_POR_DEFECTO } = await import('../engine/bot')
+    const state = createBattleState(12345, false, false, NIVEL_POR_DEFECTO, 'auth-v2')
+    const sunflowerEntity = crearPlantaPropia(state, 'sunflower', 0, 1, sunflowerMejoras.statRolls, sunflowerMejoras.level)
+    expect(sunflowerEntity.level).toBe(1)
+
+    const bonkEntity = crearPlantaPropia(state, 'bonkchoy', 0, 2, bonkMejoras.statRolls, bonkMejoras.level)
+    expect(bonkEntity.level).toBe(3)
+  })
 })

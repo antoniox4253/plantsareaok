@@ -1764,7 +1764,7 @@ export default function Battlefield({
           undefined,
           userElo,
           undefined,
-          undefined,
+          mazoMioParsed ? { mio: mazoMioParsed, rival: null } : undefined,
           undefined,
           undefined,
           undefined,
@@ -1965,7 +1965,21 @@ export default function Battlefield({
 
     // Sólo entrenamiento/local puede reiniciar en el sitio.
     trackGameStart({ matchMode })
-    startGame()
+    startGame(
+      Math.floor(Math.random() * 1000000),
+      false,
+      undefined,
+      userElo,
+      undefined,
+      mazoMioParsed ? { mio: mazoMioParsed, rival: null } : undefined,
+      undefined,
+      undefined,
+      undefined,
+      treeBonusHpRef.current,
+      rivalTreeBonusHpRef.current,
+      treeSkinRef.current,
+      rivalTreeSkinRef.current
+    )
   }
 
   const isArenaAds = matchMode === 'arena_ads'
@@ -2252,7 +2266,27 @@ export default function Battlefield({
               <br />
               Recolecta soles haciendo click en ellos y despliega tu ejército de plantas.
             </p>
-            <button className="game-button" type="button" onClick={() => startGame()}>
+            <button
+              className="game-button"
+              type="button"
+              onClick={() =>
+                startGame(
+                  seed || Math.floor(Math.random() * 1000000),
+                  false,
+                  undefined,
+                  userElo,
+                  undefined,
+                  mazoMioParsed ? { mio: mazoMioParsed, rival: null } : undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  treeBonusHpRef.current,
+                  rivalTreeBonusHpRef.current,
+                  treeSkinRef.current,
+                  rivalTreeSkinRef.current
+                )
+              }
+            >
               ¡EMPEZAR COMBATE!
             </button>
           </div>
@@ -2626,7 +2660,23 @@ export default function Battlefield({
             ) : (
               <>
                 {(() => {
-                  const plantLevel = plant.level ?? getBattlefieldPlantLevel(plant.plantId)
+                  let plantLevel = typeof plant.level === 'number' && plant.level > 0
+                    ? plant.level
+                    : (plant.statRolls && plant.statRolls.length > 0 ? plant.statRolls.length : 0)
+
+                  if (plantLevel === 0 && mazoMioParsed && mazoMioParsed.length > 0) {
+                    const deckCard = mazoMioParsed.find((c) => c.plantId === plant.plantId)
+                    if (deckCard) {
+                      plantLevel = Math.max(
+                        typeof deckCard.level === 'number' ? deckCard.level : 0,
+                        deckCard.statRolls?.length || 0
+                      )
+                    }
+                  }
+
+                  if (plantLevel === 0) {
+                    plantLevel = getBattlefieldPlantLevel(plant.plantId)
+                  }
                   return (
                     <>
                       {/* Subtle Base Ground Aura for Leveled Plants */}
@@ -2698,7 +2748,23 @@ export default function Battlefield({
         const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
         const x = BASE_LEFT_END_X + pp.col * colWidth + colWidth / 2
         const y = laneConfig.topPct + laneConfig.heightPct / 2
-        const sproutLevel = pp.level ?? getBattlefieldPlantLevel(pp.plantId)
+        let sproutLevel = typeof pp.level === 'number' && pp.level > 0
+          ? pp.level
+          : (pp.statRolls && pp.statRolls.length > 0 ? pp.statRolls.length : 0)
+
+        if (sproutLevel === 0 && mazoMioParsed && mazoMioParsed.length > 0) {
+          const deckCard = mazoMioParsed.find((c) => c.plantId === pp.plantId)
+          if (deckCard) {
+            sproutLevel = Math.max(
+              typeof deckCard.level === 'number' ? deckCard.level : 0,
+              deckCard.statRolls?.length || 0
+            )
+          }
+        }
+
+        if (sproutLevel === 0) {
+          sproutLevel = getBattlefieldPlantLevel(pp.plantId)
+        }
 
         return (
           <div

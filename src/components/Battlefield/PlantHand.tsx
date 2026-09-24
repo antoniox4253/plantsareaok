@@ -26,15 +26,17 @@ function getSlotCardLevelData(
 
   if (deckCards && deckCards.length > 0) {
     if (slotIndex >= 0 && deckCards[slotIndex] && deckCards[slotIndex].plantId === plantId) {
-      level = deckCards[slotIndex].level || 0
+      const rawLvl = deckCards[slotIndex].level || 0
       rolls = (deckCards[slotIndex].statRolls as PlantStatKey[]) || []
+      level = Math.max(rawLvl, rolls.length)
       equippedItem = deckCards[slotIndex].equippedItem || null
       resolvedFromDeck = true
     } else {
       const found = deckCards.find((c) => c.plantId === plantId)
       if (found) {
-        level = found.level || 0
+        const rawLvl = found.level || 0
         rolls = (found.statRolls as PlantStatKey[]) || []
+        level = Math.max(rawLvl, rolls.length)
         equippedItem = found.equippedItem || null
         resolvedFromDeck = true
       }

@@ -630,8 +630,20 @@ export function useGameEngine() {
 
     ancoraMsRef.current = ancoraMs ?? null
     soyP1Ref.current = soyP1 === undefined ? null : soyP1
-    mazoMioRef.current = leerMazo(mazos?.mio)
-    mazoDelRivalRef.current = leerMazo(mazos?.rival)
+    if (mazos !== undefined) {
+      mazoMioRef.current = leerMazo(mazos?.mio)
+      mazoDelRivalRef.current = leerMazo(mazos?.rival)
+    } else if (!mazoMioRef.current) {
+      try {
+        const storedAdsRun = localStorage.getItem('plant_arena_ads_run')
+        if (storedAdsRun) {
+          const parsedAds = JSON.parse(storedAdsRun)
+          if (parsedAds && Array.isArray(parsedAds.deck) && parsedAds.deck.length > 0 && parsedAds.status === 'playing') {
+            mazoMioRef.current = leerMazo(parsedAds.deck)
+          }
+        }
+      } catch {}
+    }
     isAsyncMatchRef.current = Boolean(isAsyncMatch)
 
     if (isAsyncMatch) {
@@ -1206,10 +1218,27 @@ export function useGameEngine() {
         cardLevel = 0
 
         try {
-          const savedDeckInstIds = localStorage.getItem('plant_arena_active_deck_instances')
-          const savedInstances = localStorage.getItem('plant_arena_plant_instances')
-          const parsedDeckInstIds: string[] = savedDeckInstIds ? JSON.parse(savedDeckInstIds) : []
-          const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
+          const storedAdsRun = localStorage.getItem('plant_arena_ads_run')
+          if (storedAdsRun) {
+            const parsedAds = JSON.parse(storedAdsRun)
+            if (parsedAds && Array.isArray(parsedAds.deck) && parsedAds.status === 'playing') {
+              const adsDeck = leerMazo(parsedAds.deck)
+              if (adsDeck) {
+                const adsMejoras = mejorasDeLaCartaEnSlot(adsDeck, card, slotIdx)
+                if (adsMejoras.level > 0 || adsMejoras.statRolls.length > 0 || adsMejoras.equippedItem) {
+                  rolls = adsMejoras.statRolls
+                  cardLevel = adsMejoras.level
+                  cardEquippedItem = adsMejoras.equippedItem || null
+                }
+              }
+            }
+          }
+
+          if (cardLevel === 0 && rolls.length === 0 && !cardEquippedItem) {
+            const savedDeckInstIds = localStorage.getItem('plant_arena_active_deck_instances')
+            const savedInstances = localStorage.getItem('plant_arena_plant_instances')
+            const parsedDeckInstIds: string[] = savedDeckInstIds ? JSON.parse(savedDeckInstIds) : []
+            const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
 
           if (slotIdx !== null && parsedDeckInstIds[slotIdx]) {
             const targetInstId = parsedDeckInstIds[slotIdx]
@@ -1237,7 +1266,8 @@ export function useGameEngine() {
               cardEquippedItem = copies[0].equippedItem || null
             }
           }
-        } catch {}
+        }
+      } catch {}
 
         if (cardEquippedItem) {
           const itemDef = getEquippableItemDef(cardEquippedItem)

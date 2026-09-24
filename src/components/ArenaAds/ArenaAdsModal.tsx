@@ -586,7 +586,7 @@ export default function ArenaAdsModal({
                     const cfg = PLANT_CONFIGS[card.plantId as PlantId]
                     if (!cfg) return null
                     const isSunflower = card.plantId === 'sunflower'
-                    const cardStars = card.level || 1
+                    const cardStars = Math.max(card.level || 0, card.statRolls?.length || 0, 1)
                     const isFused = (card.statRolls?.length || 0) > 0 || cardStars > 1
 
                     return (
