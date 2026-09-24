@@ -26,13 +26,34 @@ export const ARENA_ADS_NATIVE_SRC =
 
 let isNetworkActive = false
 let activeConsumersCount = 0
+let isCombatActive = false
+
+/**
+ * Bloquea estrictamente la activación de anuncios durante el combate.
+ * Cuando está bloqueado, cualquier anuncio activo es destruido inmediatamente
+ * y ninguna llamada a activateArenaAdsNetwork tendrá efecto.
+ */
+export function setCombatAdsBlocked(blocked: boolean): void {
+  isCombatActive = blocked
+  if (blocked) {
+    deactivateArenaAdsNetwork(true)
+  }
+}
+
+export function isCombatAdsBlocked(): boolean {
+  return isCombatActive
+}
 
 /**
  * Activa los anuncios exclusivos de Arena ADS (Popunder + Social Bar).
- * Usa un contador de consumidores para soportar transiciones suaves entre el modal y el combate.
+ * Usa un contador de consumidores para soportar transiciones suaves.
+ * NUNCA se activa si el combate está en curso.
  */
 export function activateArenaAdsNetwork(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
+  if (isCombatActive) {
+    return
+  }
 
   activeConsumersCount++
   if (isNetworkActive) return
@@ -109,6 +130,7 @@ export function deactivateArenaAdsNetwork(force = false): void {
  */
 export function loadArenaAdsNativeBanner(containerId = ARENA_ADS_NATIVE_CONTAINER_ID): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
+  if (isCombatActive) return
 
   const container = document.getElementById(containerId)
   if (!container) return

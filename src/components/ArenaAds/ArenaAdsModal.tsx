@@ -45,13 +45,47 @@ export default function ArenaAdsModal({
   const [claimSummary, setClaimSummary] = useState<ArenaAdsLoot | null>(null)
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
 
-  // Activar la red de anuncios (popunder y social bar) exclusivamente en Arena ADS
+  // Activar la red de anuncios (popunder y social bar) ÚNICAMENTE en la fase de preparación ('prep')
+  // NUNCA en el lobby (al hacer click en Play 100 Oro / 200 Gemas) ni durante el combate
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && activeView === 'prep') {
       activateArenaAdsNetwork()
       return () => {
         deactivateArenaAdsNetwork()
       }
+    } else {
+      deactivateArenaAdsNetwork(true)
+    }
+  }, [isOpen, activeView])
+
+  // Preservar y recargar estado ante cambios de pestaña en móvil (cuando un anuncio abre otra pestaña y el jugador regresa)
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleTabResume = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        const stored = ArenaAdsManager.getStoredRun()
+        if (stored) {
+          setActiveRun({ ...stored })
+          if (stored.status === 'prep') {
+            setActiveView('prep')
+          }
+          if (stored.chosenAdvantage?.type === 'reward') {
+            setChosenAdvantageType('reward')
+            setSelectedPlantOption(null)
+          } else if (stored.chosenAdvantage?.type?.startsWith('plant')) {
+            setChosenAdvantageType('plant')
+            setSelectedPlantOption(stored.chosenAdvantage.plantChosen || null)
+          }
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleTabResume)
+    window.addEventListener('focus', handleTabResume)
+    return () => {
+      document.removeEventListener('visibilitychange', handleTabResume)
+      window.removeEventListener('focus', handleTabResume)
     }
   }, [isOpen])
 
@@ -197,6 +231,8 @@ export default function ArenaAdsModal({
   const handleEnterBattle = () => {
     if (!activeRun) return
     soundManager.playSound('click', 0.7)
+    // Limpieza total de red de anuncios antes de entrar al combate
+    deactivateArenaAdsNetwork(true)
     const runInBattle = ArenaAdsManager.startBattle(activeRun)
     onClose()
     onStartArenaAdsBattle(runInBattle)
@@ -347,9 +383,9 @@ export default function ArenaAdsModal({
                 </div>
               )}
 
-              {/* Contenedor de Banner Nativo Oficial */}
+              {/* Contenedor de Banner Nativo Oficial (Informativo en lobby para no disparar anuncios en el click de Play) */}
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <ArenaAdsNativeBanner fallbackText="Patrocinador Oficial • Arena ADS" />
+                <ArenaAdsNativeBanner fallbackText="Patrocinador Oficial • Arena ADS" enabled={false} />
               </div>
             </div>
           </div>

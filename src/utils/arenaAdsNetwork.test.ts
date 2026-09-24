@@ -3,6 +3,8 @@ import {
   activateArenaAdsNetwork,
   deactivateArenaAdsNetwork,
   loadArenaAdsNativeBanner,
+  setCombatAdsBlocked,
+  isCombatAdsBlocked,
   ARENA_ADS_POPUNDER_SRC,
   ARENA_ADS_SOCIALBAR_SRC,
   ARENA_ADS_NATIVE_SRC,
@@ -152,5 +154,23 @@ describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
     // Forzar desactivación total
     deactivateArenaAdsNetwork(true)
     expect((globalThis as any).document.getElementById('arena-ads-popunder-script')).toBeNull()
+  })
+
+  it('5. setCombatAdsBlocked(true) bloquea la inyección de anuncios y elimina los existentes', () => {
+    activateArenaAdsNetwork()
+    expect((globalThis as any).document.getElementById('arena-ads-popunder-script')).not.toBeNull()
+
+    // Entrar en combate bloquea estrictamente los anuncios
+    setCombatAdsBlocked(true)
+    expect(isCombatAdsBlocked()).toBe(true)
+    expect((globalThis as any).document.getElementById('arena-ads-popunder-script')).toBeNull()
+
+    // Intentar activar anuncios durante el combate no surte ningún efecto
+    activateArenaAdsNetwork()
+    expect((globalThis as any).document.getElementById('arena-ads-popunder-script')).toBeNull()
+
+    // Salir del combate desbloquea la red
+    setCombatAdsBlocked(false)
+    expect(isCombatAdsBlocked()).toBe(false)
   })
 })

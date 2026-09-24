@@ -26,7 +26,7 @@ import ProfileModal, { type ProfileTab } from '../ProfileModal/ProfileModal'
 import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
 import ColosseumModal from '../Colosseum/ColosseumModal'
 import ArenaAdsModal from '../ArenaAds/ArenaAdsModal'
-import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
+import { ArenaAdsManager, type ArenaAdsRun, type ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import TournamentModal from '../Tournament/TournamentModal'
 import GlobalChat from '../GlobalChat/GlobalChat'
 import AuctionModal from '../Auction/AuctionModal'
@@ -152,7 +152,14 @@ export default function MainMenu({
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>('profile')
   const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false)
   const [isColosseumModalOpen, setIsColosseumModalOpen] = useState(false)
-  const [isArenaAdsModalOpen, setIsArenaAdsModalOpen] = useState(false)
+  const [isArenaAdsModalOpen, setIsArenaAdsModalOpen] = useState<boolean>(() => {
+    try {
+      const stored = ArenaAdsManager.getStoredRun()
+      return Boolean(stored && stored.status === 'prep')
+    } catch {
+      return false
+    }
+  })
   const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false)
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
   const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
@@ -197,6 +204,27 @@ export default function MainMenu({
       }
     }
   }, [reopenArenaAdsModal, onResetReopenArenaAdsModal])
+
+  // Si el usuario regresa a la pestaña (por ejemplo en móvil tras abrirse un anuncio en otra pestaña),
+  // reabrir y restaurar automáticamente la expedición activa en fase de preparación
+  useEffect(() => {
+    const handleTabResume = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        try {
+          const stored = ArenaAdsManager.getStoredRun()
+          if (stored && stored.status === 'prep') {
+            setIsArenaAdsModalOpen(true)
+          }
+        } catch {}
+      }
+    }
+    document.addEventListener('visibilitychange', handleTabResume)
+    window.addEventListener('focus', handleTabResume)
+    return () => {
+      document.removeEventListener('visibilitychange', handleTabResume)
+      window.removeEventListener('focus', handleTabResume)
+    }
+  }, [])
 
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [ticker, setTicker] = useState<number>(0)

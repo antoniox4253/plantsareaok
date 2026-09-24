@@ -2,22 +2,31 @@ import { useEffect, useRef } from 'react'
 import {
   ARENA_ADS_NATIVE_CONTAINER_ID,
   ARENA_ADS_NATIVE_SRC,
+  isCombatAdsBlocked,
 } from '../../utils/arenaAdsNetwork'
 
 interface ArenaAdsNativeBannerProps {
   className?: string
   fallbackText?: string
+  enabled?: boolean
 }
 
 export default function ArenaAdsNativeBanner({
   className = '',
   fallbackText = 'Publicidad Patrocinada • Arena ADS',
+  enabled = true,
 }: ArenaAdsNativeBannerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Inyectar el script del banner nativo cuando el contenedor esté montado
     const scriptId = 'arena-ads-native-invoke-script'
+    if (!enabled || isCombatAdsBlocked()) {
+      const existing = document.getElementById(scriptId)
+      if (existing) existing.remove()
+      return
+    }
+
+    // Inyectar el script del banner nativo cuando el contenedor esté montado
     let script = document.getElementById(scriptId) as HTMLScriptElement | null
 
     if (!script) {
@@ -30,9 +39,9 @@ export default function ArenaAdsNativeBanner({
     }
 
     return () => {
-      // Al desmontar, si se requiere limpieza se puede gestionar
+      // Limpieza controlada
     }
-  }, [])
+  }, [enabled])
 
   return (
     <div className={`arena-ads-native-banner-box ${className}`}>
