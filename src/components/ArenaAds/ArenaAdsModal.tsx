@@ -139,6 +139,31 @@ export default function ArenaAdsModal({
     return activeRun.accumulatedRewards
   }, [activeRun])
 
+  // Auto-seleccionar la primera planta si el evento de este nivel es 'plant'
+  useEffect(() => {
+    if (!isOpen) return
+    if (activeView === 'prep' && activeRun?.currentPrepChoice?.eventType === 'plant') {
+      const options =
+        selectedPlantSubTab === 'normal'
+          ? activeRun.currentPrepChoice.normalPlantOptions
+          : activeRun.currentPrepChoice.fusedPlantOptions
+      if (options && options.length > 0) {
+        const currentMatch = options.find(
+          (o) => o.plantId === selectedPlantOption?.plantId && o.isFused === selectedPlantOption?.isFused
+        )
+        if (!currentMatch) {
+          const defaultOpt = options[0]
+          setSelectedPlantOption(defaultOpt)
+          const updated = ArenaAdsManager.applyAdvantageChoice(activeRun, {
+            type: defaultOpt.isFused ? 'plant_fused' : 'plant_normal',
+            option: defaultOpt,
+          })
+          setActiveRun({ ...updated })
+        }
+      }
+    }
+  }, [isOpen, activeView, activeRun?.currentPrepChoice?.eventType, selectedPlantSubTab])
+
   if (!isOpen || typeof document === 'undefined') return null
 
   // Iniciar nueva expedición (100 Oro -> 1x multiplicador, o 200 Gemas -> 2x multiplicador)
@@ -191,29 +216,7 @@ export default function ArenaAdsModal({
     setActiveView('prep')
   }
 
-  // Auto-seleccionar la primera planta si el evento de este nivel es 'plant'
-  useEffect(() => {
-    if (activeView === 'prep' && activeRun?.currentPrepChoice?.eventType === 'plant') {
-      const options =
-        selectedPlantSubTab === 'normal'
-          ? activeRun.currentPrepChoice.normalPlantOptions
-          : activeRun.currentPrepChoice.fusedPlantOptions
-      if (options && options.length > 0) {
-        const currentMatch = options.find(
-          (o) => o.plantId === selectedPlantOption?.plantId && o.isFused === selectedPlantOption?.isFused
-        )
-        if (!currentMatch) {
-          const defaultOpt = options[0]
-          setSelectedPlantOption(defaultOpt)
-          const updated = ArenaAdsManager.applyAdvantageChoice(activeRun, {
-            type: defaultOpt.isFused ? 'plant_fused' : 'plant_normal',
-            option: defaultOpt,
-          })
-          setActiveRun({ ...updated })
-        }
-      }
-    }
-  }, [activeView, activeRun?.currentPrepChoice?.eventType, selectedPlantSubTab])
+
 
   // Reclamar botín y avanzar al combate (opcionalmente duplicando oro si está habilitado)
   const handleClaimRewardAndBattle = (double = false) => {
