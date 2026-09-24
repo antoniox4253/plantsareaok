@@ -1666,6 +1666,9 @@ export default function Battlefield({
           }
         } else if (gameStatus === 'defeat') {
           if (run) {
+            run.status = 'game_over'
+            ArenaAdsManager.saveRun(run)
+            setCurrentArenaAdsRun(run)
             setArenaAdsModalMode('defeat')
             setShowArenaAdsInterstitial(true)
           }
@@ -1814,6 +1817,15 @@ export default function Battlefield({
     hasHandledEndRef.current = true
     surrenderGame()
 
+    if (matchMode === 'arena_ads') {
+      ArenaAdsManager.clearRun()
+      setCurrentArenaAdsRun(null)
+      if (onBackToMenu) {
+        onBackToMenu()
+      }
+      return
+    }
+
     // En una partida real, rendirse lo registra el servidor: declara ganador al
     // rival y aplica el ELO. Antes esto no salía del navegador — el cliente
     // restaba 8 puntos en su propio estado, que no se guarda, así que al recargar
@@ -1937,6 +1949,8 @@ export default function Battlefield({
           return
         }
       }
+      ArenaAdsManager.clearRun()
+      setCurrentArenaAdsRun(null)
       if (onBackToMenu) {
         onBackToMenu()
       }
@@ -3481,6 +3495,10 @@ export default function Battlefield({
                     disabled={isRerollingTarget}
                     onClick={() => {
                       soundManager.playBgm('menu')
+                      if (matchMode === 'arena_ads' && gameStatus !== 'victory') {
+                        ArenaAdsManager.clearRun()
+                        setCurrentArenaAdsRun(null)
+                      }
                       onBackToMenu()
                     }}
                   >
@@ -3513,6 +3531,7 @@ export default function Battlefield({
             setShowArenaAdsInterstitial(false)
             if (arenaAdsModalMode === 'defeat') {
               ArenaAdsManager.clearRun()
+              setCurrentArenaAdsRun(null)
               if (onBackToMenu) {
                 onBackToMenu()
               }

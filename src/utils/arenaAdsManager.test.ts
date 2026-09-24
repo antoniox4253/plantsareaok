@@ -242,4 +242,77 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     const bonkEntity = crearPlantaPropia(state, 'bonkchoy', 0, 2, bonkMejoras.statRolls, bonkMejoras.level)
     expect(bonkEntity.level).toBe(3)
   })
+
+  it('10. Las opciones de plantas (normales y fusionadas) NUNCA se repiten con las cartas del mazo activo', () => {
+    // Probar múltiples iteraciones para garantizar aleatoriedad consistente
+    for (let i = 0; i < 20; i++) {
+      const run = ArenaAdsManager.startNewRun()
+      const deckPlantIds = new Set(run.deck.map((c) => c.plantId))
+      expect(deckPlantIds.size).toBe(5)
+      expect(deckPlantIds.has('sunflower')).toBe(true)
+
+      const normalOptions = run.currentPrepChoice?.normalPlantOptions || []
+      const fusedOptions = run.currentPrepChoice?.fusedPlantOptions || []
+
+      expect(normalOptions.length).toBe(3)
+      expect(fusedOptions.length).toBe(3)
+
+      // Ninguna planta normal debe estar en el mazo activo ni ser sunflower
+      for (const opt of normalOptions) {
+        expect(deckPlantIds.has(opt.plantId)).toBe(false)
+        expect(opt.plantId).not.toBe('sunflower')
+      }
+
+      // Ninguna planta fusionada debe estar en el mazo activo ni ser sunflower
+      for (const opt of fusedOptions) {
+        expect(deckPlantIds.has(opt.plantId)).toBe(false)
+        expect(opt.plantId).not.toBe('sunflower')
+      }
+
+      // Las opciones normales y fusionadas tampoco deben solaparse entre sí
+      const normalIds = new Set(normalOptions.map((o) => o.plantId))
+      for (const opt of fusedOptions) {
+        expect(normalIds.has(opt.plantId)).toBe(false)
+      }
+
+      // Probar avance de nivel: el nuevo mazo tampoco debe colisionar con las nuevas opciones
+      const nextRun = ArenaAdsManager.advanceToNextLevel(run)
+      const nextDeckPlantIds = new Set(nextRun.deck.map((c) => c.plantId))
+      const nextNormals = nextRun.currentPrepChoice?.normalPlantOptions || []
+      const nextFused = nextRun.currentPrepChoice?.fusedPlantOptions || []
+
+      for (const opt of nextNormals) {
+        expect(nextDeckPlantIds.has(opt.plantId)).toBe(false)
+      }
+      for (const opt of nextFused) {
+        expect(nextDeckPlantIds.has(opt.plantId)).toBe(false)
+      }
+    }
+  })
+
+  it('11. Limpieza estricta de progreso al perder (derrota): elimina la run de caché e inicia juego nuevo', () => {
+    const run = ArenaAdsManager.startNewRun()
+    expect(ArenaAdsManager.getStoredRun()).not.toBeNull()
+
+    // Caso A: Llamada a handleDefeat
+    ArenaAdsManager.handleDefeat(run)
+    expect(run.status).toBe('game_over')
+    expect(ArenaAdsManager.getStoredRun()).toBeNull()
+    expect(localStorage.getItem(ARENA_ADS_STORAGE_KEY)).toBeNull()
+
+    // Caso B: Si la run quedó guardada como game_over en storage, getStoredRun la limpia automáticamente
+    const run2 = ArenaAdsManager.startNewRun()
+    run2.status = 'game_over'
+    ArenaAdsManager.saveRun(run2)
+    // Al intentar leerla, detecta game_over, la elimina y devuelve null
+    expect(ArenaAdsManager.getStoredRun()).toBeNull()
+    expect(localStorage.getItem(ARENA_ADS_STORAGE_KEY)).toBeNull()
+
+    // Caso C: Nueva run tras derrota debe iniciar limpia en Nivel 1
+    const freshRun = ArenaAdsManager.startNewRun()
+    expect(freshRun.level).toBe(1)
+    expect(freshRun.status).toBe('prep')
+    expect(freshRun.accumulatedRewards.gold).toBe(0)
+    expect(freshRun.accumulatedRewards.gems).toBe(0)
+  })
 })

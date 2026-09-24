@@ -255,9 +255,11 @@ export function generateRewardOptions(level: number, multiplier = 1): ArenaAdsRe
 
 /**
  * Genera opciones de plantas normales (3 opciones aleatorias a Nivel 1).
+ * Si se especifica un pool disponible, selecciona de este pool.
  */
-export function generateNormalPlantOptions(): ArenaAdsPlantOption[] {
-  const picked = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
+export function generateNormalPlantOptions(availablePool?: PlantId[]): ArenaAdsPlantOption[] {
+  const sourcePool = availablePool && availablePool.length >= 3 ? availablePool : ALL_NON_SUNFLOWER_PLANTS
+  const picked = shuffleArray(sourcePool).slice(0, 3)
   return picked.map((plantId) => {
     const cfg = PLANT_CONFIGS[plantId]
     return {
@@ -273,9 +275,11 @@ export function generateNormalPlantOptions(): ArenaAdsPlantOption[] {
 
 /**
  * Genera opciones de plantas fusionadas con estadísticas potenciadas (3 opciones).
+ * Si se especifica un pool disponible, selecciona de este pool.
  */
-export function generateFusedPlantOptions(level: number): ArenaAdsPlantOption[] {
-  const picked = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
+export function generateFusedPlantOptions(level: number, availablePool?: PlantId[]): ArenaAdsPlantOption[] {
+  const sourcePool = availablePool && availablePool.length >= 3 ? availablePool : ALL_NON_SUNFLOWER_PLANTS
+  const picked = shuffleArray(sourcePool).slice(0, 3)
   const rollPool: PlantStatKey[] = ['damage', 'hp', 'attackSpeed', 'cooldown']
 
   return picked.map((plantId) => {
@@ -310,14 +314,43 @@ export function generateFusedPlantOptions(level: number): ArenaAdsPlantOption[] 
 
 /**
  * Genera la fase de preparación completa para un nivel dado.
+ * Si se proporciona `currentDeck`, garantiza que las opciones normales y fusionadas
+ * NO contengan ninguna planta que ya esté presente en dicho mazo activo.
  */
-export function generateLevelPrep(level: number, multiplier = 1): ArenaAdsPrepChoice {
+export function generateLevelPrep(
+  level: number,
+  multiplier = 1,
+  currentDeck?: CartaDeMazo[]
+): ArenaAdsPrepChoice {
   const rewardOptions = generateRewardOptions(level, multiplier)
+
+  // Obtener IDs de plantas actualmente presentes en el mazo activo (+ sunflower)
+  const deckPlantIds = new Set<string>((currentDeck || []).map((c) => c.plantId))
+  deckPlantIds.add('sunflower')
+
+  // Pool de plantas no presentes en el mazo
+  const nonDeckPool = ALL_NON_SUNFLOWER_PLANTS.filter((p) => !deckPlantIds.has(p))
+
+  let normalPool: PlantId[]
+  let fusedPool: PlantId[]
+
+  if (nonDeckPool.length >= 6) {
+    const shuffled = shuffleArray(nonDeckPool)
+    normalPool = shuffled.slice(0, 3)
+    fusedPool = shuffled.slice(3, 6)
+  } else if (nonDeckPool.length >= 3) {
+    normalPool = shuffleArray(nonDeckPool).slice(0, 3)
+    fusedPool = shuffleArray(nonDeckPool).slice(0, 3)
+  } else {
+    normalPool = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
+    fusedPool = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
+  }
+
   return {
     rewardOption: rewardOptions[0],
     rewardOptions,
-    normalPlantOptions: generateNormalPlantOptions(),
-    fusedPlantOptions: generateFusedPlantOptions(level),
+    normalPlantOptions: generateNormalPlantOptions(normalPool),
+    fusedPlantOptions: generateFusedPlantOptions(level, fusedPool),
   }
 }
 
@@ -448,6 +481,10 @@ export class ArenaAdsManager {
       if (!raw) return null
       const parsed: ArenaAdsRun = JSON.parse(raw)
       if (parsed && typeof parsed.level === 'number' && parsed.status) {
+        if (parsed.status === 'game_over') {
+          this.clearRun()
+          return null
+        }
         if (!parsed.baseDeck || parsed.baseDeck.length === 0) {
           parsed.baseDeck = parsed.deck ? [...parsed.deck] : buildArenaAdsDeck()
         }
@@ -482,6 +519,17 @@ export class ArenaAdsManager {
   }
 
   /**
+   * Maneja la derrota de una run: marca el estado como 'game_over' y purga el progreso de almacenamiento
+   * para que la próxima partida comience limpia desde el Nivel 1.
+   */
+  static handleDefeat(run?: ArenaAdsRun | null): void {
+    if (run) {
+      run.status = 'game_over'
+    }
+    this.clearRun()
+  }
+
+  /**
    * Inicia una nueva run de Mazmorra Infinita.
    * Permite elegir pagar 100 de Oro (1x) o 200 Gemas (2x multiplicador de botín).
    */
@@ -495,8 +543,8 @@ export class ArenaAdsManager {
     }
 
     const multiplier = paymentType === 'gems' ? 2 : 1
-    const prep = generateLevelPrep(1, multiplier)
     const initialDeck = buildArenaAdsDeck()
+    const prep = generateLevelPrep(1, multiplier, initialDeck)
 
     const run: ArenaAdsRun = {
       id: `run_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -608,6 +656,8 @@ export class ArenaAdsManager {
     run.lives = (run.lives || 1) + 1
     run.reviveCount = (run.reviveCount || 0) + 1
     run.status = 'prep'
+    const deckToUse = run.baseDeck && run.baseDeck.length > 0 ? run.baseDeck : run.deck
+    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier, deckToUse)
     this.saveRun(run)
     return run
   }
@@ -618,12 +668,12 @@ export class ArenaAdsManager {
   static advanceToNextLevel(run: ArenaAdsRun): ArenaAdsRun {
     run.level += 1
     run.status = 'prep'
-    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier)
     run.chosenAdvantage = { type: 'none' }
 
     const newBaseDeck = buildArenaAdsDeck()
     run.baseDeck = newBaseDeck
     run.deck = newBaseDeck
+    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier, newBaseDeck)
 
     this.saveRun(run)
     return run
