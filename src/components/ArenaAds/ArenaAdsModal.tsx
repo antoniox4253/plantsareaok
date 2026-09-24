@@ -426,33 +426,39 @@ export default function ArenaAdsModal({
                       chosenAdvantageType === 'reward' ? 'arena-ads-choice-indicator--active' : ''
                     }`}
                   >
-                    {chosenAdvantageType === 'reward' ? '✓ ELEGIDA' : 'ELEGIR'}
+                    {chosenAdvantageType === 'reward' ? '✨ ELEGIDA' : '⚪ ELEGIR'}
                   </span>
                 </div>
 
                 {activeRun?.currentPrepChoice && (
-                  <div className="arena-ads-reward-preview" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+                  <div className="arena-ads-reward-showcase">
+                    <div className="arena-ads-reward-cards-grid">
                       {activeRun.currentPrepChoice.rewardOptions.map((opt, i) => (
                         <div
                           key={i}
-                          style={{
-                            background: opt.isExclusiveItem ? 'rgba(234, 179, 8, 0.25)' : 'rgba(15, 23, 42, 0.6)',
-                            border: opt.isExclusiveItem ? '1px solid #facc15' : '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '8px',
-                            padding: '4px 8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '12px',
-                          }}
+                          className={`arena-ads-reward-card-item ${opt.isExclusiveItem ? 'arena-ads-reward-card-item--exclusive' : ''}`}
                         >
-                          <span style={{ fontSize: '16px' }}>{opt.icon}</span>
-                          <strong style={{ color: opt.isExclusiveItem ? '#facc15' : '#fff' }}>{opt.label}</strong>
+                          <div className="arena-ads-reward-card-icon-wrap">
+                            <span className="arena-ads-reward-card-icon">{opt.icon}</span>
+                          </div>
+                          <div className="arena-ads-reward-card-info">
+                            <strong className="arena-ads-reward-card-label">{opt.label}</strong>
+                            <span className="arena-ads-reward-card-sub">
+                              {opt.isExclusiveItem ? '✨ Ítem Legendario Exclusivo' : 'Recurso Inmediato'}
+                            </span>
+                          </div>
                         </div>
                       ))}
                     </div>
-                    <span className="arena-ads-reward-desc" style={{ textAlign: 'center', marginTop: '4px' }}>
+
+                    {activeRun.multiplier === 2 && (
+                      <div className="arena-ads-multiplier-callout">
+                        <span>⚡</span>
+                        <strong>MULTIPLICADOR 2X ACTIVO</strong>
+                      </div>
+                    )}
+
+                    <span className="arena-ads-reward-desc">
                       Se sumará a tu botín acumulado • Tu mazo combatirá con plantas estándar
                     </span>
                   </div>
@@ -461,7 +467,7 @@ export default function ArenaAdsModal({
 
               {/* OPCIÓN 2: PLANTA (NORMAL O FUSIONADA) */}
               <div
-                className={`arena-ads-choice-card ${
+                className={`arena-ads-choice-card arena-ads-choice-card--plant ${
                   chosenAdvantageType === 'plant' ? 'arena-ads-choice-card--active' : ''
                 }`}
               >
@@ -474,7 +480,7 @@ export default function ArenaAdsModal({
                       chosenAdvantageType === 'plant' ? 'arena-ads-choice-indicator--active' : ''
                     }`}
                   >
-                    {chosenAdvantageType === 'plant' ? '✓ ELEGIDA' : 'ELEGIR'}
+                    {chosenAdvantageType === 'plant' ? '✨ ELEGIDA' : '⚪ ELEGIR'}
                   </span>
                 </div>
 
@@ -491,7 +497,7 @@ export default function ArenaAdsModal({
                       setSelectedPlantSubTab('normal')
                     }}
                   >
-                    🌿 Normal (⭐1)
+                    🌿 Planta Estándar (⭐1)
                   </button>
                   <button
                     type="button"
@@ -504,7 +510,7 @@ export default function ArenaAdsModal({
                       setSelectedPlantSubTab('fused')
                     }}
                   >
-                    ⚡ Fusión (⭐+)
+                    ⚡ Fusión Mítica (⭐+)
                   </button>
                 </div>
 
@@ -527,19 +533,28 @@ export default function ArenaAdsModal({
                         } ${isSelected ? 'arena-ads-plant-option-item--selected' : ''}`}
                         onClick={() => handleSelectPlantAdvantage(plantOpt)}
                       >
-                        <span className="arena-ads-plant-stars">⭐{plantOpt.level}</span>
-                        <img
-                          src={cfg?.icon || cfg?.sprite}
-                          alt={plantOpt.name}
-                          className="arena-ads-plant-thumb"
-                        />
+                        <div className="arena-ads-plant-avatar-wrap">
+                          <img
+                            src={cfg?.icon || cfg?.sprite}
+                            alt={plantOpt.name}
+                            className="arena-ads-plant-thumb"
+                          />
+                          <span className="arena-ads-plant-stars">⭐{plantOpt.level}</span>
+                        </div>
                         <div className="arena-ads-plant-meta">
-                          <span className="arena-ads-plant-name">{plantOpt.name}</span>
+                          <div className="arena-ads-plant-name-row">
+                            <span className="arena-ads-plant-name">{plantOpt.name}</span>
+                            {plantOpt.isFused && (
+                              <span className="arena-ads-fused-badge">⚡ FUSIÓN</span>
+                            )}
+                          </div>
                           <span className="arena-ads-plant-desc">{plantOpt.description}</span>
                         </div>
-                        {isSelected && (
-                          <span className="arena-ads-plant-check">✓</span>
-                        )}
+                        <div className="arena-ads-plant-check-wrap">
+                          <span className={`arena-ads-radio-circle ${isSelected ? 'arena-ads-radio-circle--active' : ''}`}>
+                            {isSelected ? '✓' : ''}
+                          </span>
+                        </div>
                       </div>
                     )
                   })}
