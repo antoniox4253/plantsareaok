@@ -8,7 +8,6 @@ import {
   resetPopunderQuota,
   isPopunderQuotaReached,
   ARENA_ADS_POPUNDER_SRC,
-  ARENA_ADS_SOCIALBAR_SRC,
   ARENA_ADS_NATIVE_SRC,
   ARENA_ADS_NATIVE_CONTAINER_ID,
 } from './arenaAdsNetwork'
@@ -109,7 +108,7 @@ describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
     vi.unstubAllGlobals()
   })
 
-  it('1. activateArenaAdsNetwork inyecta Popunder y Social Bar en el DOM', () => {
+  it('1. activateArenaAdsNetwork inyecta Popunder y excluye Social Bar para no invadir esquinas en combate', () => {
     activateArenaAdsNetwork()
 
     const popunder = (globalThis as any).document.getElementById('arena-ads-popunder-script')
@@ -118,14 +117,13 @@ describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
     expect(popunder).not.toBeNull()
     expect(popunder?.src).toBe(ARENA_ADS_POPUNDER_SRC)
 
-    expect(socialbar).not.toBeNull()
-    expect(socialbar?.src).toBe(ARENA_ADS_SOCIALBAR_SRC)
+    // El social bar se omite completamente para proteger la experiencia de juego sin anuncios en la esquina
+    expect(socialbar).toBeNull()
   })
 
   it('2. deactivateArenaAdsNetwork elimina los scripts del DOM', () => {
     activateArenaAdsNetwork()
     expect((globalThis as any).document.getElementById('arena-ads-popunder-script')).not.toBeNull()
-    expect((globalThis as any).document.getElementById('arena-ads-socialbar-script')).not.toBeNull()
 
     deactivateArenaAdsNetwork(true)
 

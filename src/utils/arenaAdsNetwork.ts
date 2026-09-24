@@ -151,14 +151,8 @@ export function activateArenaAdsNetwork(): void {
       document.head.appendChild(popunderScript)
     }
 
-    // 2. Inyectar Social Bar exclusivo si no está presente
-    if (!document.getElementById('arena-ads-socialbar-script')) {
-      const socialbarScript = document.createElement('script')
-      socialbarScript.id = 'arena-ads-socialbar-script'
-      socialbarScript.src = ARENA_ADS_SOCIALBAR_SRC
-      socialbarScript.async = true
-      document.head.appendChild(socialbarScript)
-    }
+    // 2. Nota: La red Social Bar (esquina flotante) se omite completamente para no tapar ni dañar
+    // la experiencia de combate en la arena táctica.
   } catch (err) {
     console.warn('[ArenaAdsNetwork] Error al inicializar red de anuncios:', err)
   }
@@ -192,13 +186,13 @@ export function deactivateArenaAdsNetwork(force = false): void {
     const native = document.getElementById('arena-ads-native-invoke-script')
     if (native) native.remove()
 
-    // 2. Remover contenedores flotantes creados dinámicamente por la red en el body
+    // 2. Remover contenedores flotantes creados dinámicamente por la red en el body (esquinas flotantes, popups, etc.)
     const externalElements = document.querySelectorAll(
-      'iframe[src*="profitableratecpmnetwork"], script[src*="profitableratecpmnetwork"], div[class*="social-bar"], div[id*="social-bar"]'
+      'iframe[src*="profitableratecpmnetwork"]:not(.arena-ads-combat-flank-iframe), script[src*="profitableratecpmnetwork"], div[class*="social-bar"], div[id*="social-bar"], div[class*="push-notification"], div[id*="push-notification"]'
     )
     externalElements.forEach((el) => {
-      // Eliminar solo si no está explícitamente contenido dentro del modal o la carta de interstitial
-      if (!el.closest('.arena-ads-modal') && !el.closest('.arena-ads-interstitial-card')) {
+      // Eliminar solo si no está explícitamente contenido dentro de los flancos o modales autorizados
+      if (!el.closest('.arena-ads-modal') && !el.closest('.arena-ads-interstitial-card') && !el.closest('.arena-ads-combat-flank')) {
         el.remove()
       }
     })

@@ -49,6 +49,7 @@ import GoldIcon from '../Common/GoldIcon'
 import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { ArenaAdsManager } from '../../utils/arenaAdsManager'
 import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
+import ArenaAdsNativeBanner from '../ArenaAds/ArenaAdsNativeBanner'
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { setCombatAdsBlocked, resetPopunderQuota } from '../../utils/arenaAdsNetwork'
 import './Battlefield.css'
@@ -1967,9 +1968,11 @@ export default function Battlefield({
     startGame()
   }
 
-  return (
+  const isArenaAds = matchMode === 'arena_ads'
+
+  const battlefieldNode = (
     <div
-      className={`battlefield ${matchMode === 'clan_fortress' ? 'battlefield--clan-fortress' : ''} ${matchMode === 'arena_ads' ? 'battlefield--arena-ads' : ''} ${selectedCard === 'shovel' ? 'battlefield--shovel-mode' : ''}`}
+      className={`battlefield ${matchMode === 'clan_fortress' ? 'battlefield--clan-fortress' : ''} ${isArenaAds ? 'battlefield--arena-ads' : ''} ${selectedCard === 'shovel' ? 'battlefield--shovel-mode' : ''}`}
       style={{ backgroundImage: `url(${activeBgImage})` }}
       onPointerDown={(e) => {
         if (selectedCard && e.button === 0 && e.target === e.currentTarget) {
@@ -1983,44 +1986,6 @@ export default function Battlefield({
         }
       }}
     >
-      {/* ── ARENA ADS: BANNERS DE PUBLICIDAD (CASCARÓN) ── */}
-      {matchMode === 'arena_ads' && (
-        <>
-          <div className="arena-ads-layout-header">
-            <span className="arena-ads-layout-ad-badge">[ PUBLICIDAD / AD ] - HEADER BANNER</span>
-            <div className="arena-ads-layout-ad-content">
-              <span>📢</span> Anuncio Patrocinado • Mazmorra Infinita
-            </div>
-          </div>
-
-          <div className="arena-ads-layout-lateral arena-ads-layout-lateral--left">
-            <span className="arena-ads-layout-ad-badge">[ AD ]</span>
-            <div className="arena-ads-layout-ad-vertical">
-              <span>📺</span>
-              <span>A</span>
-              <span>D</span>
-              <span>S</span>
-            </div>
-          </div>
-
-          <div className="arena-ads-layout-lateral arena-ads-layout-lateral--right">
-            <span className="arena-ads-layout-ad-badge">[ AD ]</span>
-            <div className="arena-ads-layout-ad-vertical">
-              <span>🎯</span>
-              <span>A</span>
-              <span>D</span>
-              <span>S</span>
-            </div>
-          </div>
-
-          <div className="arena-ads-layout-footer">
-            <span className="arena-ads-layout-ad-badge">[ PUBLICIDAD / AD ] - FOOTER</span>
-            <div className="arena-ads-layout-ad-content">
-              <span>🛡️</span> Progreso guardado en caché • Retírate a tiempo o lo perderás todo
-            </div>
-          </div>
-        </>
-      )}
       {/* Practice / Sandbox Mode Bar */}
       {isPracticeMode && (
         <div className="practice-bar">
@@ -3607,4 +3572,36 @@ export default function Battlefield({
       />
     </div>
   )
+
+  if (isArenaAds) {
+    return (
+      <div className="battlefield-arena-ads-frame">
+        <aside className="arena-ads-combat-flank arena-ads-combat-flank--left">
+          <div className="arena-ads-combat-flank__header">
+            <span className="arena-ads-combat-flank__badge">[ AD ]</span>
+            <span className="arena-ads-combat-flank__tag">PATROCINADOR</span>
+          </div>
+          <div className="arena-ads-combat-flank__body">
+            <ArenaAdsNativeBanner lateral />
+          </div>
+        </aside>
+
+        <div className="battlefield-arena-ads-center">
+          {battlefieldNode}
+        </div>
+
+        <aside className="arena-ads-combat-flank arena-ads-combat-flank--right">
+          <div className="arena-ads-combat-flank__header">
+            <span className="arena-ads-combat-flank__badge">[ AD ]</span>
+            <span className="arena-ads-combat-flank__tag">PATROCINADOR</span>
+          </div>
+          <div className="arena-ads-combat-flank__body">
+            <ArenaAdsNativeBanner lateral />
+          </div>
+        </aside>
+      </div>
+    )
+  }
+
+  return battlefieldNode
 }

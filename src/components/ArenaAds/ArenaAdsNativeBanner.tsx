@@ -1,47 +1,78 @@
-import { useEffect, useRef } from 'react'
 import {
   ARENA_ADS_NATIVE_CONTAINER_ID,
   ARENA_ADS_NATIVE_SRC,
-  isCombatAdsBlocked,
 } from '../../utils/arenaAdsNetwork'
 
 interface ArenaAdsNativeBannerProps {
   className?: string
   fallbackText?: string
   enabled?: boolean
+  lateral?: boolean
 }
 
 export default function ArenaAdsNativeBanner({
   className = '',
-  fallbackText = 'Publicidad Patrocinada • Arena ADS',
+  fallbackText = 'Patrocinador Oficial • Arena ADS',
   enabled = true,
+  lateral = false,
 }: ArenaAdsNativeBannerProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  if (!enabled) {
+    return (
+      <div className={`arena-ads-native-banner-box ${className}`} style={{ minHeight: lateral ? '100%' : '50px' }}>
+        <div className="arena-ads-native-header">
+          <span className="arena-ads-native-badge">[ PUBLICIDAD / AD ]</span>
+          <span className="arena-ads-native-title">{fallbackText}</span>
+        </div>
+      </div>
+    )
+  }
 
-  useEffect(() => {
-    const scriptId = 'arena-ads-native-invoke-script'
-    if (!enabled || isCombatAdsBlocked()) {
-      const existing = document.getElementById(scriptId)
-      if (existing) existing.remove()
-      return
+  const iframeSrcDoc = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
     }
-
-    // Inyectar el script del banner nativo cuando el contenedor esté montado
-    let script = document.getElementById(scriptId) as HTMLScriptElement | null
-
-    if (!script) {
-      script = document.createElement('script')
-      script.id = scriptId
-      script.src = ARENA_ADS_NATIVE_SRC
-      script.async = true
-      script.setAttribute('data-cfasync', 'false')
-      document.body.appendChild(script)
+    #${ARENA_ADS_NATIVE_CONTAINER_ID} {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
+  </style>
+  <script async="async" data-cfasync="false" src="${ARENA_ADS_NATIVE_SRC}"></script>
+</head>
+<body>
+  <div id="${ARENA_ADS_NATIVE_CONTAINER_ID}"></div>
+</body>
+</html>`
 
-    return () => {
-      // Limpieza controlada
-    }
-  }, [enabled])
+  if (lateral) {
+    return (
+      <div className={`arena-ads-native-lateral-wrap ${className}`} style={{ width: '100%', height: '100%' }}>
+        <iframe
+          title="Arena Ads Lateral Native Banner"
+          className="arena-ads-combat-flank-iframe"
+          srcDoc={iframeSrcDoc}
+          style={{ width: '100%', height: '100%', border: 'none', overflow: 'hidden' }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className={`arena-ads-native-banner-box ${className}`}>
@@ -50,11 +81,14 @@ export default function ArenaAdsNativeBanner({
         <span className="arena-ads-native-title">{fallbackText}</span>
       </div>
 
-      <div
-        ref={containerRef}
-        id={ARENA_ADS_NATIVE_CONTAINER_ID}
-        className="arena-ads-native-container"
-      />
+      <div className="arena-ads-native-container">
+        <iframe
+          title="Arena Ads Native Banner"
+          className="arena-ads-combat-flank-iframe"
+          srcDoc={iframeSrcDoc}
+          style={{ width: '100%', minHeight: '60px', border: 'none', overflow: 'hidden' }}
+        />
+      </div>
     </div>
   )
 }
