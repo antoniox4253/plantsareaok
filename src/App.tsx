@@ -1124,6 +1124,24 @@ function App() {
         console.error('Error al guardar items de cultivo en inventario:', e)
       }
     }
+    if (arenaAdsRun) {
+      void arenaAdsService.recordRun({
+        level: arenaAdsRun.level,
+        playtimeSeconds: arenaAdsRun.createdAt
+          ? Math.max(1, Math.round((Date.now() - arenaAdsRun.createdAt) / 1000))
+          : 60,
+        spentGems: arenaAdsRun.paymentType === 'gems',
+        gemsSpent: (arenaAdsRun.paymentType === 'gems' ? 200 : 0) + ((arenaAdsRun.reviveCount || 0) * 150),
+        revived: (arenaAdsRun.reviveCount || 0) > 0,
+        reviveCount: arenaAdsRun.reviveCount || 0,
+        totalRewards: {
+          gold: finalGold,
+          gems: finalGems,
+          items: loot.items,
+        },
+        status: 'retired',
+      }).catch((err) => console.warn('[App] Error al registrar run en claim:', err))
+    }
     try {
       await arenaAdsService.claimLoot(loot, finalMult)
     } catch (e) {
@@ -1138,6 +1156,22 @@ function App() {
   const handleArenaAdsAdvance = (run: ArenaAdsRun) => {
     resetPopunderQuota()
     setArenaAdsRun(run)
+    void arenaAdsService.recordRun({
+      level: run.level,
+      playtimeSeconds: run.createdAt
+        ? Math.max(1, Math.round((Date.now() - run.createdAt) / 1000))
+        : 60,
+      spentGems: run.paymentType === 'gems',
+      gemsSpent: (run.paymentType === 'gems' ? 200 : 0) + ((run.reviveCount || 0) * 150),
+      revived: (run.reviveCount || 0) > 0,
+      reviveCount: run.reviveCount || 0,
+      totalRewards: {
+        gold: (run.accumulatedRewards.gold || 0) * (run.multiplier || 1),
+        gems: (run.accumulatedRewards.gems || 0) * (run.multiplier || 1),
+        items: run.accumulatedRewards.items || {},
+      },
+      status: 'active',
+    }).catch((err) => console.warn('[App] Error al registrar avance en backend:', err))
     setReopenArenaAdsOnMenu(true)
     setScreen('menu')
   }

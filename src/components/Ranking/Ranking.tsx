@@ -689,8 +689,14 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
   // Arena ADS Leaderboard Filtered and Paginated
   const filteredArenaAdsUsers = useMemo(() => {
     const query = arenaAdsSearch.trim().toLowerCase()
-    if (!query) return arenaAdsLeaderboard
-    return arenaAdsLeaderboard.filter((u) => u.username.toLowerCase().includes(query))
+    if (query) {
+      return arenaAdsLeaderboard.filter((u) => u.username.toLowerCase().includes(query))
+    }
+    // Al costado el resto de puestos (a partir del puesto 4 en adelante si hay más de 3)
+    if (arenaAdsLeaderboard.length > 3) {
+      return arenaAdsLeaderboard.slice(3)
+    }
+    return arenaAdsLeaderboard
   }, [arenaAdsLeaderboard, arenaAdsSearch])
 
   const totalArenaAdsCount = filteredArenaAdsUsers.length
@@ -2067,13 +2073,9 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                 <div className="leaderboard-loading-state">
                   <span>⏳ Cargando clasificación de Arena ADS...</span>
                 </div>
-              ) : arenaAdsLeaderboard.length === 0 ? (
-                <div className="leaderboard-empty-state">
-                  <span>⚔️ Aún no hay expediciones registradas en Arena ADS. ¡Sé el primero en entrar a la mazmorra!</span>
-                </div>
               ) : (
                 <div className="leaderboard-split-layout">
-                  {/* LEFT COLUMN: PODIUM TOP 3 */}
+                  {/* LEFT COLUMN: PODIUM #1 TOP, #2 & #3 BOTTOM */}
                   <div className="leaderboard-podium-col">
                     {/* 1st Place Golden Card */}
                     {arenaAdsLeaderboard[0] ? (
@@ -2087,7 +2089,8 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           soundManager.playSound('click', 0.4)
                           setSelectedArenaAdsUser(arenaAdsLeaderboard[0])
                         }}
-                        style={{ cursor: 'pointer' }}
+                        role="button"
+                        tabIndex={0}
                         title="Click para ver estadísticas de expedición"
                       >
                         <div className="podium-v2-top">
@@ -2121,26 +2124,39 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           />
                         </div>
 
-                        <div className="podium-v2-username">
-                          {arenaAdsLeaderboard[0].username}{' '}
-                          {isCurrentLeaderboardUser(arenaAdsLeaderboard[0].userId, userProfile?.id) && '(TÚ)'}
-                        </div>
-
-                        <div className="referral-tier-pill" style={{ marginBottom: '4px', background: 'linear-gradient(90deg, #9333ea, #7c3aed)' }}>
-                          ⚔️ Nivel {arenaAdsLeaderboard[0].levelReached}
+                        <div className="podium-v2-user-row">
+                          <span className={`podium-v2-username ${isCurrentLeaderboardUser(arenaAdsLeaderboard[0].userId, userProfile?.id) && hasVipPass ? 'vip-gold-text' : ''}`}>
+                            {isCurrentLeaderboardUser(arenaAdsLeaderboard[0].userId, userProfile?.id) && hasVipPass && '👑 '}
+                            {arenaAdsLeaderboard[0].username} {isCurrentLeaderboardUser(arenaAdsLeaderboard[0].userId, userProfile?.id) && '(TÚ)'}
+                          </span>
                         </div>
 
                         <div className="podium-v2-prize-box podium-v2-prize-box--gold">
-                          <div className="podium-v2-gems-val">🎁 VER BOTÍN DE MAZMORRA</div>
+                          <div className="podium-v2-gems-val">⚔️ NIVEL MÁXIMO {arenaAdsLeaderboard[0].levelReached}</div>
                           <div className="podium-v2-pack-val">
                             🪙 {arenaAdsLeaderboard[0].totalRewards?.gold ?? 0} | 💎 {arenaAdsLeaderboard[0].totalRewards?.gems ?? 0}
                           </div>
                         </div>
-                      </div>
-                    ) : null}
 
-                    {/* Sub Podium #2 & #3 */}
-                    <div className="podium-v2-sub-row">
+                        <div className="podium-v2-stats-row">
+                          <div className="podium-v2-cups">
+                            <span className="podium-v2-cups-icon">⏱️</span> {Math.floor((arenaAdsLeaderboard[0].playtimeSeconds || 0) / 60)} min
+                          </div>
+                          <div className="podium-v2-divider" />
+                          <div className="podium-v2-winrate">
+                            {arenaAdsLeaderboard[0].spentGems ? '💎 Entrada 2X' : '🪙 Entrada 1X'}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="podium-card-v2 podium-card-v2--placeholder">
+                        <span>Esperando Campeón de Mazmorra...</span>
+                      </div>
+                    )}
+
+                    {/* Bottom row: #2 Silver & #3 Bronze */}
+                    <div className="podium-v2-bottom-grid">
+                      {/* 2nd Place */}
                       {arenaAdsLeaderboard[1] ? (
                         <div
                           className={`podium-card-v2 podium-card-v2--silver ${
@@ -2152,9 +2168,11 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             soundManager.playSound('click', 0.4)
                             setSelectedArenaAdsUser(arenaAdsLeaderboard[1])
                           }}
-                          style={{ cursor: 'pointer' }}
+                          role="button"
+                          tabIndex={0}
+                          title="Click para ver estadísticas de expedición"
                         >
-                          <div className="podium-v2-sub-rank podium-v2-sub-rank--silver">🏆 #2</div>
+                          <div className="podium-v2-sub-rank podium-v2-sub-rank--silver">★ #2</div>
                           <div className="podium-v2-sub-avatar-wrap">
                             <img
                               src={getPlayerAvatarUrl(arenaAdsLeaderboard[1].avatar)}
@@ -2165,16 +2183,30 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                               }}
                             />
                           </div>
-                          <div className="podium-v2-sub-username">{arenaAdsLeaderboard[1].username}</div>
-                          <div className="referral-tier-pill" style={{ fontSize: '8.5px', padding: '1px 6px', marginBottom: '2px' }}>
-                            ⚔️ Nivel {arenaAdsLeaderboard[1].levelReached}
+                          <div className="podium-v2-user-row podium-v2-user-row--sub">
+                            <span className={`podium-v2-sub-username ${isCurrentLeaderboardUser(arenaAdsLeaderboard[1].userId, userProfile?.id) && hasVipPass ? 'vip-gold-text' : ''}`}>
+                              {isCurrentLeaderboardUser(arenaAdsLeaderboard[1].userId, userProfile?.id) && hasVipPass && '👑 '}
+                              {arenaAdsLeaderboard[1].username}
+                            </span>
                           </div>
                           <div className="podium-v2-prize-box podium-v2-prize-box--silver">
-                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">🎁 Ver Botín</div>
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">⚔️ Nivel {arenaAdsLeaderboard[1].levelReached}</div>
+                            <div className="podium-v2-pack-val podium-v2-pack-val--sub">
+                              🪙 {arenaAdsLeaderboard[1].totalRewards?.gold ?? 0} | 💎 {arenaAdsLeaderboard[1].totalRewards?.gems ?? 0}
+                            </div>
+                          </div>
+                          <div className="podium-v2-sub-stats">
+                            <span className="podium-v2-sub-cups">⏱️ {Math.floor((arenaAdsLeaderboard[1].playtimeSeconds || 0) / 60)}m</span>
+                            <span className="podium-v2-sub-wr">{arenaAdsLeaderboard[1].spentGems ? '💎 2X' : '🪙 1X'}</span>
                           </div>
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className="podium-card-v2 podium-card-v2--placeholder">
+                          <span>Esperando #2...</span>
+                        </div>
+                      )}
 
+                      {/* 3rd Place */}
                       {arenaAdsLeaderboard[2] ? (
                         <div
                           className={`podium-card-v2 podium-card-v2--bronze ${
@@ -2186,9 +2218,11 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             soundManager.playSound('click', 0.4)
                             setSelectedArenaAdsUser(arenaAdsLeaderboard[2])
                           }}
-                          style={{ cursor: 'pointer' }}
+                          role="button"
+                          tabIndex={0}
+                          title="Click para ver estadísticas de expedición"
                         >
-                          <div className="podium-v2-sub-rank podium-v2-sub-rank--bronze">🏆 #3</div>
+                          <div className="podium-v2-sub-rank podium-v2-sub-rank--bronze">★ #3</div>
                           <div className="podium-v2-sub-avatar-wrap">
                             <img
                               src={getPlayerAvatarUrl(arenaAdsLeaderboard[2].avatar)}
@@ -2199,15 +2233,28 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                               }}
                             />
                           </div>
-                          <div className="podium-v2-sub-username">{arenaAdsLeaderboard[2].username}</div>
-                          <div className="referral-tier-pill" style={{ fontSize: '8.5px', padding: '1px 6px', marginBottom: '2px' }}>
-                            ⚔️ Nivel {arenaAdsLeaderboard[2].levelReached}
+                          <div className="podium-v2-user-row podium-v2-user-row--sub">
+                            <span className={`podium-v2-sub-username ${isCurrentLeaderboardUser(arenaAdsLeaderboard[2].userId, userProfile?.id) && hasVipPass ? 'vip-gold-text' : ''}`}>
+                              {isCurrentLeaderboardUser(arenaAdsLeaderboard[2].userId, userProfile?.id) && hasVipPass && '👑 '}
+                              {arenaAdsLeaderboard[2].username}
+                            </span>
                           </div>
                           <div className="podium-v2-prize-box podium-v2-prize-box--bronze">
-                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">🎁 Ver Botín</div>
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">⚔️ Nivel {arenaAdsLeaderboard[2].levelReached}</div>
+                            <div className="podium-v2-pack-val podium-v2-pack-val--sub">
+                              🪙 {arenaAdsLeaderboard[2].totalRewards?.gold ?? 0} | 💎 {arenaAdsLeaderboard[2].totalRewards?.gems ?? 0}
+                            </div>
+                          </div>
+                          <div className="podium-v2-sub-stats">
+                            <span className="podium-v2-sub-cups">⏱️ {Math.floor((arenaAdsLeaderboard[2].playtimeSeconds || 0) / 60)}m</span>
+                            <span className="podium-v2-sub-wr">{arenaAdsLeaderboard[2].spentGems ? '💎 2X' : '🪙 1X'}</span>
                           </div>
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className="podium-card-v2 podium-card-v2--placeholder">
+                          <span>Esperando #3...</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -2239,15 +2286,16 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                       )}
                     </div>
 
-                    <div className="lb-table-wrapper" ref={arenaAdsTableRef}>
+                    <div className="lb-table-wrap" ref={arenaAdsTableRef}>
                       {paginatedArenaAdsUsers.length > 0 ? (
                         <table className="lb-table">
                           <thead>
                             <tr>
-                              <th style={{ width: '60px' }}>#</th>
+                              <th style={{ width: '50px', textAlign: 'center' }}>#</th>
                               <th>JUGADOR</th>
-                              <th style={{ width: '130px', textAlign: 'center' }}>NIVEL</th>
-                              <th style={{ width: '150px', textAlign: 'center' }}>BOTÍN</th>
+                              <th style={{ width: '110px', textAlign: 'center' }}>NIVEL</th>
+                              <th style={{ width: '140px', textAlign: 'center' }}>BOTÍN TOTAL</th>
+                              <th style={{ width: '90px', textAlign: 'center' }}>DETALLES</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2264,7 +2312,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                   style={{ cursor: 'pointer' }}
                                   title="Click para ver detalles de la expedición"
                                 >
-                                  <td className="lb-col-rank">
+                                  <td className="lb-col-rank" style={{ textAlign: 'center' }}>
                                     {usr.rank === 1 ? '🥇 #1' : usr.rank === 2 ? '🥈 #2' : usr.rank === 3 ? '🥉 #3' : `#${usr.rank}`}
                                   </td>
                                   <td className="lb-col-player">
@@ -2287,17 +2335,21 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                   <td style={{ textAlign: 'center' }}>
                                     <span
                                       style={{
-                                        background: 'linear-gradient(90deg, rgba(147, 51, 234, 0.3) 0%, rgba(124, 58, 237, 0.4) 100%)',
+                                        background: 'linear-gradient(90deg, rgba(147, 51, 234, 0.35) 0%, rgba(124, 58, 237, 0.45) 100%)',
                                         border: '1px solid #c084fc',
                                         color: '#f5d0fe',
-                                        padding: '3px 8px',
+                                        padding: '2px 8px',
                                         borderRadius: '6px',
                                         fontWeight: 900,
                                         fontSize: '11px',
+                                        whiteSpace: 'nowrap',
                                       }}
                                     >
                                       ⚔️ Nivel {usr.levelReached}
                                     </span>
+                                  </td>
+                                  <td style={{ textAlign: 'center', fontSize: '10.5px', color: '#e2e8f0', fontWeight: 700 }}>
+                                    🪙 {usr.totalRewards?.gold ?? 0} | 💎 {usr.totalRewards?.gems ?? 0}
                                   </td>
                                   <td style={{ textAlign: 'center' }}>
                                     <button
@@ -2319,7 +2371,11 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                         </table>
                       ) : (
                         <div className="leaderboard-empty-state" style={{ padding: '32px 16px' }}>
-                          <span>🔎 No se encontraron expediciones con "{arenaAdsSearch}".</span>
+                          <span>
+                            {arenaAdsSearch
+                              ? `🔎 No se encontraron expediciones con "${arenaAdsSearch}".`
+                              : '🏆 Los puestos #1, #2 y #3 se muestran en el Podio de honor. ¡Completa más niveles para clasificar aquí!'}
+                          </span>
                         </div>
                       )}
                     </div>

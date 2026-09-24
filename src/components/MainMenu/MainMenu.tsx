@@ -338,16 +338,6 @@ export default function MainMenu({
 
   const handlePlayClick = () => {
     soundManager.playSound('click', 0.5)
-    if (userElo > 1602 && playerEnergy <= 0) {
-      setActiveAlert({
-        title: 'ENERGÍA AGOTADA',
-        message: `⚡ Has agotado tus ${maxPlayerEnergy} partidas competitivas de hoy. Tu energía se recarga automáticamente a las 00:00 UTC, o puedes recargar ahora en la Tienda.`,
-        icon: '⚡',
-        actionLabel: 'IR A TIENDA',
-        onAction: () => onOpenShop?.('energy'),
-      })
-      return
-    }
     setIsModeSelectorOpen(true)
   }
 

@@ -1663,6 +1663,24 @@ export default function Battlefield({
             setCurrentArenaAdsRun(updated)
             setArenaAdsModalMode('victory')
             setShowArenaAdsInterstitial(true)
+
+            const playtimeSeconds = updated.createdAt
+              ? Math.max(1, Math.round((Date.now() - updated.createdAt) / 1000))
+              : 60
+            void arenaAdsService.recordRun({
+              level: updated.level,
+              playtimeSeconds,
+              spentGems: updated.paymentType === 'gems',
+              gemsSpent: (updated.paymentType === 'gems' ? 200 : 0) + ((updated.reviveCount || 0) * 150),
+              revived: (updated.reviveCount || 0) > 0,
+              reviveCount: updated.reviveCount || 0,
+              totalRewards: {
+                gold: (updated.accumulatedRewards.gold || 0) * (updated.multiplier || 1),
+                gems: (updated.accumulatedRewards.gems || 0) * (updated.multiplier || 1),
+                items: updated.accumulatedRewards.items || {},
+              },
+              status: 'active',
+            }).catch((err) => console.warn('[Battlefield] Error al registrar run en victoria:', err))
           }
         } else if (gameStatus === 'defeat') {
           if (run) {
@@ -1671,6 +1689,24 @@ export default function Battlefield({
             setCurrentArenaAdsRun(run)
             setArenaAdsModalMode('defeat')
             setShowArenaAdsInterstitial(true)
+
+            const playtimeSeconds = run.createdAt
+              ? Math.max(1, Math.round((Date.now() - run.createdAt) / 1000))
+              : 60
+            void arenaAdsService.recordRun({
+              level: run.level,
+              playtimeSeconds,
+              spentGems: run.paymentType === 'gems',
+              gemsSpent: (run.paymentType === 'gems' ? 200 : 0) + ((run.reviveCount || 0) * 150),
+              revived: (run.reviveCount || 0) > 0,
+              reviveCount: run.reviveCount || 0,
+              totalRewards: {
+                gold: (run.accumulatedRewards.gold || 0) * (run.multiplier || 1),
+                gems: (run.accumulatedRewards.gems || 0) * (run.multiplier || 1),
+                items: run.accumulatedRewards.items || {},
+              },
+              status: 'completed',
+            }).catch((err) => console.warn('[Battlefield] Error al registrar run en derrota:', err))
           }
         }
       }
