@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { soundManager } from '../../utils/audioManager'
-import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
 import GoldIcon from '../Common/GoldIcon'
 import './ArenaAdsModal.css'
 
@@ -61,10 +60,9 @@ export default function ArenaAdsInterstitialModal({
           {isDefeat ? `💀 ¡HAS CAÍDO EN EL NIVEL ${levelCleared}!` : `🎉 ¡NIVEL ${levelCleared} SUPERADO!`}
         </h3>
 
-        {/* CASCARÓN DE ANUNCIO ENTRE NIVELES CON BANNER NATIVO */}
+        {/* MENSAJE DE ESTADO ENTRE NIVELES */}
         <div className="arena-ads-interstitial-ad-shell">
-          <ArenaAdsNativeBanner fallbackText={isDefeat ? 'Zona de Riesgo • Anuncio Patrocinado' : 'Recompensa Patrocinada • Anuncio'} />
-          <span style={{ fontSize: '10.5px', color: isDefeat ? '#f87171' : '#94a3b8' }}>
+          <span style={{ fontSize: '11px', color: isDefeat ? '#f87171' : '#94a3b8', textAlign: 'center', padding: '6px' }}>
             {isDefeat ? '⚠️ Si abandonas ahora, perderás todo el botín acumulado.' : '🛡️ Tu progreso y botín están 100% blindados en caché.'}
           </span>
         </div>

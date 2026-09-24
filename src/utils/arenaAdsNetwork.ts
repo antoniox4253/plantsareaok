@@ -78,7 +78,10 @@ export function activateMonetagVignette(): void {
   try {
     const s = document.createElement('script')
     s.id = 'monetag-vignette-script'
-    s.dataset.zone = MONETAG_ZONE_ID
+    s.setAttribute('data-zone', MONETAG_ZONE_ID)
+    if (s.dataset) {
+      s.dataset.zone = MONETAG_ZONE_ID
+    }
     s.src = MONETAG_VIGNETTE_SRC
     s.async = true
     const target = [document.documentElement, document.body].filter(Boolean).pop()
@@ -121,6 +124,10 @@ function installPopunderLimiter(): void {
   if (typeof window.open === 'function') {
     const rawOpen = window.open.bind(window)
     window.open = function (...args) {
+      if (isCombatActive) {
+        console.warn('[ArenaAdsNetwork] Bloqueo total: intento de popup publicitario bloqueado en combate.')
+        return null
+      }
       if (popunderTriggeredInPhase) {
         return null
       }
@@ -132,10 +139,15 @@ function installPopunderLimiter(): void {
   if (typeof HTMLAnchorElement !== 'undefined' && HTMLAnchorElement.prototype?.click) {
     originalAnchorClick = HTMLAnchorElement.prototype.click
     HTMLAnchorElement.prototype.click = function () {
+      if (isCombatActive) {
+        return
+      }
       const href = this.getAttribute('href') || ''
       const target = this.getAttribute('target') || ''
       const isAd =
         href.includes('profitableratecpmnetwork') ||
+        href.includes('profitablecpmrate') ||
+        href.includes('n6wxm') ||
         (target === '_blank' && !this.classList?.contains('btn-telegram-link'))
 
       if (isAd) {
@@ -153,7 +165,7 @@ function installPopunderLimiter(): void {
     window.addEventListener(
       'click',
       () => {
-        if (!popunderTriggeredInPhase) {
+        if (!popunderTriggeredInPhase && !isCombatActive) {
           popunderTriggeredInPhase = true
         }
       },
@@ -162,15 +174,61 @@ function installPopunderLimiter(): void {
   }
 }
 
+let combatObserver: MutationObserver | null = null
+
 /**
  * Bloquea estrictamente la activación de anuncios durante el combate.
- * Cuando está bloqueado, cualquier anuncio activo es destruido inmediatamente
+ * Cuando está bloqueado, cualquier anuncio activo es destruido inmediatamente,
+ * un MutationObserver neutraliza cualquier overlay o iframe en tiempo real
  * y ninguna llamada a activateArenaAdsNetwork tendrá efecto.
  */
 export function setCombatAdsBlocked(blocked: boolean): void {
   isCombatActive = blocked
+  installPopunderLimiter()
   if (blocked) {
     deactivateArenaAdsNetwork(true)
+
+    // 1. Purga total inmediata del DOM
+    if (typeof document !== 'undefined') {
+      const adElements = document.querySelectorAll(
+        'iframe[src*="profitableratecpmnetwork"], script[src*="profitableratecpmnetwork"], iframe[src*="n6wxm"], script[src*="n6wxm"], iframe[src*="vignette"], div[class*="vignette"], [id*="monetag"], [class*="monetag"], [data-zone="11883853"], div[class*="social-bar"], div[id*="social-bar"], div[class*="push-notification"]'
+      )
+      adElements.forEach((el) => el.remove())
+
+      // 2. Instalar escudo de combate (MutationObserver) para neutralizar cualquier elemento publicitario en tiempo real
+      if (typeof MutationObserver !== 'undefined') {
+        if (combatObserver) combatObserver.disconnect()
+        combatObserver = new MutationObserver((mutations) => {
+          if (!isCombatActive) return
+          for (const m of mutations) {
+            for (const node of m.addedNodes) {
+              if (node instanceof HTMLElement) {
+                const src = node.getAttribute('src') || ''
+                const id = node.id || ''
+                const className = typeof node.className === 'string' ? node.className : ''
+                if (
+                  src.includes('profitableratecpmnetwork') ||
+                  src.includes('n6wxm') ||
+                  src.includes('vignette') ||
+                  src.includes('profitablecpmrate') ||
+                  id.includes('monetag') ||
+                  className.includes('vignette') ||
+                  className.includes('monetag')
+                ) {
+                  node.remove()
+                }
+              }
+            }
+          }
+        })
+        combatObserver.observe(document.documentElement, { childList: true, subtree: true })
+      }
+    }
+  } else {
+    if (combatObserver) {
+      combatObserver.disconnect()
+      combatObserver = null
+    }
   }
 }
 
@@ -179,10 +237,10 @@ export function isCombatAdsBlocked(): boolean {
 }
 
 /**
- * Activa los anuncios exclusivos de Arena ADS (Popunder + Social Bar).
- * Usa un contador de consumidores para soportar transiciones suaves.
+ * Activa la red de Arena ADS.
  * NUNCA se activa si el combate está en curso.
- * Si ya se disparó 1 popunder en la fase previa actual, NO vuelve a inyectar el popunder.
+ * No inyecta scripts invasivos de auto-click en el background para garantizar
+ * que el combate esté 100% limpio y sin interrupciones.
  */
 export function activateArenaAdsNetwork(): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
@@ -197,7 +255,7 @@ export function activateArenaAdsNetwork(): void {
   isNetworkActive = true
 
   try {
-    // 1. Inyectar Popunder exclusivo ÚNICAMENTE si no se ha alcanzado la cuota de 1 en esta fase previa
+    // Inyectar Popunder exclusivo ÚNICAMENTE si no se ha alcanzado la cuota de 1 en esta fase previa
     if (!popunderTriggeredInPhase && !document.getElementById('arena-ads-popunder-script')) {
       const popunderScript = document.createElement('script')
       popunderScript.id = 'arena-ads-popunder-script'
@@ -205,9 +263,6 @@ export function activateArenaAdsNetwork(): void {
       popunderScript.async = true
       document.head.appendChild(popunderScript)
     }
-
-    // 2. Inyectar Monetag Vignette (Interstitials de alto CPM para juegos)
-    activateMonetagVignette()
   } catch (err) {
     console.warn('[ArenaAdsNetwork] Error al inicializar red de anuncios:', err)
   }

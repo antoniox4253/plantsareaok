@@ -50,7 +50,6 @@ import GoldIcon from '../Common/GoldIcon'
 import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { ArenaAdsManager } from '../../utils/arenaAdsManager'
 import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
-import ArenaAdsNativeBanner from '../ArenaAds/ArenaAdsNativeBanner'
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { setCombatAdsBlocked, resetPopunderQuota } from '../../utils/arenaAdsNetwork'
 import './Battlefield.css'
@@ -3706,42 +3705,6 @@ export default function Battlefield({
       />
     </div>
   )
-
-  if (isArenaAds) {
-    return (
-      <div className="battlefield-arena-ads-frame">
-        <aside className="arena-ads-combat-flank arena-ads-combat-flank--left">
-          <div className="arena-ads-combat-flank__header">
-            <span className="arena-ads-combat-flank__badge">[ AD ]</span>
-            <span className="arena-ads-combat-flank__tag">PATROCINADOR</span>
-          </div>
-          <div className="arena-ads-combat-flank__body">
-            <ArenaAdsNativeBanner
-              lateral
-              refreshKey={`flank-left-lvl-${currentArenaAdsRun?.level || 1}-${currentArenaAdsRun?.updatedAt || 0}`}
-            />
-          </div>
-        </aside>
-
-        <div className="battlefield-arena-ads-center">
-          {battlefieldNode}
-        </div>
-
-        <aside className="arena-ads-combat-flank arena-ads-combat-flank--right">
-          <div className="arena-ads-combat-flank__header">
-            <span className="arena-ads-combat-flank__badge">[ AD ]</span>
-            <span className="arena-ads-combat-flank__tag">PATROCINADOR</span>
-          </div>
-          <div className="arena-ads-combat-flank__body">
-            <ArenaAdsNativeBanner
-              lateral
-              refreshKey={`flank-right-lvl-${currentArenaAdsRun?.level || 1}-${currentArenaAdsRun?.updatedAt || 0}`}
-            />
-          </div>
-        </aside>
-      </div>
-    )
-  }
 
   return battlefieldNode
 }

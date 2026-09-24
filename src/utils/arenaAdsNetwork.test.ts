@@ -105,6 +105,10 @@ describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
   afterEach(() => {
     deactivateArenaAdsNetwork(true)
     resetPopunderQuota()
+    delete (globalThis as any).__arenaAdsLimiterInstalled
+    if (typeof window !== 'undefined') {
+      delete (window as any).__arenaAdsLimiterInstalled
+    }
     vi.unstubAllGlobals()
   })
 
@@ -202,5 +206,17 @@ describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
     // Avanzar a una nueva fase previa reinicia la cuota exactamente a 1
     resetPopunderQuota()
     expect(isPopunderQuotaReached()).toBe(false)
+  })
+
+  it('7. En combate NUNCA se permite abrir ventanas ni popunders (bloqueo total)', () => {
+    resetPopunderQuota()
+    setCombatAdsBlocked(true)
+    expect(isCombatAdsBlocked()).toBe(true)
+
+    // Cualquier llamada a window.open durante combate debe retornar null
+    const res = (globalThis as any).window.open('https://popunder.com')
+    expect(res).toBeNull()
+
+    setCombatAdsBlocked(false)
   })
 })
