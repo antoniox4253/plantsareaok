@@ -5,7 +5,7 @@
   inset: 0;
   background: rgba(4, 8, 18, 0.92);
   backdrop-filter: blur(8px);
-  z-index: 1000;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,6 +135,31 @@
   color: #fff;
   border-color: #c084fc;
   font-weight: 900;
+}
+
+.arena-ads-fullscreen-btn {
+  background: rgba(56, 189, 248, 0.2);
+  border: 1.5px solid rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  z-index: 10;
+}
+
+.arena-ads-fullscreen-btn:hover {
+  background: rgba(56, 189, 248, 0.4);
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
 }
 
 .arena-ads-close-btn {
@@ -1228,32 +1253,72 @@
   line-height: 1.25;
 }
 
-/* ── RESPONSIVE MEDIA QUERIES (MÓVILES Y LANDSCAPE) ── */
-@media (max-width: 768px), (max-height: 520px) {
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES & FULLSCREEN (PANTALLA COMPLETA TOTAL)
+   ========================================================================== */
+
+/* 1. MÓVILES, PANTALLAS PEQUEÑAS Y MODO FULLSCREEN TOTAL */
+@media (max-width: 1024px), (max-height: 600px), (orientation: portrait) {
   .arena-ads-backdrop {
     padding: 0 !important;
     inset: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
+    height: 100dvh !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    z-index: 99999 !important;
   }
 
   .arena-ads-modal {
     width: 100vw !important;
     max-width: 100vw !important;
     height: 100vh !important;
+    height: 100dvh !important;
     max-height: 100vh !important;
+    max-height: 100dvh !important;
     border-radius: 0 !important;
     border: none !important;
+    box-shadow: none !important;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 }
 
-@media (max-width: 600px) {
-  .arena-ads-modal {
-    width: 100vw;
-    height: 100vh;
-    border-radius: 0;
-  }
+/* 2. SOPORTE DE API FULLSCREEN / BOTÓN ZOOM PANTALLA COMPLETA */
+:fullscreen .arena-ads-backdrop,
+:-webkit-full-screen .arena-ads-backdrop {
+  padding: 0 !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  z-index: 99999 !important;
+}
 
+:fullscreen .arena-ads-modal,
+:-webkit-full-screen .arena-ads-modal {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* 3. VISTA EN RETRATO / VERTICAL (PORTRAIT) */
+@media (max-width: 600px) and (orientation: portrait) {
   .arena-ads-header {
     padding: 4px 8px;
   }
@@ -1315,93 +1380,131 @@
   }
 }
 
-@media (max-height: 440px) and (orientation: landscape) {
-  .arena-ads-modal {
-    height: 96vh;
-    max-width: 96vw;
+/* 4. VISTA EN APAISADO / HORIZONTAL (LANDSCAPE EN MÓVILES - ULTRA OPTIMIZADA) */
+@media (max-height: 560px) and (orientation: landscape) {
+  .arena-ads-header {
+    padding: 3px 10px;
   }
 
-  .arena-ads-header {
-    padding: 3px 8px;
+  .arena-ads-title {
+    font-size: 13px;
+  }
+
+  .arena-ads-subtitle {
+    font-size: 8.5px;
   }
 
   .arena-ads-content {
-    padding: 3px 8px;
+    padding: 3px 10px;
     gap: 4px;
   }
 
+  .arena-ads-lobby-columns {
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 8px;
+  }
+
+  .arena-ads-rules-card {
+    padding: 6px 10px;
+  }
+
+  .arena-ads-rules-title {
+    margin: 0 0 4px 0;
+    font-size: 11px;
+  }
+
+  .arena-ads-rules-grid {
+    gap: 4px;
+  }
+
+  .arena-ads-rule-item {
+    padding: 4px 6px;
+    font-size: 9px;
+    line-height: 1.2;
+  }
+
+  .arena-ads-native-banner-box {
+    padding: 3px 6px;
+  }
+
+  .arena-ads-native-container {
+    min-height: 60px;
+    height: 68px;
+  }
+
   .arena-ads-choice-columns {
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
   .arena-ads-choice-card {
-    padding: 6px 10px;
-    gap: 4px;
+    padding: 5px 8px;
+    gap: 3px;
   }
 
   .arena-ads-plant-avatar-wrap {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
 
   .arena-ads-plant-thumb {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
 
   .arena-ads-plant-name {
-    font-size: 11px;
+    font-size: 10.5px;
   }
 
   .arena-ads-plant-desc {
-    font-size: 8.5px;
+    font-size: 8px;
   }
 
   .arena-ads-reward-showcase {
-    padding: 6px 8px;
-    gap: 4px;
+    padding: 4px 6px;
+    gap: 3px;
   }
 
   .arena-ads-reward-card-item {
-    padding: 4px 8px;
-    gap: 8px;
+    padding: 3px 6px;
+    gap: 6px;
   }
 
   .arena-ads-reward-card-icon-wrap {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
 
   .arena-ads-reward-card-icon {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .arena-ads-reward-card-label {
-    font-size: 11.5px;
+    font-size: 10.5px;
   }
 
   .arena-ads-deck-rack {
-    padding: 3px 6px;
+    padding: 2px 6px;
     gap: 2px;
   }
 
   .arena-ads-deck-slot {
-    width: 50px;
-    height: 54px;
+    width: 48px;
+    height: 50px;
     padding: 2px;
   }
 
   .arena-ads-deck-slot-img {
-    width: 25px;
-    height: 25px;
+    width: 22px;
+    height: 22px;
   }
 
   .arena-ads-deck-slot-name {
-    font-size: 7px;
+    font-size: 6.5px;
   }
 
   .arena-ads-footer {
-    padding: 3px 8px;
+    padding: 3px 10px;
   }
 
   .arena-ads-btn {

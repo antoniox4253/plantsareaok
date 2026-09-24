@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { soundManager } from '../../utils/audioManager'
 import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
@@ -49,11 +50,11 @@ export default function ArenaAdsInterstitialModal({
     return () => clearInterval(timer)
   }, [isOpen, mode])
 
-  if (!isOpen) return null
+  if (!isOpen || typeof document === 'undefined') return null
 
   const isDefeat = mode === 'defeat'
 
-  return (
+  return createPortal(
     <div className="arena-ads-interstitial-backdrop">
       <div className="arena-ads-interstitial-card" style={isDefeat ? { borderColor: '#ef4444', boxShadow: '0 0 30px rgba(239, 68, 68, 0.4)' } : undefined}>
         <h3 className="arena-ads-interstitial-title" style={isDefeat ? { color: '#ef4444' } : undefined}>
@@ -155,6 +156,7 @@ export default function ArenaAdsInterstitialModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

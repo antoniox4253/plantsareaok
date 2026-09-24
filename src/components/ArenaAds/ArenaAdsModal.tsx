@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import type { PlantId } from '../../types/game'
 import {
   ArenaAdsManager,
@@ -11,6 +12,7 @@ import {
 } from '../../utils/arenaAdsManager'
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { soundManager } from '../../utils/audioManager'
+import { isFullscreen, toggleFullscreen } from '../../utils/fullscreen'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
 import { activateArenaAdsNetwork, deactivateArenaAdsNetwork, resetPopunderQuota } from '../../utils/arenaAdsNetwork'
 import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
@@ -45,6 +47,23 @@ export default function ArenaAdsModal({
   const [chosenAdvantageType, setChosenAdvantageType] = useState<'none' | 'reward' | 'plant'>('none')
   const [claimSummary, setClaimSummary] = useState<ArenaAdsLoot | null>(null)
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
+  const [isFullscreenActive, setIsFullscreenActive] = useState<boolean>(() => {
+    if (typeof document !== 'undefined') return isFullscreen()
+    return false
+  })
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreenActive(isFullscreen())
+    }
+    handleFullscreenChange()
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+    }
+  }, [])
 
   // Activar la red de anuncios (popunder y social bar) ÚNICAMENTE en la fase de preparación ('prep')
   // NUNCA en el lobby (al hacer click en Play 100 Oro / 200 Gemas) ni durante el combate
@@ -128,7 +147,7 @@ export default function ArenaAdsModal({
     return activeRun.accumulatedRewards
   }, [activeRun])
 
-  if (!isOpen) return null
+  if (!isOpen || typeof document === 'undefined') return null
 
   // Iniciar nueva expedición (100 Oro -> 1x multiplicador, o 200 Gemas -> 2x multiplicador)
   const handleStartNewRun = async (paymentType: 'gold' | 'gems' = 'gold') => {
@@ -268,7 +287,7 @@ export default function ArenaAdsModal({
     onStartArenaAdsBattle(runInBattle)
   }
 
-  return (
+  return createPortal(
     <div className="arena-ads-backdrop" onClick={onClose}>
       <div className="arena-ads-modal" onClick={(e) => e.stopPropagation()}>
         {/* HEADER COMPACTO CON BOTÓN DE CERRAR INDEPENDIENTE */}
@@ -304,6 +323,18 @@ export default function ArenaAdsModal({
                 </div>
               )}
             </div>
+
+            <button
+              type="button"
+              className="arena-ads-fullscreen-btn"
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                toggleFullscreen()
+              }}
+              title={isFullscreenActive ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            >
+              {isFullscreenActive ? '🗗' : '⛶'}
+            </button>
 
             <button type="button" className="arena-ads-close-btn" onClick={onClose} title="Cerrar">
               ✕
@@ -743,6 +774,7 @@ export default function ArenaAdsModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
