@@ -94,6 +94,8 @@ interface MainMenuProps {
   onlineUsersCount?: number
   reopenTournamentModal?: boolean
   onResetReopenTournamentModal?: () => void
+  reopenArenaAdsModal?: boolean
+  onResetReopenArenaAdsModal?: () => void
   onRewardsChanged?: () => Promise<void> | void
 }
 
@@ -141,6 +143,8 @@ export default function MainMenu({
   onDeductGold,
   reopenTournamentModal,
   onResetReopenTournamentModal,
+  reopenArenaAdsModal,
+  onResetReopenArenaAdsModal,
   onRewardsChanged,
 }: MainMenuProps) {
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => UserManager.getProfile())
@@ -184,6 +188,15 @@ export default function MainMenu({
       }
     }
   }, [reopenTournamentModal, onResetReopenTournamentModal])
+
+  useEffect(() => {
+    if (reopenArenaAdsModal) {
+      setIsArenaAdsModalOpen(true)
+      if (onResetReopenArenaAdsModal) {
+        onResetReopenArenaAdsModal()
+      }
+    }
+  }, [reopenArenaAdsModal, onResetReopenArenaAdsModal])
 
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [ticker, setTicker] = useState<number>(0)
@@ -1217,8 +1230,13 @@ export default function MainMenu({
         isOpen={isArenaAdsModalOpen}
         onClose={() => setIsArenaAdsModalOpen(false)}
         userGold={userGold}
+        userGems={userTokens}
         onDeductGold={(amount) => {
           if (onDeductGold) return onDeductGold(amount)
+          return false
+        }}
+        onDeductGems={(amount) => {
+          if (onDeductTokens) return onDeductTokens(amount)
           return false
         }}
         onStartArenaAdsBattle={(run) => {

@@ -49,7 +49,9 @@ describe('arenaAdsService (Validación de Backend)', () => {
     expect(res.success).toBe(true)
     expect(res.cost).toBe(100)
     expect(res.newGoldBalance).toBe(9650)
-    expect(supabase.rpc).toHaveBeenCalledWith('enter_arena_ads')
+    expect(supabase.rpc).toHaveBeenCalledWith('enter_arena_ads', {
+      p_payment_type: 'gold',
+    })
   })
 
   it('3. enterArenaAds rechaza la entrada si el usuario no tiene suficiente oro en backend', async () => {
@@ -69,7 +71,46 @@ describe('arenaAdsService (Validación de Backend)', () => {
     expect(res.error).toContain('100 🪙')
   })
 
-  it('4. claimLoot acredita botín en el backend autoritativo', async () => {
+  it('4. enterArenaAds soporta entrada con 200 gemas para multiplicador 2x', async () => {
+    vi.mocked(isSupabaseConfigured).mockReturnValue(true)
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: 'test-user-id' } } },
+      error: null,
+    } as any)
+
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: { success: true, cost: 200, currency: 'gems', multiplier: 2, new_gems_balance: 800 },
+      error: null,
+    } as any)
+
+    const res = await arenaAdsService.enterArenaAds('gems')
+    expect(res.success).toBe(true)
+    expect(res.cost).toBe(200)
+    expect(res.multiplier).toBe(2)
+    expect(supabase.rpc).toHaveBeenCalledWith('enter_arena_ads', {
+      p_payment_type: 'gems',
+    })
+  })
+
+  it('5. reviveArenaAds cobra 150 gemas autoritativamente', async () => {
+    vi.mocked(isSupabaseConfigured).mockReturnValue(true)
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: 'test-user-id' } } },
+      error: null,
+    } as any)
+
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: { success: true, cost: 150, new_gems_balance: 650 },
+      error: null,
+    } as any)
+
+    const res = await arenaAdsService.reviveArenaAds()
+    expect(res.success).toBe(true)
+    expect(res.cost).toBe(150)
+    expect(supabase.rpc).toHaveBeenCalledWith('revive_arena_ads')
+  })
+
+  it('6. claimLoot acredita botín en el backend autoritativo con multiplicador', async () => {
     vi.mocked(isSupabaseConfigured).mockReturnValue(true)
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: { session: { user: { id: 'test-user-id' } } },
@@ -85,7 +126,7 @@ describe('arenaAdsService (Validación de Backend)', () => {
       gold: 550,
       gems: 10,
       items: { fertilizer: 2 },
-    })
+    }, 2)
 
     expect(res.success).toBe(true)
     expect(res.newGoldBalance).toBe(10200)
@@ -94,6 +135,7 @@ describe('arenaAdsService (Validación de Backend)', () => {
       p_gold: 550,
       p_gems: 10,
       p_items: { fertilizer: 2 },
+      p_multiplier: 2,
     })
   })
 })

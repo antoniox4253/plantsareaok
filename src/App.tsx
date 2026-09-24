@@ -567,6 +567,7 @@ function App() {
   const [treeSkinsEnPartida, setTreeSkinsEnPartida] = useState<{ mio: string | null; rival: string | null } | null>(null)
   const [partidaAsincrona, setPartidaAsincrona] = useState<boolean>(false)
   const [reopenTournamentOnMenu, setReopenTournamentOnMenu] = useState<boolean>(false)
+  const [reopenArenaAdsOnMenu, setReopenArenaAdsOnMenu] = useState<boolean>(false)
 
   // Reaccionar a errores asíncronos de la cola (por ej. agotamiento de energías en backend)
   useEffect(() => {
@@ -1127,7 +1128,8 @@ function App() {
 
   const handleArenaAdsAdvance = (run: ArenaAdsRun) => {
     setArenaAdsRun(run)
-    handleStartArenaAdsMatch(run)
+    setReopenArenaAdsOnMenu(true)
+    setScreen('menu')
   }
 
   const handleStartStrategicPlaytest = (config: StrategicPlaytestConfig) => {
@@ -1419,6 +1421,8 @@ function App() {
             onDeductGold={deductGold}
             reopenTournamentModal={reopenTournamentOnMenu}
             onResetReopenTournamentModal={() => setReopenTournamentOnMenu(false)}
+            reopenArenaAdsModal={reopenArenaAdsOnMenu}
+            onResetReopenArenaAdsModal={() => setReopenArenaAdsOnMenu(false)}
             onRewardsChanged={refreshFromServer}
           />
         )}

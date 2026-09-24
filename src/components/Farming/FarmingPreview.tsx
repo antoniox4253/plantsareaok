@@ -59,6 +59,14 @@ const DEMO_INVENTORY: FarmingInventory = {
   knight_helmet: 0,
   energy_potion_5: 0,
   mother_tree_skin: 0,
+  sunflower_glasses: 0,
+  cactus_armor: 0,
+  superman_suit: 0,
+  spiderman_suit: 0,
+  batman_suit: 0,
+  ironman_suit: 0,
+  gold_24k: 0,
+  samurai_armor: 0,
 }
 
 const INVENTORY_ORDER: FarmingItemId[] = [

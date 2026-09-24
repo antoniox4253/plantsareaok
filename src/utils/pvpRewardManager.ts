@@ -13,6 +13,14 @@ export type FarmingItemId =
   | 'knight_helmet'
   | 'energy_potion_5'
   | 'mother_tree_skin'
+  | 'sunflower_glasses'
+  | 'cactus_armor'
+  | 'superman_suit'
+  | 'spiderman_suit'
+  | 'batman_suit'
+  | 'ironman_suit'
+  | 'gold_24k'
+  | 'samurai_armor'
 
 export interface FarmingInventory {
   water: number
@@ -27,6 +35,14 @@ export interface FarmingInventory {
   knight_helmet: number
   energy_potion_5: number
   mother_tree_skin: number
+  sunflower_glasses: number
+  cactus_armor: number
+  superman_suit: number
+  spiderman_suit: number
+  batman_suit: number
+  ironman_suit: number
+  gold_24k: number
+  samurai_armor: number
 }
 
 export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
@@ -42,6 +58,14 @@ export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
   knight_helmet: 0,
   energy_potion_5: 0,
   mother_tree_skin: 0,
+  sunflower_glasses: 0,
+  cactus_armor: 0,
+  superman_suit: 0,
+  spiderman_suit: 0,
+  batman_suit: 0,
+  ironman_suit: 0,
+  gold_24k: 0,
+  samurai_armor: 0,
 }
 
 export const FARMING_ITEM_DEFINITIONS: Record<
@@ -104,7 +128,7 @@ export const FARMING_ITEM_DEFINITIONS: Record<
   },
   knight_helmet: {
     label: 'Yelmo de Caballero',
-    description: 'Yelmo exclusivo de Nuez. Al equiparse otorga +150 HP y resistencia de acero.',
+    description: 'Yelmo exclusivo de Nuez. Al equiparse otorga +350 HP y resistencia de acero.',
     icon: '/game-assets/auction/knight_wallnut.png',
     fallback: '🛡️',
   },
@@ -119,6 +143,54 @@ export const FARMING_ITEM_DEFINITIONS: Record<
     description: 'Aspecto sagrado para el Árbol Madre. Al equiparse, tu base cambia de aspecto y dispara 2 proyectiles mágicos en líneas aleatorias (1º a los 25s, luego cada 15s) en combate.',
     icon: '/game-assets/farming/mother_tree_skin.png',
     fallback: '🌳',
+  },
+  sunflower_glasses: {
+    label: 'Gafas de Sol',
+    description: 'Gafas oscuras con estilo para Girasol. Aumenta la producción de soles en combate y mazmorra.',
+    icon: '/game-assets/farming/sunflower_glasses.webp',
+    fallback: '🕶️',
+  },
+  cactus_armor: {
+    label: 'Armadura de Cactus',
+    description: 'Armadura con púas de acero reforzado para Cactus. Otorga +15 de Daño continuo en combate.',
+    icon: '/game-assets/farming/cactus_armor.webp',
+    fallback: '🌵',
+  },
+  superman_suit: {
+    label: 'Capa de Superman',
+    description: 'Traje heroico legendario para la Nuez. Otorga +200 HP de resistencia heroica.',
+    icon: '/game-assets/farming/superman_suit.webp',
+    fallback: '🦸',
+  },
+  spiderman_suit: {
+    label: 'Traje de Spiderman',
+    description: 'Mallas arácnidas exclusivas para la Nuez. Otorga +200 HP de resistencia trepamuros.',
+    icon: '/game-assets/farming/spiderman_suit.webp',
+    fallback: '🕷️',
+  },
+  batman_suit: {
+    label: 'Armadura de Batman',
+    description: 'Armadura táctica de la noche para la Nuez. Otorga +200 HP de blindaje gótico impenetrable.',
+    icon: '/game-assets/farming/batman_suit.webp',
+    fallback: '🦇',
+  },
+  ironman_suit: {
+    label: 'Reactor de Iron Man',
+    description: 'Armadura de titanio y reactor arc para la Nuez. Otorga +200 HP de resistencia tecnológica.',
+    icon: '/game-assets/farming/ironman_suit.webp',
+    fallback: '🦾',
+  },
+  gold_24k: {
+    label: 'Bañado en Oro 24K',
+    description: 'Bañado en oro puro de 24 quilates para la Nuez. Otorga +300 HP y reduce 2 segundos su tiempo de recarga.',
+    icon: '/game-assets/farming/gold_24k.webp',
+    fallback: '👑',
+  },
+  samurai_armor: {
+    label: 'Armadura Samurái',
+    description: 'Armadura y katana samurái para Squash. Reduce 1.5 segundos su tiempo de recarga.',
+    icon: '/game-assets/farming/samurai_armor.webp',
+    fallback: '⚔️',
   },
 }
 

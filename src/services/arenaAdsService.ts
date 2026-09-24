@@ -4,51 +4,90 @@ import type { ArenaAdsLoot } from '../utils/arenaAdsManager'
 export interface EnterArenaAdsResult {
   success: boolean
   cost?: number
-  newGoldBalance?: number
-  error?: string
-}
-
-export interface ClaimArenaAdsLootResult {
-  success: boolean
+  currency?: 'gold' | 'gems'
+  multiplier?: number
   newGoldBalance?: number
   newGemsBalance?: number
   error?: string
 }
 
+export interface ReviveArenaAdsResult {
+  success: boolean
+  cost?: number
+  newGemsBalance?: number
+  error?: string
+}
+
+export interface ClaimArenaAdsLootResult {
+  success: boolean
+  multiplier?: number
+  newGoldBalance?: number
+  newGemsBalance?: number
+  error?: string
+}
+
+export interface ArenaAdsItemStockDef {
+  itemId: string
+  name: string
+  targetPlant: string
+  maxStock: number
+  remainingStock: number
+  claimedCount: number
+}
+
 export const arenaAdsService = {
   /**
-   * Valida en el backend y descuenta atómicamente 100 de Oro de profiles.gold_balance
+   * Valida en el backend y descuenta atómicamente la entrada a Arena ADS:
+   * - 100 de Oro (Multiplicador 1x)
+   * - 200 Gemas (Multiplicador 2x de botín)
    */
-  async enterArenaAds(): Promise<EnterArenaAdsResult> {
+  async enterArenaAds(paymentType: 'gold' | 'gems' = 'gold'): Promise<EnterArenaAdsResult> {
     if (!isSupabaseConfigured()) {
-      return { success: true }
+      return {
+        success: true,
+        cost: paymentType === 'gems' ? 200 : 100,
+        currency: paymentType,
+        multiplier: paymentType === 'gems' ? 2 : 1,
+      }
     }
 
     try {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData?.session?.user) {
         // Modo local / invitado
-        return { success: true }
+        return {
+          success: true,
+          cost: paymentType === 'gems' ? 200 : 100,
+          currency: paymentType,
+          multiplier: paymentType === 'gems' ? 2 : 1,
+        }
       }
 
-      const { data, error } = await (supabase.rpc as any)('enter_arena_ads')
+      const { data, error } = await (supabase.rpc as any)('enter_arena_ads', {
+        p_payment_type: paymentType,
+      })
       if (error) {
         console.error('[arenaAdsService] enter_arena_ads error:', error)
         const isInsufficient =
-          error.message?.includes('INSUFFICIENT_GOLD') ||
-          error.message?.includes('insuficiente')
+          error.message?.includes('insuficiente') ||
+          error.message?.includes('INSUFFICIENT')
         return {
           success: false,
           error: isInsufficient
-            ? 'No tienes suficiente Oro en tu cuenta (se requieren 100 🪙).'
+            ? paymentType === 'gems'
+              ? 'Gemas insuficientes para la entrada potenciada (se requieren 200 💎).'
+              : 'Oro insuficiente para entrar a la mazmorra (se requieren 100 🪙).'
             : (error.message || 'Error al validar la entrada en el servidor.'),
         }
       }
 
       return {
         success: true,
-        cost: data?.cost ?? 100,
+        cost: data?.cost ?? (paymentType === 'gems' ? 200 : 100),
+        currency: (data?.currency as 'gold' | 'gems') || paymentType,
+        multiplier: data?.multiplier ?? (paymentType === 'gems' ? 2 : 1),
         newGoldBalance: data?.new_gold_balance,
+        newGemsBalance: data?.new_gems_balance,
       }
     } catch (err: any) {
       console.error('[arenaAdsService] enterArenaAds exception:', err)
@@ -60,23 +99,66 @@ export const arenaAdsService = {
   },
 
   /**
-   * Reclama el botín acumulado de la mazmorra acreditándolo en la base de datos
+   * Cobra 150 gemas atómicamente en el servidor para revivir en el nivel actual con 1 vida extra.
    */
-  async claimLoot(loot: ArenaAdsLoot): Promise<ClaimArenaAdsLootResult> {
+  async reviveArenaAds(): Promise<ReviveArenaAdsResult> {
     if (!isSupabaseConfigured()) {
-      return { success: true }
+      return { success: true, cost: 150 }
     }
 
     try {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData?.session?.user) {
-        return { success: true }
+        return { success: true, cost: 150 }
+      }
+
+      const { data, error } = await (supabase.rpc as any)('revive_arena_ads')
+      if (error) {
+        console.error('[arenaAdsService] revive_arena_ads error:', error)
+        const isInsufficient =
+          error.message?.includes('insuficiente') ||
+          error.message?.includes('INSUFFICIENT')
+        return {
+          success: false,
+          error: isInsufficient
+            ? 'Gemas insuficientes para revivir (se requieren 150 💎).'
+            : (error.message || 'Error al procesar la resurrección en el servidor.'),
+        }
+      }
+
+      return {
+        success: true,
+        cost: data?.cost ?? 150,
+        newGemsBalance: data?.new_gems_balance,
+      }
+    } catch (err: any) {
+      console.error('[arenaAdsService] reviveArenaAds exception:', err)
+      return {
+        success: false,
+        error: err.message || 'Error de conexión con el servidor.',
+      }
+    }
+  },
+
+  /**
+   * Reclama el botín acumulado de la mazmorra acreditándolo en la base de datos con multiplicador
+   */
+  async claimLoot(loot: ArenaAdsLoot, multiplier: number = 1): Promise<ClaimArenaAdsLootResult> {
+    if (!isSupabaseConfigured()) {
+      return { success: true, multiplier }
+    }
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData?.session?.user) {
+        return { success: true, multiplier }
       }
 
       const { data, error } = await (supabase.rpc as any)('claim_arena_ads_loot', {
         p_gold: loot.gold || 0,
         p_gems: loot.gems || 0,
         p_items: loot.items || {},
+        p_multiplier: multiplier || 1,
       })
 
       if (error) {
@@ -86,12 +168,34 @@ export const arenaAdsService = {
 
       return {
         success: true,
+        multiplier: data?.multiplier ?? multiplier,
         newGoldBalance: data?.new_gold_balance,
         newGemsBalance: data?.new_gems_balance,
       }
     } catch (err: any) {
       console.error('[arenaAdsService] claimLoot exception:', err)
       return { success: false, error: err.message }
+    }
+  },
+
+  /**
+   * Obtiene el stock disponible de los ítems exclusivos de Arena ADS (máximo 5 de cada uno)
+   */
+  async getStock(): Promise<Record<string, ArenaAdsItemStockDef>> {
+    if (!isSupabaseConfigured()) {
+      return {}
+    }
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_arena_ads_stock')
+      if (error) {
+        console.error('[arenaAdsService] get_arena_ads_stock error:', error)
+        return {}
+      }
+      return (data as Record<string, ArenaAdsItemStockDef>) || {}
+    } catch (err) {
+      console.error('[arenaAdsService] getStock exception:', err)
+      return {}
     }
   },
 }

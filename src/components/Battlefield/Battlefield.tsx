@@ -49,6 +49,7 @@ import GoldIcon from '../Common/GoldIcon'
 import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { ArenaAdsManager } from '../../utils/arenaAdsManager'
 import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
+import { arenaAdsService } from '../../services/arenaAdsService'
 import './Battlefield.css'
 
 /** Un segundo antes de que el sol se recoja solo: momento de avisar. */
@@ -576,6 +577,8 @@ export default function Battlefield({
   const hasClanFortressStartedRef = useRef<boolean>(false)
 
   const [showArenaAdsInterstitial, setShowArenaAdsInterstitial] = useState<boolean>(false)
+  const [arenaAdsModalMode, setArenaAdsModalMode] = useState<'victory' | 'defeat'>('victory')
+  const [isRevivingArenaAds, setIsRevivingArenaAds] = useState<boolean>(false)
   const [currentArenaAdsRun, setCurrentArenaAdsRun] = useState<ArenaAdsRun | null>(
     () => arenaAdsRun || ArenaAdsManager.getStoredRun()
   )
@@ -1639,15 +1642,19 @@ export default function Battlefield({
       }
 
       if (matchMode === 'arena_ads') {
+        const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
         if (gameStatus === 'victory') {
-          const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
           if (run) {
             const updated = ArenaAdsManager.completeLevelVictory(run)
             setCurrentArenaAdsRun(updated)
+            setArenaAdsModalMode('victory')
             setShowArenaAdsInterstitial(true)
           }
         } else if (gameStatus === 'defeat') {
-          ArenaAdsManager.clearRun()
+          if (run) {
+            setArenaAdsModalMode('defeat')
+            setShowArenaAdsInterstitial(true)
+          }
         }
       }
 
@@ -3441,12 +3448,15 @@ export default function Battlefield({
           </div>
       )})()}
 
-      {/* ARENA ADS INTERSTITIAL POPUP (CASCARÓN ENTRE NIVELES) */}
+      {/* ARENA ADS INTERSTITIAL POPUP (VICTORIA O REVIVIR TRAS DERROTA) */}
       {matchMode === 'arena_ads' && showArenaAdsInterstitial && currentArenaAdsRun && (
         <ArenaAdsInterstitialModal
           isOpen={showArenaAdsInterstitial}
+          mode={arenaAdsModalMode}
           levelCleared={currentArenaAdsRun.level}
           accumulatedLoot={currentArenaAdsRun.accumulatedRewards}
+          multiplier={currentArenaAdsRun.multiplier}
+          isReviving={isRevivingArenaAds}
           onNextLevel={() => {
             setShowArenaAdsInterstitial(false)
             if (onArenaAdsAdvance) {
@@ -3456,8 +3466,33 @@ export default function Battlefield({
           }}
           onCashout={() => {
             setShowArenaAdsInterstitial(false)
-            if (onArenaAdsRetreat) {
+            if (arenaAdsModalMode === 'defeat') {
+              ArenaAdsManager.clearRun()
+              if (onBackToMenu) {
+                onBackToMenu()
+              }
+            } else if (onArenaAdsRetreat) {
               onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards)
+            }
+          }}
+          onRevive={async () => {
+            setIsRevivingArenaAds(true)
+            try {
+              const res = await arenaAdsService.reviveArenaAds()
+              if (!res.success) {
+                alert(res.error || 'No se pudo revivir. Verifica tu saldo de Gemas.')
+                return
+              }
+              const revivedRun = ArenaAdsManager.reviveRun(currentArenaAdsRun)
+              setCurrentArenaAdsRun(revivedRun)
+              setShowArenaAdsInterstitial(false)
+              if (onArenaAdsAdvance) {
+                onArenaAdsAdvance(revivedRun)
+              } else if (onBackToMenu) {
+                onBackToMenu()
+              }
+            } finally {
+              setIsRevivingArenaAds(false)
             }
           }}
         />

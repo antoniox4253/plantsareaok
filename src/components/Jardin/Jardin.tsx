@@ -7,6 +7,7 @@ import {
   getScaledPlantConfig,
   getEquippableItemDef,
   getEquippableItemForPlant,
+  getEquippableItemsForPlant,
   type PlantStatKey,
 } from '../../utils/gameConstants'
 import background from '../../assets/images/background.webp'
@@ -1693,15 +1694,12 @@ export default function Jardin({
                   {/* EQUIPAR / DESEQUIPAR ÍTEM EXCLUSIVO */}
                   {(() => {
                     if (!isUnlocked || card.isListed) return null
-                    const itemDef = getEquippableItemForPlant(plantId)
-                    if (!itemDef) return null
-                    const isItemEquippedOnCard = Boolean(equippedItem && equippedItem === itemDef.id)
-                    const availableQty = Number(farmingItems?.[itemDef.id as keyof FarmingInventory] || 0)
-                    if (!isItemEquippedOnCard && availableQty <= 0) return null
 
-                    return (
-                      <div className="jardin-card-item-row">
-                        {isItemEquippedOnCard ? (
+                    if (equippedItem) {
+                      const equippedDef = getEquippableItemDef(equippedItem)
+                      if (!equippedDef) return null
+                      return (
+                        <div className="jardin-card-item-row">
                           <button
                             type="button"
                             className="jardin-unequip-item-btn"
@@ -1710,24 +1708,40 @@ export default function Jardin({
                               e.stopPropagation()
                               handleUnequipItem(instanceId)
                             }}
-                            title={`Desequipar ${itemDef.name} (volverá a tu inventario)`}
+                            title={`Desequipar ${equippedDef.name} (volverá a tu inventario)`}
                           >
-                            {itemDef.emoji} DESEQUIPAR
+                            {equippedDef.emoji} DESEQUIPAR
                           </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="jardin-equip-item-btn"
-                            disabled={isEquippingItem}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleEquipItem(instanceId, itemDef.id)
-                            }}
-                            title={`Equipar ${itemDef.name} (${itemDef.statBonusText}) (Disponibles: ${availableQty})`}
-                          >
-                            {itemDef.emoji} EQUIPAR
-                          </button>
-                        )}
+                        </div>
+                      )
+                    }
+
+                    const candidateDefs = getEquippableItemsForPlant(plantId)
+                    const availableDefs = candidateDefs.filter(
+                      (def) => Number(farmingItems?.[def.id as keyof FarmingInventory] || 0) > 0
+                    )
+                    if (availableDefs.length === 0) return null
+
+                    return (
+                      <div className="jardin-card-item-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                        {availableDefs.map((def) => {
+                          const availableQty = Number(farmingItems?.[def.id as keyof FarmingInventory] || 0)
+                          return (
+                            <button
+                              key={def.id}
+                              type="button"
+                              className="jardin-equip-item-btn"
+                              disabled={isEquippingItem}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleEquipItem(instanceId, def.id)
+                              }}
+                              title={`Equipar ${def.name} (${def.statBonusText}) (Disponibles: ${availableQty})`}
+                            >
+                              {def.emoji} EQUIPAR {availableDefs.length > 1 ? def.name : ''}
+                            </button>
+                          )
+                        })}
                       </div>
                     )
                   })()}

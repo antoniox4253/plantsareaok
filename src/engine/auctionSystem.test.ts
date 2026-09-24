@@ -121,19 +121,19 @@ describe('Sistema de Subasta - Reglas de Negocio y Configuración', () => {
     expect(auction.highestBidderId).toBe('user_winner_123')
   })
 
-  it('la nueva carta de subasta (knight_helmet / Nuez Blindada) está correctamente registrada con bonos de +150 HP para wallnut', () => {
+  it('la nueva carta de subasta (knight_helmet / Nuez Blindada) está correctamente registrada con bonos de +350 HP para wallnut', () => {
     const itemDef = EQUIPPABLE_PLANT_ITEMS['knight_helmet']
     expect(itemDef).toBeDefined()
     expect(itemDef.targetPlantId).toBe('wallnut')
     expect(itemDef.name).toBe('Yelmo de Caballero')
-    expect(itemDef.statBonusText).toContain('+150 HP')
+    expect(itemDef.statBonusText).toContain('+350 HP')
     expect(itemDef.statBonusText).toContain('Defensa de Acero')
 
-    // Probar aplicación de stats en nivel 0 (base de Wallnut + 150 HP)
+    // Probar aplicación de stats en nivel 0 (base de Wallnut + 350 HP)
     const baseWallnut = PLANT_CONFIGS.wallnut
     const scaledBase = getScaledPlantConfig('wallnut', 0, 'knight_helmet')
 
-    expect(scaledBase.maxHp).toBe(baseWallnut.maxHp + 150)
+    expect(scaledBase.maxHp).toBe(baseWallnut.maxHp + 350)
     expect(scaledBase.sprite).toBe('/game-assets/auction/knight_wallnut.png')
     expect(scaledBase.icon).toBe('/game-assets/auction/knight_wallnut.png')
     expect(scaledBase.packetActive).toBe('/game-assets/auction/knight_wallnut.png')

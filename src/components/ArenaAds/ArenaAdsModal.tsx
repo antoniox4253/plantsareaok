@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   ArenaAdsManager,
   ARENA_ADS_ENTRY_FEE_GOLD,
+  ARENA_ADS_ENTRY_FEE_GEMS,
   type ArenaAdsRun,
   type ArenaAdsPlantOption,
   type ArenaAdsLoot,
@@ -16,7 +17,9 @@ interface ArenaAdsModalProps {
   isOpen: boolean
   onClose: () => void
   userGold: number
+  userGems?: number
   onDeductGold: (amount: number) => boolean
+  onDeductGems?: (amount: number) => boolean
   onStartArenaAdsBattle: (run: ArenaAdsRun) => void
   onClaimLoot: (loot: ArenaAdsLoot) => void
 }
@@ -25,7 +28,9 @@ export default function ArenaAdsModal({
   isOpen,
   onClose,
   userGold,
+  userGems = 0,
   onDeductGold,
+  onDeductGems,
   onStartArenaAdsBattle,
   onClaimLoot,
 }: ArenaAdsModalProps) {
@@ -73,18 +78,24 @@ export default function ArenaAdsModal({
 
   if (!isOpen) return null
 
-  // Iniciar nueva expedición por 100 de Oro con validación autoritativa en Backend
-  const handleStartNewRun = async () => {
-    if (userGold < ARENA_ADS_ENTRY_FEE_GOLD) {
+  // Iniciar nueva expedición (100 Oro -> 1x multiplicador, o 200 Gemas -> 2x multiplicador)
+  const handleStartNewRun = async (paymentType: 'gold' | 'gems' = 'gold') => {
+    if (paymentType === 'gold' && userGold < ARENA_ADS_ENTRY_FEE_GOLD) {
       soundManager.playSound('click', 0.5)
       alert(`Oro insuficiente. Necesitas al menos ${ARENA_ADS_ENTRY_FEE_GOLD} de Oro 🪙 para entrar a Arena ADS.`)
+      return
+    }
+
+    if (paymentType === 'gems' && userGems < ARENA_ADS_ENTRY_FEE_GEMS) {
+      soundManager.playSound('click', 0.5)
+      alert(`Gemas insuficientes. Necesitas al menos ${ARENA_ADS_ENTRY_FEE_GEMS} Gemas 💎 para la entrada potenciada con 2X de botín.`)
       return
     }
 
     setIsProcessing(true)
     try {
       // 1. Validación y deducción autoritativa en base de datos Supabase
-      const backendRes = await arenaAdsService.enterArenaAds()
+      const backendRes = await arenaAdsService.enterArenaAds(paymentType)
       if (!backendRes.success) {
         soundManager.playSound('click', 0.5)
         alert(backendRes.error || 'No se pudo procesar la entrada en el servidor.')
@@ -93,10 +104,14 @@ export default function ArenaAdsModal({
       }
 
       // 2. Descontar en el estado local de inventario
-      onDeductGold(ARENA_ADS_ENTRY_FEE_GOLD)
+      if (paymentType === 'gold') {
+        onDeductGold(ARENA_ADS_ENTRY_FEE_GOLD)
+      } else if (onDeductGems) {
+        onDeductGems(ARENA_ADS_ENTRY_FEE_GEMS)
+      }
 
       soundManager.playSound('victory', 0.6)
-      const newRun = ArenaAdsManager.startNewRun()
+      const newRun = ArenaAdsManager.startNewRun(paymentType)
       setActiveRun(newRun)
       setActiveView('prep')
       setChosenAdvantageType('none')
@@ -113,13 +128,13 @@ export default function ArenaAdsModal({
     setActiveView('prep')
   }
 
-  // Elegir Recompensa como ventaja (MUTUAMENTE EXCLUYENTE CON PLANTA)
-  const handleSelectRewardAdvantage = (reward: ArenaAdsRewardOption) => {
+  // Elegir Recompensas como ventaja (MUTUAMENTE EXCLUYENTE CON PLANTA)
+  const handleSelectRewardAdvantage = (rewards: ArenaAdsRewardOption[]) => {
     if (!activeRun) return
     soundManager.playSound('click', 0.5)
     const updated = ArenaAdsManager.applyAdvantageChoice(activeRun, {
       type: 'reward',
-      option: reward,
+      options: rewards,
     })
     setActiveRun({ ...updated })
     setChosenAdvantageType('reward')
@@ -147,8 +162,8 @@ export default function ArenaAdsModal({
       soundManager.playSound('victory', 0.8)
       const loot = { ...activeRun.accumulatedRewards }
 
-      // 1. Acreditar en backend Supabase (oro, gemas, e items de cultivo)
-      await arenaAdsService.claimLoot(loot)
+      // 1. Acreditar en backend Supabase con multiplicador
+      await arenaAdsService.claimLoot(loot, activeRun.multiplier)
 
       // 2. Acreditar ítems de cultivo en localStorage
       if (loot.items && Object.keys(loot.items).length > 0) {
@@ -201,10 +216,20 @@ export default function ArenaAdsModal({
               <span>🪙</span>
               <strong>{userGold}</strong>
             </div>
+            <div className="arena-ads-badge arena-ads-badge--gems" title="Tu saldo de Gemas">
+              <span>💎</span>
+              <strong>{userGems}</strong>
+            </div>
             {activeRun && (
               <div className="arena-ads-badge arena-ads-badge--level" title="Nivel actual en mazmorra">
                 <span>⚔️</span>
                 <strong>Nivel {activeRun.level}</strong>
+              </div>
+            )}
+            {activeRun?.multiplier === 2 && (
+              <div className="arena-ads-badge" style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff', border: '1px solid #c084fc' }} title="Multiplicador x2 Activo">
+                <span>⚡</span>
+                <strong>2X BOTÍN</strong>
               </div>
             )}
             <button type="button" className="arena-ads-close-btn" onClick={onClose} title="Cerrar">
@@ -273,7 +298,7 @@ export default function ArenaAdsModal({
                   </div>
 
                   <p className="arena-ads-run-desc">
-                    Tienes una expedición activa. Puedes continuar luchando o retirarte para reclamar tu botín acumulado.
+                    Tienes una expedición activa {activeRun.multiplier === 2 ? '⚡ con MULTIPLICADOR 2X' : ''}. Puedes continuar luchando o retirarte para reclamar tu botín acumulado.
                   </p>
 
                   {totalAccumulatedLoot && (
@@ -300,16 +325,16 @@ export default function ArenaAdsModal({
                   </h3>
                   <div className="arena-ads-rules-grid">
                     <div className="arena-ads-rule-item">
-                      <strong>1. Entrada 100 🪙:</strong> Inicia tu expedición infinita contra bots.
+                      <strong>1. Opciones de Entrada:</strong> 100 🪙 Oro (1x botín) o 200 💎 Gemas (⚡ 2x botín).
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>2. Preparación:</strong> Elige Botín extra O Reforzar mazo (1 sola opción).
+                      <strong>2. Preparación:</strong> Elige Botín Extra O Reforzar Mazo (1 sola opción por nivel).
                     </div>
                     <div className="arena-ads-rule-item">
                       <strong>3. 🌻 Girasol Fijo:</strong> Siempre presente en tu mazo de 5 cartas.
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>4. ⚠️ Retírate a Tiempo:</strong> ¡Si caes derrotado pierdes todo tu botín!
+                      <strong>4. 👑 Ítems Exclusivos:</strong> Salen desde el Nivel 10 cada 5 niveles (sólo 5 unidades cada uno).
                     </div>
                   </div>
                 </div>
@@ -338,6 +363,11 @@ export default function ArenaAdsModal({
             {/* Ticker Slim de Instrucciones */}
             <div className="arena-ads-prep-ticker">
               <span className="arena-ads-prep-level-badge">⚔️ NIVEL {activeRun?.level}</span>
+              {activeRun?.multiplier === 2 && (
+                <span style={{ background: '#7c3aed', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
+                  ⚡ MULTIPLICADOR 2X ACTIVO
+                </span>
+              )}
               <span className="arena-ads-prep-instruction">
                 Elige <strong>1 SOLA OPCIÓN</strong> para este nivel: 🎁 Botín Extra <em>O</em> 🌱 Reforzar Mazo
               </span>
@@ -352,12 +382,12 @@ export default function ArenaAdsModal({
                 }`}
                 onClick={() =>
                   activeRun?.currentPrepChoice &&
-                  handleSelectRewardAdvantage(activeRun.currentPrepChoice.rewardOption)
+                  handleSelectRewardAdvantage(activeRun.currentPrepChoice.rewardOptions)
                 }
               >
                 <div className="arena-ads-choice-header">
                   <span className="arena-ads-choice-title">
-                    <span>🎁</span> Opción A: Botín Extra
+                    <span>🎁</span> Opción A: Botín Extra ({activeRun?.currentPrepChoice?.rewardOptions.length || 1})
                   </span>
                   <span
                     className={`arena-ads-choice-indicator ${
@@ -369,15 +399,29 @@ export default function ArenaAdsModal({
                 </div>
 
                 {activeRun?.currentPrepChoice && (
-                  <div className="arena-ads-reward-preview">
-                    <span className="arena-ads-reward-icon">
-                      {activeRun.currentPrepChoice.rewardOption.icon}
-                    </span>
-                    <strong className="arena-ads-reward-val">
-                      {activeRun.currentPrepChoice.rewardOption.label}
-                    </strong>
-                    <span className="arena-ads-reward-desc">
-                      Se suma a tu botín • Tu mazo combate con plantas estándar
+                  <div className="arena-ads-reward-preview" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+                      {activeRun.currentPrepChoice.rewardOptions.map((opt, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            background: opt.isExclusiveItem ? 'rgba(234, 179, 8, 0.25)' : 'rgba(15, 23, 42, 0.6)',
+                            border: opt.isExclusiveItem ? '1px solid #facc15' : '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '8px',
+                            padding: '4px 8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '12px',
+                          }}
+                        >
+                          <span style={{ fontSize: '16px' }}>{opt.icon}</span>
+                          <strong style={{ color: opt.isExclusiveItem ? '#facc15' : '#fff' }}>{opt.label}</strong>
+                        </div>
+                      ))}
+                    </div>
+                    <span className="arena-ads-reward-desc" style={{ textAlign: 'center', marginTop: '4px' }}>
+                      Se sumará a tu botín acumulado • Tu mazo combatirá con plantas estándar
                     </span>
                   </div>
                 )}
@@ -451,27 +495,19 @@ export default function ArenaAdsModal({
                         } ${isSelected ? 'arena-ads-plant-option-item--selected' : ''}`}
                         onClick={() => handleSelectPlantAdvantage(plantOpt)}
                       >
-                        <div className="arena-ads-plant-info">
-                          <img
-                            src={cfg?.icon || cfg?.sprite || '/game-assets/greenfoot/peashooterpacket1.webp'}
-                            alt={plantOpt.name}
-                            className="arena-ads-plant-icon"
-                          />
-                          <div className="arena-ads-plant-names">
-                            <span className="arena-ads-plant-name">
-                              {cfg?.name || plantOpt.name}{' '}
-                              <strong style={{ color: plantOpt.isFused ? '#c084fc' : '#4ade80' }}>
-                                ⭐{plantOpt.level}
-                              </strong>
-                            </span>
-                            <span className="arena-ads-plant-fused-badge">
-                              {plantOpt.description}
-                            </span>
-                          </div>
+                        <span className="arena-ads-plant-stars">⭐{plantOpt.level}</span>
+                        <img
+                          src={cfg?.icon || cfg?.sprite}
+                          alt={plantOpt.name}
+                          className="arena-ads-plant-thumb"
+                        />
+                        <div className="arena-ads-plant-meta">
+                          <span className="arena-ads-plant-name">{plantOpt.name}</span>
+                          <span className="arena-ads-plant-desc">{plantOpt.description}</span>
                         </div>
-                        <button type="button" className="arena-ads-plant-select-btn">
-                          {isSelected ? '✓ ACTIVA' : 'ELEGIR'}
-                        </button>
+                        {isSelected && (
+                          <span className="arena-ads-plant-check">✓</span>
+                        )}
                       </div>
                     )
                   })}
@@ -479,21 +515,20 @@ export default function ArenaAdsModal({
               </div>
             </div>
 
-            {/* Mazo Sincronizado en Tiempo Real con Indicadores de Estrellas */}
-            {activeRun?.deck && (
-              <div className="arena-ads-deck-preview">
-                <div className="arena-ads-deck-preview-title">
-                  <span>🃏 Tu Mazo (Nivel {activeRun.level}):</span>
-                  <span className="arena-ads-deck-preview-sub">
-                    🌻 Girasol fijo • {chosenAdvantageType === 'plant' ? 'Planta sincronizada' : '4 aleatorias'}
-                  </span>
-                </div>
-                <div className="arena-ads-deck-cards-row">
+            {/* PREVISUALIZACIÓN HORIZONTAL SLIM DEL MAZO ACTIVO */}
+            {activeRun && (
+              <div className="arena-ads-deck-preview-bar">
+                <span className="arena-ads-deck-bar-label">
+                  TU MAZO (5 CARTAS):
+                </span>
+                <div className="arena-ads-deck-strip">
                   {activeRun.deck.map((card, idx) => {
-                    const cfg = (PLANT_CONFIGS as any)[card.plantId] || PLANT_CONFIGS.peashooter
+                    const cfg = PLANT_CONFIGS[card.plantId]
+                    if (!cfg) return null
                     const isSunflower = card.plantId === 'sunflower'
-                    const isFused = Boolean(card.statRolls && card.statRolls.length > 0)
-                    const cardStars = card.level || (isFused ? card.statRolls?.length : 1)
+                    const cardStars = card.level || 1
+                    const isFused = (card.statRolls?.length || 0) > 0 || cardStars > 1
+
                     return (
                       <div
                         key={`${card.plantId}-${idx}`}
@@ -552,14 +587,31 @@ export default function ArenaAdsModal({
                     </button>
                   </>
                 ) : (
-                  <button
-                    type="button"
-                    className="arena-ads-btn arena-ads-btn--primary"
-                    onClick={handleStartNewRun}
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? '⏳ PROCESANDO...' : '🎮 PLAY / ENTRAR (100 🪙)'}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="arena-ads-btn arena-ads-btn--primary"
+                      onClick={() => handleStartNewRun('gold')}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? '⏳ PROCESANDO...' : '🎮 ENTRAR (100 🪙 ORO)'}
+                    </button>
+                    <button
+                      type="button"
+                      className="arena-ads-btn"
+                      style={{
+                        background: 'linear-gradient(180deg, #9333ea 0%, #7e22ce 100%)',
+                        border: '2px solid #c084fc',
+                        color: '#ffffff',
+                        boxShadow: '0 0 12px rgba(168, 85, 247, 0.4)',
+                        fontWeight: 800,
+                      }}
+                      onClick={() => handleStartNewRun('gems')}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? '⏳ PROCESANDO...' : '⚡ ENTRAR (200 💎) [2X BOTÍN]'}
+                    </button>
+                  </>
                 )}
               </div>
             </>

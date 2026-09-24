@@ -284,6 +284,14 @@ export default function Marketplace({
         'witch_hat',
         'knight_helmet',
         'energy_potion_5',
+        'sunflower_glasses',
+        'cactus_armor',
+        'superman_suit',
+        'spiderman_suit',
+        'batman_suit',
+        'ironman_suit',
+        'gold_24k',
+        'samurai_armor',
       ]
       order.forEach((fId) => {
         const qty = Number(farmingItems[fId] || 0)
