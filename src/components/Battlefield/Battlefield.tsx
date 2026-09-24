@@ -2494,7 +2494,8 @@ export default function Battlefield({
                     ? true
                     : !isCellOccupied
                 )
-                const previewPlantConfig = !isLaneLocked && isPlantCard && isPlantDestination ? selectedCardConfig : null
+                const isPrepInstantRestricted = matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && (selectedCard === 'jalapeno' || selectedCard === 'iceberglettuce')
+                const previewPlantConfig = !isLaneLocked && isPlantCard && isPlantDestination && !isPrepInstantRestricted ? selectedCardConfig : null
 
                 const handleCellAction = () => {
                   if (isLaneLocked || !isPlantDestination) return
@@ -2557,12 +2558,21 @@ export default function Battlefield({
                         resolvedSlot = slot >= 0 ? slot : 0
                       }
 
-                      if (matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && carta === 'jalapeno') {
-                        setRaidPrepNotice('⚠️ Jalapeño es de acción inmediata: úsalo durante el combate activo para arrasar un carril.')
-                        setTimeout(() => setRaidPrepNotice(null), 4000)
-                        soundManager.playSound('click', 0.3)
-                        setSelectedCard(null, null)
-                        return
+                      if (matchMode === 'clan_fortress' && clanRaidPhase === 'prep') {
+                        if (carta === 'jalapeno') {
+                          setRaidPrepNotice('⚠️ Jalapeño es de acción inmediata: úsalo durante el combate activo para arrasar un carril.')
+                          setTimeout(() => setRaidPrepNotice(null), 4000)
+                          soundManager.playSound('click', 0.3)
+                          setSelectedCard(null, null)
+                          return
+                        }
+                        if (carta === 'iceberglettuce') {
+                          setRaidPrepNotice('⚠️ Lechuga de Hielo es de acción inmediata: úsala durante el combate activo para congelar a los rivales.')
+                          setTimeout(() => setRaidPrepNotice(null), 4000)
+                          soundManager.playSound('click', 0.3)
+                          setSelectedCard(null, null)
+                          return
+                        }
                       }
 
                       const nextSeq = roomId ? ordenRef.current + 1 : undefined

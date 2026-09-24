@@ -1333,8 +1333,8 @@ export function useGameEngine() {
       // En fase de preparación (Fortaleza / Asalto previo):
       // La planta se materializa de inmediato en reposo sin desfasajes de tiempo ni combate activo.
       if (isPrepPhaseRef.current) {
-        if (card === 'jalapeno') {
-          // Jalapeño es de acción inmediata: no se permite plantar en el tablero durante preparación
+        if (card === 'jalapeno' || card === 'iceberglettuce') {
+          // Jalapeño y Lechuga de Hielo son de acción inmediata: no se permite plantar en el tablero durante preparación
           return null
         }
         state.sunBank -= config.cost

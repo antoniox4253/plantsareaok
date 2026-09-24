@@ -164,6 +164,63 @@ export function generateSingleRewardItem(
     }
   }
 
+  // ── REGLA ESTRICTA NIVELES 1 AL 5: CERO GEMAS, SOLO RECURSOS DE CULTIVO Y CRAFTING ──
+  // Agua, Fertilizante, Fragmentos de Pala, Fragmentos de Espantapájaros y Pesticida
+  if (level <= 5) {
+    const resourceRoll = Math.random()
+    if (resourceRoll < 0.30) {
+      // Agua (30%)
+      const baseWater = randomPick(WATER_POOL)
+      const amount = baseWater * multiplier
+      return {
+        type: 'item',
+        amount,
+        itemId: 'water',
+        label: multiplier === 2 ? `+${amount} Agua (2X)` : `+${amount} Agua`,
+        icon: '💧',
+      }
+    } else if (resourceRoll < 0.60) {
+      // Fertilizante (30%)
+      const baseFertilizer = randomPick(FERTILIZER_POOL)
+      const amount = baseFertilizer * multiplier
+      return {
+        type: 'item',
+        amount,
+        itemId: 'fertilizer',
+        label: multiplier === 2 ? `+${amount} Fertilizante (2X)` : `+${amount} Fertilizante`,
+        icon: '🌱',
+      }
+    } else if (resourceRoll < 0.75) {
+      // Fragmento de Pala (15%) - Cantidad siempre 1
+      return {
+        type: 'item',
+        amount: 1,
+        itemId: 'shovel_fragment',
+        label: '+1 Fragmento de Pala',
+        icon: '⛏️',
+      }
+    } else if (resourceRoll < 0.90) {
+      // Fragmento de Espantapájaros (15%) - Cantidad siempre 1
+      return {
+        type: 'item',
+        amount: 1,
+        itemId: 'scarecrow_fragment',
+        label: '+1 Frag. Espantapájaros',
+        icon: '🌾',
+      }
+    } else {
+      // Pesticida (10%) - Cantidad siempre 1
+      return {
+        type: 'item',
+        amount: 1,
+        itemId: 'pesticide',
+        label: '+1 Pesticida',
+        icon: '🧴',
+      }
+    }
+  }
+
+  // ── NIVELES 6 EN ADELANTE: Comienzan a salir Oro y Gemas balanceadas ──
   const categoryRoll = Math.random()
   if (categoryRoll < 0.35) {
     // Oro (35%)
@@ -177,8 +234,9 @@ export function generateSingleRewardItem(
       icon: '🪙',
     }
   } else if (categoryRoll < 0.65) {
-    // Gemas (30%)
-    const baseGems = randomPick(GEMS_POOL)
+    // Gemas (30% a partir de nivel 6+)
+    const gemsPool = level < 10 ? [1, 2, 3] : GEMS_POOL
+    const baseGems = randomPick(gemsPool)
     const amount = baseGems * multiplier
     return {
       type: 'gems',
@@ -212,7 +270,7 @@ export function generateSingleRewardItem(
   } else {
     // Consumibles / Fragmentos especiales (15%) - Cantidad siempre 1, NUNCA se duplican
     const specialPick = Math.random()
-    if (specialPick < 0.35) {
+    if (specialPick < 0.28) {
       return {
         type: 'item',
         amount: 1,
@@ -220,13 +278,21 @@ export function generateSingleRewardItem(
         label: '+1 Fragmento de Pala',
         icon: '⛏️',
       }
-    } else if (specialPick < 0.7) {
+    } else if (specialPick < 0.56) {
       return {
         type: 'item',
         amount: 1,
         itemId: 'scarecrow_fragment',
         label: '+1 Frag. Espantapájaros',
         icon: '🌾',
+      }
+    } else if (specialPick < 0.80) {
+      return {
+        type: 'item',
+        amount: 1,
+        itemId: 'pesticide',
+        label: '+1 Pesticida',
+        icon: '🧴',
       }
     } else {
       return {
@@ -390,12 +456,12 @@ export function generateLevelPrep(
     fusedPool = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
   }
 
-  // ── SORTEO DE EVENTO ALEATORIO (40% Botín vs 60% Reforzar Plantas) ───────────
+  // ── SORTEO DE EVENTO ALEATORIO (50% Botín vs 50% Reforzar Plantas) ───────────
   // En múltiplos de 10 (10, 20, 30...) es SIEMPRE 'reward' para garantizar el cofre de skin exclusiva
   const isMilestoneEvery10 = level >= 10 && level % 10 === 0
   const eventType: 'reward' | 'plant' = isMilestoneEvery10
     ? 'reward'
-    : Math.random() < 0.40
+    : Math.random() < 0.50
     ? 'reward'
     : 'plant'
 

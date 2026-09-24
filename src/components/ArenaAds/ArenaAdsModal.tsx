@@ -49,10 +49,17 @@ export default function ArenaAdsModal({
     if (typeof document !== 'undefined') return isFullscreen()
     return false
   })
+  const [isManualFullscreen, setIsManualFullscreen] = useState<boolean>(false)
+
+  const isEffectiveFullscreen = isFullscreenActive || isManualFullscreen
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreenActive(isFullscreen())
+      const active = isFullscreen()
+      setIsFullscreenActive(active)
+      if (!active) {
+        setIsManualFullscreen(false)
+      }
     }
     handleFullscreenChange()
     document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -337,8 +344,14 @@ export default function ArenaAdsModal({
   }
 
   return createPortal(
-    <div className="arena-ads-backdrop" onClick={onClose}>
-      <div className="arena-ads-modal" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`arena-ads-backdrop ${isEffectiveFullscreen ? 'arena-ads-backdrop--fullscreen' : ''}`}
+      onClick={onClose}
+    >
+      <div
+        className={`arena-ads-modal ${isEffectiveFullscreen ? 'arena-ads-modal--fullscreen' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* HEADER COMPACTO CON BOTÓN DE CERRAR INDEPENDIENTE */}
         <div className="arena-ads-header">
           <div className="arena-ads-title-box">
@@ -378,11 +391,12 @@ export default function ArenaAdsModal({
               className="arena-ads-fullscreen-btn"
               onClick={() => {
                 soundManager.playSound('click', 0.4)
+                setIsManualFullscreen((prev) => !prev)
                 toggleFullscreen()
               }}
-              title={isFullscreenActive ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              title={isEffectiveFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
             >
-              {isFullscreenActive ? '🗗' : '⛶'}
+              {isEffectiveFullscreen ? '🗗' : '⛶'}
             </button>
 
             <button type="button" className="arena-ads-close-btn" onClick={onClose} title="Cerrar">

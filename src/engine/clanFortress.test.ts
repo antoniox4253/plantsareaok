@@ -727,6 +727,24 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(sql).toContain('v_target_clan.base_hp := COALESCE(v_target_clan.max_base_hp, 500)')
     expect(sql).not.toContain('v_candidate_ids[1 + floor(random()')
   })
+
+  it('restricción de fase previa: no permite plantar cartas instantáneas (jalapeño ni lechuga de hielo)', () => {
+    const instantCards = ['jalapeno', 'iceberglettuce']
+    const isInstantBlockedInPrep = (card: string, isPrep: boolean) => {
+      if (isPrep && (card === 'jalapeno' || card === 'iceberglettuce')) {
+        return true
+      }
+      return false
+    }
+
+    for (const card of instantCards) {
+      expect(isInstantBlockedInPrep(card, true)).toBe(true)
+      expect(isInstantBlockedInPrep(card, false)).toBe(false)
+    }
+    expect(isInstantBlockedInPrep('peashooter', true)).toBe(false)
+    expect(isInstantBlockedInPrep('repeater', true)).toBe(false)
+    expect(isInstantBlockedInPrep('wallnut', true)).toBe(false)
+  })
 })
 
 

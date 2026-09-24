@@ -372,30 +372,32 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     }
   })
 
-  it('14. Balance económico de drops: Early Gold [4..12], Late Gold [15..50], Gemas [1..3] y bonus de victoria escalado', () => {
-    // 1. Verificar drops tempranos (niveles 1..9)
-    for (let i = 0; i < 50; i++) {
-      const reward1x = generateSingleRewardItem(1, 1, false)
-      if (reward1x.type === 'gold') {
-        expect(reward1x.amount).toBeGreaterThanOrEqual(4)
-        expect(reward1x.amount).toBeLessThanOrEqual(12)
-      } else if (reward1x.type === 'gems') {
-        expect(reward1x.amount).toBeGreaterThanOrEqual(1)
-        expect(reward1x.amount).toBeLessThanOrEqual(5)
-      }
-
-      // Con multiplicador 2X
-      const reward2x = generateSingleRewardItem(1, 2, false)
-      if (reward2x.type === 'gold') {
-        expect(reward2x.amount).toBeGreaterThanOrEqual(8)
-        expect(reward2x.amount).toBeLessThanOrEqual(24)
-      } else if (reward2x.type === 'gems') {
-        expect(reward2x.amount).toBeGreaterThanOrEqual(2)
-        expect(reward2x.amount).toBeLessThanOrEqual(10)
+  it('14. Balance económico de drops: Niveles 1-5 solo recursos (cero gemas), Niveles 6-9 Gold [4..12] y Gemas [1..3]', () => {
+    // 1. Verificar drops de niveles 1 a 5: EXCLUSIVAMENTE recursos de huerto y crafting
+    const validLevel1to5Items = new Set(['water', 'fertilizer', 'shovel_fragment', 'scarecrow_fragment', 'pesticide'])
+    for (let lvl = 1; lvl <= 5; lvl++) {
+      for (let i = 0; i < 20; i++) {
+        const reward = generateSingleRewardItem(lvl, 1, false)
+        expect(reward.type).toBe('item')
+        expect(validLevel1to5Items.has(reward.itemId!)).toBe(true)
+        // CERO GEMAS en los primeros 5 niveles
+        expect(reward.type).not.toBe('gems')
       }
     }
 
-    // 2. Verificar drops avanzados (niveles 10+)
+    // 2. Verificar drops de niveles 6 a 9: ya pueden salir Oro temprano [4..12] y Gemas [1..3]
+    for (let i = 0; i < 50; i++) {
+      const reward6to9 = generateSingleRewardItem(6, 1, false)
+      if (reward6to9.type === 'gold') {
+        expect(reward6to9.amount).toBeGreaterThanOrEqual(4)
+        expect(reward6to9.amount).toBeLessThanOrEqual(12)
+      } else if (reward6to9.type === 'gems') {
+        expect(reward6to9.amount).toBeGreaterThanOrEqual(1)
+        expect(reward6to9.amount).toBeLessThanOrEqual(3)
+      }
+    }
+
+    // 3. Verificar drops avanzados (niveles 10+)
     for (let i = 0; i < 50; i++) {
       const rewardLate1x = generateSingleRewardItem(10, 1, false)
       if (rewardLate1x.type === 'gold') {
@@ -404,7 +406,7 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
       }
     }
 
-    // 3. Verificar bonos de victoria por nivel
+    // 4. Verificar bonos de victoria por nivel
     let run = ArenaAdsManager.startNewRun()
     run.level = 1
     run = ArenaAdsManager.completeLevelVictory(run)
@@ -525,4 +527,30 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
       }
     }
   })
+
+  it('19. Selección de Evento: 50% Botín vs 50% Refuerzo de Planta, y 100% Botín en piso 10/20/30', () => {
+    // En niveles múltiplos de 10 siempre debe salir 'reward'
+    for (const lvl of [10, 20, 30, 40]) {
+      for (let i = 0; i < 20; i++) {
+        const prep = generateLevelPrep(lvl)
+        expect(prep.eventType).toBe('reward')
+      }
+    }
+
+    // En niveles normales, se distribuye en torno al 50% botín y 50% planta
+    let rewardCount = 0
+    let plantCount = 0
+    const totalSamples = 1000
+    for (let i = 0; i < totalSamples; i++) {
+      const prep = generateLevelPrep(7)
+      if (prep.eventType === 'reward') rewardCount++
+      else if (prep.eventType === 'plant') plantCount++
+    }
+    // Debe estar razonablemente cerca de 500 (entre 420 y 580 con 1000 muestras)
+    expect(rewardCount).toBeGreaterThan(420)
+    expect(rewardCount).toBeLessThan(580)
+    expect(plantCount).toBeGreaterThan(420)
+    expect(plantCount).toBeLessThan(580)
+  })
 })
+
