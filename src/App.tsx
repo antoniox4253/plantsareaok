@@ -49,7 +49,7 @@ import { isStrategicPlaytestAuthorized } from './utils/strategicPlaytestAuth'
 import { useOnlineUsers } from './hooks/useOnlineUsers'
 import { VIP_PASS_PRECIO_GEMAS } from './utils/gameConstants'
 import type { ArenaAdsRun, ArenaAdsLoot } from './utils/arenaAdsManager'
-import { ArenaAdsManager, getBotStatsForLevel } from './utils/arenaAdsManager'
+import { ArenaAdsManager, getBotStatsForLevel, EXCLUSIVE_ARENA_ITEM_IDS } from './utils/arenaAdsManager'
 import { arenaAdsService } from './services/arenaAdsService'
 import { resetPopunderQuota } from './utils/arenaAdsNetwork'
 import {
@@ -1100,10 +1100,10 @@ function App() {
     setScreen('battle')
   }
 
-  const handleClaimArenaAdsLoot = async (loot: ArenaAdsLoot, multiplier: number = 1) => {
-    const finalMult = Math.max(1, multiplier)
-    const finalGold = (loot.gold || 0) * finalMult
-    const finalGems = (loot.gems || 0) * finalMult
+  const handleClaimArenaAdsLoot = async (loot: ArenaAdsLoot, _multiplier: number = 1) => {
+    // Las recompensas acumuladas en loot YA TIENEN aplicado el multiplicador en cada cofre
+    const finalGold = Math.max(0, loot.gold || 0)
+    const finalGems = Math.max(0, loot.gems || 0)
 
     if (finalGold > 0) {
       addGold(finalGold)
@@ -1116,7 +1116,8 @@ function App() {
         const raw = localStorage.getItem('plant_arena_farming_inventory') || '{}'
         const inv = JSON.parse(raw)
         for (const [itemId, qty] of Object.entries(loot.items)) {
-          inv[itemId] = (inv[itemId] || 0) + Number(qty || 0) * finalMult
+          const addedQty = Number(qty || 0)
+          inv[itemId] = (inv[itemId] || 0) + addedQty
         }
         localStorage.setItem('plant_arena_farming_inventory', JSON.stringify(inv))
         window.dispatchEvent(new Event('plant_arena_farming_inventory_updated'))
@@ -1143,7 +1144,11 @@ function App() {
       }).catch((err) => console.warn('[App] Error al registrar run en claim:', err))
     }
     try {
-      await arenaAdsService.claimLoot(loot, finalMult)
+      await arenaAdsService.claimLoot({
+        gold: finalGold,
+        gems: finalGems,
+        items: loot.items,
+      }, 1)
     } catch (e) {
       console.error('Error al reclamar botin de arena ads en backend:', e)
     }

@@ -707,6 +707,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
         // distintos.
         // ============================================================
 
+        const valorSol = planta.equippedItem === 'sunflower_glasses' ? SUN_VALUE + 5 : SUN_VALUE
+
         for (let i = 0; i < cuantos; i++) {
           const contador = state.entityCounter++
           const variacionX = nextFloat(state.rng)
@@ -722,7 +724,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
               x: planta.x + (variacionX * 6 - 3),
               y: 20 + planta.lane * 20 + 5,
               targetY: 20 + planta.lane * 20 + 10,
-              value: SUN_VALUE,
+              value: valorSol,
               createdAt: state.tick,
             })
           }
@@ -734,7 +736,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           sumarSoles(
             state,
             'p2',
-            cuantos * SUN_VALUE
+            cuantos * valorSol
           )
         }
       }

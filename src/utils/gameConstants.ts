@@ -504,12 +504,21 @@ export function getScaledPlantConfig(
   // ── BONIFICACIÓN EXCLUSIVA DE ÍTEMS EQUIPABLES ────────────────────────────────
   if (equippedItem && EQUIPPABLE_PLANT_ITEMS[equippedItem]) {
     const itemDef = EQUIPPABLE_PLANT_ITEMS[equippedItem]
-    if (itemDef.targetPlantId === plantId) {
+    if (isPlantMatchingTarget(itemDef.targetPlantId, plantId)) {
       return itemDef.applyStats(scaled)
     }
   }
 
   return scaled
+}
+
+export function isPlantMatchingTarget(targetPlantId: PlantId | string, plantId: PlantId | string): boolean {
+  if (targetPlantId === plantId) return true
+  if (targetPlantId === 'chomper' && (plantId === 'cactus' || plantId === 'chomper')) return true
+  if (targetPlantId === 'cactus' && (plantId === 'chomper' || plantId === 'cactus')) return true
+  if (targetPlantId === 'garlic' && (plantId === 'squash' || plantId === 'garlic')) return true
+  if (targetPlantId === 'squash' && (plantId === 'garlic' || plantId === 'squash')) return true
+  return false
 }
 
 export interface EquippablePlantItemDef {
@@ -720,11 +729,11 @@ export function getEquippableItemDef(itemId?: string | null): EquippablePlantIte
 }
 
 export function getEquippableItemForPlant(plantId: PlantId): EquippablePlantItemDef | undefined {
-  return Object.values(EQUIPPABLE_PLANT_ITEMS).find((item) => item.targetPlantId === plantId)
+  return Object.values(EQUIPPABLE_PLANT_ITEMS).find((item) => isPlantMatchingTarget(item.targetPlantId, plantId))
 }
 
 export function getEquippableItemsForPlant(plantId: PlantId): EquippablePlantItemDef[] {
-  return Object.values(EQUIPPABLE_PLANT_ITEMS).filter((item) => item.targetPlantId === plantId)
+  return Object.values(EQUIPPABLE_PLANT_ITEMS).filter((item) => isPlantMatchingTarget(item.targetPlantId, plantId))
 }
 
 /**

@@ -21,6 +21,7 @@ import {
   P1_COLUMNS,
   INITIAL_BASE_HP,
   getScaledPlantConfig,
+  isPlantMatchingTarget,
   type PlantStatKey,
 } from '../../utils/gameConstants'
 import type { ClanFortressMatchOpponent, ClanFortressRaidResult } from '../../types/game'
@@ -687,7 +688,7 @@ export default function Battlefield({
 
         // 1. Coincidencia por ID de instancia exacto en el slot
         if (pIds[idx]) {
-          const f = pInst.find((i) => i.instanceId === pIds[idx] && i.plantId === plantId)
+          const f = pInst.find((i) => i.instanceId === pIds[idx] && isPlantMatchingTarget(i.plantId, plantId))
           if (f) {
             level = f.level ?? (f.statRolls?.length || 0)
             statRolls = f.statRolls || []
@@ -697,7 +698,7 @@ export default function Battlefield({
 
         // 2. Coincidencia de respaldo por plantId
         if (statRolls.length === 0 && !equippedItem) {
-          const copies = pInst.filter((i) => i.plantId === plantId)
+          const copies = pInst.filter((i) => isPlantMatchingTarget(i.plantId, plantId))
           if (copies.length > 0) {
             copies.sort((a, b) => {
               if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
@@ -2443,14 +2444,14 @@ export default function Battlefield({
                             const pIds: string[] = sIds ? JSON.parse(sIds) : []
                             const pInst: any[] = sInst ? JSON.parse(sInst) : []
                             if (selectedSlotIndex !== null && pIds[selectedSlotIndex]) {
-                              const f = pInst.find((i) => i.instanceId === pIds[selectedSlotIndex] && i.plantId === selectedCard)
+                              const f = pInst.find((i) => i.instanceId === pIds[selectedSlotIndex] && isPlantMatchingTarget(i.plantId, selectedCard))
                               if (f) {
                                 r = f.statRolls || []
                                 eq = f.equippedItem || null
                               }
                             }
                             if (r.length === 0 && !eq) {
-                              const copies = pInst.filter((i) => i.plantId === selectedCard)
+                              const copies = pInst.filter((i) => isPlantMatchingTarget(i.plantId, selectedCard))
                               if (copies.length > 0) {
                                 copies.sort((a, b) => {
                                   if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {

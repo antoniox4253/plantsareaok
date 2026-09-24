@@ -7,6 +7,7 @@ import {
   getScaledPlantConfig,
   getEquippableItemDef,
   getEquippableItemsForPlant,
+  isPlantMatchingTarget,
   type PlantStatKey,
 } from '../../utils/gameConstants'
 import background from '../../assets/images/background.webp'
@@ -298,7 +299,7 @@ export default function Jardin({
       soundManager.playSound('click', 0.5)
       let targetId = instanceId
       if (targetId.startsWith('inst_base_')) {
-        const real = plantInstances.find((p) => p.plantId === targetPlantId && !p.instanceId.startsWith('inst_base_'))
+        const real = plantInstances.find((p) => isPlantMatchingTarget(targetPlantId, p.plantId) && !p.instanceId.startsWith('inst_base_'))
         if (real) targetId = real.instanceId
       }
       const res = await onEquipItem(targetId, itemId)
@@ -584,8 +585,8 @@ export default function Jardin({
 
     const targetPlantId = itemDef.targetPlantId
     const plantConfig = PLANT_CONFIGS[targetPlantId]
-    const targetInstances = plantInstances.filter((p) => p.plantId === targetPlantId)
-    const hasPlantUnlocked = unlockedPlants.includes(targetPlantId) || targetInstances.length > 0
+    const targetInstances = plantInstances.filter((p) => isPlantMatchingTarget(targetPlantId, p.plantId))
+    const hasPlantUnlocked = unlockedPlants.some((pid) => isPlantMatchingTarget(targetPlantId, pid)) || targetInstances.length > 0
 
     if (!hasPlantUnlocked) {
       setFuseAlert({
@@ -1269,7 +1270,7 @@ export default function Jardin({
                 const qty = Number(farmingItems[itemId] || 0)
                 const equippableDef = getEquippableItemDef(itemId)
                 const isEquippedAnywhere = equippableDef
-                  ? plantInstances.some((p) => p.plantId === equippableDef.targetPlantId && p.equippedItem === itemId)
+                  ? plantInstances.some((p) => isPlantMatchingTarget(equippableDef.targetPlantId, p.plantId) && p.equippedItem === itemId)
                   : false
 
                 // Los ítems equipables sólo se muestran si se han obtenido (en inventario o equipados)

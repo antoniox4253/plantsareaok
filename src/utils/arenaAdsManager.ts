@@ -91,11 +91,15 @@ export const EXCLUSIVE_ARENA_ITEMS: Array<{ id: FarmingItemId; label: string; ic
   { id: 'samurai_armor', label: 'Armadura Samurái (Squash)', icon: '⚔️', targetPlant: 'garlic' },
 ]
 
-// Pools de recompensas exactas solicitadas por el usuario
-const GOLD_POOL = [20, 50, 75, 100]
-const GEMS_POOL = [2, 5, 7, 12, 15, 18]
-const WATER_POOL = [3, 5, 7, 10]
-const FERTILIZER_POOL = [2, 5, 8, 12]
+export const EXCLUSIVE_ARENA_ITEM_IDS = new Set<FarmingItemId>(
+  EXCLUSIVE_ARENA_ITEMS.map((item) => item.id)
+)
+
+// Pools de recompensas balanceadas para economía sana
+const GOLD_POOL = [10, 15, 25, 40]
+const GEMS_POOL = [1, 2, 3, 5]
+const WATER_POOL = [2, 3, 4, 6]
+const FERTILIZER_POOL = [1, 2, 3, 5]
 
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array]
@@ -118,17 +122,26 @@ export function setCachedStock(stock: Record<string, { remainingStock: number }>
 
 /**
  * Genera una sola opción individual de recompensa según los pools balanceados
+ *
+ * REGLAS ESTRICTAS DE BALANCE:
+ * 1. Ítems exclusivos / Skins SOLO pueden salir cada 10 niveles (Nivel 10, 20, 30, 40...).
+ * 2. Si level % 10 !== 0, la probabilidad es estrictamente 0% (nunca en niveles intermedios).
+ * 3. En niveles múltiplos de 10, es una tirada de probabilidad aleatoria (45% de drop).
+ * 4. Los ítems exclusivos y consumibles NUNCA se multiplican por 2 (siempre cantidad = 1).
+ * 5. Solo los recursos (Oro, Gemas, Agua, Fertilizante) se duplican por el multiplicador 2X.
  */
-export function generateSingleRewardItem(level: number, multiplier = 1): ArenaAdsRewardOption {
-  // A partir de nivel 10:
-  // - Niveles de Hito / Jefes (cada 5 niveles: 10, 15, 20, 25...): 65% probabilidad de drop exclusivo
-  // - Otros niveles >= 10: 15% probabilidad de drop exclusivo
-  // - Niveles < 10: 0% probabilidad de drop exclusivo
-  const isMilestoneLevel = level >= 10 && level % 5 === 0
-  const exclusiveChance = isMilestoneLevel ? 0.65 : (level >= 10 ? 0.15 : 0)
+export function generateSingleRewardItem(
+  level: number,
+  multiplier = 1,
+  allowExclusiveItem = false,
+  excludedItemIds?: Set<string>
+): ArenaAdsRewardOption {
+  const isMilestoneEvery10 = level >= 10 && level % 10 === 0
+  const canRollExclusive = allowExclusiveItem && isMilestoneEvery10
 
-  if (exclusiveChance > 0 && Math.random() < exclusiveChance) {
+  if (canRollExclusive && Math.random() < 0.45) {
     const availablePool = EXCLUSIVE_ARENA_ITEMS.filter((item) => {
+      if (excludedItemIds && excludedItemIds.has(item.id)) return false
       if (!_cachedStock) return true
       const s = _cachedStock[item.id]
       return s ? s.remainingStock > 0 : true
@@ -138,7 +151,7 @@ export function generateSingleRewardItem(level: number, multiplier = 1): ArenaAd
       const exclusive = randomPick(availablePool)
       return {
         type: 'item',
-        amount: 1, // Los ítems exclusivos se entregan de 1 en 1
+        amount: 1, // Los ítems exclusivos SIEMPRE son exactamente 1, NUNCA se duplican
         itemId: exclusive.id,
         label: `${exclusive.label} (Exclusivo)`,
         icon: exclusive.icon,
@@ -151,81 +164,71 @@ export function generateSingleRewardItem(level: number, multiplier = 1): ArenaAd
   if (categoryRoll < 0.35) {
     // Oro (35%)
     const baseGold = randomPick(GOLD_POOL)
-    const amount = baseGold
-    const displayAmount = baseGold * multiplier
+    const amount = baseGold * multiplier
     return {
       type: 'gold',
       amount,
-      label: multiplier === 2 ? `+${displayAmount} Oro (2X)` : `+${amount} Oro`,
+      label: multiplier === 2 ? `+${amount} Oro (2X)` : `+${amount} Oro`,
       icon: '🪙',
     }
   } else if (categoryRoll < 0.65) {
     // Gemas (30%)
     const baseGems = randomPick(GEMS_POOL)
-    const amount = baseGems
-    const displayAmount = baseGems * multiplier
+    const amount = baseGems * multiplier
     return {
       type: 'gems',
       amount,
-      label: multiplier === 2 ? `+${displayAmount} Gemas (2X)` : `+${amount} Gemas`,
+      label: multiplier === 2 ? `+${amount} Gemas (2X)` : `+${amount} Gemas`,
       icon: '💎',
     }
   } else if (categoryRoll < 0.85) {
     // Agua o Fertilizante (20%)
     if (Math.random() < 0.5) {
       const baseWater = randomPick(WATER_POOL)
-      const amount = baseWater
-      const displayAmount = baseWater * multiplier
+      const amount = baseWater * multiplier
       return {
         type: 'item',
         amount,
         itemId: 'water',
-        label: multiplier === 2 ? `+${displayAmount} Agua (2X)` : `+${amount} Agua`,
+        label: multiplier === 2 ? `+${amount} Agua (2X)` : `+${amount} Agua`,
         icon: '💧',
       }
     } else {
       const baseFertilizer = randomPick(FERTILIZER_POOL)
-      const amount = baseFertilizer
-      const displayAmount = baseFertilizer * multiplier
+      const amount = baseFertilizer * multiplier
       return {
         type: 'item',
         amount,
         itemId: 'fertilizer',
-        label: multiplier === 2 ? `+${displayAmount} Fertilizante (2X)` : `+${amount} Fertilizante`,
+        label: multiplier === 2 ? `+${amount} Fertilizante (2X)` : `+${amount} Fertilizante`,
         icon: '🌱',
       }
     }
   } else {
-    // Consumibles / Fragmentos especiales (15%)
+    // Consumibles / Fragmentos especiales (15%) - Cantidad siempre 1, NUNCA se duplican
     const specialPick = Math.random()
     if (specialPick < 0.35) {
-      const amount = 1
-      const displayAmount = 1 * multiplier
       return {
         type: 'item',
-        amount,
+        amount: 1,
         itemId: 'shovel_fragment',
-        label: multiplier === 2 ? `+${displayAmount} Frag. Pala (2X)` : `+${amount} Fragmento de Pala`,
+        label: '+1 Fragmento de Pala',
         icon: '⛏️',
       }
     } else if (specialPick < 0.7) {
-      const amount = 1
-      const displayAmount = 1 * multiplier
       return {
         type: 'item',
-        amount,
+        amount: 1,
         itemId: 'scarecrow_fragment',
-        label: multiplier === 2 ? `+${displayAmount} Espantapájaros (2X)` : `+${amount} Frag. Espantapájaros`,
+        label: '+1 Frag. Espantapájaros',
         icon: '🌾',
       }
     } else {
-      const amount = 1
-      const displayAmount = 1 * multiplier
       return {
         type: 'item',
-        amount,
+        amount: 1,
         itemId: 'energy_potion_5',
-        label: multiplier === 2 ? `+${displayAmount} Poción (+5⚡) (2X)` : `+${amount} Poción de Energía (5⚡)`,
+        label: '+1 Poción de Energía (5⚡)',
         icon: '⚡',
       }
     }
@@ -237,8 +240,18 @@ export function generateSingleRewardItem(level: number, multiplier = 1): ArenaAd
  * - Niveles 1-9: 1 recompensa.
  * - Niveles 10-19: 2 recompensas.
  * - Niveles 20+: 3 recompensas (añade 1 cada 10 niveles).
+ *
+ * REGLAS ESTRICTAS DE BALANCE:
+ * - Ítems exclusivos / Skins SOLO pueden salir cada 10 niveles (10, 20, 30...).
+ * - Máximo 1 ítem exclusivo por lote de recompensas (el resto son recursos).
+ * - Máximo 1 ítem exclusivo acumulado por cada 10 niveles (Math.floor(level / 10)).
  */
-export function generateRewardOptions(level: number, multiplier = 1): ArenaAdsRewardOption[] {
+export function generateRewardOptions(
+  level: number,
+  multiplier = 1,
+  existingExclusiveCount = 0,
+  existingExclusiveIds?: Set<string>
+): ArenaAdsRewardOption[] {
   let count = 1
   if (level >= 10 && level < 20) {
     count = 2
@@ -246,9 +259,20 @@ export function generateRewardOptions(level: number, multiplier = 1): ArenaAdsRe
     count = 2 + Math.floor((level - 10) / 10)
   }
 
+  const isMilestoneEvery10 = level >= 10 && level % 10 === 0
+  const maxAllowedExclusives = Math.floor(level / 10)
+  const canAttemptExclusive = isMilestoneEvery10 && existingExclusiveCount < maxAllowedExclusives
+
+  let hasExclusiveInBatch = false
   const list: ArenaAdsRewardOption[] = []
+
   for (let i = 0; i < count; i++) {
-    list.push(generateSingleRewardItem(level, multiplier))
+    const allowExclusiveForSlot = canAttemptExclusive && !hasExclusiveInBatch
+    const opt = generateSingleRewardItem(level, multiplier, allowExclusiveForSlot, existingExclusiveIds)
+    if (opt.isExclusiveItem) {
+      hasExclusiveInBatch = true
+    }
+    list.push(opt)
   }
   return list
 }
@@ -320,9 +344,24 @@ export function generateFusedPlantOptions(level: number, availablePool?: PlantId
 export function generateLevelPrep(
   level: number,
   multiplier = 1,
-  currentDeck?: CartaDeMazo[]
+  currentDeck?: CartaDeMazo[],
+  accumulatedItems?: Partial<Record<FarmingItemId, number>>
 ): ArenaAdsPrepChoice {
-  const rewardOptions = generateRewardOptions(level, multiplier)
+  const existingExclusiveCount = accumulatedItems
+    ? Object.keys(accumulatedItems).filter(
+        (id) => EXCLUSIVE_ARENA_ITEM_IDS.has(id as FarmingItemId) && (accumulatedItems[id as FarmingItemId] || 0) > 0
+      ).length
+    : 0
+
+  const existingExclusiveIds = new Set<string>(
+    accumulatedItems
+      ? Object.keys(accumulatedItems).filter(
+          (id) => EXCLUSIVE_ARENA_ITEM_IDS.has(id as FarmingItemId) && (accumulatedItems[id as FarmingItemId] || 0) > 0
+        )
+      : []
+  )
+
+  const rewardOptions = generateRewardOptions(level, multiplier, existingExclusiveCount, existingExclusiveIds)
 
   // Obtener IDs de plantas actualmente presentes en el mazo activo (+ sunflower)
   const deckPlantIds = new Set<string>((currentDeck || []).map((c) => c.plantId))
@@ -628,8 +667,19 @@ export class ArenaAdsManager {
         } else if (opt.type === 'gems') {
           run.accumulatedRewards.gems += opt.amount
         } else if (opt.type === 'item' && opt.itemId) {
-          run.accumulatedRewards.items[opt.itemId] =
-            (run.accumulatedRewards.items[opt.itemId] || 0) + opt.amount
+          if (EXCLUSIVE_ARENA_ITEM_IDS.has(opt.itemId)) {
+            const currentExclusiveCount = Object.keys(run.accumulatedRewards.items).filter(
+              (id) => EXCLUSIVE_ARENA_ITEM_IDS.has(id as FarmingItemId) && (run.accumulatedRewards.items[id as FarmingItemId] || 0) > 0
+            ).length
+            const maxAllowedExclusives = Math.floor(run.level / 10)
+
+            if (currentExclusiveCount < maxAllowedExclusives || (run.accumulatedRewards.items[opt.itemId] || 0) > 0) {
+              run.accumulatedRewards.items[opt.itemId] = 1
+            }
+          } else {
+            run.accumulatedRewards.items[opt.itemId] =
+              (run.accumulatedRewards.items[opt.itemId] || 0) + opt.amount
+          }
         }
       }
     }
@@ -643,7 +693,7 @@ export class ArenaAdsManager {
    */
   static completeLevelVictory(run: ArenaAdsRun): ArenaAdsRun {
     run.status = 'level_cleared'
-    const bonusGold = 20 + run.level * 10
+    const bonusGold = 5 + run.level * 2
     run.accumulatedRewards.gold += bonusGold
     this.saveRun(run)
     return run
@@ -657,7 +707,7 @@ export class ArenaAdsManager {
     run.reviveCount = (run.reviveCount || 0) + 1
     run.status = 'prep'
     const deckToUse = run.baseDeck && run.baseDeck.length > 0 ? run.baseDeck : run.deck
-    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier, deckToUse)
+    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier, deckToUse, run.accumulatedRewards.items)
     this.saveRun(run)
     return run
   }
@@ -673,7 +723,7 @@ export class ArenaAdsManager {
     const newBaseDeck = buildArenaAdsDeck()
     run.baseDeck = newBaseDeck
     run.deck = newBaseDeck
-    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier, newBaseDeck)
+    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier, newBaseDeck, run.accumulatedRewards.items)
 
     this.saveRun(run)
     return run

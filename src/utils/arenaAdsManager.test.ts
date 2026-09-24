@@ -3,6 +3,9 @@ import {
   ArenaAdsManager,
   buildArenaAdsDeck,
   generateLevelPrep,
+  generateRewardOptions,
+  generateSingleRewardItem,
+  EXCLUSIVE_ARENA_ITEM_IDS,
   getBotStatsForLevel,
   ARENA_ADS_ENTRY_FEE_GOLD,
   ARENA_ADS_STORAGE_KEY,
@@ -314,5 +317,132 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     expect(freshRun.status).toBe('prep')
     expect(freshRun.accumulatedRewards.gold).toBe(0)
     expect(freshRun.accumulatedRewards.gems).toBe(0)
+  })
+
+  it('12. Ítems exclusivos SOLO pueden aparecer cada 10 niveles (Nivel 10, 20, 30...), NUNCA en niveles intermedios como 11 o 12', () => {
+    // Probar 100 tiradas en niveles que NO son múltiplos de 10 (ej. nivel 1, 5, 9, 11, 12, 15, 19)
+    const nonMilestoneLevels = [1, 5, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 25]
+    for (const lvl of nonMilestoneLevels) {
+      for (let i = 0; i < 20; i++) {
+        const reward = generateSingleRewardItem(lvl, 1, true)
+        if (reward.type === 'item' && reward.itemId) {
+          expect(EXCLUSIVE_ARENA_ITEM_IDS.has(reward.itemId)).toBe(false)
+        }
+        expect(reward.isExclusiveItem).toBeFalsy()
+      }
+    }
+
+    // En nivel 10, SÍ puede aparecer con probabilidad aleatoria
+    let foundExclusiveAt10 = false
+    for (let i = 0; i < 200; i++) {
+      const reward = generateSingleRewardItem(10, 1, true)
+      if (reward.isExclusiveItem) {
+        foundExclusiveAt10 = true
+        expect(EXCLUSIVE_ARENA_ITEM_IDS.has(reward.itemId!)).toBe(true)
+        expect(reward.amount).toBe(1) // Siempre 1
+        break
+      }
+    }
+    expect(foundExclusiveAt10).toBe(true)
+  })
+
+  it('13. En niveles múltiplos de 10, máximo 1 ítem exclusivo por lote y NUNCA se duplica con multiplicador 2X', () => {
+    // En nivel 10 con multiplicador 2X (200 gemas)
+    for (let testRun = 0; testRun < 50; testRun++) {
+      const options = generateRewardOptions(10, 2, 0)
+      expect(options.length).toBe(2) // 2 opciones en nivel 10
+
+      const exclusiveCount = options.filter((o) => o.isExclusiveItem).length
+      // En ningún caso puede haber 2 ítems exclusivos en el mismo lote
+      expect(exclusiveCount).toBeLessThanOrEqual(1)
+
+      // Si salió uno exclusivo, su amount debe ser 1 estrictamente
+      for (const opt of options) {
+        if (opt.isExclusiveItem) {
+          expect(opt.amount).toBe(1)
+        }
+      }
+    }
+
+    // Si la run ya tiene 1 exclusivo acumulado en nivel 10 a 19, no puede salir otro
+    for (let i = 0; i < 50; i++) {
+      const options = generateRewardOptions(10, 2, 1) // existingExclusiveCount = 1
+      const exclusiveCount = options.filter((o) => o.isExclusiveItem).length
+      expect(exclusiveCount).toBe(0)
+    }
+  })
+
+  it('14. Balance económico de drops: Oro [10..40], Gemas [1..5] y bonus de victoria moderado', () => {
+    // Verificar que los montos base de oro y gemas nunca excedan los límites sanos
+    for (let i = 0; i < 100; i++) {
+      const reward1x = generateSingleRewardItem(1, 1, false)
+      if (reward1x.type === 'gold') {
+        expect(reward1x.amount).toBeGreaterThanOrEqual(10)
+        expect(reward1x.amount).toBeLessThanOrEqual(40)
+      } else if (reward1x.type === 'gems') {
+        expect(reward1x.amount).toBeGreaterThanOrEqual(1)
+        expect(reward1x.amount).toBeLessThanOrEqual(5)
+      }
+
+      // Con multiplicador 2X
+      const reward2x = generateSingleRewardItem(1, 2, false)
+      if (reward2x.type === 'gold') {
+        expect(reward2x.amount).toBeGreaterThanOrEqual(20)
+        expect(reward2x.amount).toBeLessThanOrEqual(80)
+      } else if (reward2x.type === 'gems') {
+        expect(reward2x.amount).toBeGreaterThanOrEqual(2)
+        expect(reward2x.amount).toBeLessThanOrEqual(10)
+      }
+    }
+
+    // Verificar bono de victoria en nivel 1 y nivel 12
+    let run = ArenaAdsManager.startNewRun()
+    run.level = 1
+    run = ArenaAdsManager.completeLevelVictory(run)
+    expect(run.accumulatedRewards.gold).toBe(7) // 5 + 1 * 2 = 7
+
+    run.accumulatedRewards.gold = 0
+    run.level = 12
+    run = ArenaAdsManager.completeLevelVictory(run)
+    expect(run.accumulatedRewards.gold).toBe(29) // 5 + 12 * 2 = 29
+  })
+
+  it('15. Compatibilidad y estadísticas de combate de todos los ítems y skins con alias de plantas', async () => {
+    const { getScaledPlantConfig, EQUIPPABLE_PLANT_ITEMS, isPlantMatchingTarget } = await import('./gameConstants')
+    const { crearPlantaPropia, createBattleState } = await import('../engine/simulate')
+    const { NIVEL_POR_DEFECTO } = await import('../engine/bot')
+
+    // Probar Cactus con Armadura de Cactus (tanto con id 'chomper' como 'cactus')
+    expect(isPlantMatchingTarget('chomper', 'cactus')).toBe(true)
+    expect(isPlantMatchingTarget('cactus', 'chomper')).toBe(true)
+    const cactusScaled = getScaledPlantConfig('chomper', [], 'cactus_armor')
+    expect(cactusScaled.damage).toBe((35) + 15)
+    expect(cactusScaled.sprite).toBe('/game-assets/skins/armaduraconcactus.webp')
+
+    // Probar Squash con Armadura Samurái (tanto con id 'garlic' como 'squash')
+    expect(isPlantMatchingTarget('garlic', 'squash')).toBe(true)
+    expect(isPlantMatchingTarget('squash', 'garlic')).toBe(true)
+    const squashScaled = getScaledPlantConfig('garlic', [], 'samurai_armor')
+    expect(squashScaled.cooldownMs).toBe(Math.max(1000, 7500 - 1500))
+    expect(squashScaled.sprite).toBe('/game-assets/skins/squashsamurai.webp')
+
+    // Probar Nuez con Batman (+200 HP)
+    const wallnutBatman = getScaledPlantConfig('wallnut', [], 'batman_suit')
+    expect(wallnutBatman.maxHp).toBe(1200 + 200)
+    expect(wallnutBatman.sprite).toBe('/game-assets/skins/papabatman.webp')
+
+    // Probar Nuez con Bañado en Oro 24K (+300 HP, -2s recarga)
+    const wallnutGold = getScaledPlantConfig('wallnut', [], 'gold_24k')
+    expect(wallnutGold.maxHp).toBe(1200 + 300)
+    expect(wallnutGold.cooldownMs).toBe(Math.max(1000, 15000 - 2000))
+    expect(wallnutGold.sprite).toBe('/game-assets/skins/papa24k.webp')
+
+    // Probar creación de entidad en combate con sprite y vida bonificada
+    const state = createBattleState(999, false, false, NIVEL_POR_DEFECTO, 'auth-v2')
+    const batmanEntity = crearPlantaPropia(state, 'wallnut', 0, 2, [], 1, 'batman_suit')
+    expect(batmanEntity.maxHp).toBe(1400)
+    expect(batmanEntity.hp).toBe(1400)
+    expect(batmanEntity.spriteOverride).toBe('/game-assets/skins/papabatman.webp')
+    expect(batmanEntity.equippedItem).toBe('batman_suit')
   })
 })

@@ -85,6 +85,7 @@ import {
   getScaledPlantConfig,
   getEligibleStatsForPlant,
   getEquippableItemDef,
+  isPlantMatchingTarget,
   type PlantStatKey,
 } from '../utils/gameConstants'
 import { soundManager } from '../utils/audioManager'
@@ -1199,7 +1200,7 @@ export function useGameEngine() {
           try {
             const savedInstances = localStorage.getItem('plant_arena_plant_instances')
             const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
-            const found = parsedInstances.find((i) => i.plantId === card && i.equippedItem)
+            const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, card) && i.equippedItem)
             if (found) {
               cardEquippedItem = found.equippedItem || null
             }
@@ -1207,7 +1208,7 @@ export function useGameEngine() {
         }
         if (cardEquippedItem) {
           const itemDef = getEquippableItemDef(cardEquippedItem)
-          if (!itemDef || itemDef.targetPlantId !== card) {
+          if (!itemDef || !isPlantMatchingTarget(itemDef.targetPlantId, card)) {
             cardEquippedItem = null
           }
         }
@@ -1242,7 +1243,7 @@ export function useGameEngine() {
 
           if (slotIdx !== null && parsedDeckInstIds[slotIdx]) {
             const targetInstId = parsedDeckInstIds[slotIdx]
-            const found = parsedInstances.find((i) => i.instanceId === targetInstId && i.plantId === card)
+            const found = parsedInstances.find((i) => i.instanceId === targetInstId && isPlantMatchingTarget(i.plantId, card))
             if (found) {
               rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
               cardLevel = found.level || 0
@@ -1250,7 +1251,7 @@ export function useGameEngine() {
             }
           }
           if (rolls.length === 0 && !cardEquippedItem) {
-            const copies = parsedInstances.filter((i) => i.plantId === card)
+            const copies = parsedInstances.filter((i) => isPlantMatchingTarget(i.plantId, card))
             if (copies.length > 0) {
               copies.sort((a, b) => {
                 if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
@@ -1271,7 +1272,7 @@ export function useGameEngine() {
 
         if (cardEquippedItem) {
           const itemDef = getEquippableItemDef(cardEquippedItem)
-          if (!itemDef || itemDef.targetPlantId !== card) {
+          if (!itemDef || !isPlantMatchingTarget(itemDef.targetPlantId, card)) {
             cardEquippedItem = null
           }
         }

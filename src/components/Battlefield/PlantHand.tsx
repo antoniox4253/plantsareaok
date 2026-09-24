@@ -8,6 +8,7 @@ import {
   getEligibleStatsForPlant,
   getScaledPlantConfig,
   getEquippableItemDef,
+  isPlantMatchingTarget,
   type PlantStatKey,
 } from '../../utils/gameConstants'
 const sunIcon = '/game-assets/greenfoot/sun1.webp'
@@ -25,14 +26,14 @@ function getSlotCardLevelData(
   let resolvedFromDeck = false
 
   if (deckCards && deckCards.length > 0) {
-    if (slotIndex >= 0 && deckCards[slotIndex] && deckCards[slotIndex].plantId === plantId) {
+    if (slotIndex >= 0 && deckCards[slotIndex] && isPlantMatchingTarget(deckCards[slotIndex].plantId, plantId)) {
       const rawLvl = deckCards[slotIndex].level || 0
       rolls = (deckCards[slotIndex].statRolls as PlantStatKey[]) || []
       level = Math.max(rawLvl, rolls.length)
       equippedItem = deckCards[slotIndex].equippedItem || null
       resolvedFromDeck = true
     } else {
-      const found = deckCards.find((c) => c.plantId === plantId)
+      const found = deckCards.find((c) => isPlantMatchingTarget(c.plantId, plantId))
       if (found) {
         const rawLvl = found.level || 0
         rolls = (found.statRolls as PlantStatKey[]) || []
@@ -58,8 +59,8 @@ function getSlotCardLevelData(
 
       if (slotIndex >= 0 && parsedDeckInstIds[slotIndex]) {
         const targetInstId = parsedDeckInstIds[slotIndex]
-        // CRITICAL FIX: MUST verify i.plantId === plantId so we don't adopt stats or item from another plant in that slot!
-        const found = parsedInstances.find((i) => i.instanceId === targetInstId && i.plantId === plantId)
+        // CRITICAL FIX: MUST verify matching plantId so we don't adopt stats or item from another plant in that slot!
+        const found = parsedInstances.find((i) => i.instanceId === targetInstId && isPlantMatchingTarget(i.plantId, plantId))
         if (found) {
           level = found.level || 0
           rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
@@ -68,7 +69,7 @@ function getSlotCardLevelData(
       }
 
       if (!equippedItem && rolls.length === 0) {
-        const copies = parsedInstances.filter((i) => i.plantId === plantId)
+        const copies = parsedInstances.filter((i) => isPlantMatchingTarget(i.plantId, plantId))
         if (copies.length > 0) {
           copies.sort((a, b) => {
             if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
@@ -85,7 +86,7 @@ function getSlotCardLevelData(
           if (!equippedItem) equippedItem = best.equippedItem || null
         }
       } else if (!equippedItem) {
-        const found = parsedInstances.find((i) => i.plantId === plantId && i.equippedItem)
+        const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, plantId) && i.equippedItem)
         if (found) {
           equippedItem = found.equippedItem || null
         }
@@ -115,7 +116,7 @@ function getSlotCardLevelData(
       try {
         const savedInstances = localStorage.getItem('plant_arena_plant_instances')
         const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
-        const found = parsedInstances.find((i) => i.plantId === plantId && i.equippedItem)
+        const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, plantId) && i.equippedItem)
         if (found) {
           equippedItem = found.equippedItem || null
         }
@@ -126,7 +127,7 @@ function getSlotCardLevelData(
   // BULLETPROOF CHECK: equippedItem MUST be compatible with this exact plantId
   if (equippedItem) {
     const itemDef = getEquippableItemDef(equippedItem)
-    if (!itemDef || itemDef.targetPlantId !== plantId) {
+    if (!itemDef || !isPlantMatchingTarget(itemDef.targetPlantId, plantId)) {
       equippedItem = null
     }
   }
