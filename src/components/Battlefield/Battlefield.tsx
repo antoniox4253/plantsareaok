@@ -50,7 +50,7 @@ import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { ArenaAdsManager } from '../../utils/arenaAdsManager'
 import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
 import { arenaAdsService } from '../../services/arenaAdsService'
-import { setCombatAdsBlocked } from '../../utils/arenaAdsNetwork'
+import { setCombatAdsBlocked, resetPopunderQuota } from '../../utils/arenaAdsNetwork'
 import './Battlefield.css'
 
 /** Un segundo antes de que el sol se recoja solo: momento de avisar. */
@@ -3472,6 +3472,7 @@ export default function Battlefield({
           isReviving={isRevivingArenaAds}
           onNextLevel={() => {
             setShowArenaAdsInterstitial(false)
+            resetPopunderQuota()
             if (onArenaAdsAdvance) {
               const nextRun = ArenaAdsManager.advanceToNextLevel(currentArenaAdsRun)
               onArenaAdsAdvance(nextRun)
@@ -3499,6 +3500,7 @@ export default function Battlefield({
               if (onArenaAdsRevive) {
                 onArenaAdsRevive(res.cost || 150)
               }
+              resetPopunderQuota()
               const revivedRun = ArenaAdsManager.reviveRun(currentArenaAdsRun)
               setCurrentArenaAdsRun(revivedRun)
               setShowArenaAdsInterstitial(false)

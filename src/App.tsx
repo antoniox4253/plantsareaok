@@ -51,6 +51,7 @@ import { VIP_PASS_PRECIO_GEMAS } from './utils/gameConstants'
 import type { ArenaAdsRun, ArenaAdsLoot } from './utils/arenaAdsManager'
 import { ArenaAdsManager, getBotStatsForLevel } from './utils/arenaAdsManager'
 import { arenaAdsService } from './services/arenaAdsService'
+import { resetPopunderQuota } from './utils/arenaAdsNetwork'
 import {
   trackPageView,
   type GameScreen,
@@ -1135,6 +1136,7 @@ function App() {
   }
 
   const handleArenaAdsAdvance = (run: ArenaAdsRun) => {
+    resetPopunderQuota()
     setArenaAdsRun(run)
     setReopenArenaAdsOnMenu(true)
     setScreen('menu')

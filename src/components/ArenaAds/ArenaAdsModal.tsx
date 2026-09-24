@@ -12,7 +12,7 @@ import {
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { soundManager } from '../../utils/audioManager'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
-import { activateArenaAdsNetwork, deactivateArenaAdsNetwork } from '../../utils/arenaAdsNetwork'
+import { activateArenaAdsNetwork, deactivateArenaAdsNetwork, resetPopunderQuota } from '../../utils/arenaAdsNetwork'
 import ArenaAdsNativeBanner from './ArenaAdsNativeBanner'
 import './ArenaAdsModal.css'
 
@@ -158,6 +158,7 @@ export default function ArenaAdsModal({
       }
 
       soundManager.playSound('victory', 0.6)
+      resetPopunderQuota()
       const newRun = ArenaAdsManager.startNewRun(paymentType)
       setActiveRun(newRun)
       setActiveView('prep')

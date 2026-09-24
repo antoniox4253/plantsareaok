@@ -5,6 +5,8 @@ import {
   loadArenaAdsNativeBanner,
   setCombatAdsBlocked,
   isCombatAdsBlocked,
+  resetPopunderQuota,
+  isPopunderQuotaReached,
   ARENA_ADS_POPUNDER_SRC,
   ARENA_ADS_SOCIALBAR_SRC,
   ARENA_ADS_NATIVE_SRC,
@@ -92,12 +94,18 @@ describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
       },
     }
 
+    const mockWindow = {
+      open: vi.fn((_url?: string) => ({ closed: false })),
+      addEventListener: vi.fn(),
+    }
+
     vi.stubGlobal('document', mockDocument)
-    vi.stubGlobal('window', {})
+    vi.stubGlobal('window', mockWindow)
   })
 
   afterEach(() => {
     deactivateArenaAdsNetwork(true)
+    resetPopunderQuota()
     vi.unstubAllGlobals()
   })
 
@@ -172,5 +180,29 @@ describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
     // Salir del combate desbloquea la red
     setCombatAdsBlocked(false)
     expect(isCombatAdsBlocked()).toBe(false)
+  })
+
+  it('6. Solo permite 1 popunder en toda la fase previa y bloquea popunders subsiguientes', () => {
+    resetPopunderQuota()
+    expect(isPopunderQuotaReached()).toBe(false)
+
+    activateArenaAdsNetwork()
+    expect((globalThis as any).document.getElementById('arena-ads-popunder-script')).not.toBeNull()
+
+    // Simular el primer popunder exitoso
+    const res1 = (globalThis as any).window.open('https://popunder.com')
+    expect(res1).not.toBeNull()
+    expect(isPopunderQuotaReached()).toBe(true)
+
+    // Clics subsiguientes intentando abrir popunders son estrictamente bloqueados
+    const res2 = (globalThis as any).window.open('https://spam-popunder.com')
+    expect(res2).toBeNull()
+
+    const res3 = (globalThis as any).window.open('https://another-ad.com')
+    expect(res3).toBeNull()
+
+    // Avanzar a una nueva fase previa reinicia la cuota exactamente a 1
+    resetPopunderQuota()
+    expect(isPopunderQuotaReached()).toBe(false)
   })
 })
