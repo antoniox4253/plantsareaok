@@ -24,7 +24,7 @@ interface ArenaAdsModalProps {
   onDeductGold: (amount: number) => boolean
   onDeductGems?: (amount: number) => boolean
   onStartArenaAdsBattle: (run: ArenaAdsRun) => void
-  onClaimLoot: (loot: ArenaAdsLoot) => void
+  onClaimLoot: (loot: ArenaAdsLoot, multiplier?: number) => void
 }
 
 export default function ArenaAdsModal({
@@ -174,29 +174,20 @@ export default function ArenaAdsModal({
     try {
       soundManager.playSound('victory', 0.8)
       const loot = { ...activeRun.accumulatedRewards }
+      const mult = activeRun.multiplier || 1
 
-      // 1. Acreditar en backend Supabase con multiplicador
-      await arenaAdsService.claimLoot(loot, activeRun.multiplier)
+      // Sincronizar centralizadamente en backend y perfiles
+      await onClaimLoot(loot, mult)
 
-      // 2. Acreditar ítems de cultivo en localStorage
-      if (loot.items && Object.keys(loot.items).length > 0) {
-        try {
-          const raw = localStorage.getItem('plant_arena_farming_inventory') || '{}'
-          const inv = JSON.parse(raw)
-          for (const [itemId, qty] of Object.entries(loot.items)) {
-            inv[itemId] = (inv[itemId] || 0) + Number(qty || 0)
-          }
-          localStorage.setItem('plant_arena_farming_inventory', JSON.stringify(inv))
-          window.dispatchEvent(new Event('plant_arena_farming_inventory_updated'))
-        } catch (e) {
-          console.error('Error al guardar items de cultivo en inventario:', e)
-        }
-      }
-
-      ArenaAdsManager.clearRun()
+      // Mostrar el resumen con el multiplicador aplicado para feedback visual exacto
+      setClaimSummary({
+        gold: (loot.gold || 0) * mult,
+        gems: (loot.gems || 0) * mult,
+        items: Object.fromEntries(
+          Object.entries(loot.items).map(([k, v]) => [k, (v || 0) * mult])
+        ),
+      })
       setActiveRun(null)
-      setClaimSummary(loot)
-      onClaimLoot(loot)
     } finally {
       setIsProcessing(false)
     }

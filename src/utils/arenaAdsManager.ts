@@ -130,43 +130,47 @@ export function generateSingleRewardItem(level: number, multiplier = 1): ArenaAd
   if (categoryRoll < 0.35) {
     // Oro (35%)
     const baseGold = randomPick(GOLD_POOL)
-    const amount = baseGold * multiplier
+    const amount = baseGold
+    const displayAmount = baseGold * multiplier
     return {
       type: 'gold',
       amount,
-      label: `+${amount} Oro`,
+      label: multiplier === 2 ? `+${displayAmount} Oro (2X)` : `+${amount} Oro`,
       icon: '🪙',
     }
   } else if (categoryRoll < 0.65) {
     // Gemas (30%)
     const baseGems = randomPick(GEMS_POOL)
-    const amount = baseGems * multiplier
+    const amount = baseGems
+    const displayAmount = baseGems * multiplier
     return {
       type: 'gems',
       amount,
-      label: `+${amount} Gemas`,
+      label: multiplier === 2 ? `+${displayAmount} Gemas (2X)` : `+${amount} Gemas`,
       icon: '💎',
     }
   } else if (categoryRoll < 0.85) {
     // Agua o Fertilizante (20%)
     if (Math.random() < 0.5) {
       const baseWater = randomPick(WATER_POOL)
-      const amount = baseWater * multiplier
+      const amount = baseWater
+      const displayAmount = baseWater * multiplier
       return {
         type: 'item',
         amount,
         itemId: 'water',
-        label: `+${amount} Agua`,
+        label: multiplier === 2 ? `+${displayAmount} Agua (2X)` : `+${amount} Agua`,
         icon: '💧',
       }
     } else {
       const baseFertilizer = randomPick(FERTILIZER_POOL)
-      const amount = baseFertilizer * multiplier
+      const amount = baseFertilizer
+      const displayAmount = baseFertilizer * multiplier
       return {
         type: 'item',
         amount,
         itemId: 'fertilizer',
-        label: `+${amount} Fertilizante`,
+        label: multiplier === 2 ? `+${displayAmount} Fertilizante (2X)` : `+${amount} Fertilizante`,
         icon: '🌱',
       }
     }
@@ -174,30 +178,33 @@ export function generateSingleRewardItem(level: number, multiplier = 1): ArenaAd
     // Consumibles / Fragmentos especiales (15%)
     const specialPick = Math.random()
     if (specialPick < 0.35) {
-      const amount = 1 * multiplier
+      const amount = 1
+      const displayAmount = 1 * multiplier
       return {
         type: 'item',
         amount,
         itemId: 'shovel_fragment',
-        label: `+${amount} Fragmento de Pala`,
+        label: multiplier === 2 ? `+${displayAmount} Frag. Pala (2X)` : `+${amount} Fragmento de Pala`,
         icon: '⛏️',
       }
     } else if (specialPick < 0.7) {
-      const amount = 1 * multiplier
+      const amount = 1
+      const displayAmount = 1 * multiplier
       return {
         type: 'item',
         amount,
         itemId: 'scarecrow_fragment',
-        label: `+${amount} Frag. Espantapájaros`,
+        label: multiplier === 2 ? `+${displayAmount} Espantapájaros (2X)` : `+${amount} Frag. Espantapájaros`,
         icon: '🌾',
       }
     } else {
-      const amount = 1 * multiplier
+      const amount = 1
+      const displayAmount = 1 * multiplier
       return {
         type: 'item',
         amount,
         itemId: 'energy_potion_5',
-        label: `+${amount} Poción de Energía (5⚡)`,
+        label: multiplier === 2 ? `+${displayAmount} Poción (+5⚡) (2X)` : `+${amount} Poción de Energía (5⚡)`,
         icon: '⚡',
       }
     }
@@ -553,7 +560,7 @@ export class ArenaAdsManager {
    */
   static completeLevelVictory(run: ArenaAdsRun): ArenaAdsRun {
     run.status = 'level_cleared'
-    const bonusGold = (20 + run.level * 10) * run.multiplier
+    const bonusGold = 20 + run.level * 10
     run.accumulatedRewards.gold += bonusGold
     this.saveRun(run)
     return run

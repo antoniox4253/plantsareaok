@@ -1099,19 +1099,23 @@ function App() {
     setScreen('battle')
   }
 
-  const handleClaimArenaAdsLoot = (loot: ArenaAdsLoot) => {
-    if (loot.gold > 0) {
-      addGold(loot.gold)
+  const handleClaimArenaAdsLoot = async (loot: ArenaAdsLoot, multiplier: number = 1) => {
+    const finalMult = Math.max(1, multiplier)
+    const finalGold = (loot.gold || 0) * finalMult
+    const finalGems = (loot.gems || 0) * finalMult
+
+    if (finalGold > 0) {
+      addGold(finalGold)
     }
-    if (loot.gems > 0) {
-      addUserTokens(loot.gems)
+    if (finalGems > 0) {
+      addUserTokens(finalGems)
     }
     if (loot.items && Object.keys(loot.items).length > 0) {
       try {
         const raw = localStorage.getItem('plant_arena_farming_inventory') || '{}'
         const inv = JSON.parse(raw)
         for (const [itemId, qty] of Object.entries(loot.items)) {
-          inv[itemId] = (inv[itemId] || 0) + Number(qty || 0)
+          inv[itemId] = (inv[itemId] || 0) + Number(qty || 0) * finalMult
         }
         localStorage.setItem('plant_arena_farming_inventory', JSON.stringify(inv))
         window.dispatchEvent(new Event('plant_arena_farming_inventory_updated'))
@@ -1119,7 +1123,11 @@ function App() {
         console.error('Error al guardar items de cultivo en inventario:', e)
       }
     }
-    void arenaAdsService.claimLoot(loot)
+    try {
+      await arenaAdsService.claimLoot(loot, finalMult)
+    } catch (e) {
+      console.error('Error al reclamar botin de arena ads en backend:', e)
+    }
     setArenaAdsRun(null)
     ArenaAdsManager.clearRun()
     void refreshFromServer()
@@ -1507,6 +1515,10 @@ function App() {
             arenaAdsRun={arenaAdsRun}
             onArenaAdsAdvance={handleArenaAdsAdvance}
             onArenaAdsRetreat={handleClaimArenaAdsLoot}
+            onArenaAdsRevive={(cost) => {
+              deductUserTokens(cost || 150)
+              void refreshFromServer()
+            }}
             onClanFortressComplete={() => {
               void refreshFromServer()
             }}

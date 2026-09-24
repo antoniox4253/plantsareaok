@@ -187,7 +187,8 @@ interface BattlefieldProps {
   matchMode?: 'ranked' | 'colosseum' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads'
   arenaAdsRun?: ArenaAdsRun | null
   onArenaAdsAdvance?: (run: ArenaAdsRun) => void
-  onArenaAdsRetreat?: (loot: ArenaAdsLoot) => void
+  onArenaAdsRetreat?: (loot: ArenaAdsLoot, multiplier?: number) => void
+  onArenaAdsRevive?: (costGems?: number) => void
   friendlyBetGems?: number
   colosseumConfig?: ColosseumMatchConfig | null
   tournamentOpponent?: { name: string; tournamentId: string } | null
@@ -279,6 +280,7 @@ export default function Battlefield({
   arenaAdsRun = null,
   onArenaAdsAdvance,
   onArenaAdsRetreat,
+  onArenaAdsRevive,
   treeLevels = null,
   treeSkins = null,
 }: BattlefieldProps) {
@@ -3432,7 +3434,7 @@ export default function Battlefield({
                     onClick={() => {
                       soundManager.playBgm('menu')
                       if (currentArenaAdsRun && onArenaAdsRetreat) {
-                        onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards)
+                        onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards, currentArenaAdsRun.multiplier || 1)
                       } else if (onBackToMenu) {
                         onBackToMenu()
                       }
@@ -3483,7 +3485,7 @@ export default function Battlefield({
                 onBackToMenu()
               }
             } else if (onArenaAdsRetreat) {
-              onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards)
+              onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards, currentArenaAdsRun.multiplier || 1)
             }
           }}
           onRevive={async () => {
@@ -3493,6 +3495,9 @@ export default function Battlefield({
               if (!res.success) {
                 alert(res.error || 'No se pudo revivir. Verifica tu saldo de Gemas.')
                 return
+              }
+              if (onArenaAdsRevive) {
+                onArenaAdsRevive(res.cost || 150)
               }
               const revivedRun = ArenaAdsManager.reviveRun(currentArenaAdsRun)
               setCurrentArenaAdsRun(revivedRun)
