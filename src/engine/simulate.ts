@@ -236,7 +236,8 @@ export function createBattleState(
   isFortressMode = false,
   initialAttackSuns?: number,
   allowedLanes?: number[],
-  fortressRoster?: PlantId[]
+  fortressRoster?: PlantId[],
+  initialDefenseSuns?: number
 ): GameState {
   return {
     tick: 0,
@@ -270,7 +271,7 @@ export function createBattleState(
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
     sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isFortressMode ? 200 : INITIAL_SUN),
-    p2SunBank: isFortressMode ? 500 : INITIAL_SUN,
+    p2SunBank: initialDefenseSuns !== undefined ? initialDefenseSuns : (isFortressMode ? 400 : INITIAL_SUN),
     plants: [],
     enemyPlants: [],
     projectiles: [],

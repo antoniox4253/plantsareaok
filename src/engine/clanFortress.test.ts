@@ -551,7 +551,8 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
       true,
       500,
       [0, 1, 2, 3, 4],
-      ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
+      ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower'],
+      500
     )
 
     // Supongamos que Jalapeño limpió el carril 2 por completo.
@@ -683,7 +684,8 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
       true,
       500,
       [0, 1, 2, 3, 4],
-      ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
+      ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower'],
+      500
     )
 
     expect(state.p2SunBank).toBe(500)

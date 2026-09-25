@@ -548,7 +548,16 @@ export function useGameEngine() {
       isFortress,
       initialAttackSuns,
       effectiveFortressLanesAllowed,
-      effectiveFortressRoster
+      effectiveFortressRoster,
+      isFortress
+        ? targetTreeLevel !== undefined
+          ? targetTreeLevel >= 4
+            ? 500
+            : targetTreeLevel === 3
+              ? 400
+              : 300
+          : 350
+        : undefined
     )
 
     // Helper para normalizar el carril defensivo al espacio de combate activo (0..effectiveLanes-1)

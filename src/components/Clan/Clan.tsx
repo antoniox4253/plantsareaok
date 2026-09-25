@@ -568,6 +568,13 @@ export default function Clan({
             icon: '⏳',
             type: 'error',
           })
+        } else if (errMsg.includes('DAILY_RAID_LIMIT_REACHED')) {
+          setActiveDialog({
+            title: 'Límite de Asaltos Alcanzado',
+            message: 'Has alcanzado el límite diario de 5 asaltos de fortaleza. El contador se reinicia todos los días a las 00:00 UTC.',
+            icon: '🛑',
+            type: 'warning',
+          })
         } else {
           setActiveDialog({
             title: 'Búsqueda de Partida',
