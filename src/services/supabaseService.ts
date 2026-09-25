@@ -4413,12 +4413,34 @@ export const SupabaseService = {
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
-      const { data, error } = await (supabase.rpc as any)('claim_pack_slot', {
+      try {
+        const { data: s } = await supabase.auth.getSession()
+        if (!s?.session) {
+          await supabase.auth.refreshSession().catch(() => null)
+        }
+      } catch (_) {}
+
+      let { data, error } = await (supabase.rpc as any)('claim_pack_slot', {
         p_slot_index: slotIndex,
       })
+
+      if (error && (error.message?.includes('permission denied') || error.message?.includes('NOT_AUTHENTICATED') || error.code === '42501')) {
+        const refreshed = await supabase.auth.refreshSession().catch(() => null)
+        if (refreshed?.data?.session) {
+          const retry = await (supabase.rpc as any)('claim_pack_slot', {
+            p_slot_index: slotIndex,
+          })
+          data = retry.data
+          error = retry.error
+        }
+      }
+
       if (error) {
         logError('claimPackSlot', error)
-        return { success: false, error: error.message }
+        const errMsg = error.message?.includes('NOT_AUTHENTICATED') || error.message?.includes('permission denied')
+          ? 'Tu sesión ha expirado o no estás autenticado. Por favor inicia sesión de nuevo.'
+          : error.message
+        return { success: false, error: errMsg }
       }
       return data
     } catch (e: any) {
@@ -4436,9 +4458,28 @@ export const SupabaseService = {
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
-      const { data, error } = await (supabase.rpc as any)('instant_unlock_pack_slot', {
+      try {
+        const { data: s } = await supabase.auth.getSession()
+        if (!s?.session) {
+          await supabase.auth.refreshSession().catch(() => null)
+        }
+      } catch (_) {}
+
+      let { data, error } = await (supabase.rpc as any)('instant_unlock_pack_slot', {
         p_slot_index: slotIndex,
       })
+
+      if (error && (error.message?.includes('permission denied') || error.message?.includes('NOT_AUTHENTICATED') || error.code === '42501')) {
+        const refreshed = await supabase.auth.refreshSession().catch(() => null)
+        if (refreshed?.data?.session) {
+          const retry = await (supabase.rpc as any)('instant_unlock_pack_slot', {
+            p_slot_index: slotIndex,
+          })
+          data = retry.data
+          error = retry.error
+        }
+      }
+
       if (error) {
         logError('instantUnlockPackSlot', error)
         return { success: false, error: error.message }
@@ -5291,9 +5332,28 @@ export const SupabaseService = {
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
-      const { data, error } = await (supabase.rpc as any)('instant_unlock_reward_pack', {
+      try {
+        const { data: s } = await supabase.auth.getSession()
+        if (!s?.session) {
+          await supabase.auth.refreshSession().catch(() => null)
+        }
+      } catch (_) {}
+
+      let { data, error } = await (supabase.rpc as any)('instant_unlock_reward_pack', {
         p_pack_id: packId,
       })
+
+      if (error && (error.message?.includes('permission denied') || error.message?.includes('NOT_AUTHENTICATED') || error.code === '42501')) {
+        const refreshed = await supabase.auth.refreshSession().catch(() => null)
+        if (refreshed?.data?.session) {
+          const retry = await (supabase.rpc as any)('instant_unlock_reward_pack', {
+            p_pack_id: packId,
+          })
+          data = retry.data
+          error = retry.error
+        }
+      }
+
       if (error) {
         logError('instantUnlockRewardPack', error)
         return { success: false, error: error.message }
@@ -5318,12 +5378,34 @@ export const SupabaseService = {
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
-      const { data, error } = await (supabase.rpc as any)('claim_reward_pack', {
+      try {
+        const { data: s } = await supabase.auth.getSession()
+        if (!s?.session) {
+          await supabase.auth.refreshSession().catch(() => null)
+        }
+      } catch (_) {}
+
+      let { data, error } = await (supabase.rpc as any)('claim_reward_pack', {
         p_pack_id: packId,
       })
+
+      if (error && (error.message?.includes('permission denied') || error.message?.includes('NOT_AUTHENTICATED') || error.code === '42501')) {
+        const refreshed = await supabase.auth.refreshSession().catch(() => null)
+        if (refreshed?.data?.session) {
+          const retry = await (supabase.rpc as any)('claim_reward_pack', {
+            p_pack_id: packId,
+          })
+          data = retry.data
+          error = retry.error
+        }
+      }
+
       if (error) {
         logError('claimRewardPack', error)
-        return { success: false, error: error.message }
+        const errMsg = error.message?.includes('NOT_AUTHENTICATED') || error.message?.includes('permission denied')
+          ? 'Tu sesión ha expirado o no estás autenticado. Por favor inicia sesión de nuevo.'
+          : error.message
+        return { success: false, error: errMsg }
       }
       return data ?? { success: true }
     } catch (e: any) {
