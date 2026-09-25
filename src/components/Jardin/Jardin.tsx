@@ -15,6 +15,8 @@ import { soundManager } from '../../utils/audioManager'
 import type { InventoryPack, PackId } from '../../utils/packDropManager'
 import type { PlayerRewardPack } from '../../utils/freePackManager'
 import { EMPTY_FARMING_INVENTORY, FARMING_ITEM_DEFINITIONS, type FarmingInventory } from '../../utils/pvpRewardManager'
+import { supabaseService } from '../../services/supabaseService'
+import { triggerArenaAdsSmartlink } from '../../utils/arenaAdsNetwork'
 import TreeModal from './TreeModal'
 import './Jardin.css'
 
@@ -655,6 +657,51 @@ export default function Jardin({
     })
   }
 
+  const [isClaimingGardenAd, setIsClaimingGardenAd] = useState<boolean>(false)
+
+  const handleClaimGardenAd = async (rewardType: 'water' | 'fertilizer') => {
+    if (isClaimingGardenAd) return
+    setIsClaimingGardenAd(true)
+    try {
+      // 1. Abrir anuncio directo (Smartlink) en nueva pestaña
+      triggerArenaAdsSmartlink()
+
+      // 2. Pequeño tiempo de cortesía para procesar la interacción con el sponsor
+      await new Promise((resolve) => setTimeout(resolve, 2500))
+
+      // 3. Reclamar en Supabase RPC
+      const res = await supabaseService.claimGardenAdReward(rewardType)
+      if (res.success) {
+        soundManager.playSound('plantation', 0.8)
+        if (onRewardsChanged) {
+          await onRewardsChanged()
+        }
+        setFuseAlert({
+          title: '¡SUMINISTROS RECIBIDOS!',
+          message:
+            rewardType === 'water'
+              ? `💧 ¡Has recibido +${res.waterAdded ?? 2} Aguas para tus plantas!\n\nReclamos restantes hoy: ${res.remainingToday ?? 0}/${res.maxViews ?? 3}.`
+              : `🧪 ¡Has recibido +${res.fertilizerAdded ?? 1} Fertilizante para tus plantas!\n\nReclamos restantes hoy: ${res.remainingToday ?? 0}/${res.maxViews ?? 3}.`,
+          icon: rewardType === 'water' ? '💧' : '🧪',
+        })
+      } else {
+        setFuseAlert({
+          title: 'LÍMITE ALCANZADO',
+          message: res.error || 'Has alcanzado el límite diario de suministros gratuitos. ¡Vuelve mañana!',
+          icon: '⏳',
+        })
+      }
+    } catch (err: any) {
+      setFuseAlert({
+        title: 'ERROR',
+        message: err?.message || 'Error al conectar con el patrocinador.',
+        icon: '⚠️',
+      })
+    } finally {
+      setIsClaimingGardenAd(false)
+    }
+  }
+
   const groupedPacks = useMemo(() => {
     const map = new Map<PackId, InventoryPack[]>()
     inventoryPacks.forEach((p) => {
@@ -1265,7 +1312,40 @@ export default function Jardin({
             </button>
           </div>
           {!isFarmingCollapsed && (
-            <div className="jardin-farming-grid">
+            <>
+              <div className="jardin-well-banner">
+                <div className="jardin-well-info">
+                  <div className="jardin-well-icon">💧</div>
+                  <div className="jardin-well-text">
+                    <div className="jardin-well-title">Surtidor Patrocinado del Jardín</div>
+                    <div className="jardin-well-subtitle">
+                      Obtén suministros de cultivo gratis apoyando el juego (Máximo 3 diarios).
+                    </div>
+                  </div>
+                </div>
+                <div className="jardin-well-actions">
+                  <button
+                    type="button"
+                    className="jardin-well-btn jardin-well-btn--water"
+                    disabled={isClaimingGardenAd}
+                    onClick={() => handleClaimGardenAd('water')}
+                    title="Reclamar +2 Aguas gratuitas apoyando a los patrocinadores"
+                  >
+                    {isClaimingGardenAd ? '⏳ Reclamando...' : '💧 +2 Agua'}
+                  </button>
+                  <button
+                    type="button"
+                    className="jardin-well-btn jardin-well-btn--fert"
+                    disabled={isClaimingGardenAd}
+                    onClick={() => handleClaimGardenAd('fertilizer')}
+                    title="Reclamar +1 Fertilizante gratuito apoyando a los patrocinadores"
+                  >
+                    {isClaimingGardenAd ? '⏳ Reclamando...' : '🧪 +1 Abono'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="jardin-farming-grid">
               {(Object.entries(FARMING_ITEM_DEFINITIONS) as Array<[keyof FarmingInventory, (typeof FARMING_ITEM_DEFINITIONS)[keyof typeof FARMING_ITEM_DEFINITIONS]]>).map(([itemId, def]) => {
                 const qty = Number(farmingItems[itemId] || 0)
                 const equippableDef = getEquippableItemDef(itemId)
@@ -1371,7 +1451,8 @@ export default function Jardin({
                 <small>Sirve para acelerar, fusionar y futuros crafts de farming.</small>
               </div>
             </div>
-          )}
+          </>
+        )}
         </div>
 
         {/* ACTIVE BATTLE DECK (3 TO 6 SLOTS) */}

@@ -51,7 +51,7 @@ import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { ArenaAdsManager, getBotStatsForLevel } from '../../utils/arenaAdsManager'
 import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
 import { arenaAdsService } from '../../services/arenaAdsService'
-import { setCombatAdsBlocked, resetPopunderQuota } from '../../utils/arenaAdsNetwork'
+import { setCombatAdsBlocked, resetPopunderQuota, activateMonetagVignette } from '../../utils/arenaAdsNetwork'
 import './Battlefield.css'
 
 /** Un segundo antes de que el sol se recoja solo: momento de avisar. */
@@ -1999,6 +1999,7 @@ export default function Battlefield({
 
     if (matchMode === 'arena_ads') {
       soundManager.playBgm('menu')
+      activateMonetagVignette()
       if (gameStatus === 'victory') {
         const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
         if (run && onArenaAdsAdvance) {
@@ -3592,6 +3593,7 @@ export default function Battlefield({
           multiplier={currentArenaAdsRun.multiplier}
           isReviving={isRevivingArenaAds}
           onNextLevel={() => {
+            activateMonetagVignette()
             setShowArenaAdsInterstitial(false)
             resetPopunderQuota()
             if (onArenaAdsAdvance) {
@@ -3600,6 +3602,7 @@ export default function Battlefield({
             }
           }}
           onCashout={() => {
+            activateMonetagVignette()
             setShowArenaAdsInterstitial(false)
             if (arenaAdsModalMode === 'defeat') {
               ArenaAdsManager.clearRun()

@@ -418,11 +418,16 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(skinReward?.amount).toBe(1) // Siempre 1
   })
 
-  it('18. Duplicar Recompensa: Solo a partir de Nivel 15 y NUNCA si hay skins exclusivas o sobres', () => {
+  it('18. Duplicar Recompensa: Disponible desde Nivel 1 y NUNCA en hitos con skins exclusivas o sobres', () => {
     // Niveles con sobres o skins nunca permiten duplicar por anuncio (Lv 10, 15, 25, 30, 35, 40, 45, 50)
     for (const lvl of [10, 15, 25, 30, 35, 40, 45, 50]) {
       const prep = generateLevelPrep(lvl)
       expect(prep.canDoubleReward).toBeFalsy()
+    }
+    // Pisos de recursos/cultivo (Lv 1, 2, 3, 4) SIEMPRE permiten duplicar para monetización Web3
+    for (const lvl of [1, 2, 3, 4]) {
+      const prep = generateLevelPrep(lvl)
+      expect(prep.canDoubleReward).toBe(true)
     }
   })
 

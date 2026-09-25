@@ -442,11 +442,11 @@ export function generateLevelPrep(
     ? 'reward'
     : 'plant'
 
-  // Duplicar recompensa: Permitido a partir de nivel 15 solo si NO hay skins exclusivas ni sobres
+  // Duplicar recompensa: Disponible desde el Nivel 1 en todos los pisos de recursos/cultivo (sin skins ni sobres)
   const hasExclusiveOrPack = rewardOptions.some(
     (opt) => opt.type === 'pack' || Boolean(opt.isExclusiveItem)
   )
-  const canDoubleReward = !hasExclusiveOrPack && level >= 15 && Math.random() < 0.50
+  const canDoubleReward = !hasExclusiveOrPack && level >= 1
 
   return {
     eventType,

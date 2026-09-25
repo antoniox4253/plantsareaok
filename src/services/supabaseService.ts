@@ -4090,6 +4090,45 @@ export const SupabaseService = {
     }
   },
 
+  /**
+   * Reclama suministros gratuitos patrocinados del pozo del jardín (+2 Agua ó +1 Fertilizante)
+   */
+  async claimGardenAdReward(rewardType: 'water' | 'fertilizer' = 'water'): Promise<{
+    success: boolean
+    rewardType?: string
+    waterAdded?: number
+    fertilizerAdded?: number
+    farmingInventory?: any
+    viewsToday?: number
+    maxViews?: number
+    remainingToday?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('claim_garden_ad_reward', {
+        p_reward_type: rewardType,
+      })
+      if (error) {
+        return { success: false, error: error.message }
+      }
+      return {
+        success: Boolean(data?.success),
+        rewardType: data?.rewardType,
+        waterAdded: data?.waterAdded,
+        fertilizerAdded: data?.fertilizerAdded,
+        farmingInventory: data?.farmingInventory,
+        viewsToday: data?.viewsToday,
+        maxViews: data?.maxViews,
+        remainingToday: data?.remainingToday,
+        error: data?.error,
+      }
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Error de conexión con el servidor.' }
+    }
+  },
 
   /**
    * Consulta el estado de una oferta flash en el servidor (o fallback local).
