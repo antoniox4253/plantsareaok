@@ -89,7 +89,7 @@ const ALL_NON_SUNFLOWER_PLANTS: PlantId[] = [
 // Ítems equipables exclusivos limitados a 5 drops cada uno
 export const EXCLUSIVE_ARENA_ITEMS: Array<{ id: FarmingItemId; label: string; icon: string; targetPlant: PlantId }> = [
   { id: 'sunflower_glasses', label: 'Gafas de Sol (Girasol)', icon: '🕶️', targetPlant: 'sunflower' },
-  { id: 'cactus_armor', label: 'Armadura de Cactus', icon: '🌵', targetPlant: 'chomper' },
+  { id: 'cactus_armor', label: 'Armadura de Cactus (Cactus)', icon: '🌵', targetPlant: 'chomper' },
   { id: 'superman_suit', label: 'Capa de Superman (Nuez)', icon: '🦸', targetPlant: 'wallnut' },
   { id: 'spiderman_suit', label: 'Traje de Spiderman (Nuez)', icon: '🕷️', targetPlant: 'wallnut' },
   { id: 'batman_suit', label: 'Armadura de Batman (Nuez)', icon: '🦇', targetPlant: 'wallnut' },
