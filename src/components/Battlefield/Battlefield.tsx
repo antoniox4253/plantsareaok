@@ -1631,7 +1631,7 @@ export default function Battlefield({
       if (matchMode === 'clan_fortress' && (currentFortressOpponent || clanFortressConfig?.targetClan)) {
         const target = currentFortressOpponent || clanFortressConfig!.targetClan
         const isVic = gameStatus === 'victory'
-        const maxHp = target.targetMaxBaseHp || 1000
+        const maxHp = target.targetMaxBaseHp || (target as any).targetMaxHp || 2000
         const curHp = Math.max(0, p2BaseHp)
         const damageDealt = Math.max(0, maxHp - curHp)
         const damagePct = (damageDealt / maxHp) * 100
@@ -2117,7 +2117,7 @@ export default function Battlefield({
         hp={p2BaseHp}
         maxHp={
           matchMode === 'clan_fortress'
-            ? (currentFortressOpponent?.targetMaxBaseHp || currentFortressOpponent?.targetBaseHp || 1000)
+            ? (currentFortressOpponent?.targetMaxBaseHp || (currentFortressOpponent as any)?.targetMaxHp || currentFortressOpponent?.targetBaseHp || 2000)
             : INITIAL_BASE_HP + rivalTreeBonusHp
         }
         sunBank={roomId ? undefined : p2SunBank}

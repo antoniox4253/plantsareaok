@@ -270,7 +270,7 @@ export function createBattleState(
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
     sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isFortressMode ? 200 : INITIAL_SUN),
-    p2SunBank: isFortressMode ? 250 : INITIAL_SUN,
+    p2SunBank: isFortressMode ? 500 : INITIAL_SUN,
     plants: [],
     enemyPlants: [],
     projectiles: [],

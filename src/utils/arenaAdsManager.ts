@@ -130,16 +130,16 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
     { type: 'pack', packId: 'basic', amount: 1, label: '1 Sobre Común', icon: '📦' },
     { type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' },
   ],
-  11: [{ type: 'item', itemId: 'water', amount: 10, label: '+10 Agua', icon: '💧' }],
-  12: [{ type: 'item', itemId: 'fertilizer', amount: 10, label: '+10 Fertilizante', icon: '🌱' }],
+  11: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  12: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   13: [{ type: 'item', itemId: 'shovel_fragment', amount: 2, label: '+2 Fragmentos de Pala', icon: '⛏️' }],
   14: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
   15: [
     { type: 'gems', amount: 10, label: '+10 Gemas (Bono)', icon: '💎' },
     { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
   ],
-  16: [{ type: 'item', itemId: 'water', amount: 12, label: '+12 Agua', icon: '💧' }],
-  17: [{ type: 'item', itemId: 'fertilizer', amount: 12, label: '+12 Fertilizante', icon: '🌱' }],
+  16: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  17: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   18: [{ type: 'item', itemId: 'scarecrow_fragment', amount: 2, label: '+2 Frag. Espantapájaros', icon: '🌾' }],
   19: [{ type: 'item', itemId: 'pesticide', amount: 2, label: '+2 Pesticidas', icon: '🧴' }],
   20: [
@@ -147,16 +147,16 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
     { type: 'item', itemId: 'pesticide', amount: 2, label: '+2 Pesticidas', icon: '🧴' },
     { type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' },
   ],
-  21: [{ type: 'item', itemId: 'water', amount: 15, label: '+15 Agua', icon: '💧' }],
-  22: [{ type: 'item', itemId: 'fertilizer', amount: 15, label: '+15 Fertilizante', icon: '🌱' }],
+  21: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  22: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   23: [{ type: 'item', itemId: 'shovel_fragment', amount: 2, label: '+2 Fragmentos de Pala', icon: '⛏️' }],
   24: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
   25: [
     { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
     { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
   ],
-  26: [{ type: 'item', itemId: 'water', amount: 15, label: '+15 Agua', icon: '💧' }],
-  27: [{ type: 'item', itemId: 'fertilizer', amount: 15, label: '+15 Fertilizante', icon: '🌱' }],
+  26: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  27: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   28: [{ type: 'item', itemId: 'scarecrow_fragment', amount: 2, label: '+2 Frag. Espantapájaros', icon: '🌾' }],
   29: [{ type: 'item', itemId: 'pesticide', amount: 2, label: '+2 Pesticidas', icon: '🧴' }],
   30: [
@@ -164,8 +164,8 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
     { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
     { type: 'item', itemId: 'sunflower_glasses', amount: 1, label: 'Gafas de Sol (Girasol)', icon: '🕶️', isExclusiveItem: true },
   ],
-  31: [{ type: 'item', itemId: 'water', amount: 20, label: '+20 Agua', icon: '💧' }],
-  32: [{ type: 'item', itemId: 'fertilizer', amount: 20, label: '+20 Fertilizante', icon: '🌱' }],
+  31: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  32: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   33: [{ type: 'item', itemId: 'shovel_fragment', amount: 3, label: '+3 Fragmentos de Pala', icon: '⛏️' }],
   34: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
   35: [
@@ -173,8 +173,8 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
     { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
     { type: 'item', itemId: 'superman_suit', amount: 1, label: 'Capa de Superman (Nuez)', icon: '🦸', isExclusiveItem: true },
   ],
-  36: [{ type: 'item', itemId: 'water', amount: 20, label: '+20 Agua', icon: '💧' }],
-  37: [{ type: 'item', itemId: 'fertilizer', amount: 20, label: '+20 Fertilizante', icon: '🌱' }],
+  36: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  37: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   38: [
     { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
     { type: 'item', itemId: 'pesticide', amount: 3, label: '+3 Pesticidas', icon: '🧴' },
@@ -185,8 +185,8 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
     { type: 'pack', packId: 'epic', amount: 1, label: '1 Pack Místico/Épico', icon: '🔮' },
     { type: 'item', itemId: 'spiderman_suit', amount: 1, label: 'Traje de Spiderman (Nuez)', icon: '🕷️', isExclusiveItem: true },
   ],
-  41: [{ type: 'item', itemId: 'water', amount: 25, label: '+25 Agua', icon: '💧' }],
-  42: [{ type: 'item', itemId: 'fertilizer', amount: 25, label: '+25 Fertilizante', icon: '🌱' }],
+  41: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  42: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   43: [
     { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
     { type: 'item', itemId: 'energy_potion_5', amount: 2, label: '+2 Pociones de Energía (10⚡)', icon: '⚡' },
@@ -197,8 +197,8 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
     { type: 'item', itemId: 'scarecrow_fragment', amount: 4, label: '+4 Frag. Espantapájaros', icon: '🌾' },
     { type: 'item', itemId: 'ironman_suit', amount: 1, label: 'Reactor de Iron Man (Nuez)', icon: '🦾', isExclusiveItem: true },
   ],
-  46: [{ type: 'item', itemId: 'water', amount: 30, label: '+30 Agua', icon: '💧' }],
-  47: [{ type: 'item', itemId: 'fertilizer', amount: 30, label: '+30 Fertilizante', icon: '🌱' }],
+  46: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  47: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   48: [
     { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
     { type: 'item', itemId: 'pesticide', amount: 4, label: '+4 Pesticidas', icon: '🧴' },
@@ -216,42 +216,54 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
 /**
  * Obtiene las recompensas fijas para un nivel específico.
  * Si isFirstTime es false (piso ya superado en la historia de la cuenta),
- * otorga ÚNICAMENTE recursos de cultivo (agua/fertilizante), NUNCA gemas, sobres o skins exclusivas.
+ * otorga ÚNICAMENTE UNA recompensa (Agua o Fertilizante), con exactamente la MITAD
+ * de lo que correspondía en primera victoria.
  */
 export function getFixedRewardsForLevel(
   level: number,
   multiplier = 1,
   isFirstTime = true
 ): ArenaAdsRewardOption[] {
+  const baseRewards = ARENA_ADS_LEVEL_REWARDS[level] || []
+
   if (!isFirstTime) {
-    const waterAmount = Math.min(25, 3 + Math.floor(level / 2)) * multiplier
-    const fertilizerAmount = Math.min(20, 2 + Math.floor(level / 3)) * multiplier
     const labelPrefix = multiplier === 2 ? ` (2X)` : ''
+
+    const origWater = baseRewards.find((r) => r.itemId === 'water')
+    const origFert = baseRewards.find((r) => r.itemId === 'fertilizer')
+
+    let targetItem: 'water' | 'fertilizer'
+    let baseAmount: number
+
+    if (origWater) {
+      targetItem = 'water'
+      baseAmount = Math.max(1, Math.floor(origWater.amount / 2))
+    } else if (origFert) {
+      targetItem = 'fertilizer'
+      baseAmount = Math.max(1, Math.floor(origFert.amount / 2))
+    } else {
+      // Para pisos de gemas, sobres o herramientas, entrega 1 solo recurso alternado:
+      // Impares = Agua, Pares = Fertilizante
+      targetItem = level % 2 !== 0 ? 'water' : 'fertilizer'
+      // Mitad de la escala base (escala 5 en pisos 1-5 -> 2; escala 8 en pisos 6+ -> 4)
+      baseAmount = level <= 5 ? 2 : 4
+    }
+
+    const finalAmount = baseAmount * multiplier
+    const icon = targetItem === 'water' ? '💧' : '🌱'
+    const name = targetItem === 'water' ? 'Agua' : 'Fertilizante'
+
     return [
       {
         type: 'item',
-        itemId: 'water',
-        amount: waterAmount,
-        label: `+${waterAmount} Agua (Piso repetido)${labelPrefix}`,
-        icon: '💧',
-        isRepeatFloor: true,
-      },
-      {
-        type: 'item',
-        itemId: 'fertilizer',
-        amount: fertilizerAmount,
-        label: `+${fertilizerAmount} Fertilizante (Piso repetido)${labelPrefix}`,
-        icon: '🌱',
+        itemId: targetItem,
+        amount: finalAmount,
+        label: `+${finalAmount} ${name} (Piso repetido)${labelPrefix}`,
+        icon,
         isRepeatFloor: true,
       },
     ]
   }
-
-  const baseRewards = ARENA_ADS_LEVEL_REWARDS[level] || [
-    { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
-    { type: 'item', itemId: 'water', amount: 30, label: '+30 Agua', icon: '💧' },
-    { type: 'item', itemId: 'fertilizer', amount: 30, label: '+30 Fertilizante', icon: '🌱' },
-  ]
 
   return baseRewards.map((rew) => {
     // Los ítems exclusivos y los sobres NUNCA se duplican (siempre 1)

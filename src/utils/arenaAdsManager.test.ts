@@ -431,21 +431,34 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     }
   })
 
-  it('19. Primera Victoria vs Piso Repetido (Blindaje de Hito Único por Cuenta)', () => {
+  it('19. Primera Victoria vs Piso Repetido (Blindaje de Hito Único por Cuenta y Solo 1 Recompensa a la Mitad)', () => {
     // Nivel 30 como Primera Victoria (incluye Sobre PvP y Skin Gafas)
     const firstTimeRewards = getFixedRewardsForLevel(30, 1, true)
     expect(firstTimeRewards.some((r) => r.type === 'gems' && r.amount === 20)).toBe(true)
     expect(firstTimeRewards.some((r) => r.type === 'pack' && r.packId === 'pvp')).toBe(true)
     expect(firstTimeRewards.some((r) => r.isExclusiveItem && r.itemId === 'sunflower_glasses')).toBe(true)
 
-    // Nivel 30 como Piso Repetido (isFirstTime = false)
+    // Nivel 30 como Piso Repetido (isFirstTime = false) -> Solo 1 recompensa (Fertilizante por ser par, mitad = 4)
     const repeatRewards = getFixedRewardsForLevel(30, 1, false)
+    expect(repeatRewards.length).toBe(1)
     expect(repeatRewards.some((r) => r.type === 'gems')).toBe(false) // 0 gemas
     expect(repeatRewards.some((r) => r.type === 'pack')).toBe(false) // 0 sobres
     expect(repeatRewards.some((r) => r.isExclusiveItem)).toBe(false) // 0 skins
-    // Solo recursos de cultivo
-    expect(repeatRewards.some((r) => r.itemId === 'water' && r.isRepeatFloor)).toBe(true)
-    expect(repeatRewards.some((r) => r.itemId === 'fertilizer' && r.isRepeatFloor)).toBe(true)
+    expect(repeatRewards[0].itemId).toBe('fertilizer')
+    expect(repeatRewards[0].amount).toBe(4) // Mitad de la escala de 8
+    expect(repeatRewards[0].isRepeatFloor).toBe(true)
+
+    // Nivel 1 (Piso repetido con agua original: 5 -> mitad = 2 Aguas)
+    const repeatLv1 = getFixedRewardsForLevel(1, 1, false)
+    expect(repeatLv1.length).toBe(1)
+    expect(repeatLv1[0].itemId).toBe('water')
+    expect(repeatLv1[0].amount).toBe(2)
+
+    // Nivel 6 (Piso repetido con agua original: 8 -> mitad = 4 Aguas)
+    const repeatLv6 = getFixedRewardsForLevel(6, 1, false)
+    expect(repeatLv6.length).toBe(1)
+    expect(repeatLv6[0].itemId).toBe('water')
+    expect(repeatLv6[0].amount).toBe(4)
   })
 
   it('20. Rastreo autoritativo de newlyClaimedLevels y alreadyClaimedLevels en el ciclo de victoria', () => {
@@ -491,11 +504,23 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(gemsFirst?.amount).toBe(75)
     expect(skinFirst?.itemId).toBe('gold_24k')
 
-    // Piso repetido en Nivel 50
+    // Piso repetido en Nivel 50 (da solo 1 recurso: Fertilizante, mitad = 4)
     const rewardsRepeat = getFixedRewardsForLevel(50, 1, false)
+    expect(rewardsRepeat.length).toBe(1)
     expect(rewardsRepeat.some((r) => r.type === 'gems')).toBe(false)
     expect(rewardsRepeat.some((r) => r.isExclusiveItem)).toBe(false)
-    expect(rewardsRepeat.some((r) => r.itemId === 'water')).toBe(true)
-    expect(rewardsRepeat.some((r) => r.itemId === 'fertilizer')).toBe(true)
+    expect(rewardsRepeat[0].itemId).toBe('fertilizer')
+    expect(rewardsRepeat[0].amount).toBe(4)
+  })
+
+  it('22. Regla estricta: NUNCA dar más de 8 Aguas ni 8 Fertilizantes en primera victoria en los 50 niveles', () => {
+    for (let lvl = 1; lvl <= 50; lvl++) {
+      const rewards = getFixedRewardsForLevel(lvl, 1, true)
+      for (const rew of rewards) {
+        if (rew.itemId === 'water' || rew.itemId === 'fertilizer') {
+          expect(rew.amount).toBeLessThanOrEqual(8)
+        }
+      }
+    }
   })
 })

@@ -559,7 +559,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     const allyAttacker = crearPlantaPropia(state, 'bonkchoy', 2, 3)
     state.plants.push(allyAttacker)
 
-    expect(state.p2SunBank).toBe(250)
+    expect(state.p2SunBank).toBe(500)
     expect(state.enemyPlants.filter((e) => e.lane === 2).length).toBe(0)
 
     // La IA detecta la brecha indefensa y despliega refuerzos
@@ -567,7 +567,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
 
     const defensasCarril2 = state.enemyPlants.filter((e) => e.lane === 2)
     expect(defensasCarril2.length).toBeGreaterThan(0)
-    expect(state.p2SunBank).toBeLessThan(250)
+    expect(state.p2SunBank).toBeLessThan(500)
   })
 
   it('IA defensiva reactiva: respeta estrictamente el presupuesto solar de la fortaleza', () => {
@@ -686,7 +686,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
       ['wallnut', 'peashooter', 'repeater', 'bonkchoy', 'sunflower']
     )
 
-    expect(state.p2SunBank).toBe(250)
+    expect(state.p2SunBank).toBe(500)
     expect(state.enemyPlants.filter((e) => e.plantId === 'sunflower').length).toBe(0)
 
     // La IA evalúa la fortaleza sin amenazas y planta girasol en retaguardia
@@ -695,7 +695,7 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     const girasoles = state.enemyPlants.filter((e) => e.plantId === 'sunflower')
     expect(girasoles.length).toBe(1)
     expect(girasoles[0].col).toBe(13) // col 0 local = col 13 en campo
-    expect(state.p2SunBank).toBe(200) // 250 - 50 = 200
+    expect(state.p2SunBank).toBe(450) // 500 - 50 = 450
   })
 
   it('auditoría estática Migración 226: coste unificado y validación de asalto a 500 Oro', async () => {
