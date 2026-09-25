@@ -47,13 +47,23 @@ export const PAID_SPIN_COST_GEMS = 10
 
 const DEFAULT_WHEEL_SECTORS: WheelSector[] = [
   {
-    id: 'jackpot_500',
-    label: '500 Gemas 💎',
+    id: 'jackpot_300',
+    label: '300 Gemas 💎',
     icon: '💎',
     color: '#7c3aed',
     textColor: '#ffffff',
     type: 'token',
-    valueUsd: 500.0,
+    valueUsd: 300.0,
+    rarity: 'jackpot',
+  },
+  {
+    id: 'jackpot_500',
+    label: '300 Gemas 💎',
+    icon: '💎',
+    color: '#7c3aed',
+    textColor: '#ffffff',
+    type: 'token',
+    valueUsd: 300.0,
     rarity: 'jackpot',
   },
   {
@@ -497,6 +507,7 @@ export default function LotteryModal({
       if (!dbSectors || dbSectors.length === 0) return
 
       const standardOrder = [
+        'jackpot_300',
         'jackpot_500',
         'pack_basic',
         'jackpot_10',
@@ -527,7 +538,7 @@ export default function LotteryModal({
           id: row.sector_id,
           label: row.label || row.sector_id,
           icon: row.reward_type === 'gems' ? '💎' : row.reward_type === 'gold' ? '💰' : row.reward_type === 'pack' ? '👑' : row.reward_type === 'plant' ? '🥜' : row.reward_type === 'item' ? ((row as any).item_id === 'water' ? '💧' : '🌿') : '🎁',
-          color: row.reward_type === 'gems' && Number(row.gems_amount) >= 500 ? '#7c3aed' : row.reward_type === 'gems' && Number(row.gems_amount) <= 5 ? '#ec4899' : row.reward_type === 'gems' ? '#06b6d4' : row.reward_type === 'gold' && Number(row.gold_amount) >= 250 ? '#d97706' : row.reward_type === 'gold' ? '#f59e0b' : row.reward_type === 'pack' ? '#eab308' : row.reward_type === 'item' ? ((row as any).item_id === 'water' ? '#0284c7' : '#16a34a') : '#475569',
+          color: row.reward_type === 'gems' && Number(row.gems_amount) >= 300 ? '#7c3aed' : row.reward_type === 'gems' && Number(row.gems_amount) <= 5 ? '#ec4899' : row.reward_type === 'gems' ? '#06b6d4' : row.reward_type === 'gold' && Number(row.gold_amount) >= 250 ? '#d97706' : row.reward_type === 'gold' ? '#f59e0b' : row.reward_type === 'pack' ? '#eab308' : row.reward_type === 'item' ? ((row as any).item_id === 'water' ? '#0284c7' : '#16a34a') : '#475569',
           textColor: '#ffffff',
           type: row.reward_type === 'gems' ? 'token' : row.reward_type === 'gold' ? 'gold' : row.reward_type === 'pack' ? 'pack' : row.reward_type === 'plant' ? 'plant' : row.reward_type === 'item' ? 'item' : 'none',
           valueUsd: row.gems_amount ? Number(row.gems_amount) : undefined,
@@ -538,7 +549,7 @@ export default function LotteryModal({
           plantQty: row.plant_qty ?? undefined,
           itemId: (row as any).item_id ?? undefined,
           itemQty: (row as any).item_qty ?? undefined,
-          rarity: row.reward_type === 'gems' && Number(row.gems_amount) >= 500 ? 'jackpot' : row.reward_type === 'pack' ? 'jackpot' : row.reward_type === 'gems' && Number(row.gems_amount) >= 10 ? 'epic' : row.reward_type === 'gems' || (row.reward_type === 'gold' && Number(row.gold_amount) >= 250) ? 'rare' : 'common',
+          rarity: row.reward_type === 'gems' && Number(row.gems_amount) >= 300 ? 'jackpot' : row.reward_type === 'pack' ? 'jackpot' : row.reward_type === 'gems' && Number(row.gems_amount) >= 10 ? 'epic' : row.reward_type === 'gems' || (row.reward_type === 'gold' && Number(row.gold_amount) >= 250) ? 'rare' : 'common',
         }
       })
 
@@ -948,7 +959,7 @@ export default function LotteryModal({
                 <span className="lottery-prizes-title">🎁 PREMIOS EN ESTE SORTEO:</span>
                 <div className="lottery-prizes-tags-grid">
                   <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                    💎 500 Gemas
+                    💎 300 Gemas
                   </div>
                   <div className="lottery-prize-tag lottery-prize-tag--jackpot">
                     👑 Sobre Básico

@@ -2376,6 +2376,30 @@ export const SupabaseService = {
     }
   },
 
+  async getClanById(clanId: string): Promise<any | null> {
+    if (!isSupabaseConfigured() || !clanId) return null
+    try {
+      const clans = await this.getClansList()
+      const found = clans.find((c: any) => c.id === clanId)
+      if (found) return found
+
+      const { data, error } = await (supabase as any)
+        .from('clans')
+        .select('id, name, tag, badge, description, min_elo, is_public, vault_gems, leader_id')
+        .eq('id', clanId)
+        .eq('is_active', true)
+        .maybeSingle()
+      if (error) {
+        logError('getClanById', error)
+        return null
+      }
+      return data
+    } catch (e: any) {
+      logError('getClanById', e)
+      return null
+    }
+  },
+
   async getMyClanDetails(): Promise<{ clan?: any; members?: any[]; donations?: any[]; deposits?: any[]; requests?: any[] } | null> {
     if (!isSupabaseConfigured()) return null
     try {

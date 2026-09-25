@@ -323,10 +323,6 @@ function App() {
     let cancelled = false
 
     const checkInvitations = async () => {
-      // If user already has a valid clan, do not show invitation popups
-      const currentClan = ClanManager.getUserClan()
-      if (currentClan && ClanManager.isValidUuid(currentClan.id)) return
-
       if (isSupabaseConfigured()) {
         try {
           const invs = await supabaseService.getMyClanInvitations()
@@ -335,14 +331,18 @@ function App() {
             return
           }
         } catch {}
-      }
+      } else {
+        // If user already has a valid clan in offline mode, do not show invitation popups
+        const currentClan = ClanManager.getUserClan()
+        if (currentClan && ClanManager.isValidUuid(currentClan.id)) return
 
-      // Offline fallback
-      const localUsername = profile?.username || UserManager.getProfile().name
-      if (localUsername) {
-        const localInvs = ClanManager.getMyClanInvitations(localUsername)
-        if (!cancelled && localInvs.length > 0) {
-          setActiveClanInvitation(localInvs[0])
+        // Offline fallback
+        const localUsername = profile?.username || UserManager.getProfile().name
+        if (localUsername) {
+          const localInvs = ClanManager.getMyClanInvitations(localUsername)
+          if (!cancelled && localInvs.length > 0) {
+            setActiveClanInvitation(localInvs[0])
+          }
         }
       }
     }
@@ -1911,7 +1911,7 @@ function App() {
               <button
                 type="button"
                 className="clan-invitation-dialog-close"
-                onClick={() => handleRespondClanInvitation(false)}
+                onClick={() => setActiveClanInvitation(null)}
                 disabled={isProcessingClanInvitation}
                 aria-label="Cerrar invitación"
               >

@@ -21,6 +21,11 @@ import {
   loadArenaAdsNativeBanner,
   ARENA_ADS_NATIVE_CONTAINER_ID,
 } from '../../utils/arenaAdsNetwork'
+import { supabase } from '../../lib/supabaseClient'
+import {
+  sponsoredMissionService,
+  type SponsoredMission,
+} from '../../services/sponsoredMissionService'
 import GoldIcon from '../Common/GoldIcon'
 import './ArenaAdsModal.css'
 
@@ -59,6 +64,140 @@ export default function ArenaAdsModal({
   const [isManualFullscreen, setIsManualFullscreen] = useState<boolean>(false)
 
   const isEffectiveFullscreen = isFullscreenActive || isManualFullscreen
+
+  // ── MISIONES PATROCINADAS EN EL LOBBY ──
+  const [missions, setMissions] = useState<SponsoredMission[]>([])
+  const [isLoadingMissions, setIsLoadingMissions] = useState<boolean>(false)
+  const [isUploadingProof, setIsUploadingProof] = useState<string | null>(null)
+  const [isClaimingReward, setIsClaimingReward] = useState<string | null>(null)
+  const [newSponsorUrl, setNewSponsorUrl] = useState<string>('')
+  const [isCreatingMission, setIsCreatingMission] = useState<boolean>(false)
+  const [sponsorNotice, setSponsorNotice] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
+
+  const loadMissions = async () => {
+    setIsLoadingMissions(true)
+    try {
+      const list = await sponsoredMissionService.getActiveMissions()
+      setMissions(list)
+    } catch {
+      setMissions([])
+    } finally {
+      setIsLoadingMissions(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen && activeView === 'lobby') {
+      void loadMissions()
+    }
+  }, [isOpen, activeView])
+
+  const handleUploadProof = async (missionId: string, file: File) => {
+    if (!file) return
+    setIsUploadingProof(missionId)
+    setSponsorNotice(null)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.id) {
+        setSponsorNotice({ type: 'error', message: 'Debes iniciar sesión para subir una captura.' })
+        setIsUploadingProof(null)
+        return
+      }
+
+      soundManager.playSound('click', 0.4)
+      const uploadRes = await sponsoredMissionService.uploadProofImage(file, user.id)
+      if (!uploadRes.success || !uploadRes.url) {
+        setSponsorNotice({ type: 'error', message: uploadRes.error || 'Error al subir la captura al servidor.' })
+        setIsUploadingProof(null)
+        return
+      }
+
+      const submitRes = await sponsoredMissionService.submitProof(missionId, uploadRes.url)
+      if (!submitRes.success) {
+        setSponsorNotice({ type: 'error', message: submitRes.message || submitRes.error || 'Error al registrar la captura.' })
+        setIsUploadingProof(null)
+        return
+      }
+
+      soundManager.playSound('plantation', 0.8)
+      setSponsorNotice({ type: 'success', message: '¡Captura adjuntada con éxito! El administrador la revisará para validar tus 5 Gemas.' })
+      await loadMissions()
+    } catch (err: any) {
+      setSponsorNotice({ type: 'error', message: err?.message || 'Error al procesar la captura.' })
+    } finally {
+      setIsUploadingProof(null)
+    }
+  }
+
+  const handleClaimReward = async (submissionId: string) => {
+    setIsClaimingReward(submissionId)
+    setSponsorNotice(null)
+    try {
+      soundManager.playSound('click', 0.5)
+      const res = await sponsoredMissionService.claimReward(submissionId)
+      if (!res.success) {
+        setSponsorNotice({ type: 'error', message: res.message || res.error || 'Error al reclamar recompensa.' })
+        setIsClaimingReward(null)
+        return
+      }
+
+      soundManager.playSound('victory', 0.9)
+      setSponsorNotice({ type: 'success', message: '🎉 ¡Has reclamado tus 5 Gemas 💎 exitosamente!' })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('refresh_user_balance'))
+      }
+      await loadMissions()
+    } catch (err: any) {
+      setSponsorNotice({ type: 'error', message: err?.message || 'Error al reclamar las gemas.' })
+    } finally {
+      setIsClaimingReward(null)
+    }
+  }
+
+  const handleCreateMission = async () => {
+    const url = newSponsorUrl.trim()
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+      setSponsorNotice({ type: 'warning', message: 'Ingresa un enlace válido que comience con http:// o https://' })
+      return
+    }
+
+    if (userGems < 250) {
+      soundManager.playSound('surrender', 0.6)
+      setSponsorNotice({
+        type: 'warning',
+        message: `Saldo insuficiente. Requieres 250 Gemas 💎 y dispones de ${Math.floor(userGems)} Gemas 💎.`,
+      })
+      return
+    }
+
+    setIsCreatingMission(true)
+    setSponsorNotice(null)
+    try {
+      soundManager.playSound('click', 0.5)
+      const res = await sponsoredMissionService.createMission(url)
+      if (!res.success) {
+        setSponsorNotice({ type: 'error', message: res.message || res.error || 'Error al crear la campaña de patrocinio.' })
+        setIsCreatingMission(false)
+        return
+      }
+
+      onDeductGems?.(250)
+      soundManager.playSound('plantation', 0.9)
+      setSponsorNotice({
+        type: 'success',
+        message: '🚀 ¡Campaña de patrocinio creada con éxito! 40 jugadores podrán completar tu misión.',
+      })
+      setNewSponsorUrl('')
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('refresh_user_balance'))
+      }
+      await loadMissions()
+    } catch (err: any) {
+      setSponsorNotice({ type: 'error', message: err?.message || 'Error de conexión al crear misión.' })
+    } finally {
+      setIsCreatingMission(false)
+    }
+  }
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -508,6 +647,158 @@ export default function ArenaAdsModal({
                   </div>
                 </div>
               )}
+
+              {/* COLUMNA 2: PATROCINIOS Y MISIONES DE LA COMUNIDAD */}
+              <div className="arena-ads-sponsor-card">
+                <div className="arena-ads-sponsor-header">
+                  <div className="arena-ads-sponsor-badge">💎 PATROCÍNATE POR 250 GEMAS</div>
+                  <h4 className="arena-ads-sponsor-title">
+                    <span>🎯</span> Regístrate, adjunta tu captura y recibe 5 Gemas
+                  </h4>
+                  <span className="arena-ads-sponsor-sub">
+                    Gana gemas gratis completando misiones (máx. 40 personas por patrocinio)
+                  </span>
+                </div>
+
+                {/* Notificación temporal de acciones */}
+                {sponsorNotice && (
+                  <div className={`arena-ads-sponsor-notice arena-ads-sponsor-notice--${sponsorNotice.type}`}>
+                    <span>{sponsorNotice.message}</span>
+                    <button
+                      type="button"
+                      className="arena-ads-sponsor-notice-close"
+                      onClick={() => setSponsorNotice(null)}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
+                {/* Lista de Misiones con Scroll */}
+                <div className="arena-ads-missions-scroll">
+                  {isLoadingMissions ? (
+                    <div className="arena-ads-missions-loading">Cargando misiones disponibles...</div>
+                  ) : missions.length === 0 ? (
+                    <div className="arena-ads-missions-empty">
+                      <span>🌱</span>
+                      <p>No hay misiones activas por ahora. ¡Sé el primero en patrocinarte!</p>
+                    </div>
+                  ) : (
+                    missions.map((mission) => {
+                      const isFull = mission.approvedCount >= mission.maxParticipants
+                      const sub = mission.mySubmission
+
+                      return (
+                        <div key={mission.id} className="arena-ads-mission-item">
+                          <div className="arena-ads-mission-item__top">
+                            <div className="arena-ads-mission-item__info">
+                              <strong className="arena-ads-mission-title">{mission.title}</strong>
+                              <span className="arena-ads-mission-sponsor">
+                                Patrocinado por: <strong>@{mission.sponsorUsername}</strong>
+                              </span>
+                            </div>
+                            <div className="arena-ads-mission-badge-group">
+                              <span className="arena-ads-mission-reward-badge">+5 💎</span>
+                              <span className={`arena-ads-mission-quota ${isFull ? 'arena-ads-mission-quota--full' : ''}`}>
+                                👥 {mission.approvedCount}/{mission.maxParticipants}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="arena-ads-mission-item__actions">
+                            <a
+                              href={mission.targetUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="arena-ads-mission-link-btn"
+                              onClick={() => soundManager.playSound('click', 0.3)}
+                              title="Abrir enlace del patrocinador en una nueva pestaña"
+                            >
+                              🔗 Abrir Enlace ↗
+                            </a>
+
+                            {/* Acciones de comprobante y reclamo */}
+                            {mission.isMyMission ? (
+                              <span className="arena-ads-mission-owner-tag">👑 Tu Campaña</span>
+                            ) : sub?.claimed ? (
+                              <span className="arena-ads-mission-status-btn arena-ads-mission-status-btn--claimed">
+                                ✓ Reclamado (+5 💎)
+                              </span>
+                            ) : sub?.status === 'approved' ? (
+                              <button
+                                type="button"
+                                className="arena-ads-mission-claim-btn"
+                                onClick={() => handleClaimReward(sub.id)}
+                                disabled={isClaimingReward === sub.id}
+                              >
+                                {isClaimingReward === sub.id ? '⏳ Cobrando...' : '🎁 ¡RECLAMAR 5 💎!'}
+                              </button>
+                            ) : sub?.status === 'pending' ? (
+                              <span
+                                className="arena-ads-mission-status-btn arena-ads-mission-status-btn--pending"
+                                title="Captura subida. El botón de reclamo se activará en cuanto el admin la valide."
+                              >
+                                ⏳ En Revisión (Admin)
+                              </span>
+                            ) : (
+                              <label className={`arena-ads-mission-upload-label ${isUploadingProof === mission.id || isFull ? 'arena-ads-mission-upload-label--disabled' : ''}`}>
+                                <span>
+                                  {isUploadingProof === mission.id
+                                    ? '⏳ Subiendo...'
+                                    : isFull
+                                    ? '🔒 Cupo Lleno'
+                                    : sub?.status === 'rejected'
+                                    ? '⚠️ Rechazado: Reintentar'
+                                    : '📸 Adjuntar Captura'}
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/png,image/jpeg,image/webp"
+                                  disabled={isUploadingProof === mission.id || isFull}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) handleUploadProof(mission.id, file)
+                                    e.target.value = ''
+                                  }}
+                                  style={{ display: 'none' }}
+                                />
+                              </label>
+                            )}
+                          </div>
+                          {sub?.adminNotes && (
+                            <div className="arena-ads-mission-note">Nota admin: {sub.adminNotes}</div>
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+
+                {/* Formulario / Botón: Patrocínate Ahora */}
+                <div className="arena-ads-sponsor-create-box">
+                  <div className="arena-ads-sponsor-create-header">
+                    <span>🚀 <strong>Patrocínate Ahora:</strong> Paga 250 💎 y consigue hasta 40 registros</span>
+                  </div>
+                  <div className="arena-ads-sponsor-input-row">
+                    <input
+                      type="url"
+                      className="arena-ads-sponsor-url-input"
+                      placeholder="Pega aquí tu link de referido o web (https://...)"
+                      value={newSponsorUrl}
+                      onChange={(e) => setNewSponsorUrl(e.target.value)}
+                      disabled={isCreatingMission}
+                    />
+                    <button
+                      type="button"
+                      className="arena-ads-sponsor-launch-btn"
+                      onClick={handleCreateMission}
+                      disabled={isCreatingMission || !newSponsorUrl.trim()}
+                    >
+                      {isCreatingMission ? 'Creando...' : 'Pagar 250 💎'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ) : (

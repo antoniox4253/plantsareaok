@@ -8,6 +8,10 @@ import {
   adminReviewTikTokSubmission,
   type AdminTikTokSubmissionRow,
 } from '../../services/missionService'
+import {
+  sponsoredMissionService,
+  type AdminMissionSubmission,
+} from '../../services/sponsoredMissionService'
 import type { Database, CodeRoundPrizeTier } from '../../types/database.types'
 import GoldIcon from '../Common/GoldIcon'
 import './AdminPanel.css'
@@ -202,6 +206,66 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       }
     } catch (e: any) {
       alert('Excepción al revisar video: ' + e.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Sponsored missions moderation state
+  const [missionSubmissions, setMissionSubmissions] = useState<AdminMissionSubmission[]>([])
+  const [isLoadingMissions, setIsLoadingMissions] = useState<boolean>(false)
+  const [previewProofModal, setPreviewProofModal] = useState<{
+    url: string
+    username: string
+    title: string
+    subId: string
+    status: string
+  } | null>(null)
+
+  const loadMissionSubmissions = async () => {
+    setIsLoadingMissions(true)
+    try {
+      const submissions = await sponsoredMissionService.adminGetSubmissions()
+      setMissionSubmissions(submissions)
+    } catch (e: any) {
+      console.error('Error loading mission submissions', e)
+    } finally {
+      setIsLoadingMissions(false)
+    }
+  }
+
+  const handleReviewMission = async (id: string, action: 'approve' | 'reject') => {
+    let notes: string | undefined = undefined
+    if (action === 'reject') {
+      const reason = prompt('Motivo del rechazo de la captura (opcional):')
+      if (reason === null) return
+      notes = reason.trim() || undefined
+    } else {
+      if (
+        !confirm(
+          '¿Aprobar esta captura de misión patrocinada?\n\n' +
+            'Al aprobar, se suma 1 al cupo de la campaña (máx 40 cupos) y el jugador podrá reclamar sus 5 Gemas 💎 en la Mazmorra Infinita.'
+        )
+      ) {
+        return
+      }
+    }
+
+    setIsLoading(true)
+    try {
+      const res = await sponsoredMissionService.adminReviewSubmission(id, action, notes)
+      if (res.success) {
+        soundManager.playSound('victory', 0.8)
+        showNotice(action === 'approve' ? '✅ Captura aprobada (+5 💎 habilitados para el jugador)' : '❌ Captura rechazada')
+        if (previewProofModal && previewProofModal.subId === id) {
+          setPreviewProofModal(null)
+        }
+        await loadMissionSubmissions()
+      } else {
+        alert('Error al revisar entrega: ' + (res.message || res.error))
+      }
+    } catch (e: any) {
+      alert('Excepción al revisar entrega: ' + e.message)
     } finally {
       setIsLoading(false)
     }
@@ -501,6 +565,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       if (bpData) setBpLevels(bpData)
 
       await loadCodeRounds()
+      void loadMissionSubmissions()
     } catch (e) {
       console.error(e)
     } finally {
@@ -950,9 +1015,10 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             onClick={() => {
               setActiveTab('referidos')
               void adminService.adminP2pReport(50).then(setP2pReport)
+              void loadMissionSubmissions()
             }}
           >
-            🔗 Referidos y Mercado
+            🎯 Referencias y Patrocinios ({missionSubmissions.filter((s) => s.status === 'pending').length} pendientes)
           </button>
           <button
             type="button"
@@ -989,6 +1055,200 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         {/* TAB 6: REFERIDOS Y EL REPARTO DEL MERCADO */}
         {activeTab === 'referidos' && (
           <div className="admin-content-section">
+            {/* MODERACIÓN DE MISIONES PATROCINADAS (Mazmorra Infinita - Balde de Almacenamiento) */}
+            <div className="admin-card" style={{ marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>🎯</span> Moderación de Misiones Patrocinadas (Mazmorra Infinita)
+                  </h3>
+                  <p className="admin-card-desc" style={{ margin: '4px 0 0 0' }}>
+                    Revisa las capturas del balde de almacenamiento (<strong>mission-proofs</strong>). Al validar la captura, el jugador podrá reclamar 5 💎 de recompensa (máximo 40 cupos aprobados por campaña).
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={loadMissionSubmissions}
+                    className="admin-action-btn--green"
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', background: '#3b82f6' }}
+                    disabled={isLoadingMissions}
+                  >
+                    {isLoadingMissions ? 'Cargando...' : '🔄 Actualizar Capturas'}
+                  </button>
+                  <div style={{ background: '#1e293b', border: '1px solid #475569', padding: '6px 12px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24' }}>
+                    Pendientes: {missionSubmissions.filter((s) => s.status === 'pending').length}
+                  </div>
+                </div>
+              </div>
+
+              {isLoadingMissions ? (
+                <p className="admin-card-desc">Cargando capturas de misiones...</p>
+              ) : missionSubmissions.length === 0 ? (
+                <p className="admin-card-desc">No hay capturas enviadas por jugadores todavía.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', borderBottom: '1px solid #334155', color: '#94a3b8' }}>
+                        <th style={{ padding: '8px' }}>Fecha</th>
+                        <th style={{ padding: '8px' }}>Jugador</th>
+                        <th style={{ padding: '8px' }}>Campaña / Patrocinador</th>
+                        <th style={{ padding: '8px' }}>Enlace Patrocinado</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>Captura (Balde)</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>Cupos Campaña</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>Estado</th>
+                        <th style={{ padding: '8px', textAlign: 'right' }}>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {missionSubmissions.map((sub) => (
+                        <tr key={sub.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                          <td style={{ padding: '8px', color: '#94a3b8', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                            {new Date(sub.createdAt).toLocaleDateString()} {new Date(sub.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td style={{ padding: '8px', fontWeight: 700, color: '#f8fafc' }}>
+                            {sub.username}
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <div style={{ fontWeight: 600, color: '#e2e8f0' }}>{sub.missionTitle}</div>
+                            <small style={{ color: '#94a3b8' }}>Por: @{sub.sponsorUsername}</small>
+                          </td>
+                          <td style={{ padding: '8px' }}>
+                            <a
+                              href={sub.targetUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: '#38bdf8', textDecoration: 'underline', fontSize: '12px', wordBreak: 'break-all' }}
+                            >
+                              Abrir Enlace ↗
+                            </a>
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <div
+                              onClick={() => setPreviewProofModal({
+                                url: sub.proofImageUrl,
+                                username: sub.username,
+                                title: sub.missionTitle,
+                                subId: sub.id,
+                                status: sub.status,
+                              })}
+                              style={{ cursor: 'pointer', display: 'inline-block', position: 'relative' }}
+                              title="Haz clic para inspeccionar la captura a pantalla completa"
+                            >
+                              <img
+                                src={sub.proofImageUrl}
+                                alt="Comprobante"
+                                style={{
+                                  width: '54px',
+                                  height: '54px',
+                                  objectFit: 'cover',
+                                  borderRadius: '8px',
+                                  border: '2px solid #38bdf8',
+                                  background: '#0f172a',
+                                  transition: 'transform 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.08)')}
+                                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                              />
+                              <span style={{
+                                position: 'absolute',
+                                bottom: '2px',
+                                right: '2px',
+                                background: 'rgba(0,0,0,0.7)',
+                                borderRadius: '4px',
+                                fontSize: '10px',
+                                padding: '1px 3px',
+                              }}>🔍</span>
+                            </div>
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700 }}>
+                            <span style={{ color: sub.approvedCount >= (sub.maxParticipants || 40) ? '#f87171' : '#34d399' }}>
+                              {sub.approvedCount}
+                            </span>
+                            <span style={{ color: '#64748b' }}> / {sub.maxParticipants || 40}</span>
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <span
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                background:
+                                  sub.status === 'approved'
+                                    ? 'rgba(16, 185, 129, 0.2)'
+                                    : sub.status === 'rejected'
+                                    ? 'rgba(239, 68, 68, 0.2)'
+                                    : 'rgba(245, 158, 11, 0.2)',
+                                color:
+                                  sub.status === 'approved'
+                                    ? '#34d399'
+                                    : sub.status === 'rejected'
+                                    ? '#f87171'
+                                    : '#fbbf24',
+                              }}
+                            >
+                              {sub.status === 'approved' ? '✓ Aprobada' : sub.status === 'rejected' ? '✕ Rechazada' : '⏳ Pendiente'}
+                            </span>
+                            {sub.status === 'approved' && (
+                              <div style={{ fontSize: '10px', marginTop: '3px', color: sub.claimed ? '#34d399' : '#fbbf24' }}>
+                                {sub.claimed ? '💎 5 Gemas cobradas' : '⏳ Sin cobrar'}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'right' }}>
+                            {sub.status === 'pending' ? (
+                              <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReviewMission(sub.id, 'approve')}
+                                  style={{
+                                    background: '#10b981',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '11px',
+                                    fontWeight: 800,
+                                  }}
+                                  title="Validar captura y autorizar pago de 5 Gemas al jugador"
+                                >
+                                  ✓ Validar (+5 💎)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReviewMission(sub.id, 'reject')}
+                                  style={{
+                                    background: '#ef4444',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '5px 8px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '11px',
+                                    fontWeight: 800,
+                                  }}
+                                  title="Rechazar captura con nota"
+                                >
+                                  ✕ Rechazar
+                                </button>
+                              </div>
+                            ) : (
+                              <span style={{ color: '#64748b', fontSize: '12px' }}>
+                                {sub.adminNotes ? `Nota: ${sub.adminNotes}` : 'Revisada'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
             <h3>🔗 Comisión del mercado P2P</h3>
 
             {!p2pReport ? (
@@ -2961,6 +3221,121 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* MODAL DE INSPECCIÓN DE CAPTURA DEL BALDE (Misiones Patrocinadas) */}
+        {previewProofModal && (
+          <div
+            className="admin-proof-preview-backdrop"
+            onClick={() => setPreviewProofModal(null)}
+          >
+            <div
+              className="admin-proof-preview-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="admin-proof-preview-header">
+                <div>
+                  <h4 style={{ margin: 0, color: '#f8fafc', fontSize: '1.1rem' }}>
+                    📸 Captura de @{previewProofModal.username}
+                  </h4>
+                  <small style={{ color: '#94a3b8' }}>{previewProofModal.title}</small>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewProofModal(null)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#cbd5e1',
+                    fontSize: '1.4rem',
+                    cursor: 'pointer',
+                    padding: '2px 8px',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="admin-proof-preview-body">
+                <img
+                  src={previewProofModal.url}
+                  alt="Captura comprobante a pantalla completa"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '70vh',
+                    objectFit: 'contain',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                  }}
+                />
+              </div>
+
+              <div className="admin-proof-preview-footer">
+                <a
+                  href={previewProofModal.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: '#38bdf8', fontSize: '0.85rem', textDecoration: 'underline' }}
+                >
+                  Abrir imagen original en pestaña nueva ↗
+                </a>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {previewProofModal.status === 'pending' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleReviewMission(previewProofModal.subId, 'approve')}
+                        style={{
+                          background: '#10b981',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: 800,
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        ✓ Aprobar (+5 💎)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleReviewMission(previewProofModal.subId, 'reject')}
+                        style={{
+                          background: '#ef4444',
+                          color: '#fff',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: 800,
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        ✕ Rechazar
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setPreviewProofModal(null)}
+                    style={{
+                      background: '#475569',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '6px 14px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
