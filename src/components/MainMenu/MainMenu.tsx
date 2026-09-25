@@ -55,6 +55,7 @@ interface MainMenuProps {
   unlockedPlants?: PlantId[]
   plantInstances?: PlantCardInstance[]
   claimedVipLevels?: number[]
+  claimedArenaAdsLevels?: number[]
   freePackSlots?: FreePackSlot[]
   colosseumTickets?: number
   colosseumCurrentStreak?: number
@@ -64,7 +65,7 @@ interface MainMenuProps {
   onPlayFriendly?: (roomCode: string, betGems: number) => void
   onStartColosseumMatch?: (betGems: ColosseumBetAmount, usedTicket: boolean) => void
   onStartArenaAdsBattle?: (run: ArenaAdsRun) => void
-  onClaimArenaAdsLoot?: (loot: ArenaAdsLoot) => void
+  onClaimArenaAdsLoot?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => void
   onStartTournamentMatch?: (opponentName: string, tournamentId: string, tournamentDeck?: PlantId[]) => void
   onOpenCollection?: () => void
   onOpenJardin?: () => void
@@ -111,6 +112,7 @@ export default function MainMenu({
   unlockedPlants,
   plantInstances,
   claimedVipLevels = [],
+  claimedArenaAdsLevels = [],
   freePackSlots = [],
   colosseumTickets = 0,
   colosseumCurrentStreak = 0,
@@ -1249,6 +1251,7 @@ export default function MainMenu({
         onClose={() => setIsArenaAdsModalOpen(false)}
         userGold={userGold}
         userGems={userTokens}
+        claimedLevels={claimedArenaAdsLevels}
         onDeductGold={(amount) => {
           if (onDeductGold) return onDeductGold(amount)
           return false
@@ -1262,9 +1265,9 @@ export default function MainMenu({
             onStartArenaAdsBattle(run)
           }
         }}
-        onClaimLoot={(loot) => {
+        onClaimLoot={(loot, multiplier, newlyClaimed) => {
           if (onClaimArenaAdsLoot) {
-            onClaimArenaAdsLoot(loot)
+            onClaimArenaAdsLoot(loot, multiplier, newlyClaimed)
           }
         }}
       />

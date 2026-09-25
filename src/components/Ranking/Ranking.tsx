@@ -2608,7 +2608,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             >
                               <span>{def?.fallback || '🎒'}</span>
                               <span>
-                                {def?.label || id} {qty > 1 ? `x${qty}` : ''}
+                                {def?.label || id} {Number(qty) > 1 ? `x${qty}` : ''}
                               </span>
                             </span>
                           )

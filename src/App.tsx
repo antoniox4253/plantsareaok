@@ -219,6 +219,8 @@ function App() {
     updateActiveDeck,
     hasVipPass,
     claimedVipLevels,
+    claimedArenaAdsLevels,
+    setClaimedArenaAdsLevels,
     freePackSlots,
     buyPack,
     openPackByInstanceId,
@@ -1100,7 +1102,11 @@ function App() {
     setScreen('battle')
   }
 
-  const handleClaimArenaAdsLoot = async (loot: ArenaAdsLoot, _multiplier: number = 1) => {
+  const handleClaimArenaAdsLoot = async (
+    loot: ArenaAdsLoot,
+    _multiplier: number = 1,
+    newlyClaimedLevels?: number[]
+  ) => {
     // Las recompensas acumuladas en loot YA TIENEN aplicado el multiplicador en cada cofre
     const finalGold = Math.max(0, loot.gold || 0)
     const finalGems = Math.max(0, loot.gems || 0)
@@ -1125,6 +1131,9 @@ function App() {
         console.error('Error al guardar items de cultivo en inventario:', e)
       }
     }
+
+    const levelsToClaim = newlyClaimedLevels || arenaAdsRun?.newlyClaimedLevels || []
+
     if (arenaAdsRun) {
       const runStarted = arenaAdsRun.startedAt || arenaAdsRun.createdAt
       void arenaAdsService.recordRun({
@@ -1145,11 +1154,18 @@ function App() {
       }).catch((err) => console.warn('[App] Error al registrar run en claim:', err))
     }
     try {
-      await arenaAdsService.claimLoot({
-        gold: finalGold,
-        gems: finalGems,
-        items: loot.items,
-      }, 1)
+      const claimRes = await arenaAdsService.claimLoot(
+        {
+          gold: finalGold,
+          gems: finalGems,
+          items: loot.items,
+        },
+        1,
+        levelsToClaim
+      )
+      if (claimRes?.claimedArenaAdsLevels) {
+        setClaimedArenaAdsLevels(claimRes.claimedArenaAdsLevels)
+      }
     } catch (e) {
       console.error('Error al reclamar botin de arena ads en backend:', e)
     }
@@ -1430,6 +1446,7 @@ function App() {
             unlockedPlants={unlockedPlants}
             plantInstances={plantInstances}
             claimedVipLevels={claimedVipLevels}
+            claimedArenaAdsLevels={claimedArenaAdsLevels}
             freePackSlots={freePackSlots}
             colosseumTickets={colosseumTickets}
             colosseumCurrentStreak={colosseumCurrentStreak}

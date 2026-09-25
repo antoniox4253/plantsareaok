@@ -3,18 +3,20 @@ import type { CartaDeMazo } from '../engine/mazoDeLaSala'
 import type { FarmingItemId } from './pvpRewardManager'
 import { PLANT_CONFIGS } from './gameConstants'
 
-export const ARENA_ADS_ENTRY_FEE_GOLD = 100
+export const ARENA_ADS_ENTRY_FEE_GOLD = 350
 export const ARENA_ADS_ENTRY_FEE_GEMS = 200
 export const ARENA_ADS_REVIVE_FEE_GEMS = 150
 export const ARENA_ADS_STORAGE_KEY = 'plant_arena_ads_run'
 
 export interface ArenaAdsRewardOption {
-  type: 'gold' | 'gems' | 'item'
+  type: 'gold' | 'gems' | 'item' | 'pack'
   amount: number
   itemId?: FarmingItemId
+  packId?: 'basic' | 'epic' | 'legendary' | 'pvp'
   label: string
   icon: string
   isExclusiveItem?: boolean
+  isRepeatFloor?: boolean
 }
 
 export interface ArenaAdsPlantOption {
@@ -38,7 +40,7 @@ export interface ArenaAdsPrepChoice {
 export interface ArenaAdsLoot {
   gold: number
   gems: number
-  items: Partial<Record<FarmingItemId, number>>
+  items: Partial<Record<FarmingItemId | string, number>>
 }
 
 export interface ArenaAdsRun {
@@ -47,7 +49,7 @@ export interface ArenaAdsRun {
   seed: number
   status: 'prep' | 'battle' | 'level_cleared' | 'game_over'
   paymentType: 'gold' | 'gems'
-  multiplier: number // 1 si pagó 100 oro, 2 si pagó 200 gemas
+  multiplier: number // 1 si pagó 350 oro, 2 si pagó 200 gemas
   lives: number // Vidas extra acumuladas por revivir
   baseDeck: CartaDeMazo[]
   deck: CartaDeMazo[]
@@ -58,6 +60,8 @@ export interface ArenaAdsRun {
     rewardClaimed?: ArenaAdsRewardOption | ArenaAdsRewardOption[]
     plantChosen?: ArenaAdsPlantOption
   }
+  alreadyClaimedLevels?: number[] // Niveles ya superados históricamente en la cuenta
+  newlyClaimedLevels?: number[] // Niveles superados por primera vez en esta expedición
   updatedAt: number
   startedAt?: number
   createdAt?: number
@@ -98,12 +102,171 @@ export const EXCLUSIVE_ARENA_ITEM_IDS = new Set<FarmingItemId>(
   EXCLUSIVE_ARENA_ITEMS.map((item) => item.id)
 )
 
-// Pools de recompensas balanceadas: en niveles 1..9 la pérdida es neta y solo se recupera el oro en nivel 10+
-const GOLD_POOL_EARLY = [4, 6, 8, 12] // Niveles 1 al 9: Pérdida neta estricta
-const GOLD_POOL_LATE = [15, 25, 35, 50] // Niveles 10+: Ganancia neta y recuperación
-const GEMS_POOL = [1, 2, 3, 5]
-const WATER_POOL = [2, 3, 4, 6]
-const FERTILIZER_POOL = [1, 2, 3, 5]
+/**
+ * TABLA AUTORITATIVA DE RECOMPENSAS FIJAS POR NIVEL (NIVELES 1 AL 50)
+ *
+ * REGLAS ESTRICTAS DE BALANCE:
+ * 1. 0 Oro en todos los niveles (el oro se eliminó completamente de la mazmorra).
+ * 2. Exactamente 300 Gemas en total (suman 300 💎 en saldo no retirable locked_gems_balance).
+ * 3. 1 Sobre Básico (Nivel 10), 4 Sobres PvP (Niveles 15, 25, 30 y 35) y 1 Pack Místico/Épico (Nivel 40).
+ * 4. 5 Skins exclusivas a partir de Nivel 30 (Niveles 30, 35, 40, 45 y 50).
+ * 5. Recursos de cultivo y consumibles en niveles intermedios.
+ */
+export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
+  1: [{ type: 'item', itemId: 'water', amount: 5, label: '+5 Agua', icon: '💧' }],
+  2: [{ type: 'item', itemId: 'fertilizer', amount: 5, label: '+5 Fertilizante', icon: '🌱' }],
+  3: [{ type: 'item', itemId: 'shovel_fragment', amount: 1, label: '+1 Fragmento de Pala', icon: '⛏️' }],
+  4: [{ type: 'item', itemId: 'scarecrow_fragment', amount: 1, label: '+1 Frag. Espantapájaros', icon: '🌾' }],
+  5: [
+    { type: 'gems', amount: 5, label: '+5 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'pesticide', amount: 1, label: '+1 Pesticida', icon: '🧴' },
+  ],
+  6: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
+  7: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
+  8: [{ type: 'item', itemId: 'shovel_fragment', amount: 1, label: '+1 Fragmento de Pala', icon: '⛏️' }],
+  9: [{ type: 'item', itemId: 'scarecrow_fragment', amount: 1, label: '+1 Frag. Espantapájaros', icon: '🌾' }],
+  10: [
+    { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
+    { type: 'pack', packId: 'basic', amount: 1, label: '1 Sobre Común', icon: '📦' },
+    { type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' },
+  ],
+  11: [{ type: 'item', itemId: 'water', amount: 10, label: '+10 Agua', icon: '💧' }],
+  12: [{ type: 'item', itemId: 'fertilizer', amount: 10, label: '+10 Fertilizante', icon: '🌱' }],
+  13: [{ type: 'item', itemId: 'shovel_fragment', amount: 2, label: '+2 Fragmentos de Pala', icon: '⛏️' }],
+  14: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
+  15: [
+    { type: 'gems', amount: 10, label: '+10 Gemas (Bono)', icon: '💎' },
+    { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
+  ],
+  16: [{ type: 'item', itemId: 'water', amount: 12, label: '+12 Agua', icon: '💧' }],
+  17: [{ type: 'item', itemId: 'fertilizer', amount: 12, label: '+12 Fertilizante', icon: '🌱' }],
+  18: [{ type: 'item', itemId: 'scarecrow_fragment', amount: 2, label: '+2 Frag. Espantapájaros', icon: '🌾' }],
+  19: [{ type: 'item', itemId: 'pesticide', amount: 2, label: '+2 Pesticidas', icon: '🧴' }],
+  20: [
+    { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'pesticide', amount: 2, label: '+2 Pesticidas', icon: '🧴' },
+    { type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' },
+  ],
+  21: [{ type: 'item', itemId: 'water', amount: 15, label: '+15 Agua', icon: '💧' }],
+  22: [{ type: 'item', itemId: 'fertilizer', amount: 15, label: '+15 Fertilizante', icon: '🌱' }],
+  23: [{ type: 'item', itemId: 'shovel_fragment', amount: 2, label: '+2 Fragmentos de Pala', icon: '⛏️' }],
+  24: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
+  25: [
+    { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
+    { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
+  ],
+  26: [{ type: 'item', itemId: 'water', amount: 15, label: '+15 Agua', icon: '💧' }],
+  27: [{ type: 'item', itemId: 'fertilizer', amount: 15, label: '+15 Fertilizante', icon: '🌱' }],
+  28: [{ type: 'item', itemId: 'scarecrow_fragment', amount: 2, label: '+2 Frag. Espantapájaros', icon: '🌾' }],
+  29: [{ type: 'item', itemId: 'pesticide', amount: 2, label: '+2 Pesticidas', icon: '🧴' }],
+  30: [
+    { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
+    { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
+    { type: 'item', itemId: 'sunflower_glasses', amount: 1, label: 'Gafas de Sol (Girasol)', icon: '🕶️', isExclusiveItem: true },
+  ],
+  31: [{ type: 'item', itemId: 'water', amount: 20, label: '+20 Agua', icon: '💧' }],
+  32: [{ type: 'item', itemId: 'fertilizer', amount: 20, label: '+20 Fertilizante', icon: '🌱' }],
+  33: [{ type: 'item', itemId: 'shovel_fragment', amount: 3, label: '+3 Fragmentos de Pala', icon: '⛏️' }],
+  34: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
+  35: [
+    { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
+    { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
+    { type: 'item', itemId: 'superman_suit', amount: 1, label: 'Capa de Superman (Nuez)', icon: '🦸', isExclusiveItem: true },
+  ],
+  36: [{ type: 'item', itemId: 'water', amount: 20, label: '+20 Agua', icon: '💧' }],
+  37: [{ type: 'item', itemId: 'fertilizer', amount: 20, label: '+20 Fertilizante', icon: '🌱' }],
+  38: [
+    { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'pesticide', amount: 3, label: '+3 Pesticidas', icon: '🧴' },
+  ],
+  39: [{ type: 'item', itemId: 'scarecrow_fragment', amount: 3, label: '+3 Frag. Espantapájaros', icon: '🌾' }],
+  40: [
+    { type: 'gems', amount: 30, label: '+30 Gemas (Bono)', icon: '💎' },
+    { type: 'pack', packId: 'epic', amount: 1, label: '1 Pack Místico/Épico', icon: '🔮' },
+    { type: 'item', itemId: 'spiderman_suit', amount: 1, label: 'Traje de Spiderman (Nuez)', icon: '🕷️', isExclusiveItem: true },
+  ],
+  41: [{ type: 'item', itemId: 'water', amount: 25, label: '+25 Agua', icon: '💧' }],
+  42: [{ type: 'item', itemId: 'fertilizer', amount: 25, label: '+25 Fertilizante', icon: '🌱' }],
+  43: [
+    { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'energy_potion_5', amount: 2, label: '+2 Pociones de Energía (10⚡)', icon: '⚡' },
+  ],
+  44: [{ type: 'item', itemId: 'shovel_fragment', amount: 4, label: '+4 Fragmentos de Pala', icon: '⛏️' }],
+  45: [
+    { type: 'gems', amount: 25, label: '+25 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'scarecrow_fragment', amount: 4, label: '+4 Frag. Espantapájaros', icon: '🌾' },
+    { type: 'item', itemId: 'ironman_suit', amount: 1, label: 'Reactor de Iron Man (Nuez)', icon: '🦾', isExclusiveItem: true },
+  ],
+  46: [{ type: 'item', itemId: 'water', amount: 30, label: '+30 Agua', icon: '💧' }],
+  47: [{ type: 'item', itemId: 'fertilizer', amount: 30, label: '+30 Fertilizante', icon: '🌱' }],
+  48: [
+    { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'pesticide', amount: 4, label: '+4 Pesticidas', icon: '🧴' },
+  ],
+  49: [
+    { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'energy_potion_5', amount: 2, label: '+2 Pociones de Energía (10⚡)', icon: '⚡' },
+  ],
+  50: [
+    { type: 'gems', amount: 75, label: '+75 Gemas Supremas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'gold_24k', amount: 1, label: 'Nuez Bañada en Oro 24K', icon: '👑', isExclusiveItem: true },
+  ],
+}
+
+/**
+ * Obtiene las recompensas fijas para un nivel específico.
+ * Si isFirstTime es false (piso ya superado en la historia de la cuenta),
+ * otorga ÚNICAMENTE recursos de cultivo (agua/fertilizante), NUNCA gemas, sobres o skins exclusivas.
+ */
+export function getFixedRewardsForLevel(
+  level: number,
+  multiplier = 1,
+  isFirstTime = true
+): ArenaAdsRewardOption[] {
+  if (!isFirstTime) {
+    const waterAmount = Math.min(25, 3 + Math.floor(level / 2)) * multiplier
+    const fertilizerAmount = Math.min(20, 2 + Math.floor(level / 3)) * multiplier
+    const labelPrefix = multiplier === 2 ? ` (2X)` : ''
+    return [
+      {
+        type: 'item',
+        itemId: 'water',
+        amount: waterAmount,
+        label: `+${waterAmount} Agua (Piso repetido)${labelPrefix}`,
+        icon: '💧',
+        isRepeatFloor: true,
+      },
+      {
+        type: 'item',
+        itemId: 'fertilizer',
+        amount: fertilizerAmount,
+        label: `+${fertilizerAmount} Fertilizante (Piso repetido)${labelPrefix}`,
+        icon: '🌱',
+        isRepeatFloor: true,
+      },
+    ]
+  }
+
+  const baseRewards = ARENA_ADS_LEVEL_REWARDS[level] || [
+    { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'water', amount: 30, label: '+30 Agua', icon: '💧' },
+    { type: 'item', itemId: 'fertilizer', amount: 30, label: '+30 Fertilizante', icon: '🌱' },
+  ]
+
+  return baseRewards.map((rew) => {
+    // Los ítems exclusivos y los sobres NUNCA se duplican (siempre 1)
+    if (rew.isExclusiveItem || rew.type === 'pack') {
+      return { ...rew, amount: 1 }
+    }
+    const scaledAmount = rew.amount * multiplier
+    const labelPrefix = multiplier === 2 ? ` (2X)` : ''
+    return {
+      ...rew,
+      amount: scaledAmount,
+      label: rew.type === 'gems' ? `+${scaledAmount} Gemas (Bono)${labelPrefix}` : `+${scaledAmount} ${rew.label.replace(/^\+\d+\s*/, '')}${labelPrefix}`,
+    }
+  })
+}
 
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array]
@@ -124,228 +287,34 @@ export function setCachedStock(stock: Record<string, { remainingStock: number }>
   _cachedStock = stock
 }
 
+export function getCachedStock(): Record<string, { remainingStock: number }> | null {
+  return _cachedStock
+}
+
 /**
- * Genera una sola opción individual de recompensa según los pools balanceados
- *
- * REGLAS ESTRICTAS DE BALANCE:
- * 1. Ítems exclusivos / Skins SOLO pueden salir cada 10 niveles (Nivel 10, 20, 30, 40...).
- * 2. Si level % 10 !== 0, la probabilidad es estrictamente 0% (nunca en niveles intermedios).
- * 3. En niveles múltiplos de 10, es una tirada de probabilidad aleatoria (45% de drop).
- * 4. Los ítems exclusivos y consumibles NUNCA se multiplican por 2 (siempre cantidad = 1).
- * 5. Solo los recursos (Oro, Gemas, Agua, Fertilizante) se duplican por el multiplicador 2X.
+ * Devuelve la recompensa principal del nivel según la tabla fija
  */
 export function generateSingleRewardItem(
   level: number,
   multiplier = 1,
-  allowExclusiveItem = false,
-  excludedItemIds?: Set<string>
+  _allowExclusiveItem = false,
+  _excludedItemIds?: Set<string>,
+  isFirstTime = true
 ): ArenaAdsRewardOption {
-  const isMilestoneEvery10 = level >= 10 && level % 10 === 0
-  const canRollExclusive = allowExclusiveItem && isMilestoneEvery10
-
-  if (canRollExclusive && Math.random() < 0.45) {
-    const availablePool = EXCLUSIVE_ARENA_ITEMS.filter((item) => {
-      if (excludedItemIds && excludedItemIds.has(item.id)) return false
-      if (!_cachedStock) return true
-      const s = _cachedStock[item.id]
-      return s ? s.remainingStock > 0 : true
-    })
-
-    if (availablePool.length > 0) {
-      const exclusive = randomPick(availablePool)
-      return {
-        type: 'item',
-        amount: 1, // Los ítems exclusivos SIEMPRE son exactamente 1, NUNCA se duplican
-        itemId: exclusive.id,
-        label: `${exclusive.label} (Exclusivo)`,
-        icon: exclusive.icon,
-        isExclusiveItem: true,
-      }
-    }
-  }
-
-  // ── REGLA ESTRICTA NIVELES 1 AL 5: CERO GEMAS, SOLO RECURSOS DE CULTIVO Y CRAFTING ──
-  // Agua, Fertilizante, Fragmentos de Pala, Fragmentos de Espantapájaros y Pesticida
-  if (level <= 5) {
-    const resourceRoll = Math.random()
-    if (resourceRoll < 0.30) {
-      // Agua (30%)
-      const baseWater = randomPick(WATER_POOL)
-      const amount = baseWater * multiplier
-      return {
-        type: 'item',
-        amount,
-        itemId: 'water',
-        label: multiplier === 2 ? `+${amount} Agua (2X)` : `+${amount} Agua`,
-        icon: '💧',
-      }
-    } else if (resourceRoll < 0.60) {
-      // Fertilizante (30%)
-      const baseFertilizer = randomPick(FERTILIZER_POOL)
-      const amount = baseFertilizer * multiplier
-      return {
-        type: 'item',
-        amount,
-        itemId: 'fertilizer',
-        label: multiplier === 2 ? `+${amount} Fertilizante (2X)` : `+${amount} Fertilizante`,
-        icon: '🌱',
-      }
-    } else if (resourceRoll < 0.75) {
-      // Fragmento de Pala (15%) - Cantidad siempre 1
-      return {
-        type: 'item',
-        amount: 1,
-        itemId: 'shovel_fragment',
-        label: '+1 Fragmento de Pala',
-        icon: '⛏️',
-      }
-    } else if (resourceRoll < 0.90) {
-      // Fragmento de Espantapájaros (15%) - Cantidad siempre 1
-      return {
-        type: 'item',
-        amount: 1,
-        itemId: 'scarecrow_fragment',
-        label: '+1 Frag. Espantapájaros',
-        icon: '🌾',
-      }
-    } else {
-      // Pesticida (10%) - Cantidad siempre 1
-      return {
-        type: 'item',
-        amount: 1,
-        itemId: 'pesticide',
-        label: '+1 Pesticida',
-        icon: '🧴',
-      }
-    }
-  }
-
-  // ── NIVELES 6 EN ADELANTE: Comienzan a salir Oro y Gemas balanceadas ──
-  const categoryRoll = Math.random()
-  if (categoryRoll < 0.35) {
-    // Oro (35%)
-    const goldPool = level < 10 ? GOLD_POOL_EARLY : GOLD_POOL_LATE
-    const baseGold = randomPick(goldPool)
-    const amount = baseGold * multiplier
-    return {
-      type: 'gold',
-      amount,
-      label: multiplier === 2 ? `+${amount} Oro (2X)` : `+${amount} Oro`,
-      icon: '🪙',
-    }
-  } else if (categoryRoll < 0.65) {
-    // Gemas (30% a partir de nivel 6+)
-    const gemsPool = level < 10 ? [1, 2, 3] : GEMS_POOL
-    const baseGems = randomPick(gemsPool)
-    const amount = baseGems * multiplier
-    return {
-      type: 'gems',
-      amount,
-      label: multiplier === 2 ? `+${amount} Gemas (2X)` : `+${amount} Gemas`,
-      icon: '💎',
-    }
-  } else if (categoryRoll < 0.85) {
-    // Agua o Fertilizante (20%)
-    if (Math.random() < 0.5) {
-      const baseWater = randomPick(WATER_POOL)
-      const amount = baseWater * multiplier
-      return {
-        type: 'item',
-        amount,
-        itemId: 'water',
-        label: multiplier === 2 ? `+${amount} Agua (2X)` : `+${amount} Agua`,
-        icon: '💧',
-      }
-    } else {
-      const baseFertilizer = randomPick(FERTILIZER_POOL)
-      const amount = baseFertilizer * multiplier
-      return {
-        type: 'item',
-        amount,
-        itemId: 'fertilizer',
-        label: multiplier === 2 ? `+${amount} Fertilizante (2X)` : `+${amount} Fertilizante`,
-        icon: '🌱',
-      }
-    }
-  } else {
-    // Consumibles / Fragmentos especiales (15%) - Cantidad siempre 1, NUNCA se duplican
-    const specialPick = Math.random()
-    if (specialPick < 0.28) {
-      return {
-        type: 'item',
-        amount: 1,
-        itemId: 'shovel_fragment',
-        label: '+1 Fragmento de Pala',
-        icon: '⛏️',
-      }
-    } else if (specialPick < 0.56) {
-      return {
-        type: 'item',
-        amount: 1,
-        itemId: 'scarecrow_fragment',
-        label: '+1 Frag. Espantapájaros',
-        icon: '🌾',
-      }
-    } else if (specialPick < 0.80) {
-      return {
-        type: 'item',
-        amount: 1,
-        itemId: 'pesticide',
-        label: '+1 Pesticida',
-        icon: '🧴',
-      }
-    } else {
-      return {
-        type: 'item',
-        amount: 1,
-        itemId: 'energy_potion_5',
-        label: '+1 Poción de Energía (5⚡)',
-        icon: '⚡',
-      }
-    }
-  }
+  const rewards = getFixedRewardsForLevel(level, multiplier, isFirstTime)
+  return rewards[0]
 }
-
 /**
- * Genera el paquete de recompensas para la fase de preparación:
- * - Niveles 1-9: 1 recompensa.
- * - Niveles 10-19: 2 recompensas.
- * - Niveles 20+: 3 recompensas (añade 1 cada 10 niveles).
- *
- * REGLAS ESTRICTAS DE BALANCE:
- * - Ítems exclusivos / Skins SOLO pueden salir cada 10 niveles (10, 20, 30...).
- * - Máximo 1 ítem exclusivo por lote de recompensas (el resto son recursos).
- * - Máximo 1 ítem exclusivo acumulado por cada 10 niveles (Math.floor(level / 10)).
+ * Genera el paquete de recompensas para la fase de preparación según la tabla fija por nivel
  */
 export function generateRewardOptions(
   level: number,
   multiplier = 1,
-  existingExclusiveCount = 0,
-  existingExclusiveIds?: Set<string>
+  _existingExclusiveCount = 0,
+  _existingExclusiveIds?: Set<string>,
+  isFirstTime = true
 ): ArenaAdsRewardOption[] {
-  let count = 1
-  if (level >= 10 && level < 20) {
-    count = 2
-  } else if (level >= 20) {
-    count = 2 + Math.floor((level - 10) / 10)
-  }
-
-  const isMilestoneEvery10 = level >= 10 && level % 10 === 0
-  const maxAllowedExclusives = Math.floor(level / 10)
-  const canAttemptExclusive = isMilestoneEvery10 && existingExclusiveCount < maxAllowedExclusives
-
-  let hasExclusiveInBatch = false
-  const list: ArenaAdsRewardOption[] = []
-
-  for (let i = 0; i < count; i++) {
-    const allowExclusiveForSlot = canAttemptExclusive && !hasExclusiveInBatch
-    const opt = generateSingleRewardItem(level, multiplier, allowExclusiveForSlot, existingExclusiveIds)
-    if (opt.isExclusiveItem) {
-      hasExclusiveInBatch = true
-    }
-    list.push(opt)
-  }
-  return list
+  return getFixedRewardsForLevel(level, multiplier, isFirstTime)
 }
 
 /**
@@ -416,8 +385,11 @@ export function generateLevelPrep(
   level: number,
   multiplier = 1,
   currentDeck?: CartaDeMazo[],
-  accumulatedItems?: Partial<Record<FarmingItemId, number>>
+  accumulatedItems?: Partial<Record<FarmingItemId | string, number>>,
+  alreadyClaimedLevels?: number[]
 ): ArenaAdsPrepChoice {
+  const isFirstTime = !alreadyClaimedLevels?.includes(level)
+
   const existingExclusiveCount = accumulatedItems
     ? Object.keys(accumulatedItems).filter(
         (id) => EXCLUSIVE_ARENA_ITEM_IDS.has(id as FarmingItemId) && (accumulatedItems[id as FarmingItemId] || 0) > 0
@@ -432,7 +404,13 @@ export function generateLevelPrep(
       : []
   )
 
-  const rewardOptions = generateRewardOptions(level, multiplier, existingExclusiveCount, existingExclusiveIds)
+  const rewardOptions = generateRewardOptions(
+    level,
+    multiplier,
+    existingExclusiveCount,
+    existingExclusiveIds,
+    isFirstTime
+  )
 
   // Obtener IDs de plantas actualmente presentes en el mazo activo (+ sunflower)
   const deckPlantIds = new Set<string>((currentDeck || []).map((c) => c.plantId))
@@ -456,20 +434,19 @@ export function generateLevelPrep(
     fusedPool = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
   }
 
-  // ── SORTEO DE EVENTO ALEATORIO (50% Botín vs 50% Reforzar Plantas) ───────────
-  // En múltiplos de 10 (10, 20, 30...) es SIEMPRE 'reward' para garantizar el cofre de skin exclusiva
-  const isMilestoneEvery10 = level >= 10 && level % 10 === 0
-  const eventType: 'reward' | 'plant' = isMilestoneEvery10
+  // En hitos importantes (10, 15, 20, 25, 30, 35, 40, 45, 50), evento 'reward' garantizado
+  const isMilestone = level % 10 === 0 || [15, 25, 35, 45, 50].includes(level)
+  const eventType: 'reward' | 'plant' = isMilestone
     ? 'reward'
     : Math.random() < 0.50
     ? 'reward'
     : 'plant'
 
-  // Duplicar recompensa: A partir de nivel 15, aleatoriamente, PERO NUNCA si salieron gemas o ítems
-  const hasGemsOrItems = rewardOptions.some(
-    (opt) => opt.type === 'gems' || opt.type === 'item' || Boolean(opt.isExclusiveItem)
+  // Duplicar recompensa: Permitido a partir de nivel 15 solo si NO hay skins exclusivas ni sobres
+  const hasExclusiveOrPack = rewardOptions.some(
+    (opt) => opt.type === 'pack' || Boolean(opt.isExclusiveItem)
   )
-  const canDoubleReward = !hasGemsOrItems && level >= 15 && Math.random() < 0.50
+  const canDoubleReward = !hasExclusiveOrPack && level >= 15 && Math.random() < 0.50
 
   return {
     eventType,
@@ -554,34 +531,57 @@ export function buildArenaAdsDeck(
 }
 
 /**
- * Genera el mazo del Bot rival para el nivel actual.
+ * Genera el mazo del Bot rival para el nivel actual con composiciones sinérgicas
+ * y escalado sustancial de estadísticas a partir del nivel 5.
  */
 export function generateBotDeckForLevel(level: number): CartaDeMazo[] {
   const deck: CartaDeMazo[] = []
+  // Girasol en slot 0
+  const sunflowerLevel = level >= 30 ? 4 : level >= 15 ? 3 : level >= 5 ? 2 : 1
   deck.push({
     plantId: 'sunflower',
     slot: 0,
-    level: 1 + Math.floor(level / 5),
+    level: sunflowerLevel,
     statRolls: [],
   })
 
-  const shuffled = shuffleArray(ALL_NON_SUNFLOWER_PLANTS)
-  for (let i = 1; i < 5; i++) {
-    const plantId = shuffled[i - 1]
-    const rollsCount = Math.floor(level / 4)
-    const rolls: PlantStatKey[] = Array.from({ length: rollsCount }, () => 'damage')
+  // Composiciones sinérgicas según nivel de mazmorra
+  const tankPool: PlantId[] = level >= 25 ? ['tallnut', 'wallnut'] : ['wallnut', 'garlic']
+  const dpsPool: PlantId[] = level >= 20 ? ['melonpult', 'threepeater', 'repeater'] : ['repeater', 'peashooter']
+  const meleePool: PlantId[] = level >= 15 ? ['bonkchoy', 'squash', 'chomper'] : ['bonkchoy', 'chomper']
+  const utilityPool: PlantId[] = level >= 20 ? ['iceberglettuce', 'jalapeno', 'kernelpult', 'aloe'] : ['kernelpult', 'iceberglettuce']
+
+  const selectedPlants: PlantId[] = [
+    randomPick(tankPool),
+    randomPick(dpsPool),
+    randomPick(meleePool),
+    randomPick(utilityPool),
+  ]
+
+  // Escalado de nivel de cartas y tiradas de estadísticas
+  const cardLevel = level >= 40 ? 4 : level >= 20 ? 3 : level >= 5 ? 2 : 1
+  const rollsCount = level >= 30 ? 4 : level >= 20 ? 3 : level >= 10 ? 2 : level >= 5 ? 1 : 0
+  const rollPool: PlantStatKey[] = ['damage', 'hp', 'attackSpeed', 'cooldown']
+
+  selectedPlants.forEach((plantId, index) => {
+    const rolls: PlantStatKey[] = []
+    for (let r = 0; r < rollsCount; r++) {
+      rolls.push(rollPool[r % rollPool.length])
+    }
     deck.push({
       plantId,
-      slot: i,
-      level: 1 + Math.floor(level / 3),
+      slot: index + 1,
+      level: cardLevel,
       statRolls: rolls,
     })
-  }
+  })
+
   return deck
 }
 
 /**
  * Calcula los atributos del bot rival para el nivel actual de la mazmorra.
+ * A partir del Nivel 5 se eleva significativamente el ELO y la vida base del bot.
  */
 export function getBotStatsForLevel(level: number): {
   botElo: number
@@ -589,12 +589,39 @@ export function getBotStatsForLevel(level: number): {
   botName: string
   botDeck: CartaDeMazo[]
 } {
-  const botElo = Math.min(3200, 1000 + (level - 1) * 200)
-  const botBaseHp = 600 + (level - 1) * 60
+  let botElo = 1100
+  if (level <= 4) {
+    botElo = 1100 + (level - 1) * 75 // 1100, 1175, 1250, 1325
+  } else if (level <= 20) {
+    botElo = 1325 + (level - 4) * 65 // Lv 5: 1390, Lv 10: 1715, Lv 20: 2365
+  } else if (level <= 40) {
+    botElo = 2365 + (level - 20) * 35 // Lv 30: 2715, Lv 40: 3065
+  } else {
+    botElo = Math.min(3600, 3065 + (level - 40) * 35) // Lv 50: 3415
+  }
+
+  let botBaseHp = 1000
+  if (level <= 4) {
+    botBaseHp = 1000
+  } else if (level <= 10) {
+    botBaseHp = 1000 + (level - 4) * 25 // Lv 5: 1025, Lv 10: 1150
+  } else if (level <= 20) {
+    botBaseHp = 1150 + (level - 10) * 35 // Lv 20: 1500
+  } else if (level <= 30) {
+    botBaseHp = 1500 + (level - 20) * 45 // Lv 30: 1950
+  } else if (level <= 40) {
+    botBaseHp = 1950 + (level - 30) * 55 // Lv 40: 2500
+  } else {
+    botBaseHp = 2500 + (level - 40) * 70 // Lv 50: 3200
+  }
+
   const botDeck = generateBotDeckForLevel(level)
 
-  const titles = ['Novato', 'Guardián', 'Centinela', 'Gladiador', 'Veterano', 'Campeón', 'Titán', 'Coloso', 'Señor Supremo']
-  const titleIdx = Math.min(titles.length - 1, Math.floor((level - 1) / 2))
+  const titles = [
+    'Recluta', 'Guardián', 'Centinela', 'Gladiador', 'Veterano',
+    'Comandante', 'Campeón', 'Titán', 'Coloso', 'Señor Supremo'
+  ]
+  const titleIdx = Math.min(titles.length - 1, Math.floor((level - 1) / 5))
   const botName = `Bot ${titles[titleIdx]} (Nv.${level})`
 
   return { botElo, botBaseHp, botName, botDeck }
@@ -658,9 +685,13 @@ export class ArenaAdsManager {
 
   /**
    * Inicia una nueva run de Mazmorra Infinita.
-   * Permite elegir pagar 100 de Oro (1x) o 200 Gemas (2x multiplicador de botín).
+   * Permite elegir pagar 350 de Oro (1x) o 200 Gemas (2x multiplicador de botín).
    */
-  static startNewRun(paymentTypeOrSeed: 'gold' | 'gems' | number = 'gold', seed = Date.now()): ArenaAdsRun {
+  static startNewRun(
+    paymentTypeOrSeed: 'gold' | 'gems' | number = 'gold',
+    seed = Date.now(),
+    alreadyClaimedLevels: number[] = []
+  ): ArenaAdsRun {
     let paymentType: 'gold' | 'gems' = 'gold'
     let actualSeed = seed
     if (typeof paymentTypeOrSeed === 'number') {
@@ -671,7 +702,7 @@ export class ArenaAdsManager {
 
     const multiplier = paymentType === 'gems' ? 2 : 1
     const initialDeck = buildArenaAdsDeck()
-    const prep = generateLevelPrep(1, multiplier, initialDeck)
+    const prep = generateLevelPrep(1, multiplier, initialDeck, {}, alreadyClaimedLevels)
 
     const run: ArenaAdsRun = {
       id: `run_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -692,6 +723,8 @@ export class ArenaAdsManager {
       chosenAdvantage: {
         type: 'none',
       },
+      alreadyClaimedLevels: [...alreadyClaimedLevels],
+      newlyClaimedLevels: [],
       updatedAt: Date.now(),
       startedAt: Date.now(),
       reviveCount: 0,
@@ -741,54 +774,60 @@ export class ArenaAdsManager {
   }
 
   /**
-   * Inicia el combate del nivel actual consolidando las recompensas elegidas si aplica.
+   * Inicia el combate del nivel actual.
+   * Las recompensas del nivel se consolidan al ganar el combate en completeLevelVictory.
    */
   static startBattle(run: ArenaAdsRun): ArenaAdsRun {
     run.status = 'battle'
-
-    if (run.chosenAdvantage?.type === 'reward' && run.chosenAdvantage.rewardClaimed) {
-      const raw = run.chosenAdvantage.rewardClaimed
-      const opts = Array.isArray(raw) ? raw : [raw]
-      for (const opt of opts) {
-        if (opt.type === 'gold') {
-          run.accumulatedRewards.gold += opt.amount
-        } else if (opt.type === 'gems') {
-          run.accumulatedRewards.gems += opt.amount
-        } else if (opt.type === 'item' && opt.itemId) {
-          if (EXCLUSIVE_ARENA_ITEM_IDS.has(opt.itemId)) {
-            const currentExclusiveCount = Object.keys(run.accumulatedRewards.items).filter(
-              (id) => EXCLUSIVE_ARENA_ITEM_IDS.has(id as FarmingItemId) && (run.accumulatedRewards.items[id as FarmingItemId] || 0) > 0
-            ).length
-            const maxAllowedExclusives = Math.floor(run.level / 10)
-
-            if (currentExclusiveCount < maxAllowedExclusives || (run.accumulatedRewards.items[opt.itemId] || 0) > 0) {
-              run.accumulatedRewards.items[opt.itemId] = 1
-            }
-          } else {
-            run.accumulatedRewards.items[opt.itemId] =
-              (run.accumulatedRewards.items[opt.itemId] || 0) + opt.amount
-          }
-        }
-      }
-    }
-
     this.saveRun(run)
     return run
   }
 
   /**
-   * Procesa la victoria del nivel actual y añade bono de victoria escalado por multiplicador.
+   * Procesa la victoria del nivel actual y añade las recompensas fijas autoritativas.
+   * Si es primera victoria histórica de la cuenta: otorga gemas, sobres, skins exclusivas.
+   * Si el piso ya fue superado previamente: otorga ÚNICAMENTE recursos de cultivo (agua/fertilizante).
+   * 0 Oro en toda la mazmorra.
    */
   static completeLevelVictory(run: ArenaAdsRun): ArenaAdsRun {
     run.status = 'level_cleared'
-    let bonusGold = 2
-    if (run.level === 10) {
-      // Hito Legendario de Recuperación: Cruza el umbral de los 100 de oro de entrada
-      bonusGold = 50
-    } else if (run.level > 10) {
-      bonusGold = 10 + (run.level - 10) * 3
+
+    const isDoubled =
+      run.chosenAdvantage?.type === 'reward' &&
+      Array.isArray(run.chosenAdvantage.rewardClaimed) &&
+      run.chosenAdvantage.rewardClaimed.some((r) => r.label.includes('(2X)'))
+
+    const effectiveMultiplier = (run.multiplier || 1) * (isDoubled ? 2 : 1)
+    const isFirstTime = !run.alreadyClaimedLevels?.includes(run.level)
+    const levelRewards = getFixedRewardsForLevel(run.level, effectiveMultiplier, isFirstTime)
+
+    if (isFirstTime) {
+      if (!run.newlyClaimedLevels) run.newlyClaimedLevels = []
+      if (!run.newlyClaimedLevels.includes(run.level)) {
+        run.newlyClaimedLevels.push(run.level)
+      }
+      if (!run.alreadyClaimedLevels) run.alreadyClaimedLevels = []
+      if (!run.alreadyClaimedLevels.includes(run.level)) {
+        run.alreadyClaimedLevels.push(run.level)
+      }
     }
-    run.accumulatedRewards.gold += bonusGold
+
+    for (const opt of levelRewards) {
+      if (opt.type === 'gems') {
+        run.accumulatedRewards.gems += opt.amount
+      } else if (opt.type === 'item' && opt.itemId) {
+        if (EXCLUSIVE_ARENA_ITEM_IDS.has(opt.itemId)) {
+          run.accumulatedRewards.items[opt.itemId] = 1
+        } else {
+          run.accumulatedRewards.items[opt.itemId] =
+            (run.accumulatedRewards.items[opt.itemId] || 0) + opt.amount
+        }
+      } else if (opt.type === 'pack' && opt.packId) {
+        run.accumulatedRewards.items[opt.packId] =
+          (run.accumulatedRewards.items[opt.packId] || 0) + opt.amount
+      }
+    }
+
     this.saveRun(run)
     return run
   }
@@ -801,7 +840,13 @@ export class ArenaAdsManager {
     run.reviveCount = (run.reviveCount || 0) + 1
     run.status = 'prep'
     const deckToUse = run.baseDeck && run.baseDeck.length > 0 ? run.baseDeck : run.deck
-    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier, deckToUse, run.accumulatedRewards.items)
+    run.currentPrepChoice = generateLevelPrep(
+      run.level,
+      run.multiplier,
+      deckToUse,
+      run.accumulatedRewards.items,
+      run.alreadyClaimedLevels
+    )
     this.saveRun(run)
     return run
   }
@@ -817,7 +862,13 @@ export class ArenaAdsManager {
     const newBaseDeck = buildArenaAdsDeck()
     run.baseDeck = newBaseDeck
     run.deck = newBaseDeck
-    run.currentPrepChoice = generateLevelPrep(run.level, run.multiplier, newBaseDeck, run.accumulatedRewards.items)
+    run.currentPrepChoice = generateLevelPrep(
+      run.level,
+      run.multiplier,
+      newBaseDeck,
+      run.accumulatedRewards.items,
+      run.alreadyClaimedLevels
+    )
 
     this.saveRun(run)
     return run

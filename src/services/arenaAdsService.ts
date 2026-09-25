@@ -8,6 +8,7 @@ export interface EnterArenaAdsResult {
   multiplier?: number
   newGoldBalance?: number
   newGemsBalance?: number
+  claimedArenaAdsLevels?: number[]
   error?: string
 }
 
@@ -23,6 +24,7 @@ export interface ClaimArenaAdsLootResult {
   multiplier?: number
   newGoldBalance?: number
   newGemsBalance?: number
+  claimedArenaAdsLevels?: number[]
   error?: string
 }
 
@@ -49,7 +51,7 @@ export interface ArenaAdsLeaderboardEntry {
   totalRewards: {
     gold: number
     gems: number
-    items?: Record<string, number>
+    items?: Partial<Record<string, number>>
   }
   updatedAt: string
 }
@@ -57,16 +59,17 @@ export interface ArenaAdsLeaderboardEntry {
 export const arenaAdsService = {
   /**
    * Valida en el backend y descuenta atómicamente la entrada a Arena ADS:
-   * - 100 de Oro (Multiplicador 1x)
+   * - 350 de Oro (Multiplicador 1x)
    * - 200 Gemas (Multiplicador 2x de botín)
    */
   async enterArenaAds(paymentType: 'gold' | 'gems' = 'gold'): Promise<EnterArenaAdsResult> {
     if (!isSupabaseConfigured()) {
       return {
         success: true,
-        cost: paymentType === 'gems' ? 200 : 100,
+        cost: paymentType === 'gems' ? 200 : 350,
         currency: paymentType,
         multiplier: paymentType === 'gems' ? 2 : 1,
+        claimedArenaAdsLevels: [],
       }
     }
 
@@ -76,9 +79,10 @@ export const arenaAdsService = {
         // Modo local / invitado
         return {
           success: true,
-          cost: paymentType === 'gems' ? 200 : 100,
+          cost: paymentType === 'gems' ? 200 : 350,
           currency: paymentType,
           multiplier: paymentType === 'gems' ? 2 : 1,
+          claimedArenaAdsLevels: [],
         }
       }
 
@@ -95,18 +99,19 @@ export const arenaAdsService = {
           error: isInsufficient
             ? paymentType === 'gems'
               ? 'Gemas insuficientes para la entrada potenciada (se requieren 200 💎).'
-              : 'Oro insuficiente para entrar a la mazmorra (se requieren 100 🪙).'
+              : 'Oro insuficiente para entrar a la mazmorra (se requieren 350 🪙).'
             : (error.message || 'Error al validar la entrada en el servidor.'),
         }
       }
 
       return {
         success: true,
-        cost: data?.cost ?? (paymentType === 'gems' ? 200 : 100),
+        cost: data?.cost ?? (paymentType === 'gems' ? 200 : 350),
         currency: (data?.currency as 'gold' | 'gems') || paymentType,
         multiplier: data?.multiplier ?? (paymentType === 'gems' ? 2 : 1),
         newGoldBalance: data?.new_gold_balance,
         newGemsBalance: data?.new_gems_balance,
+        claimedArenaAdsLevels: Array.isArray(data?.claimed_arena_ads_levels) ? data.claimed_arena_ads_levels : [],
       }
     } catch (err: any) {
       console.error('[arenaAdsService] enterArenaAds exception:', err)
@@ -161,16 +166,21 @@ export const arenaAdsService = {
 
   /**
    * Reclama el botín acumulado de la mazmorra acreditándolo en la base de datos con multiplicador
+   * y consolidando permanentemente los pisos superados en claimed_arena_ads_levels.
    */
-  async claimLoot(loot: ArenaAdsLoot, multiplier: number = 1): Promise<ClaimArenaAdsLootResult> {
+  async claimLoot(
+    loot: ArenaAdsLoot,
+    multiplier: number = 1,
+    claimedLevels: number[] = []
+  ): Promise<ClaimArenaAdsLootResult> {
     if (!isSupabaseConfigured()) {
-      return { success: true, multiplier }
+      return { success: true, multiplier, claimedArenaAdsLevels: claimedLevels }
     }
 
     try {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData?.session?.user) {
-        return { success: true, multiplier }
+        return { success: true, multiplier, claimedArenaAdsLevels: claimedLevels }
       }
 
       const { data, error } = await (supabase.rpc as any)('claim_arena_ads_loot', {
@@ -178,6 +188,7 @@ export const arenaAdsService = {
         p_gems: loot.gems || 0,
         p_items: loot.items || {},
         p_multiplier: multiplier || 1,
+        p_claimed_levels: claimedLevels,
       })
 
       if (error) {
@@ -190,6 +201,7 @@ export const arenaAdsService = {
         multiplier: data?.multiplier ?? multiplier,
         newGoldBalance: data?.new_gold_balance,
         newGemsBalance: data?.new_gems_balance,
+        claimedArenaAdsLevels: Array.isArray(data?.claimed_arena_ads_levels) ? data.claimed_arena_ads_levels : claimedLevels,
       }
     } catch (err: any) {
       console.error('[arenaAdsService] claimLoot exception:', err)
@@ -251,7 +263,7 @@ export const arenaAdsService = {
     gemsSpent?: number
     revived?: boolean
     reviveCount?: number
-    totalRewards?: { gold: number; gems: number; items?: Record<string, number> }
+    totalRewards?: { gold: number; gems: number; items?: Partial<Record<string, number>> }
     status?: 'completed' | 'active' | 'retired'
   }): Promise<{ success: boolean; newBest?: boolean; error?: string }> {
     if (!isSupabaseConfigured()) {

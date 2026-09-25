@@ -63,7 +63,9 @@ export default function ArenaAdsInterstitialModal({
         {/* MENSAJE DE ESTADO ENTRE NIVELES */}
         <div className="arena-ads-interstitial-ad-shell">
           <span style={{ fontSize: '11px', color: isDefeat ? '#f87171' : '#94a3b8', textAlign: 'center', padding: '6px' }}>
-            {isDefeat ? '⚠️ Si abandonas ahora, perderás todo el botín acumulado.' : '🛡️ Tu progreso y botín están 100% blindados en caché.'}
+            {isDefeat
+              ? '⚠️ Si sales al lobby perderás el botín sin asegurar de esta expedición (podrás volver a desafiar la mazmorra pagando 350 🪙 Oro desde el Nivel 1). O revive de inmediato por 150 💎 Gemas.'
+              : '🛡️ Tu progreso y botín están 100% blindados en caché.'}
           </span>
         </div>
 
@@ -78,9 +80,11 @@ export default function ArenaAdsInterstitialModal({
             )}
           </div>
           <div className="arena-ads-loot-pills" style={{ justifyContent: 'center' }}>
-            <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
-              <GoldIcon size={16} /> {accumulatedLoot.gold} Oro
-            </div>
+            {accumulatedLoot.gold > 0 && (
+              <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
+                <GoldIcon size={16} /> {accumulatedLoot.gold} Oro
+              </div>
+            )}
             <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
               <span>💎</span> {accumulatedLoot.gems} Gemas
             </div>
@@ -101,10 +105,10 @@ export default function ArenaAdsInterstitialModal({
               style={{ background: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444', color: '#fca5a5' }}
               onClick={() => {
                 soundManager.playSound('click', 0.5)
-                onCashout() // Abandonar y perder todo
+                onCashout() // Abandonar y perder botín de la sesión
               }}
             >
-              💀 PERDER TODO Y SALIR
+              🚪 SALIR AL LOBBY
             </button>
 
             {onRevive && (

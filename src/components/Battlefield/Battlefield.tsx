@@ -48,7 +48,7 @@ import { recordPlantPlacement } from '../../utils/plantUsageTracker'
 import { trackGameOver, trackGameStart } from '../../utils/analytics'
 import GoldIcon from '../Common/GoldIcon'
 import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
-import { ArenaAdsManager } from '../../utils/arenaAdsManager'
+import { ArenaAdsManager, getBotStatsForLevel } from '../../utils/arenaAdsManager'
 import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { setCombatAdsBlocked, resetPopunderQuota } from '../../utils/arenaAdsNetwork'
@@ -188,7 +188,7 @@ interface BattlefieldProps {
   matchMode?: 'ranked' | 'colosseum' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads'
   arenaAdsRun?: ArenaAdsRun | null
   onArenaAdsAdvance?: (run: ArenaAdsRun) => void
-  onArenaAdsRetreat?: (loot: ArenaAdsLoot, multiplier?: number) => void
+  onArenaAdsRetreat?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => void
   onArenaAdsRevive?: (costGems?: number) => void
   friendlyBetGems?: number
   colosseumConfig?: ColosseumMatchConfig | null
@@ -1798,25 +1798,45 @@ export default function Battlefield({
         // Fail-closed: si el reloj falla o no está disponible, no se arranca desalineada.
         syncAndStartMatchClock(roomId)
       } else {
-        // Entrenamiento contra el bot local: no hay reloj que alinear
-        startGame(
-          seed,
-          false,
-          undefined,
-          userElo,
-          undefined,
-          mazoMioParsed ? { mio: mazoMioParsed, rival: null } : undefined,
-          undefined,
-          undefined,
-          undefined,
-          treeBonusHpRef.current,
-          rivalTreeBonusHpRef.current,
-          treeSkinRef.current,
-          rivalTreeSkinRef.current
-        )
+        // Entrenamiento contra el bot local o Mazmorra Arena ADS
+        if (matchMode === 'arena_ads' && currentArenaAdsRun) {
+          const adsBotStats = getBotStatsForLevel(currentArenaAdsRun.level)
+          const rivalBonusHp = Math.max(0, adsBotStats.botBaseHp - 1000)
+          startGame(
+            seed,
+            false,
+            undefined,
+            adsBotStats.botElo,
+            undefined,
+            { mio: mazoMioParsed, rival: adsBotStats.botDeck },
+            undefined,
+            undefined,
+            'auth-v2',
+            treeBonusHpRef.current,
+            rivalBonusHp,
+            treeSkinRef.current,
+            rivalTreeSkinRef.current
+          )
+        } else {
+          startGame(
+            seed,
+            false,
+            undefined,
+            userElo,
+            undefined,
+            mazoMioParsed ? { mio: mazoMioParsed, rival: null } : undefined,
+            undefined,
+            undefined,
+            undefined,
+            treeBonusHpRef.current,
+            rivalTreeBonusHpRef.current,
+            treeSkinRef.current,
+            rivalTreeSkinRef.current
+          )
+        }
       }
     }
-  }, [practicePlantId, seed, roomId, startGame, startPracticeGame, startStrategicPlaytestGame, setSelectedCard, gameStatus, userElo, syncAndStartMatchClock, matchMode, strategicPlaytestConfig, activeDeck, mazoMioParsed, treeLevel])
+  }, [practicePlantId, seed, roomId, startGame, startPracticeGame, startStrategicPlaytestGame, setSelectedCard, gameStatus, userElo, syncAndStartMatchClock, matchMode, strategicPlaytestConfig, activeDeck, mazoMioParsed, treeLevel, currentArenaAdsRun])
 
   /**
    * LA HUELLA DEL TABLERO
@@ -2024,14 +2044,14 @@ export default function Battlefield({
       userElo,
       undefined,
       mazoMioParsed ? { mio: mazoMioParsed, rival: null } : undefined,
-      undefined,
-      undefined,
-      undefined,
-      treeBonusHpRef.current,
-      rivalTreeBonusHpRef.current,
-      treeSkinRef.current,
-      rivalTreeSkinRef.current
-    )
+        undefined,
+        undefined,
+        undefined,
+        treeBonusHpRef.current,
+        rivalTreeBonusHpRef.current,
+        treeSkinRef.current,
+        rivalTreeSkinRef.current
+      )
   }
 
   const isArenaAds = matchMode === 'arena_ads'
@@ -3527,7 +3547,11 @@ export default function Battlefield({
                     onClick={() => {
                       soundManager.playBgm('menu')
                       if (currentArenaAdsRun && onArenaAdsRetreat) {
-                        onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards, currentArenaAdsRun.multiplier || 1)
+                        onArenaAdsRetreat(
+                          currentArenaAdsRun.accumulatedRewards,
+                          currentArenaAdsRun.multiplier || 1,
+                          currentArenaAdsRun.newlyClaimedLevels
+                        )
                       } else if (onBackToMenu) {
                         onBackToMenu()
                       }
@@ -3584,7 +3608,11 @@ export default function Battlefield({
                 onBackToMenu()
               }
             } else if (onArenaAdsRetreat) {
-              onArenaAdsRetreat(currentArenaAdsRun.accumulatedRewards, currentArenaAdsRun.multiplier || 1)
+              onArenaAdsRetreat(
+                currentArenaAdsRun.accumulatedRewards,
+                currentArenaAdsRun.multiplier || 1,
+                currentArenaAdsRun.newlyClaimedLevels
+              )
             }
           }}
           onRevive={async () => {

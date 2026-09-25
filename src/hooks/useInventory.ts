@@ -711,11 +711,26 @@ export function useInventory() {
     return saved ? JSON.parse(saved) : []
   })
 
+  const [claimedArenaAdsLevels, setClaimedArenaAdsLevels] = useState<number[]>(() => {
+    try {
+      const saved = localStorage.getItem('plant_arena_claimed_ads_levels')
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
+
   // Tampoco se guarda el pase VIP: lo dice profiles.has_vip_pass.
 
   useEffect(() => {
     localStorage.setItem('plant_arena_claimed_vip_pass', JSON.stringify(claimedVipLevels))
   }, [claimedVipLevels])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('plant_arena_claimed_ads_levels', JSON.stringify(claimedArenaAdsLevels))
+    } catch {}
+  }, [claimedArenaAdsLevels])
 
   // buyVipPass se movió al bloque de servidor: el precio lo pone shop_config,
   // no una constante en el cliente.
@@ -1132,6 +1147,9 @@ export function useInventory() {
     if (profile.colosseum_current_streak !== undefined) setColosseumCurrentStreak(Number(profile.colosseum_current_streak))
     if (profile.has_vip_pass !== undefined) setHasVipPass(Boolean(profile.has_vip_pass))
     if (profile.claimed_vip_levels !== undefined) setClaimedVipLevels(profile.claimed_vip_levels || [])
+    if ((profile as any).claimed_arena_ads_levels !== undefined) {
+      setClaimedArenaAdsLevels(Array.isArray((profile as any).claimed_arena_ads_levels) ? (profile as any).claimed_arena_ads_levels : [])
+    }
     if ((profile as any).energy_current !== undefined) {
       const en = Number((profile as any).energy_current)
       setPlayerEnergy(en)
@@ -1163,6 +1181,9 @@ export function useInventory() {
     setColosseumTickets(Number(b.colosseum_tickets))
     setHasVipPass(Boolean(b.has_vip_pass))
     setClaimedVipLevels(b.claimed_vip_levels || [])
+    if ((b as any).claimed_arena_ads_levels !== undefined) {
+      setClaimedArenaAdsLevels(Array.isArray((b as any).claimed_arena_ads_levels) ? (b as any).claimed_arena_ads_levels : [])
+    }
     setColosseumCurrentStreak(Number(b.colosseum_current_streak))
     setColosseumMaxStreak(Number(b.colosseum_max_streak))
     if (b.energy_current !== undefined) {
@@ -1809,6 +1830,8 @@ export function useInventory() {
     updateActiveDeck,
     hasVipPass,
     claimedVipLevels,
+    claimedArenaAdsLevels,
+    setClaimedArenaAdsLevels,
     freePackSlots,
     buyPack,
     openPackByInstanceId,

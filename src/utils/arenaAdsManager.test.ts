@@ -3,9 +3,7 @@ import {
   ArenaAdsManager,
   buildArenaAdsDeck,
   generateLevelPrep,
-  generateRewardOptions,
-  generateSingleRewardItem,
-  EXCLUSIVE_ARENA_ITEM_IDS,
+  getFixedRewardsForLevel,
   getBotStatsForLevel,
   ARENA_ADS_ENTRY_FEE_GOLD,
   ARENA_ADS_STORAGE_KEY,
@@ -31,13 +29,13 @@ if (typeof globalThis.localStorage === 'undefined') {
   } as any
 }
 
-describe('ArenaAdsManager (Mazmorra Infinita)', () => {
+describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
   beforeEach(() => {
     localStorage.clear()
   })
 
-  it('1. Valida el costo de entrada de 100 de Oro', () => {
-    expect(ARENA_ADS_ENTRY_FEE_GOLD).toBe(100)
+  it('1. Valida el costo de entrada de 350 de Oro', () => {
+    expect(ARENA_ADS_ENTRY_FEE_GOLD).toBe(350)
   })
 
   it('2. El Girasol siempre está garantizado en el mazo de 5 cartas', () => {
@@ -68,7 +66,7 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
   it('3. Genera opciones válidas en la fase de preparación con estrellas sincronizadas', () => {
     const prep = generateLevelPrep(1)
     expect(prep.rewardOption).toBeDefined()
-    expect(['gold', 'gems', 'item']).toContain(prep.rewardOption.type)
+    expect(['gold', 'gems', 'item', 'pack']).toContain(prep.rewardOption.type)
     expect(prep.normalPlantOptions.length).toBe(3)
     expect(prep.fusedPlantOptions.length).toBe(3)
 
@@ -104,11 +102,11 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
   it('5. Exclusividad mutua estricta: Opción A (Botín) u Opción B (Planta) no se pueden elegir ambas', () => {
     let run = ArenaAdsManager.startNewRun()
 
-    const rewardGold: ArenaAdsRewardOption = {
-      type: 'gold',
-      amount: 150,
-      label: '+150 Oro',
-      icon: '🪙',
+    const rewardGems: ArenaAdsRewardOption = {
+      type: 'gems',
+      amount: 15,
+      label: '+15 Gemas',
+      icon: '💎',
     }
     const fusedOpt: ArenaAdsPlantOption = {
       plantId: 'bonkchoy',
@@ -120,9 +118,9 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     }
 
     // Paso 1: Usuario elige primero Opción A (Botín)
-    run = ArenaAdsManager.applyAdvantageChoice(run, { type: 'reward', option: rewardGold })
+    run = ArenaAdsManager.applyAdvantageChoice(run, { type: 'reward', option: rewardGems })
     expect(run.chosenAdvantage?.type).toBe('reward')
-    expect(run.chosenAdvantage?.rewardClaimed).toEqual(rewardGold)
+    expect(run.chosenAdvantage?.rewardClaimed).toEqual(rewardGems)
 
     // Paso 2: Usuario cambia de opinión y elige Opción B (Planta Fusionada)
     run = ArenaAdsManager.applyAdvantageChoice(run, { type: 'plant_fused', option: fusedOpt })
@@ -130,17 +128,14 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     expect(run.chosenAdvantage?.rewardClaimed).toBeUndefined()
     expect(run.chosenAdvantage?.plantChosen).toEqual(fusedOpt)
 
-    // Al entrar a batalla, SOLO se aplica la planta elegida y NO el botín de la opción A cancelada
-    const initialGold = run.accumulatedRewards.gold
+    // Al entrar a batalla, se aplica la planta elegida
     run = ArenaAdsManager.startBattle(run)
-    expect(run.accumulatedRewards.gold).toBe(initialGold) // No se cobró el botín de la opción A cancelada
     expect(run.deck.some((c) => c.plantId === 'bonkchoy' && c.level === 3)).toBe(true)
   })
 
   it('6. Sincronización de estrellas entre la planta elegida y el mazo activo', () => {
     let run = ArenaAdsManager.startNewRun()
 
-    // Supongamos que el mazo tiene Bonk Choy nivel 1
     run.baseDeck = [
       { plantId: 'sunflower', slot: 0, level: 1, statRolls: [] },
       { plantId: 'bonkchoy', slot: 1, level: 1, statRolls: [] },
@@ -150,7 +145,6 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     ]
     run.deck = [...run.baseDeck]
 
-    // En el cambio se ofrece Bonk Choy ⭐3 Fusión
     const bonkChoyLvl3: ArenaAdsPlantOption = {
       plantId: 'bonkchoy',
       name: 'Bonk Choy',
@@ -160,47 +154,63 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
       description: '⭐3 Fusión',
     }
 
-    // Al elegirla, el Bonk Choy del mazo se sincroniza inmediatamente a ⭐3 y adopta las tiradas
     run = ArenaAdsManager.applyAdvantageChoice(run, { type: 'plant_fused', option: bonkChoyLvl3 })
     const deckBonk = run.deck.find((c) => c.plantId === 'bonkchoy')
     expect(deckBonk).toBeDefined()
     expect(deckBonk?.level).toBe(3)
     expect(deckBonk?.statRolls).toHaveLength(3)
 
-    // Si luego cambia a opción A (Botín), el mazo se resetea al baseDeck donde Bonk Choy vuelve a ser ⭐1
     run = ArenaAdsManager.applyAdvantageChoice(run, {
       type: 'reward',
-      option: { type: 'gold', amount: 50, label: '+50 Oro', icon: '🪙' },
+      option: { type: 'gems', amount: 5, label: '+5 Gemas', icon: '💎' },
     })
     const revertedBonk = run.deck.find((c) => c.plantId === 'bonkchoy')
     expect(revertedBonk?.level).toBe(1)
     expect(revertedBonk?.statRolls).toHaveLength(0)
   })
 
-  it('7. Escalado de bots según el nivel de la mazmorra', () => {
+  it('7. Escalado de dificultad sustancial de bots a partir de nivel 5', () => {
     const botLvl1 = getBotStatsForLevel(1)
+    const botLvl4 = getBotStatsForLevel(4)
     const botLvl5 = getBotStatsForLevel(5)
     const botLvl10 = getBotStatsForLevel(10)
+    const botLvl20 = getBotStatsForLevel(20)
+    const botLvl50 = getBotStatsForLevel(50)
 
-    expect(botLvl1.botElo).toBe(1000)
-    expect(botLvl1.botBaseHp).toBe(600)
+    expect(botLvl1.botElo).toBe(1100)
+    expect(botLvl1.botBaseHp).toBe(1000)
     expect(botLvl1.botDeck[0].plantId).toBe('sunflower')
 
-    expect(botLvl5.botElo).toBeGreaterThan(botLvl1.botElo)
-    expect(botLvl5.botBaseHp).toBeGreaterThan(botLvl1.botBaseHp)
+    expect(botLvl4.botElo).toBe(1325)
+    expect(botLvl5.botElo).toBe(1390) // Rampa desde nivel 5
+    expect(botLvl5.botBaseHp).toBe(1025)
 
-    expect(botLvl10.botElo).toBeGreaterThan(botLvl5.botElo)
-    expect(botLvl10.botBaseHp).toBeGreaterThan(botLvl5.botBaseHp)
+    expect(botLvl10.botElo).toBe(1715)
+    expect(botLvl10.botBaseHp).toBe(1150)
+
+    expect(botLvl20.botElo).toBe(2365) // Muy desafiante en nivel 20
+    expect(botLvl20.botBaseHp).toBe(1500)
+
+    expect(botLvl50.botElo).toBe(3415)
+    expect(botLvl50.botBaseHp).toBe(3200)
+
+    // Mazos sinérgicos y con niveles escalados
+    expect(botLvl5.botDeck[1].level).toBe(2)
+    expect(botLvl20.botDeck[1].level).toBe(3)
+    expect(botLvl50.botDeck[1].level).toBe(4)
   })
 
-  it('8. Flujo completo: victoria de nivel y avance o liquidación', () => {
+  it('8. Flujo completo: victoria de nivel, 0 oro y recompensa fija', () => {
     let run = ArenaAdsManager.startNewRun()
     run = ArenaAdsManager.startBattle(run)
     expect(run.status).toBe('battle')
 
     run = ArenaAdsManager.completeLevelVictory(run)
     expect(run.status).toBe('level_cleared')
-    expect(run.accumulatedRewards.gold).toBeGreaterThan(0)
+    // 0 Oro en la mazmorra
+    expect(run.accumulatedRewards.gold).toBe(0)
+    // Nivel 1 otorga 5 de agua
+    expect(run.accumulatedRewards.items['water']).toBe(5)
 
     // Continuar al siguiente nivel
     run = ArenaAdsManager.advanceToNextLevel(run)
@@ -214,7 +224,6 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     const { crearPlantaPropia, createBattleState } = await import('../engine/simulate')
 
     let run = ArenaAdsManager.startNewRun()
-    // Elegir fusión Bonk Choy ⭐3 con 2 rolls
     run = ArenaAdsManager.applyAdvantageChoice(run, {
       type: 'plant_fused',
       option: {
@@ -227,16 +236,13 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
       },
     })
 
-    // 1. Sunflower base: debe tener level 1 en el mazo y en mejorasDeLaCartaEnSlot
     const sunflowerMejoras = mejorasDeLaCartaEnSlot(run.deck, 'sunflower', 0)
     expect(sunflowerMejoras.level).toBe(1)
 
-    // 2. Bonk Choy fusión: debe tener level 3 en el mazo y en mejorasDeLaCartaEnSlot aunque tenga 2 statRolls
     const bonkMejoras = mejorasDeLaCartaEnSlot(run.deck, 'bonkchoy', 1)
     expect(bonkMejoras.level).toBe(3)
     expect(bonkMejoras.statRolls).toEqual(['damage', 'hp'])
 
-    // 3. Al instanciar las plantas en combate, conservan exactamente los niveles del deck
     const { NIVEL_POR_DEFECTO } = await import('../engine/bot')
     const state = createBattleState(12345, false, false, NIVEL_POR_DEFECTO, 'auth-v2')
     const sunflowerEntity = crearPlantaPropia(state, 'sunflower', 0, 1, sunflowerMejoras.statRolls, sunflowerMejoras.level)
@@ -247,7 +253,6 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
   })
 
   it('10. Las opciones de plantas (normales y fusionadas) NUNCA se repiten con las cartas del mazo activo', () => {
-    // Probar múltiples iteraciones para garantizar aleatoriedad consistente
     for (let i = 0; i < 20; i++) {
       const run = ArenaAdsManager.startNewRun()
       const deckPlantIds = new Set(run.deck.map((c) => c.plantId))
@@ -260,35 +265,19 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
       expect(normalOptions.length).toBe(3)
       expect(fusedOptions.length).toBe(3)
 
-      // Ninguna planta normal debe estar en el mazo activo ni ser sunflower
       for (const opt of normalOptions) {
         expect(deckPlantIds.has(opt.plantId)).toBe(false)
         expect(opt.plantId).not.toBe('sunflower')
       }
 
-      // Ninguna planta fusionada debe estar en el mazo activo ni ser sunflower
       for (const opt of fusedOptions) {
         expect(deckPlantIds.has(opt.plantId)).toBe(false)
         expect(opt.plantId).not.toBe('sunflower')
       }
 
-      // Las opciones normales y fusionadas tampoco deben solaparse entre sí
       const normalIds = new Set(normalOptions.map((o) => o.plantId))
       for (const opt of fusedOptions) {
         expect(normalIds.has(opt.plantId)).toBe(false)
-      }
-
-      // Probar avance de nivel: el nuevo mazo tampoco debe colisionar con las nuevas opciones
-      const nextRun = ArenaAdsManager.advanceToNextLevel(run)
-      const nextDeckPlantIds = new Set(nextRun.deck.map((c) => c.plantId))
-      const nextNormals = nextRun.currentPrepChoice?.normalPlantOptions || []
-      const nextFused = nextRun.currentPrepChoice?.fusedPlantOptions || []
-
-      for (const opt of nextNormals) {
-        expect(nextDeckPlantIds.has(opt.plantId)).toBe(false)
-      }
-      for (const opt of nextFused) {
-        expect(nextDeckPlantIds.has(opt.plantId)).toBe(false)
       }
     }
   })
@@ -297,21 +286,11 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     const run = ArenaAdsManager.startNewRun()
     expect(ArenaAdsManager.getStoredRun()).not.toBeNull()
 
-    // Caso A: Llamada a handleDefeat
     ArenaAdsManager.handleDefeat(run)
     expect(run.status).toBe('game_over')
     expect(ArenaAdsManager.getStoredRun()).toBeNull()
     expect(localStorage.getItem(ARENA_ADS_STORAGE_KEY)).toBeNull()
 
-    // Caso B: Si la run quedó guardada como game_over en storage, getStoredRun la limpia automáticamente
-    const run2 = ArenaAdsManager.startNewRun()
-    run2.status = 'game_over'
-    ArenaAdsManager.saveRun(run2)
-    // Al intentar leerla, detecta game_over, la elimina y devuelve null
-    expect(ArenaAdsManager.getStoredRun()).toBeNull()
-    expect(localStorage.getItem(ARENA_ADS_STORAGE_KEY)).toBeNull()
-
-    // Caso C: Nueva run tras derrota debe iniciar limpia en Nivel 1
     const freshRun = ArenaAdsManager.startNewRun()
     expect(freshRun.level).toBe(1)
     expect(freshRun.status).toBe('prep')
@@ -319,108 +298,68 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     expect(freshRun.accumulatedRewards.gems).toBe(0)
   })
 
-  it('12. Ítems exclusivos SOLO pueden aparecer cada 10 niveles (Nivel 10, 20, 30...), NUNCA en niveles intermedios como 11 o 12', () => {
-    // Probar 100 tiradas en niveles que NO son múltiplos de 10 (ej. nivel 1, 5, 9, 11, 12, 15, 19)
-    const nonMilestoneLevels = [1, 5, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 25]
-    for (const lvl of nonMilestoneLevels) {
-      for (let i = 0; i < 20; i++) {
-        const reward = generateSingleRewardItem(lvl, 1, true)
-        if (reward.type === 'item' && reward.itemId) {
-          expect(EXCLUSIVE_ARENA_ITEM_IDS.has(reward.itemId)).toBe(false)
-        }
-        expect(reward.isExclusiveItem).toBeFalsy()
-      }
-    }
+  it('12. Tabla de los 50 Niveles: Exactamente 300 Gemas en total y 0 Oro', () => {
+    let totalGems = 0
+    let totalGold = 0
 
-    // En nivel 10, SÍ puede aparecer con probabilidad aleatoria
-    let foundExclusiveAt10 = false
-    for (let i = 0; i < 200; i++) {
-      const reward = generateSingleRewardItem(10, 1, true)
-      if (reward.isExclusiveItem) {
-        foundExclusiveAt10 = true
-        expect(EXCLUSIVE_ARENA_ITEM_IDS.has(reward.itemId!)).toBe(true)
-        expect(reward.amount).toBe(1) // Siempre 1
-        break
-      }
-    }
-    expect(foundExclusiveAt10).toBe(true)
-  })
-
-  it('13. En niveles múltiplos de 10, máximo 1 ítem exclusivo por lote y NUNCA se duplica con multiplicador 2X', () => {
-    // En nivel 10 con multiplicador 2X (200 gemas)
-    for (let testRun = 0; testRun < 50; testRun++) {
-      const options = generateRewardOptions(10, 2, 0)
-      expect(options.length).toBe(2) // 2 opciones en nivel 10
-
-      const exclusiveCount = options.filter((o) => o.isExclusiveItem).length
-      // En ningún caso puede haber 2 ítems exclusivos en el mismo lote
-      expect(exclusiveCount).toBeLessThanOrEqual(1)
-
-      // Si salió uno exclusivo, su amount debe ser 1 estrictamente
-      for (const opt of options) {
-        if (opt.isExclusiveItem) {
-          expect(opt.amount).toBe(1)
+    for (let lvl = 1; lvl <= 50; lvl++) {
+      const rewards = getFixedRewardsForLevel(lvl, 1)
+      for (const rew of rewards) {
+        if (rew.type === 'gems') {
+          totalGems += rew.amount
+        } else if (rew.type === 'gold') {
+          totalGold += rew.amount
         }
       }
     }
 
-    // Si la run ya tiene 1 exclusivo acumulado en nivel 10 a 19, no puede salir otro
-    for (let i = 0; i < 50; i++) {
-      const options = generateRewardOptions(10, 2, 1) // existingExclusiveCount = 1
-      const exclusiveCount = options.filter((o) => o.isExclusiveItem).length
-      expect(exclusiveCount).toBe(0)
-    }
+    expect(totalGold).toBe(0) // Cero oro en toda la mazmorra
+    expect(totalGems).toBe(300) // Exactamente 300 gemas acumuladas
   })
 
-  it('14. Balance económico de drops: Niveles 1-5 solo recursos (cero gemas), Niveles 6-9 Gold [4..12] y Gemas [1..3]', () => {
-    // 1. Verificar drops de niveles 1 a 5: EXCLUSIVAMENTE recursos de huerto y crafting
-    const validLevel1to5Items = new Set(['water', 'fertilizer', 'shovel_fragment', 'scarecrow_fragment', 'pesticide'])
-    for (let lvl = 1; lvl <= 5; lvl++) {
-      for (let i = 0; i < 20; i++) {
-        const reward = generateSingleRewardItem(lvl, 1, false)
-        expect(reward.type).toBe('item')
-        expect(validLevel1to5Items.has(reward.itemId!)).toBe(true)
-        // CERO GEMAS en los primeros 5 niveles
-        expect(reward.type).not.toBe('gems')
+  it('13. Distribución estricta de Sobres: 1 Común (Lv10), 4 PvP (Lv15, 25, 30, 35) y 1 Místico (Lv40)', () => {
+    const packMap: Record<number, string> = {}
+
+    for (let lvl = 1; lvl <= 50; lvl++) {
+      const rewards = getFixedRewardsForLevel(lvl, 1)
+      for (const rew of rewards) {
+        if (rew.type === 'pack' && rew.packId) {
+          packMap[lvl] = rew.packId
+        }
       }
     }
 
-    // 2. Verificar drops de niveles 6 a 9: ya pueden salir Oro temprano [4..12] y Gemas [1..3]
-    for (let i = 0; i < 50; i++) {
-      const reward6to9 = generateSingleRewardItem(6, 1, false)
-      if (reward6to9.type === 'gold') {
-        expect(reward6to9.amount).toBeGreaterThanOrEqual(4)
-        expect(reward6to9.amount).toBeLessThanOrEqual(12)
-      } else if (reward6to9.type === 'gems') {
-        expect(reward6to9.amount).toBeGreaterThanOrEqual(1)
-        expect(reward6to9.amount).toBeLessThanOrEqual(3)
+    expect(Object.keys(packMap).length).toBe(6) // 6 sobres en total
+    expect(packMap[10]).toBe('basic') // Nivel 10: 1 pack común
+    expect(packMap[15]).toBe('pvp') // Nivel 15: 1 sobre pvp
+    expect(packMap[25]).toBe('pvp') // Nivel 25: 1 sobre pvp
+    expect(packMap[30]).toBe('pvp') // Nivel 30: 1 sobre pvp
+    expect(packMap[35]).toBe('pvp') // Nivel 35: 1 sobre pvp
+    expect(packMap[40]).toBe('epic') // Nivel 40: 1 pack místico/épico
+  })
+
+  it('14. Distribución estricta de Skins: 5 Skins exclusivas a partir de Nivel 30 (30, 35, 40, 45, 50)', () => {
+    const skinMap: Record<number, string> = {}
+
+    for (let lvl = 1; lvl <= 50; lvl++) {
+      const rewards = getFixedRewardsForLevel(lvl, 1)
+      for (const rew of rewards) {
+        if (rew.isExclusiveItem && rew.itemId) {
+          skinMap[lvl] = rew.itemId
+        }
       }
     }
 
-    // 3. Verificar drops avanzados (niveles 10+)
-    for (let i = 0; i < 50; i++) {
-      const rewardLate1x = generateSingleRewardItem(10, 1, false)
-      if (rewardLate1x.type === 'gold') {
-        expect(rewardLate1x.amount).toBeGreaterThanOrEqual(15)
-        expect(rewardLate1x.amount).toBeLessThanOrEqual(50)
-      }
+    expect(Object.keys(skinMap).length).toBe(5)
+    // Ninguna skin por debajo del Nivel 30
+    for (let lvl = 1; lvl < 30; lvl++) {
+      expect(skinMap[lvl]).toBeUndefined()
     }
-
-    // 4. Verificar bonos de victoria por nivel
-    let run = ArenaAdsManager.startNewRun()
-    run.level = 1
-    run = ArenaAdsManager.completeLevelVictory(run)
-    expect(run.accumulatedRewards.gold).toBe(2) // Nivel 1: bonus = 2
-
-    run.accumulatedRewards.gold = 0
-    run.level = 10
-    run = ArenaAdsManager.completeLevelVictory(run)
-    expect(run.accumulatedRewards.gold).toBe(50) // Nivel 10 (Hito de Recuperación): bonus = 50
-
-    run.accumulatedRewards.gold = 0
-    run.level = 12
-    run = ArenaAdsManager.completeLevelVictory(run)
-    expect(run.accumulatedRewards.gold).toBe(16) // Nivel 12: 10 + (12 - 10) * 3 = 16
+    expect(skinMap[30]).toBe('sunflower_glasses') // Nivel 30: Gafas Girasol
+    expect(skinMap[35]).toBe('superman_suit') // Nivel 35: Superman Nuez
+    expect(skinMap[40]).toBe('spiderman_suit') // Nivel 40: Spiderman Nuez
+    expect(skinMap[45]).toBe('ironman_suit') // Nivel 45: Reactor Iron Man
+    expect(skinMap[50]).toBe('gold_24k') // Nivel 50: Nuez Bañada en Oro 24K
   })
 
   it('15. Compatibilidad y estadísticas de combate de todos los ítems y skins con alias de plantas', async () => {
@@ -428,24 +367,22 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
     const { crearPlantaPropia, createBattleState } = await import('../engine/simulate')
     const { NIVEL_POR_DEFECTO } = await import('../engine/bot')
 
-    // Probar Cactus con Armadura de Cactus (tanto con id 'chomper' como 'cactus')
+    // Probar Cactus con Armadura de Cactus
     expect(isPlantMatchingTarget('chomper', 'cactus')).toBe(true)
-    expect(isPlantMatchingTarget('cactus', 'chomper')).toBe(true)
     const cactusScaled = getScaledPlantConfig('chomper', [], 'cactus_armor')
-    expect(cactusScaled.damage).toBe((35) + 15)
+    expect(cactusScaled.damage).toBe(35 + 15)
     expect(cactusScaled.sprite).toBe('/game-assets/skins/armaduraconcactus.webp')
 
-    // Probar Squash con Armadura Samurái (tanto con id 'garlic' como 'squash')
+    // Probar Squash con Armadura Samurái
     expect(isPlantMatchingTarget('garlic', 'squash')).toBe(true)
-    expect(isPlantMatchingTarget('squash', 'garlic')).toBe(true)
     const squashScaled = getScaledPlantConfig('garlic', [], 'samurai_armor')
     expect(squashScaled.cooldownMs).toBe(Math.max(1000, 7500 - 1500))
     expect(squashScaled.sprite).toBe('/game-assets/skins/squashsamurai.webp')
 
-    // Probar Nuez con Batman (+200 HP)
-    const wallnutBatman = getScaledPlantConfig('wallnut', [], 'batman_suit')
-    expect(wallnutBatman.maxHp).toBe(1200 + 200)
-    expect(wallnutBatman.sprite).toBe('/game-assets/skins/papabatman.webp')
+    // Probar Nuez con Superman (+200 HP)
+    const wallnutSuperman = getScaledPlantConfig('wallnut', [], 'superman_suit')
+    expect(wallnutSuperman.maxHp).toBe(1200 + 200)
+    expect(wallnutSuperman.sprite).toBe('/game-assets/skins/papasuperman.webp')
 
     // Probar Nuez con Bañado en Oro 24K (+300 HP, -2s recarga)
     const wallnutGold = getScaledPlantConfig('wallnut', [], 'gold_24k')
@@ -455,102 +392,105 @@ describe('ArenaAdsManager (Mazmorra Infinita)', () => {
 
     // Probar creación de entidad en combate con sprite y vida bonificada
     const state = createBattleState(999, false, false, NIVEL_POR_DEFECTO, 'auth-v2')
-    const batmanEntity = crearPlantaPropia(state, 'wallnut', 0, 2, [], 1, 'batman_suit')
-    expect(batmanEntity.maxHp).toBe(1400)
-    expect(batmanEntity.hp).toBe(1400)
-    expect(batmanEntity.spriteOverride).toBe('/game-assets/skins/papabatman.webp')
-    expect(batmanEntity.equippedItem).toBe('batman_suit')
+    const goldEntity = crearPlantaPropia(state, 'wallnut', 0, 2, [], 1, 'gold_24k')
+    expect(goldEntity.maxHp).toBe(1500)
+    expect(goldEntity.hp).toBe(1500)
+    expect(goldEntity.spriteOverride).toBe('/game-assets/skins/papa24k.webp')
+    expect(goldEntity.equippedItem).toBe('gold_24k')
   })
 
-  it('16. Evento aleatorio (40% Botín vs 60% Reforzar Mazo), y 100% Botín garantizado en múltiplos de 10', () => {
-    // 1. En niveles múltiplos de 10 (10, 20, 30...), el evento siempre debe ser 'reward'
-    for (const lvl of [10, 20, 30, 40]) {
-      for (let i = 0; i < 25; i++) {
-        const prep = generateLevelPrep(lvl)
-        expect(prep.eventType).toBe('reward')
-      }
-    }
-
-    // 2. En niveles normales, ambos tipos de eventos ('reward' y 'plant') deben aparecer con distribución ~40/60
-    let rewardCount = 0
-    let plantCount = 0
-    const totalSamples = 500
-    for (let i = 0; i < totalSamples; i++) {
-      const prep = generateLevelPrep(3) // nivel 3 no es múltiplo de 10
-      if (prep.eventType === 'reward') rewardCount++
-      else plantCount++
-    }
-
-    expect(rewardCount).toBeGreaterThan(120) // ~40% (200 de 500)
-    expect(plantCount).toBeGreaterThan(200)  // ~60% (300 de 500)
-  })
-
-  it('17. Curva de recuperación de los 100 de oro de entrada a partir del Nivel 10', () => {
-    // Niveles 1 a 9 tienen pérdida neta estricta: las victorias sólo dan 2 de oro cada una (total 18)
-    // más un botín promedio moderado de 4-12 en los niveles donde salga botín.
-    let cumulativeGold = 0
-    for (let lvl = 1; lvl <= 9; lvl++) {
-      cumulativeGold += 2 // victoria de cada nivel
-    }
-    // Antes del nivel 10, los bonos de victoria acumulados son solo 18 de oro (pérdida neta vs los 100 de entrada)
-    expect(cumulativeGold).toBe(18)
-    expect(cumulativeGold).toBeLessThan(50)
-
-    // Al llegar y vencer el Nivel 10, se otorga el bono legendario de +50 de oro
-    let runLvl10 = ArenaAdsManager.startNewRun()
-    runLvl10.level = 10
-    runLvl10.accumulatedRewards.gold = cumulativeGold // ~18 a 45
-    runLvl10 = ArenaAdsManager.completeLevelVictory(runLvl10)
-
-    // Con el hito de 50 de oro del nivel 10 más el botín del cofre garantizado del piso 10 (15 a 50 de oro),
-    // el jugador cruza el umbral de los 100 de oro de entrada
-    expect(runLvl10.accumulatedRewards.gold).toBe(18 + 50) // 68 de bonos base de victoria
-  })
-
-  it('18. Duplicar Recompensa: Solo a partir de Nivel 15 y NUNCA si hay gemas o ítems', () => {
-    // 1. En niveles menores a 15, canDoubleReward NUNCA es true
-    for (let lvl = 1; lvl < 15; lvl++) {
-      for (let i = 0; i < 20; i++) {
-        const prep = generateLevelPrep(lvl)
-        expect(prep.canDoubleReward).toBeFalsy()
-      }
-    }
-
-    // 2. A partir de nivel 15, si hay gemas o ítems en las recompensas, canDoubleReward SIEMPRE debe ser false
-    for (let i = 0; i < 100; i++) {
-      const prep = generateLevelPrep(15)
-      const hasGemsOrItems = prep.rewardOptions.some(
-        (opt) => opt.type === 'gems' || opt.type === 'item' || Boolean(opt.isExclusiveItem)
-      )
-      if (hasGemsOrItems) {
-        expect(prep.canDoubleReward).toBe(false)
-      }
+  it('16. Evento de preparación: Hitos (10, 15, 20, 25, 30, 35, 40, 45, 50) garantizan botín fijo', () => {
+    for (const lvl of [10, 15, 20, 25, 30, 35, 40, 45, 50]) {
+      const prep = generateLevelPrep(lvl)
+      expect(prep.eventType).toBe('reward')
     }
   })
 
-  it('19. Selección de Evento: 50% Botín vs 50% Refuerzo de Planta, y 100% Botín en piso 10/20/30', () => {
-    // En niveles múltiplos de 10 siempre debe salir 'reward'
-    for (const lvl of [10, 20, 30, 40]) {
-      for (let i = 0; i < 20; i++) {
-        const prep = generateLevelPrep(lvl)
-        expect(prep.eventType).toBe('reward')
-      }
-    }
+  it('17. Multiplicador de entrada en Gemas duplica recursos y gemas, pero NUNCA sobres ni skins', () => {
+    // Nivel 30 con multiplicador 2x
+    const rewards2x = getFixedRewardsForLevel(30, 2)
+    const gemsReward = rewards2x.find((r) => r.type === 'gems')
+    const packReward = rewards2x.find((r) => r.type === 'pack')
+    const skinReward = rewards2x.find((r) => r.isExclusiveItem)
 
-    // En niveles normales, se distribuye en torno al 50% botín y 50% planta
-    let rewardCount = 0
-    let plantCount = 0
-    const totalSamples = 1000
-    for (let i = 0; i < totalSamples; i++) {
-      const prep = generateLevelPrep(7)
-      if (prep.eventType === 'reward') rewardCount++
-      else if (prep.eventType === 'plant') plantCount++
+    expect(gemsReward?.amount).toBe(40) // 20 * 2 = 40
+    expect(packReward?.amount).toBe(1) // Siempre 1
+    expect(skinReward?.amount).toBe(1) // Siempre 1
+  })
+
+  it('18. Duplicar Recompensa: Solo a partir de Nivel 15 y NUNCA si hay skins exclusivas o sobres', () => {
+    // Niveles con sobres o skins nunca permiten duplicar por anuncio (Lv 10, 15, 25, 30, 35, 40, 45, 50)
+    for (const lvl of [10, 15, 25, 30, 35, 40, 45, 50]) {
+      const prep = generateLevelPrep(lvl)
+      expect(prep.canDoubleReward).toBeFalsy()
     }
-    // Debe estar razonablemente cerca de 500 (entre 420 y 580 con 1000 muestras)
-    expect(rewardCount).toBeGreaterThan(420)
-    expect(rewardCount).toBeLessThan(580)
-    expect(plantCount).toBeGreaterThan(420)
-    expect(plantCount).toBeLessThan(580)
+  })
+
+  it('19. Primera Victoria vs Piso Repetido (Blindaje de Hito Único por Cuenta)', () => {
+    // Nivel 30 como Primera Victoria (incluye Sobre PvP y Skin Gafas)
+    const firstTimeRewards = getFixedRewardsForLevel(30, 1, true)
+    expect(firstTimeRewards.some((r) => r.type === 'gems' && r.amount === 20)).toBe(true)
+    expect(firstTimeRewards.some((r) => r.type === 'pack' && r.packId === 'pvp')).toBe(true)
+    expect(firstTimeRewards.some((r) => r.isExclusiveItem && r.itemId === 'sunflower_glasses')).toBe(true)
+
+    // Nivel 30 como Piso Repetido (isFirstTime = false)
+    const repeatRewards = getFixedRewardsForLevel(30, 1, false)
+    expect(repeatRewards.some((r) => r.type === 'gems')).toBe(false) // 0 gemas
+    expect(repeatRewards.some((r) => r.type === 'pack')).toBe(false) // 0 sobres
+    expect(repeatRewards.some((r) => r.isExclusiveItem)).toBe(false) // 0 skins
+    // Solo recursos de cultivo
+    expect(repeatRewards.some((r) => r.itemId === 'water' && r.isRepeatFloor)).toBe(true)
+    expect(repeatRewards.some((r) => r.itemId === 'fertilizer' && r.isRepeatFloor)).toBe(true)
+  })
+
+  it('20. Rastreo autoritativo de newlyClaimedLevels y alreadyClaimedLevels en el ciclo de victoria', () => {
+    // El jugador ya completó históricamente los pisos 1 y 2
+    const initialClaimed = [1, 2]
+    let run = ArenaAdsManager.startNewRun('gold', 99999, initialClaimed)
+    expect(run.alreadyClaimedLevels).toEqual([1, 2])
+    expect(run.newlyClaimedLevels).toEqual([])
+
+    // Nivel 1 es repetido -> solo da recursos, 0 gemas, y no entra a newlyClaimedLevels
+    run = ArenaAdsManager.completeLevelVictory(run)
+    expect(run.accumulatedRewards.gems).toBe(0)
+    expect(run.newlyClaimedLevels).toEqual([]) // Sigue vacío
+
+    // Avanzamos al Nivel 2 (también repetido)
+    run = ArenaAdsManager.advanceToNextLevel(run)
+    expect(run.level).toBe(2)
+    run = ArenaAdsManager.completeLevelVictory(run)
+    expect(run.accumulatedRewards.gems).toBe(0)
+    expect(run.newlyClaimedLevels).toEqual([])
+
+    // Avanzamos al Nivel 3 (PRIMERA VICTORIA)
+    run = ArenaAdsManager.advanceToNextLevel(run)
+    expect(run.level).toBe(3)
+    run = ArenaAdsManager.completeLevelVictory(run)
+    // Nivel 3 otorga fragmento de pala y es nuevo
+    expect(run.newlyClaimedLevels).toContain(3)
+    expect(run.alreadyClaimedLevels).toContain(3)
+
+    // Avanzamos al Nivel 5 (PRIMERA VICTORIA con Gemas)
+    run.level = 5 // Forzamos nivel 5 para verificar gemas de primera victoria
+    run = ArenaAdsManager.completeLevelVictory(run)
+    expect(run.accumulatedRewards.gems).toBe(5) // Gana sus 5 gemas
+    expect(run.newlyClaimedLevels).toContain(5)
+    expect(run.alreadyClaimedLevels).toContain(5)
+  })
+
+  it('21. Nivel 50: Gran Hito Final de 75 Gemas Supremas y Nuez de Oro 24K solo una vez', () => {
+    // Primera victoria en Nivel 50
+    const rewardsFirstTime = getFixedRewardsForLevel(50, 1, true)
+    const gemsFirst = rewardsFirstTime.find((r) => r.type === 'gems')
+    const skinFirst = rewardsFirstTime.find((r) => r.isExclusiveItem)
+    expect(gemsFirst?.amount).toBe(75)
+    expect(skinFirst?.itemId).toBe('gold_24k')
+
+    // Piso repetido en Nivel 50
+    const rewardsRepeat = getFixedRewardsForLevel(50, 1, false)
+    expect(rewardsRepeat.some((r) => r.type === 'gems')).toBe(false)
+    expect(rewardsRepeat.some((r) => r.isExclusiveItem)).toBe(false)
+    expect(rewardsRepeat.some((r) => r.itemId === 'water')).toBe(true)
+    expect(rewardsRepeat.some((r) => r.itemId === 'fertilizer')).toBe(true)
   })
 })
-

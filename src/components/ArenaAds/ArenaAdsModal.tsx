@@ -22,10 +22,11 @@ interface ArenaAdsModalProps {
   onClose: () => void
   userGold: number
   userGems?: number
+  claimedLevels?: number[]
   onDeductGold: (amount: number) => boolean
   onDeductGems?: (amount: number) => boolean
   onStartArenaAdsBattle: (run: ArenaAdsRun) => void
-  onClaimLoot: (loot: ArenaAdsLoot, multiplier?: number) => void
+  onClaimLoot: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => void | Promise<void>
 }
 
 export default function ArenaAdsModal({
@@ -33,6 +34,7 @@ export default function ArenaAdsModal({
   onClose,
   userGold,
   userGems = 0,
+  claimedLevels = [],
   onDeductGold,
   onDeductGems,
   onStartArenaAdsBattle,
@@ -206,7 +208,9 @@ export default function ArenaAdsModal({
 
       soundManager.playSound('victory', 0.6)
       resetPopunderQuota()
-      const newRun = ArenaAdsManager.startNewRun(paymentType)
+      const serverClaimed = backendRes.claimedArenaAdsLevels || []
+      const mergedClaimed = Array.from(new Set([...(claimedLevels || []), ...serverClaimed]))
+      const newRun = ArenaAdsManager.startNewRun(paymentType, Date.now(), mergedClaimed)
       setActiveRun(newRun)
       setActiveView('prep')
       setSelectedPlantOption(null)
@@ -302,7 +306,7 @@ export default function ArenaAdsModal({
       const mult = activeRun.multiplier || 1
 
       // Sincronizar centralizadamente en backend y perfiles
-      await onClaimLoot(loot, mult)
+      await onClaimLoot(loot, mult, activeRun.newlyClaimedLevels)
 
       // Registrar el récord en el leaderboard del backend
       const runStarted = activeRun.startedAt || activeRun.createdAt
@@ -414,9 +418,11 @@ export default function ArenaAdsModal({
             </p>
 
             <div className="arena-ads-loot-pills arena-ads-loot-pills--center">
-              <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
-                <GoldIcon size={16} /> +{claimSummary.gold} Oro
-              </div>
+              {claimSummary.gold > 0 && (
+                <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
+                  <GoldIcon size={16} /> +{claimSummary.gold} Oro
+                </div>
+              )}
               <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
                 <span>💎</span> +{claimSummary.gems} Gemas
               </div>
@@ -469,9 +475,11 @@ export default function ArenaAdsModal({
 
                   {totalAccumulatedLoot && (
                     <div className="arena-ads-loot-pills">
-                      <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
-                        <GoldIcon size={16} /> {totalAccumulatedLoot.gold} Oro
-                      </div>
+                      {totalAccumulatedLoot.gold > 0 && (
+                        <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
+                          <GoldIcon size={16} /> {totalAccumulatedLoot.gold} Oro
+                        </div>
+                      )}
                       <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
                         <span>💎</span> {totalAccumulatedLoot.gems} Gemas
                       </div>
@@ -491,16 +499,16 @@ export default function ArenaAdsModal({
                   </h3>
                   <div className="arena-ads-rules-grid">
                     <div className="arena-ads-rule-item">
-                      <strong>1. Entrada:</strong> 100 <GoldIcon size={14} /> (1x) o 200 💎 (⚡ 2x botín).
+                      <strong>1. Entrada:</strong> 350 <GoldIcon size={14} /> (1x) o 200 💎 (⚡ 2x botín).
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>2. Preparación:</strong> Botín Extra O Reforzar Mazo.
+                      <strong>2. Preparación:</strong> Botín Fijo O Reforzar Mazo.
                     </div>
                     <div className="arena-ads-rule-item">
                       <strong>3. 🌻 Girasol:</strong> Siempre presente en tu mazo.
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>4. 👑 Skins/Ítems:</strong> Drops desde Nivel 10 (máx 5).
+                      <strong>4. 👑 Skins/Sobres:</strong> 5 Skins exclusivas (a partir de Nivel 30) y 6 Sobres.
                     </div>
                   </div>
                 </div>
@@ -536,6 +544,15 @@ export default function ArenaAdsModal({
                     <div className="arena-ads-event-badge arena-ads-event-badge--reward">
                       <span>🎁</span> {activeRun.level % 10 === 0 ? 'COFRE LEGENDARIO DE PISO 10' : 'BOTÍN DE MAZMORRA'}
                     </div>
+                    {activeRun.alreadyClaimedLevels?.includes(activeRun.level) ? (
+                      <span style={{ background: '#334155', color: '#94a3b8', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, border: '1px solid #475569' }}>
+                        🔁 PISO REPETIDO (RECURSOS)
+                      </span>
+                    ) : (
+                      <span style={{ background: 'linear-gradient(90deg, #f59e0b, #d97706)', color: '#000', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
+                        ⭐ PRIMERA VICTORIA
+                      </span>
+                    )}
                     <span className="arena-ads-event-level">Nivel {activeRun.level}</span>
                   </div>
 
@@ -554,7 +571,11 @@ export default function ArenaAdsModal({
                           <div className="arena-ads-reward-card-info">
                             <strong className="arena-ads-reward-card-label">{opt.label}</strong>
                             <span className="arena-ads-reward-card-sub">
-                              {opt.isExclusiveItem ? '✨ Ítem Legendario Exclusivo' : 'Recurso Inmediato'}
+                              {opt.isExclusiveItem
+                                ? '✨ Ítem Legendario Exclusivo'
+                                : opt.isRepeatFloor
+                                ? '🔁 Recurso de Piso Repetido'
+                                : 'Recurso Inmediato'}
                             </span>
                           </div>
                         </div>
@@ -569,9 +590,11 @@ export default function ArenaAdsModal({
                     )}
 
                     <p className="arena-ads-reward-hint">
-                      {activeRun.currentPrepChoice.canDoubleReward
+                      {activeRun.alreadyClaimedLevels?.includes(activeRun.level)
+                        ? '🔁 Ya superaste este piso anteriormente. Otorga recursos básicos de cultivo (Agua y Fertilizante).'
+                        : activeRun.currentPrepChoice.canDoubleReward
                         ? '🔥 ¡OFERTA PATROCINADA DISPONIBLE! Duplica el botín al 100% apoyando con el patrocinador.'
-                        : '🎁 Reclama tu botín patrocinado para sumarlo a tu cuenta y entrar a combatir.'}
+                        : '⭐ ¡Primera Victoria! Reclama tu botín único y prepárate para el combate.'}
                     </p>
 
                     <div className="arena-ads-event-actions">
@@ -775,7 +798,7 @@ export default function ArenaAdsModal({
                       onClick={handleCashout}
                       disabled={isProcessing}
                     >
-                      💰 RETIRARSE ({activeRun.accumulatedRewards.gold} <GoldIcon size={14} />)
+                      💰 RETIRARSE ({activeRun.accumulatedRewards.gems} 💎)
                     </button>
                     <button
                       type="button"
@@ -793,7 +816,7 @@ export default function ArenaAdsModal({
                       onClick={() => handleStartNewRun('gold')}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? '⏳...' : <>🎮 100 <GoldIcon size={16} style={{ margin: '0 3px' }} /> ORO</>}
+                      {isProcessing ? '⏳...' : <>🎮 350 <GoldIcon size={16} style={{ margin: '0 3px' }} /> ORO</>}
                     </button>
                     <button
                       type="button"
@@ -809,7 +832,7 @@ export default function ArenaAdsModal({
             </>
           ) : (
             <>
-              {activeRun && (activeRun.level >= 2 || activeRun.accumulatedRewards.gold > 0) ? (
+              {activeRun && (activeRun.level >= 2 || activeRun.accumulatedRewards.gems > 0 || Object.keys(activeRun.accumulatedRewards.items || {}).length > 0) ? (
                 <button
                   type="button"
                   className="arena-ads-btn arena-ads-btn--cashout"
@@ -817,7 +840,7 @@ export default function ArenaAdsModal({
                   disabled={isProcessing}
                   title="Retírate ahora con todo lo que has acumulado"
                 >
-                  💰 RETIRARSE ({activeRun.accumulatedRewards.gold} <GoldIcon size={14} />)
+                  💰 RETIRARSE ({activeRun.accumulatedRewards.gems} 💎)
                 </button>
               ) : (
                 <button

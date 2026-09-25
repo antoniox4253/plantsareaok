@@ -33,7 +33,7 @@ describe('arenaAdsService (Validación de Backend)', () => {
     expect(resGuest.success).toBe(true)
   })
 
-  it('2. enterArenaAds descuenta 100 de oro atómicamente si el backend responde con éxito', async () => {
+  it('2. enterArenaAds descuenta 350 de oro atómicamente si el backend responde con éxito', async () => {
     vi.mocked(isSupabaseConfigured).mockReturnValue(true)
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: { session: { user: { id: 'test-user-id' } } },
@@ -41,14 +41,15 @@ describe('arenaAdsService (Validación de Backend)', () => {
     } as any)
 
     vi.mocked(supabase.rpc).mockResolvedValue({
-      data: { success: true, cost: 100, new_gold_balance: 9650 },
+      data: { success: true, cost: 350, new_gold_balance: 9650, claimed_arena_ads_levels: [1, 2] },
       error: null,
     } as any)
 
     const res = await arenaAdsService.enterArenaAds()
     expect(res.success).toBe(true)
-    expect(res.cost).toBe(100)
+    expect(res.cost).toBe(350)
     expect(res.newGoldBalance).toBe(9650)
+    expect(res.claimedArenaAdsLevels).toEqual([1, 2])
     expect(supabase.rpc).toHaveBeenCalledWith('enter_arena_ads', {
       p_payment_type: 'gold',
     })
@@ -63,12 +64,12 @@ describe('arenaAdsService (Validación de Backend)', () => {
 
     vi.mocked(supabase.rpc).mockResolvedValue({
       data: null,
-      error: { message: 'INSUFFICIENT_GOLD: Se requieren 100 de Oro' },
+      error: { message: 'INSUFFICIENT_GOLD: Se requieren 350 de Oro' },
     } as any)
 
     const res = await arenaAdsService.enterArenaAds()
     expect(res.success).toBe(false)
-    expect(res.error).toContain('100 🪙')
+    expect(res.error).toContain('350 🪙')
   })
 
   it('4. enterArenaAds soporta entrada con 200 gemas para multiplicador 2x', async () => {
@@ -118,7 +119,7 @@ describe('arenaAdsService (Validación de Backend)', () => {
     } as any)
 
     vi.mocked(supabase.rpc).mockResolvedValue({
-      data: { success: true, new_gold_balance: 10200, new_gems_balance: 55 },
+      data: { success: true, new_gold_balance: 10200, new_gems_balance: 55, claimed_arena_ads_levels: [1, 2, 3] },
       error: null,
     } as any)
 
@@ -126,16 +127,18 @@ describe('arenaAdsService (Validación de Backend)', () => {
       gold: 550,
       gems: 10,
       items: { fertilizer: 2 },
-    }, 2)
+    }, 2, [3])
 
     expect(res.success).toBe(true)
     expect(res.newGoldBalance).toBe(10200)
     expect(res.newGemsBalance).toBe(55)
+    expect(res.claimedArenaAdsLevels).toEqual([1, 2, 3])
     expect(supabase.rpc).toHaveBeenCalledWith('claim_arena_ads_loot', {
       p_gold: 550,
       p_gems: 10,
       p_items: { fertilizer: 2 },
       p_multiplier: 2,
+      p_claimed_levels: [3],
     })
   })
 })

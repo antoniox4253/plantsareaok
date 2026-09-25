@@ -32,6 +32,7 @@ export interface Database {
           has_claimed_clan_full_bonus?: boolean
           claimed_clan_full_bonus_at?: string | null
           claimed_vip_levels: number[]
+          claimed_arena_ads_levels?: number[]
           is_admin: boolean
           exclude_from_ranking?: boolean
           referral_code: string | null
@@ -59,6 +60,7 @@ export interface Database {
           has_vip_pass?: boolean
           vip_pass_expires_at?: string | null
           claimed_vip_levels?: number[]
+          claimed_arena_ads_levels?: number[]
           is_admin?: boolean
           exclude_from_ranking?: boolean
           referral_code?: string | null
@@ -86,6 +88,7 @@ export interface Database {
           has_vip_pass?: boolean
           vip_pass_expires_at?: string | null
           claimed_vip_levels?: number[]
+          claimed_arena_ads_levels?: number[]
           is_admin?: boolean
           exclude_from_ranking?: boolean
           referral_code?: string | null
