@@ -13,7 +13,14 @@ import { arenaAdsService } from '../../services/arenaAdsService'
 import { soundManager } from '../../utils/audioManager'
 import { isFullscreen, toggleFullscreen } from '../../utils/fullscreen'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
-import { activateArenaAdsNetwork, deactivateArenaAdsNetwork, resetPopunderQuota, triggerArenaAdsSmartlink } from '../../utils/arenaAdsNetwork'
+import {
+  activateArenaAdsNetwork,
+  deactivateArenaAdsNetwork,
+  resetPopunderQuota,
+  triggerArenaAdsSmartlink,
+  loadArenaAdsNativeBanner,
+  ARENA_ADS_NATIVE_CONTAINER_ID,
+} from '../../utils/arenaAdsNetwork'
 import GoldIcon from '../Common/GoldIcon'
 import './ArenaAdsModal.css'
 
@@ -42,7 +49,6 @@ export default function ArenaAdsModal({
 }: ArenaAdsModalProps) {
   const [activeRun, setActiveRun] = useState<ArenaAdsRun | null>(null)
   const [activeView, setActiveView] = useState<'lobby' | 'prep'>('lobby')
-  const [selectedPlantSubTab, setSelectedPlantSubTab] = useState<'normal' | 'fused'>('normal')
   const [selectedPlantOption, setSelectedPlantOption] = useState<ArenaAdsPlantOption | null>(null)
   const [claimSummary, setClaimSummary] = useState<ArenaAdsLoot | null>(null)
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
@@ -71,16 +77,23 @@ export default function ArenaAdsModal({
     }
   }, [])
 
-  // Activar la red de anuncios (popunder y social bar) ÚNICAMENTE en la fase de preparación ('prep')
-  // NUNCA en el lobby (al hacer click en Play 100 Oro / 200 Gemas) ni durante el combate
+  // Activar la red de anuncios (popunder) en preparación y banner nativo en lobby
   useEffect(() => {
-    if (isOpen && activeView === 'prep') {
-      activateArenaAdsNetwork()
-      return () => {
-        deactivateArenaAdsNetwork()
-      }
-    } else {
+    if (!isOpen) {
       deactivateArenaAdsNetwork(true)
+      return
+    }
+
+    if (activeView === 'prep') {
+      activateArenaAdsNetwork()
+    } else if (activeView === 'lobby') {
+      loadArenaAdsNativeBanner()
+    }
+
+    return () => {
+      if (!isOpen) {
+        deactivateArenaAdsNetwork(true)
+      }
     }
   }, [isOpen, activeView])
 
@@ -147,30 +160,23 @@ export default function ArenaAdsModal({
     return activeRun.accumulatedRewards
   }, [activeRun])
 
-  // Auto-seleccionar la primera planta si el evento de este nivel es 'plant'
+  // Auto-seleccionar la opción gratuita por defecto (Columna 1) para que el mazo siempre esté listo
   useEffect(() => {
     if (!isOpen) return
-    if (activeView === 'prep' && activeRun?.currentPrepChoice?.eventType === 'plant') {
-      const options =
-        selectedPlantSubTab === 'normal'
-          ? activeRun.currentPrepChoice.normalPlantOptions
-          : activeRun.currentPrepChoice.fusedPlantOptions
-      if (options && options.length > 0) {
-        const currentMatch = options.find(
-          (o) => o.plantId === selectedPlantOption?.plantId && o.isFused === selectedPlantOption?.isFused
-        )
-        if (!currentMatch) {
-          const defaultOpt = options[0]
-          setSelectedPlantOption(defaultOpt)
-          const updated = ArenaAdsManager.applyAdvantageChoice(activeRun, {
-            type: defaultOpt.isFused ? 'plant_fused' : 'plant_normal',
-            option: defaultOpt,
-          })
-          setActiveRun({ ...updated })
-        }
+    if (activeView === 'prep' && activeRun?.currentPrepChoice) {
+      const defaultPlant =
+        activeRun.currentPrepChoice.tacticalColumns?.[0]?.plant ||
+        activeRun.currentPrepChoice.normalPlantOptions?.[0]
+      if (defaultPlant && !selectedPlantOption) {
+        setSelectedPlantOption(defaultPlant)
+        const updated = ArenaAdsManager.applyAdvantageChoice(activeRun, {
+          type: defaultPlant.isFused ? 'plant_fused' : 'plant_normal',
+          option: defaultPlant,
+        })
+        setActiveRun({ ...updated })
       }
     }
-  }, [isOpen, activeView, activeRun?.currentPrepChoice?.eventType, selectedPlantSubTab])
+  }, [isOpen, activeView, activeRun?.currentPrepChoice, selectedPlantOption])
 
   if (!isOpen || typeof document === 'undefined') return null
 
@@ -228,33 +234,6 @@ export default function ArenaAdsModal({
 
 
 
-  // Reclamar botín y avanzar al combate (opcionalmente duplicando oro si está habilitado)
-  const handleClaimRewardAndBattle = (double = false) => {
-    if (!activeRun || !activeRun.currentPrepChoice) return
-    soundManager.playSound('victory', 0.6)
-    // Disparar smartlink de alto CPM en interacción genuina del usuario
-    triggerArenaAdsSmartlink()
-
-    let rewards = activeRun.currentPrepChoice.rewardOptions
-    if (double) {
-      rewards = rewards.map((opt) => ({
-        ...opt,
-        amount: opt.amount * 2,
-        label: opt.type === 'gold' ? `+${opt.amount * 2} Oro (2X)` : opt.label,
-      }))
-    }
-
-    const updated = ArenaAdsManager.applyAdvantageChoice(activeRun, {
-      type: 'reward',
-      options: rewards,
-    })
-    setActiveRun({ ...updated })
-    deactivateArenaAdsNetwork(true)
-    const runInBattle = ArenaAdsManager.startBattle(updated)
-    onClose()
-    onStartArenaAdsBattle(runInBattle)
-  }
-
   // Seleccionar planta para previsualizar en el rack inferior
   const handleSelectPlant = (plant: ArenaAdsPlantOption) => {
     if (!activeRun) return
@@ -267,17 +246,32 @@ export default function ArenaAdsModal({
     setActiveRun({ ...updated })
   }
 
+  // Reroll táctico con patrocinador
+  const handleRerollTacticalChoices = () => {
+    if (!activeRun) return
+    soundManager.playSound('click', 0.5)
+    // Disparar patrocinador por el reroll
+    triggerArenaAdsSmartlink()
+    const updated = ArenaAdsManager.rerollPrepChoices(activeRun)
+    setActiveRun({ ...updated })
+    setSelectedPlantOption(null)
+  }
+
   // Equipar planta y avanzar al combate
-  const handleEquipPlantAndBattle = (plantOverride?: ArenaAdsPlantOption) => {
+  const handleEquipPlantAndBattle = (plantOverride?: ArenaAdsPlantOption, isSponsored = false) => {
     if (!activeRun || !activeRun.currentPrepChoice) return
     soundManager.playSound('click', 0.7)
+
     const plant =
       plantOverride ||
       selectedPlantOption ||
-      (selectedPlantSubTab === 'normal'
-        ? activeRun.currentPrepChoice.normalPlantOptions[0]
-        : activeRun.currentPrepChoice.fusedPlantOptions[0]) ||
+      activeRun.currentPrepChoice.tacticalColumns?.[0]?.plant ||
       activeRun.currentPrepChoice.normalPlantOptions[0]
+
+    if (isSponsored) {
+      soundManager.playSound('victory', 0.6)
+      triggerArenaAdsSmartlink()
+    }
 
     if (plant) {
       const updated = ArenaAdsManager.applyAdvantageChoice(activeRun, {
@@ -454,6 +448,7 @@ export default function ArenaAdsModal({
                 <span className="arena-ads-native-badge">📢 ARENA ADS PATROCINADA</span>
                 <span className="arena-ads-native-title">Juega gratis contra bots patrocinado por red oficial de anuncios</span>
               </div>
+              <div id={ARENA_ADS_NATIVE_CONTAINER_ID} className="arena-ads-native-banner-slot" />
             </div>
 
             {/* Fila / Columnas Principales del Lobby */}
@@ -502,13 +497,13 @@ export default function ArenaAdsModal({
                       <strong>1. Entrada:</strong> 350 <GoldIcon size={14} /> (1x) o 200 💎 (⚡ 2x botín).
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>2. Preparación:</strong> Botín Fijo O Reforzar Mazo.
+                      <strong>2. Refuerzo Táctico:</strong> 3 Opciones (1 Gratis + 2 Fusiones con Patrocinador).
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>3. 🌻 Girasol:</strong> Siempre presente en tu mazo.
+                      <strong>3. 🌻 Girasol:</strong> Siempre garantizado en tu mazo.
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>4. 👑 Skins/Sobres:</strong> 5 Skins exclusivas (a partir de Nivel 30) y 6 Sobres.
+                      <strong>4. 👑 Botín de Combate:</strong> Recompensas fijas al ganar (Gemas, Recursos, Sobres y Skins).
                     </div>
                   </div>
                 </div>
@@ -527,193 +522,126 @@ export default function ArenaAdsModal({
                 </span>
               )}
               <span className="arena-ads-prep-instruction">
-                {activeRun?.currentPrepChoice?.eventType === 'reward' ? (
-                  <>🎁 <strong>EVENTO DE BOTÍN:</strong> Reclama el cofre con el patrocinador para avanzar al combate.</>
-                ) : (
-                  <>🌱 <strong>REFUERZO DE MAZO:</strong> Equipa una planta o fusión para liderar el combate.</>
-                )}
+                🌱 <strong>REFUERZO DE MAZO:</strong> Elige una planta gratuita o desbloquea una poderosa fusión con el patrocinador para liderar el combate.
               </span>
             </div>
 
-            {/* Evento Aleatorio Central Único: RECOMPENSA (40%) vs REFUERZO DE PLANTA (60%) */}
-            <div className="arena-ads-single-event-container">
-              {activeRun?.currentPrepChoice?.eventType === 'reward' ? (
-                /* CASO 1: TARJETA DE RECOMPENSA / BOTÍN */
-                <div className="arena-ads-event-card arena-ads-event-card--reward">
-                  <div className="arena-ads-event-header">
-                    <div className="arena-ads-event-badge arena-ads-event-badge--reward">
-                      <span>🎁</span> {activeRun.level % 10 === 0 ? 'COFRE LEGENDARIO DE PISO 10' : 'BOTÍN DE MAZMORRA'}
-                    </div>
-                    {activeRun.alreadyClaimedLevels?.includes(activeRun.level) ? (
-                      <span style={{ background: '#334155', color: '#94a3b8', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, border: '1px solid #475569' }}>
-                        🔁 PISO REPETIDO (RECURSOS)
-                      </span>
-                    ) : (
-                      <span style={{ background: 'linear-gradient(90deg, #f59e0b, #d97706)', color: '#000', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
-                        ⭐ PRIMERA VICTORIA
-                      </span>
-                    )}
-                    <span className="arena-ads-event-level">Nivel {activeRun.level}</span>
-                  </div>
+            {/* ESCAPARATE TÁCTICO: 3 COLUMNAS DE REFUERZO DE PLANTA */}
+            <div className="arena-ads-tactical-showcase">
+              <div className="arena-ads-tactical-header">
+                <div className="arena-ads-tactical-header-info">
+                  <span className="arena-ads-event-badge arena-ads-event-badge--plant">
+                    <span>🌱</span> REFUERZO DE MAZO (3 COLUMNAS)
+                  </span>
+                  <span className="arena-ads-tactical-hint">
+                    Elige 1 planta para liderar tu mazo. Las opciones patrocinadas otorgan fusiones de alto impacto.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="arena-ads-btn arena-ads-btn--reroll"
+                  onClick={handleRerollTacticalChoices}
+                  disabled={isProcessing}
+                  title="¿No te convence ninguna? Cambia las 3 plantas apoyando al patrocinador"
+                >
+                  🎲 REROLL CON PATROCINADOR
+                </button>
+              </div>
 
-                  <div className="arena-ads-reward-showcase">
-                    <div className="arena-ads-reward-cards-grid">
-                      {activeRun.currentPrepChoice.rewardOptions.map((opt, i) => (
-                        <div
-                          key={i}
-                          className={`arena-ads-reward-card-item ${opt.isExclusiveItem ? 'arena-ads-reward-card-item--exclusive' : ''}`}
-                        >
-                          <div className="arena-ads-reward-card-icon-wrap">
-                            <span className="arena-ads-reward-card-icon">
-                              {opt.type === 'gold' ? <GoldIcon size={24} /> : opt.icon}
-                            </span>
-                          </div>
-                          <div className="arena-ads-reward-card-info">
-                            <strong className="arena-ads-reward-card-label">{opt.label}</strong>
-                            <span className="arena-ads-reward-card-sub">
-                              {opt.isExclusiveItem
-                                ? '✨ Ítem Legendario Exclusivo'
-                                : opt.isRepeatFloor
-                                ? '🔁 Recurso de Piso Repetido'
-                                : 'Recurso Inmediato'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+              <div className="arena-ads-3cols-grid">
+                {(activeRun?.currentPrepChoice?.tacticalColumns || []).map((col, idx) => {
+                  const plant = col.plant
+                  const cfg = PLANT_CONFIGS[plant.plantId]
+                  const isFree = !col.requiresAd
+                  const isSupreme = col.tier === 3
+                  const isSelected = selectedPlantOption?.plantId === plant.plantId
 
-                    {activeRun.multiplier === 2 && (
-                      <div className="arena-ads-multiplier-callout">
-                        <span>⚡</span>
-                        <strong>MULTIPLICADOR 2X ACTIVO</strong>
+                  return (
+                    <div
+                      key={`${plant.plantId}-${col.tier}-${idx}`}
+                      className={`arena-ads-col-card arena-ads-col-card--${col.color} ${
+                        isSelected ? 'arena-ads-col-card--selected' : ''
+                      }`}
+                      onClick={() => handleSelectPlant(plant)}
+                      title="Haz clic para previsualizar en tu mazo inferior"
+                    >
+                      <div className="arena-ads-col-badge">
+                        <span>{isFree ? '🌿' : isSupreme ? '👑' : '⚡'}</span>
+                        <span>{col.badge}</span>
                       </div>
-                    )}
 
-                    <p className="arena-ads-reward-hint">
-                      {activeRun.alreadyClaimedLevels?.includes(activeRun.level)
-                        ? '🔁 Ya superaste este piso anteriormente. Otorga recursos básicos de cultivo (Agua y Fertilizante).'
-                        : activeRun.currentPrepChoice.canDoubleReward
-                        ? '🔥 ¡OFERTA PATROCINADA DISPONIBLE! Duplica el botín al 100% apoyando con el patrocinador.'
-                        : '⭐ ¡Primera Victoria! Reclama tu botín único y prepárate para el combate.'}
-                    </p>
+                      <div className="arena-ads-col-avatar-wrap">
+                        <img
+                          src={cfg?.icon || cfg?.sprite}
+                          alt={plant.name}
+                          className="arena-ads-col-img"
+                        />
+                        <span className="arena-ads-col-stars">⭐{plant.level}</span>
+                      </div>
 
-                    <div className="arena-ads-event-actions">
-                      <button
-                        type="button"
-                        className="arena-ads-btn arena-ads-btn--claim-reward"
-                        onClick={() => handleClaimRewardAndBattle(false)}
-                      >
-                        🎁 RECLAMAR BOTÍN Y COMBATIR
-                      </button>
-
-                      {activeRun.currentPrepChoice.canDoubleReward && (
-                        <button
-                          type="button"
-                          className="arena-ads-btn arena-ads-btn--double-reward"
-                          onClick={() => handleClaimRewardAndBattle(true)}
-                        >
-                          ⚡ ¡DUPLICAR 2X BOTÍN Y COMBATIR!
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* CASO 2: TARJETA DE REFUERZO DE PLANTA */
-                <div className="arena-ads-event-card arena-ads-event-card--plant">
-                  <div className="arena-ads-event-header">
-                    <div className="arena-ads-event-badge arena-ads-event-badge--plant">
-                      <span>🌱</span> REFUERZO DE MAZO (SELECCIÓN)
-                    </div>
-                    <span className="arena-ads-event-level">Nivel {activeRun?.level}</span>
-                  </div>
-
-                  {/* SubTabs: Normal vs Fused */}
-                  <div className="arena-ads-subtabs">
-                    <button
-                      type="button"
-                      className={`arena-ads-subtab-btn ${
-                        selectedPlantSubTab === 'normal' ? 'arena-ads-subtab-btn--active' : ''
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        soundManager.playSound('click', 0.3)
-                        setSelectedPlantSubTab('normal')
-                      }}
-                    >
-                      🌿 Planta Estándar (⭐1)
-                    </button>
-                    <button
-                      type="button"
-                      className={`arena-ads-subtab-btn arena-ads-subtab-btn--fused ${
-                        selectedPlantSubTab === 'fused' ? 'arena-ads-subtab-btn--active' : ''
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        soundManager.playSound('click', 0.3)
-                        setSelectedPlantSubTab('fused')
-                      }}
-                    >
-                      ⚡ Fusión Mítica (⭐+)
-                    </button>
-                  </div>
-
-                  {/* Plant Choices List */}
-                  <div className="arena-ads-plant-options-list">
-                    {(selectedPlantSubTab === 'normal'
-                      ? activeRun?.currentPrepChoice?.normalPlantOptions
-                      : activeRun?.currentPrepChoice?.fusedPlantOptions
-                    )?.map((plantOpt) => {
-                      const isSelected =
-                        selectedPlantOption?.plantId === plantOpt.plantId &&
-                        selectedPlantOption?.isFused === plantOpt.isFused
-                      const cfg = PLANT_CONFIGS[plantOpt.plantId]
-                      return (
-                        <div
-                          key={`${plantOpt.plantId}-${plantOpt.isFused ? 'fused' : 'normal'}`}
-                          className={`arena-ads-plant-option-item ${
-                            plantOpt.isFused ? 'arena-ads-plant-option-item--fused' : ''
-                          } ${isSelected ? 'arena-ads-plant-option-item--selected' : ''}`}
-                          onClick={() => handleSelectPlant(plantOpt)}
-                        >
-                          <div className="arena-ads-plant-avatar-wrap">
-                            <img
-                              src={cfg?.icon || cfg?.sprite}
-                              alt={plantOpt.name}
-                              className="arena-ads-plant-thumb"
-                            />
-                            <span className="arena-ads-plant-stars">⭐{plantOpt.level}</span>
-                          </div>
-                          <div className="arena-ads-plant-meta">
-                            <div className="arena-ads-plant-name-row">
-                              <span className="arena-ads-plant-name">{plantOpt.name}</span>
-                              {plantOpt.isFused && (
-                                <span className="arena-ads-fused-badge">⚡ FUSIÓN</span>
-                              )}
-                            </div>
-                            <span className="arena-ads-plant-desc">{plantOpt.description}</span>
-                          </div>
-                          <div className="arena-ads-plant-check-wrap">
-                            <span className={`arena-ads-radio-circle ${isSelected ? 'arena-ads-radio-circle--active' : ''}`}>
-                              {isSelected ? '✓' : ''}
+                      <div className="arena-ads-col-info">
+                        <strong className="arena-ads-col-name">{plant.name}</strong>
+                        <span className="arena-ads-col-tier-label">{col.tierLabel}</span>
+                        <div className="arena-ads-col-stats">
+                          {plant.statRolls.length > 0 ? (
+                            plant.statRolls.map((roll, rIdx) => {
+                              const label =
+                                roll === 'damage'
+                                  ? '+15% Daño'
+                                  : roll === 'hp'
+                                  ? '+15% Vida'
+                                  : roll === 'attackSpeed'
+                                  ? '+15% Cadencia'
+                                  : '-15% Recarga'
+                              return (
+                                <span
+                                  key={rIdx}
+                                  className={`arena-ads-col-stat-pill arena-ads-col-stat-pill--${roll}`}
+                                >
+                                  {label}
+                                </span>
+                              )
+                            })
+                          ) : (
+                            <span className="arena-ads-col-stat-pill arena-ads-col-stat-pill--basic">
+                              Estadísticas Estándar
                             </span>
-                          </div>
+                          )}
                         </div>
-                      )
-                    })}
-                  </div>
+                      </div>
 
-                  <div className="arena-ads-event-actions">
-                    <button
-                      type="button"
-                      className="arena-ads-btn arena-ads-btn--primary"
-                      onClick={() => handleEquipPlantAndBattle()}
-                    >
-                      ⚔️ EQUIPAR PLANTA Y COMBATIR
-                    </button>
-                  </div>
-                </div>
-              )}
+                      <div className="arena-ads-col-action">
+                        {isFree ? (
+                          <button
+                            type="button"
+                            className="arena-ads-btn arena-ads-btn--col-free"
+                            onClick={() => handleEquipPlantAndBattle(plant, false)}
+                            disabled={isProcessing}
+                          >
+                            🟢 ELEGIR GRATIS
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`arena-ads-btn ${
+                              isSupreme
+                                ? 'arena-ads-btn--col-supreme'
+                                : 'arena-ads-btn--col-tactical'
+                            }`}
+                            onClick={() => handleEquipPlantAndBattle(plant, true)}
+                            disabled={isProcessing}
+                            title="Desbloquea esta fusión épica apoyando al patrocinador"
+                          >
+                            {isSupreme
+                              ? '👑 DESBLOQUEAR Y LUCHAR ⚡'
+                              : '⚡ DESBLOQUEAR Y LUCHAR 🎁'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
 
             {/* DOCK TÁCTICO DEL MAZO ACTIVO (GAMING RACK) */}
@@ -853,38 +781,15 @@ export default function ArenaAdsModal({
               )}
 
               <div className="arena-ads-footer-actions">
-                {activeRun?.currentPrepChoice?.eventType === 'reward' ? (
-                  <>
-                    {activeRun.currentPrepChoice.canDoubleReward && (
-                      <button
-                        type="button"
-                        className="arena-ads-btn arena-ads-btn--double-reward"
-                        onClick={() => handleClaimRewardAndBattle(true)}
-                        disabled={isProcessing}
-                        title="Duplica el botín de oro viendo al patrocinador"
-                      >
-                        ⚡ DUPLICAR X2 Y COMBATIR
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="arena-ads-btn arena-ads-btn--claim-reward"
-                      onClick={() => handleClaimRewardAndBattle(false)}
-                      disabled={isProcessing}
-                    >
-                      🎁 RECLAMAR BOTÍN Y COMBATIR
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="arena-ads-btn arena-ads-btn--primary"
-                    onClick={() => handleEquipPlantAndBattle()}
-                    disabled={isProcessing}
-                  >
-                    ⚔️ EQUIPAR Y COMBATIR (NIVEL {activeRun?.level})
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="arena-ads-btn arena-ads-btn--primary"
+                  onClick={() => handleEquipPlantAndBattle()}
+                  disabled={isProcessing}
+                  title="Inicia el combate con la opción seleccionada o la gratuita por defecto"
+                >
+                  ⚔️ ENTRAR A COMBATIR (NIVEL {activeRun?.level})
+                </button>
               </div>
             </>
           )}

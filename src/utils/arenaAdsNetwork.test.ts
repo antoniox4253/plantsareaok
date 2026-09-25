@@ -7,9 +7,14 @@ import {
   isCombatAdsBlocked,
   resetPopunderQuota,
   isPopunderQuotaReached,
+  activateMonetagVignette,
+  deactivateMonetagVignette,
+  triggerArenaAdsSmartlink,
   ARENA_ADS_POPUNDER_SRC,
   ARENA_ADS_NATIVE_SRC,
   ARENA_ADS_NATIVE_CONTAINER_ID,
+  MONETAG_VIGNETTE_SRC,
+  MONETAG_ZONE_ID,
 } from './arenaAdsNetwork'
 
 // Mock DOM simple para entornos de prueba Node.js
@@ -219,4 +224,58 @@ describe('arenaAdsNetwork (Aislamiento y Ciclo de Vida de Anuncios)', () => {
 
     setCombatAdsBlocked(false)
   })
+
+  it('8. Smartlink se abre sin ser bloqueado por la cuota de popunder', () => {
+    resetPopunderQuota()
+    activateArenaAdsNetwork()
+
+    // El smartlink oficial de Adsterra no debe ser bloqueado
+    const smartlinkRes = (globalThis as any).window.open(
+      'https://www.profitablecpmrate.com/r0w5qgzk?key=0358fcd5e615f7daaddf8b75555dfa78'
+    )
+    expect(smartlinkRes).not.toBeNull()
+
+    // Consumir el popunder legítimo de la fase
+    const popRes1 = (globalThis as any).window.open('https://pl31424403.profitableratecpmnetwork.com/ad')
+    expect(popRes1).not.toBeNull()
+    expect(isPopunderQuotaReached()).toBe(true)
+
+    // Un segundo intento de popunder rogue sí se bloquea
+    const popRes2 = (globalThis as any).window.open('https://spam.com')
+    expect(popRes2).toBeNull()
+
+    // Pero un Smartlink explícito de reclamo voluntario sigue permitiéndose
+    const smartlinkRes2 = (globalThis as any).window.open(
+      'https://www.profitablecpmrate.com/r0w5qgzk?key=0358fcd5e615f7daaddf8b75555dfa78'
+    )
+    expect(smartlinkRes2).not.toBeNull()
+  })
+
+  it('9. triggerArenaAdsSmartlink delega a Telegram.WebApp.openLink si está disponible', () => {
+    const mockOpenLink = vi.fn()
+    ;(globalThis as any).window.Telegram = {
+      WebApp: {
+        openLink: mockOpenLink,
+      },
+    }
+
+    triggerArenaAdsSmartlink('https://test-sponsor.com')
+    expect(mockOpenLink).toHaveBeenCalledWith('https://test-sponsor.com')
+
+    delete (globalThis as any).window.Telegram
+  })
+
+  it('10. activateMonetagVignette inyecta el script con data-zone oficial y deactivate lo remueve', () => {
+    setCombatAdsBlocked(false)
+    activateMonetagVignette()
+
+    const script = (globalThis as any).document.getElementById('monetag-vignette-script')
+    expect(script).not.toBeNull()
+    expect(script?.src).toBe(MONETAG_VIGNETTE_SRC)
+    expect(script?.getAttribute('data-zone')).toBe(MONETAG_ZONE_ID)
+
+    deactivateMonetagVignette()
+    expect((globalThis as any).document.getElementById('monetag-vignette-script')).toBeNull()
+  })
 })
+

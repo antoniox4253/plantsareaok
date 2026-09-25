@@ -63,19 +63,33 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(uniqueIds.size).toBe(5)
   })
 
-  it('3. Genera opciones válidas en la fase de preparación con estrellas sincronizadas', () => {
+  it('3. Genera opciones tácticas en 3 columnas en la fase de preparación con estrellas sincronizadas', () => {
     const prep = generateLevelPrep(1)
     expect(prep.rewardOption).toBeDefined()
     expect(['gold', 'gems', 'item', 'pack']).toContain(prep.rewardOption.type)
-    expect(prep.normalPlantOptions.length).toBe(3)
-    expect(prep.fusedPlantOptions.length).toBe(3)
+    expect(prep.tacticalColumns?.length).toBe(3)
 
-    // Las fusionadas deben tener statRolls y su nivel sincronizado con la cantidad de estrellas
-    for (const fused of prep.fusedPlantOptions) {
-      expect(fused.isFused).toBe(true)
-      expect(fused.statRolls.length).toBeGreaterThan(0)
-      expect(fused.level).toBe(Math.max(2, fused.statRolls.length))
-    }
+    // Columna 1: Planta básica gratis (⭐1)
+    const col1 = prep.tacticalColumns![0]
+    expect(col1.requiresAd).toBe(false)
+    expect(col1.tier).toBe(1)
+    expect(col1.plant.level).toBe(1)
+    expect(col1.plant.statRolls).toHaveLength(0)
+
+    // Columna 2: Fusión táctica con patrocinador (⭐2)
+    const col2 = prep.tacticalColumns![1]
+    expect(col2.requiresAd).toBe(true)
+    expect(col2.tier).toBe(2)
+    expect(col2.plant.isFused).toBe(true)
+    expect(col2.plant.statRolls.length).toBeGreaterThan(0)
+    expect(col2.plant.level).toBe(2)
+
+    // Columna 3: Fusión suprema con patrocinador (⭐2 o ⭐3)
+    const col3 = prep.tacticalColumns![2]
+    expect(col3.requiresAd).toBe(true)
+    expect(col3.tier).toBe(3)
+    expect(col3.plant.isFused).toBe(true)
+    expect(col3.plant.statRolls.length).toBeGreaterThan(0)
   })
 
   it('4. Persistencia en localStorage: salva, restaura y limpia la run', () => {
@@ -252,32 +266,23 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(bonkEntity.level).toBe(3)
   })
 
-  it('10. Las opciones de plantas (normales y fusionadas) NUNCA se repiten con las cartas del mazo activo', () => {
+  it('10. Las opciones de plantas en las 3 columnas NUNCA se repiten con las cartas del mazo activo ni entre sí', () => {
     for (let i = 0; i < 20; i++) {
       const run = ArenaAdsManager.startNewRun()
       const deckPlantIds = new Set(run.deck.map((c) => c.plantId))
       expect(deckPlantIds.size).toBe(5)
       expect(deckPlantIds.has('sunflower')).toBe(true)
 
-      const normalOptions = run.currentPrepChoice?.normalPlantOptions || []
-      const fusedOptions = run.currentPrepChoice?.fusedPlantOptions || []
+      const cols = run.currentPrepChoice?.tacticalColumns || []
+      expect(cols.length).toBe(3)
 
-      expect(normalOptions.length).toBe(3)
-      expect(fusedOptions.length).toBe(3)
+      const colPlantIds = cols.map((c) => c.plant.plantId)
+      const uniqueColPlantIds = new Set(colPlantIds)
+      expect(uniqueColPlantIds.size).toBe(3) // 3 plantas distintas entre sí
 
-      for (const opt of normalOptions) {
-        expect(deckPlantIds.has(opt.plantId)).toBe(false)
-        expect(opt.plantId).not.toBe('sunflower')
-      }
-
-      for (const opt of fusedOptions) {
-        expect(deckPlantIds.has(opt.plantId)).toBe(false)
-        expect(opt.plantId).not.toBe('sunflower')
-      }
-
-      const normalIds = new Set(normalOptions.map((o) => o.plantId))
-      for (const opt of fusedOptions) {
-        expect(normalIds.has(opt.plantId)).toBe(false)
+      for (const plantId of colPlantIds) {
+        expect(deckPlantIds.has(plantId)).toBe(false) // Ninguna está en el mazo activo
+        expect(plantId).not.toBe('sunflower') // Ninguna es el girasol
       }
     }
   })
@@ -399,10 +404,14 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(goldEntity.equippedItem).toBe('gold_24k')
   })
 
-  it('16. Evento de preparación: Hitos (10, 15, 20, 25, 30, 35, 40, 45, 50) garantizan botín fijo', () => {
-    for (const lvl of [10, 15, 20, 25, 30, 35, 40, 45, 50]) {
+  it('16. Evento de preparación: Siempre ofrece el escaparate táctico de 3 columnas para avanzar', () => {
+    for (const lvl of [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]) {
       const prep = generateLevelPrep(lvl)
-      expect(prep.eventType).toBe('reward')
+      expect(prep.eventType).toBe('plant')
+      expect(prep.tacticalColumns?.length).toBe(3)
+      expect(prep.tacticalColumns![0].requiresAd).toBe(false)
+      expect(prep.tacticalColumns![1].requiresAd).toBe(true)
+      expect(prep.tacticalColumns![2].requiresAd).toBe(true)
     }
   })
 
@@ -418,17 +427,27 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(skinReward?.amount).toBe(1) // Siempre 1
   })
 
-  it('18. Duplicar Recompensa: Disponible desde Nivel 1 y NUNCA en hitos con skins exclusivas o sobres', () => {
-    // Niveles con sobres o skins nunca permiten duplicar por anuncio (Lv 10, 15, 25, 30, 35, 40, 45, 50)
-    for (const lvl of [10, 15, 25, 30, 35, 40, 45, 50]) {
-      const prep = generateLevelPrep(lvl)
-      expect(prep.canDoubleReward).toBeFalsy()
-    }
-    // Pisos de recursos/cultivo (Lv 1, 2, 3, 4) SIEMPRE permiten duplicar para monetización Web3
-    for (const lvl of [1, 2, 3, 4]) {
-      const prep = generateLevelPrep(lvl)
-      expect(prep.canDoubleReward).toBe(true)
-    }
+  it('18. Sistema Táctico: Escalado progresivo de fusión por piso y reroll con patrocinador', () => {
+    // Piso 1-10: Col 2 tiene 1 roll, Col 3 tiene 2 rolls
+    const prepLvl5 = generateLevelPrep(5)
+    expect(prepLvl5.tacticalColumns![1].plant.statRolls.length).toBe(1)
+    expect(prepLvl5.tacticalColumns![2].plant.statRolls.length).toBe(2)
+
+    // Piso 11-25: Col 2 tiene 2 rolls, Col 3 tiene 3 rolls
+    const prepLvl15 = generateLevelPrep(15)
+    expect(prepLvl15.tacticalColumns![1].plant.statRolls.length).toBe(2)
+    expect(prepLvl15.tacticalColumns![2].plant.statRolls.length).toBe(3)
+
+    // Piso 26+: Col 2 tiene 3 rolls, Col 3 tiene 4 rolls y ⭐3
+    const prepLvl30 = generateLevelPrep(30)
+    expect(prepLvl30.tacticalColumns![1].plant.statRolls.length).toBe(3)
+    expect(prepLvl30.tacticalColumns![2].plant.statRolls.length).toBe(4)
+    expect(prepLvl30.tacticalColumns![2].plant.level).toBe(3)
+
+    // Probar Reroll con patrocinador
+    const run = ArenaAdsManager.startNewRun()
+    const rerolledRun = ArenaAdsManager.rerollPrepChoices(run)
+    expect(rerolledRun.currentPrepChoice?.tacticalColumns?.length).toBe(3)
   })
 
   it('19. Primera Victoria vs Piso Repetido (Blindaje de Hito Único por Cuenta y Solo 1 Recompensa a la Mitad)', () => {

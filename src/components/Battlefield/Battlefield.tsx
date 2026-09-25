@@ -593,15 +593,21 @@ export default function Battlefield({
     }
   }, [arenaAdsRun])
 
-  // Los anuncios NUNCA deben activarse en combate: bloqueo estricto garantizado
+  // Los anuncios NUNCA deben activarse durante el combate en el césped.
+  // Al terminar la partida (victoria o derrota), se levanta el bloqueo para permitir
+  // que Monetag Vignette se precargue y muestre en el interstitial modal sin interrupciones.
   useEffect(() => {
     if (matchMode === 'arena_ads') {
-      setCombatAdsBlocked(true)
+      const isPostCombat = gameStatus === 'victory' || gameStatus === 'defeat'
+      setCombatAdsBlocked(!isPostCombat)
+      if (isPostCombat) {
+        activateMonetagVignette()
+      }
       return () => {
         setCombatAdsBlocked(false)
       }
     }
-  }, [matchMode])
+  }, [matchMode, gameStatus])
 
   // En clan_fortress la arena siempre opera sobre 5 carriles (LANES_CONFIG_5),
   // bloqueando visualmente los carriles no disponibles según el nivel del Árbol Madre rival.
@@ -1659,6 +1665,8 @@ export default function Battlefield({
         const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
         if (gameStatus === 'victory') {
           if (run) {
+            setCombatAdsBlocked(false)
+            activateMonetagVignette()
             const updated = ArenaAdsManager.completeLevelVictory(run)
             setCurrentArenaAdsRun(updated)
             setArenaAdsModalMode('victory')
@@ -1685,6 +1693,8 @@ export default function Battlefield({
           }
         } else if (gameStatus === 'defeat') {
           if (run) {
+            setCombatAdsBlocked(false)
+            activateMonetagVignette()
             run.status = 'game_over'
             ArenaAdsManager.saveRun(run)
             setCurrentArenaAdsRun(run)

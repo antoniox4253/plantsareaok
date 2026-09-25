@@ -42,7 +42,25 @@ export function triggerArenaAdsSmartlink(customUrl?: string): void {
   if (typeof window === 'undefined') return
   try {
     const targetUrl = customUrl || ARENA_ADS_SMARTLINK_URL
-    window.open(targetUrl, '_blank', 'noopener,noreferrer')
+    // Soporte nativo para Telegram WebApp (evita que el WebView bloquee popups)
+    const tg = (window as any).Telegram?.WebApp
+    if (tg && typeof tg.openLink === 'function') {
+      tg.openLink(targetUrl)
+      return
+    }
+
+    const w = window.open(targetUrl, '_blank', 'noopener,noreferrer')
+    if (!w && typeof document !== 'undefined') {
+      // Fallback si el navegador intercepta window.open como popup
+      const a = document.createElement('a')
+      a.href = targetUrl
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => a.remove(), 100)
+    }
   } catch (err) {
     console.warn('[ArenaAdsNetwork] Error al disparar Smartlink:', err)
   }
@@ -79,12 +97,13 @@ export function activateMonetagVignette(): void {
     const s = document.createElement('script')
     s.id = 'monetag-vignette-script'
     s.setAttribute('data-zone', MONETAG_ZONE_ID)
+    s.setAttribute('data-cfasync', 'false')
     if (s.dataset) {
       s.dataset.zone = MONETAG_ZONE_ID
     }
     s.src = MONETAG_VIGNETTE_SRC
     s.async = true
-    const target = [document.documentElement, document.body].filter(Boolean).pop()
+    const target = [document.head, document.documentElement, document.body].filter(Boolean).pop()
     if (target) {
       target.appendChild(s)
     }
@@ -124,6 +143,13 @@ function installPopunderLimiter(): void {
   if (typeof window.open === 'function') {
     const rawOpen = window.open.bind(window)
     window.open = function (...args) {
+      const url = String(args[0] || '')
+      // Permitir Smartlinks directos legítimos sin contarlos como popunder rogue
+      const isSmartlink = url.includes('profitablecpmrate') || url.includes('r0w5qgzk')
+      if (isSmartlink) {
+        return rawOpen(...args)
+      }
+
       if (isCombatActive) {
         console.warn('[ArenaAdsNetwork] Bloqueo total: intento de popup publicitario bloqueado en combate.')
         return null
@@ -139,14 +165,20 @@ function installPopunderLimiter(): void {
   if (typeof HTMLAnchorElement !== 'undefined' && HTMLAnchorElement.prototype?.click) {
     originalAnchorClick = HTMLAnchorElement.prototype.click
     HTMLAnchorElement.prototype.click = function () {
+      const href = this.getAttribute('href') || ''
+      const target = this.getAttribute('target') || ''
+
+      const isSmartlink = href.includes('profitablecpmrate') || href.includes('r0w5qgzk')
+      if (isSmartlink) {
+        return originalAnchorClick?.apply(this)
+      }
+
       if (isCombatActive) {
         return
       }
-      const href = this.getAttribute('href') || ''
-      const target = this.getAttribute('target') || ''
+
       const isAd =
         href.includes('profitableratecpmnetwork') ||
-        href.includes('profitablecpmrate') ||
         href.includes('n6wxm') ||
         (target === '_blank' && !this.classList?.contains('btn-telegram-link'))
 
@@ -158,19 +190,6 @@ function installPopunderLimiter(): void {
       }
       return originalAnchorClick?.apply(this)
     }
-  }
-
-  // Escuchar el primer click para marcar la cuota cumplida sin cortar la llamada HTTP
-  if (typeof window.addEventListener === 'function') {
-    window.addEventListener(
-      'click',
-      () => {
-        if (!popunderTriggeredInPhase && !isCombatActive) {
-          popunderTriggeredInPhase = true
-        }
-      },
-      { capture: true, passive: true }
-    )
   }
 }
 

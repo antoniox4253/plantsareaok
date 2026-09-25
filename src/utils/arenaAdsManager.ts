@@ -28,12 +28,22 @@ export interface ArenaAdsPlantOption {
   description: string
 }
 
+export interface ArenaAdsTacticalColumn {
+  tier: 1 | 2 | 3
+  tierLabel: string
+  plant: ArenaAdsPlantOption
+  requiresAd: boolean
+  badge: string
+  color: 'normal' | 'tactical' | 'supreme'
+}
+
 export interface ArenaAdsPrepChoice {
   eventType: 'reward' | 'plant'
   rewardOption: ArenaAdsRewardOption
   rewardOptions: ArenaAdsRewardOption[]
   normalPlantOptions: ArenaAdsPlantOption[]
   fusedPlantOptions: ArenaAdsPlantOption[]
+  tacticalColumns?: [ArenaAdsTacticalColumn, ArenaAdsTacticalColumn, ArenaAdsTacticalColumn]
   canDoubleReward?: boolean
 }
 
@@ -265,6 +275,60 @@ export function getFixedRewardsForLevel(
     ]
   }
 
+  // Si el jugador supera el nivel 50 en primera victoria (modo infinito), otorgar recursos dinámicos escalados
+  if (baseRewards.length === 0) {
+    const labelPrefix = multiplier === 2 ? ` (2X)` : ''
+    if (level % 10 === 0) {
+      const gemsAmount = 25 * multiplier
+      return [
+        {
+          type: 'gems',
+          amount: gemsAmount,
+          label: `+${gemsAmount} Gemas Supremas (Piso ${level})${labelPrefix}`,
+          icon: '💎',
+        },
+        {
+          type: 'item',
+          itemId: 'pesticide',
+          amount: 4 * multiplier,
+          label: `+${4 * multiplier} Pesticidas${labelPrefix}`,
+          icon: '🧴',
+        },
+      ]
+    }
+    if (level % 5 === 0) {
+      const gemsAmount = 15 * multiplier
+      return [
+        {
+          type: 'gems',
+          amount: gemsAmount,
+          label: `+${gemsAmount} Gemas (Piso ${level})${labelPrefix}`,
+          icon: '💎',
+        },
+        {
+          type: 'item',
+          itemId: 'water',
+          amount: 8 * multiplier,
+          label: `+${8 * multiplier} Agua${labelPrefix}`,
+          icon: '💧',
+        },
+      ]
+    }
+    const targetItem: FarmingItemId = level % 2 !== 0 ? 'water' : 'fertilizer'
+    const finalAmount = 8 * multiplier
+    const icon = targetItem === 'water' ? '💧' : '🌱'
+    const name = targetItem === 'water' ? 'Agua' : 'Fertilizante'
+    return [
+      {
+        type: 'item',
+        itemId: targetItem,
+        amount: finalAmount,
+        label: `+${finalAmount} ${name} (Piso ${level})${labelPrefix}`,
+        icon,
+      },
+    ]
+  }
+
   return baseRewards.map((rew) => {
     // Los ítems exclusivos y los sobres NUNCA se duplican (siempre 1)
     if (rew.isExclusiveItem || rew.type === 'pack') {
@@ -431,42 +495,120 @@ export function generateLevelPrep(
   // Pool de plantas no presentes en el mazo
   const nonDeckPool = ALL_NON_SUNFLOWER_PLANTS.filter((p) => !deckPlantIds.has(p))
 
-  let normalPool: PlantId[]
-  let fusedPool: PlantId[]
 
-  if (nonDeckPool.length >= 6) {
-    const shuffled = shuffleArray(nonDeckPool)
-    normalPool = shuffled.slice(0, 3)
-    fusedPool = shuffled.slice(3, 6)
-  } else if (nonDeckPool.length >= 3) {
-    normalPool = shuffleArray(nonDeckPool).slice(0, 3)
-    fusedPool = shuffleArray(nonDeckPool).slice(0, 3)
-  } else {
-    normalPool = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
-    fusedPool = shuffleArray(ALL_NON_SUNFLOWER_PLANTS).slice(0, 3)
+  // Seleccionar 3 plantas distintas que no estén actualmente en el mazo
+  const candidatePool = nonDeckPool.length >= 3 ? nonDeckPool : ALL_NON_SUNFLOWER_PLANTS
+  const picked3 = shuffleArray(candidatePool).slice(0, 3)
+  const rollPool: PlantStatKey[] = ['damage', 'hp', 'attackSpeed', 'cooldown']
+
+  // ── COLUMNA 1: PLANTA BÁSICA ESTÁNDAR (⭐1) — GRATIS (Sin anuncios) ──
+  const p1 = picked3[0] || 'peashooter'
+  const col1Plant: ArenaAdsPlantOption = {
+    plantId: p1,
+    name: PLANT_CONFIGS[p1]?.name || p1,
+    isFused: false,
+    level: 1,
+    statRolls: [],
+    description: 'Refuerzo básico estándar • Sin anuncios',
+  }
+  const col1: ArenaAdsTacticalColumn = {
+    tier: 1,
+    tierLabel: 'Planta Estándar (⭐1)',
+    plant: col1Plant,
+    requiresAd: false,
+    badge: 'GRATIS',
+    color: 'normal',
   }
 
-  // En hitos importantes (10, 15, 20, 25, 30, 35, 40, 45, 50), evento 'reward' garantizado
-  const isMilestone = level % 10 === 0 || [15, 25, 35, 45, 50].includes(level)
-  const eventType: 'reward' | 'plant' = isMilestone
-    ? 'reward'
-    : Math.random() < 0.50
-    ? 'reward'
-    : 'plant'
+  // ── COLUMNA 2: FUSIÓN TÁCTICA (⭐2) — DESBLOQUEO PATROCINADO ──
+  // Escalado equilibrado por pisos:
+  // Pisos 1-10: 1 stat (+15%)
+  // Pisos 11-25: 2 stats (+15% c/u)
+  // Pisos 26+: 3 stats
+  const p2 = picked3[1] || 'repeater'
+  const col2RollsCount = level >= 26 ? 3 : level >= 11 ? 2 : 1
+  const col2Rolls: PlantStatKey[] = []
+  for (let i = 0; i < col2RollsCount; i++) {
+    col2Rolls.push(rollPool[Math.floor(Math.random() * rollPool.length)])
+  }
+  const col2Summary = col2Rolls
+    .map((s) => {
+      if (s === 'damage') return '+15% Daño'
+      if (s === 'hp') return '+15% Vida'
+      if (s === 'attackSpeed') return '+15% Cadencia'
+      return '-15% Recarga'
+    })
+    .join(' • ')
 
-  // Duplicar recompensa: Disponible desde el Nivel 1 en todos los pisos de recursos/cultivo (sin skins ni sobres)
-  const hasExclusiveOrPack = rewardOptions.some(
-    (opt) => opt.type === 'pack' || Boolean(opt.isExclusiveItem)
-  )
-  const canDoubleReward = !hasExclusiveOrPack && level >= 1
+  const col2Plant: ArenaAdsPlantOption = {
+    plantId: p2,
+    name: PLANT_CONFIGS[p2]?.name || p2,
+    isFused: true,
+    level: 2,
+    statRolls: col2Rolls,
+    description: `⭐2 Fusión Táctica: ${col2Summary}`,
+  }
+  const col2: ArenaAdsTacticalColumn = {
+    tier: 2,
+    tierLabel: 'Fusión Táctica (⭐2)',
+    plant: col2Plant,
+    requiresAd: true,
+    badge: '⚡ FUSIÓN (PATROCINADA)',
+    color: 'tactical',
+  }
+
+  // ── COLUMNA 3: FUSIÓN SUPREMA (⭐2 - ⭐3+) — DESBLOQUEO PATROCINADO ──
+  // Escalado de élite por pisos:
+  // Pisos 1-10: 2 stats (⭐2)
+  // Pisos 11-25: 3 stats (⭐2)
+  // Pisos 26+: 4 stats (⭐3)
+  const p3 = picked3[2] || 'melonpult'
+  const col3RollsCount = level >= 26 ? 4 : level >= 11 ? 3 : 2
+  const col3Level = level >= 26 ? 3 : 2
+  const col3Rolls: PlantStatKey[] = []
+  for (let i = 0; i < col3RollsCount; i++) {
+    col3Rolls.push(rollPool[Math.floor(Math.random() * rollPool.length)])
+  }
+  const col3Summary = col3Rolls
+    .map((s) => {
+      if (s === 'damage') return '+15% Daño'
+      if (s === 'hp') return '+15% Vida'
+      if (s === 'attackSpeed') return '+15% Cadencia'
+      return '-15% Recarga'
+    })
+    .join(' • ')
+
+  const col3Plant: ArenaAdsPlantOption = {
+    plantId: p3,
+    name: PLANT_CONFIGS[p3]?.name || p3,
+    isFused: true,
+    level: col3Level,
+    statRolls: col3Rolls,
+    description: `⭐${col3Level} Fusión Suprema: ${col3Summary}`,
+  }
+  const col3: ArenaAdsTacticalColumn = {
+    tier: 3,
+    tierLabel: `Fusión Suprema (⭐${col3Level})`,
+    plant: col3Plant,
+    requiresAd: true,
+    badge: '👑 SUPREMA (PATROCINADA)',
+    color: 'supreme',
+  }
+
+  const tacticalColumns: [ArenaAdsTacticalColumn, ArenaAdsTacticalColumn, ArenaAdsTacticalColumn] = [
+    col1,
+    col2,
+    col3,
+  ]
 
   return {
-    eventType,
+    eventType: 'plant',
     rewardOption: rewardOptions[0],
     rewardOptions,
-    normalPlantOptions: generateNormalPlantOptions(normalPool),
-    fusedPlantOptions: generateFusedPlantOptions(level, fusedPool),
-    canDoubleReward,
+    normalPlantOptions: [col1Plant],
+    fusedPlantOptions: [col2Plant, col3Plant],
+    tacticalColumns,
+    canDoubleReward: false,
   }
 }
 
@@ -882,6 +1024,23 @@ export class ArenaAdsManager {
       run.alreadyClaimedLevels
     )
 
+    this.saveRun(run)
+    return run
+  }
+
+  /**
+   * Genera 3 nuevas opciones de plantas en la fase de preparación actual
+   * (Reroll táctico apoyando al patrocinador).
+   */
+  static rerollPrepChoices(run: ArenaAdsRun): ArenaAdsRun {
+    const deckToUse = run.baseDeck && run.baseDeck.length > 0 ? run.baseDeck : run.deck
+    run.currentPrepChoice = generateLevelPrep(
+      run.level,
+      run.multiplier,
+      deckToUse,
+      run.accumulatedRewards.items,
+      run.alreadyClaimedLevels
+    )
     this.saveRun(run)
     return run
   }

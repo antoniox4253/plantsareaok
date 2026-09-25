@@ -1714,3 +1714,427 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* ── BANNER NATIVO PUBLICITARIO OFICIAL ── */
+.arena-ads-native-banner-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px dashed rgba(56, 189, 248, 0.4);
+  border-radius: 8px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.arena-ads-native-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.arena-ads-native-badge {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.arena-ads-native-title {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.arena-ads-native-banner-slot {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 36px;
+  overflow: hidden;
+}
+
+/* ── ESCAPARATE TÁCTICO: 3 COLUMNAS DE REFUERZO DE PLANTA ── */
+.arena-ads-tactical-showcase {
+  background: radial-gradient(circle at 50% 10%, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.arena-ads-tactical-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+
+.arena-ads-tactical-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.arena-ads-tactical-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  letter-spacing: 0.2px;
+}
+
+.arena-ads-btn--reroll {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border: 1.5px solid #818cf8;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+  white-space: nowrap;
+}
+
+.arena-ads-btn--reroll:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.02);
+  filter: brightness(1.15);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.55);
+}
+
+/* Grilla de 3 Columnas */
+.arena-ads-3cols-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Tarjeta individual de columna */
+.arena-ads-col-card {
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  position: relative;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.arena-ads-col-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* Variante Normal (Columna 1 - Gratis) */
+.arena-ads-col-card--normal {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 78, 59, 0.25) 50%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid #10b981;
+}
+
+.arena-ads-col-card--normal:hover {
+  border-color: #34d399;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+}
+
+/* Variante Táctica (Columna 2 - Patrocinada ⭐2) */
+.arena-ads-col-card--tactical {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(180, 83, 9, 0.25) 50%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid #f59e0b;
+}
+
+.arena-ads-col-card--tactical:hover {
+  border-color: #fbbf24;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+/* Variante Suprema (Columna 3 - Patrocinada ⭐3+) */
+.arena-ads-col-card--supreme {
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.15) 0%, rgba(126, 34, 206, 0.3) 50%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid #a855f7;
+  animation: colSupremePulse 3s infinite alternate ease-in-out;
+}
+
+.arena-ads-col-card--supreme:hover {
+  border-color: #c084fc;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.55);
+}
+
+@keyframes colSupremePulse {
+  0% {
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.25);
+  }
+  100% {
+    box-shadow: 0 0 22px rgba(168, 85, 247, 0.45), inset 0 0 12px rgba(168, 85, 247, 0.15);
+  }
+}
+
+/* Badge de cabecera de la columna */
+.arena-ads-col-badge {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-transform: uppercase;
+}
+
+.arena-ads-col-card--normal .arena-ads-col-badge {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.arena-ads-col-card--tactical .arena-ads-col-badge {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.arena-ads-col-card--supreme .arena-ads-col-badge {
+  color: #c084fc;
+  border-color: rgba(192, 132, 252, 0.4);
+}
+
+/* Avatar de la Planta */
+.arena-ads-col-avatar-wrap {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.4) 80%);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  margin: 2px 0;
+}
+
+.arena-ads-col-card--normal .arena-ads-col-avatar-wrap {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.arena-ads-col-card--tactical .arena-ads-col-avatar-wrap {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+}
+
+.arena-ads-col-card--supreme .arena-ads-col-avatar-wrap {
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+}
+
+.arena-ads-col-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
+}
+
+.arena-ads-col-stars {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #0f172a;
+  border: 1.5px solid #facc15;
+  color: #facc15;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* Info y Nombre */
+.arena-ads-col-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+}
+
+.arena-ads-col-name {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.arena-ads-col-tier-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.arena-ads-col-card--normal .arena-ads-col-tier-label {
+  color: #6ee7b7;
+}
+
+.arena-ads-col-card--tactical .arena-ads-col-tier-label {
+  color: #fcd34d;
+}
+
+.arena-ads-col-card--supreme .arena-ads-col-tier-label {
+  color: #d8b4fe;
+}
+
+/* Desglose de Stats / Píldoras */
+.arena-ads-col-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 4px;
+  min-height: 42px;
+  align-content: flex-start;
+}
+
+.arena-ads-col-stat-pill {
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.arena-ads-col-stat-pill--damage {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.arena-ads-col-stat-pill--hp {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #6ee7b7;
+}
+
+.arena-ads-col-stat-pill--attackSpeed {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #fcd34d;
+}
+
+.arena-ads-col-stat-pill--cooldown {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #7dd3fc;
+}
+
+.arena-ads-col-stat-pill--basic {
+  background: rgba(148, 163, 184, 0.15);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
+
+/* Botones de Acción de las Columnas */
+.arena-ads-col-action {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.arena-ads-btn--col-free {
+  width: 100%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid #34d399;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 8px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+}
+
+.arena-ads-btn--col-free:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.55);
+}
+
+.arena-ads-btn--col-tactical {
+  width: 100%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border: 1.5px solid #fbbf24;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 900;
+  padding: 8px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+}
+
+.arena-ads-btn--col-tactical:hover:not(:disabled) {
+  filter: brightness(1.18);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.6);
+}
+
+.arena-ads-btn--col-supreme {
+  width: 100%;
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  border: 1.5px solid #c084fc;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 900;
+  padding: 8px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 12px rgba(168, 85, 247, 0.45);
+}
+
+.arena-ads-btn--col-supreme:hover:not(:disabled) {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(168, 85, 247, 0.65);
+}
+
+/* Responsivo para móviles */
+@media (max-width: 640px) {
+  .arena-ads-3cols-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .arena-ads-col-card {
+    padding: 8px 10px;
+  }
+  .arena-ads-col-stats {
+    min-height: auto;
+  }
+  .arena-ads-col-action button {
+    padding: 7px 4px;
+    font-size: 11px;
+  }
+}
+

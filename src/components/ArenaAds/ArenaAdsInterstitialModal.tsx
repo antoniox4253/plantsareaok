@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { soundManager } from '../../utils/audioManager'
+import { activateMonetagVignette } from '../../utils/arenaAdsNetwork'
 import GoldIcon from '../Common/GoldIcon'
 import './ArenaAdsModal.css'
 
@@ -29,6 +30,12 @@ export default function ArenaAdsInterstitialModal({
   multiplier = 1,
 }: ArenaAdsInterstitialModalProps) {
   const [countdown, setCountdown] = useState<number>(3)
+
+  useEffect(() => {
+    if (isOpen) {
+      activateMonetagVignette()
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen || mode === 'defeat') {
