@@ -1876,6 +1876,7 @@ function App() {
               isAdmin={isAdmin}
               onOpenAdmin={() => setIsAdminPanelOpen(true)}
               onRewardsChanged={refreshFromServer}
+              userElo={userElo}
             />
           </div>
         )}

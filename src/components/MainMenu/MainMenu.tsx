@@ -1280,6 +1280,7 @@ export default function MainMenu({
           onRewardsChanged={onRewardsChanged}
           userId={userProfile?.id}
           username={userProfile?.username}
+          userElo={userElo}
           initialTab={lotteryInitialTab}
         />
       )}

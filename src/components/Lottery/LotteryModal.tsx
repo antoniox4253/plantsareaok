@@ -22,6 +22,7 @@ interface LotteryModalProps {
   onRewardsChanged?: () => Promise<void> | void
   userId?: string
   username?: string
+  userElo?: number
   initialTab?: 'wheel' | 'auction' | 'code'
 }
 
@@ -220,6 +221,7 @@ export default function LotteryModal({
   onRewardsChanged,
   userId,
   username,
+  userElo,
   initialTab,
 }: LotteryModalProps) {
   const [activeTab, setActiveTab] = useState<'wheel' | 'auction' | 'code'>(initialTab || 'wheel')
@@ -612,6 +614,10 @@ export default function LotteryModal({
 
     // Avisos locales sólo para no gastar una llamada en vano. Los que cuentan
     // son los del servidor.
+    if (isFree && userElo !== undefined && userElo < 1200) {
+      alert(`El giro diario gratuito se desbloquea al alcanzar 1,200 copas 🏆 (Tu rango actual: ${userElo} copas). ¡Compite en partidas Ranked para desbloquearlo!`)
+      return
+    }
     if (isFree && !canFreeSpin) {
       alert(`Ya has usado tu tiro gratis diario. Puedes girar nuevamente por ${PAID_SPIN_COST_GEMS} Gemas 💎.`)
       return
@@ -900,12 +906,18 @@ export default function LotteryModal({
               {/* Wheel Center Button */}
               <button
                 type="button"
-                className={`lottery-wheel-center-hub ${isSpinning ? 'lottery-hub--spinning' : ''} ${!canFreeSpin ? 'lottery-hub--locked' : ''}`}
-                disabled={isSpinning || !canFreeSpin}
+                className={`lottery-wheel-center-hub ${isSpinning ? 'lottery-hub--spinning' : ''} ${(!canFreeSpin || (userElo !== undefined && userElo < 1200)) ? 'lottery-hub--locked' : ''}`}
+                disabled={isSpinning || !canFreeSpin || (userElo !== undefined && userElo < 1200)}
                 onClick={() => handleSpinWheel(true)}
-                title={canFreeSpin ? 'Girar tiro gratis' : `Tiro gratis usado. Haz clic en "⚡ GIRAR POR ${PAID_SPIN_COST_GEMS} GEMAS 💎"`}
+                title={
+                  userElo !== undefined && userElo < 1200
+                    ? `Se requieren 1,200 copas 🏆 para girar gratis (Tienes: ${userElo} copas)`
+                    : canFreeSpin
+                    ? 'Girar tiro gratis'
+                    : `Tiro gratis usado. Haz clic en "⚡ GIRAR POR ${PAID_SPIN_COST_GEMS} GEMAS 💎"`
+                }
               >
-                <span>{isSpinning ? '🌀' : 'GIRAR'}</span>
+                <span>{isSpinning ? '🌀' : userElo !== undefined && userElo < 1200 ? '🔒' : 'GIRAR'}</span>
               </button>
             </div>
           )
@@ -916,12 +928,20 @@ export default function LotteryModal({
                 <div className="lottery-wheel-hero-badge">⭐ RULETA DE LA SUERTE</div>
                 <h3>¡PRUEBA TU SUERTE CADA DÍA!</h3>
                 <p>
-                  1 Giro Gratis cada 24h garantizado. Giros extra por tan solo <strong>{PAID_SPIN_COST_GEMS} Gemas 💎</strong>.
+                  1 Giro Gratis cada 24h (desde 1,200 🏆). Giros extra por tan solo <strong>{PAID_SPIN_COST_GEMS} Gemas 💎</strong>.
                 </p>
               </div>
 
               <div className="lottery-spin-action-box">
-                {canFreeSpin ? (
+                {userElo !== undefined && userElo < 1200 ? (
+                  <div className="lottery-free-cooldown-box" style={{ borderColor: 'rgba(245, 158, 11, 0.45)', background: 'rgba(245, 158, 11, 0.08)' }}>
+                    <span className="lottery-cooldown-icon">🏆</span>
+                    <div className="lottery-cooldown-text">
+                      <strong style={{ color: '#fbbf24' }}>DESBLOQUEA A 1,200 COPAS</strong>
+                      <small>Alcanza 1,200 copas en Ranked para activar giros gratis diarios ({userElo}/1,200)</small>
+                    </div>
+                  </div>
+                ) : canFreeSpin ? (
                   <button
                     type="button"
                     className="lottery-spin-btn lottery-spin-btn--free"
