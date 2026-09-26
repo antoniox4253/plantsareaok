@@ -1166,13 +1166,15 @@ function App() {
       if (claimRes?.claimedArenaAdsLevels) {
         setClaimedArenaAdsLevels(claimRes.claimedArenaAdsLevels)
       }
+      return claimRes
     } catch (e) {
       console.error('Error al reclamar botin de arena ads en backend:', e)
+    } finally {
+      setArenaAdsRun(null)
+      ArenaAdsManager.clearRun()
+      void refreshFromServer()
+      setScreen('menu')
     }
-    setArenaAdsRun(null)
-    ArenaAdsManager.clearRun()
-    void refreshFromServer()
-    setScreen('menu')
   }
 
   const handleArenaAdsAdvance = (run: ArenaAdsRun) => {

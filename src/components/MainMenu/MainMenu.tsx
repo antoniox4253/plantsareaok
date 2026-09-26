@@ -64,7 +64,7 @@ interface MainMenuProps {
   onPlayFriendly?: (roomCode: string, betGems: number) => void
   onStartColosseumMatch?: (betGems: ColosseumBetAmount, usedTicket: boolean) => void
   onStartArenaAdsBattle?: (run: ArenaAdsRun) => void
-  onClaimArenaAdsLoot?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => void
+  onClaimArenaAdsLoot?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => Promise<any> | void
   onStartTournamentMatch?: (opponentName: string, tournamentId: string, tournamentDeck?: PlantId[]) => void
   onOpenCollection?: () => void
   onOpenJardin?: () => void
@@ -1164,7 +1164,7 @@ export default function MainMenu({
         }}
         onClaimLoot={(loot, multiplier, newlyClaimed) => {
           if (onClaimArenaAdsLoot) {
-            onClaimArenaAdsLoot(loot, multiplier, newlyClaimed)
+            return onClaimArenaAdsLoot(loot, multiplier, newlyClaimed)
           }
         }}
       />

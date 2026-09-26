@@ -2012,10 +2012,21 @@ export default function Battlefield({
       activateMonetagVignette()
       if (gameStatus === 'victory') {
         const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
-        if (run && onArenaAdsAdvance) {
-          const nextRun = ArenaAdsManager.advanceToNextLevel(run)
-          onArenaAdsAdvance(nextRun)
-          return
+        if (run) {
+          if (run.level >= 50) {
+            if (onArenaAdsRetreat) {
+              onArenaAdsRetreat(
+                run.accumulatedRewards,
+                run.multiplier || 1,
+                run.newlyClaimedLevels
+              )
+              return
+            }
+          } else if (onArenaAdsAdvance) {
+            const nextRun = ArenaAdsManager.advanceToNextLevel(run)
+            onArenaAdsAdvance(nextRun)
+            return
+          }
         }
       }
       ArenaAdsManager.clearRun()
@@ -3606,6 +3617,16 @@ export default function Battlefield({
             activateMonetagVignette()
             setShowArenaAdsInterstitial(false)
             resetPopunderQuota()
+            if (currentArenaAdsRun.level >= 50) {
+              if (onArenaAdsRetreat) {
+                onArenaAdsRetreat(
+                  currentArenaAdsRun.accumulatedRewards,
+                  currentArenaAdsRun.multiplier || 1,
+                  currentArenaAdsRun.newlyClaimedLevels
+                )
+              }
+              return
+            }
             if (onArenaAdsAdvance) {
               const nextRun = ArenaAdsManager.advanceToNextLevel(currentArenaAdsRun)
               onArenaAdsAdvance(nextRun)

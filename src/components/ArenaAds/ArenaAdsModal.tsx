@@ -1123,13 +1123,15 @@ export default function ArenaAdsModal({
                     >
                       💰 RETIRARSE ({activeRun.accumulatedRewards.gems} 💎)
                     </button>
-                    <button
-                      type="button"
-                      className="arena-ads-btn arena-ads-btn--primary"
-                      onClick={handleResumeRun}
-                    >
-                      ▶️ CONTINUAR (NIV {activeRun.level})
-                    </button>
+                    {activeRun.level <= 50 && (
+                      <button
+                        type="button"
+                        className="arena-ads-btn arena-ads-btn--primary"
+                        onClick={handleResumeRun}
+                      >
+                        ▶️ CONTINUAR (NIV {activeRun.level})
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>
@@ -1176,15 +1178,32 @@ export default function ArenaAdsModal({
               )}
 
               <div className="arena-ads-footer-actions">
-                <button
-                  type="button"
-                  className="arena-ads-btn arena-ads-btn--primary"
-                  onClick={() => handleEquipPlantAndBattle()}
-                  disabled={isProcessing}
-                  title="Inicia el combate con la opción seleccionada o la gratuita por defecto"
-                >
-                  ⚔️ ENTRAR A COMBATIR (NIVEL {activeRun?.level})
-                </button>
+                {activeRun && activeRun.level > 50 ? (
+                  <button
+                    type="button"
+                    className="arena-ads-btn arena-ads-btn--cashout"
+                    style={{
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                      borderColor: '#fbbf24',
+                      color: '#fff',
+                      fontWeight: 800,
+                    }}
+                    onClick={handleCashout}
+                    disabled={isProcessing}
+                  >
+                    🏆 COBRAR BOTÍN SUPREMO ({activeRun.accumulatedRewards.gems} 💎)
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="arena-ads-btn arena-ads-btn--primary"
+                    onClick={() => handleEquipPlantAndBattle()}
+                    disabled={isProcessing}
+                    title="Inicia el combate con la opción seleccionada o la gratuita por defecto"
+                  >
+                    ⚔️ ENTRAR A COMBATIR (NIVEL {activeRun?.level})
+                  </button>
+                )}
               </div>
             </>
           )}
