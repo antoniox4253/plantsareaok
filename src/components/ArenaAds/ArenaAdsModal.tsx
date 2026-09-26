@@ -67,12 +67,47 @@ export default function ArenaAdsModal({
 
   // ── MISIONES PATROCINADAS EN EL LOBBY ──
   const [missions, setMissions] = useState<SponsoredMission[]>([])
+  const [currentMissionIndex, setCurrentMissionIndex] = useState<number>(0)
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [isLoadingMissions, setIsLoadingMissions] = useState<boolean>(false)
   const [isUploadingProof, setIsUploadingProof] = useState<string | null>(null)
   const [isClaimingReward, setIsClaimingReward] = useState<string | null>(null)
   const [newSponsorUrl, setNewSponsorUrl] = useState<string>('')
   const [isCreatingMission, setIsCreatingMission] = useState<boolean>(false)
   const [sponsorNotice, setSponsorNotice] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
+
+  const handlePrevMission = () => {
+    if (missions.length <= 1) return
+    soundManager.playSound('click', 0.25)
+    setSlideDirection('left')
+    setCurrentMissionIndex((prev) => (prev > 0 ? prev - 1 : missions.length - 1))
+  }
+
+  const handleNextMission = () => {
+    if (missions.length <= 1) return
+    soundManager.playSound('click', 0.25)
+    setSlideDirection('right')
+    setCurrentMissionIndex((prev) => (prev < missions.length - 1 ? prev + 1 : 0))
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0]?.clientX ?? null)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || missions.length <= 1) return
+    const touchEndX = e.changedTouches[0]?.clientX ?? touchStartX
+    const diff = touchStartX - touchEndX
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        handleNextMission()
+      } else {
+        handlePrevMission()
+      }
+    }
+    setTouchStartX(null)
+  }
 
   const loadMissions = async () => {
     setIsLoadingMissions(true)
@@ -188,6 +223,7 @@ export default function ArenaAdsModal({
         message: '🚀 ¡Campaña de patrocinio creada con éxito! 40 jugadores podrán completar tu misión.',
       })
       setNewSponsorUrl('')
+      setCurrentMissionIndex(0)
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('refresh_user_balance'))
       }
@@ -674,8 +710,12 @@ export default function ArenaAdsModal({
                   </div>
                 )}
 
-                {/* Lista de Misiones con Scroll */}
-                <div className="arena-ads-missions-scroll">
+                {/* Carrusel / Slider de Misiones */}
+                <div
+                  className="arena-ads-missions-slider-container"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                >
                   {isLoadingMissions ? (
                     <div className="arena-ads-missions-loading">Cargando misiones disponibles...</div>
                   ) : missions.length === 0 ? (
@@ -684,93 +724,157 @@ export default function ArenaAdsModal({
                       <p>No hay misiones activas por ahora. ¡Sé el primero en patrocinarte!</p>
                     </div>
                   ) : (
-                    missions.map((mission) => {
-                      const isFull = mission.approvedCount >= mission.maxParticipants
-                      const sub = mission.mySubmission
+                    <>
+                      <div className="arena-ads-missions-slider-track">
+                        {missions.length > 1 && (
+                          <button
+                            type="button"
+                            className="arena-ads-slider-arrow arena-ads-slider-arrow--prev"
+                            onClick={handlePrevMission}
+                            aria-label="Misión anterior"
+                            title="Misión anterior"
+                          >
+                            ◀
+                          </button>
+                        )}
 
-                      return (
-                        <div key={mission.id} className="arena-ads-mission-item">
-                          <div className="arena-ads-mission-item__top">
-                            <div className="arena-ads-mission-item__info">
-                              <strong className="arena-ads-mission-title">{mission.title}</strong>
-                              <span className="arena-ads-mission-sponsor">
-                                Patrocinado por: <strong>@{mission.sponsorUsername}</strong>
-                              </span>
-                            </div>
-                            <div className="arena-ads-mission-badge-group">
-                              <span className="arena-ads-mission-reward-badge">+5 💎</span>
-                              <span className={`arena-ads-mission-quota ${isFull ? 'arena-ads-mission-quota--full' : ''}`}>
-                                👥 {mission.approvedCount}/{mission.maxParticipants}
-                              </span>
-                            </div>
-                          </div>
+                        {(() => {
+                          const safeMissionIndex = Math.min(currentMissionIndex, missions.length - 1)
+                          const mission = missions[safeMissionIndex]
+                          if (!mission) return null
+                          const isFull = mission.approvedCount >= mission.maxParticipants
+                          const sub = mission.mySubmission
 
-                          <div className="arena-ads-mission-item__actions">
-                            <a
-                              href={mission.targetUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="arena-ads-mission-link-btn"
-                              onClick={() => soundManager.playSound('click', 0.3)}
-                              title="Abrir enlace del patrocinador en una nueva pestaña"
+                          return (
+                            <div
+                              key={mission.id}
+                              className={`arena-ads-mission-item arena-ads-mission-item--slide arena-ads-mission-item--slide-${slideDirection}`}
                             >
-                              🔗 Abrir Enlace ↗
-                            </a>
+                              <div className="arena-ads-mission-item__top">
+                                <div className="arena-ads-mission-item__info">
+                                  <div className="arena-ads-mission-title-row">
+                                    <strong className="arena-ads-mission-title">{mission.title}</strong>
+                                    {missions.length > 1 && (
+                                      <span className="arena-ads-mission-counter-tag">
+                                        {safeMissionIndex + 1}/{missions.length}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="arena-ads-mission-sponsor">
+                                    Patrocinado por: <strong>@{mission.sponsorUsername}</strong>
+                                  </span>
+                                </div>
+                                <div className="arena-ads-mission-badge-group">
+                                  <span className="arena-ads-mission-reward-badge">+5 💎</span>
+                                  <span className={`arena-ads-mission-quota ${isFull ? 'arena-ads-mission-quota--full' : ''}`}>
+                                    👥 {mission.approvedCount}/{mission.maxParticipants}
+                                  </span>
+                                </div>
+                              </div>
 
-                            {/* Acciones de comprobante y reclamo */}
-                            {mission.isMyMission ? (
-                              <span className="arena-ads-mission-owner-tag">👑 Tu Campaña</span>
-                            ) : sub?.claimed ? (
-                              <span className="arena-ads-mission-status-btn arena-ads-mission-status-btn--claimed">
-                                ✓ Reclamado (+5 💎)
-                              </span>
-                            ) : sub?.status === 'approved' ? (
+                              <div className="arena-ads-mission-item__actions">
+                                <a
+                                  href={mission.targetUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="arena-ads-mission-link-btn"
+                                  onClick={() => soundManager.playSound('click', 0.3)}
+                                  title="Abrir enlace del patrocinador en una nueva pestaña"
+                                >
+                                  🔗 Abrir Enlace ↗
+                                </a>
+
+                                {/* Acciones de comprobante y reclamo */}
+                                {mission.isMyMission ? (
+                                  <span className="arena-ads-mission-owner-tag">👑 Tu Campaña</span>
+                                ) : sub?.claimed ? (
+                                  <span className="arena-ads-mission-status-btn arena-ads-mission-status-btn--claimed">
+                                    ✓ Reclamado (+5 💎)
+                                  </span>
+                                ) : sub?.status === 'approved' ? (
+                                  <button
+                                    type="button"
+                                    className="arena-ads-mission-claim-btn"
+                                    onClick={() => handleClaimReward(sub.id)}
+                                    disabled={isClaimingReward === sub.id}
+                                  >
+                                    {isClaimingReward === sub.id ? '⏳ Cobrando...' : '🎁 ¡RECLAMAR 5 💎!'}
+                                  </button>
+                                ) : sub?.status === 'pending' ? (
+                                  <span
+                                    className="arena-ads-mission-status-btn arena-ads-mission-status-btn--pending"
+                                    title="Captura subida. El botón de reclamo se activará en cuanto el admin la valide."
+                                  >
+                                    ⏳ En Revisión (Admin)
+                                  </span>
+                                ) : (
+                                  <label className={`arena-ads-mission-upload-label ${isUploadingProof === mission.id || isFull ? 'arena-ads-mission-upload-label--disabled' : ''}`}>
+                                    <span>
+                                      {isUploadingProof === mission.id
+                                        ? '⏳ Subiendo...'
+                                        : isFull
+                                        ? '🔒 Cupo Lleno'
+                                        : sub?.status === 'rejected'
+                                        ? '⚠️ Rechazado: Reintentar'
+                                        : '📸 Adjuntar Captura'}
+                                    </span>
+                                    <input
+                                      type="file"
+                                      accept="image/png,image/jpeg,image/webp"
+                                      disabled={isUploadingProof === mission.id || isFull}
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file) handleUploadProof(mission.id, file)
+                                        e.target.value = ''
+                                      }}
+                                      style={{ display: 'none' }}
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                              {sub?.adminNotes && (
+                                <div className="arena-ads-mission-note">Nota admin: {sub.adminNotes}</div>
+                              )}
+                            </div>
+                          )
+                        })()}
+
+                        {missions.length > 1 && (
+                          <button
+                            type="button"
+                            className="arena-ads-slider-arrow arena-ads-slider-arrow--next"
+                            onClick={handleNextMission}
+                            aria-label="Siguiente misión"
+                            title="Siguiente misión"
+                          >
+                            ▶
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Dots / Puntos de navegación */}
+                      {missions.length > 1 && (
+                        <div className="arena-ads-slider-dots">
+                          {missions.map((m, idx) => {
+                            const safeMissionIndex = Math.min(currentMissionIndex, missions.length - 1)
+                            return (
                               <button
+                                key={m.id}
                                 type="button"
-                                className="arena-ads-mission-claim-btn"
-                                onClick={() => handleClaimReward(sub.id)}
-                                disabled={isClaimingReward === sub.id}
-                              >
-                                {isClaimingReward === sub.id ? '⏳ Cobrando...' : '🎁 ¡RECLAMAR 5 💎!'}
-                              </button>
-                            ) : sub?.status === 'pending' ? (
-                              <span
-                                className="arena-ads-mission-status-btn arena-ads-mission-status-btn--pending"
-                                title="Captura subida. El botón de reclamo se activará en cuanto el admin la valide."
-                              >
-                                ⏳ En Revisión (Admin)
-                              </span>
-                            ) : (
-                              <label className={`arena-ads-mission-upload-label ${isUploadingProof === mission.id || isFull ? 'arena-ads-mission-upload-label--disabled' : ''}`}>
-                                <span>
-                                  {isUploadingProof === mission.id
-                                    ? '⏳ Subiendo...'
-                                    : isFull
-                                    ? '🔒 Cupo Lleno'
-                                    : sub?.status === 'rejected'
-                                    ? '⚠️ Rechazado: Reintentar'
-                                    : '📸 Adjuntar Captura'}
-                                </span>
-                                <input
-                                  type="file"
-                                  accept="image/png,image/jpeg,image/webp"
-                                  disabled={isUploadingProof === mission.id || isFull}
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0]
-                                    if (file) handleUploadProof(mission.id, file)
-                                    e.target.value = ''
-                                  }}
-                                  style={{ display: 'none' }}
-                                />
-                              </label>
-                            )}
-                          </div>
-                          {sub?.adminNotes && (
-                            <div className="arena-ads-mission-note">Nota admin: {sub.adminNotes}</div>
-                          )}
+                                className={`arena-ads-slider-dot ${idx === safeMissionIndex ? 'arena-ads-slider-dot--active' : ''}`}
+                                onClick={() => {
+                                  soundManager.playSound('click', 0.2)
+                                  setSlideDirection(idx > safeMissionIndex ? 'right' : 'left')
+                                  setCurrentMissionIndex(idx)
+                                }}
+                                title={`Misión ${idx + 1}: ${m.title}`}
+                                aria-label={`Ir a misión ${idx + 1}`}
+                              />
+                            )
+                          })}
                         </div>
-                      )
-                    })
+                      )}
+                    </>
                   )}
                 </div>
 
