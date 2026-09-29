@@ -120,7 +120,7 @@ export function parseServerPlantCopies(rawCopies: unknown): Record<PlantId, numb
     if (!Number.isInteger(n) || n < 0) {
       throw new Error(`[useInventory] Valor de copias inválido para ${id}: ${count}`)
     }
-    baseCopies[id as PlantId] = n
+    baseCopies[id as PlantId] = Math.min(5, n)
   }
 
   return baseCopies

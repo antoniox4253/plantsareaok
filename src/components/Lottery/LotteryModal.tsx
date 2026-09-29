@@ -247,15 +247,14 @@ const DEFAULT_GEMS_WHEEL_SECTORS: WheelSector[] = [
     rarity: 'jackpot',
   },
   {
-    id: 'gems_reing_50',
-    label: '50 Gemas 💎',
-    shortLabel: '50 💎',
-    icon: '💎',
-    color: '#0284c7',
+    id: 'gems_none_1',
+    label: 'Sigue Intentando 🍀',
+    shortLabel: 'Suerte 🍀',
+    icon: '💨',
+    color: '#334155',
     textColor: '#ffffff',
-    type: 'token',
-    valueUsd: 50.0,
-    rarity: 'jackpot',
+    type: 'none',
+    rarity: 'common',
   },
   {
     id: 'gems_peashooter_2x',
@@ -282,15 +281,25 @@ const DEFAULT_GEMS_WHEEL_SECTORS: WheelSector[] = [
     rarity: 'rare',
   },
   {
-    id: 'gems_reing_25',
-    label: '25 Gemas 💎',
-    shortLabel: '25 💎',
+    id: 'gems_reing_50',
+    label: '50 Gemas 💎',
+    shortLabel: '50 💎',
     icon: '💎',
-    color: '#0891b2',
+    color: '#0284c7',
     textColor: '#ffffff',
     type: 'token',
-    valueUsd: 25.0,
-    rarity: 'epic',
+    valueUsd: 50.0,
+    rarity: 'jackpot',
+  },
+  {
+    id: 'gems_none_2',
+    label: 'Sigue Intentando 🍀',
+    shortLabel: 'Suerte 🍀',
+    icon: '💨',
+    color: '#334155',
+    textColor: '#ffffff',
+    type: 'none',
+    rarity: 'common',
   },
   {
     id: 'gems_sunflower_2x',
@@ -317,16 +326,25 @@ const DEFAULT_GEMS_WHEEL_SECTORS: WheelSector[] = [
     rarity: 'rare',
   },
   {
-    id: 'gems_jalapeno_jack',
-    label: 'Jalapeño 🌶️',
-    shortLabel: 'Jalapeño',
-    icon: '🌶️',
-    color: '#b91c1c',
+    id: 'gems_reing_25',
+    label: '25 Gemas 💎',
+    shortLabel: '25 💎',
+    icon: '💎',
+    color: '#0891b2',
     textColor: '#ffffff',
-    type: 'plant',
-    plantId: 'jalapeno',
-    plantQty: 1,
-    rarity: 'jackpot',
+    type: 'token',
+    valueUsd: 25.0,
+    rarity: 'epic',
+  },
+  {
+    id: 'gems_none_3',
+    label: 'Sigue Intentando 🍀',
+    shortLabel: 'Suerte 🍀',
+    icon: '💨',
+    color: '#334155',
+    textColor: '#ffffff',
+    type: 'none',
+    rarity: 'common',
   },
   {
     id: 'gems_wallnut_2x',
@@ -353,15 +371,26 @@ const DEFAULT_GEMS_WHEEL_SECTORS: WheelSector[] = [
     rarity: 'rare',
   },
   {
-    id: 'gems_reing_10',
-    label: '10 Gemas 💎',
-    shortLabel: '10 💎',
-    icon: '💎',
-    color: '#06b6d4',
+    id: 'gems_chomper_2x',
+    label: '2x Cactus 🌵',
+    shortLabel: '2x Cactus',
+    icon: '🌵',
+    color: '#059669',
     textColor: '#ffffff',
-    type: 'token',
-    valueUsd: 10.0,
-    rarity: 'epic',
+    type: 'plant',
+    plantId: 'chomper',
+    plantQty: 2,
+    rarity: 'rare',
+  },
+  {
+    id: 'gems_none_4',
+    label: 'Sigue Intentando 🍀',
+    shortLabel: 'Suerte 🍀',
+    icon: '💨',
+    color: '#334155',
+    textColor: '#ffffff',
+    type: 'none',
+    rarity: 'common',
   },
   {
     id: 'gems_squash',
@@ -376,18 +405,6 @@ const DEFAULT_GEMS_WHEEL_SECTORS: WheelSector[] = [
     rarity: 'rare',
   },
   {
-    id: 'gems_chomper_2x',
-    label: '2x Cactus 🌵',
-    shortLabel: '2x Cactus',
-    icon: '🌵',
-    color: '#059669',
-    textColor: '#ffffff',
-    type: 'plant',
-    plantId: 'chomper',
-    plantQty: 2,
-    rarity: 'rare',
-  },
-  {
     id: 'gems_melonpult',
     label: 'Melonpulta 🍉',
     shortLabel: 'Melón',
@@ -397,30 +414,6 @@ const DEFAULT_GEMS_WHEEL_SECTORS: WheelSector[] = [
     type: 'plant',
     plantId: 'melonpult',
     plantQty: 1,
-    rarity: 'rare',
-  },
-  {
-    id: 'gems_bonkchoy_2x',
-    label: '2x Bonk Choy 🥊',
-    shortLabel: '2x Bonk Choy',
-    icon: '🥊',
-    color: '#c2410c',
-    textColor: '#ffffff',
-    type: 'plant',
-    plantId: 'bonkchoy',
-    plantQty: 2,
-    rarity: 'rare',
-  },
-  {
-    id: 'gems_repeater_2x',
-    label: '2x Repetidora 🌿',
-    shortLabel: '2x Repetidor',
-    icon: '🌿',
-    color: '#166534',
-    textColor: '#ffffff',
-    type: 'plant',
-    plantId: 'repeater',
-    plantQty: 2,
     rarity: 'rare',
   },
 ]
@@ -1358,9 +1351,9 @@ export default function LotteryModal({
                 ) : (
                   <>
                     <div className="lottery-wheel-hero-badge lottery-wheel-hero-badge--vip">👑 MODO SUERTE VIP</div>
-                    <h3 style={{ color: '#38bdf8' }}>¡0% FALLOS · RECOMPENSAS GARANTIZADAS!</h3>
+                    <h3 style={{ color: '#38bdf8' }}>¡RULETA VIP · PLANTAS DOBLES Y JACKPOT!</h3>
                     <p>
-                      Costo: <strong>{SPIN_COST_GEMS_VIP} Gemas por giro</strong>. <strong>1.2% Jalapeño 🌶️</strong>, copias dobles (2x) de plantas y reintegros de gemas.
+                      Costo: <strong>{SPIN_COST_GEMS_VIP} Gemas por giro</strong>. <strong>0.5% Jalapeño 🌶️</strong>, copias dobles (2x) de plantas y reintegros de gemas.
                     </p>
                   </>
                 )}
@@ -1433,7 +1426,7 @@ export default function LotteryModal({
                   {wheelMode === 'gold' ? (
                     <>
                       <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                        🌶️ Jalapeño (0.2% Jackpot)
+                        🌶️ Jalapeño (0.5% Jackpot)
                       </div>
                       <div className="lottery-prize-tag lottery-prize-tag--legendary">
                         💎 10 y 5 Gemas
@@ -1445,25 +1438,25 @@ export default function LotteryModal({
                         🥊 5 Poco Comunes (Bonk Choy, Repetidor, Ajo, Squash, Melón)
                       </div>
                       <div className="lottery-prize-tag lottery-prize-tag--none">
-                        🍀 Sigue Intentando (52% Quema)
+                        🍀 Sigue Intentando (60% Quema)
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                        🌶️ Jalapeño (1.2% Jackpot VIP)
+                        🌶️ Jalapeño (0.5% Jackpot VIP)
                       </div>
                       <div className="lottery-prize-tag lottery-prize-tag--legendary">
-                        💎 Reintegros de 10, 25 y 50 Gemas
+                        💎 Reintegros de 25 y 50 Gemas
                       </div>
                       <div className="lottery-prize-tag lottery-prize-tag--plant">
                         🌱 4 Comunes Dobles (2x Copias)
                       </div>
                       <div className="lottery-prize-tag lottery-prize-tag--plant">
-                        🥊 5 Poco Comunes (1x y 2x Copias)
+                        🥊 5 Poco Comunes (Bonk Choy, Repetidor, Ajo, Squash, Melón)
                       </div>
-                      <div className="lottery-prize-tag lottery-prize-tag--vip">
-                        ⭐ ¡0% Fallos · Premio Seguro!
+                      <div className="lottery-prize-tag lottery-prize-tag--none">
+                        🍀 Sigue Intentando (35% Fallo)
                       </div>
                     </>
                   )}
