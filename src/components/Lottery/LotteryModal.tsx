@@ -1360,7 +1360,7 @@ export default function LotteryModal({
                     <div className="lottery-wheel-hero-badge lottery-wheel-hero-badge--vip">👑 MODO SUERTE VIP</div>
                     <h3 style={{ color: '#38bdf8' }}>¡0% FALLOS · RECOMPENSAS GARANTIZADAS!</h3>
                     <p>
-                      Costo: <strong>{SPIN_COST_GEMS_VIP} Gemas por giro</strong>. <strong>5% Jalapeño 🌶️</strong>, copias dobles (2x) de plantas y reintegros de gemas.
+                      Costo: <strong>{SPIN_COST_GEMS_VIP} Gemas por giro</strong>. <strong>1.2% Jalapeño 🌶️</strong>, copias dobles (2x) de plantas y reintegros de gemas.
                     </p>
                   </>
                 )}
@@ -1445,13 +1445,13 @@ export default function LotteryModal({
                         🥊 5 Poco Comunes (Bonk Choy, Repetidor, Ajo, Squash, Melón)
                       </div>
                       <div className="lottery-prize-tag lottery-prize-tag--none">
-                        🍀 Sigue Intentando (34.5% Quema)
+                        🍀 Sigue Intentando (52% Quema)
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                        🌶️ Jalapeño (5% Jackpot VIP)
+                        🌶️ Jalapeño (1.2% Jackpot VIP)
                       </div>
                       <div className="lottery-prize-tag lottery-prize-tag--legendary">
                         💎 Reintegros de 10, 25 y 50 Gemas

@@ -1924,37 +1924,138 @@
 
   /* PESTAÑA 1: RULETA */
   .lottery-wheel-tab-pane {
-    padding: 6px 12px;
+    padding: 4px 8px;
+    justify-content: center;
   }
 
   .lottery-wheel-content-grid {
-    grid-template-columns: 320px 1fr;
-    gap: 12px;
+    grid-template-columns: minmax(210px, 270px) 1fr;
+    gap: 8px;
+    align-items: center;
   }
 
   .lottery-roller-wrapper {
-    max-width: 320px;
+    max-width: 270px;
+    gap: 2px;
+  }
+
+  .lottery-roller-title-tag {
+    font-size: 0.65rem;
+    padding: 1px 8px;
+  }
+
+  .lottery-roller-status-footer {
+    font-size: 0.62rem;
+    margin-top: 1px;
+  }
+
+  .lottery-reel-item {
+    padding: 4px 8px;
+    gap: 8px;
+  }
+
+  .lottery-reel-item-icon-box {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lottery-reel-item-img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .lottery-reel-item-name {
+    font-size: 0.82rem;
+  }
+
+  .lottery-reel-rarity-pill {
+    font-size: 0.58rem;
+    padding: 1px 4px;
+  }
+
+  .lottery-wheel-info-col {
+    padding: 4px 8px;
+    gap: 3px;
   }
 
   .lottery-wheel-hero-card {
-    padding: 6px 12px;
+    padding: 3px 8px;
   }
 
   .lottery-wheel-hero-card h3 {
-    font-size: 12px;
+    font-size: 11px;
+    margin: 0;
   }
 
   .lottery-wheel-hero-card p {
+    font-size: 8px;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .lottery-wheel-mode-switcher {
+    gap: 4px;
+  }
+
+  .lottery-mode-btn {
+    padding: 3px 6px;
+    gap: 4px;
+  }
+
+  .lottery-mode-info strong {
+    font-size: 9.5px;
+  }
+
+  .lottery-mode-info small {
+    font-size: 7.5px;
+  }
+
+  .lottery-multiplier-wrapper {
+    gap: 2px;
+  }
+
+  .lottery-multiplier-label {
+    font-size: 8px;
+  }
+
+  .lottery-mult-btn {
+    padding: 2px 5px;
+  }
+
+  .lottery-mult-count {
     font-size: 9px;
   }
 
+  .lottery-mult-cost {
+    font-size: 7.5px;
+  }
+
   .lottery-spin-action-box {
-    gap: 6px;
+    gap: 3px;
   }
 
   .lottery-spin-btn {
-    padding: 7px 14px;
-    font-size: 10.5px;
+    padding: 6px 12px;
+    font-size: 10px;
+  }
+
+  .lottery-balance-reminder {
+    font-size: 8px;
+    gap: 4px;
+  }
+
+  .lottery-prizes-preview-box {
+    padding: 2px 6px;
+  }
+
+  .lottery-prizes-title {
+    font-size: 7.5px;
+    margin-bottom: 2px;
+  }
+
+  .lottery-prize-tag {
+    font-size: 7px;
+    padding: 1px 4px;
   }
 
   /* PESTAÑA 2: CÓDIGO BOTÁNICO */
@@ -2279,119 +2380,208 @@
   color: #f8fafc;
 }
 
-/* FULL SCREEN MODE WHEEL GRID (CLEAN 2-COLUMN, NO ADS) */
+/* FULL SCREEN MODE WHEEL GRID (CLEAN 2-COLUMN, SCALED FOR BOTH PC AND CELLPHONES) */
 .lottery-screen-view .lottery-wheel-tab-pane {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 6px 10px;
-  overflow: hidden;
+  justify-content: center;
+  padding: clamp(4px, 1.2vh, 10px) clamp(8px, 1.8vw, 16px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .lottery-screen-view .lottery-wheel-content-grid {
   display: grid;
-  grid-template-columns: 310px 1fr;
-  gap: 18px;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  gap: clamp(8px, 1.5vw, 18px);
   align-items: center;
   width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
   flex: 1;
+  min-height: 0;
   box-sizing: border-box;
-}
-
-@media (max-width: 860px) {
-  .lottery-screen-view .lottery-wheel-content-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
 }
 
 .lottery-screen-view .lottery-wheel-visual-col {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 2px;
+  width: 100%;
 }
 
 .lottery-screen-view .lottery-roller-wrapper {
   width: 100%;
-  max-width: 400px;
+  max-width: 290px;
+  gap: 4px;
+}
+
+.lottery-screen-view .lottery-roller-container {
+  height: 216px;
+  border-width: 2.5px;
 }
 
 .lottery-screen-view .lottery-wheel-info-col {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(15, 23, 42, 0.75);
+  gap: clamp(3px, 0.8vh, 6px);
+  background: rgba(15, 23, 42, 0.8);
   border: 1.5px solid rgba(234, 179, 8, 0.3);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: clamp(6px, 1vh, 10px) clamp(8px, 1.2vw, 14px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  min-width: 0;
 }
 
 .lottery-screen-view .lottery-wheel-hero-card {
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid #475569;
-  border-radius: 10px;
-  padding: 8px 12px;
+  border-radius: 8px;
+  padding: clamp(3px, 0.6vh, 6px) clamp(6px, 1vw, 10px);
   text-align: center;
 }
 
 .lottery-screen-view .lottery-wheel-hero-card h3 {
-  font-size: 0.95rem;
-  margin: 2px 0;
+  font-size: clamp(10.5px, 1.4vw, 12.5px);
+  margin: 0 0 1px 0;
   color: #f8fafc;
 }
 
 .lottery-screen-view .lottery-wheel-hero-card p {
-  font-size: 0.74rem;
+  font-size: clamp(8px, 1.1vw, 9.5px);
   line-height: 1.25;
   margin: 0;
   color: #94a3b8;
 }
 
-.lottery-screen-view .lottery-spin-action-box {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.lottery-screen-view .lottery-wheel-hero-badge {
+  font-size: 7.5px;
+  padding: 1px 5px;
 }
 
-.lottery-screen-view .lottery-spin-btn {
-  font-size: 0.84rem;
-  padding: 8px 14px;
-  border-radius: 8px;
+.lottery-screen-view .lottery-wheel-mode-switcher {
+  gap: clamp(4px, 1vw, 8px);
 }
 
 .lottery-screen-view .lottery-mode-btn {
-  padding: 6px 12px;
+  padding: clamp(3px, 0.6vh, 5px) clamp(6px, 1vw, 10px);
+  gap: 6px;
+}
+
+.lottery-screen-view .lottery-mode-icon {
+  font-size: clamp(16px, 2vw, 20px);
+}
+
+.lottery-screen-view .lottery-mode-info strong {
+  font-size: clamp(9.5px, 1.3vw, 11px);
+}
+
+.lottery-screen-view .lottery-mode-info small {
+  font-size: clamp(7.5px, 1vw, 8.5px);
+}
+
+.lottery-screen-view .lottery-multiplier-wrapper {
+  gap: 2px;
+}
+
+.lottery-screen-view .lottery-multiplier-label {
+  font-size: 8px;
+}
+
+.lottery-screen-view .lottery-mult-btn {
+  padding: 3px 6px;
+}
+
+.lottery-screen-view .lottery-mult-count {
+  font-size: 9.5px;
+}
+
+.lottery-screen-view .lottery-mult-cost {
+  font-size: 7.5px;
+}
+
+.lottery-screen-view .lottery-spin-action-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.lottery-screen-view .lottery-spin-btn {
+  font-size: clamp(9.5px, 1.3vw, 11px);
+  padding: clamp(6px, 0.9vh, 9px) clamp(10px, 1.5vw, 14px);
+  border-radius: 8px;
+}
+
+.lottery-screen-view .lottery-balance-reminder {
+  font-size: clamp(7.5px, 1vw, 9px);
+  gap: 4px;
 }
 
 .lottery-screen-view .lottery-prizes-preview-box {
   background: rgba(20, 30, 45, 0.6);
   border: 1px solid rgba(234, 179, 8, 0.2);
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: clamp(3px, 0.5vh, 5px) clamp(6px, 1vw, 8px);
 }
 
 .lottery-screen-view .lottery-prizes-title {
-  font-size: 0.7rem;
+  font-size: 7.5px;
   font-weight: 800;
   color: #fde047;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   text-align: center;
 }
 
 .lottery-screen-view .lottery-prizes-tags-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
   justify-content: center;
 }
 
 .lottery-screen-view .lottery-prize-tag {
-  font-size: 0.66rem;
-  padding: 2px 6px;
+  font-size: 7px;
+  padding: 1px 5px;
   border-radius: 6px;
+}
+
+/* RESPONSIVE: CELULARES EN MODO VERTICAL / PORTRAIT (<540px) */
+@media (max-width: 540px) and (orientation: portrait) {
+  .lottery-wheel-tab-pane,
+  .lottery-screen-view .lottery-wheel-tab-pane {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 8px 6px !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lottery-wheel-content-grid,
+  .lottery-screen-view .lottery-wheel-content-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .lottery-wheel-visual-col,
+  .lottery-wheel-info-col,
+  .lottery-screen-view .lottery-wheel-visual-col,
+  .lottery-screen-view .lottery-wheel-info-col {
+    width: 100% !important;
+    max-width: 350px !important;
+    box-sizing: border-box !important;
+  }
+
+  .lottery-roller-wrapper,
+  .lottery-screen-view .lottery-roller-wrapper {
+    max-width: 100% !important;
+  }
 }
 
 
