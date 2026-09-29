@@ -45,7 +45,7 @@ interface WheelSector {
   rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'jackpot'
 }
 
-export const SPIN_COST_GOLD = 200
+export const SPIN_COST_GOLD = 500
 export const SPIN_COST_GEMS_VIP = 50
 
 const DEFAULT_GOLD_WHEEL_SECTORS: WheelSector[] = [
@@ -2232,7 +2232,38 @@ export default function LotteryModal({
                   ? '¡SIGUE INTENTANDO!'
                   : '¡FELICITACIONES!'}
               </div>
-              <div className="lottery-prize-icon">{winningSector?.icon || '🎁'}</div>
+              {(() => {
+                const plantCfg = winningSector.plantId ? PLANT_CONFIGS[winningSector.plantId as PlantId] : null
+                if (plantCfg) {
+                  return (
+                    <div className={`lottery-prize-card-frame lottery-prize-card-frame--${winningSector.rarity}`}>
+                      <img
+                        src={plantCfg.icon || plantCfg.sprite}
+                        alt={plantCfg.name}
+                        className="lottery-prize-card-img"
+                      />
+                      {(winningSector.plantQty ?? 1) > 1 && (
+                        <span className="lottery-prize-card-qty-badge">
+                          x{winningSector.plantQty}
+                        </span>
+                      )}
+                    </div>
+                  )
+                }
+                if (winningSector.type === 'token') {
+                  return (
+                    <div className="lottery-prize-card-frame lottery-prize-card-frame--gems">
+                      <span className="lottery-prize-gem-emoji">💎</span>
+                      <span className="lottery-prize-card-qty-badge">
+                        +{winningSector.valueUsd?.toFixed(0)}
+                      </span>
+                    </div>
+                  )
+                }
+                return (
+                  <div className="lottery-prize-icon">{winningSector?.icon || '🎁'}</div>
+                )
+              })()}
               <h3 className="lottery-prize-name">{winningSector?.label || ''}</h3>
               <p className="lottery-prize-desc">
                 {winningSector.type === 'none'
@@ -2310,19 +2341,32 @@ export default function LotteryModal({
                   </div>
                 )}
 
-                {batchSummary.plants.map((p) => (
-                  <div
-                    key={p.plantId}
-                    className={`lottery-summary-item ${p.plantId === 'jalapeno' ? 'lottery-summary-item--jackpot' : 'lottery-summary-item--plant'}`}
-                  >
-                    <span className="lottery-summary-item-icon">{p.icon}</span>
-                    <div className="lottery-summary-item-info">
-                      <strong>{p.name}</strong>
-                      <small>{p.plantId === 'jalapeno' ? '¡GRAN JACKPOT!' : 'Copias para mazo/jardín'}</small>
+                {batchSummary.plants.map((p) => {
+                  const pConfig = p.plantId ? PLANT_CONFIGS[p.plantId as PlantId] : null
+                  return (
+                    <div
+                      key={p.plantId}
+                      className={`lottery-summary-item ${p.plantId === 'jalapeno' ? 'lottery-summary-item--jackpot' : 'lottery-summary-item--plant'}`}
+                    >
+                      <div className="lottery-summary-item-icon-box">
+                        {pConfig ? (
+                          <img
+                            src={pConfig.icon || pConfig.sprite}
+                            alt={p.name}
+                            className="lottery-summary-plant-img"
+                          />
+                        ) : (
+                          <span className="lottery-summary-item-icon">{p.icon}</span>
+                        )}
+                      </div>
+                      <div className="lottery-summary-item-info">
+                        <strong>{p.name}</strong>
+                        <small>{p.plantId === 'jalapeno' ? '¡GRAN JACKPOT!' : 'Copias para mazo/jardín'}</small>
+                      </div>
+                      <span className="lottery-summary-item-qty">+{p.qty}x</span>
                     </div>
-                    <span className="lottery-summary-item-qty">+{p.qty}x</span>
-                  </div>
-                ))}
+                  )
+                })}
 
                 {batchSummary.noneCount > 0 && (
                   <div className="lottery-summary-item lottery-summary-item--none">
