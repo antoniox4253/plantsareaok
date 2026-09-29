@@ -3490,14 +3490,17 @@ export const SupabaseService = {
   },
 
   /** Obtiene los sectores activos de la ruleta para mostrarlos dinámicamente en el juego */
-  async getLotterySectors(): Promise<Database['public']['Tables']['lottery_sectors']['Row'][] | null> {
+  async getLotterySectors(mode?: 'gold' | 'gems'): Promise<Database['public']['Tables']['lottery_sectors']['Row'][] | null> {
     if (!isSupabaseConfigured()) return null
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('lottery_sectors')
         .select('*')
         .eq('is_active', true)
-        .order('weight', { ascending: false })
+      if (mode) {
+        query = query.eq('wheel_mode' as any, mode)
+      }
+      const { data, error } = await query.order('weight', { ascending: false })
       if (error) {
         logError('getLotterySectors', error)
         return null
@@ -3677,6 +3680,41 @@ export const SupabaseService = {
       return data
     } catch (e: any) {
       logError('spinLottery', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Ejecuta tirada única o múltiple de ruleta (1x, 3x, 5x, 10x) en modo Oro (200) o Gemas VIP (50) */
+  async spinLotteryMulti(currency: 'gold' | 'gems', spins: number = 1): Promise<{
+    success: boolean
+    currency?: 'gold' | 'gems'
+    spinsCount?: number
+    totalSpent?: number
+    results?: Array<{
+      spinIndex: number
+      sectorId: string
+      label: string
+      rewardType: string
+      plantId?: string
+      plantQty?: number
+      gemsAmount?: number
+      granted?: any
+    }>
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('spin_lottery_multi', {
+        p_currency: currency,
+        p_spins: spins,
+      })
+      if (error) {
+        logError('spinLotteryMulti', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('spinLotteryMulti', e)
       return { success: false, error: e?.message }
     }
   },

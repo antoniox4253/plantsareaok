@@ -29,6 +29,7 @@ interface LotteryModalProps {
 interface WheelSector {
   id: string
   label: string
+  shortLabel?: string
   icon: string
   color: string
   textColor: string
@@ -44,43 +45,317 @@ interface WheelSector {
   rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'jackpot'
 }
 
-export const PAID_SPIN_COST_GEMS = 10
+export const SPIN_COST_GOLD = 200
+export const SPIN_COST_GEMS_VIP = 50
 
-const DEFAULT_WHEEL_SECTORS: WheelSector[] = [
+const DEFAULT_GOLD_WHEEL_SECTORS: WheelSector[] = [
   {
-    id: 'jackpot_300',
-    label: '300 Gemas 💎',
+    id: 'gold_jalapeno',
+    label: 'Jalapeño 🌶️',
+    shortLabel: 'Jalapeño',
+    icon: '🌶️',
+    color: '#dc2626',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'jalapeno',
+    plantQty: 1,
+    rarity: 'jackpot',
+  },
+  {
+    id: 'gold_none_1',
+    label: 'Sigue Intentando 🍀',
+    shortLabel: 'Suerte 🍀',
+    icon: '💨',
+    color: '#334155',
+    textColor: '#ffffff',
+    type: 'none',
+    rarity: 'common',
+  },
+  {
+    id: 'gold_peashooter',
+    label: 'Lanza-guisantes 🌱',
+    shortLabel: 'Guisante',
+    icon: '🌱',
+    color: '#16a34a',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'peashooter',
+    plantQty: 1,
+    rarity: 'common',
+  },
+  {
+    id: 'gold_bonkchoy',
+    label: 'Bonk Choy 🥊',
+    shortLabel: 'Bonk Choy',
+    icon: '🥊',
+    color: '#ea580c',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'bonkchoy',
+    plantQty: 1,
+    rarity: 'rare',
+  },
+  {
+    id: 'gold_none_2',
+    label: 'Sigue Intentando 🍀',
+    shortLabel: 'Suerte 🍀',
+    icon: '💨',
+    color: '#334155',
+    textColor: '#ffffff',
+    type: 'none',
+    rarity: 'common',
+  },
+  {
+    id: 'gold_sunflower',
+    label: 'Girasol 🌻',
+    shortLabel: 'Girasol',
+    icon: '🌻',
+    color: '#ca8a04',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'sunflower',
+    plantQty: 1,
+    rarity: 'common',
+  },
+  {
+    id: 'gold_gems_5',
+    label: '5 Gemas 💎',
+    shortLabel: '5 Gemas',
     icon: '💎',
-    color: '#7c3aed',
+    color: '#0284c7',
     textColor: '#ffffff',
     type: 'token',
-    valueUsd: 300.0,
-    rarity: 'jackpot',
+    valueUsd: 5.0,
+    rarity: 'common',
   },
   {
-    id: 'jackpot_500',
-    label: '300 Gemas 💎',
-    icon: '💎',
-    color: '#7c3aed',
+    id: 'gold_repeater',
+    label: 'Repetidora 🌿',
+    shortLabel: 'Repetidor',
+    icon: '🌿',
+    color: '#15803d',
     textColor: '#ffffff',
-    type: 'token',
-    valueUsd: 300.0,
-    rarity: 'jackpot',
+    type: 'plant',
+    plantId: 'repeater',
+    plantQty: 1,
+    rarity: 'rare',
   },
   {
-    id: 'pack_basic',
-    label: 'Sobre Básico 👑',
-    icon: '👑',
-    color: '#eab308',
+    id: 'gold_none_3',
+    label: 'Sigue Intentando 🍀',
+    shortLabel: 'Suerte 🍀',
+    icon: '💨',
+    color: '#334155',
     textColor: '#ffffff',
-    type: 'pack',
-    packId: 'basic',
-    packQty: 1,
-    rarity: 'jackpot',
+    type: 'none',
+    rarity: 'common',
   },
   {
-    id: 'jackpot_10',
+    id: 'gold_wallnut',
+    label: 'Nuez 🥜',
+    shortLabel: 'Nuez',
+    icon: '🥜',
+    color: '#92400e',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'wallnut',
+    plantQty: 1,
+    rarity: 'common',
+  },
+  {
+    id: 'gold_garlic',
+    label: 'Ajo Desviador 🧄',
+    shortLabel: 'Ajo',
+    icon: '🧄',
+    color: '#4f46e5',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'garlic',
+    plantQty: 1,
+    rarity: 'rare',
+  },
+  {
+    id: 'gold_none_4',
+    label: 'Sigue Intentando 🍀',
+    shortLabel: 'Suerte 🍀',
+    icon: '💨',
+    color: '#334155',
+    textColor: '#ffffff',
+    type: 'none',
+    rarity: 'common',
+  },
+  {
+    id: 'gold_chomper',
+    label: 'Cactus 🌵',
+    shortLabel: 'Cactus',
+    icon: '🌵',
+    color: '#059669',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'chomper',
+    plantQty: 1,
+    rarity: 'common',
+  },
+  {
+    id: 'gold_squash',
+    label: 'Apisonaflor 💥',
+    shortLabel: 'Squash',
+    icon: '💥',
+    color: '#d97706',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'squash',
+    plantQty: 1,
+    rarity: 'rare',
+  },
+  {
+    id: 'gold_gems_10',
     label: '10 Gemas 💎',
+    shortLabel: '10 Gemas',
+    icon: '💎',
+    color: '#0891b2',
+    textColor: '#ffffff',
+    type: 'token',
+    valueUsd: 10.0,
+    rarity: 'epic',
+  },
+  {
+    id: 'gold_melonpult',
+    label: 'Melonpulta 🍉',
+    shortLabel: 'Melón',
+    icon: '🍉',
+    color: '#047857',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'melonpult',
+    plantQty: 1,
+    rarity: 'rare',
+  },
+]
+
+const DEFAULT_GEMS_WHEEL_SECTORS: WheelSector[] = [
+  {
+    id: 'gems_jalapeno',
+    label: 'Jalapeño 🌶️',
+    shortLabel: 'Jalapeño',
+    icon: '🌶️',
+    color: '#dc2626',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'jalapeno',
+    plantQty: 1,
+    rarity: 'jackpot',
+  },
+  {
+    id: 'gems_reing_50',
+    label: '50 Gemas 💎',
+    shortLabel: '50 💎',
+    icon: '💎',
+    color: '#0284c7',
+    textColor: '#ffffff',
+    type: 'token',
+    valueUsd: 50.0,
+    rarity: 'jackpot',
+  },
+  {
+    id: 'gems_peashooter_2x',
+    label: '2x Lanza-guisantes 🌱',
+    shortLabel: '2x Guisante',
+    icon: '🌱',
+    color: '#16a34a',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'peashooter',
+    plantQty: 2,
+    rarity: 'rare',
+  },
+  {
+    id: 'gems_bonkchoy',
+    label: 'Bonk Choy 🥊',
+    shortLabel: 'Bonk Choy',
+    icon: '🥊',
+    color: '#ea580c',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'bonkchoy',
+    plantQty: 1,
+    rarity: 'rare',
+  },
+  {
+    id: 'gems_reing_25',
+    label: '25 Gemas 💎',
+    shortLabel: '25 💎',
+    icon: '💎',
+    color: '#0891b2',
+    textColor: '#ffffff',
+    type: 'token',
+    valueUsd: 25.0,
+    rarity: 'epic',
+  },
+  {
+    id: 'gems_sunflower_2x',
+    label: '2x Girasol 🌻',
+    shortLabel: '2x Girasol',
+    icon: '🌻',
+    color: '#ca8a04',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'sunflower',
+    plantQty: 2,
+    rarity: 'rare',
+  },
+  {
+    id: 'gems_repeater',
+    label: 'Repetidora 🌿',
+    shortLabel: 'Repetidor',
+    icon: '🌿',
+    color: '#15803d',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'repeater',
+    plantQty: 1,
+    rarity: 'rare',
+  },
+  {
+    id: 'gems_jalapeno_jack',
+    label: 'Jalapeño 🌶️',
+    shortLabel: 'Jalapeño',
+    icon: '🌶️',
+    color: '#b91c1c',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'jalapeno',
+    plantQty: 1,
+    rarity: 'jackpot',
+  },
+  {
+    id: 'gems_wallnut_2x',
+    label: '2x Nuez 🥜',
+    shortLabel: '2x Nuez',
+    icon: '🥜',
+    color: '#92400e',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'wallnut',
+    plantQty: 2,
+    rarity: 'rare',
+  },
+  {
+    id: 'gems_garlic',
+    label: 'Ajo Desviador 🧄',
+    shortLabel: 'Ajo',
+    icon: '🧄',
+    color: '#4f46e5',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'garlic',
+    plantQty: 1,
+    rarity: 'rare',
+  },
+  {
+    id: 'gems_reing_10',
+    label: '10 Gemas 💎',
+    shortLabel: '10 💎',
     icon: '💎',
     color: '#06b6d4',
     textColor: '#ffffff',
@@ -89,65 +364,70 @@ const DEFAULT_WHEEL_SECTORS: WheelSector[] = [
     rarity: 'epic',
   },
   {
-    id: 'gold_150',
-    label: '150 Oro 💰',
-    icon: '💰',
+    id: 'gems_squash',
+    label: 'Apisonaflor 💥',
+    shortLabel: 'Squash',
+    icon: '💥',
     color: '#d97706',
     textColor: '#ffffff',
-    type: 'gold',
-    goldAmount: 150,
+    type: 'plant',
+    plantId: 'squash',
+    plantQty: 1,
     rarity: 'rare',
   },
   {
-    id: 'gold_100',
-    label: '100 Oro 💰',
-    icon: '💰',
-    color: '#f59e0b',
+    id: 'gems_chomper_2x',
+    label: '2x Cactus 🌵',
+    shortLabel: '2x Cactus',
+    icon: '🌵',
+    color: '#059669',
     textColor: '#ffffff',
-    type: 'gold',
-    goldAmount: 100,
+    type: 'plant',
+    plantId: 'chomper',
+    plantQty: 2,
     rarity: 'rare',
   },
   {
-    id: 'gold_50',
-    label: '50 Oro 💰',
-    icon: '💰',
-    color: '#fbbf24',
+    id: 'gems_melonpult',
+    label: 'Melonpulta 🍉',
+    shortLabel: 'Melón',
+    icon: '🍉',
+    color: '#047857',
     textColor: '#ffffff',
-    type: 'gold',
-    goldAmount: 50,
-    rarity: 'common',
+    type: 'plant',
+    plantId: 'melonpult',
+    plantQty: 1,
+    rarity: 'rare',
   },
   {
-    id: 'item_fertilizer',
-    label: 'Fertilizante 🌿',
+    id: 'gems_bonkchoy_2x',
+    label: '2x Bonk Choy 🥊',
+    shortLabel: '2x Bonk Choy',
+    icon: '🥊',
+    color: '#c2410c',
+    textColor: '#ffffff',
+    type: 'plant',
+    plantId: 'bonkchoy',
+    plantQty: 2,
+    rarity: 'rare',
+  },
+  {
+    id: 'gems_repeater_2x',
+    label: '2x Repetidora 🌿',
+    shortLabel: '2x Repetidor',
     icon: '🌿',
-    color: '#16a34a',
+    color: '#166534',
     textColor: '#ffffff',
-    type: 'item',
-    itemId: 'fertilizer',
-    itemQty: 1,
-    rarity: 'common',
-  },
-  {
-    id: 'none_1',
-    label: 'Sigue Intentando 🍀',
-    icon: '💨',
-    color: '#475569',
-    textColor: '#ffffff',
-    type: 'none',
-    rarity: 'common',
+    type: 'plant',
+    plantId: 'repeater',
+    plantQty: 2,
+    rarity: 'rare',
   },
 ]
 
 
 const ALL_PLANTS_LIST: PlantId[] = Object.keys(PLANT_CONFIGS) as PlantId[]
 
-const STORAGE_KEYS = {
-  // Sólo queda esta, y para el contador visual de las 24 h: la cuenta real la
-  // lleva user_lottery.last_free_spin en el servidor.
-  LAST_FREE_SPIN: 'plant_arena_lottery_last_free_spin',
-}
 
 /**
  * Claves obsoletas del minijuego. La primera guardaba EL CÓDIGO SECRETO en el
@@ -206,9 +486,25 @@ interface BoardEntry {
   isMe: boolean
 }
 
-// generateRandomSecretCode() se eliminó: era el origen del agujero. El navegador
-// generaba el código y lo guardaba en localStorage, así que el jugador leía la
-// respuesta. Ahora lo genera el servidor al abrir la ronda.
+// Helper para mapear sectores de Supabase sobre la plantilla visual
+const mapDbSectors = (
+  dbSectors: any[] | null,
+  fallbackList: WheelSector[]
+): WheelSector[] => {
+  if (!dbSectors || dbSectors.length === 0) return fallbackList
+
+  return fallbackList.map((tpl) => {
+    const row = dbSectors.find((r: any) => r.sector_id === tpl.id)
+    if (!row) return tpl
+    return {
+      ...tpl,
+      label: row.label || tpl.label,
+      valueUsd: row.reward_type === 'gems' ? (Number(row.gems_amount) || tpl.valueUsd) : undefined,
+      plantId: row.plant_id || tpl.plantId,
+      plantQty: row.plant_qty ?? tpl.plantQty,
+    }
+  })
+}
 
 export default function LotteryModal({
   isOpen = true,
@@ -221,7 +517,7 @@ export default function LotteryModal({
   onRewardsChanged,
   userId,
   username,
-  userElo,
+  userElo: _userElo,
   initialTab,
 }: LotteryModalProps) {
   const [activeTab, setActiveTab] = useState<'wheel' | 'auction' | 'code'>(initialTab || 'wheel')
@@ -232,18 +528,17 @@ export default function LotteryModal({
     }
   }, [initialTab])
 
-  // --- TAB 1: WHEEL STATE ---
+  // --- TAB 1: WHEEL DUAL MODE & MULTI-SPIN STATE ---
+  const REEL_ITEM_HEIGHT = 72
+  const [wheelMode, setWheelMode] = useState<'gold' | 'gems'>('gold')
+  const [spinMultiplier, setSpinMultiplier] = useState<number>(1)
+  const [goldSectors, setGoldSectors] = useState<WheelSector[]>(DEFAULT_GOLD_WHEEL_SECTORS)
+  const [gemsSectors, setGemsSectors] = useState<WheelSector[]>(DEFAULT_GEMS_WHEEL_SECTORS)
   const [isSpinning, setIsSpinning] = useState(false)
-  const [wheelRotation, setWheelRotation] = useState(0)
-  const [lastFreeSpinTime, setLastFreeSpinTime] = useState<number>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.LAST_FREE_SPIN)
-    return saved ? parseInt(saved, 10) : 0
-  })
-  const [timeUntilFreeSpin, setTimeUntilFreeSpin] = useState<string>('')
+  const [reelTranslateY, setReelTranslateY] = useState(0)
+  const [isTransitionActive, setIsTransitionActive] = useState(false)
   const [winningSector, setWinningSector] = useState<WheelSector | null>(null)
-  const [sectors, setSectors] = useState<WheelSector[]>(DEFAULT_WHEEL_SECTORS)
   const [showPrizeModal, setShowPrizeModal] = useState(false)
-  const [showConfirmPaidModal, setShowConfirmPaidModal] = useState(false)
   const [showConfirmCodeBuyModal, setShowConfirmCodeBuyModal] = useState(false)
   const [recentWinners, setRecentWinners] = useState<Array<{
     id: string
@@ -252,21 +547,91 @@ export default function LotteryModal({
     created_at: string
   }>>([])
 
+  // Multi-spin batch state
+  const [batchResults, setBatchResults] = useState<Array<{
+    spinIndex: number
+    sectorId: string
+    label: string
+    rewardType: string
+    plantId?: string
+    plantQty?: number
+    gemsAmount?: number
+    granted?: any
+  }>>([])
+  const [currentBatchIndex, setCurrentBatchIndex] = useState<number>(0)
+  const [showBatchSummaryModal, setShowBatchSummaryModal] = useState(false)
+  const [batchCurrency, setBatchCurrency] = useState<'gold' | 'gems'>('gold')
+  const [batchTotalSpent, setBatchTotalSpent] = useState<number>(0)
+
   // Saldo visual reactivo e instantáneo para reflejar descuentos en tiempo real
   const [currentGems, setCurrentGems] = useState(userTokens)
   useEffect(() => {
     setCurrentGems(userTokens)
   }, [userTokens])
 
+  const [currentGold, setCurrentGold] = useState(userGold ?? 0)
+  useEffect(() => {
+    setCurrentGold(userGold ?? 0)
+  }, [userGold])
+
+  const activeSectors = useMemo(() => {
+    return wheelMode === 'gold' ? goldSectors : gemsSectors
+  }, [wheelMode, goldSectors, gemsSectors])
+
+  // Inicializar o reajustar posición del reel centrando el sector 0 en la vuelta 2
+  useEffect(() => {
+    if (!isSpinning && activeSectors.length > 0) {
+      setIsTransitionActive(false)
+      const initialY = - (2 * activeSectors.length + 0) * REEL_ITEM_HEIGHT + REEL_ITEM_HEIGHT
+      setReelTranslateY(initialY)
+    }
+  }, [wheelMode, activeSectors.length])
+
+  const batchSummary = useMemo(() => {
+    if (!batchResults || batchResults.length === 0) return null
+
+    let totalGemsWon = 0
+    let noneCount = 0
+    const plantsMap: Record<string, { plantId: string; name: string; qty: number; icon: string }> = {}
+
+    for (const r of batchResults) {
+      if (r.rewardType === 'gems' && r.gemsAmount) {
+        totalGemsWon += Number(r.gemsAmount)
+      } else if (r.rewardType === 'none') {
+        noneCount += 1
+      } else if (r.rewardType === 'plant' && r.plantId) {
+        const pId = r.plantId
+        const cfg = PLANT_CONFIGS[pId as PlantId]
+        const name = cfg?.name || r.label.replace(/^[0-9x\s]+/, '').replace(/[\p{Emoji}\u200d]+/gu, '').trim()
+        const icon =
+          pId === 'jalapeno' ? '🌶️' :
+          pId === 'peashooter' ? '🌱' :
+          pId === 'sunflower' ? '🌻' :
+          pId === 'wallnut' ? '🥜' :
+          pId === 'chomper' ? '🌵' :
+          pId === 'bonkchoy' ? '🥊' :
+          pId === 'repeater' ? '🌿' :
+          pId === 'garlic' ? '🧄' :
+          pId === 'squash' ? '💥' :
+          pId === 'melonpult' ? '🍉' : '🌱'
+        const qty = r.plantQty ?? 1
+        if (!plantsMap[pId]) {
+          plantsMap[pId] = { plantId: pId, name, qty, icon }
+        } else {
+          plantsMap[pId].qty += qty
+        }
+      }
+    }
+
+    return {
+      totalGemsWon,
+      noneCount,
+      plants: Object.values(plantsMap),
+      totalSpins: batchResults.length,
+    }
+  }, [batchResults])
+
   // ── TAB 2: CÓDIGO SECRETO — TODO DESDE EL SERVIDOR ────────────────────────
-  //
-  // El estado local anterior guardaba el propio código secreto en localStorage
-  // (generateRandomSecretCode + STORAGE_KEYS.CODE_SECRET). El jugador tenía la
-  // respuesta a la vista y podía cobrar 20 gemas a la primera, ilimitadamente.
-  //
-  // Ahora nada de esto vive en el navegador: la ronda, los intentos disponibles,
-  // el historial y la clasificación vienen de secret_code_state() y
-  // secret_code_leaderboard(). El secreto no sale de Postgres en ningún caso.
   const [codeRound, setCodeRound] = useState<CodeRound | null>(null)
   const [codeAttemptsLeft, setCodeAttemptsLeft] = useState(0)
   const [codeFreeUsed, setCodeFreeUsed] = useState(0)
@@ -288,31 +653,6 @@ export default function LotteryModal({
   const [codeWonPrize, setCodeWonPrize] = useState(false)
   const [codeBannerNotice, setCodeBannerNotice] = useState<string | null>(null)
   const [codeSubTab, setCodeSubTab] = useState<'play' | 'history' | 'ranking'>('play')
-
-  // Free spin countdown timer
-  useEffect(() => {
-    const checkFreeSpinTimer = () => {
-      const diff = Date.now() - lastFreeSpinTime
-      const cooldown = 86400000 // 24h
-      if (diff >= cooldown) {
-        setTimeUntilFreeSpin('')
-      } else {
-        const remaining = cooldown - diff
-        const hours = Math.floor(remaining / 3600000)
-        const mins = Math.floor((remaining % 3600000) / 60000)
-        const secs = Math.floor((remaining % 60000) / 1000)
-        setTimeUntilFreeSpin(
-          `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-        )
-      }
-    }
-
-    checkFreeSpinTimer()
-    const interval = setInterval(checkFreeSpinTimer, 1000)
-    return () => clearInterval(interval)
-  }, [lastFreeSpinTime])
-
-  const canFreeSpin = !timeUntilFreeSpin
 
   // Intentos restantes: los calcula el servidor, aquí sólo se muestran.
   const freeAttemptsLeft = Math.max(0, (codeRound?.freeAttempts ?? 0) - codeFreeUsed)
@@ -505,66 +845,16 @@ export default function LotteryModal({
   // Carga y sincroniza los sectores reales de la ruleta desde Supabase
   const loadWheelSectors = async () => {
     try {
-      const dbSectors = await lotteryService.getLotterySectors()
-      if (!dbSectors || dbSectors.length === 0) return
-
-      const standardOrder = [
-        'jackpot_300',
-        'jackpot_500',
-        'pack_basic',
-        'jackpot_10',
-        'gold_150',
-        'gold_100',
-        'gold_50',
-        'item_fertilizer',
-        'none_1',
-      ]
-
-      const mapped: WheelSector[] = dbSectors.map((row) => {
-        const tpl = DEFAULT_WHEEL_SECTORS.find((s) => s.id === row.sector_id)
-        if (tpl) {
-          return {
-            ...tpl,
-            label: row.label || tpl.label,
-            valueUsd: row.reward_type === 'gems' ? (Number(row.gems_amount) || tpl.valueUsd) : undefined,
-            goldAmount: row.reward_type === 'gold' ? (Number(row.gold_amount) || tpl.goldAmount) : undefined,
-            packId: row.pack_id || tpl.packId,
-            packQty: row.pack_qty ?? tpl.packQty,
-            plantId: row.plant_id || tpl.plantId,
-            plantQty: row.plant_qty ?? tpl.plantQty,
-            itemId: (row as any).item_id || tpl.itemId,
-            itemQty: (row as any).item_qty ?? tpl.itemQty,
-          }
-        }
-        return {
-          id: row.sector_id,
-          label: row.label || row.sector_id,
-          icon: row.reward_type === 'gems' ? '💎' : row.reward_type === 'gold' ? '💰' : row.reward_type === 'pack' ? '👑' : row.reward_type === 'plant' ? '🥜' : row.reward_type === 'item' ? ((row as any).item_id === 'water' ? '💧' : '🌿') : '🎁',
-          color: row.reward_type === 'gems' && Number(row.gems_amount) >= 300 ? '#7c3aed' : row.reward_type === 'gems' && Number(row.gems_amount) <= 5 ? '#ec4899' : row.reward_type === 'gems' ? '#06b6d4' : row.reward_type === 'gold' && Number(row.gold_amount) >= 250 ? '#d97706' : row.reward_type === 'gold' ? '#f59e0b' : row.reward_type === 'pack' ? '#eab308' : row.reward_type === 'item' ? ((row as any).item_id === 'water' ? '#0284c7' : '#16a34a') : '#475569',
-          textColor: '#ffffff',
-          type: row.reward_type === 'gems' ? 'token' : row.reward_type === 'gold' ? 'gold' : row.reward_type === 'pack' ? 'pack' : row.reward_type === 'plant' ? 'plant' : row.reward_type === 'item' ? 'item' : 'none',
-          valueUsd: row.gems_amount ? Number(row.gems_amount) : undefined,
-          goldAmount: row.gold_amount ? Number(row.gold_amount) : undefined,
-          packId: row.pack_id ?? undefined,
-          packQty: row.pack_qty ?? undefined,
-          plantId: row.plant_id ?? undefined,
-          plantQty: row.plant_qty ?? undefined,
-          itemId: (row as any).item_id ?? undefined,
-          itemQty: (row as any).item_qty ?? undefined,
-          rarity: row.reward_type === 'gems' && Number(row.gems_amount) >= 300 ? 'jackpot' : row.reward_type === 'pack' ? 'jackpot' : row.reward_type === 'gems' && Number(row.gems_amount) >= 10 ? 'epic' : row.reward_type === 'gems' || (row.reward_type === 'gold' && Number(row.gold_amount) >= 250) ? 'rare' : 'common',
-        }
-      })
-
-      mapped.sort((a, b) => {
-        const idxA = standardOrder.indexOf(a.id)
-        const idxB = standardOrder.indexOf(b.id)
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB
-        if (idxA !== -1) return -1
-        if (idxB !== -1) return 1
-        return a.id.localeCompare(b.id)
-      })
-
-      setSectors(mapped)
+      const [dbGold, dbGems] = await Promise.all([
+        lotteryService.getLotterySectors('gold'),
+        lotteryService.getLotterySectors('gems'),
+      ])
+      if (dbGold && dbGold.length > 0) {
+        setGoldSectors(mapDbSectors(dbGold, DEFAULT_GOLD_WHEEL_SECTORS))
+      }
+      if (dbGems && dbGems.length > 0) {
+        setGemsSectors(mapDbSectors(dbGems, DEFAULT_GEMS_WHEEL_SECTORS))
+      }
     } catch (e) {
       console.warn('[LotteryModal] error al sincronizar sectores de ruleta:', e)
     }
@@ -595,101 +885,151 @@ export default function LotteryModal({
   if (!isOpen) return null
 
   // ===================== WHEEL ACTIONS =====================
-  /**
-   * Gira la ruleta.
-   *
-   * ANTES: el navegador sorteaba el sector con Math.random() y luego se
-   * acreditaba el premio llamando a onAddTokens(). Uno de los sectores son 20
-   * gemas, o sea 20 USD en tu interfaz: el cliente decidía si ganaba el premio
-   * mayor, y bastaba llamar a la función sin tocar la ruleta. El tiro gratis
-   * diario también era una fecha en localStorage, reiniciable borrando la clave.
-   *
-   * AHORA: se pide el tiro al servidor, que cobra la gema o comprueba las 24 h,
-   * sortea con los pesos de lottery_sectors y entrega el premio. La animación
-   * sólo MUESTRA el resultado que ya decidió Postgres: gira hasta el sector que
-   * vino en la respuesta.
-   */
-  const handleSpinWheel = async (isFree: boolean) => {
+  const executeSingleSpinInBatch = (
+    results: Array<{
+      spinIndex: number
+      sectorId: string
+      label: string
+      rewardType: string
+      plantId?: string
+      plantQty?: number
+      gemsAmount?: number
+      granted?: any
+    }>,
+    index: number,
+    sectorsList: WheelSector[]
+  ) => {
+    const item = results[index]
+    if (!item) {
+      setIsSpinning(false)
+      return
+    }
+
+    setIsSpinning(true)
+    const targetIndex = sectorsList.findIndex((s) => s.id === item.sectorId)
+    const safeIndex = targetIndex !== -1 ? targetIndex : 0
+    const sectorToWin = sectorsList[safeIndex]
+
+    // Cinemática del rodillo vertical: desplazamiento continuo hacia abajo
+    const startRound = 9
+    const endRound = 2
+    const startY = - (startRound * sectorsList.length + safeIndex) * REEL_ITEM_HEIGHT + REEL_ITEM_HEIGHT
+    const endY = - (endRound * sectorsList.length + safeIndex) * REEL_ITEM_HEIGHT + REEL_ITEM_HEIGHT
+
+    setIsTransitionActive(false)
+    setIsSpinning(true)
+    setReelTranslateY(startY)
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setIsTransitionActive(true)
+        setReelTranslateY(endY)
+        soundManager.playSound('click', 0.6)
+      })
+    })
+
+    // Animación de 4.3 segundos
+    setTimeout(() => {
+      setIsSpinning(false)
+      const enrichedSector: WheelSector = {
+        ...sectorToWin,
+        label: item.label || sectorToWin.label,
+        plantQty: item.plantQty ?? sectorToWin.plantQty,
+        valueUsd: item.gemsAmount ? Number(item.gemsAmount) : sectorToWin.valueUsd,
+      }
+      setWinningSector(enrichedSector)
+      setShowPrizeModal(true)
+
+      // Si el tiro dio gemas, acreditar en saldo visual inmediatamente
+      if (item.rewardType === 'gems' && item.gemsAmount) {
+        setCurrentGems((prev) => prev + Number(item.gemsAmount))
+      }
+
+      if (enrichedSector.type === 'none') {
+        soundManager.playSound('defeat', 0.4)
+      } else if (enrichedSector.rarity === 'jackpot' || enrichedSector.plantId === 'jalapeno') {
+        soundManager.playSound('victory', 1.0)
+      } else {
+        soundManager.playSound('victory', 0.8)
+      }
+
+      void onRewardsChanged?.()
+    }, 4300)
+  }
+
+  const handleStartSpin = async () => {
     if (isSpinning) return
 
-    // Avisos locales sólo para no gastar una llamada en vano. Los que cuentan
-    // son los del servidor.
-    if (isFree && userElo !== undefined && userElo < 1200) {
-      alert(`El giro diario gratuito se desbloquea al alcanzar 1,200 copas 🏆 (Tu rango actual: ${userElo} copas). ¡Compite en partidas Ranked para desbloquearlo!`)
+    const singleCost = wheelMode === 'gold' ? SPIN_COST_GOLD : SPIN_COST_GEMS_VIP
+    const totalCost = singleCost * spinMultiplier
+
+    if (wheelMode === 'gold' && currentGold < totalCost) {
+      alert(
+        `Oro insuficiente. Se requieren ${totalCost.toLocaleString()} 🪙 Oro para ${spinMultiplier} ${spinMultiplier === 1 ? 'tiro' : 'tiros'}. (Tienes: ${currentGold.toLocaleString()} 🪙)`
+      )
       return
     }
-    if (isFree && !canFreeSpin) {
-      alert(`Ya has usado tu tiro gratis diario. Puedes girar nuevamente por ${PAID_SPIN_COST_GEMS} Gemas 💎.`)
-      return
-    }
-    if (!isFree && currentGems < PAID_SPIN_COST_GEMS) {
-      alert(`Gemas insuficientes (${PAID_SPIN_COST_GEMS} Gemas 💎 requeridas para un tiro adicional).`)
+
+    if (wheelMode === 'gems' && currentGems < totalCost) {
+      alert(
+        `Gemas insuficientes. Se requieren ${totalCost} 💎 Gemas para ${spinMultiplier} ${spinMultiplier === 1 ? 'tiro' : 'tiros'}. (Tienes: ${currentGems} 💎)`
+      )
       return
     }
 
     setIsSpinning(true)
     soundManager.playSound('click', 0.6)
 
-    const res = await lotteryService.spinLottery(!isFree)
+    // Descuento visual inmediato
+    if (wheelMode === 'gold') {
+      setCurrentGold((prev) => Math.max(0, prev - totalCost))
+    } else {
+      setCurrentGems((prev) => Math.max(0, prev - totalCost))
+    }
 
-    if (!res.success || !res.sectorId) {
+    const res = await lotteryService.spinLotteryMulti(wheelMode, spinMultiplier)
+
+    if (!res.success || !res.results || res.results.length === 0) {
       setIsSpinning(false)
-      alert(res.error || 'No se pudo girar la ruleta.')
-      return
-    }
-
-    // Reflejo visual inmediato del descuento de gemas
-    if (!isFree) {
-      setCurrentGems((prev) => Math.max(0, prev - PAID_SPIN_COST_GEMS))
-      void onRewardsChanged?.()
-    }
-
-    if (isFree) {
-      // Sólo para el contador visual de las 24 h. La cuenta real la lleva
-      // user_lottery.last_free_spin en el servidor.
-      setLastFreeSpinTime(Date.now())
-      localStorage.setItem(STORAGE_KEYS.LAST_FREE_SPIN, String(Date.now()))
-    }
-
-    const targetIndex = sectors.findIndex((s) => s.id === res.sectorId)
-    if (targetIndex === -1) {
-      // El servidor devolvió un sector que la rueda no dibuja: no se puede
-      // animar, pero el premio ya está entregado, así que se refresca y se avisa.
-      console.error('[Lottery] sector desconocido en la rueda:', res.sectorId)
-      setIsSpinning(false)
-      await onRewardsChanged?.()
-      alert(`¡Premio recibido: ${res.label ?? res.sectorId}!`)
-      return
-    }
-
-    const sectorToWin = sectors[targetIndex]
-    const sectorAngle = 360 / sectors.length
-    const extraSpins = 6 * 360
-    const targetSectorCenter = targetIndex * sectorAngle
-    const finalDegree =
-      wheelRotation + extraSpins + (360 - (wheelRotation % 360)) + (360 - targetSectorCenter)
-
-    setWheelRotation(finalDegree)
-
-    // 4,6 s de animación. El premio ya está en la base: esto es sólo el espectáculo.
-    setTimeout(() => {
-      setIsSpinning(false)
-      setWinningSector(sectorToWin)
-      setShowPrizeModal(true)
-
-      // Si el premio fue en gemas, acreditar inmediatamente en saldo visual
-      if (sectorToWin.type === 'token' && sectorToWin.valueUsd) {
-        setCurrentGems((prev) => prev + (sectorToWin.valueUsd ?? 0))
-      }
-
-      if (sectorToWin.type === 'none') {
-        soundManager.playSound('click', 0.8)
+      // Restaurar saldo visual si falló
+      if (wheelMode === 'gold') {
+        setCurrentGold(userGold ?? 0)
       } else {
-        soundManager.playSound('victory', 0.9)
+        setCurrentGems(userTokens)
       }
-      // Traer saldo e inventario reales.
+      alert(`⚠️ ${res.error || 'No se pudo girar la ruleta.'}`)
+      return
+    }
+
+    setBatchResults(res.results)
+    setCurrentBatchIndex(0)
+    setBatchCurrency(wheelMode)
+    setBatchTotalSpent(res.totalSpent ?? totalCost)
+
+    // Iniciar animación en el primer tiro de la tanda
+    executeSingleSpinInBatch(res.results, 0, activeSectors)
+  }
+
+  const handleNextSpinInBatch = () => {
+    setShowPrizeModal(false)
+    const nextIdx = currentBatchIndex + 1
+    if (nextIdx < batchResults.length) {
+      setCurrentBatchIndex(nextIdx)
+      executeSingleSpinInBatch(batchResults, nextIdx, activeSectors)
+    } else {
+      if (batchResults.length > 1) {
+        setShowBatchSummaryModal(true)
+      }
       void onRewardsChanged?.()
-    }, 4600)
+    }
+  }
+
+  const handleFinishPrizeModal = () => {
+    setShowPrizeModal(false)
+    if (batchResults.length > 1) {
+      setShowBatchSummaryModal(true)
+    }
+    void onRewardsChanged?.()
   }
 
   // ===================== CODE (SECUENCIA) ACTIONS =====================
@@ -864,144 +1204,269 @@ export default function LotteryModal({
 
         {/* ===================== TAB 1: WHEEL ===================== */}
         {(() => {
-          const renderWheelVisual = () => (
-            <div className="lottery-wheel-wrapper">
-              {/* Wheel Pointer */}
-              <div className="lottery-wheel-pointer">▼</div>
+          const renderWheelVisual = () => {
+            const REEL_ROUNDS = 12
+            return (
+              <div className={`lottery-roller-wrapper ${wheelMode === 'gems' ? 'lottery-roller-wrapper--vip' : ''}`}>
+                <div className="lottery-roller-header">
+                  <span className="lottery-roller-title-tag">
+                    {wheelMode === 'gems' ? '💎 RODILLO VIP DE OBJETOS' : '🪙 RODILLO DE RECOMPENSAS'}
+                  </span>
+                </div>
 
-              {/* Rotating Wheel Container */}
-              <div
-                className="lottery-wheel-disk"
-                style={{
-                  transform: `rotate(${wheelRotation}deg)`,
-                  transition: isSpinning ? 'transform 4.5s cubic-bezier(0.15, 0.9, 0.2, 1)' : 'none',
-                }}
-              >
-                {sectors.map((sec, idx) => {
-                  const angle = (360 / sectors.length) * idx
-                  const halfAngle = (180 / sectors.length) * (Math.PI / 180)
-                  const dx = 50 * Math.tan(halfAngle)
-                  const x1 = Math.max(0, 50 - dx)
-                  const x2 = Math.min(100, 50 + dx)
-                  const clipPath = sectors.length === 8 ? undefined : `polygon(50% 50%, ${x1.toFixed(2)}% 0%, ${x2.toFixed(2)}% 0%)`
-                  return (
-                    <div
-                      key={sec.id}
-                      className={`lottery-wheel-slice lottery-slice--${sec.rarity}`}
-                      style={{
-                        transform: `rotate(${angle}deg)`,
-                        background: sec.color,
-                        ...(clipPath ? { clipPath } : {}),
-                      }}
-                    >
-                      <div className="lottery-slice-content">
-                        <span className="lottery-slice-icon">{sec?.icon || '🎁'}</span>
-                        <span className="lottery-slice-label">{sec?.label || ''}</span>
+                <div className="lottery-roller-container">
+                  {/* Vignettes superior e inferior para efecto 3D de profundidad cilíndrica */}
+                  <div className="lottery-roller-vignette lottery-roller-vignette--top" />
+                  <div className="lottery-roller-vignette lottery-roller-vignette--bottom" />
+
+                  {/* Marco / Contorno selector fijo en el centro con flechas indicadoras */}
+                  <div className={`lottery-reel-target-frame ${wheelMode === 'gems' ? 'lottery-reel-target-frame--vip' : ''} ${isSpinning ? 'lottery-reel-target-frame--spinning' : ''}`}>
+                    <span className="lottery-reel-arrow lottery-reel-arrow--left">▶</span>
+                    <div className="lottery-reel-frame-glow" />
+                    <span className="lottery-reel-arrow lottery-reel-arrow--right">◀</span>
+                  </div>
+
+                  {/* Pista de tarjetas desplazándose verticalmente */}
+                  <div
+                    className="lottery-reel-track"
+                    style={{
+                      transform: `translateY(${reelTranslateY}px)`,
+                      transition: isTransitionActive ? 'transform 4.2s cubic-bezier(0.12, 0.85, 0.2, 1)' : 'none',
+                    }}
+                  >
+                    {Array.from({ length: REEL_ROUNDS }).map((_, roundIdx) => (
+                      <div key={`round_${roundIdx}`} className="lottery-reel-round-group">
+                        {activeSectors.map((sec, secIdx) => {
+                          const plantConfig = sec.plantId ? PLANT_CONFIGS[sec.plantId as PlantId] : null
+                          const isWinner = winningSector?.id === sec.id && !isSpinning
+                          return (
+                            <div
+                              key={`${roundIdx}_${sec.id}_${secIdx}`}
+                              className={`lottery-reel-item lottery-reel-item--${sec.rarity} ${isWinner ? 'lottery-reel-item--winner' : ''}`}
+                            >
+                              <div className="lottery-reel-item-icon-box">
+                                {plantConfig ? (
+                                  <img
+                                    src={plantConfig.icon || plantConfig.sprite}
+                                    alt={plantConfig.name}
+                                    className="lottery-reel-item-img"
+                                  />
+                                ) : sec.type === 'token' ? (
+                                  <span className="lottery-reel-item-emoji">💎</span>
+                                ) : (
+                                  <span className="lottery-reel-item-emoji">{sec.icon || '🍀'}</span>
+                                )}
+                              </div>
+                              <div className="lottery-reel-item-info">
+                                <div className="lottery-reel-item-name">
+                                  {sec.label || plantConfig?.name}
+                                </div>
+                                <div className="lottery-reel-item-meta">
+                                  <span className={`lottery-reel-rarity-pill lottery-pill--${sec.rarity}`}>
+                                    {sec.rarity === 'jackpot'
+                                      ? '🔥 ¡JACKPOT!'
+                                      : sec.rarity === 'epic'
+                                      ? '🔮 ÉPICO'
+                                      : sec.rarity === 'rare'
+                                      ? '⭐ POCO COMÚN'
+                                      : sec.rarity === 'common' && sec.type === 'plant'
+                                      ? '🌱 COMÚN'
+                                      : sec.type === 'token'
+                                      ? '💎 GEMAS'
+                                      : '🍀 SUERTE'}
+                                  </span>
+                                  {sec.type === 'plant' && (
+                                    <span className="lottery-reel-item-sub">x{sec.plantQty || 1} Carta</span>
+                                  )}
+                                  {sec.type === 'token' && (
+                                    <span className="lottery-reel-item-sub">+{sec.valueUsd} Gemas</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="lottery-reel-item-side-badge">
+                                {sec.rarity === 'jackpot'
+                                  ? '🌶️ TOP'
+                                  : sec.type === 'plant'
+                                  ? `x${sec.plantQty || 1}`
+                                  : sec.type === 'token'
+                                  ? `+${sec.valueUsd}`
+                                  : '🍀'}
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    ))}
+                  </div>
+                </div>
 
-              {/* Wheel Center Button */}
-              <button
-                type="button"
-                className={`lottery-wheel-center-hub ${isSpinning ? 'lottery-hub--spinning' : ''} ${(!canFreeSpin || (userElo !== undefined && userElo < 1200)) ? 'lottery-hub--locked' : ''}`}
-                disabled={isSpinning || !canFreeSpin || (userElo !== undefined && userElo < 1200)}
-                onClick={() => handleSpinWheel(true)}
-                title={
-                  userElo !== undefined && userElo < 1200
-                    ? `Se requieren 1,200 copas 🏆 para girar gratis (Tienes: ${userElo} copas)`
-                    : canFreeSpin
-                    ? 'Girar tiro gratis'
-                    : `Tiro gratis usado. Haz clic en "⚡ GIRAR POR ${PAID_SPIN_COST_GEMS} GEMAS 💎"`
-                }
-              >
-                <span>{isSpinning ? '🌀' : userElo !== undefined && userElo < 1200 ? '🔒' : 'GIRAR'}</span>
-              </button>
-            </div>
-          )
+                <div className="lottery-roller-status-footer">
+                  <span>{isSpinning ? '🌀 Rodillo girando hacia abajo...' : '🎯 El objeto dentro del contorno es el premio obtenido'}</span>
+                </div>
+              </div>
+            )
+          }
 
           const renderWheelInfoAndActions = () => (
             <>
-              <div className="lottery-wheel-hero-card">
-                <div className="lottery-wheel-hero-badge">⭐ RULETA DE LA SUERTE</div>
-                <h3>¡PRUEBA TU SUERTE CADA DÍA!</h3>
-                <p>
-                  1 Giro Gratis cada 24h (desde 1,200 🏆). Giros extra por tan solo <strong>{PAID_SPIN_COST_GEMS} Gemas 💎</strong>.
-                </p>
-              </div>
-
-              <div className="lottery-spin-action-box">
-                {userElo !== undefined && userElo < 1200 ? (
-                  <div className="lottery-free-cooldown-box" style={{ borderColor: 'rgba(245, 158, 11, 0.45)', background: 'rgba(245, 158, 11, 0.08)' }}>
-                    <span className="lottery-cooldown-icon">🏆</span>
-                    <div className="lottery-cooldown-text">
-                      <strong style={{ color: '#fbbf24' }}>DESBLOQUEA A 1,200 COPAS</strong>
-                      <small>Alcanza 1,200 copas en Ranked para activar giros gratis diarios ({userElo}/1,200)</small>
-                    </div>
+              {/* 1. MODO SWITCHER */}
+              <div className="lottery-wheel-mode-switcher">
+                <button
+                  type="button"
+                  className={`lottery-mode-btn lottery-mode-btn--gold ${wheelMode === 'gold' ? 'lottery-mode-btn--active' : ''}`}
+                  disabled={isSpinning}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setWheelMode('gold')
+                  }}
+                >
+                  <span className="lottery-mode-icon">🪙</span>
+                  <div className="lottery-mode-info">
+                    <strong>MODO ORO</strong>
+                    <small>{SPIN_COST_GOLD} Oro / tiro</small>
                   </div>
-                ) : canFreeSpin ? (
-                  <button
-                    type="button"
-                    className="lottery-spin-btn lottery-spin-btn--free"
-                    disabled={isSpinning}
-                    onClick={() => handleSpinWheel(true)}
-                  >
-                    <span className="lottery-btn-sparkle">✨</span>
-                    <span>🎉 GIRAR GRATIS (1 TIRO HOY)</span>
-                  </button>
-                ) : (
-                  <div className="lottery-free-cooldown-box">
-                    <span className="lottery-cooldown-icon">⏳</span>
-                    <div className="lottery-cooldown-text">
-                      <strong>TIRO GRATIS USADO</strong>
-                      <small>Próximo giro gratis en: {timeUntilFreeSpin}</small>
-                    </div>
-                  </div>
-                )}
+                </button>
 
                 <button
                   type="button"
-                  className="lottery-spin-btn lottery-spin-btn--paid"
-                  disabled={isSpinning || currentGems < PAID_SPIN_COST_GEMS}
+                  className={`lottery-mode-btn lottery-mode-btn--vip ${wheelMode === 'gems' ? 'lottery-mode-btn--active' : ''}`}
+                  disabled={isSpinning}
                   onClick={() => {
                     soundManager.playSound('click', 0.4)
-                    setShowConfirmPaidModal(true)
+                    setWheelMode('gems')
                   }}
                 >
-                  <span>⚡ GIRAR POR {PAID_SPIN_COST_GEMS} GEMAS 💎</span>
+                  <span className="lottery-mode-icon">💎</span>
+                  <div className="lottery-mode-info">
+                    <strong style={{ color: '#38bdf8' }}>SUERTE VIP</strong>
+                    <small>{SPIN_COST_GEMS_VIP} Gemas / tiro</small>
+                  </div>
+                  <span className="lottery-vip-tag">0% FALLO</span>
                 </button>
               </div>
 
-              {/* PRIZES HIGHLIGHT LIST (COMPACT ROW) */}
+              {/* 2. HERO CARD */}
+              <div className={`lottery-wheel-hero-card ${wheelMode === 'gems' ? 'lottery-wheel-hero-card--vip' : ''}`}>
+                {wheelMode === 'gold' ? (
+                  <>
+                    <div className="lottery-wheel-hero-badge">🪙 QUEMA DE ORO</div>
+                    <h3>¡CONVIERTE TU ORO EN CARTAS Y JACKPOTS!</h3>
+                    <p>
+                      Costo: <strong>{SPIN_COST_GOLD} Oro por giro</strong>. Gana copias de plantas, gemas directas y el <strong>Gran Jackpot Jalapeño 🌶️</strong>.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="lottery-wheel-hero-badge lottery-wheel-hero-badge--vip">👑 MODO SUERTE VIP</div>
+                    <h3 style={{ color: '#38bdf8' }}>¡0% FALLOS · RECOMPENSAS GARANTIZADAS!</h3>
+                    <p>
+                      Costo: <strong>{SPIN_COST_GEMS_VIP} Gemas por giro</strong>. <strong>5% Jalapeño 🌶️</strong>, copias dobles (2x) de plantas y reintegros de gemas.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* 3. MULTIPLIER SELECTOR */}
+              <div className="lottery-multiplier-wrapper">
+                <span className="lottery-multiplier-label">⚡ CANTIDAD DE TIROS:</span>
+                <div className="lottery-multiplier-selector">
+                  {[1, 3, 5, 10].map((mult) => {
+                    const isSelected = spinMultiplier === mult
+                    const cost = mult * (wheelMode === 'gold' ? SPIN_COST_GOLD : SPIN_COST_GEMS_VIP)
+                    return (
+                      <button
+                        key={mult}
+                        type="button"
+                        className={`lottery-mult-btn ${isSelected ? 'lottery-mult-btn--active' : ''}`}
+                        disabled={isSpinning}
+                        onClick={() => {
+                          soundManager.playSound('click', 0.3)
+                          setSpinMultiplier(mult)
+                        }}
+                      >
+                        <span className="lottery-mult-count">x{mult}</span>
+                        <span className="lottery-mult-cost">
+                          {wheelMode === 'gold' ? `${cost.toLocaleString()} 🪙` : `${cost} 💎`}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* 4. SPIN BUTTON & BALANCE */}
+              <div className="lottery-spin-action-box">
+                <button
+                  type="button"
+                  className={`lottery-spin-btn ${wheelMode === 'gold' ? 'lottery-spin-btn--gold' : 'lottery-spin-btn--vip'}`}
+                  disabled={
+                    isSpinning ||
+                    (wheelMode === 'gold' && currentGold < spinMultiplier * SPIN_COST_GOLD) ||
+                    (wheelMode === 'gems' && currentGems < spinMultiplier * SPIN_COST_GEMS_VIP)
+                  }
+                  onClick={handleStartSpin}
+                >
+                  <span className="lottery-btn-sparkle">
+                    {wheelMode === 'gold' ? '🪙' : '✨'}
+                  </span>
+                  <span>
+                    {isSpinning
+                      ? 'GIRANDO RULETA...'
+                      : wheelMode === 'gold'
+                      ? `GIRAR ${spinMultiplier} ${spinMultiplier === 1 ? 'TIRO' : 'TIROS'} (${(spinMultiplier * SPIN_COST_GOLD).toLocaleString()} ORO)`
+                      : `GIRAR ${spinMultiplier} ${spinMultiplier === 1 ? 'TIRO VIP' : 'TIROS VIP'} (${spinMultiplier * SPIN_COST_GEMS_VIP} GEMAS)`}
+                  </span>
+                </button>
+
+                <div className="lottery-balance-reminder">
+                  <span>Tu saldo:</span>
+                  <strong style={{ color: '#facc15' }}>🪙 {currentGold.toLocaleString()} Oro</strong>
+                  <span style={{ opacity: 0.4 }}>•</span>
+                  <strong style={{ color: '#38bdf8' }}>💎 {currentGems.toLocaleString()} Gemas</strong>
+                </div>
+              </div>
+
+              {/* 5. PREVIEW HIGHLIGHTS */}
               <div className="lottery-prizes-preview-box">
-                <span className="lottery-prizes-title">🎁 PREMIOS EN ESTE SORTEO:</span>
+                <span className="lottery-prizes-title">🎁 PREMIOS ({wheelMode === 'gold' ? 'MODO ORO' : 'MODO GEMAS VIP'}):</span>
                 <div className="lottery-prizes-tags-grid">
-                  <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                    💎 300 Gemas
-                  </div>
-                  <div className="lottery-prize-tag lottery-prize-tag--jackpot">
-                    👑 Sobre Básico
-                  </div>
-                  <div className="lottery-prize-tag lottery-prize-tag--legendary">
-                    💎 10 Gemas
-                  </div>
-                  <div className="lottery-prize-tag lottery-prize-tag--gold">
-                    💰 150 Oro
-                  </div>
-                  <div className="lottery-prize-tag lottery-prize-tag--gold">
-                    💰 100 Oro
-                  </div>
-                  <div className="lottery-prize-tag lottery-prize-tag--gold">
-                    💰 50 Oro
-                  </div>
-                  <div className="lottery-prize-tag lottery-prize-tag--rare">
-                    🌿 Fertilizante
-                  </div>
-                  <div className="lottery-prize-tag lottery-prize-tag--epic">
-                    🍀 Suerte
-                  </div>
+                  {wheelMode === 'gold' ? (
+                    <>
+                      <div className="lottery-prize-tag lottery-prize-tag--jackpot">
+                        🌶️ Jalapeño (0.2% Jackpot)
+                      </div>
+                      <div className="lottery-prize-tag lottery-prize-tag--legendary">
+                        💎 10 y 5 Gemas
+                      </div>
+                      <div className="lottery-prize-tag lottery-prize-tag--plant">
+                        🌱 4 Comunes (Guisante, Girasol, Nuez, Cactus)
+                      </div>
+                      <div className="lottery-prize-tag lottery-prize-tag--plant">
+                        🥊 5 Poco Comunes (Bonk Choy, Repetidor, Ajo, Squash, Melón)
+                      </div>
+                      <div className="lottery-prize-tag lottery-prize-tag--none">
+                        🍀 Sigue Intentando (34.5% Quema)
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="lottery-prize-tag lottery-prize-tag--jackpot">
+                        🌶️ Jalapeño (5% Jackpot VIP)
+                      </div>
+                      <div className="lottery-prize-tag lottery-prize-tag--legendary">
+                        💎 Reintegros de 10, 25 y 50 Gemas
+                      </div>
+                      <div className="lottery-prize-tag lottery-prize-tag--plant">
+                        🌱 4 Comunes Dobles (2x Copias)
+                      </div>
+                      <div className="lottery-prize-tag lottery-prize-tag--plant">
+                        🥊 5 Poco Comunes (1x y 2x Copias)
+                      </div>
+                      <div className="lottery-prize-tag lottery-prize-tag--vip">
+                        ⭐ ¡0% Fallos · Premio Seguro!
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </>
@@ -1746,107 +2211,143 @@ export default function LotteryModal({
 
         {/* ===================== PRIZE POPUP MODAL (WHEEL) ===================== */}
         {showPrizeModal && winningSector && (
-          <div className="lottery-prize-overlay" onClick={() => setShowPrizeModal(false)}>
+          <div className="lottery-prize-overlay" onClick={() => { if (!isSpinning) handleFinishPrizeModal() }}>
             <div className="lottery-prize-box" onClick={(e) => e.stopPropagation()}>
               <div className="lottery-prize-confetti">
                 {winningSector.type === 'none' ? '💨 🍀 ✨' : '🎉 🎊 ✨'}
               </div>
               <div
                 className="lottery-prize-badge"
-                style={winningSector.type === 'none' ? { background: '#64748b', color: '#ffffff' } : undefined}
+                style={
+                  winningSector.type === 'none'
+                    ? { background: '#64748b', color: '#ffffff' }
+                    : winningSector.rarity === 'jackpot'
+                    ? { background: '#ef4444', color: '#ffffff', boxShadow: '0 0 16px rgba(239, 68, 68, 0.8)' }
+                    : undefined
+                }
               >
-                {winningSector.type === 'none' ? '¡SIGUE INTENTANDO!' : '¡FELICITACIONES!'}
+                {batchResults.length > 1
+                  ? `TIRO ${currentBatchIndex + 1} DE ${batchResults.length}`
+                  : winningSector.type === 'none'
+                  ? '¡SIGUE INTENTANDO!'
+                  : '¡FELICITACIONES!'}
               </div>
               <div className="lottery-prize-icon">{winningSector?.icon || '🎁'}</div>
               <h3 className="lottery-prize-name">{winningSector?.label || ''}</h3>
               <p className="lottery-prize-desc">
                 {winningSector.type === 'none'
-                  ? `¡No te desanimes! Vuelve mañana para tu tiro gratis diario o gira por ${PAID_SPIN_COST_GEMS} Gemas 💎.`
+                  ? '¡La suerte no estuvo de tu lado en este tiro! Sigue intentando.'
                   : winningSector.type === 'token'
-                  ? `¡Se han acreditado ${winningSector.valueUsd?.toFixed(0)} Gemas 💎 a tu cuenta!`
+                  ? `¡Se han acreditado +${winningSector.valueUsd?.toFixed(0)} Gemas 💎 a tu cuenta!`
                   : winningSector.type === 'gold'
-                  ? `¡Has ganado ${winningSector.goldAmount?.toLocaleString()} Monedas de Oro!`
+                  ? `¡Has ganado +${winningSector.goldAmount?.toLocaleString()} Monedas de Oro!`
                   : winningSector.type === 'pack'
                   ? `¡Se ha añadido ${winningSector.packQty}x ${winningSector.label} a tus sobres pendientes!`
                   : winningSector.type === 'plant'
-                  ? `¡Has recibido ${winningSector.plantQty ?? 1}x carta Wall-nut 🥜 para tu mazo o jardín!`
+                  ? `¡Has recibido +${winningSector.plantQty ?? 1}x ${winningSector.label} para tu colección y jardín!`
                   : winningSector.type === 'item'
-                  ? `¡Se ha añadido ${winningSector.label} a tu inventario de cultivo en el jardín!`
+                  ? `¡Se ha añadido ${winningSector.label} a tu inventario de cultivo!`
                   : `¡Recompensa acreditada con éxito!`}
               </p>
-              <button
-                type="button"
-                className="lottery-prize-claim-btn"
-                onClick={() => {
-                  soundManager.playSound('click', 0.4)
-                  setShowPrizeModal(false)
-                }}
-              >
-                {winningSector.type === 'none' ? 'ENTENDIDO' : 'RECLAMAR RECOMPENSA'}
-              </button>
+
+              {currentBatchIndex < batchResults.length - 1 ? (
+                <button
+                  type="button"
+                  className="lottery-prize-claim-btn"
+                  onClick={handleNextSpinInBatch}
+                >
+                  SIGUIENTE TIRO ({currentBatchIndex + 2}/{batchResults.length}) ⏩
+                </button>
+              ) : batchResults.length > 1 ? (
+                <button
+                  type="button"
+                  className="lottery-prize-claim-btn lottery-prize-claim-btn--summary"
+                  onClick={handleFinishPrizeModal}
+                >
+                  VER RESUMEN DE BOTÍN 🏆
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="lottery-prize-claim-btn"
+                  onClick={handleFinishPrizeModal}
+                >
+                  {winningSector.type === 'none' ? 'ENTENDIDO' : 'RECLAMAR RECOMPENSA'}
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {/* ===================== JACKPOT POPUP (CODE WIN) ===================== */}
-        {codeWonPrize && (
-          <div className="lottery-prize-overlay" onClick={() => setCodeWonPrize(false)}>
-            <div className="lottery-prize-box lottery-prize-box--jackpot" onClick={(e) => e.stopPropagation()}>
-              <div className="lottery-prize-confetti">👑 💎 💰 🎊</div>
-              <div className="lottery-prize-badge" style={{ background: '#eab308', color: '#000' }}>
-                ¡CÓDIGO BOTÁNICO DESCIFRADO!
+        {/* ===================== BATCH SUMMARY POPUP ===================== */}
+        {showBatchSummaryModal && batchSummary && (
+          <div className="lottery-prize-overlay" onClick={() => setShowBatchSummaryModal(false)}>
+            <div className="lottery-summary-box" onClick={(e) => e.stopPropagation()}>
+              <div className="lottery-prize-confetti">👑 🎁 💎 ✨</div>
+              <div className="lottery-summary-badge">
+                🏆 BOTÍN DE SESIÓN ({batchSummary.totalSpins} TIROS)
               </div>
-              <div className="lottery-prize-icon">{top1Currency === 'gems' ? '💎' : '💰'}</div>
-              <h3 className="lottery-prize-name" style={{ color: '#4ade80' }}>
-                +{top1Amount} {top1Currency === 'gems' ? 'GEMAS 💎' : 'ORO 💰'}
-              </h3>
-              <p className="lottery-prize-desc">
-                ¡Increíble deducción! Has acertado las {SECRET_CODE_LENGTH} plantas en la posición exacta y ganado el <strong>Gran Premio de {top1Amount} {top1CurrencyLabel}</strong>.
-              </p>
+              <h3 className="lottery-summary-title">¡RESULTADOS DE TU SORTEO!</h3>
+
+              <div className="lottery-summary-spent-bar">
+                <span>Inversión realizada:</span>
+                <strong>
+                  {batchCurrency === 'gold'
+                    ? `${batchTotalSpent.toLocaleString()} 🪙 Oro`
+                    : `${batchTotalSpent} 💎 Gemas`}
+                </strong>
+              </div>
+
+              <div className="lottery-summary-rewards-list">
+                {batchSummary.totalGemsWon > 0 && (
+                  <div className="lottery-summary-item lottery-summary-item--gems">
+                    <span className="lottery-summary-item-icon">💎</span>
+                    <div className="lottery-summary-item-info">
+                      <strong>Gemas Ganadas</strong>
+                      <small>Acreditadas a tu cuenta</small>
+                    </div>
+                    <span className="lottery-summary-item-qty">+{batchSummary.totalGemsWon} 💎</span>
+                  </div>
+                )}
+
+                {batchSummary.plants.map((p) => (
+                  <div
+                    key={p.plantId}
+                    className={`lottery-summary-item ${p.plantId === 'jalapeno' ? 'lottery-summary-item--jackpot' : 'lottery-summary-item--plant'}`}
+                  >
+                    <span className="lottery-summary-item-icon">{p.icon}</span>
+                    <div className="lottery-summary-item-info">
+                      <strong>{p.name}</strong>
+                      <small>{p.plantId === 'jalapeno' ? '¡GRAN JACKPOT!' : 'Copias para mazo/jardín'}</small>
+                    </div>
+                    <span className="lottery-summary-item-qty">+{p.qty}x</span>
+                  </div>
+                ))}
+
+                {batchSummary.noneCount > 0 && (
+                  <div className="lottery-summary-item lottery-summary-item--none">
+                    <span className="lottery-summary-item-icon">💨</span>
+                    <div className="lottery-summary-item-info">
+                      <strong>Sigue Intentando</strong>
+                      <small>Tiros sin premio directo</small>
+                    </div>
+                    <span className="lottery-summary-item-qty">{batchSummary.noneCount}x</span>
+                  </div>
+                )}
+              </div>
+
               <button
                 type="button"
                 className="lottery-prize-claim-btn"
                 onClick={() => {
-                  soundManager.playSound('click', 0.4)
-                  setCodeWonPrize(false)
+                  soundManager.playSound('victory', 0.6)
+                  setShowBatchSummaryModal(false)
+                  setBatchResults([])
+                  void onRewardsChanged?.()
                 }}
               >
-                ¡RECLAMAR {top1Amount} {top1CurrencyLabel}!
+                ¡RECOGER TODO EL BOTÍN! 🎉
               </button>
-            </div>
-          </div>
-        )}
-        {/* ===================== CONFIRM PAID SPIN POPUP ===================== */}
-        {showConfirmPaidModal && (
-          <div className="lottery-prize-overlay" onClick={() => setShowConfirmPaidModal(false)}>
-            <div className="lottery-confirm-box" onClick={(e) => e.stopPropagation()}>
-              <div className="lottery-confirm-icon">⚡</div>
-              <h3>CONFIRMAR GIRO DE RULETA</h3>
-              <p>
-                ¿Deseas pagar <strong>{PAID_SPIN_COST_GEMS} Gemas 💎</strong> de tu saldo para girar la Ruleta de la Suerte y probar tu suerte?
-              </p>
-              <div className="lottery-confirm-balance">
-                Saldo actual: <strong>{currentGems} Gemas 💎</strong>
-              </div>
-              <div className="lottery-confirm-actions">
-                <button
-                  type="button"
-                  className="lottery-confirm-cancel-btn"
-                  onClick={() => setShowConfirmPaidModal(false)}
-                >
-                  CANCELAR
-                </button>
-                <button
-                  type="button"
-                  className="lottery-confirm-accept-btn"
-                  onClick={() => {
-                    setShowConfirmPaidModal(false)
-                    handleSpinWheel(false)
-                  }}
-                >
-                  SÍ, GIRAR ({PAID_SPIN_COST_GEMS} 💎)
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -1910,7 +2411,7 @@ export default function LotteryModal({
 
           <div className="lottery-screen-balances">
             <div className="lottery-screen-balance-tag" title="Monedas de Oro">
-              🪙 {(userGold ?? 0).toLocaleString()} Oro
+              🪙 {(currentGold ?? 0).toLocaleString()} Oro
             </div>
             <div className="lottery-screen-balance-tag" title="Gemas Disponibles">
               💎 {currentGems.toLocaleString()} Gemas
@@ -1947,9 +2448,13 @@ export default function LotteryModal({
           </div>
 
           <div className="lottery-header__right">
+            <div className="lottery-user-balance" style={{ borderColor: '#facc15' }}>
+              <span>🪙 Oro:</span>
+              <strong style={{ color: '#facc15' }}>{(currentGold ?? 0).toLocaleString()}</strong>
+            </div>
             <div className="lottery-user-balance">
-              <span>💎 Saldo:</span>
-              <strong>{currentGems} Gemas</strong>
+              <span>💎 Gemas:</span>
+              <strong>{currentGems}</strong>
             </div>
             <button type="button" className="lottery-close-btn" onClick={onClose}>
               ✕

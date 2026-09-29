@@ -1584,7 +1584,21 @@ export function useInventory() {
     packRowId: string
   ): Promise<{ drops: PackDropResult[]; colosseumTicket: boolean } | null> => {
     const res = await inventoryService.openPack(packRowId)
-    if (!res.success || !res.drops) return null
+    if (!res.success || !res.drops) {
+      console.warn('[openPackOnServer] Error al abrir sobre:', res.error)
+      if (typeof window !== 'undefined' && res.error) {
+        window.dispatchEvent(
+          new CustomEvent('plant-arena:game-alert', {
+            detail: {
+              title: '⚠️ ERROR AL ABRIR SOBRE',
+              message: res.error || 'No se pudo abrir el sobre en el servidor.',
+              icon: '📦',
+            },
+          })
+        )
+      }
+      return null
+    }
 
     await refreshFromServer()
 
@@ -1772,7 +1786,24 @@ export function useInventory() {
   /** Reclama y abre un sobre PvP de recompensa o Sobre Campeón listo. */
   const openRewardPack = async (packId: string): Promise<any> => {
     const res = await inventoryService.claimRewardPack(packId)
-    if (!res.success) return null
+    if (!res.success) {
+      console.warn('[openRewardPack] Error al reclamar sobre:', res.error)
+      if (typeof window !== 'undefined' && res.error) {
+        window.dispatchEvent(
+          new CustomEvent('plant-arena:game-alert', {
+            detail: {
+              title: res.error === 'PACK_NOT_READY' ? '⏳ SOBRE EN PROCESO' : '⚠️ SOBRE NO DISPONIBLE',
+              message:
+                res.error === 'PACK_NOT_READY'
+                  ? 'El sobre aún no ha terminado su tiempo de desbloqueo. Espera a que termine la cuenta regresiva.'
+                  : res.error || 'No se pudo abrir el sobre en el servidor.',
+              icon: '📦',
+            },
+          })
+        )
+      }
+      return null
+    }
 
     // Revalidación en segundo plano para no demorar la animación
     void refreshFromServer()

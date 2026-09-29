@@ -1027,7 +1027,7 @@ export default function Jardin({
                   ? Math.max(5, Math.ceil(remainingSec / 60) * 10)
                   : Math.max(10, Math.ceil(remainingHours * 75))
 
-                const isReady = pack.status === 'ready' || (isClanChampion && remainingSec <= 0)
+                const isReady = pack.status === 'ready' || (Boolean(pack.unlockStartedAt) && remainingSec <= 0)
                 const isUnlocking = (pack.status === 'unlocking' || isClanChampion) && remainingSec > 0
 
                 return (
