@@ -215,9 +215,9 @@ export const MisionesModal: React.FC<MisionesModalProps> = ({
         soundManager.playSound('plantation', 0.8)
         let rewardDetail = ''
         if (tier === 'bronze') {
-          rewardDetail = '¡+150 🪙 Oro y 1 Sobre Básico enviado a tu Jardín 📦!'
+          rewardDetail = '¡+100 🪙 Oro y 1 Sobre Básico enviado a tu Jardín 📦!'
         } else if (tier === 'silver') {
-          rewardDetail = '¡+400 🪙 Oro, +20 💎 Gemas y 1 Poción de Energía ⚡!'
+          rewardDetail = '¡+200 🪙 Oro, +20 💎 Gemas y 1 Poción de Energía ⚡!'
         } else if (tier === 'gold') {
           rewardDetail = '¡1 Sobre Épico Místico enviado a tu Jardín 🏆!'
         }

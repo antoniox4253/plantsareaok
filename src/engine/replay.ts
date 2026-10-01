@@ -138,6 +138,7 @@ interface CartaResuelta {
   slot: number | null
   level: number
   statRolls: PlantStatKey[]
+  equippedItem?: string | null
 }
 
 function esPlantId(x: string | null | undefined): x is PlantId {
@@ -173,6 +174,7 @@ function resolverCarta(
         slot: slot ?? null,
         statRolls: [],
         level: 0,
+        equippedItem: null,
       },
     }
   }
@@ -206,6 +208,7 @@ function resolverCarta(
           slot: slot ?? null,
           statRolls: [],
           level: 0,
+          equippedItem: null,
         },
       }
     }
@@ -222,6 +225,7 @@ function resolverCarta(
       slot: slot ?? encontrada.slot ?? null,
       statRolls,
       level,
+      equippedItem: encontrada.equippedItem || null,
     },
   }
 }
@@ -260,6 +264,7 @@ function encolarPlanta(
       col: j.col ?? undefined,
       statRolls: carta.statRolls,
       level: carta.level,
+      equippedItem: carta.equippedItem || undefined,
     })
   } else {
     estado.pending.push({
@@ -270,6 +275,7 @@ function encolarPlanta(
       col: j.col ?? undefined,
       statRolls: carta.statRolls,
       level: carta.level,
+      equippedItem: carta.equippedItem || undefined,
     })
   }
 }
@@ -494,7 +500,7 @@ function validarYAplicarIntencion(
     return
   }
   const carta = resuelta.carta
-  const config = getScaledPlantConfig(carta.plantId, carta.statRolls)
+  const config = getScaledPlantConfig(carta.plantId, carta.statRolls, carta.equippedItem)
   if (!config) {
     registrarIlegal(ilegales, j, 'config_de_carta_inexistente')
     return
@@ -670,7 +676,6 @@ export function recalcularGanadorAutoritativo(
   const ganadorP2 = ganadorDesdeVistaP2(vistaP2)
   const p1Ilegal = ilegales.some((x) => x.de === 1)
   const p2Ilegal = ilegales.some((x) => x.de === 2)
-
   let ganador: 1 | 2 | null = null
   let motivo: ResultadoAutoritativo['motivo'] = 'no_result'
 
