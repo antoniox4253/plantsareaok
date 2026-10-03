@@ -275,30 +275,32 @@
 .topbar-pill--gold {
   left: 63.636364%;
   top: 4.144527%;
-  width: 9.509569%;
+  width: 12.8%;
   height: 8.182784%;
   gap: 8px;
   justify-content: flex-start;
+  padding: 0 10px;
 }
 
 /* 6. Gemas */
 .topbar-pill--gems {
-  left: 73.863636%;
+  left: 77.2%;
   top: 4.144527%;
-  width: 10.107656%;
+  width: 14.5%;
   height: 8.182784%;
   gap: 8px;
   justify-content: flex-start;
+  padding: 0 10px;
 }
 
-/* 7. Trofeos / ELO */
-.topbar-pill--trophies {
-  left: 84.748804%;
+/* 7. Ajustes (Tuerca) */
+.topbar-pill--settings {
+  left: 92.5%;
   top: 4.144527%;
-  width: 8.552632%;
+  width: 5.6%;
   height: 8.182784%;
-  gap: 8px;
-  justify-content: flex-start;
+  justify-content: center;
+  padding: 0;
 }
 
 /* Iconos y Valores de Estadísticas */
@@ -328,20 +330,6 @@
 
 .topbar-stat-val--gems {
   color: #38bdf8;
-}
-
-.topbar-stat-val--trophies {
-  color: #facc15;
-}
-
-/* 8. Ajustes (Tuerca) */
-.topbar-pill--settings {
-  left: 93.779904%;
-  top: 4.144527%;
-  width: 4.904306%;
-  height: 8.182784%;
-  justify-content: center;
-  padding: 0;
 }
 
 .topbar-settings-icon {
@@ -578,16 +566,213 @@
 }
 
 /* --------------------------------------------------------------------------
-   PANEL LATERAL DERECHO (TORNEO, NOTICIAS, BANNER)
+   PANEL LATERAL DERECHO (RANKING, TORNEO, NOTICIAS, BANNER)
    -------------------------------------------------------------------------- */
-[data-action="torneo"] {
+
+/* 1. Barra Dedicada de Ranking (Debajo de Oro, Gemas y Ajustes) */
+.bosque-ranking-banner {
+  position: absolute;
   left: 72.308612%;
-  top: 13.921360%;
+  top: 13.5%;
   width: 26.315789%;
-  height: 30.286929%;
-  border-radius: 16px;
+  height: 6.8%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: linear-gradient(135deg, #133a25 0%, #061911 100%);
+  border: 1.5px solid #eab308;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(234, 179, 8, 0.15);
+  box-sizing: border-box;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  user-select: none;
+  font-family: inherit;
+  outline: none;
 }
 
+.bosque-ranking-banner:hover {
+  transform: scale(1.02);
+  border-color: #fde047;
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.45), inset 0 0 14px rgba(234, 179, 8, 0.25);
+}
+
+.bosque-ranking-banner:active {
+  transform: scale(0.98);
+}
+
+.bosque-ranking-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bosque-ranking-banner__trophy {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.bosque-ranking-banner__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.bosque-ranking-banner__title {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #fef08a;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.bosque-ranking-banner__subtitle {
+  font-size: 9px;
+  font-weight: 700;
+  color: #86efac;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.bosque-ranking-banner__right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(4, 18, 12, 0.8);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+}
+
+.bosque-ranking-banner__elo-val {
+  font-size: 14px;
+  font-weight: 900;
+  color: #facc15;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.5px;
+}
+
+.bosque-ranking-banner__trophy-icon {
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+
+/* 2. Tarjeta de Torneo con Ilustración Limpia y Cuenta Regresiva */
+.bosque-tourney-card {
+  position: absolute;
+  left: 72.308612%;
+  top: 21.0%;
+  width: 26.315789%;
+  height: 23.5%;
+  border-radius: 14px;
+  border: 1.5px solid #2d7350;
+  background: linear-gradient(180deg, #0d2a1f 0%, #061811 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.bosque-tourney-card:hover {
+  transform: scale(1.02);
+  border-color: #4ade80;
+  box-shadow: 0 0 16px rgba(74, 222, 128, 0.4);
+}
+
+.bosque-tourney-card:active {
+  transform: scale(0.98);
+}
+
+.bosque-tourney-card__header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  background: rgba(5, 20, 14, 0.95);
+  border-bottom: 1px solid rgba(74, 222, 128, 0.25);
+  flex-shrink: 0;
+}
+
+.bosque-tourney-card__header-icon {
+  font-size: 14px;
+}
+
+.bosque-tourney-card__header-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px #000;
+}
+
+.bosque-tourney-card__art-wrap {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bosque-tourney-card__art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bosque-tourney-card__badge-row {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(6, 21, 15, 0.88);
+  backdrop-filter: blur(4px);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+}
+
+.bosque-tourney-card__timer {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fef08a;
+  text-shadow: 0 1px 2px #000;
+}
+
+.bosque-tourney-card__status-btn {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.3px;
+}
+
+.bosque-tourney-card__status-btn--upcoming {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  border: 0.5px solid #c084fc;
+}
+
+.bosque-tourney-card__status-btn--live {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  border: 0.5px solid #fca5a5;
+  animation: pulseDot 1.5s infinite ease-in-out;
+}
+
+/* 3. Noticias y Banners */
 [data-action="noticias"] {
   left: 72.308612%;
   top: 45.164718%;
@@ -616,66 +801,6 @@
   width: 26.315789%;
   height: 18.172157%;
   border-radius: 16px;
-}
-
-/* Torneo Overlay */
-.dynamic-overlay-tourney {
-  position: absolute;
-  left: 72.308612%;
-  top: 13.921360%;
-  width: 26.315789%;
-  height: 30.286929%;
-  pointer-events: none;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 12px 16px 14px 16px;
-}
-
-.dynamic-overlay-tourney__bottom-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(7, 20, 15, 0.85);
-  backdrop-filter: blur(4px);
-  padding: 5px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(74, 222, 128, 0.3);
-}
-
-.dynamic-overlay-tourney__timer {
-  font-size: 11px;
-  font-weight: 800;
-  color: #fcd34d;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.dynamic-overlay-tourney__status-btn {
-  font-size: 10px;
-  font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  color: white;
-}
-
-.dynamic-overlay-tourney__status-btn--live {
-  background: linear-gradient(135deg, #dc2626, #f97316);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
-  animation: pulseLive 1.5s infinite;
-}
-
-.dynamic-overlay-tourney__status-btn--upcoming {
-  background: linear-gradient(135deg, #4338ca, #6366f1);
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
-}
-
-@keyframes pulseLive {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
 }
 
 @keyframes pulseDot {

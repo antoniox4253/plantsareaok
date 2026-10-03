@@ -667,25 +667,7 @@ export default function MainMenu({
         </span>
       </button>
 
-      {/* 7. Trofeos / ELO */}
-      <button
-        type="button"
-        className="topbar-pill topbar-pill--trophies"
-        data-action="trofeos"
-        aria-label="trofeos"
-        title="Copas / Camino de Arenas"
-        onClick={() => {
-          soundManager.playSound('click', 0.5)
-          onOpenRanking?.()
-        }}
-      >
-        <img src={ranking} alt="Copas" className="topbar-stat-icon" />
-        <span className="topbar-stat-val topbar-stat-val--trophies">
-          {userElo}
-        </span>
-      </button>
-
-      {/* 8. Ajustes */}
+      {/* 7. Ajustes */}
       <button
         type="button"
         className="topbar-pill topbar-pill--settings"
@@ -807,19 +789,68 @@ export default function MainMenu({
       })}
 
       {/* ── PANEL LATERAL DERECHO ── */}
+
+      {/* 1. Barra Dedicada de Ranking (Debajo de Oro, Gemas y Ajustes) */}
       <button
         type="button"
-        className="hit"
+        className="bosque-ranking-banner"
+        data-action="trofeos"
+        title="Ver Camino de Arenas y Clasificación Global"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenRanking?.()
+        }}
+      >
+        <div className="bosque-ranking-banner__left">
+          <img src={ranking} alt="Trofeo" className="bosque-ranking-banner__trophy" />
+          <div className="bosque-ranking-banner__info">
+            <span className="bosque-ranking-banner__title">RANKING GLOBAL</span>
+            <span className="bosque-ranking-banner__subtitle">Camino de Arenas</span>
+          </div>
+        </div>
+        <div className="bosque-ranking-banner__right">
+          <span className="bosque-ranking-banner__elo-val">{userElo}</span>
+          <span className="bosque-ranking-banner__trophy-icon">🏆</span>
+        </div>
+      </button>
+
+      {/* 2. Tarjeta de Torneo con Ilustración Limpia y Cuenta Regresiva */}
+      <div
+        className="bosque-tourney-card"
         data-action="torneo"
-        aria-label="torneo"
         title="Lobby de Torneos"
         onClick={() => {
           soundManager.playSound('click', 0.5)
           setIsTournamentModalOpen(true)
         }}
       >
-        torneo
-      </button>
+        <div className="bosque-tourney-card__header">
+          <span className="bosque-tourney-card__header-icon">🏆</span>
+          <span className="bosque-tourney-card__header-title">TORNEO PRÓXIMO</span>
+        </div>
+        <div className="bosque-tourney-card__art-wrap">
+          <img
+            src="/game-assets/dashboard/torneo-arena.webp"
+            alt="Torneo Arena"
+            className="bosque-tourney-card__art"
+          />
+          <div className="bosque-tourney-card__badge-row">
+            <span className="bosque-tourney-card__timer">
+              ⏱️ {upcomingTourneyInfo ? upcomingTourneyInfo.countdownStr : '11d 22h'}
+            </span>
+            <span
+              className={`bosque-tourney-card__status-btn ${
+                upcomingTourneyInfo?.isLive
+                  ? 'bosque-tourney-card__status-btn--live'
+                  : 'bosque-tourney-card__status-btn--upcoming'
+              }`}
+            >
+              {upcomingTourneyInfo?.isLive ? '🔥 EN VIVO' : '🏆 PRÓXIMO'}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <button
         type="button"
         className="hit"
@@ -878,24 +909,6 @@ export default function MainMenu({
       >
         banner-lateral
       </button>
-
-      {/* Próximo Torneo Dinámico */}
-      <div className="dynamic-overlay-tourney">
-        <div className="dynamic-overlay-tourney__bottom-row">
-          <span className="dynamic-overlay-tourney__timer">
-            ⏱️ {upcomingTourneyInfo ? upcomingTourneyInfo.countdownStr : '11d 22h'}
-          </span>
-          <span
-            className={`dynamic-overlay-tourney__status-btn ${
-              upcomingTourneyInfo?.isLive
-                ? 'dynamic-overlay-tourney__status-btn--live'
-                : 'dynamic-overlay-tourney__status-btn--upcoming'
-            }`}
-          >
-            {upcomingTourneyInfo?.isLive ? '🔥 EN VIVO' : '🏆 PRÓXIMO'}
-          </span>
-        </div>
-      </div>
 
       {/* ── 3. MENÚ DESPLEGABLE DE AJUSTES (GEAR ICON) ── */}
       {isSettingsOpen && (

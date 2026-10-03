@@ -43,8 +43,11 @@ async function cleanDashboard() {
       <!-- Gemas number area (clearing '1,523') -->
       <rect x="1285" y="47" width="112" height="60" rx="8" fill="url(#darkBadge)" />
 
-      <!-- Trofeos number area (clearing '1043') -->
-      <rect x="1468" y="47" width="86" height="60" rx="8" fill="url(#darkBadge)" />
+      <!-- Trofeos pill area (clearing entire trophy pill so top bar has Oro, Gemas, Tuerca) -->
+      <rect x="1406" y="38" width="158" height="78" rx="14" fill="#05160e" opacity="0.98" />
+
+      <!-- Torneo area (clearing old castle and baked texts: Temporada 1, 11d 22h 18m, Proximamente) -->
+      <rect x="1208" y="130" width="442" height="290" rx="18" fill="url(#darkSlot)" opacity="0.98" />
 
       <!-- 4 Chest Slots: clearing dummy boxes and 'SLOT VACÍO' text -->
       <rect x="390" y="686" width="148" height="116" rx="14" fill="url(#darkSlot)" opacity="0.96" />
@@ -54,11 +57,15 @@ async function cleanDashboard() {
     </svg>
   `)
 
-  await img
+  // Save to dashboard-original.png so it is directly used by the app
+  const buffer = await img
     .composite([{ input: svgOverlay, top: 0, left: 0 }])
-    .toFile('public/game-assets/dashboard/dashboard-clean.png')
+    .png()
+    .toBuffer()
 
-  console.log('Successfully generated public/game-assets/dashboard/dashboard-clean.png')
+  await sharp(buffer).toFile('public/game-assets/dashboard/dashboard-original.png')
+
+  console.log('Successfully updated public/game-assets/dashboard/dashboard-original.png')
 }
 
 cleanDashboard().catch(console.error)
