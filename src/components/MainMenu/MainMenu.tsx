@@ -1,17 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import background from '../../assets/images/background.webp'
-import logo from '../../assets/images/logo.webp'
-import plant1 from '../../assets/images/plant1.webp'
-import plant2 from '../../assets/images/plant2.webp'
-import play from '../../assets/images/play.webp'
-import jardin from '../../assets/images/jardin.webp'
-import coleccion from '../../assets/images/coleccion.webp'
-import arena from '../../assets/images/Arena.webp'
-import shop from '../../assets/images/shop.webp'
-import gema from '../../assets/ico/gema.webp'
-import moneda from '../../assets/ico/moneda.webp'
-import ranking from '../../assets/ico/Ranking.webp'
-import clan from '../../assets/ico/clan.webp'
 import { soundManager } from '../../utils/audioManager'
 import {
   getRemainingTimeString,
@@ -20,7 +7,6 @@ import {
 } from '../../utils/freePackManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
 import { BATTLE_PASS_LEVELS } from '../../utils/battlePassManager'
-import { SeasonManager } from '../../utils/seasonManager'
 import { UserManager, type PlayerProfile } from '../../utils/userManager'
 import ProfileModal, { type ProfileTab } from '../ProfileModal/ProfileModal'
 import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
@@ -32,11 +18,10 @@ import GlobalChat from '../GlobalChat/GlobalChat'
 import AuctionModal from '../Auction/AuctionModal'
 import MisionesModal from '../Misiones/MisionesModal'
 import LotteryModal from '../Lottery/LotteryModal'
-import { auctionService, type ActiveAuctionData } from '../../services/auctionService'
 import { tournamentService } from '../../services/tournamentService'
-import { lotteryService } from '../../services/lotteryService'
 import type { ColosseumBetAmount, PlantId, TournamentModel, PlantCardInstance } from '../../types/game'
 import './MainMenu.css'
+import './BosqueRenovado.css'
 
 interface MainMenuProps {
   userProfile?: {
@@ -87,8 +72,6 @@ interface MainMenuProps {
   onOpenSlotPack?: (slotId: number) => void
   playerEnergy?: number
   maxPlayerEnergy?: number
-  // onAddTokens se eliminó al dejar el formulario de recarga como maqueta:
-  // era la vía por la que ProfileModal se sumaba saldo sin cobrar nada.
   onDeductTokens?: (amountUsd: number) => boolean
   onDeductGold?: (amount: number) => boolean
   onlineUsersCount?: number
@@ -166,6 +149,8 @@ export default function MainMenu({
   const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
   const [showLotteryModal, setShowLotteryModal] = useState(false)
   const [lotteryInitialTab, setLotteryInitialTab] = useState<'wheel' | 'auction' | 'code'>('wheel')
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [newsModal, setNewsModal] = useState<{ title: string; message: string } | null>(null)
 
   useEffect(() => {
     const handleOpenLottery = (e: any) => {
@@ -175,7 +160,6 @@ export default function MainMenu({
     window.addEventListener('open_lottery_modal', handleOpenLottery)
     return () => window.removeEventListener('open_lottery_modal', handleOpenLottery)
   }, [])
-
 
   const handleToggleGlobalChat = () => {
     setIsGlobalChatOpen((prev) => {
@@ -206,8 +190,7 @@ export default function MainMenu({
     }
   }, [reopenArenaAdsModal, onResetReopenArenaAdsModal])
 
-  // Si el usuario regresa a la pestaña (por ejemplo en móvil tras abrirse un anuncio en otra pestaña),
-  // reabrir y restaurar automáticamente la expedición activa en fase de preparación
+  // Si el usuario regresa a la pestaña, restaurar expedición activa
   useEffect(() => {
     const handleTabResume = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
@@ -238,42 +221,14 @@ export default function MainMenu({
     onAction?: () => void
   } | null>(null)
   const [slotToAccelerate, setSlotToAccelerate] = useState<FreePackSlot | null>(null)
-
   const [isAccelerating, setIsAccelerating] = useState<boolean>(false)
   const [isAuctionModalOpen, setIsAuctionModalOpen] = useState<boolean>(false)
   const [isMisionesModalOpen, setIsMisionesModalOpen] = useState<boolean>(false)
-  const [auctionInfo, setAuctionInfo] = useState<ActiveAuctionData | null>(null)
 
   const handleCloseGlobalChat = useCallback(() => setIsGlobalChatOpen(false), [])
   const handleCloseAuctionModal = useCallback(() => setIsAuctionModalOpen(false), [])
   const handleCloseMisionesModal = useCallback(() => setIsMisionesModalOpen(false), [])
   const handleCloseLotteryModal = useCallback(() => setShowLotteryModal(false), [])
-
-  useEffect(() => {
-    auctionService.getActiveAuction().then((data) => {
-      if (data) setAuctionInfo(data)
-    })
-    const unsub = auctionService.subscribeToAuctionChanges(() => {
-      auctionService.getActiveAuction().then((data) => {
-        if (data) setAuctionInfo(data)
-      })
-    })
-    return () => unsub()
-  }, [])
-
-  const auctionRemainingStr = useMemo(() => {
-    if (!auctionInfo) return '30h 00m'
-    const diff = Math.max(0, auctionInfo.endTime - Date.now())
-    if (diff <= 0) return 'FINALIZADA'
-    const h = Math.floor(diff / 3600000)
-    const m = Math.floor((diff % 3600000) / 60000)
-    return `${h}h ${m}m`
-  }, [auctionInfo, ticker])
-
-
-  // La interfaz y modal de subasta están 100% guardados; se oculta el botón del lobby
-  // hasta que se reemplace el asset gráfico de la nueva planta en subasta.
-  const SHOW_AUCTION_HEADER_WIDGET = false
 
   const handleConfirmAccelerate = async () => {
     if (!slotToAccelerate || !onFastUnlockSlot || isAccelerating) return
@@ -307,6 +262,37 @@ export default function MainMenu({
     setIsModeSelectorOpen(true)
   }
 
+  const handleSlotClick = (slot?: FreePackSlot) => {
+    if (!slot) return
+    if (slot.status === 'locked' && onStartSlotUnlock) {
+      const res = onStartSlotUnlock(slot.slotId)
+      if (!res.success && res.error) {
+        setActiveAlert({ title: 'SLOT OCUPADO', message: res.error, icon: '⏳' })
+      } else {
+        soundManager.playSound('click', 0.5)
+      }
+    } else if (
+      slot.status === 'ready' ||
+      (slot.status === 'unlocking' &&
+        slot.unlockStartedAt &&
+        Date.now() - slot.unlockStartedAt >= slot.durationHours * 3600 * 1000)
+    ) {
+      if (onOpenSlotPack) {
+        soundManager.playSound('click', 0.5)
+        onOpenSlotPack(slot.slotId)
+      }
+    } else if (slot.status === 'unlocking') {
+      if (onFastUnlockSlot) {
+        soundManager.playSound('click', 0.5)
+        setSlotToAccelerate(slot)
+      }
+    }
+  }
+
+  const handleOpenNews = (title: string, message: string) => {
+    soundManager.playSound('click', 0.5)
+    setNewsModal({ title, message })
+  }
 
   useEffect(() => {
     const syncProfile = () => setPlayerProfile(UserManager.getProfile())
@@ -327,7 +313,7 @@ export default function MainMenu({
     return () => unsubscribe()
   }, [])
 
-  // Force tick every second to animate countdown timers
+  // Tick cada segundo para actualizar temporizadores
   useEffect(() => {
     const interval = setInterval(() => {
       setTicker((t) => t + 1)
@@ -340,7 +326,6 @@ export default function MainMenu({
       const list = await tournamentService.listTournaments()
       const now = Date.now()
 
-      // 1. Torneo en vivo actualmente
       const liveTourney = list.find((t) => {
         if (t.status === 'live') return true
         const start = new Date(t.start_time).getTime()
@@ -353,7 +338,6 @@ export default function MainMenu({
         return
       }
 
-      // 2. Próximo torneo programado en el futuro más cercano
       const scheduled = list
         .filter((t) => {
           if (t.status === 'ended' || t.status === 'cancelled') return false
@@ -377,43 +361,11 @@ export default function MainMenu({
     return () => clearInterval(intv)
   }, [loadUpcomingTournament])
 
-  // Recargar al cerrar o abrir el modal de torneos
   useEffect(() => {
     if (!isTournamentModalOpen) {
       void loadUpcomingTournament()
     }
   }, [isTournamentModalOpen, loadUpcomingTournament])
-
-  // ── RULETA DE LA SUERTE: CINTILLO / MARQUESINA DE MEJORES PREMIOS (15 SEGUNDOS) ──
-  const [showLotteryTicker, setShowLotteryTicker] = useState(true)
-  const [lotteryWinners, setLotteryWinners] = useState<Array<{
-    id: string
-    username: string
-    description: string
-    amount_gems: number
-    created_at: string
-  }>>([])
-
-  useEffect(() => {
-    let isMounted = true
-    void (lotteryService as any).getRecentLotteryWinners(10).then((w: any) => {
-      if (isMounted && w && Array.isArray(w) && w.length > 0) {
-        setLotteryWinners(w)
-      }
-    })
-
-    // Permanece 15 segundos en el lobby como solicitó el usuario
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        setShowLotteryTicker(false)
-      }
-    }, 15000)
-
-    return () => {
-      isMounted = false
-      clearTimeout(timer)
-    }
-  }, [])
 
   const upcomingTourneyInfo = useMemo(() => {
     if (!upcomingTournament) return null
@@ -421,12 +373,10 @@ export default function MainMenu({
     const startMs = new Date(upcomingTournament.start_time).getTime()
     const endMs = new Date(upcomingTournament.end_time).getTime()
 
-    const isLive = (upcomingTournament.status === 'live') || (now >= startMs && now < endMs)
+    const isLive = upcomingTournament.status === 'live' || (now >= startMs && now < endMs)
     const isScheduled = now < startMs
 
-    if (!isLive && !isScheduled) {
-      return null
-    }
+    if (!isLive && !isScheduled) return null
 
     const targetMs = isLive ? endMs : startMs
     const diffSecs = Math.max(0, Math.floor((targetMs - now) / 1000))
@@ -444,545 +394,687 @@ export default function MainMenu({
       countdownStr = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
     }
 
-    const d = new Date(upcomingTournament.start_time)
-    const day = d.getUTCDate().toString().padStart(2, '0')
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-    const mon = months[d.getUTCMonth()]
-    const hour = d.getUTCHours().toString().padStart(2, '0')
-    const min = d.getUTCMinutes().toString().padStart(2, '0')
-    const dateStr = `${day} ${mon}, ${hour}:${min} UTC`
-
     return {
       isLive,
       countdownStr,
-      dateStr,
       title: upcomingTournament.title,
     }
   }, [ticker, upcomingTournament])
 
   return (
-    <div
-      className="main-menu"
-      style={{ backgroundImage: `url(${background})` }}
-    >
-      <div className="topbar">
-        <div className="topbar__left">
-          <div className="topbar__player-col">
-            <div className="topbar__player-row">
-              <div
-                className={`card card--player ${hasVipPass ? 'card--player-vip' : ''}`}
-                onClick={() => {
-                  soundManager.playSound('click', 0.5)
-                  setProfileInitialTab('profile')
-                  setIsProfileModalOpen(true)
-                }}
-                title="Ver y editar perfil, depositar, retirar y referidos"
-                style={{ cursor: 'pointer' }}
-              >
-                <div className={`card__player-avatar-circle ${hasVipPass ? 'card__player-avatar-circle--vip' : ''}`}>
-                  <img
-                    src={playerProfile.avatar}
-                    alt={userProfile?.username || playerProfile.name}
-                    onError={(e) => {
-                      e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.webp'
-                    }}
-                  />
-                </div>
-                <span className={`card__title ${hasVipPass ? 'card__title--vip-gold' : ''}`}>
-                  {hasVipPass && <span className="nick-vip-crown">👑 </span>}
-                  {userProfile?.username || playerProfile.name}
-                </span>
-              </div>
+    <div className="bosque-dashboard" aria-label="Dashboard Plants Arena">
+      {/* ── 1. HITBOXES INTERACTIVOS PRINCIPALES (BASADOS EN EL REPOSITORIO DESCARGADO) ── */}
 
-              {/* COMPACT VIP BATTLE PASS WIDGET - AL COSTADO DEL PERFIL */}
-              <div
-                className={`card card--pass-widget ${
-                  hasVipPass ? 'card--pass-widget-active' : 'card--pass-widget-locked'
-                }`}
-                onClick={onOpenBattlePass}
-                title={
-                  hasVipPass
-                    ? 'Ver Pase de Batalla VIP (Activo)'
-                    : 'Pase VIP (Bloqueado) — Clic para ver niveles y comprar'
-                }
-              >
-                <span className="pass-widget__crown">{hasVipPass ? '👑' : '🔒'}</span>
-                <div className="pass-widget__info">
-                  <span className="pass-widget__title">PASE VIP</span>
-                  <span className="pass-widget__level-txt">
-                    NIVEL {highestLevelReached}/20
-                  </span>
-                  <div className="pass-widget__progress-wrap">
-                    <div
-                      className="pass-widget__progress-bar"
-                      style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
-                    />
-                  </div>
-                </div>
+      {/* Menú lateral izquierdo */}
+      <button
+        type="button"
+        className="hit"
+        data-action="inicio"
+        aria-label="inicio"
+        title="Inicio (Lobby)"
+        onClick={() => soundManager.playSound('click', 0.4)}
+      >
+        inicio
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="jardin"
+        aria-label="jardin"
+        title="Jardín y Recursos de Cultivo"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenJardin?.()
+        }}
+      >
+        jardin
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="coleccion"
+        aria-label="coleccion"
+        title="Colección y Mazo"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenCollection?.()
+        }}
+      >
+        coleccion
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="ranking"
+        aria-label="ranking"
+        title="Ranking y Camino de Copas"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenRanking?.()
+        }}
+      >
+        ranking
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="tienda"
+        aria-label="tienda"
+        title="Tienda de Sobres y Recursos"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenShop?.()
+        }}
+      >
+        tienda
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="mis-partidas"
+        aria-label="mis partidas"
+        title="Mis Partidas y Repeticiones"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenMisPartidas?.()
+        }}
+      >
+        mis-partidas
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="misiones"
+        aria-label="misiones"
+        title="Misiones Diarias y Racha"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          if (onOpenMisiones) onOpenMisiones()
+          else setIsMisionesModalOpen(true)
+        }}
+      >
+        misiones
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="clan"
+        aria-label="clan"
+        title="Clanes y Batallas de Clan"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenClan?.()
+        }}
+      >
+        clan
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="loteria"
+        aria-label="loteria"
+        title="Ruleta de la Suerte y Lotería"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          if (onOpenLoteria) onOpenLoteria()
+          else setShowLotteryModal(true)
+        }}
+      >
+        loteria
+      </button>
 
-                {hasVipPass && claimableCount > 0 && (
-                  <span className="pass-widget__claim-badge">
-                    ✨ {claimableCount}
-                  </span>
-                )}
-                {!hasVipPass && (
-                  <span className="pass-widget__buy-badge">
-                    COMPRAR
-                  </span>
-                )}
-              </div>
-            </div>
+      {/* Barra superior */}
+      <button
+        type="button"
+        className="hit"
+        data-action="logo"
+        aria-label="logo"
+        title="Volver a Portada / Landing"
+        onClick={() => {
+          soundManager.playSound('click', 0.4)
+          onOpenLanding?.()
+        }}
+      >
+        logo
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="perfil"
+        aria-label="perfil"
+        title="Mi Perfil, Depositar y Retirar"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          setProfileInitialTab('profile')
+          setIsProfileModalOpen(true)
+        }}
+      >
+        perfil
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="pase-vip"
+        aria-label="pase vip"
+        title="Pase de Batalla VIP"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenBattlePass?.()
+        }}
+      >
+        pase-vip
+      </button>
+      <a
+        className="hit"
+        data-action="telegram"
+        aria-label="telegram"
+        title="Canal Oficial de Telegram"
+        href="https://t.me/+HY1gbZZKmAE5ZDcx"
+        target="_blank"
+        rel="noreferrer"
+        onClick={() => soundManager.playSound('click', 0.4)}
+      >
+        telegram
+      </a>
+      <button
+        type="button"
+        className="hit"
+        data-action="en-linea"
+        aria-label="en linea"
+        title="Jugadores conectados en tiempo real"
+        onClick={() => soundManager.playSound('click', 0.3)}
+      >
+        en-linea
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="oro"
+        aria-label="oro"
+        title="Monedas de Oro (Clic para comprar)"
+        onClick={() => {
+          soundManager.playSound('click', 0.4)
+          onOpenShop?.('gold')
+        }}
+      >
+        oro
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="gemas"
+        aria-label="gemas"
+        title="Gemas (Clic para Depositar / Retirar USDT BEP20)"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          setProfileInitialTab('deposit')
+          setIsProfileModalOpen(true)
+        }}
+      >
+        gemas
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="trofeos"
+        aria-label="trofeos"
+        title="Copas / Camino de Arenas"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenRanking?.()
+        }}
+      >
+        trofeos
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="ajustes"
+        aria-label="ajustes"
+        title="Ajustes y Opciones"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          setIsSettingsOpen((prev) => !prev)
+        }}
+      >
+        ajustes
+      </button>
 
-            <div className="profile-sub-row">
-              <span className="badge-beta-test">🧪 Beta Test</span>
-              <a
-                href="https://t.me/+HY1gbZZKmAE5ZDcx"
-                target="_blank"
-                rel="noreferrer"
-                className="btn-telegram-link"
-                title="Canal Oficial de Telegram"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <svg className="telegram-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.77-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .37z" />
-                </svg>
-                Telegram
-              </a>
-            </div>
+      {/* Centro / Arena */}
+      <button
+        type="button"
+        className="hit"
+        data-action="banner-superior"
+        aria-label="banner superior"
+        title="Patrocinador GreenLeaf Energía Natural"
+        onClick={() =>
+          handleOpenNews(
+            'Patrocinador GreenLeaf',
+            '¡GreenLeaf Energía Natural impulsa los torneos y batallas de Plants Arena! Plantas más fuertes para un mundo mejor.'
+          )
+        }
+      >
+        banner-superior
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="jugar"
+        aria-label="jugar"
+        title="¡JUGAR PARTIDA!"
+        onClick={handlePlayClick}
+      >
+        jugar
+      </button>
 
-            {/* HEADER VISUAL DE USUARIOS EN LÍNEA */}
-            <div className="online-users-badge" title="Jugadores activos conectados a Plant Arena en tiempo real">
-              <span className="online-users-dot" />
-              <span className="online-users-count">{onlineUsersCount}</span>
-              <span className="online-users-label">en línea</span>
-            </div>
+      {/* Slots de Cofres/Sobres */}
+      {[0, 1, 2, 3].map((slotIdx) => {
+        const slot = freePackSlots[slotIdx]
+        const actionName = `slot-${slotIdx + 1}`
+        return (
+          <button
+            key={slotIdx}
+            type="button"
+            className="hit"
+            data-action={actionName}
+            aria-label={actionName}
+            title={slot ? `Sobre Slot ${slotIdx + 1}` : 'Slot Vacío'}
+            onClick={() => handleSlotClick(slot)}
+          >
+            {actionName}
+          </button>
+        )
+      })}
 
-            {/* WIDGET DESTACADO DE SUBASTA EN VIVO (GUARDADO Y PRESERVADO PARA FUTURO CAMBIO DE IMAGEN) */}
-            {SHOW_AUCTION_HEADER_WIDGET && (
-              <div
-                className="auction-header-widget"
-                onClick={() => {
-                  soundManager.playSound('click', 0.5)
-                  setIsAuctionModalOpen(true)
-                }}
-                title="🎃 Clic para entrar a la Gran Subasta Mítica: Lanzamaíz Bruja (500 💎)"
-              >
-                <div className="auction-header-widget__art-wrap">
-                  <img
-                    src="/game-assets/auction/kernel_witch.png"
-                    alt="Subasta Lanzamaíz Bruja"
-                    className="auction-header-widget__img"
-                  />
-                </div>
-                <div className="auction-header-widget__meta">
-                  <div className="auction-header-widget__top-row">
-                    <span className="auction-header-widget__live-dot" />
-                    <span className="auction-header-widget__title">SUBASTA</span>
-                    <span className="auction-header-widget__timer">⏱️ {auctionRemainingStr}</span>
-                  </div>
-                  <div className="auction-header-widget__price-row">
-                    <span className="auction-header-widget__label">Precio Inicial:</span>
-                    <span className="auction-header-widget__price">
-                      {auctionInfo ? auctionInfo.currentBid.toLocaleString() : '500'} 💎
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+      {/* Panel lateral derecho */}
+      <button
+        type="button"
+        className="hit"
+        data-action="torneo"
+        aria-label="torneo"
+        title="Lobby de Torneos"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          setIsTournamentModalOpen(true)
+        }}
+      >
+        torneo
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="noticias"
+        aria-label="noticias"
+        title="Noticias y Actualizaciones"
+        onClick={() =>
+          handleOpenNews(
+            'Noticias del Bosque Renovado',
+            'Explora las últimas actualizaciones de la temporada, notas de balance competitivo y los nuevos mapas mágicos.'
+          )
+        }
+      >
+        noticias
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="noticia-arena"
+        aria-label="noticia arena"
+        title="Novedades de la Arena"
+        onClick={() =>
+          handleOpenNews(
+            'Novedades de la Arena',
+            'Nuevos escenarios forestales, sistema de emparejamiento ELO de alta precisión y recompensas de victoria incrementadas.'
+          )
+        }
+      >
+        noticia-arena
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="noticia-jardin"
+        aria-label="noticia jardin"
+        title="Actualización del Jardín"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenJardin?.()
+        }}
+      >
+        noticia-jardin
+      </button>
+      <button
+        type="button"
+        className="hit"
+        data-action="banner-lateral"
+        aria-label="banner lateral"
+        title="LeafTech Tecnología"
+        onClick={() =>
+          handleOpenNews(
+            'LeafTech Solutions',
+            'Tecnología que hace crecer tu mundo. Potencia tus plantas con el equipamiento y recursos botánicos del juego.'
+          )
+        }
+      >
+        banner-lateral
+      </button>
 
+      {/* ── 2. CAPAS DINÁMICAS (DATOS REALES DEL JUEGO EN TIEMPO REAL) ── */}
 
-          </div>
+      {/* Perfil del Jugador */}
+      <div className="dynamic-overlay-profile">
+        <div className="dynamic-overlay-profile__avatar-wrap">
+          <img
+            src={playerProfile.avatar}
+            alt="Avatar"
+            className="dynamic-overlay-profile__avatar-img"
+            onError={(e) => {
+              e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.webp'
+            }}
+          />
         </div>
+        <span className="dynamic-overlay-profile__name">
+          {userProfile?.username || playerProfile.name}
+        </span>
+      </div>
 
-        <div className="topbar__right-wrap">
-          {/* FILA 1: MONEDAS DE ORO, GEMAS Y ELO 🏆 */}
-          <div className="topbar__right">
-            <div className="card card--stat card--stat-gold" title="Monedas de Oro">
-              <img className="card__icon" src={moneda} alt="Monedas" />
-              {userGold.toLocaleString()}
-            </div>
-            <div
-              className="card card--stat"
-              title="Gemas Disponibles (Clic para Depositar / Retirar USDT BEP20)"
-              style={{ cursor: 'pointer' }}
+      {/* Pase VIP */}
+      <div className="dynamic-overlay-vip">
+        <div className="dynamic-overlay-vip__row">
+          <span>{hasVipPass ? 'PASE VIP' : 'PASE'}</span>
+          <span>
+            NV {highestLevelReached}/20
+            {hasVipPass && claimableCount > 0 && ` (✨ ${claimableCount})`}
+          </span>
+        </div>
+        <div className="dynamic-overlay-vip__bar-bg">
+          <div
+            className="dynamic-overlay-vip__bar-fill"
+            style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Usuarios en línea */}
+      <div className="dynamic-overlay-online">
+        <div className="dynamic-overlay-online__badge">
+          <span className="dynamic-overlay-online__dot" />
+          <span>{onlineUsersCount} en línea</span>
+        </div>
+      </div>
+
+      {/* Saldo de Oro */}
+      <div className="dynamic-overlay-stat dynamic-overlay-stat--gold">
+        <span className="dynamic-overlay-stat__val dynamic-overlay-stat__val--gold">
+          {userGold.toLocaleString()}
+        </span>
+      </div>
+
+      {/* Saldo de Gemas */}
+      <div className="dynamic-overlay-stat dynamic-overlay-stat--gems">
+        <span className="dynamic-overlay-stat__val dynamic-overlay-stat__val--gems">
+          {userTokens.toLocaleString()}
+        </span>
+      </div>
+
+      {/* Trofeos / ELO */}
+      <div className="dynamic-overlay-stat dynamic-overlay-stat--elo">
+        <span className="dynamic-overlay-stat__val dynamic-overlay-stat__val--elo">
+          {userElo}
+        </span>
+      </div>
+
+      {/* Sobres y Slots Dinámicos */}
+      {[0, 1, 2, 3].map((slotIdx) => {
+        const slot = freePackSlots[slotIdx]
+        if (!slot || slot.status === 'empty') return null
+        const isTimerFinished = Boolean(
+          slot.status === 'unlocking' &&
+            slot.unlockStartedAt &&
+            Date.now() - slot.unlockStartedAt >= slot.durationHours * 3600 * 1000
+        )
+        const isSlotReady = slot.status === 'ready' || isTimerFinished
+        const remainingText = isSlotReady ? '¡LISTO!' : getRemainingTimeString(slot)
+
+        return (
+          <div
+            key={slotIdx}
+            data-action={`slot-${slotIdx + 1}`}
+            className={`dynamic-slot-content dynamic-slot-content--active ${
+              isSlotReady ? 'dynamic-slot-content--ready' : ''
+            }`}
+          >
+            <span className="dynamic-slot__arena">ARENA {slot.arenaLevel}</span>
+            <img
+              src="/game-assets/greenfoot/seed_pack_pvp.webp"
+              alt="Sobre PvP"
+              className={`dynamic-slot__pack-img ${
+                slot.status === 'unlocking' ? 'dynamic-slot__pack-img--pulse' : ''
+              }`}
+            />
+            {slot.status === 'locked' && (
+              <>
+                <span className="dynamic-slot__timer">⏳ {slot.durationHours}h</span>
+                <span className="dynamic-slot__btn-hint dynamic-slot__btn-hint--unlock">
+                  DESBLOQUEAR
+                </span>
+              </>
+            )}
+            {slot.status === 'unlocking' && !isSlotReady && (
+              <>
+                <span className="dynamic-slot__timer">⏱️ {remainingText}</span>
+                <span className="dynamic-slot__btn-hint dynamic-slot__btn-hint--accelerate">
+                  ⚡ ACELERAR
+                </span>
+              </>
+            )}
+            {isSlotReady && (
+              <>
+                <span className="dynamic-slot__timer">¡LISTO!</span>
+                <span className="dynamic-slot__btn-hint dynamic-slot__btn-hint--ready">
+                  ✨ ABRIR
+                </span>
+              </>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Próximo Torneo Dinámico */}
+      <div className="dynamic-overlay-tourney">
+        <div className="dynamic-overlay-tourney__bottom-row">
+          <span className="dynamic-overlay-tourney__timer">
+            ⏱️ {upcomingTourneyInfo ? upcomingTourneyInfo.countdownStr : '11d 22h'}
+          </span>
+          <span
+            className={`dynamic-overlay-tourney__status-btn ${
+              upcomingTourneyInfo?.isLive
+                ? 'dynamic-overlay-tourney__status-btn--live'
+                : 'dynamic-overlay-tourney__status-btn--upcoming'
+            }`}
+          >
+            {upcomingTourneyInfo?.isLive ? '🔥 EN VIVO' : '🏆 PRÓXIMO'}
+          </span>
+        </div>
+      </div>
+
+      {/* ── 3. MENÚ DESPLEGABLE DE AJUSTES (GEAR ICON) ── */}
+      {isSettingsOpen && (
+        <div className="bosque-settings-backdrop" onClick={() => setIsSettingsOpen(false)}>
+          <div className="bosque-settings-menu" onClick={(e) => e.stopPropagation()}>
+            <h4 className="bosque-settings-menu__title">AJUSTES</h4>
+            <button
+              type="button"
+              className="bosque-settings-menu__btn"
               onClick={() => {
-                soundManager.playSound('click', 0.5)
-                setProfileInitialTab('deposit')
-                setIsProfileModalOpen(true)
+                soundManager.toggleMute()
+                setIsMuted(soundManager.isMuted())
               }}
             >
-              <img className="card__icon" src={gema} alt="Gemas" />
-              {userTokens.toLocaleString()}
-            </div>
-            <div
-              className="card card--stat"
-              style={{ cursor: 'pointer' }}
-              onClick={onOpenRanking}
-              title="Ver Camino de Arenas y Ranking Global"
-            >
-              <img className="card__icon" src={ranking} alt="" />
-              {userElo} 🏆
-            </div>
-          </div>
-
-          {/* FILA 2: TICKETS DE COLISEO Y ENERGÍA DIARIA (DEBAJO DE ELO / STATS) */}
-          <div className="topbar__substats">
-            <div className="card card--stat card--stat-ticket" title="Tickets de Coliseo (1 Ticket = 0.5 💎 de entrada)">
-              <span style={{ fontSize: '1.05rem' }}>🎟️</span>
-              {colosseumTickets}
-            </div>
-            <div
-              className="card card--stat card--stat-energy"
-              title={
-                userElo <= 1602
-                  ? '⚡ Energía ilimitada en Arena 1 novato (≤ 1602 Copas). ¡Juega todas las partidas que quieras sin costo!'
-                  : `⚡ Energía Diaria: ${playerEnergy}/${maxPlayerEnergy} (Recarga a las 00:00 UTC). Clic para recargar en la Tienda.`
-              }
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                soundManager.playSound('click', 0.5)
-                onOpenShop?.('energy')
-              }}
-            >
-              <span style={{ fontSize: '1.05rem', filter: 'drop-shadow(0 0 3px #38bdf8)' }}>⚡</span>
-              {userElo <= 1602 ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`}
-            </div>
-          </div>
-
-          {/* 30-DAY SEASON TIMER ROW WITH FULLSCREEN & MUTE BUTTONS BESIDE IT */}
-          <div className="season-timer-row">
-            {isAdmin && (
+              {isMuted ? '🔇 Activar Música' : '🔊 Silenciar Música'}
+            </button>
+            <button type="button" className="bosque-settings-menu__btn" onClick={toggleFullscreen}>
+              ⛶ Pantalla Completa
+            </button>
+            {onOpenBetaInfo && (
               <button
                 type="button"
-                className="main-menu-admin-btn"
-                onClick={onOpenAdmin}
-                title="Abrir Panel de Administrador (Supabase)"
+                className="bosque-settings-menu__btn"
+                onClick={() => {
+                  setIsSettingsOpen(false)
+                  onOpenBetaInfo()
+                }}
               >
-                🛡️ Admin
+                🧪 Info Temporada 1
               </button>
             )}
-            <div
-              className="season-countdown-badge"
-              onClick={onOpenBetaInfo}
-              style={{ cursor: onOpenBetaInfo ? 'pointer' : 'default' }}
-              title="🏆 Fase Beta Oficial - Temporada 1 (45 Días) - Clic para más información"
-            >
-              <span className="season-badge-icon">⏳</span>
-              <span className="season-badge-text">
-                TEMPORADA 1: <strong>{SeasonManager.getSeasonStatus().formattedCountdown}</strong>
-              </span>
-            </div>
-            <button
-              className="fullscreen-button"
-              type="button"
-              onClick={toggleFullscreen}
-              title="Pantalla Completa (Ocultar navegador)"
-            >
-              ⛶
-            </button>
-            <button
-              className="mute-button"
-              type="button"
-              onClick={() => soundManager.toggleMute()}
-              aria-label={isMuted ? 'Activar música' : 'Silenciar música'}
-            >
-              {isMuted ? '🔇' : '🔊'}
-            </button>
+            {isAdmin && onOpenAdmin && (
+              <button
+                type="button"
+                className="bosque-settings-menu__btn"
+                onClick={() => {
+                  setIsSettingsOpen(false)
+                  onOpenAdmin()
+                }}
+              >
+                🛡️ Panel de Admin
+              </button>
+            )}
             {onSignOut && (
               <button
-                className="main-menu-logout-btn"
                 type="button"
-                onClick={onSignOut}
-                title="Cerrar Sesión (Salir de la cuenta)"
-                aria-label="Cerrar Sesión"
+                className="bosque-settings-menu__btn bosque-settings-menu__btn--danger"
+                onClick={() => {
+                  setIsSettingsOpen(false)
+                  onSignOut()
+                }}
               >
-                🚪
+                🚪 Cerrar Sesión
               </button>
             )}
           </div>
+        </div>
+      )}
 
-          {/* TOURNAMENT COUNTDOWN HEADER UNDER SEASON ROW */}
-          {upcomingTourneyInfo ? (
-            <div
-              className={`tourney-countdown-header ${upcomingTourneyInfo.isLive ? 'tourney-countdown-header--live' : ''}`}
-              onClick={() => {
-                soundManager.playSound('click', 0.5)
-                setIsTournamentModalOpen(true)
-              }}
-              title="🏆 Clic para abrir el Lobby de Torneos"
-            >
-              <span className="tourney-countdown-header__icon">
-                {upcomingTourneyInfo.isLive ? '🔥' : '🏆'}
-              </span>
-              <span className="tourney-countdown-header__label">
-                {upcomingTourneyInfo.isLive ? 'TORNEO EN VIVO:' : 'PRÓXIMO TORNEO EN:'}
-              </span>
-              <span className="tourney-countdown-header__time">
-                {upcomingTourneyInfo.countdownStr}
-              </span>
-              {!upcomingTourneyInfo.isLive && (
-                <span className="tourney-countdown-header__date">
-                  ({upcomingTourneyInfo.dateStr})
-                </span>
-              )}
-            </div>
-          ) : (
-            <div
-              className="tourney-countdown-header"
-              onClick={() => {
-                soundManager.playSound('click', 0.5)
-                setIsTournamentModalOpen(true)
-              }}
-              title="🏆 Clic para abrir el Lobby de Torneos"
-            >
-              <span className="tourney-countdown-header__icon">🏆</span>
-              <span className="tourney-countdown-header__label">PRÓXIMO TORNEO:</span>
-              <span className="tourney-countdown-header__time">Próximamente</span>
-            </div>
-          )}
-
-          {/* LUCKY WHEEL LIVE WINNERS MARQUEE / TICKER IN LOBBY (15s DURATION) */}
-          {showLotteryTicker && lotteryWinners.length > 0 && (
-            <div
-              className="lottery-lobby-ticker"
-              onClick={() => {
-                soundManager.playSound('click', 0.5)
-                if (onOpenLoteria) {
-                  onOpenLoteria()
-                } else {
-                  setShowLotteryModal(true)
-                }
-              }}
-              title="🎰 Clic para ir a la Ruleta de la Suerte"
-            >
-              <div className="lottery-lobby-ticker__badge">
-                <span className="lottery-lobby-ticker__icon">🎰</span>
-                <span className="lottery-lobby-ticker__title">RULETA</span>
-              </div>
-              <div className="lottery-lobby-ticker__content">
-                <div className="lottery-lobby-ticker__marquee">
-                  {lotteryWinners.map((w, idx) => (
-                    <span key={w.id || idx} className="lottery-lobby-ticker__item">
-                      <strong className="lottery-lobby-ticker__user">{w.username}</strong>:{' '}
-                      <span className="lottery-lobby-ticker__reward">
-                        {w.description.replace(/^Premio de Ruleta:\s*/i, '')}
-                      </span>
-                      {idx < lotteryWinners.length - 1 && <span className="lottery-lobby-ticker__sep">•</span>}
-                    </span>
-                  ))}
-                </div>
-              </div>
+      {/* ── 4. MODAL DE NOTICIAS / ANUNCIOS ── */}
+      {newsModal && (
+        <div className="bosque-news-modal-backdrop" onClick={() => setNewsModal(null)}>
+          <div className="bosque-news-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="bosque-news-modal-header">
+              <h3 className="bosque-news-modal-title">📰 {newsModal.title}</h3>
               <button
                 type="button"
-                className="lottery-lobby-ticker__close"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowLotteryTicker(false)
-                }}
-                title="Cerrar aviso"
+                className="bosque-news-modal-close"
+                onClick={() => setNewsModal(null)}
               >
                 ✕
               </button>
             </div>
-          )}
+            <p className="bosque-news-modal-body">{newsModal.message}</p>
+            <div className="bosque-news-modal-actions">
+              <button
+                type="button"
+                className="bosque-news-modal-btn"
+                onClick={() => setNewsModal(null)}
+              >
+                ENTENDIDO
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      <img
-        className="logo"
-        src={logo}
-        alt="Plant Arena"
-        onClick={onOpenLanding}
-        style={{ cursor: onOpenLanding ? 'pointer' : 'default' }}
-        title="Volver a la portada / Landing Page"
-      />
-
-      <img className="plant plant--left" src={plant1} alt="" />
-      <img className="plant plant--right" src={plant2} alt="" />
-
-      <button
-        className="play-button"
-        type="button"
-        onClick={handlePlayClick}
-        title="Seleccionar Modo: Ranked, Amistoso o Torneos"
-      >
-        <img className="play-button__art" src={play} alt="" />
-        <span className="play-button__label">PLAY</span>
-      </button>
-
-      {/* 4 FREE BATTLE PACK SLOTS (CLASH ROYALE STYLE) */}
-      <div className="main-menu-chest-slots">
-        {freePackSlots.map((slot) => {
-          const isTimerFinished = Boolean(
-            slot.status === 'unlocking' &&
-            slot.unlockStartedAt &&
-            Date.now() - slot.unlockStartedAt >= slot.durationHours * 3600 * 1000
-          )
-          const isSlotReady = slot.status === 'ready' || isTimerFinished
-          const remainingText = isSlotReady ? '¡LISTO!' : getRemainingTimeString(slot)
+      {/* ── 5. CONFIRMACIÓN ACELERAR SOBRE CON ORO ── */}
+      {slotToAccelerate &&
+        (() => {
+          const goldCost = calculateInstantUnlockGoldCost(slotToAccelerate)
+          const hasEnoughGold = (userGold ?? 0) >= goldCost
+          const missingGold = goldCost - (userGold ?? 0)
+          const remainingTime = getRemainingTimeString(slotToAccelerate)
 
           return (
             <div
-              key={slot.slotId}
-              className={`chest-slot chest-slot--${isSlotReady ? 'ready' : slot.status}`}
+              className="main-menu-dialog-backdrop"
               onClick={() => {
-                if (slot.status === 'locked' && onStartSlotUnlock) {
-                  const res = onStartSlotUnlock(slot.slotId)
-                  if (!res.success && res.error) {
-                    setActiveAlert({ title: 'SLOT OCUPADO', message: res.error, icon: '⏳' })
-                  } else {
-                    soundManager.playSound('click', 0.5)
-                  }
-                } else if (isSlotReady) {
-                  if (onOpenSlotPack) {
-                    soundManager.playSound('click', 0.5)
-                    onOpenSlotPack(slot.slotId)
-                  }
-                } else if (slot.status === 'unlocking') {
-                  if (onFastUnlockSlot) {
-                    soundManager.playSound('click', 0.5)
-                    setSlotToAccelerate(slot)
-                  }
-                }
+                if (!isAccelerating) setSlotToAccelerate(null)
               }}
             >
-              {isSlotReady ? (
-                <div className="chest-slot__content chest-slot__content--ready">
-                  <span className="chest-slot__arena-tag chest-slot__arena-tag--ready">
-                    ¡LISTO!
-                  </span>
+              <div className="main-menu-dialog-card" onClick={(e) => e.stopPropagation()}>
+                <div className="main-menu-dialog-header">
+                  <div className="main-menu-dialog-icon">⚡</div>
+                  <h3 className="main-menu-dialog-title">DESBLOQUEAR AL INSTANTE</h3>
+                  <button
+                    type="button"
+                    className="main-menu-dialog-close"
+                    onClick={() => {
+                      if (!isAccelerating) setSlotToAccelerate(null)
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="game-dialog-pack-preview">
                   <img
                     src="/game-assets/greenfoot/seed_pack_pvp.webp"
                     alt="Sobre PvP"
-                    className="chest-slot__pack-img chest-slot__pack-img--glowing"
+                    className="game-dialog-pack-img"
                   />
-                  <span className="chest-slot__btn-hint chest-slot__btn-hint--ready">
-                    ✨ ABRIR
-                  </span>
+                  <div className="game-dialog-pack-meta">
+                    <span className="game-dialog-pack-tag">ARENA {slotToAccelerate.arenaLevel}</span>
+                    <span className="game-dialog-pack-name">Sobre de Victoria PvP</span>
+                    <span className="game-dialog-pack-timer">⏱️ Restante: {remainingTime}</span>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  {slot.status === 'empty' && (
-                    <div className="chest-slot__empty">
-                      <span className="chest-slot__empty-icon">📦</span>
-                      <span className="chest-slot__empty-label">SLOT VACÍO</span>
-                    </div>
-                  )}
 
-                  {slot.status === 'locked' && (
-                    <div className="chest-slot__content">
-                      <span className="chest-slot__arena-tag">ARENA {slot.arenaLevel}</span>
-                      <img
-                        src="/game-assets/greenfoot/seed_pack_pvp.webp"
-                        alt="Sobre PvP"
-                        className="chest-slot__pack-img"
-                      />
-                      <span className="chest-slot__timer">⏳ {slot.durationHours}h</span>
-                      <span className="chest-slot__btn-hint">DESBLOQUEAR</span>
+                <div className="game-dialog-gold-box">
+                  <div className="game-dialog-gold-row">
+                    <span className="game-dialog-gold-label">Costo de aceleración:</span>
+                    <strong className="game-dialog-gold-val game-dialog-gold-val--cost">
+                      {goldCost} 💰 Oro
+                    </strong>
+                  </div>
+                  <div className="game-dialog-gold-row">
+                    <span className="game-dialog-gold-label">Tu saldo actual:</span>
+                    <strong className="game-dialog-gold-val">{userGold ?? 0} 💰</strong>
+                  </div>
+                  {!hasEnoughGold && (
+                    <div className="game-dialog-gold-warning">
+                      ⚠️ Te faltan {missingGold} de Oro para acelerar este sobre.
                     </div>
                   )}
+                </div>
 
-                  {slot.status === 'unlocking' && (
-                    <div className="chest-slot__content chest-slot__content--unlocking">
-                      <span className="chest-slot__arena-tag">DESBLOQUEANDO</span>
-                      <img
-                        src="/game-assets/greenfoot/seed_pack_pvp.webp"
-                        alt="Sobre PvP"
-                        className="chest-slot__pack-img chest-slot__pack-img--pulsing"
-                      />
-                      <span className="chest-slot__timer chest-slot__timer--active">
-                        ⏱️ {remainingText}
-                      </span>
-                      <span className="chest-slot__btn-hint chest-slot__btn-hint--unlocking">
-                        ⚡ ACELERAR
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
+                <div className="main-menu-dialog-actions">
+                  <button
+                    type="button"
+                    className="main-menu-dialog-btn main-menu-dialog-btn--cancel"
+                    disabled={isAccelerating}
+                    onClick={() => setSlotToAccelerate(null)}
+                  >
+                    CANCELAR
+                  </button>
+                  <button
+                    type="button"
+                    className={`main-menu-dialog-btn main-menu-dialog-btn--confirm ${
+                      !hasEnoughGold ? 'main-menu-dialog-btn--disabled' : ''
+                    }`}
+                    disabled={isAccelerating || !hasEnoughGold}
+                    onClick={handleConfirmAccelerate}
+                  >
+                    {isAccelerating
+                      ? 'PROCESANDO...'
+                      : hasEnoughGold
+                      ? `PAGAR ${goldCost} 💰`
+                      : 'ORO INSUFICIENTE'}
+                  </button>
+                </div>
+              </div>
             </div>
           )
-        })}
-      </div>
+        })()}
 
-      <div className="panel panel--left">
-        <div id="farming-preview-launcher-slot" className="farming-preview-launcher-host" />
-
-        <button className="banner-button" type="button" onClick={onOpenJardin}>
-          <img src={jardin} alt="" />
-          <span>JARDÍN</span>
-        </button>
-        <button className="banner-button" type="button" onClick={onOpenCollection}>
-          <img src={coleccion} alt="" />
-          <span>COLECCIÓN</span>
-        </button>
-      </div>
-
-      <div className="panel panel--right">
-        <button className="banner-button" type="button" onClick={onOpenRanking}>
-          <img src={arena} alt="" />
-          <span>RANKING</span>
-        </button>
-        <button className="banner-button" type="button" onClick={() => onOpenShop?.()}>
-          <img src={shop} alt="" />
-          <span>TIENDA</span>
-        </button>
-        {/* Las repeticiones. Sin icono propio todavía: se usa el de arena y se
-            distingue por el texto, que es lo que se lee. */}
-        <button className="banner-button" type="button" onClick={onOpenMisPartidas}>
-          <img src={arena} alt="" />
-          <span>MIS PARTIDAS</span>
-        </button>
-      </div>
-
-      <div className="footer">
-        <button
-          className="footer-button footer-button--missions"
-          type="button"
-          onClick={() => {
-            soundManager.playSound('click', 0.5)
-            if (onOpenMisiones) {
-              onOpenMisiones()
-            } else {
-              setIsMisionesModalOpen(true)
-            }
-          }}
-          title="Misiones Diarias, Racha de 7 Días y Concurso TikTok"
-        >
-          <div className="footer-button__icon-box">
-            <span style={{ fontSize: '1.3rem' }}>📜</span>
-          </div>
-          <span className="footer-button__title">MISIONES</span>
-        </button>
-
-        <button className="footer-button footer-button--clan" type="button" onClick={onOpenClan}>
-          <div className="footer-button__icon-box">
-            <img src={clan} alt="Clan" />
-          </div>
-          <span className="footer-button__title">CLAN</span>
-        </button>
-
-        <button
-          className="footer-button footer-button--lottery"
-          type="button"
-          onClick={() => {
-            soundManager.playSound('click', 0.4)
-            if (onOpenLoteria) {
-              onOpenLoteria()
-            } else {
-              setShowLotteryModal(true)
-            }
-          }}
-          title="Lotería y Ruleta de la Suerte"
-        >
-          <div className="footer-button__icon-box">
-            <span style={{ fontSize: '1.3rem' }}>🎰</span>
-          </div>
-          <span className="footer-button__title">LOTERÍA</span>
-        </button>
-      </div>
-
-      {/* IN-GAME THEMED MODAL ALERT */}
+      {/* ── 6. ALERTAS PERSONALIZADAS ── */}
       {activeAlert && (
         <div className="main-menu-dialog-backdrop" onClick={() => setActiveAlert(null)}>
           <div className="main-menu-dialog-card" onClick={(e) => e.stopPropagation()}>
@@ -1024,96 +1116,9 @@ export default function MainMenu({
         </div>
       )}
 
-      {/* CONFIRMACIÓN ACELERAR SOBRE CON ORO */}
-      {slotToAccelerate && (() => {
-        const goldCost = calculateInstantUnlockGoldCost(slotToAccelerate)
-        const hasEnoughGold = (userGold ?? 0) >= goldCost
-        const missingGold = goldCost - (userGold ?? 0)
-        const remainingTime = getRemainingTimeString(slotToAccelerate)
+      {/* ── 7. MODALES DEL JUEGO (100% PRESERVADOS) ── */}
 
-        return (
-          <div
-            className="main-menu-dialog-backdrop"
-            onClick={() => {
-              if (!isAccelerating) setSlotToAccelerate(null)
-            }}
-          >
-            <div className="main-menu-dialog-card" onClick={(e) => e.stopPropagation()}>
-              <div className="main-menu-dialog-header">
-                <div className="main-menu-dialog-icon">⚡</div>
-                <h3 className="main-menu-dialog-title">DESBLOQUEAR AL INSTANTE</h3>
-                <button
-                  type="button"
-                  className="main-menu-dialog-close"
-                  onClick={() => {
-                    if (!isAccelerating) setSlotToAccelerate(null)
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Vista previa del sobre PvP */}
-              <div className="game-dialog-pack-preview">
-                <img
-                  src="/game-assets/greenfoot/seed_pack_pvp.webp"
-                  alt="Sobre PvP"
-                  className="game-dialog-pack-img"
-                />
-                <div className="game-dialog-pack-meta">
-                  <span className="game-dialog-pack-tag">ARENA {slotToAccelerate.arenaLevel}</span>
-                  <span className="game-dialog-pack-name">Sobre de Victoria PvP</span>
-                  <span className="game-dialog-pack-timer">⏱️ Restante: {remainingTime}</span>
-                </div>
-              </div>
-
-              {/* Comparación de Oro */}
-              <div className="game-dialog-gold-box">
-                <div className="game-dialog-gold-row">
-                  <span className="game-dialog-gold-label">Costo de aceleración:</span>
-                  <strong className="game-dialog-gold-val game-dialog-gold-val--cost">
-                    {goldCost} 💰 Oro
-                  </strong>
-                </div>
-                <div className="game-dialog-gold-row">
-                  <span className="game-dialog-gold-label">Tu saldo actual:</span>
-                  <strong className="game-dialog-gold-val">{userGold ?? 0} 💰</strong>
-                </div>
-                {!hasEnoughGold && (
-                  <div className="game-dialog-gold-warning">
-                    ⚠️ Te faltan {missingGold} de Oro para acelerar este sobre.
-                  </div>
-                )}
-              </div>
-
-              <div className="main-menu-dialog-actions">
-                <button
-                  type="button"
-                  className="main-menu-dialog-btn main-menu-dialog-btn--cancel"
-                  disabled={isAccelerating}
-                  onClick={() => setSlotToAccelerate(null)}
-                >
-                  CANCELAR
-                </button>
-                <button
-                  type="button"
-                  className={`main-menu-dialog-btn main-menu-dialog-btn--confirm ${!hasEnoughGold ? 'main-menu-dialog-btn--disabled' : ''}`}
-                  disabled={isAccelerating || !hasEnoughGold}
-                  onClick={handleConfirmAccelerate}
-                >
-                  {isAccelerating
-                    ? 'PROCESANDO...'
-                    : hasEnoughGold
-                    ? `PAGAR ${goldCost} 💰`
-                    : 'ORO INSUFICIENTE'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* PLAYER PROFILE MODAL */}
+      {/* Perfil del Jugador */}
       <ProfileModal
         isOpen={isProfileModalOpen}
         userElo={userElo}
@@ -1124,7 +1129,7 @@ export default function MainMenu({
         onClose={() => setIsProfileModalOpen(false)}
       />
 
-      {/* MODE SELECTOR MODAL (RANKED VS COLOSSEUM VS TOURNAMENT) */}
+      {/* Selector de Modo */}
       <ModeSelectorModal
         isOpen={isModeSelectorOpen}
         onClose={() => setIsModeSelectorOpen(false)}
@@ -1142,7 +1147,7 @@ export default function MainMenu({
         onOpenShop={onOpenShop}
       />
 
-      {/* ARENA ADS MODAL (MAZMORRA INFINITA) */}
+      {/* Arena Ads */}
       <ArenaAdsModal
         isOpen={isArenaAdsModalOpen}
         onClose={() => setIsArenaAdsModalOpen(false)}
@@ -1158,18 +1163,14 @@ export default function MainMenu({
           return false
         }}
         onStartArenaAdsBattle={(run) => {
-          if (onStartArenaAdsBattle) {
-            onStartArenaAdsBattle(run)
-          }
+          if (onStartArenaAdsBattle) onStartArenaAdsBattle(run)
         }}
         onClaimLoot={(loot, multiplier, newlyClaimed) => {
-          if (onClaimArenaAdsLoot) {
-            return onClaimArenaAdsLoot(loot, multiplier, newlyClaimed)
-          }
+          if (onClaimArenaAdsLoot) return onClaimArenaAdsLoot(loot, multiplier, newlyClaimed)
         }}
       />
 
-      {/* COLOSSEUM MODAL */}
+      {/* Coliseo */}
       <ColosseumModal
         isOpen={isColosseumModalOpen}
         onClose={() => setIsColosseumModalOpen(false)}
@@ -1179,14 +1180,12 @@ export default function MainMenu({
         currentStreak={colosseumCurrentStreak}
         maxStreak={colosseumMaxStreak}
         onStartColosseumMatch={(betGems, usedTicket) => {
-          if (onStartColosseumMatch) {
-            onStartColosseumMatch(betGems, usedTicket)
-          }
+          if (onStartColosseumMatch) onStartColosseumMatch(betGems, usedTicket)
         }}
         onOpenShop={onOpenShop}
       />
 
-      {/* TOURNAMENT MODAL */}
+      {/* Torneos */}
       <TournamentModal
         isOpen={isTournamentModalOpen}
         onClose={() => setIsTournamentModalOpen(false)}
@@ -1204,13 +1203,11 @@ export default function MainMenu({
           return false
         }}
         onStartTournamentMatch={(oppName, tourneyId, tourneyDeck) => {
-          if (onStartTournamentMatch) {
-            onStartTournamentMatch(oppName, tourneyId, tourneyDeck)
-          }
+          if (onStartTournamentMatch) onStartTournamentMatch(oppName, tourneyId, tourneyDeck)
         }}
       />
 
-      {/* BOTÓN FLOTANTE EMOTE CHAT GLOBAL */}
+      {/* Chat Global Flotante */}
       {!isGlobalChatOpen && (
         <div className="global-chat-floating-btn-wrapper">
           <button
@@ -1229,7 +1226,6 @@ export default function MainMenu({
         </div>
       )}
 
-      {/* CHAT GLOBAL MINIMIZABLE */}
       <GlobalChat
         isOpen={isGlobalChatOpen}
         onClose={handleCloseGlobalChat}
@@ -1245,21 +1241,19 @@ export default function MainMenu({
         }}
       />
 
-      {/* MODAL DE SUBASTA EXCLUSIVA (LANZAMAÍZ BRUJA) */}
+      {/* Subastas */}
       <AuctionModal
         isOpen={isAuctionModalOpen}
         onClose={handleCloseAuctionModal}
         userTokens={userTokens}
         onTokensDeducted={(newTokens) => {
-          if (onDeductTokens) {
-            onDeductTokens(userTokens - newTokens)
-          }
+          if (onDeductTokens) onDeductTokens(userTokens - newTokens)
         }}
         userId={userProfile?.id}
         username={userProfile?.username || playerProfile.name}
       />
 
-      {/* MODAL DE MISIONES, RACHA Y TIKTOK */}
+      {/* Misiones */}
       <MisionesModal
         isOpen={isMisionesModalOpen}
         onClose={handleCloseMisionesModal}
@@ -1268,7 +1262,7 @@ export default function MainMenu({
         onRewardClaimed={onRewardsChanged}
       />
 
-      {/* MODAL DE LOTERÍA Y RULETA */}
+      {/* Lotería */}
       {showLotteryModal && (
         <LotteryModal
           isOpen={showLotteryModal}
