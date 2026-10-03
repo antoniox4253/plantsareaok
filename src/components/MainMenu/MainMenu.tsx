@@ -7,7 +7,7 @@ import {
 } from '../../utils/freePackManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
 import { BATTLE_PASS_LEVELS } from '../../utils/battlePassManager'
-import { UserManager, type PlayerProfile } from '../../utils/userManager'
+import { UserManager, type PlayerProfile, getPlayerAvatarUrl } from '../../utils/userManager'
 import ProfileModal, { type ProfileTab } from '../ProfileModal/ProfileModal'
 import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
 import ColosseumModal from '../Colosseum/ColosseumModal'
@@ -18,6 +18,10 @@ import GlobalChat from '../GlobalChat/GlobalChat'
 import AuctionModal from '../Auction/AuctionModal'
 import MisionesModal from '../Misiones/MisionesModal'
 import LotteryModal from '../Lottery/LotteryModal'
+import moneda from '../../assets/ico/moneda.webp'
+import gema from '../../assets/ico/gema.webp'
+import ranking from '../../assets/ico/Ranking.webp'
+import ajustesIcon from '../../assets/ico/ajustes.webp'
 import { tournamentService } from '../../services/tournamentService'
 import type { ColosseumBetAmount, PlantId, TournamentModel, PlantCardInstance } from '../../types/game'
 import './MainMenu.css'
@@ -28,6 +32,7 @@ interface MainMenuProps {
     id?: string
     username?: string
     avatar_id?: string
+    avatar_url?: string
     elo_rating?: number
     gems_balance?: number
     gold_balance?: number
@@ -401,6 +406,11 @@ export default function MainMenu({
     }
   }, [ticker, upcomingTournament])
 
+  const displayAvatar = getPlayerAvatarUrl(
+    userProfile?.avatar_id || userProfile?.avatar_url || playerProfile.avatar
+  )
+  const displayName = userProfile?.username || playerProfile.name || 'Jugador'
+
   return (
     <div className="bosque-dashboard" aria-label="Dashboard Plants Arena">
       {/* ── 1. HITBOXES INTERACTIVOS PRINCIPALES (BASADOS EN EL REPOSITORIO DESCARGADO) ── */}
@@ -523,7 +533,7 @@ export default function MainMenu({
         loteria
       </button>
 
-      {/* Barra superior */}
+      {/* ── BARRA SUPERIOR DINÁMICA (Pills 3D RPG con datos 100% reales de la base de datos) ── */}
       <button
         type="button"
         className="hit"
@@ -537,9 +547,11 @@ export default function MainMenu({
       >
         logo
       </button>
+
+      {/* 1. Perfil del Jugador */}
       <button
         type="button"
-        className="hit"
+        className="topbar-pill topbar-pill--profile"
         data-action="perfil"
         aria-label="perfil"
         title="Mi Perfil, Depositar y Retirar"
@@ -549,11 +561,23 @@ export default function MainMenu({
           setIsProfileModalOpen(true)
         }}
       >
-        perfil
+        <div className="topbar-avatar-wrap">
+          <img
+            src={displayAvatar}
+            alt="Avatar"
+            className="topbar-avatar-img"
+            onError={(e) => {
+              e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.webp'
+            }}
+          />
+        </div>
+        <span className="topbar-player-name">{displayName}</span>
       </button>
+
+      {/* 2. Pase VIP */}
       <button
         type="button"
-        className="hit"
+        className="topbar-pill topbar-pill--vip"
         data-action="pase-vip"
         aria-label="pase vip"
         title="Pase de Batalla VIP"
@@ -562,10 +586,27 @@ export default function MainMenu({
           onOpenBattlePass?.()
         }}
       >
-        pase-vip
+        <span className="topbar-vip-crown" role="img" aria-label="Corona VIP">👑</span>
+        <div className="topbar-vip-info">
+          <div className="topbar-vip-title-row">
+            <span>{hasVipPass ? 'PASE VIP' : 'PASE'}</span>
+            <span>
+              NV {highestLevelReached}/20
+              {hasVipPass && claimableCount > 0 && ` (✨ ${claimableCount})`}
+            </span>
+          </div>
+          <div className="topbar-vip-bar-track">
+            <div
+              className="topbar-vip-bar-fill"
+              style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
+            />
+          </div>
+        </div>
       </button>
+
+      {/* 3. Telegram */}
       <a
-        className="hit"
+        className="topbar-pill topbar-pill--telegram"
         data-action="telegram"
         aria-label="telegram"
         title="Canal Oficial de Telegram"
@@ -574,21 +615,25 @@ export default function MainMenu({
         rel="noreferrer"
         onClick={() => soundManager.playSound('click', 0.4)}
       >
-        telegram
+        <span style={{ fontSize: '14px' }}>✈️</span>
+        <span>Telegram</span>
       </a>
-      <button
-        type="button"
-        className="hit"
+
+      {/* 4. Jugadores en línea */}
+      <div
+        className="topbar-pill topbar-pill--online"
         data-action="en-linea"
         aria-label="en linea"
         title="Jugadores conectados en tiempo real"
-        onClick={() => soundManager.playSound('click', 0.3)}
       >
-        en-linea
-      </button>
+        <span className="topbar-online-dot" />
+        <span className="topbar-online-text">{onlineUsersCount} en línea</span>
+      </div>
+
+      {/* 5. Oro */}
       <button
         type="button"
-        className="hit"
+        className="topbar-pill topbar-pill--gold"
         data-action="oro"
         aria-label="oro"
         title="Monedas de Oro (Clic para comprar)"
@@ -597,11 +642,16 @@ export default function MainMenu({
           onOpenShop?.('gold')
         }}
       >
-        oro
+        <img src={moneda} alt="Oro" className="topbar-stat-icon" />
+        <span className="topbar-stat-val topbar-stat-val--gold">
+          {userGold.toLocaleString()}
+        </span>
       </button>
+
+      {/* 6. Gemas */}
       <button
         type="button"
-        className="hit"
+        className="topbar-pill topbar-pill--gems"
         data-action="gemas"
         aria-label="gemas"
         title="Gemas (Clic para Depositar / Retirar USDT BEP20)"
@@ -611,11 +661,16 @@ export default function MainMenu({
           setIsProfileModalOpen(true)
         }}
       >
-        gemas
+        <img src={gema} alt="Gemas" className="topbar-stat-icon" />
+        <span className="topbar-stat-val topbar-stat-val--gems">
+          {userTokens.toLocaleString()}
+        </span>
       </button>
+
+      {/* 7. Trofeos / ELO */}
       <button
         type="button"
-        className="hit"
+        className="topbar-pill topbar-pill--trophies"
         data-action="trofeos"
         aria-label="trofeos"
         title="Copas / Camino de Arenas"
@@ -624,11 +679,16 @@ export default function MainMenu({
           onOpenRanking?.()
         }}
       >
-        trofeos
+        <img src={ranking} alt="Copas" className="topbar-stat-icon" />
+        <span className="topbar-stat-val topbar-stat-val--trophies">
+          {userElo}
+        </span>
       </button>
+
+      {/* 8. Ajustes */}
       <button
         type="button"
-        className="hit"
+        className="topbar-pill topbar-pill--settings"
         data-action="ajustes"
         aria-label="ajustes"
         title="Ajustes y Opciones"
@@ -637,10 +697,10 @@ export default function MainMenu({
           setIsSettingsOpen((prev) => !prev)
         }}
       >
-        ajustes
+        <img src={ajustesIcon} alt="Ajustes" className="topbar-settings-img" />
       </button>
 
-      {/* Centro / Arena */}
+      {/* ── CENTRO / ARENA ── */}
       <button
         type="button"
         className="hit"
@@ -667,26 +727,86 @@ export default function MainMenu({
         jugar
       </button>
 
-      {/* Slots de Cofres/Sobres */}
+      {/* ── SLOTS DE COFRES Y SOBRES REACTIVOS (CLASH ROYALE STYLE) ── */}
       {[0, 1, 2, 3].map((slotIdx) => {
         const slot = freePackSlots[slotIdx]
         const actionName = `slot-${slotIdx + 1}`
+        const slotClassName = `bosque-slot bosque-slot--${slotIdx + 1}`
+
+        if (!slot || slot.status === 'empty') {
+          return (
+            <div
+              key={slotIdx}
+              className={`${slotClassName} bosque-slot--empty`}
+              data-action={actionName}
+              title="Slot Vacío (Gana partidas multijugador para obtener sobres)"
+              onClick={() => handleSlotClick(slot)}
+            >
+              <span className="bosque-slot__empty-icon">📦</span>
+              <span className="bosque-slot__empty-label">VACÍO</span>
+            </div>
+          )
+        }
+
+        const isTimerFinished = Boolean(
+          slot.status === 'unlocking' &&
+            slot.unlockStartedAt &&
+            Date.now() - slot.unlockStartedAt >= slot.durationHours * 3600 * 1000
+        )
+        const isSlotReady = slot.status === 'ready' || isTimerFinished
+        const remainingText = isSlotReady ? '¡LISTO!' : getRemainingTimeString(slot)
+
         return (
-          <button
+          <div
             key={slotIdx}
-            type="button"
-            className="hit"
             data-action={actionName}
-            aria-label={actionName}
-            title={slot ? `Sobre Slot ${slotIdx + 1}` : 'Slot Vacío'}
+            className={`${slotClassName} ${
+              isSlotReady
+                ? 'bosque-slot--ready'
+                : slot.status === 'unlocking'
+                ? 'bosque-slot--unlocking'
+                : 'bosque-slot--locked'
+            }`}
+            title={`Sobre Arena ${slot.arenaLevel} - ${isSlotReady ? 'Listo para abrir' : slot.status}`}
             onClick={() => handleSlotClick(slot)}
           >
-            {actionName}
-          </button>
+            <span className={`bosque-slot__tag ${isSlotReady ? 'bosque-slot__tag--ready' : ''}`}>
+              ARENA {slot.arenaLevel}
+            </span>
+            <img
+              src="/game-assets/greenfoot/seed_pack_pvp.webp"
+              alt="Sobre PvP"
+              className={`bosque-slot__img ${
+                isSlotReady
+                  ? 'bosque-slot__img--glow'
+                  : slot.status === 'unlocking'
+                  ? 'bosque-slot__img--pulse'
+                  : ''
+              }`}
+            />
+            {slot.status === 'locked' && (
+              <>
+                <span className="bosque-slot__timer">⏳ {slot.durationHours}h</span>
+                <span className="bosque-slot__btn bosque-slot__btn--unlock">DESBLOQUEAR</span>
+              </>
+            )}
+            {slot.status === 'unlocking' && !isSlotReady && (
+              <>
+                <span className="bosque-slot__timer bosque-slot__timer--active">⏱️ {remainingText}</span>
+                <span className="bosque-slot__btn bosque-slot__btn--accelerate">⚡ ACELERAR</span>
+              </>
+            )}
+            {isSlotReady && (
+              <>
+                <span className="bosque-slot__timer bosque-slot__timer--active">¡LISTO!</span>
+                <span className="bosque-slot__btn bosque-slot__btn--ready">✨ ABRIR</span>
+              </>
+            )}
+          </div>
         )
       })}
 
-      {/* Panel lateral derecho */}
+      {/* ── PANEL LATERAL DERECHO ── */}
       <button
         type="button"
         className="hit"
@@ -758,127 +878,6 @@ export default function MainMenu({
       >
         banner-lateral
       </button>
-
-      {/* ── 2. CAPAS DINÁMICAS (DATOS REALES DEL JUEGO EN TIEMPO REAL) ── */}
-
-      {/* Perfil del Jugador */}
-      <div className="dynamic-overlay-profile">
-        <div className="dynamic-overlay-profile__avatar-wrap">
-          <img
-            src={playerProfile.avatar}
-            alt="Avatar"
-            className="dynamic-overlay-profile__avatar-img"
-            onError={(e) => {
-              e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.webp'
-            }}
-          />
-        </div>
-        <span className="dynamic-overlay-profile__name">
-          {userProfile?.username || playerProfile.name}
-        </span>
-      </div>
-
-      {/* Pase VIP */}
-      <div className="dynamic-overlay-vip">
-        <div className="dynamic-overlay-vip__row">
-          <span>{hasVipPass ? 'PASE VIP' : 'PASE'}</span>
-          <span>
-            NV {highestLevelReached}/20
-            {hasVipPass && claimableCount > 0 && ` (✨ ${claimableCount})`}
-          </span>
-        </div>
-        <div className="dynamic-overlay-vip__bar-bg">
-          <div
-            className="dynamic-overlay-vip__bar-fill"
-            style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Usuarios en línea */}
-      <div className="dynamic-overlay-online">
-        <div className="dynamic-overlay-online__badge">
-          <span className="dynamic-overlay-online__dot" />
-          <span>{onlineUsersCount} en línea</span>
-        </div>
-      </div>
-
-      {/* Saldo de Oro */}
-      <div className="dynamic-overlay-stat dynamic-overlay-stat--gold">
-        <span className="dynamic-overlay-stat__val dynamic-overlay-stat__val--gold">
-          {userGold.toLocaleString()}
-        </span>
-      </div>
-
-      {/* Saldo de Gemas */}
-      <div className="dynamic-overlay-stat dynamic-overlay-stat--gems">
-        <span className="dynamic-overlay-stat__val dynamic-overlay-stat__val--gems">
-          {userTokens.toLocaleString()}
-        </span>
-      </div>
-
-      {/* Trofeos / ELO */}
-      <div className="dynamic-overlay-stat dynamic-overlay-stat--elo">
-        <span className="dynamic-overlay-stat__val dynamic-overlay-stat__val--elo">
-          {userElo}
-        </span>
-      </div>
-
-      {/* Sobres y Slots Dinámicos */}
-      {[0, 1, 2, 3].map((slotIdx) => {
-        const slot = freePackSlots[slotIdx]
-        if (!slot || slot.status === 'empty') return null
-        const isTimerFinished = Boolean(
-          slot.status === 'unlocking' &&
-            slot.unlockStartedAt &&
-            Date.now() - slot.unlockStartedAt >= slot.durationHours * 3600 * 1000
-        )
-        const isSlotReady = slot.status === 'ready' || isTimerFinished
-        const remainingText = isSlotReady ? '¡LISTO!' : getRemainingTimeString(slot)
-
-        return (
-          <div
-            key={slotIdx}
-            data-action={`slot-${slotIdx + 1}`}
-            className={`dynamic-slot-content dynamic-slot-content--active ${
-              isSlotReady ? 'dynamic-slot-content--ready' : ''
-            }`}
-          >
-            <span className="dynamic-slot__arena">ARENA {slot.arenaLevel}</span>
-            <img
-              src="/game-assets/greenfoot/seed_pack_pvp.webp"
-              alt="Sobre PvP"
-              className={`dynamic-slot__pack-img ${
-                slot.status === 'unlocking' ? 'dynamic-slot__pack-img--pulse' : ''
-              }`}
-            />
-            {slot.status === 'locked' && (
-              <>
-                <span className="dynamic-slot__timer">⏳ {slot.durationHours}h</span>
-                <span className="dynamic-slot__btn-hint dynamic-slot__btn-hint--unlock">
-                  DESBLOQUEAR
-                </span>
-              </>
-            )}
-            {slot.status === 'unlocking' && !isSlotReady && (
-              <>
-                <span className="dynamic-slot__timer">⏱️ {remainingText}</span>
-                <span className="dynamic-slot__btn-hint dynamic-slot__btn-hint--accelerate">
-                  ⚡ ACELERAR
-                </span>
-              </>
-            )}
-            {isSlotReady && (
-              <>
-                <span className="dynamic-slot__timer">¡LISTO!</span>
-                <span className="dynamic-slot__btn-hint dynamic-slot__btn-hint--ready">
-                  ✨ ABRIR
-                </span>
-              </>
-            )}
-          </div>
-        )
-      })}
 
       {/* Próximo Torneo Dinámico */}
       <div className="dynamic-overlay-tourney">

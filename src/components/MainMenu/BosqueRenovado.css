@@ -1,6 +1,6 @@
 /* ==========================================================================
    PLANTS ARENA — BOSQUE RENOVADO DASHBOARD STYLES
-   Basado en el diseño maestro de 1672 × 941 px (Lienzo 16:9 de precisión)
+   Lienzo 1672 × 941 px (Lienzo 16:9 de precisión para PC y móvil horizontal)
    ========================================================================== */
 
 .bosque-dashboard {
@@ -16,7 +16,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   BOTONES INTERACTIVOS (HITBOXES TRANSPARENTES CON EFECTO DE RESPLANDOR)
+   BOTONES INTERACTIVOS (HITBOXES LATERALES Y CENTRALES)
    -------------------------------------------------------------------------- */
 .hit {
   position: absolute;
@@ -47,10 +47,8 @@
 }
 
 /* --------------------------------------------------------------------------
-   COORDENADAS EXACTAS DE LOS HITBOXES (EXTRAÍDAS DE componentes.json)
+   MENÚ LATERAL IZQUIERDO (9 BOTONES)
    -------------------------------------------------------------------------- */
-
-/* Menú lateral izquierdo */
 [data-action="inicio"] {
   left: 2.033493%;
   top: 15.515409%;
@@ -106,7 +104,266 @@
   height: 6.482465%;
 }
 
-/* Barra superior */
+/* --------------------------------------------------------------------------
+   BARRA SUPERIOR (TOPBAR PILLS CON ESTILO 3D NATIVO Y DATOS 100% REALES)
+   -------------------------------------------------------------------------- */
+.topbar-pill {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(180deg, #0d2c20 0%, #061912 100%);
+  border: 1.5px solid #2d7350;
+  border-radius: 14px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7), 0 3px 8px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  z-index: 10;
+  padding: 0 8px;
+}
+
+.topbar-pill:hover {
+  border-color: #4ade80;
+  box-shadow: inset 0 0 10px rgba(74, 222, 128, 0.25), 0 0 12px rgba(74, 222, 128, 0.4);
+  transform: scale(1.02);
+}
+
+.topbar-pill:active {
+  transform: scale(0.98);
+}
+
+/* 1. Perfil */
+.topbar-pill--profile {
+  left: 12.200957%;
+  top: 4.144527%;
+  width: 10.466507%;
+  height: 8.182784%;
+  gap: 7px;
+  padding: 0 6px;
+}
+
+.topbar-avatar-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #05140e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.topbar-player-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  flex: 1;
+}
+
+/* 2. Pase VIP */
+.topbar-pill--vip {
+  left: 23.325359%;
+  top: 4.144527%;
+  width: 14.294258%;
+  height: 8.182784%;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.topbar-vip-crown {
+  font-size: 20px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.topbar-vip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar-vip-title-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ffde59;
+  text-shadow: 0 1px 2px #000;
+}
+
+.topbar-vip-bar-track {
+  width: 100%;
+  height: 5px;
+  background: #061710;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 0.5px solid #2d7350;
+}
+
+.topbar-vip-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #facc15);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* 3. Telegram */
+.topbar-pill--telegram {
+  left: 38.038278%;
+  top: 4.250797%;
+  width: 11.303828%;
+  height: 7.970244%;
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  border-color: #38bdf8;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 12.5px;
+}
+
+.topbar-pill--telegram:hover {
+  border-color: #7dd3fc;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+}
+
+/* 4. En línea */
+.topbar-pill--online {
+  left: 49.820574%;
+  top: 4.250797%;
+  width: 10.705742%;
+  height: 7.970244%;
+  justify-content: center;
+  gap: 6px;
+  cursor: default;
+}
+
+.topbar-online-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+.topbar-online-text {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #e2e8f0;
+  text-shadow: 0 1px 2px #000;
+}
+
+/* 5. Oro */
+.topbar-pill--gold {
+  left: 63.636364%;
+  top: 4.144527%;
+  width: 9.509569%;
+  height: 8.182784%;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+/* 6. Gemas */
+.topbar-pill--gems {
+  left: 73.863636%;
+  top: 4.144527%;
+  width: 10.107656%;
+  height: 8.182784%;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+/* 7. Trofeos / ELO */
+.topbar-pill--trophies {
+  left: 84.748804%;
+  top: 4.144527%;
+  width: 8.552632%;
+  height: 8.182784%;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+/* Iconos y Valores de Estadísticas */
+.topbar-stat-icon {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.topbar-stat-val {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.3px;
+  flex: 1;
+}
+
+.topbar-stat-val--gold {
+  color: #ffde59;
+}
+
+.topbar-stat-val--gems {
+  color: #38bdf8;
+}
+
+.topbar-stat-val--trophies {
+  color: #facc15;
+}
+
+/* 8. Ajustes (Tuerca) */
+.topbar-pill--settings {
+  left: 93.779904%;
+  top: 4.144527%;
+  width: 4.904306%;
+  height: 8.182784%;
+  justify-content: center;
+  padding: 0;
+}
+
+.topbar-settings-icon {
+  font-size: 18px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.topbar-settings-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  transition: transform 0.25s ease;
+}
+
+.topbar-pill--settings:hover .topbar-settings-img {
+  transform: rotate(35deg);
+}
+
+/* --------------------------------------------------------------------------
+   CENTRO / ARENA / LOGO / PLAY
+   -------------------------------------------------------------------------- */
 [data-action="logo"] {
   left: 1.196172%;
   top: 0.0%;
@@ -114,62 +371,14 @@
   height: 13.071201%;
   cursor: pointer;
 }
-[data-action="perfil"] {
-  left: 12.200957%;
-  top: 4.144527%;
-  width: 10.466507%;
-  height: 8.182784%;
-}
-[data-action="pase-vip"] {
-  left: 23.325359%;
-  top: 4.144527%;
-  width: 14.294258%;
-  height: 8.182784%;
-}
-[data-action="telegram"] {
-  left: 38.038278%;
-  top: 4.250797%;
-  width: 11.303828%;
-  height: 7.970244%;
-}
-[data-action="en-linea"] {
-  left: 49.820574%;
-  top: 4.250797%;
-  width: 10.705742%;
-  height: 7.970244%;
-}
-[data-action="oro"] {
-  left: 63.636364%;
-  top: 4.144527%;
-  width: 9.509569%;
-  height: 8.182784%;
-}
-[data-action="gemas"] {
-  left: 73.863636%;
-  top: 4.144527%;
-  width: 10.107656%;
-  height: 8.182784%;
-}
-[data-action="trofeos"] {
-  left: 84.748804%;
-  top: 4.144527%;
-  width: 8.552632%;
-  height: 8.182784%;
-}
-[data-action="ajustes"] {
-  left: 93.779904%;
-  top: 4.144527%;
-  width: 4.904306%;
-  height: 8.182784%;
-}
 
-/* Centro / Arena */
 [data-action="banner-superior"] {
   left: 17.105263%;
   top: 13.921360%;
   width: 54.425837%;
   height: 12.752391%;
 }
+
 [data-action="jugar"] {
   left: 33.313397%;
   top: 42.189160%;
@@ -177,42 +386,200 @@
   height: 25.398512%;
   border-radius: 24px;
 }
+
 [data-action="jugar"]:hover {
   box-shadow: inset 0 0 0 3px #ffe066, 0 0 30px rgba(255, 224, 102, 0.75);
   backdrop-filter: brightness(1.12);
   transform: scale(1.02);
 }
+
 [data-action="jugar"]:active {
   transform: scale(0.97);
 }
 
-/* Slots de Cofres/Sobres */
-[data-action="slot-1"] {
+/* --------------------------------------------------------------------------
+   SLOTS DE COFRES Y SOBRES REACTIVOS (CLASH ROYALE STYLE)
+   -------------------------------------------------------------------------- */
+.bosque-slot {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  z-index: 10;
+  padding: 4px;
+  box-sizing: border-box;
+  border: 1.5px dashed rgba(255, 255, 255, 0.25);
+  background: rgba(6, 23, 17, 0.65);
+  backdrop-filter: blur(2px);
+}
+
+.bosque-slot:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 14px rgba(74, 222, 128, 0.4);
+  border-color: #4ade80;
+}
+
+.bosque-slot:active {
+  transform: scale(0.98);
+}
+
+/* Slot positions */
+.bosque-slot--1 {
   left: 22.966507%;
   top: 72.263549%;
   width: 9.569378%;
   height: 13.602550%;
 }
-[data-action="slot-2"] {
+.bosque-slot--2 {
   left: 33.732057%;
   top: 72.263549%;
   width: 9.449761%;
   height: 13.602550%;
 }
-[data-action="slot-3"] {
+.bosque-slot--3 {
   left: 44.497608%;
   top: 72.263549%;
   width: 9.509569%;
   height: 13.602550%;
 }
-[data-action="slot-4"] {
+.bosque-slot--4 {
   left: 55.263158%;
   top: 72.263549%;
   width: 9.569378%;
   height: 13.602550%;
 }
 
-/* Panel derecho */
+/* Empty slot */
+.bosque-slot--empty {
+  color: #94a3b8;
+}
+
+.bosque-slot__empty-icon {
+  font-size: 24px;
+  opacity: 0.65;
+}
+
+.bosque-slot__empty-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-top: 3px;
+  opacity: 0.75;
+}
+
+/* Locked slot */
+.bosque-slot--locked {
+  background: rgba(6, 23, 17, 0.9);
+  border: 1.5px solid #2d7350;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+/* Unlocking slot */
+.bosque-slot--unlocking {
+  background: radial-gradient(circle, rgba(234, 179, 8, 0.25) 0%, rgba(6, 23, 17, 0.92) 80%);
+  border: 1.5px solid #eab308;
+  box-shadow: 0 0 14px rgba(234, 179, 8, 0.4);
+}
+
+/* Ready to open slot */
+.bosque-slot--ready {
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.35) 0%, rgba(6, 23, 17, 0.95) 80%);
+  border: 1.5px solid #4ade80;
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.6);
+  animation: slotReadyPulse 2s infinite ease-in-out;
+}
+
+@keyframes slotReadyPulse {
+  0%, 100% { box-shadow: 0 0 14px rgba(74, 222, 128, 0.5); }
+  50% { box-shadow: 0 0 24px rgba(74, 222, 128, 0.85); }
+}
+
+.bosque-slot__tag {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #86efac;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bosque-slot__tag--ready {
+  color: #facc15;
+}
+
+.bosque-slot__img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+}
+
+.bosque-slot__img--pulse {
+  animation: slotPackPulse 1.8s infinite ease-in-out;
+}
+
+.bosque-slot__img--glow {
+  animation: slotPackGlow 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes slotPackPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 8px #facc15); }
+}
+
+@keyframes slotPackGlow {
+  0% { filter: drop-shadow(0 0 6px #4ade80); }
+  100% { filter: drop-shadow(0 0 14px #86efac) brightness(1.1); }
+}
+
+.bosque-slot__timer {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #fef08a;
+  margin-top: 1px;
+  text-shadow: 0 1px 2px #000;
+}
+
+.bosque-slot__timer--active {
+  color: #facc15;
+}
+
+.bosque-slot__btn {
+  font-size: 8px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-top: 2px;
+  letter-spacing: 0.3px;
+}
+
+.bosque-slot__btn--unlock {
+  background: #166534;
+  color: #bbf7d0;
+  border: 0.5px solid #4ade80;
+}
+
+.bosque-slot__btn--accelerate {
+  background: #854d0e;
+  color: #fef08a;
+  border: 0.5px solid #facc15;
+}
+
+.bosque-slot__btn--ready {
+  background: linear-gradient(135deg, #15803d, #22c55e);
+  color: #ffffff;
+  border: 0.5px solid #86efac;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+/* --------------------------------------------------------------------------
+   PANEL LATERAL DERECHO (TORNEO, NOTICIAS, BANNER)
+   -------------------------------------------------------------------------- */
 [data-action="torneo"] {
   left: 72.308612%;
   top: 13.921360%;
@@ -220,6 +587,7 @@
   height: 30.286929%;
   border-radius: 16px;
 }
+
 [data-action="noticias"] {
   left: 72.308612%;
   top: 45.164718%;
@@ -227,18 +595,21 @@
   height: 29.649309%;
   border-radius: 16px;
 }
+
 [data-action="noticia-arena"] {
   left: 73.744019%;
   top: 51.222104%;
   width: 23.444976%;
   height: 11.052072%;
 }
+
 [data-action="noticia-jardin"] {
   left: 73.744019%;
   top: 63.018066%;
   width: 23.444976%;
   height: 10.520723%;
 }
+
 [data-action="banner-lateral"] {
   left: 72.308612%;
   top: 75.770457%;
@@ -247,308 +618,7 @@
   border-radius: 16px;
 }
 
-/* --------------------------------------------------------------------------
-   CAPAS DINÁMICAS (SMART OVERLAYS PARA DATOS REALES EN TIEMPO REAL)
-   -------------------------------------------------------------------------- */
-
-/* Avatar y Nombre Real del Perfil */
-.dynamic-overlay-profile {
-  position: absolute;
-  left: 12.200957%;
-  top: 4.144527%;
-  width: 10.466507%;
-  height: 8.182784%;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-  z-index: 3;
-  padding: 0 4px;
-}
-
-.dynamic-overlay-profile__avatar-wrap {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin-left: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #0d281a;
-  border: 1.5px solid #4ade80;
-  box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
-}
-
-.dynamic-overlay-profile__avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.dynamic-overlay-profile__name {
-  flex: 1;
-  margin-left: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.6);
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: #081a14;
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
-  min-width: 60px;
-}
-
-/* Pase VIP Dinámico */
-.dynamic-overlay-vip {
-  position: absolute;
-  left: 23.325359%;
-  top: 4.144527%;
-  width: 14.294258%;
-  height: 8.182784%;
-  pointer-events: none;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0 12px 0 38px;
-}
-
-.dynamic-overlay-vip__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #ffde59;
-  text-shadow: 0 1px 2px #000;
-  background: #081a14;
-  padding: 2px 6px;
-  border-radius: 4px;
-  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
-}
-
-.dynamic-overlay-vip__bar-bg {
-  width: 100%;
-  height: 5px;
-  background: #091a13;
-  border-radius: 3px;
-  margin-top: 2px;
-  overflow: hidden;
-  border: 0.5px solid #234b35;
-}
-
-.dynamic-overlay-vip__bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #4ade80, #facc15);
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-/* Usuarios en línea dinámico */
-.dynamic-overlay-online {
-  position: absolute;
-  left: 49.820574%;
-  top: 4.250797%;
-  width: 10.705742%;
-  height: 7.970244%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.dynamic-overlay-online__badge {
-  background: #081a14;
-  border-radius: 8px;
-  padding: 3px 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #e2e8f0;
-  text-shadow: 0 1px 2px #000;
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
-  min-width: 80px;
-  justify-content: center;
-}
-
-.dynamic-overlay-online__dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 8px #22c55e;
-  animation: pulseDot 2s infinite ease-in-out;
-}
-
-@keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
-}
-
-/* Balances Dinámicos (Oro, Gemas, Trofeos) */
-.dynamic-overlay-stat {
-  position: absolute;
-  pointer-events: none;
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-left: 28%;
-  padding-right: 8%;
-}
-
-.dynamic-overlay-stat--gold {
-  left: 63.636364%;
-  top: 4.144527%;
-  width: 9.509569%;
-  height: 8.182784%;
-}
-
-.dynamic-overlay-stat--gems {
-  left: 73.863636%;
-  top: 4.144527%;
-  width: 10.107656%;
-  height: 8.182784%;
-}
-
-.dynamic-overlay-stat--elo {
-  left: 84.748804%;
-  top: 4.144527%;
-  width: 8.552632%;
-  height: 8.182784%;
-}
-
-.dynamic-overlay-stat__val {
-  width: 100%;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 800;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  background: #081a14;
-  padding: 3px 6px;
-  border-radius: 6px;
-  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
-  letter-spacing: 0.3px;
-}
-
-.dynamic-overlay-stat__val--gold {
-  color: #ffdf00;
-}
-
-.dynamic-overlay-stat__val--gems {
-  color: #38bdf8;
-}
-
-.dynamic-overlay-stat__val--elo {
-  color: #f6ad55;
-}
-
-/* --------------------------------------------------------------------------
-   SOBRES Y SLOTS DE COFRES DINÁMICOS
-   -------------------------------------------------------------------------- */
-.dynamic-slot-content {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 4;
-  border-radius: 12px;
-  padding: 4px;
-}
-
-.dynamic-slot-content--active {
-  background: rgba(5, 20, 15, 0.9);
-  box-shadow: inset 0 0 12px rgba(34, 197, 94, 0.3), 0 4px 10px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(74, 222, 128, 0.4);
-}
-
-.dynamic-slot-content--ready {
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, rgba(5, 20, 15, 0.92) 80%);
-  border: 1.5px solid #4ade80;
-  box-shadow: inset 0 0 14px rgba(74, 222, 128, 0.6), 0 0 16px rgba(74, 222, 128, 0.4);
-  animation: slotGlow 2s infinite ease-in-out;
-}
-
-@keyframes slotGlow {
-  0%, 100% { box-shadow: inset 0 0 14px rgba(74, 222, 128, 0.6), 0 0 12px rgba(74, 222, 128, 0.3); }
-  50% { box-shadow: inset 0 0 20px rgba(74, 222, 128, 0.8), 0 0 22px rgba(74, 222, 128, 0.6); }
-}
-
-.dynamic-slot__arena {
-  font-size: 8.5px;
-  font-weight: 800;
-  color: #86efac;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.dynamic-slot__pack-img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
-}
-
-.dynamic-slot__pack-img--pulse {
-  animation: packPulse 1.8s infinite ease-in-out;
-}
-
-@keyframes packPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); filter: drop-shadow(0 0 10px #4ade80); }
-}
-
-.dynamic-slot__timer {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #fcd34d;
-  margin-top: 1px;
-  text-shadow: 0 1px 2px #000;
-}
-
-.dynamic-slot__btn-hint {
-  font-size: 8px;
-  font-weight: 900;
-  padding: 2px 6px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  margin-top: 2px;
-  letter-spacing: 0.3px;
-}
-
-.dynamic-slot__btn-hint--unlock {
-  background: #166534;
-  color: #bbf7d0;
-  border: 0.5px solid #4ade80;
-}
-
-.dynamic-slot__btn-hint--accelerate {
-  background: #854d0e;
-  color: #fef08a;
-  border: 0.5px solid #facc15;
-}
-
-.dynamic-slot__btn-hint--ready {
-  background: linear-gradient(135deg, #15803d, #22c55e);
-  color: #ffffff;
-  border: 0.5px solid #86efac;
-  box-shadow: 0 0 8px #22c55e;
-}
-
-/* --------------------------------------------------------------------------
-   TORNEO EN TIEMPO REAL
-   -------------------------------------------------------------------------- */
+/* Torneo Overlay */
 .dynamic-overlay-tourney {
   position: absolute;
   left: 72.308612%;
@@ -608,8 +678,13 @@
   50% { transform: scale(1.05); }
 }
 
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
 /* --------------------------------------------------------------------------
-   MENÚ DESPLEGABLE DE AJUSTES (GEAR ICON)
+   MENÚ DESPLEGABLE DE AJUSTES
    -------------------------------------------------------------------------- */
 .bosque-settings-backdrop {
   position: absolute;
