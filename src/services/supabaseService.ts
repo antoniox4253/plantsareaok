@@ -1500,9 +1500,10 @@ export const SupabaseService = {
           return dbResolvedFallback
         }
 
-        // Si tras ~12-15 segundos el rival no ha reportado, re-enviar el reporte local
-        // para que la base de datos liquide autoritativamente por abandono si expiró el plazo de gracia
-        if ((intento === 8 || intento === 15) && reportedWinnerId !== undefined) {
+        // Si tras ~8-15 segundos el rival no ha reportado (desconexión o abandono),
+        // re-enviar el reporte local periódicamente para que la base de datos
+        // liquide autoritativamente por abandono del rival.
+        if (intento >= 6 && reportedWinnerId !== undefined) {
           try {
             const reReport = await this.reportMatchResult(roomId, reportedWinnerId)
             if (reReport && (reReport.status === 'liquidada' || reReport.status === 'ya_liquidada')) {
