@@ -624,7 +624,7 @@
 }
 
 .bosque-ranking-banner__title {
-  font-size: 11.5px;
+  font-size: 10px;
   font-weight: 900;
   color: #fef08a;
   letter-spacing: 0.5px;
@@ -632,7 +632,7 @@
 }
 
 .bosque-ranking-banner__subtitle {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
   color: #86efac;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
