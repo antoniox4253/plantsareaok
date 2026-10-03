@@ -295,10 +295,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 5px rgba(0, 0, 0, 0.6);
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(6, 23, 18, 0.85);
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.4);
+  background: #081a14;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
+  min-width: 60px;
 }
 
 /* Pase VIP Dinámico */
@@ -324,9 +325,10 @@
   font-weight: 800;
   color: #ffde59;
   text-shadow: 0 1px 2px #000;
-  background: rgba(6, 23, 18, 0.8);
-  padding: 1px 4px;
+  background: #081a14;
+  padding: 2px 6px;
   border-radius: 4px;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
 }
 
 .dynamic-overlay-vip__bar-bg {
@@ -356,23 +358,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
   pointer-events: none;
   z-index: 3;
 }
 
 .dynamic-overlay-online__badge {
-  background: rgba(6, 23, 18, 0.85);
+  background: #081a14;
   border-radius: 8px;
-  padding: 3px 8px;
+  padding: 3px 10px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 11px;
   font-weight: 700;
   color: #e2e8f0;
   text-shadow: 0 1px 2px #000;
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
+  min-width: 80px;
+  justify-content: center;
 }
 
 .dynamic-overlay-online__dot {
@@ -396,8 +399,9 @@
   z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding-right: 12px;
+  justify-content: center;
+  padding-left: 28%;
+  padding-right: 8%;
 }
 
 .dynamic-overlay-stat--gold {
@@ -422,14 +426,17 @@
 }
 
 .dynamic-overlay-stat__val {
-  font-size: 12.5px;
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
   font-weight: 800;
   color: #ffffff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  background: rgba(6, 23, 18, 0.85);
-  padding: 2px 7px;
+  background: #081a14;
+  padding: 3px 6px;
   border-radius: 6px;
-  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.3px;
 }
 
 .dynamic-overlay-stat__val--gold {
