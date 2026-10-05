@@ -334,8 +334,8 @@ export default function MainMenu({
               <span className="bosque-jalapeno-news__hero-tag">🔥 EVENTO RELÁMPAGO · 24 HORAS</span>
               <h4 className="bosque-jalapeno-news__hero-title">El Titán Incendiario de la Arena</h4>
               <p className="bosque-jalapeno-news__hero-sub">
-                ¡Quema toda la línea enemiga con <strong>1,800 de daño devastador</strong>! 
-                El Jalapeño elimina oleadas masivas y tanques acorazados de un solo estallido.
+                ¡Quema toda la línea enemiga con <strong>1,000 de daño devastador</strong>! 
+                El Jalapeño elimina oleadas masivas y tanques acorazados de un solo estallido (+150 por nivel).
               </p>
             </div>
           </div>
@@ -357,7 +357,7 @@ export default function MainMenu({
                   <span>+250 Oro</span>
                 </div>
                 <p className="bosque-jalapeno-news__room-hint">
-                  Ideal para competidores que han ahorrado su oro obtenido en batallas de la Arena.
+                  Desbloquea la carta base si no la tienes, o suma +1 copia si ya la posees.
                 </p>
               </div>
             </div>
@@ -378,13 +378,20 @@ export default function MainMenu({
                   <span>+50 Gemas</span>
                 </div>
                 <p className="bosque-jalapeno-news__room-hint">
-                  Lote doble exclusivo de 2 copias listo para fusionar o subir de nivel de inmediato.
+                  Carta base + 1 copia (o +2 copias si ya la tienes) para fusionar y mejorar.
                 </p>
               </div>
             </div>
           </div>
 
           <div className="bosque-jalapeno-news__guarantees">
+            <div className="bosque-jalapeno-news__guarantee-item">
+              <span className="bosque-jalapeno-news__guarantee-icon">🃏</span>
+              <div>
+                <strong>Entrega Inteligente de Carta o Copias</strong>
+                <p>Si no tienes a Jalapeño, se crea tu carta base. Si ya lo posees, se suman directamente como copias para el Jardín.</p>
+              </div>
+            </div>
             <div className="bosque-jalapeno-news__guarantee-item">
               <span className="bosque-jalapeno-news__guarantee-icon">⚡</span>
               <div>
@@ -1199,7 +1206,7 @@ export default function MainMenu({
           </div>
           <span className="bosque-news-jalapeno__title">Subasta de Jalapeños</span>
           <span className="bosque-news-jalapeno__desc">
-            1800 Daño · Pujas en Oro 🪙 y Gemas 💎
+            1000 Daño · Pujas en Oro 🪙 y Gemas 💎
           </span>
         </div>
         <span className="bosque-news-jalapeno__arrow">➔</span>

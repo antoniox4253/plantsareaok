@@ -255,8 +255,18 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
         soundManager.playSound('points', 0.8)
         setFeedback({
           type: 'success',
-          message: res.message || '¡Carta legendaria reclamada con éxito!',
+          message: res.message || '¡Carta reclamada con éxito!',
         })
+        if (activeAuction.plantId === 'jalapeno') {
+          try {
+            const unlockedKey = 'plant_arena_unlocked_plants'
+            const unlocked = JSON.parse(localStorage.getItem(unlockedKey) || '[]')
+            if (!unlocked.includes('jalapeno')) {
+              unlocked.push('jalapeno')
+              localStorage.setItem(unlockedKey, JSON.stringify(unlocked))
+            }
+          } catch {}
+        }
         await fetchLiveAuctions()
         if (onRewardsChanged) {
           await onRewardsChanged()
@@ -603,8 +613,8 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
                 <span className="lottery-auction-card-sub">
                   {activeAuction.plantId === 'jalapeno'
                     ? (activeAuction.copiesCount && activeAuction.copiesCount > 1
-                      ? '2x Cartas Legendarias de Jalapeño'
-                      : '1x Carta Legendaria de Jalapeño')
+                      ? '2x Cartas de Jalapeño (Base + 1 Copia o +2 Copias)'
+                      : '1x Carta de Jalapeño (Carta Base o +1 Copia)')
                     : isLive
                     ? 'Yelmo de Caballero Forjado'
                     : 'Catapulta Mística de Bruja'}
@@ -613,10 +623,10 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
                 <div className="lottery-auction-stats-pills">
                   {activeAuction.plantId === 'jalapeno' ? (
                     <>
-                      <span className="lottery-stat-pill">💥 1800 Daño Volcánico</span>
+                      <span className="lottery-stat-pill">💥 1,000 Daño de Explosión</span>
                       <span className="lottery-stat-pill">🔥 Fuego de Línea Entera</span>
                       <span className="lottery-stat-pill">
-                        👑 {activeAuction.copiesCount || (activeAuction.currency === 'gems' ? 2 : 1)}x Copia(s)
+                        👑 {activeAuction.copiesCount || (activeAuction.currency === 'gems' ? 2 : 1)}x Carta(s)
                       </span>
                     </>
                   ) : isLive ? (

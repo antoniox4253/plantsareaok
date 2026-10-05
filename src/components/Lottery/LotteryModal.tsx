@@ -678,7 +678,11 @@ export default function LotteryModal({
       setCodeHints(st.hints ?? [])
       setCodeMyPayout(st.myPayout ?? null)
     }
-    const safeBoard = (board as BoardEntry[]) || []
+    const isExcludedAdmin = (u?: string) => {
+      const s = (u || '').toLowerCase().trim()
+      return s === 'admin' || s === 'administrador'
+    }
+    const safeBoard = ((board as BoardEntry[]) || []).filter((e) => !isExcludedAdmin(e.username))
     setCodeBoard(safeBoard)
     setRankingBoard(safeBoard)
 
@@ -694,7 +698,11 @@ export default function LotteryModal({
     setLoadingRanking(true)
     try {
       const b = await lotteryService.secretCodeLeaderboard(roundId)
-      setRankingBoard((b as BoardEntry[]) || [])
+      const isExcludedAdmin = (u?: string) => {
+        const s = (u || '').toLowerCase().trim()
+        return s === 'admin' || s === 'administrador'
+      }
+      setRankingBoard(((b as BoardEntry[]) || []).filter((e) => !isExcludedAdmin(e.username)))
     } catch (_) {
     } finally {
       setLoadingRanking(false)
@@ -794,7 +802,11 @@ export default function LotteryModal({
 
   // Calcula el premio correspondiente y su reparto equitativo entre jugadores empatados en el mismo puesto
   const boardWithDividedPrizes = useMemo(() => {
-    const activeBoard = rankingBoard && rankingBoard.length > 0 ? rankingBoard : codeBoard
+    const rawBoard = rankingBoard && rankingBoard.length > 0 ? rankingBoard : codeBoard
+    const activeBoard = (rawBoard || []).filter((e) => {
+      const u = (e.username || '').toLowerCase().trim()
+      return u !== 'admin' && u !== 'administrador'
+    })
     if (!activeBoard || activeBoard.length === 0) return []
 
     // Contar cuántos jugadores hay empatados en cada puesto

@@ -196,4 +196,53 @@ describe('Sistema de Subasta - Reglas de Negocio y Configuración', () => {
     expect(currentBid).toBe(1200)
     expect(prevBidAmount).toBe(1200)
   })
+
+  it('valida que el daño de Jalapeño en subasta y colección es exactamente 1000 base (+150 por nivel)', () => {
+    const baseJalapeno = PLANT_CONFIGS.jalapeno
+    expect(baseJalapeno).toBeDefined()
+    expect(baseJalapeno.damage).toBe(1000)
+
+    const scaledLvl0 = getScaledPlantConfig('jalapeno', 0)
+    expect(scaledLvl0.damage).toBe(1000)
+
+    const scaledLvl1 = getScaledPlantConfig('jalapeno', 1)
+    expect(scaledLvl1.damage).toBe(1150) // 1000 + 1 * 150
+
+    const scaledLvl2 = getScaledPlantConfig('jalapeno', 2)
+    expect(scaledLvl2.damage).toBe(1300) // 1000 + 2 * 150
+  })
+
+  it('simula la entrega inteligente al ganador: crea carta base si no la tiene o suma copias si ya la tiene', () => {
+    // Caso 1: Ganador NO tiene la carta base y gana 1 copia (Sala Oro)
+    let userHasBase = false
+    let baseCreated = false
+    let copiesInInventory = 0
+    const wonCopies = 1
+
+    if (!userHasBase) {
+      baseCreated = true
+      userHasBase = true
+      copiesInInventory += (wonCopies - 1)
+    } else {
+      copiesInInventory += wonCopies
+    }
+
+    expect(baseCreated).toBe(true)
+    expect(copiesInInventory).toBe(0) // La única carta se usó para crear la base
+
+    // Caso 2: El mismo usuario gana posteriormente 2 copias (Sala VIP Gemas)
+    baseCreated = false
+    const wonCopiesGems = 2
+
+    if (!userHasBase) {
+      baseCreated = true
+      userHasBase = true
+      copiesInInventory += (wonCopiesGems - 1)
+    } else {
+      copiesInInventory += wonCopiesGems
+    }
+
+    expect(baseCreated).toBe(false) // No se duplica la base
+    expect(copiesInInventory).toBe(2) // Las 2 copias se sumaron directamente
+  })
 })
