@@ -770,61 +770,47 @@ export default function MainMenu({
           </div>
         )}
 
-        {/* SLIDE 1: COMUNIDAD TELEGRAM LLAMATIVO */}
+        {/* SLIDE 1: COMUNIDAD TELEGRAM (LIMPIO, SIN BOTÓN, CLIC ABRE ENLACE) */}
         {bannerSlide === 1 && (
-          <div className="bosque-banner-slide bosque-banner-slide--telegram">
-            <div className="bosque-telegram-banner__left">
-              <div className="bosque-telegram-banner__icon-wrap">
-                <span className="bosque-telegram-banner__icon">✈️</span>
-              </div>
-              <div className="bosque-telegram-banner__titles">
-                <span className="bosque-telegram-banner__badge">COMUNIDAD OFICIAL</span>
-                <span className="bosque-telegram-banner__main-title">CANAL DE TELEGRAM</span>
-              </div>
+          <div className="bosque-banner-slide bosque-banner-slide--clean">
+            <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--telegram">
+              <span className="bosque-clean-banner__icon">✈️</span>
             </div>
-
-            <div className="bosque-telegram-banner__center">
-              <span className="bosque-telegram-banner__desc">
-                🎁 ¡Sorteos semanales, anuncios de torneos y soporte 24/7!
+            <div className="bosque-clean-banner__content">
+              <div className="bosque-clean-banner__header-row">
+                <span className="bosque-clean-banner__badge bosque-clean-banner__badge--telegram">
+                  COMUNIDAD OFICIAL
+                </span>
+                <span className="bosque-clean-banner__url">t.me/+HY1gbZZKmAE5ZDcx ↗</span>
+              </div>
+              <span className="bosque-clean-banner__title bosque-clean-banner__title--telegram">
+                ¡ÚNETE A NUESTRO CANAL DE TELEGRAM!
               </span>
-            </div>
-
-            <div className="bosque-telegram-banner__right">
-              <span className="bosque-telegram-banner__cta">
-                <span>UNIRSE AHORA</span>
-                <span className="bosque-telegram-banner__cta-arrow">➔</span>
+              <span className="bosque-clean-banner__subtitle">
+                Sorteos semanales, notas de balance y torneos oficiales para la comunidad
               </span>
             </div>
           </div>
         )}
 
-        {/* SLIDE 2: JUGADORES EN LÍNEA LLAMATIVO */}
+        {/* SLIDE 2: JUGADORES EN LÍNEA (LIMPIO, SIN BOTÓN, INFO DESTACADA) */}
         {bannerSlide === 2 && (
-          <div className="bosque-banner-slide bosque-banner-slide--online">
-            <div className="bosque-online-banner__left">
-              <div className="bosque-online-banner__icon-wrap">
-                <span className="bosque-online-banner__icon">⚔️</span>
-              </div>
-              <div className="bosque-online-banner__titles">
-                <span className="bosque-online-banner__badge">
-                  <span className="bosque-online-banner__radar-dot" /> EN VIVO EN LA ARENA
-                </span>
-                <span className="bosque-online-banner__main-title">
-                  <strong className="bosque-online-banner__count">{onlineUsersCount}</strong> JUGADORES EN LÍNEA
-                </span>
-              </div>
+          <div className="bosque-banner-slide bosque-banner-slide--clean">
+            <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--online">
+              <span className="bosque-clean-banner__icon">⚔️</span>
             </div>
-
-            <div className="bosque-online-banner__center">
-              <span className="bosque-online-banner__desc">
-                ⚡ ¡Rival listo para combatir ahora mismo! ¡Entra y sube tus copas!
+            <div className="bosque-clean-banner__content">
+              <div className="bosque-clean-banner__header-row">
+                <span className="bosque-clean-banner__badge bosque-clean-banner__badge--online">
+                  <span className="bosque-clean-banner__radar-dot" /> EN VIVO EN LA ARENA
+                </span>
+                <span className="bosque-clean-banner__live-tag">MATCHMAKING ACTIVO</span>
+              </div>
+              <span className="bosque-clean-banner__title bosque-clean-banner__title--online">
+                <strong className="bosque-clean-banner__count">{onlineUsersCount}</strong> JUGADORES CONECTADOS AHORA
               </span>
-            </div>
-
-            <div className="bosque-online-banner__right">
-              <span className="bosque-online-banner__cta">
-                <span>COMBATIR</span>
-                <span className="bosque-online-banner__cta-arrow">➔</span>
+              <span className="bosque-clean-banner__subtitle">
+                ¡Rivales listos en tiempo real! Haz clic para entrar a la batalla y subir copas
               </span>
             </div>
           </div>

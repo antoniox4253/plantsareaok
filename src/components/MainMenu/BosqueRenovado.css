@@ -527,217 +527,150 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Slide 1: Telegram Llamativo */
-.bosque-banner-slide--telegram {
-  justify-content: space-between;
-  padding: 0 10px;
+/* Slides Limpios y Destacados (Telegram y Jugadores En Vivo) */
+.bosque-banner-slide--clean {
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 0 10px 8px 10px;
+  width: 100%;
+  height: 100%;
 }
 
-.bosque-telegram-banner__left {
+.bosque-clean-banner__icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
 }
 
-.bosque-telegram-banner__icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+.bosque-season-banner:hover .bosque-clean-banner__icon-wrap {
+  transform: scale(1.06);
+}
+
+.bosque-clean-banner__icon-wrap--telegram {
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(2, 132, 199, 0.85));
   border: 1.5px solid #38bdf8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
-  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
 }
 
-.bosque-telegram-banner__icon {
-  font-size: 24px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
-}
-
-.bosque-telegram-banner__titles {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
-.bosque-telegram-banner__badge {
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #7dd3fc;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.bosque-telegram-banner__main-title {
-  font-size: 14px;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: 0.6px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
-  white-space: nowrap;
-}
-
-.bosque-telegram-banner__center {
-  flex: 1;
-  text-align: center;
-  padding: 0 12px;
-}
-
-.bosque-telegram-banner__desc {
-  font-size: 11px;
-  font-weight: 700;
-  color: #bae6fd;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-
-.bosque-telegram-banner__right {
-  flex-shrink: 0;
-}
-
-.bosque-telegram-banner__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  border: 1px solid #7dd3fc;
-  border-radius: 10px;
-  padding: 7px 13px;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.5px;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
-}
-
-.bosque-telegram-banner__cta:hover {
-  transform: scale(1.04);
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.7);
-}
-
-.bosque-telegram-banner__cta-arrow {
-  font-size: 12px;
-  font-weight: 900;
-}
-
-/* Slide 2: Jugadores en Línea Llamativo */
-.bosque-banner-slide--online {
-  justify-content: space-between;
-  padding: 0 10px;
-}
-
-.bosque-online-banner__left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.bosque-online-banner__icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+.bosque-clean-banner__icon-wrap--online {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.35), rgba(5, 46, 22, 0.85));
   border: 1.5px solid #4ade80;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 14px rgba(74, 222, 128, 0.45);
-  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(74, 222, 128, 0.45);
 }
 
-.bosque-online-banner__icon {
-  font-size: 24px;
+.bosque-clean-banner__icon {
+  font-size: 26px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
-.bosque-online-banner__titles {
+.bosque-clean-banner__content {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
-.bosque-online-banner__badge {
+.bosque-clean-banner__header-row {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 10px;
+}
+
+.bosque-clean-banner__badge {
   font-size: 9.5px;
   font-weight: 800;
-  color: #86efac;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+}
+
+.bosque-clean-banner__badge--telegram {
+  color: #7dd3fc;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.bosque-online-banner__radar-dot {
-  width: 6px;
-  height: 6px;
+.bosque-clean-banner__badge--online {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #86efac;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.bosque-clean-banner__radar-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #22c55e;
   box-shadow: 0 0 8px #22c55e;
   animation: pulseDot 1.5s infinite ease-in-out;
 }
 
-.bosque-online-banner__main-title {
-  font-size: 14px;
-  font-weight: 900;
-  color: #ffffff;
-  letter-spacing: 0.6px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
-  white-space: nowrap;
+.bosque-clean-banner__url {
+  font-size: 10px;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 6px;
+  padding: 1px 8px;
+  letter-spacing: 0.4px;
 }
 
-.bosque-online-banner__count {
+.bosque-clean-banner__live-tag {
+  font-size: 10px;
+  font-weight: 800;
   color: #4ade80;
-  font-size: 16px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: 6px;
+  padding: 1px 8px;
+  letter-spacing: 0.4px;
 }
 
-.bosque-online-banner__center {
-  flex: 1;
-  text-align: center;
-  padding: 0 12px;
-}
-
-.bosque-online-banner__desc {
-  font-size: 11px;
-  font-weight: 700;
-  color: #d1fae5;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-
-.bosque-online-banner__right {
-  flex-shrink: 0;
-}
-
-.bosque-online-banner__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
-  border: 1px solid #4ade80;
-  border-radius: 10px;
-  padding: 7px 13px;
+.bosque-clean-banner__title {
+  font-size: 15px;
+  font-weight: 900;
   color: #ffffff;
-  font-size: 11px;
-  font-weight: 900;
   letter-spacing: 0.5px;
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-.bosque-online-banner__cta:hover {
-  transform: scale(1.04);
-  box-shadow: 0 0 18px rgba(74, 222, 128, 0.7);
+.bosque-clean-banner__title--telegram {
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.35), 0 2px 4px rgba(0, 0, 0, 0.95);
 }
 
-.bosque-online-banner__cta-arrow {
-  font-size: 12px;
-  font-weight: 900;
+.bosque-clean-banner__title--online {
+  text-shadow: 0 0 12px rgba(74, 222, 128, 0.35), 0 2px 4px rgba(0, 0, 0, 0.95);
+}
+
+.bosque-clean-banner__count {
+  font-size: 17px;
+  font-weight: 950;
+  color: #4ade80;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.7);
+}
+
+.bosque-clean-banner__subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #bae6fd;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Indicadores de carrusel (puntos) */
