@@ -52,6 +52,100 @@
   box-shadow: 0 0 12px rgba(234, 179, 8, 0.45);
 }
 
+/* SELECTOR DE SALAS SIMULTÁNEAS (ORO vs GEMAS) */
+.lottery-auction-rooms {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.lottery-auction-room-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1.5px solid #334155;
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.lottery-auction-room-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  transform: translateY(-1px);
+}
+
+.lottery-auction-room-btn--gold {
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.lottery-auction-room-btn--gold.lottery-auction-room-btn--active {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(30, 41, 59, 0.95) 100%);
+  border-color: #facc15;
+  box-shadow: 0 0 14px rgba(250, 204, 21, 0.35);
+}
+
+.lottery-auction-room-btn--gems {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.lottery-auction-room-btn--gems.lottery-auction-room-btn--active {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(30, 41, 59, 0.95) 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+}
+
+.lottery-auction-room-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.lottery-auction-room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lottery-auction-room-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lottery-auction-room-bid {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.lottery-auction-room-bid strong {
+  color: #facc15;
+}
+
+.lottery-auction-room-btn--gems .lottery-auction-room-bid strong {
+  color: #38bdf8;
+}
+
+.lottery-auction-room-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulseDot 1.5s infinite ease-in-out;
+}
+
 .lottery-auction-loading,
 .lottery-auction-empty {
   display: flex;
@@ -146,6 +240,19 @@
 
 .lottery-auction-summary-timer--expired {
   color: #f87171;
+}
+
+.lottery-auction-snipe-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #fef08a;
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+  animation: pulseDot 1s infinite ease-in-out;
 }
 
 /* 2. CONSOLE */

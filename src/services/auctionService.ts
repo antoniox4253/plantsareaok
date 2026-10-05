@@ -16,6 +16,7 @@ export interface ActiveAuctionData {
   description: string
   imageUrl: string
   currency?: 'gold' | 'gems'
+  copiesCount?: number
   startingBid: number
   currentBid: number
   minBidStep: number
@@ -37,6 +38,8 @@ export interface BidResult {
   bidAmount?: number
   currency?: 'gold' | 'gems'
   highestBidderName?: string
+  wasExtended?: boolean
+  newEndTime?: number
   remainingGems?: number
   remainingGold?: number
   error?: string
@@ -52,11 +55,30 @@ export interface ClaimResult {
 
 class AuctionService {
   /**
-   * Obtiene los datos de la subasta activa y el top de ofertas.
+   * Obtiene la lista de todas las subastas activas (soporte simultáneo multimoneda).
    */
-  async getActiveAuction(): Promise<ActiveAuctionData | null> {
+  async getActiveAuctions(): Promise<ActiveAuctionData[]> {
     try {
-      const { data, error } = await (supabase.rpc as any)('get_active_auction')
+      const { data, error } = await (supabase.rpc as any)('get_active_auctions')
+      if (error) {
+        console.error('[AuctionService] Error al obtener subastas activas:', error)
+        return []
+      }
+      return (data || []) as ActiveAuctionData[]
+    } catch (e) {
+      console.error('[AuctionService] Excepción en getActiveAuctions:', e)
+      return []
+    }
+  }
+
+  /**
+   * Obtiene los datos de una subasta activa (opcionalmente por moneda) y el top de ofertas.
+   */
+  async getActiveAuction(currency?: 'gold' | 'gems'): Promise<ActiveAuctionData | null> {
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_active_auction', {
+        p_currency: currency || null,
+      })
 
       if (error) {
         console.error('[AuctionService] Error al obtener subasta activa:', error)

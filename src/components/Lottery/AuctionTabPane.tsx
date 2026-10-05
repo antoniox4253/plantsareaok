@@ -24,12 +24,13 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
   onRewardsChanged,
 }) => {
   const [subTab, setSubTab] = useState<'live' | 'completed'>('live')
-  const [liveAuction, setLiveAuction] = useState<ActiveAuctionData | null>(null)
+  const [liveAuctions, setLiveAuctions] = useState<ActiveAuctionData[]>([])
   const [completedAuctions, setCompletedAuctions] = useState<ActiveAuctionData[]>([])
+  const [selectedLiveCurrency, setSelectedLiveCurrency] = useState<'gold' | 'gems'>('gold')
   const [selectedCompletedIdx] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  const [bidAmount, setBidAmount] = useState<number>(1000)
+  const [bidAmount, setBidAmount] = useState<number>(3000)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
   const [remainingMs, setRemainingMs] = useState<number>(0)
   const [isClaiming, setIsClaiming] = useState<boolean>(false)
@@ -50,22 +51,18 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
     }
   }, [resolvedUserId])
 
-  // Carga de la subasta activa
-  const fetchLiveAuction = useCallback(async () => {
-    const data = await auctionService.getActiveAuction()
-    if (data) {
-      setLiveAuction(data)
-      const now = Date.now()
-      const diff = Math.max(0, data.endTime - now)
-      setRemainingMs(diff)
-
-      // Sugerir la siguiente puja válida
-      const isGold = (data.currency || 'gold') === 'gold'
-      const minStep = data.minBidStep || (isGold ? 50 : 10)
-      if (data.highestBidderId) {
-        setBidAmount(data.currentBid + minStep)
+  // Carga de todas las subastas activas (soporte simultáneo)
+  const fetchLiveAuctions = useCallback(async () => {
+    const list = await auctionService.getActiveAuctions()
+    if (Array.isArray(list) && list.length > 0) {
+      setLiveAuctions(list)
+    } else {
+      // Fallback a getActiveAuction si retorna un solo objeto
+      const single = await auctionService.getActiveAuction()
+      if (single) {
+        setLiveAuctions([single])
       } else {
-        setBidAmount(data.startingBid || (isGold ? 1000 : 500))
+        setLiveAuctions([])
       }
     }
     setIsLoading(false)
@@ -79,38 +76,85 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
     }
   }, [])
 
+  // Sincronización Realtime con actualización inmediata de saldos reembolsados
   useEffect(() => {
     setIsLoading(true)
-    fetchLiveAuction()
-    fetchCompletedAuctions()
+    void fetchLiveAuctions()
+    void fetchCompletedAuctions()
 
     // Suscripción Realtime a cambios en subastas y ofertas
-    const unsubscribe = auctionService.subscribeToAuctionChanges(() => {
-      fetchLiveAuction()
-      fetchCompletedAuctions()
+    const unsubscribe = auctionService.subscribeToAuctionChanges(async () => {
+      await fetchLiveAuctions()
+      await fetchCompletedAuctions()
+      // ALERTA DE REEMBOLSO: si otro usuario pujó, refrescar saldos en el acto
+      if (onRewardsChanged) {
+        await onRewardsChanged()
+      }
     })
 
     return () => {
       unsubscribe()
     }
-  }, [fetchLiveAuction, fetchCompletedAuctions])
+  }, [fetchLiveAuctions, fetchCompletedAuctions, onRewardsChanged])
 
-  // Temporizador de cuenta regresiva (48 horas)
+  // Sondeo preventivo de saldo cada 3.5 segundos mientras esté abierta la subasta
+  // para que si el usuario fue superado vea su oro/gemas devueltas en pantalla de inmediato
   useEffect(() => {
-    if (!liveAuction) return
+    const interval = setInterval(() => {
+      if (onRewardsChanged) {
+        void onRewardsChanged()
+      }
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [onRewardsChanged])
 
-    const timer = setInterval(() => {
+  // Determinar subasta activa según la moneda seleccionada en vivo
+  const currentLiveAuction = useMemo(() => {
+    if (liveAuctions.length === 0) return null
+    const found = liveAuctions.find((a) => (a.currency || 'gold') === selectedLiveCurrency)
+    return found || liveAuctions[0]
+  }, [liveAuctions, selectedLiveCurrency])
+
+  const activeAuction = subTab === 'live'
+    ? currentLiveAuction
+    : (completedAuctions[selectedCompletedIdx] || completedAuctions[0] || null)
+
+  const isLive = subTab === 'live'
+  const isCurrencyGold = (activeAuction?.currency || 'gold') === 'gold'
+  const currencySymbol = isCurrencyGold ? '💰' : '💎'
+  const currencyName = isCurrencyGold ? 'Oro' : 'Gemas'
+  const userBalance = isCurrencyGold ? userGold : userTokens
+
+  // Temporizador de cuenta regresiva
+  useEffect(() => {
+    if (!activeAuction) return
+
+    const updateTimer = () => {
       const now = Date.now()
-      const diff = Math.max(0, liveAuction.endTime - now)
+      const diff = Math.max(0, activeAuction.endTime - now)
       setRemainingMs(diff)
 
-      if (diff <= 0 && liveAuction.status === 'active') {
-        fetchLiveAuction()
+      if (diff <= 0 && activeAuction.status === 'active') {
+        void fetchLiveAuctions()
       }
-    }, 1000)
+    }
 
+    updateTimer()
+    const timer = setInterval(updateTimer, 1000)
     return () => clearInterval(timer)
-  }, [liveAuction, fetchLiveAuction])
+  }, [activeAuction, fetchLiveAuctions])
+
+  // Sugerir la siguiente puja válida al cambiar de subasta o líder
+  useEffect(() => {
+    if (!activeAuction) return
+    const isGold = (activeAuction.currency || 'gold') === 'gold'
+    const minStep = activeAuction.minBidStep || (isGold ? 200 : 20)
+    if (activeAuction.highestBidderId) {
+      setBidAmount(activeAuction.currentBid + minStep)
+    } else {
+      setBidAmount(activeAuction.startingBid || (isGold ? 3000 : 800))
+    }
+  }, [activeAuction?.id, activeAuction?.currentBid, activeAuction?.highestBidderId, activeAuction?.currency, activeAuction?.minBidStep, activeAuction?.startingBid])
 
   // Formato de cuenta regresiva
   const formatCountdown = useMemo(() => {
@@ -125,18 +169,12 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
     return `${hours}h ${pad(minutes)}m ${pad(seconds)}s`
   }, [remainingMs])
 
-  const activeAuction = subTab === 'live' ? liveAuction : (completedAuctions[selectedCompletedIdx] || completedAuctions[0] || null)
-  const isLive = subTab === 'live'
-  const isCurrencyGold = (activeAuction?.currency || 'gold') === 'gold'
-  const currencySymbol = isCurrencyGold ? '💰' : '💎'
-  const currencyName = isCurrencyGold ? 'Oro' : 'Gemas'
-  const userBalance = isCurrencyGold ? userGold : userTokens
-
   const isExpired = !isLive || remainingMs <= 0 || activeAuction?.status === 'completed'
   const isHighestBidder = Boolean(resolvedUserId && activeAuction?.highestBidderId === resolvedUserId)
+  const isNearExpiration = isLive && remainingMs > 0 && remainingMs <= 60000
 
   const minRequiredBid = useMemo(() => {
-    if (!activeAuction) return isCurrencyGold ? 1000 : 500
+    if (!activeAuction) return isCurrencyGold ? 3000 : 800
     if (!activeAuction.highestBidderId) return activeAuction.startingBid
     return activeAuction.currentBid + activeAuction.minBidStep
   }, [activeAuction, isCurrencyGold])
@@ -156,6 +194,7 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
     setFeedback(null)
   }
 
+  // Realizar oferta con resolución atómica y reintento con saldo fresco
   const handlePlaceBid = async () => {
     if (!activeAuction || !isLive) return
 
@@ -168,12 +207,13 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
     }
 
     const needed = isHighestBidder ? bidAmount - activeAuction.currentBid : bidAmount
+
+    // Si localmente el saldo parece insuficiente, intentar primero un refresco rápido del saldo
+    // en lugar de bloquear al usuario si su reembolso acaba de acreditarse en PostgreSQL
     if (userBalance < needed) {
-      setFeedback({
-        type: 'error',
-        message: `Saldo insuficiente. Necesitas ${needed.toLocaleString()} ${currencySymbol} (tienes ${userBalance.toLocaleString()})`,
-      })
-      return
+      if (onRewardsChanged) {
+        await onRewardsChanged()
+      }
     }
 
     setIsSubmitting(true)
@@ -183,14 +223,15 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
       const res = await auctionService.placeBid(activeAuction.id, bidAmount)
       if (res.success) {
         soundManager.playSound('points', 0.6)
+        const antiSnipeMsg = res.wasExtended ? ' ⏱️ (¡Tiempo extendido +60s por oferta en el último minuto!)' : ''
         setFeedback({
           type: 'success',
-          message: `¡Puja de ${bidAmount.toLocaleString()} ${currencySymbol} enviada con éxito! Eres el nuevo líder 👑`,
+          message: `¡Puja de ${bidAmount.toLocaleString()} ${currencySymbol} enviada con éxito! Eres el nuevo líder 👑${antiSnipeMsg}`,
         })
         if (onRewardsChanged) {
           await onRewardsChanged()
         }
-        await fetchLiveAuction()
+        await fetchLiveAuctions()
       } else {
         setFeedback({
           type: 'error',
@@ -218,7 +259,7 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
           type: 'success',
           message: res.message || '¡Carta legendaria reclamada con éxito!',
         })
-        await fetchLiveAuction()
+        await fetchLiveAuctions()
         if (onRewardsChanged) {
           await onRewardsChanged()
         }
@@ -261,7 +302,7 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
             setFeedback(null)
           }}
         >
-          🔴 SUBASTA EN VIVO {liveAuction ? '(48H)' : ''}
+          🔴 SUBASTAS EN VIVO (24H)
         </button>
         <button
           type="button"
@@ -273,9 +314,43 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
             setFeedback(null)
           }}
         >
-          🏆 SUBASTA FINALIZADA
+          🏆 SUBASTAS FINALIZADAS
         </button>
       </div>
+
+      {/* SELECTOR DE SALAS SIMULTÁNEAS EN VIVO (ORO vs GEMAS) */}
+      {subTab === 'live' && liveAuctions.length > 1 && (
+        <div className="lottery-auction-rooms">
+          {liveAuctions.map((auc) => {
+            const isGold = (auc.currency || 'gold') === 'gold'
+            const isSelected = (auc.currency || 'gold') === selectedLiveCurrency
+            return (
+              <button
+                key={auc.id}
+                type="button"
+                className={`lottery-auction-room-btn ${
+                  isSelected ? 'lottery-auction-room-btn--active' : ''
+                } ${isGold ? 'lottery-auction-room-btn--gold' : 'lottery-auction-room-btn--gems'}`}
+                onClick={() => {
+                  soundManager.playSound('click', 0.3)
+                  setSelectedLiveCurrency((auc.currency || 'gold') as any)
+                  setRankingPage(0)
+                  setFeedback(null)
+                }}
+              >
+                <span className="lottery-auction-room-icon">{isGold ? '🪙' : '💎'}</span>
+                <div className="lottery-auction-room-info">
+                  <span className="lottery-auction-room-title">{auc.itemName}</span>
+                  <span className="lottery-auction-room-bid">
+                    Puja: <strong>{auc.currentBid.toLocaleString()} {isGold ? 'Oro' : 'Gemas'}</strong>
+                  </span>
+                </div>
+                {isSelected && <span className="lottery-auction-room-live-dot" />}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {isLoading && !activeAuction ? (
         <div className="lottery-auction-loading">
@@ -337,6 +412,11 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
                 >
                   {isLive ? formatCountdown : '🏁 FINALIZADA'}
                 </span>
+                {isNearExpiration && (
+                  <span className="lottery-auction-snipe-badge">
+                    ⏱️ +60s Anti-Snipe
+                  </span>
+                )}
               </div>
             </div>
 
@@ -510,7 +590,11 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
           <div className="lottery-auction-col-right">
             <div className="lottery-auction-card-wrap">
               <div className="lottery-auction-card-badge">
-                {isLive ? '🛡️ EDICIÓN ÉPICA DE ACERO' : '🎃 EDICIÓN ESPECIAL HALLOWEEN'}
+                {activeAuction.plantId === 'jalapeno'
+                  ? (isCurrencyGold ? '🌶️ SUBASTA LEGENDARIA EN ORO' : '💎 SUBASTA VIP DOBLE CARTA')
+                  : isLive
+                  ? '🛡️ EDICIÓN ÉPICA DE ACERO'
+                  : '🎃 EDICIÓN ESPECIAL HALLOWEEN'}
               </div>
 
               <div className="lottery-auction-card-art">
@@ -524,11 +608,25 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
               <div className="lottery-auction-card-details">
                 <h3 className="lottery-auction-card-title">{activeAuction.itemName}</h3>
                 <span className="lottery-auction-card-sub">
-                  {isLive ? 'Yelmo de Caballero Forjado' : 'Catapulta Mística de Bruja'}
+                  {activeAuction.plantId === 'jalapeno'
+                    ? (activeAuction.copiesCount && activeAuction.copiesCount > 1
+                      ? '2x Cartas Legendarias de Jalapeño'
+                      : '1x Carta Legendaria de Jalapeño')
+                    : isLive
+                    ? 'Yelmo de Caballero Forjado'
+                    : 'Catapulta Mística de Bruja'}
                 </span>
 
                 <div className="lottery-auction-stats-pills">
-                  {isLive ? (
+                  {activeAuction.plantId === 'jalapeno' ? (
+                    <>
+                      <span className="lottery-stat-pill">💥 1800 Daño Volcánico</span>
+                      <span className="lottery-stat-pill">🔥 Fuego de Línea Entera</span>
+                      <span className="lottery-stat-pill">
+                        👑 {activeAuction.copiesCount || (activeAuction.currency === 'gems' ? 2 : 1)}x Copia(s)
+                      </span>
+                    </>
+                  ) : isLive ? (
                     <>
                       <span className="lottery-stat-pill">❤️ +350 HP</span>
                       <span className="lottery-stat-pill">🛡️ Defensa de Acero</span>

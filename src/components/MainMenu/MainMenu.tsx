@@ -537,7 +537,7 @@ export default function MainMenu({
         className="hit"
         data-action="loteria"
         aria-label="loteria"
-        title="Ruleta de la Suerte y Lotería"
+        title="Ruleta de la Suerte, Subastas y Lotería"
         onClick={() => {
           soundManager.playSound('click', 0.5)
           if (onOpenLoteria) onOpenLoteria()
@@ -545,6 +545,7 @@ export default function MainMenu({
         }}
       >
         loteria
+        <span className="bosque-loteria-pulse-badge">🔥 EN VIVO</span>
       </button>
 
       {/* ── BARRA SUPERIOR DINÁMICA (Pills 3D RPG con datos 100% reales de la base de datos) ── */}
