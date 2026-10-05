@@ -743,21 +743,6 @@ export default function MainMenu({
             </div>
           </div>
         </div>
-
-        <div className="bosque-season-banner__right">
-          <button
-            type="button"
-            className="bosque-season-banner__btn"
-            onClick={(e) => {
-              e.stopPropagation()
-              soundManager.playSound('click', 0.5)
-              onOpenRanking?.()
-            }}
-          >
-            <span>PREMIOS</span>
-            <span className="bosque-season-banner__btn-arrow">➔</span>
-          </button>
-        </div>
       </div>
       <button
         type="button"
