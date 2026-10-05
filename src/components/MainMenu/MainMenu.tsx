@@ -398,6 +398,73 @@ export default function MainMenu({
     })
   }
 
+  const handleOpenSecretCodeNews = () => {
+    soundManager.playSound('click', 0.5)
+    setNewsModal({
+      title: 'Código Secreto: ¡Ronda #6 en Vivo!',
+      actionLabel: '🔐 JUGAR CÓDIGO SECRETO',
+      onAction: () => {
+        soundManager.playSound('click', 0.5)
+        setLotteryInitialTab('code')
+        setShowLotteryModal(true)
+      },
+      message: (
+        <div className="bosque-code-news">
+          <div className="bosque-code-news__hero">
+            <div className="bosque-code-news__avatar-wrap">
+              <span className="bosque-code-news__avatar-icon">🔐</span>
+            </div>
+            <div className="bosque-code-news__hero-info">
+              <span className="bosque-code-news__hero-tag">✨ MINIJUEGO TÁCTICO · RONDA 6 EN VIVO</span>
+              <h4 className="bosque-code-news__hero-title">El Desafío Mental de la Arena</h4>
+              <p className="bosque-code-news__hero-sub">
+                ¡Descifra la combinación secreta de <strong>5 plantas únicas</strong>! Pon a prueba tu deducción lógica y llévate el gran bote de gemas.
+              </p>
+            </div>
+          </div>
+
+          <div className="bosque-code-news__prizes-grid">
+            <div className="bosque-code-news__prize-card bosque-code-news__prize-card--jackpot">
+              <span className="bosque-code-news__prize-badge">GRAN BOTE TOP #1 👑</span>
+              <div className="bosque-code-news__prize-val text-gems">50 Gemas 💎</div>
+              <p className="bosque-code-news__prize-hint">Para el primer guerrero que acierte el 100% de la combinación exacta.</p>
+            </div>
+
+            <div className="bosque-code-news__prize-card bosque-code-news__prize-card--ranking">
+              <span className="bosque-code-news__prize-badge bosque-code-news__prize-badge--ranking">PREMIOS TOP 2 AL 10 💰</span>
+              <div className="bosque-code-news__prize-val text-gold">Hasta 100 Oro 🪙</div>
+              <p className="bosque-code-news__prize-hint">Reparto escalonado según tu mejor porcentaje de aciertos en la tabla.</p>
+            </div>
+          </div>
+
+          <div className="bosque-code-news__rules-grid">
+            <div className="bosque-code-news__rule-item">
+              <span className="bosque-code-news__rule-icon">🎟️</span>
+              <div>
+                <strong>3 Intentos Gratuitos</strong>
+                <p>Todos los jugadores reciben 3 intentos sin costo para iniciar la ronda.</p>
+              </div>
+            </div>
+            <div className="bosque-code-news__rule-item">
+              <span className="bosque-code-news__rule-icon">🟢</span>
+              <div>
+                <strong>Semáforo Táctico (Wordle)</strong>
+                <p>Verde = planta y posición correcta · Amarillo = planta en otra casilla · Rojo = descarte.</p>
+              </div>
+            </div>
+            <div className="bosque-code-news__rule-item">
+              <span className="bosque-code-news__rule-icon">🕵️</span>
+              <div>
+                <strong>Pistas Deductivas (10 💎)</strong>
+                <p>Descarta plantas o confirma la presencia de especies clave para resolver el enigma.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    })
+  }
+
   useEffect(() => {
     const syncProfile = () => setPlayerProfile(UserManager.getProfile())
     window.addEventListener('player_profile_updated', syncProfile)
@@ -1137,19 +1204,36 @@ export default function MainMenu({
         </div>
         <span className="bosque-news-jalapeno__arrow">➔</span>
       </div>
-      <button
-        type="button"
-        className="hit"
+      {/* Tarjeta Interactiva Viva: Código Secreto Ronda 6 */}
+      <div
+        className="bosque-news-item--code"
         data-action="noticia-jardin"
-        aria-label="noticia jardin"
-        title="Actualización del Jardín"
-        onClick={() => {
-          soundManager.playSound('click', 0.5)
-          onOpenJardin?.()
+        role="button"
+        tabIndex={0}
+        aria-label="Código Secreto Ronda 6: Bote de 50 Gemas y 3 intentos gratuitos"
+        title="Código Secreto Ronda #6 (Clic para ver detalles y jugar)"
+        onClick={handleOpenSecretCodeNews}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleOpenSecretCodeNews()
+          }
         }}
       >
-        noticia-jardin
-      </button>
+        <div className="bosque-news-code__art-wrap">
+          <span className="bosque-news-code__lock-icon">🔐</span>
+        </div>
+        <div className="bosque-news-code__content">
+          <div className="bosque-news-code__top-row">
+            <span className="bosque-news-code__badge">✨ RONDA #6 EN VIVO</span>
+            <span className="bosque-news-code__type-tag">MINIJUEGO</span>
+          </div>
+          <span className="bosque-news-code__title">Código Secreto: Ronda 6</span>
+          <span className="bosque-news-code__desc">
+            Bote 50 💎 · 3 Intentos Gratis · ¡Adivina!
+          </span>
+        </div>
+        <span className="bosque-news-code__arrow">➔</span>
+      </div>
       <button
         type="button"
         className="hit"

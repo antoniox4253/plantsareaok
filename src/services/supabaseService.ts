@@ -2860,6 +2860,10 @@ export const SupabaseService = {
         logError('guessSecretCode', error)
         return { success: false, error: error.message }
       }
+      if (data) {
+        data.solved = Boolean(data.solved ?? data.isWinner)
+        data.roundFinished = Boolean(data.roundFinished ?? data.isWinner)
+      }
       return data
     } catch (e: any) {
       logError('guessSecretCode', e)
