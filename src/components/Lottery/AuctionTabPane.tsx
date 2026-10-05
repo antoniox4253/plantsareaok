@@ -171,7 +171,6 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
 
   const isExpired = !isLive || remainingMs <= 0 || activeAuction?.status === 'completed'
   const isHighestBidder = Boolean(resolvedUserId && activeAuction?.highestBidderId === resolvedUserId)
-  const isNearExpiration = isLive && remainingMs > 0 && remainingMs <= 60000
 
   const minRequiredBid = useMemo(() => {
     if (!activeAuction) return isCurrencyGold ? 3000 : 800
@@ -223,10 +222,9 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
       const res = await auctionService.placeBid(activeAuction.id, bidAmount)
       if (res.success) {
         soundManager.playSound('points', 0.6)
-        const antiSnipeMsg = res.wasExtended ? ' ⏱️ (¡Tiempo extendido +60s por oferta en el último minuto!)' : ''
         setFeedback({
           type: 'success',
-          message: `¡Puja de ${bidAmount.toLocaleString()} ${currencySymbol} enviada con éxito! Eres el nuevo líder 👑${antiSnipeMsg}`,
+          message: `¡Puja de ${bidAmount.toLocaleString()} ${currencySymbol} enviada con éxito! Eres el nuevo líder 👑`,
         })
         if (onRewardsChanged) {
           await onRewardsChanged()
@@ -412,11 +410,6 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
                 >
                   {isLive ? formatCountdown : '🏁 FINALIZADA'}
                 </span>
-                {isNearExpiration && (
-                  <span className="lottery-auction-snipe-badge">
-                    ⏱️ +60s Anti-Snipe
-                  </span>
-                )}
               </div>
             </div>
 

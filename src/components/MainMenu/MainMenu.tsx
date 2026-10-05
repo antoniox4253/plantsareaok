@@ -156,7 +156,12 @@ export default function MainMenu({
   const [showLotteryModal, setShowLotteryModal] = useState(false)
   const [lotteryInitialTab, setLotteryInitialTab] = useState<'wheel' | 'auction' | 'code'>('wheel')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [newsModal, setNewsModal] = useState<{ title: string; message: string } | null>(null)
+  const [newsModal, setNewsModal] = useState<{
+    title: string
+    message: string | React.ReactNode
+    actionLabel?: string
+    onAction?: () => void
+  } | null>(null)
 
   useEffect(() => {
     const handleOpenLottery = (e: any) => {
@@ -295,9 +300,102 @@ export default function MainMenu({
     }
   }
 
-  const handleOpenNews = (title: string, message: string) => {
+  const handleOpenNews = (
+    title: string,
+    message: string | React.ReactNode,
+    actionLabel?: string,
+    onAction?: () => void
+  ) => {
     soundManager.playSound('click', 0.5)
-    setNewsModal({ title, message })
+    setNewsModal({ title, message, actionLabel, onAction })
+  }
+
+  const handleOpenJalapenoNews = () => {
+    soundManager.playSound('click', 0.5)
+    setNewsModal({
+      title: 'Subasta de Jalapeños: Furia Ígnea',
+      actionLabel: '🔥 IR A LA SUBASTA',
+      onAction: () => {
+        soundManager.playSound('click', 0.5)
+        setLotteryInitialTab('auction')
+        setShowLotteryModal(true)
+      },
+      message: (
+        <div className="bosque-jalapeno-news">
+          <div className="bosque-jalapeno-news__hero">
+            <div className="bosque-jalapeno-news__avatar-wrap">
+              <img
+                src="/game-assets/plants/jalapeno_hd.png"
+                alt="Jalapeño"
+                className="bosque-jalapeno-news__avatar-img"
+              />
+            </div>
+            <div className="bosque-jalapeno-news__hero-info">
+              <span className="bosque-jalapeno-news__hero-tag">🔥 EVENTO RELÁMPAGO · 24 HORAS</span>
+              <h4 className="bosque-jalapeno-news__hero-title">El Titán Incendiario de la Arena</h4>
+              <p className="bosque-jalapeno-news__hero-sub">
+                ¡Quema toda la línea enemiga con <strong>1,800 de daño devastador</strong>! 
+                El Jalapeño elimina oleadas masivas y tanques acorazados de un solo estallido.
+              </p>
+            </div>
+          </div>
+
+          <div className="bosque-jalapeno-news__rooms-grid">
+            {/* SALA 1: ORO */}
+            <div className="bosque-jalapeno-news__room-card bosque-jalapeno-news__room-card--gold">
+              <div className="bosque-jalapeno-news__room-header">
+                <span className="bosque-jalapeno-news__room-badge bosque-jalapeno-news__room-badge--gold">SALA ORO 🪙</span>
+                <span className="bosque-jalapeno-news__room-copies">1x Jalapeño</span>
+              </div>
+              <div className="bosque-jalapeno-news__room-body">
+                <div className="bosque-jalapeno-news__stat-row">
+                  <span>Puja Inicial:</span>
+                  <strong className="text-gold">3,000 Oro</strong>
+                </div>
+                <div className="bosque-jalapeno-news__stat-row">
+                  <span>Incremento Mínimo:</span>
+                  <span>+250 Oro</span>
+                </div>
+                <p className="bosque-jalapeno-news__room-hint">
+                  Ideal para competidores que han ahorrado su oro obtenido en batallas de la Arena.
+                </p>
+              </div>
+            </div>
+
+            {/* SALA 2: GEMAS VIP */}
+            <div className="bosque-jalapeno-news__room-card bosque-jalapeno-news__room-card--gems">
+              <div className="bosque-jalapeno-news__room-header">
+                <span className="bosque-jalapeno-news__room-badge bosque-jalapeno-news__room-badge--gems">SALA VIP GEMAS 💎</span>
+                <span className="bosque-jalapeno-news__room-copies bosque-jalapeno-news__room-copies--gems">2x Jalapeños</span>
+              </div>
+              <div className="bosque-jalapeno-news__room-body">
+                <div className="bosque-jalapeno-news__stat-row">
+                  <span>Puja Inicial:</span>
+                  <strong className="text-gems">800 Gemas</strong>
+                </div>
+                <div className="bosque-jalapeno-news__stat-row">
+                  <span>Incremento Mínimo:</span>
+                  <span>+50 Gemas</span>
+                </div>
+                <p className="bosque-jalapeno-news__room-hint">
+                  Lote doble exclusivo de 2 copias listo para fusionar o subir de nivel de inmediato.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bosque-jalapeno-news__guarantees">
+            <div className="bosque-jalapeno-news__guarantee-item">
+              <span className="bosque-jalapeno-news__guarantee-icon">⚡</span>
+              <div>
+                <strong>Reembolso Instantáneo Atómico</strong>
+                <p>Si otro jugador supera tu oferta, tu oro o gemas regresan al instante a tu saldo sin demoras.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    })
   }
 
   useEffect(() => {
@@ -993,27 +1091,52 @@ export default function MainMenu({
         onClick={() =>
           handleOpenNews(
             'Noticias del Bosque Renovado',
-            'Explora las últimas actualizaciones de la temporada, notas de balance competitivo y los nuevos mapas mágicos.'
+            '¡La Gran Subasta de Jalapeños ya está disponible! Consigue la carta legendaria por Oro o el Lote VIP por Gemas. Además, disfruta de los nuevos escenarios forestales, notas de balance y optimizaciones del jardín.',
+            '🔥 VER SUBASTA',
+            () => {
+              setLotteryInitialTab('auction')
+              setShowLotteryModal(true)
+            }
           )
         }
       >
         noticias
       </button>
-      <button
-        type="button"
-        className="hit"
+
+      {/* Tarjeta Interactiva Viva: Subasta de Jalapeños */}
+      <div
+        className="bosque-news-item--jalapeno"
         data-action="noticia-arena"
-        aria-label="noticia arena"
-        title="Novedades de la Arena"
-        onClick={() =>
-          handleOpenNews(
-            'Novedades de la Arena',
-            'Nuevos escenarios forestales, sistema de emparejamiento ELO de alta precisión y recompensas de victoria incrementadas.'
-          )
-        }
+        role="button"
+        tabIndex={0}
+        aria-label="Subasta de Jalapeños: 24 horas activas para pujar por 1 Jalapeño en Oro y 2 en Gemas"
+        title="Gran Subasta de Jalapeños (Clic para ver detalles y pujar)"
+        onClick={handleOpenJalapenoNews}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleOpenJalapenoNews()
+          }
+        }}
       >
-        noticia-arena
-      </button>
+        <div className="bosque-news-jalapeno__art-wrap">
+          <img
+            src="/game-assets/plants/jalapeno_hd.png"
+            alt="Jalapeño"
+            className="bosque-news-jalapeno__img"
+          />
+        </div>
+        <div className="bosque-news-jalapeno__content">
+          <div className="bosque-news-jalapeno__top-row">
+            <span className="bosque-news-jalapeno__badge">🔥 24H ACTIVA</span>
+            <span className="bosque-news-jalapeno__type-tag">SUBASTA</span>
+          </div>
+          <span className="bosque-news-jalapeno__title">Subasta de Jalapeños</span>
+          <span className="bosque-news-jalapeno__desc">
+            1800 Daño · Pujas en Oro 🪙 y Gemas 💎
+          </span>
+        </div>
+        <span className="bosque-news-jalapeno__arrow">➔</span>
+      </div>
       <button
         type="button"
         className="hit"
@@ -1115,15 +1238,28 @@ export default function MainMenu({
                 ✕
               </button>
             </div>
-            <p className="bosque-news-modal-body">{newsModal.message}</p>
+            <div className="bosque-news-modal-body">{newsModal.message}</div>
             <div className="bosque-news-modal-actions">
               <button
                 type="button"
-                className="bosque-news-modal-btn"
+                className="bosque-news-modal-btn bosque-news-modal-btn--secondary"
                 onClick={() => setNewsModal(null)}
               >
-                ENTENDIDO
+                CERRAR
               </button>
+              {newsModal.actionLabel && newsModal.onAction && (
+                <button
+                  type="button"
+                  className="bosque-news-modal-btn bosque-news-modal-btn--action"
+                  onClick={() => {
+                    const act = newsModal.onAction
+                    setNewsModal(null)
+                    act?.()
+                  }}
+                >
+                  {newsModal.actionLabel}
+                </button>
+              )}
             </div>
           </div>
         </div>
