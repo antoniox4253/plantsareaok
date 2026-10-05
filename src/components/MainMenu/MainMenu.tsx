@@ -23,6 +23,7 @@ import gema from '../../assets/ico/gema.webp'
 import ranking from '../../assets/ico/Ranking.webp'
 import ajustesIcon from '../../assets/ico/ajustes.webp'
 import { tournamentService } from '../../services/tournamentService'
+import { SeasonManager } from '../../utils/seasonManager'
 import type { ColosseumBetAmount, PlantId, TournamentModel, PlantCardInstance } from '../../types/game'
 import './MainMenu.css'
 import './BosqueRenovado.css'
@@ -406,6 +407,10 @@ export default function MainMenu({
     }
   }, [ticker, upcomingTournament])
 
+  const seasonStatus = useMemo(() => {
+    return SeasonManager.getSeasonStatus()
+  }, [ticker])
+
   const displayAvatar = getPlayerAvatarUrl(
     userProfile?.avatar_id || userProfile?.avatar_url || playerProfile.avatar
   )
@@ -682,22 +687,78 @@ export default function MainMenu({
         <img src={ajustesIcon} alt="Ajustes" className="topbar-settings-img" />
       </button>
 
-      {/* ── CENTRO / ARENA ── */}
-      <button
-        type="button"
-        className="hit"
+      {/* ── CENTRO / CONTADOR DE FIN DE TEMPORADA ── */}
+      <div
+        className="bosque-season-banner"
         data-action="banner-superior"
-        aria-label="banner superior"
-        title="Patrocinador GreenLeaf Energía Natural"
-        onClick={() =>
-          handleOpenNews(
-            'Patrocinador GreenLeaf',
-            '¡GreenLeaf Energía Natural impulsa los torneos y batallas de Plants Arena! Plantas más fuertes para un mundo mejor.'
-          )
-        }
+        role="button"
+        tabIndex={0}
+        aria-label={`Fin de Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`}
+        title={`Temporada ${seasonStatus.seasonNumber} - Haz clic para ver el ranking y recompensas`}
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenRanking?.()
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            soundManager.playSound('click', 0.5)
+            onOpenRanking?.()
+          }
+        }}
       >
-        banner-superior
-      </button>
+        <div className="bosque-season-banner__left">
+          <div className="bosque-season-banner__icon-wrap">
+            <span className="bosque-season-banner__icon">🏆</span>
+          </div>
+          <div className="bosque-season-banner__titles">
+            <span className="bosque-season-banner__badge">TEMPORADA {seasonStatus.seasonNumber}</span>
+            <span className="bosque-season-banner__main-title">FIN DE TEMPORADA</span>
+          </div>
+        </div>
+
+        <div className="bosque-season-banner__countdown-wrap">
+          <div className="bosque-season-banner__countdown-label">
+            <span className="bosque-season-banner__pulse-dot" />
+            <span>TIEMPO RESTANTE</span>
+          </div>
+          <div className="bosque-season-banner__timer-boxes">
+            <div className="bosque-season-timer-unit">
+              <span className="bosque-season-timer-val">{String(seasonStatus.daysLeft).padStart(2, '0')}</span>
+              <span className="bosque-season-timer-lbl">DÍAS</span>
+            </div>
+            <span className="bosque-season-timer-sep">:</span>
+            <div className="bosque-season-timer-unit">
+              <span className="bosque-season-timer-val">{String(seasonStatus.hoursLeft).padStart(2, '0')}</span>
+              <span className="bosque-season-timer-lbl">HRS</span>
+            </div>
+            <span className="bosque-season-timer-sep">:</span>
+            <div className="bosque-season-timer-unit">
+              <span className="bosque-season-timer-val">{String(seasonStatus.minutesLeft).padStart(2, '0')}</span>
+              <span className="bosque-season-timer-lbl">MIN</span>
+            </div>
+            <span className="bosque-season-timer-sep">:</span>
+            <div className="bosque-season-timer-unit">
+              <span className="bosque-season-timer-val">{String(seasonStatus.secondsLeft).padStart(2, '0')}</span>
+              <span className="bosque-season-timer-lbl">SEG</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bosque-season-banner__right">
+          <button
+            type="button"
+            className="bosque-season-banner__btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              soundManager.playSound('click', 0.5)
+              onOpenRanking?.()
+            }}
+          >
+            <span>PREMIOS</span>
+            <span className="bosque-season-banner__btn-arrow">➔</span>
+          </button>
+        </div>
+      </div>
       <button
         type="button"
         className="hit"
