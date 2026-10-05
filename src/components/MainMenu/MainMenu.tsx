@@ -411,6 +411,15 @@ export default function MainMenu({
     return SeasonManager.getSeasonStatus()
   }, [ticker])
 
+  const [bannerSlide, setBannerSlide] = useState<number>(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBannerSlide((prev) => (prev + 1) % 3)
+    }, 10000)
+    return () => clearInterval(timer)
+  }, [])
+
   const displayAvatar = getPlayerAvatarUrl(
     userProfile?.avatar_id || userProfile?.avatar_url || playerProfile.avatar
   )
@@ -609,33 +618,25 @@ export default function MainMenu({
         </div>
       </button>
 
-      {/* 3. Telegram */}
-      <a
-        className="topbar-pill topbar-pill--telegram"
-        data-action="telegram"
-        aria-label="telegram"
-        title="Canal Oficial de Telegram"
-        href="https://t.me/+HY1gbZZKmAE5ZDcx"
-        target="_blank"
-        rel="noreferrer"
-        onClick={() => soundManager.playSound('click', 0.4)}
+      {/* 3. Energías (Sincronizado con Supabase / profiles.energy_current) */}
+      <button
+        type="button"
+        className="topbar-pill topbar-pill--energy"
+        data-action="energia"
+        aria-label="energia"
+        title={`Energía Diaria (${playerEnergy}/${maxPlayerEnergy}⚡) - Clic para recargar o ver paquetes`}
+        onClick={() => {
+          soundManager.playSound('click', 0.4)
+          onOpenShop?.('energy')
+        }}
       >
-        <span style={{ fontSize: '14px' }}>✈️</span>
-        <span>Telegram</span>
-      </a>
+        <span className="topbar-energy-icon">⚡</span>
+        <span className="topbar-stat-val topbar-stat-val--energy">
+          {playerEnergy}/{maxPlayerEnergy}
+        </span>
+      </button>
 
-      {/* 4. Jugadores en línea */}
-      <div
-        className="topbar-pill topbar-pill--online"
-        data-action="en-linea"
-        aria-label="en linea"
-        title="Jugadores conectados en tiempo real"
-      >
-        <span className="topbar-online-dot" />
-        <span className="topbar-online-text">{onlineUsersCount} en línea</span>
-      </div>
-
-      {/* 5. Oro */}
+      {/* 4. Oro */}
       <button
         type="button"
         className="topbar-pill topbar-pill--gold"
@@ -653,7 +654,7 @@ export default function MainMenu({
         </span>
       </button>
 
-      {/* 6. Gemas */}
+      {/* 5. Gemas */}
       <button
         type="button"
         className="topbar-pill topbar-pill--gems"
@@ -672,7 +673,7 @@ export default function MainMenu({
         </span>
       </button>
 
-      {/* 7. Ajustes */}
+      {/* 6. Ajustes */}
       <button
         type="button"
         className="topbar-pill topbar-pill--settings"
@@ -687,61 +688,163 @@ export default function MainMenu({
         <img src={ajustesIcon} alt="Ajustes" className="topbar-settings-img" />
       </button>
 
-      {/* ── CENTRO / CONTADOR DE FIN DE TEMPORADA ── */}
+      {/* ── CENTRO / BANNER ROTATIVO CADA 10S (TEMPORADA, TELEGRAM, EN LÍNEA) ── */}
       <div
         className="bosque-season-banner"
         data-action="banner-superior"
         role="button"
         tabIndex={0}
-        aria-label={`Fin de Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`}
-        title={`Temporada ${seasonStatus.seasonNumber} - Haz clic para ver el ranking y recompensas`}
+        aria-label={
+          bannerSlide === 0
+            ? `Fin de Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`
+            : bannerSlide === 1
+            ? 'Canal Oficial de Telegram: Únete para noticias y torneos'
+            : `${onlineUsersCount} Jugadores en línea jugando en la Arena`
+        }
+        title={
+          bannerSlide === 0
+            ? `Temporada ${seasonStatus.seasonNumber} - Clic para ver ranking y recompensas`
+            : bannerSlide === 1
+            ? 'Comunidad Oficial de Telegram - Clic para unirte'
+            : 'Jugadores en línea - Clic para entrar a la Arena'
+        }
         onClick={() => {
           soundManager.playSound('click', 0.5)
-          onOpenRanking?.()
+          if (bannerSlide === 0) {
+            onOpenRanking?.()
+          } else if (bannerSlide === 1) {
+            window.open('https://t.me/+HY1gbZZKmAE5ZDcx', '_blank')
+          } else {
+            handlePlayClick()
+          }
         }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             soundManager.playSound('click', 0.5)
-            onOpenRanking?.()
+            if (bannerSlide === 0) onOpenRanking?.()
+            else if (bannerSlide === 1) window.open('https://t.me/+HY1gbZZKmAE5ZDcx', '_blank')
+            else handlePlayClick()
           }
         }}
       >
-        <div className="bosque-season-banner__left">
-          <div className="bosque-season-banner__icon-wrap">
-            <span className="bosque-season-banner__icon">🏆</span>
-          </div>
-          <div className="bosque-season-banner__titles">
-            <span className="bosque-season-banner__badge">TEMPORADA {seasonStatus.seasonNumber}</span>
-            <span className="bosque-season-banner__main-title">FIN DE TEMPORADA</span>
-          </div>
-        </div>
+        {/* SLIDE 0: FIN DE TEMPORADA */}
+        {bannerSlide === 0 && (
+          <div className="bosque-banner-slide bosque-banner-slide--season">
+            <div className="bosque-season-banner__left">
+              <div className="bosque-season-banner__icon-wrap">
+                <span className="bosque-season-banner__icon">🏆</span>
+              </div>
+              <div className="bosque-season-banner__titles">
+                <span className="bosque-season-banner__badge">TEMPORADA {seasonStatus.seasonNumber}</span>
+                <span className="bosque-season-banner__main-title">FIN DE TEMPORADA</span>
+              </div>
+            </div>
 
-        <div className="bosque-season-banner__countdown-wrap">
-          <div className="bosque-season-banner__countdown-label">
-            <span className="bosque-season-banner__pulse-dot" />
-            <span>TIEMPO RESTANTE</span>
+            <div className="bosque-season-banner__countdown-wrap">
+              <div className="bosque-season-banner__countdown-label">
+                <span className="bosque-season-banner__pulse-dot" />
+                <span>TIEMPO RESTANTE</span>
+              </div>
+              <div className="bosque-season-banner__timer-boxes">
+                <div className="bosque-season-timer-unit">
+                  <span className="bosque-season-timer-val">{String(seasonStatus.daysLeft).padStart(2, '0')}</span>
+                  <span className="bosque-season-timer-lbl">DÍAS</span>
+                </div>
+                <span className="bosque-season-timer-sep">:</span>
+                <div className="bosque-season-timer-unit">
+                  <span className="bosque-season-timer-val">{String(seasonStatus.hoursLeft).padStart(2, '0')}</span>
+                  <span className="bosque-season-timer-lbl">HRS</span>
+                </div>
+                <span className="bosque-season-timer-sep">:</span>
+                <div className="bosque-season-timer-unit">
+                  <span className="bosque-season-timer-val">{String(seasonStatus.minutesLeft).padStart(2, '0')}</span>
+                  <span className="bosque-season-timer-lbl">MIN</span>
+                </div>
+                <span className="bosque-season-timer-sep">:</span>
+                <div className="bosque-season-timer-unit">
+                  <span className="bosque-season-timer-val">{String(seasonStatus.secondsLeft).padStart(2, '0')}</span>
+                  <span className="bosque-season-timer-lbl">SEG</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="bosque-season-banner__timer-boxes">
-            <div className="bosque-season-timer-unit">
-              <span className="bosque-season-timer-val">{String(seasonStatus.daysLeft).padStart(2, '0')}</span>
-              <span className="bosque-season-timer-lbl">DÍAS</span>
+        )}
+
+        {/* SLIDE 1: COMUNIDAD TELEGRAM LLAMATIVO */}
+        {bannerSlide === 1 && (
+          <div className="bosque-banner-slide bosque-banner-slide--telegram">
+            <div className="bosque-telegram-banner__left">
+              <div className="bosque-telegram-banner__icon-wrap">
+                <span className="bosque-telegram-banner__icon">✈️</span>
+              </div>
+              <div className="bosque-telegram-banner__titles">
+                <span className="bosque-telegram-banner__badge">COMUNIDAD OFICIAL</span>
+                <span className="bosque-telegram-banner__main-title">CANAL DE TELEGRAM</span>
+              </div>
             </div>
-            <span className="bosque-season-timer-sep">:</span>
-            <div className="bosque-season-timer-unit">
-              <span className="bosque-season-timer-val">{String(seasonStatus.hoursLeft).padStart(2, '0')}</span>
-              <span className="bosque-season-timer-lbl">HRS</span>
+
+            <div className="bosque-telegram-banner__center">
+              <span className="bosque-telegram-banner__desc">
+                🎁 ¡Sorteos semanales, anuncios de torneos y soporte 24/7!
+              </span>
             </div>
-            <span className="bosque-season-timer-sep">:</span>
-            <div className="bosque-season-timer-unit">
-              <span className="bosque-season-timer-val">{String(seasonStatus.minutesLeft).padStart(2, '0')}</span>
-              <span className="bosque-season-timer-lbl">MIN</span>
-            </div>
-            <span className="bosque-season-timer-sep">:</span>
-            <div className="bosque-season-timer-unit">
-              <span className="bosque-season-timer-val">{String(seasonStatus.secondsLeft).padStart(2, '0')}</span>
-              <span className="bosque-season-timer-lbl">SEG</span>
+
+            <div className="bosque-telegram-banner__right">
+              <span className="bosque-telegram-banner__cta">
+                <span>UNIRSE AHORA</span>
+                <span className="bosque-telegram-banner__cta-arrow">➔</span>
+              </span>
             </div>
           </div>
+        )}
+
+        {/* SLIDE 2: JUGADORES EN LÍNEA LLAMATIVO */}
+        {bannerSlide === 2 && (
+          <div className="bosque-banner-slide bosque-banner-slide--online">
+            <div className="bosque-online-banner__left">
+              <div className="bosque-online-banner__icon-wrap">
+                <span className="bosque-online-banner__icon">⚔️</span>
+              </div>
+              <div className="bosque-online-banner__titles">
+                <span className="bosque-online-banner__badge">
+                  <span className="bosque-online-banner__radar-dot" /> EN VIVO EN LA ARENA
+                </span>
+                <span className="bosque-online-banner__main-title">
+                  <strong className="bosque-online-banner__count">{onlineUsersCount}</strong> JUGADORES EN LÍNEA
+                </span>
+              </div>
+            </div>
+
+            <div className="bosque-online-banner__center">
+              <span className="bosque-online-banner__desc">
+                ⚡ ¡Rival listo para combatir ahora mismo! ¡Entra y sube tus copas!
+              </span>
+            </div>
+
+            <div className="bosque-online-banner__right">
+              <span className="bosque-online-banner__cta">
+                <span>COMBATIR</span>
+                <span className="bosque-online-banner__cta-arrow">➔</span>
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* INDICADORES DE CARRUSEL (PUNTOS NAVEGABLES) */}
+        <div className="bosque-banner-dots">
+          {[0, 1, 2].map((idx) => (
+            <button
+              key={idx}
+              type="button"
+              className={`bosque-banner-dot ${bannerSlide === idx ? 'bosque-banner-dot--active' : ''}`}
+              aria-label={`Ir al banner ${idx + 1}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                soundManager.playSound('click', 0.4)
+                setBannerSlide(idx)
+              }}
+            />
+          ))}
         </div>
       </div>
       <button

@@ -34,8 +34,8 @@ async function cleanDashboard() {
       <!-- Pase VIP area (clearing 'PASE VIP', 'NIVEL 0/20' and bar) -->
       <rect x="440" y="47" width="180" height="60" rx="8" fill="url(#darkVip)" />
 
-      <!-- En linea area (clearing '25 en linea' and dot) -->
-      <rect x="836" y="47" width="170" height="60" rx="22" fill="url(#darkOnline)" />
+      <!-- Telegram & En linea area (clearing old Telegram blue pill & 25 en linea to make room for Energia) -->
+      <rect x="632" y="38" width="390" height="78" rx="14" fill="#05160e" opacity="0.98" />
 
       <!-- Oro number area (clearing '8,500') -->
       <rect x="1114" y="47" width="102" height="60" rx="8" fill="url(#darkBadge)" />

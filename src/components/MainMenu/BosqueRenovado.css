@@ -223,81 +223,58 @@
   transition: width 0.3s ease;
 }
 
-/* 3. Telegram */
-.topbar-pill--telegram {
-  left: 38.038278%;
-  top: 4.250797%;
-  width: 11.303828%;
-  height: 7.970244%;
-  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
-  border-color: #38bdf8;
+/* 3. Energía (Sincronizado con base de datos) */
+.topbar-pill--energy {
+  left: 38.6%;
+  top: 4.144527%;
+  width: 16.8%;
+  height: 8.182784%;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 0 10px;
+}
+
+.topbar-energy-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.8));
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
-  color: #fff;
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 12.5px;
+  flex-shrink: 0;
 }
 
-.topbar-pill--telegram:hover {
-  border-color: #7dd3fc;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+.topbar-stat-val--energy {
+  color: #fef08a;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.5), 0 2px 3px rgba(0, 0, 0, 0.9);
 }
 
-/* 4. En línea */
-.topbar-pill--online {
-  left: 49.820574%;
-  top: 4.250797%;
-  width: 10.705742%;
-  height: 7.970244%;
-  justify-content: center;
-  gap: 6px;
-  cursor: default;
-}
-
-.topbar-online-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 8px #22c55e;
-  animation: pulseDot 2s infinite ease-in-out;
-}
-
-.topbar-online-text {
-  font-size: 11.5px;
-  font-weight: 800;
-  color: #e2e8f0;
-  text-shadow: 0 1px 2px #000;
-}
-
-/* 5. Oro */
+/* 4. Oro */
 .topbar-pill--gold {
-  left: 63.636364%;
+  left: 56.4%;
   top: 4.144527%;
-  width: 12.8%;
+  width: 16.8%;
   height: 8.182784%;
   gap: 8px;
   justify-content: flex-start;
   padding: 0 10px;
 }
 
-/* 6. Gemas */
+/* 5. Gemas */
 .topbar-pill--gems {
-  left: 77.2%;
+  left: 74.2%;
   top: 4.144527%;
-  width: 14.5%;
+  width: 16.8%;
   height: 8.182784%;
   gap: 8px;
   justify-content: flex-start;
   padding: 0 10px;
 }
 
-/* 7. Ajustes (Tuerca) */
+/* 6. Ajustes (Tuerca) */
 .topbar-pill--settings {
-  left: 92.5%;
+  left: 92.0%;
   top: 4.144527%;
-  width: 5.6%;
+  width: 6.0%;
   height: 8.182784%;
   justify-content: center;
   padding: 0;
@@ -532,6 +509,268 @@
   color: #facc15;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   margin-bottom: 6px;
+}
+
+/* Estilos del Carrusel Rotativo en el Banner Central */
+.bosque-banner-slide {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  animation: fadeInBanner 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInBanner {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide 1: Telegram Llamativo */
+.bosque-banner-slide--telegram {
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.bosque-telegram-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bosque-telegram-banner__icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(2, 132, 199, 0.85));
+  border: 1.5px solid #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+  flex-shrink: 0;
+}
+
+.bosque-telegram-banner__icon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.bosque-telegram-banner__titles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.bosque-telegram-banner__badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #7dd3fc;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.bosque-telegram-banner__main-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.6px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+  white-space: nowrap;
+}
+
+.bosque-telegram-banner__center {
+  flex: 1;
+  text-align: center;
+  padding: 0 12px;
+}
+
+.bosque-telegram-banner__desc {
+  font-size: 11px;
+  font-weight: 700;
+  color: #bae6fd;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.bosque-telegram-banner__right {
+  flex-shrink: 0;
+}
+
+.bosque-telegram-banner__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border: 1px solid #7dd3fc;
+  border-radius: 10px;
+  padding: 7px 13px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.bosque-telegram-banner__cta:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.7);
+}
+
+.bosque-telegram-banner__cta-arrow {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* Slide 2: Jugadores en Línea Llamativo */
+.bosque-banner-slide--online {
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.bosque-online-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bosque-online-banner__icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.35), rgba(5, 46, 22, 0.85));
+  border: 1.5px solid #4ade80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 14px rgba(74, 222, 128, 0.45);
+  flex-shrink: 0;
+}
+
+.bosque-online-banner__icon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.bosque-online-banner__titles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.bosque-online-banner__badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #86efac;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.bosque-online-banner__radar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulseDot 1.5s infinite ease-in-out;
+}
+
+.bosque-online-banner__main-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.6px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
+  white-space: nowrap;
+}
+
+.bosque-online-banner__count {
+  color: #4ade80;
+  font-size: 16px;
+}
+
+.bosque-online-banner__center {
+  flex: 1;
+  text-align: center;
+  padding: 0 12px;
+}
+
+.bosque-online-banner__desc {
+  font-size: 11px;
+  font-weight: 700;
+  color: #d1fae5;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.bosque-online-banner__right {
+  flex-shrink: 0;
+}
+
+.bosque-online-banner__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  border: 1px solid #4ade80;
+  border-radius: 10px;
+  padding: 7px 13px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.bosque-online-banner__cta:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.7);
+}
+
+.bosque-online-banner__cta-arrow {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* Indicadores de carrusel (puntos) */
+.bosque-banner-dots {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.bosque-banner-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bosque-banner-dot:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.bosque-banner-dot--active {
+  background: #facc15;
+  box-shadow: 0 0 6px #facc15;
+  transform: scale(1.3);
 }
 
 [data-action="jugar"] {
