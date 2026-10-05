@@ -875,6 +875,17 @@ export default function LotteryModal({
     return () => clearInterval(interval)
   }, [isOpen, activeTab])
 
+  // Sondeo de sincronización automática de premios en vivo de la ruleta cada 12s
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'wheel') return
+    const interval = setInterval(() => {
+      void (lotteryService as any).getRecentLotteryWinners(10).then((w: any) => {
+        if (w && Array.isArray(w)) setRecentWinners(w)
+      })
+    }, 12000)
+    return () => clearInterval(interval)
+  }, [isOpen, activeTab])
+
   if (!isOpen) return null
 
   // ===================== WHEEL ACTIONS =====================
@@ -1014,6 +1025,9 @@ export default function LotteryModal({
         setShowBatchSummaryModal(true)
       }
       void onRewardsChanged?.()
+      void (lotteryService as any).getRecentLotteryWinners(10).then((w: any) => {
+        if (w && Array.isArray(w)) setRecentWinners(w)
+      })
     }
   }
 
@@ -1023,6 +1037,9 @@ export default function LotteryModal({
       setShowBatchSummaryModal(true)
     }
     void onRewardsChanged?.()
+    void (lotteryService as any).getRecentLotteryWinners(10).then((w: any) => {
+      if (w && Array.isArray(w)) setRecentWinners(w)
+    })
   }
 
   // ===================== CODE (SECUENCIA) ACTIONS =====================
