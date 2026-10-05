@@ -835,9 +835,6 @@ export default function MainMenu({
             className="bosque-tourney-card__art"
           />
           <div className="bosque-tourney-card__badge-row">
-            <span className="bosque-tourney-card__timer">
-              ⏱️ {upcomingTourneyInfo ? upcomingTourneyInfo.countdownStr : '11d 22h'}
-            </span>
             <span
               className={`bosque-tourney-card__status-btn ${
                 upcomingTourneyInfo?.isLive
