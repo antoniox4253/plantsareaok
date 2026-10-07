@@ -14,7 +14,6 @@ import Marketplace from '../Marketplace/Marketplace'
 import {
   VIP_PASS_PRECIO_GEMAS,
   ENERGY_PACKAGES_GEMS,
-  ENERGY_PACKAGES_GOLD,
   type EnergyPackage,
   type PlantStatKey,
 } from '../../utils/gameConstants'
@@ -1061,62 +1060,11 @@ export default function Shop({
               </div>
             </div>
 
-            {/* FILA 2: RECARGAS CON ORO */}
-            <div className="shop-energy-group shop-energy-group--gold">
-              <div className="shop-energy-group-header shop-energy-group-header--gold">
-                <div className="shop-energy-group-title-box">
-                  <span className="shop-energy-group-icon">💰</span>
-                  <span className="shop-energy-group-title">RECARGAS CON ORO</span>
-                </div>
-                <div className="shop-energy-group-balance">
-                  <span>Tu Saldo:</span>
-                  <strong className="shop-energy-balance-gold">{userGold.toLocaleString()} 💰</strong>
-                </div>
-              </div>
-
-              <div className="shop-energy-grid">
-                {ENERGY_PACKAGES_GOLD.map((pkg) => (
-                  <div
-                    key={pkg.id}
-                    className={`shop-energy-card shop-energy-card--gold ${pkg.popular ? 'shop-energy-card--popular' : ''} ${pkg.bestValue ? 'shop-energy-card--best' : ''}`}
-                    onClick={() => handleBuyEnergy(pkg)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        handleBuyEnergy(pkg)
-                      }
-                    }}
-                  >
-                    {pkg.badge && (
-                      <div className="shop-energy-badge-ribbon shop-energy-badge-ribbon--gold">
-                        {pkg.badge}
-                      </div>
-                    )}
-
-                    <div className="shop-energy-card-hero">
-                      <span className="shop-energy-card-bolt shop-energy-card-bolt--gold">⚡</span>
-                      <span className="shop-energy-card-amount shop-energy-card-amount--gold">
-                        +{pkg.energyAmount}
-                      </span>
-                    </div>
-
-                    <div className="shop-energy-card-name">{pkg.name}</div>
-
-                    <button
-                      type="button"
-                      className="shop-energy-card-btn shop-energy-card-btn--gold"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleBuyEnergy(pkg)
-                      }}
-                    >
-                      <span className="shop-energy-btn-icon">💰</span>
-                      <span className="shop-energy-btn-price">{pkg.price.toLocaleString()} Oro</span>
-                    </button>
-                  </div>
-                ))}
+            {/* NOTA INFORMATIVA DE ENERGÍA */}
+            <div className="shop-energy-group" style={{ background: 'rgba(56, 189, 248, 0.08)', borderColor: 'rgba(56, 189, 248, 0.3)', padding: '12px 16px', borderRadius: '12px', marginTop: '16px', textAlign: 'center' }}>
+              <div style={{ color: '#38bdf8', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <span>⚡</span>
+                <span>La energía se restablece automáticamente cada día a las 00:00 UTC. Las recargas adicionales se adquieren exclusivamente con Gemas para financiar el ecosistema.</span>
               </div>
             </div>
           </div>

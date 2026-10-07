@@ -617,6 +617,28 @@ export default function ArenaAdsModal({
         ) : activeView === 'lobby' ? (
           /* ── VISTA LOBBY / ENTRADA (OPTIMIZADA SIN SCROLL EN HORIZONTAL) ── */
           <div className="arena-ads-content arena-ads-lobby-layout">
+            {/* Banner de Evento Finalizado / Pausado */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.35) 100%)',
+              border: '1px solid rgba(239, 68, 68, 0.7)',
+              borderRadius: '10px',
+              padding: '10px 16px',
+              margin: '6px 0 10px',
+              textAlign: 'center',
+              color: '#fef2f2',
+              fontSize: '14px',
+              fontWeight: 700,
+              letterSpacing: '0.3px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              <span>🏁</span>
+              <span>La prueba ha finalizado, espera el siguiente evento.</span>
+            </div>
+
             {/* Banner Header Slim */}
             <div className="arena-ads-native-banner-box" style={{ minHeight: 'auto', padding: '3px 8px' }}>
               <div className="arena-ads-native-header" style={{ margin: 0 }}>
@@ -1134,24 +1156,14 @@ export default function ArenaAdsModal({
                     )}
                   </>
                 ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="arena-ads-btn arena-ads-btn--primary"
-                      onClick={() => handleStartNewRun('gold')}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? '⏳...' : <>🎮 350 <GoldIcon size={16} style={{ margin: '0 3px' }} /> ORO</>}
-                    </button>
-                    <button
-                      type="button"
-                      className="arena-ads-btn arena-ads-btn--gems"
-                      onClick={() => handleStartNewRun('gems')}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? '⏳...' : '⚡ 200 💎 (2X BOTÍN)'}
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="arena-ads-btn arena-ads-btn--secondary"
+                    disabled
+                    style={{ opacity: 0.65, cursor: 'not-allowed', width: '100%' }}
+                  >
+                    🔒 EVENTO EN PAUSA (ESPERA EL SIGUIENTE EVENTO)
+                  </button>
                 )}
               </div>
             </>

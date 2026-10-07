@@ -647,16 +647,13 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       expect(res.energyCurrent).toBe(25)
     })
 
-    it('buyEnergyPack local: procesa compras con oro deduciendo correctamente', async () => {
+    it('buyEnergyPack local: rechaza estrictamente compras de energía con oro', async () => {
       mockStorage.setItem('plant_arena_user_gold', '1500')
       mockStorage.setItem('plant_arena_player_energy', '10')
 
       const res = await inventoryService.buyEnergyPack('energy_gold_3')
-      expect(res.success).toBe(true)
-      expect(res.energyAdded).toBe(3)
-      expect(res.energyCurrent).toBe(13)
-      expect(res.spentGold).toBe(1000)
-      expect(res.newGoldBalance).toBe(500)
+      expect(res.success).toBe(false)
+      expect(res.error).toContain('La compra de energía con oro ha sido descontinuada')
     })
   })
 })

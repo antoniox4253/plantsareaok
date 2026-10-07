@@ -138,12 +138,12 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
   10: [
     { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
     { type: 'pack', packId: 'basic', amount: 1, label: '1 Sobre Común', icon: '📦' },
-    { type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' },
+    { type: 'item', itemId: 'fertilizer', amount: 10, label: '+10 Fertilizante', icon: '🌱' },
   ],
   11: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
   12: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   13: [{ type: 'item', itemId: 'shovel_fragment', amount: 2, label: '+2 Fragmentos de Pala', icon: '⛏️' }],
-  14: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
+  14: [{ type: 'item', itemId: 'water', amount: 10, label: '+10 Agua', icon: '💧' }],
   15: [
     { type: 'gems', amount: 10, label: '+10 Gemas (Bono)', icon: '💎' },
     { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
@@ -155,12 +155,12 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
   20: [
     { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
     { type: 'item', itemId: 'pesticide', amount: 2, label: '+2 Pesticidas', icon: '🧴' },
-    { type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' },
+    { type: 'item', itemId: 'fertilizer', amount: 10, label: '+10 Fertilizante', icon: '🌱' },
   ],
   21: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
   22: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   23: [{ type: 'item', itemId: 'shovel_fragment', amount: 2, label: '+2 Fragmentos de Pala', icon: '⛏️' }],
-  24: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
+  24: [{ type: 'item', itemId: 'pesticide', amount: 3, label: '+3 Pesticidas', icon: '🧴' }],
   25: [
     { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
     { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
@@ -177,7 +177,7 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
   31: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
   32: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   33: [{ type: 'item', itemId: 'shovel_fragment', amount: 3, label: '+3 Fragmentos de Pala', icon: '⛏️' }],
-  34: [{ type: 'item', itemId: 'energy_potion_5', amount: 1, label: '+1 Poción de Energía (5⚡)', icon: '⚡' }],
+  34: [{ type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' }],
   35: [
     { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
     { type: 'pack', packId: 'pvp', amount: 1, label: '1 Sobre PvP', icon: '🥊' },
@@ -198,8 +198,8 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
   41: [{ type: 'item', itemId: 'water', amount: 8, label: '+8 Agua', icon: '💧' }],
   42: [{ type: 'item', itemId: 'fertilizer', amount: 8, label: '+8 Fertilizante', icon: '🌱' }],
   43: [
-    { type: 'gems', amount: 15, label: '+15 Gemas (Bono)', icon: '💎' },
-    { type: 'item', itemId: 'energy_potion_5', amount: 2, label: '+2 Pociones de Energía (10⚡)', icon: '⚡' },
+    { type: 'gems', amount: 25, label: '+25 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'fertilizer', amount: 12, label: '+12 Fertilizante', icon: '🌱' },
   ],
   44: [{ type: 'item', itemId: 'shovel_fragment', amount: 4, label: '+4 Fragmentos de Pala', icon: '⛏️' }],
   45: [
@@ -214,8 +214,8 @@ export const ARENA_ADS_LEVEL_REWARDS: Record<number, ArenaAdsRewardOption[]> = {
     { type: 'item', itemId: 'pesticide', amount: 4, label: '+4 Pesticidas', icon: '🧴' },
   ],
   49: [
-    { type: 'gems', amount: 20, label: '+20 Gemas (Bono)', icon: '💎' },
-    { type: 'item', itemId: 'energy_potion_5', amount: 2, label: '+2 Pociones de Energía (10⚡)', icon: '⚡' },
+    { type: 'gems', amount: 30, label: '+30 Gemas (Bono)', icon: '💎' },
+    { type: 'item', itemId: 'water', amount: 15, label: '+15 Agua', icon: '💧' },
   ],
   50: [
     { type: 'gems', amount: 75, label: '+75 Gemas Supremas (Bono)', icon: '💎' },

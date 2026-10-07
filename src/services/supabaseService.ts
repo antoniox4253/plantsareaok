@@ -3949,15 +3949,8 @@ export const SupabaseService = {
     } else if (packId === 'energy_full' || packId === 'energy_gem_full') {
       costGems = 500
       isFullRefill = true
-    } else if (packId === 'energy_gold_1') {
-      costGold = 500
-      addEnergy = 1
-    } else if (packId === 'energy_gold_3') {
-      costGold = 1000
-      addEnergy = 3
-    } else if (packId === 'energy_gold_5') {
-      costGold = 1500
-      addEnergy = 5
+    } else if (packId.startsWith('energy_gold')) {
+      return { success: false, error: 'La compra de energía con oro ha sido descontinuada. Adquiere energía con Gemas.' }
     } else if (packId === 'energy_3') {
       costGems = 200
       addEnergy = 3
