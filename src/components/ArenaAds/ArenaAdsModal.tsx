@@ -399,6 +399,7 @@ export default function ArenaAdsModal({
       setIsProcessing(false)
     }
   }
+  void handleStartNewRun
 
   // Continuar la run existente desde caché
   const handleResumeRun = () => {

@@ -190,22 +190,23 @@ export const plantsTokenService = {
       }
 
       if (data) {
+        const d = data as any
         return {
-          spotPrice: Number(data.spotPrice ?? 0.0002),
-          usdtPool: Number(data.usdtPool ?? 200),
-          virtualPlants: Number(data.virtualPlants ?? 1000000),
-          totalMinted: Number(data.totalMinted ?? 0),
-          totalBurned: Number(data.totalBurned ?? 0),
-          circulatingSupply: Number(data.circulatingSupply ?? 0),
-          marketCapUsdt: Number(data.marketCapUsdt ?? 40),
-          currentHalvingEra: Number(data.currentHalvingEra ?? 1),
-          presaleActive: Boolean(data.presaleActive ?? true),
-          pvpBonusEndsAt: data.pvpBonusEndsAt ? String(data.pvpBonusEndsAt) : null,
-          pvpBonusPct: Number(data.pvpBonusPct ?? 25),
+          spotPrice: Number(d.spotPrice ?? 0.0002),
+          usdtPool: Number(d.usdtPool ?? 200),
+          virtualPlants: Number(d.virtualPlants ?? 1000000),
+          totalMinted: Number(d.totalMinted ?? 0),
+          totalBurned: Number(d.totalBurned ?? 0),
+          circulatingSupply: Number(d.circulatingSupply ?? 0),
+          marketCapUsdt: Number(d.marketCapUsdt ?? 40),
+          currentHalvingEra: Number(d.currentHalvingEra ?? 1),
+          presaleActive: Boolean(d.presaleActive ?? true),
+          pvpBonusEndsAt: d.pvpBonusEndsAt ? String(d.pvpBonusEndsAt) : null,
+          pvpBonusPct: Number(d.pvpBonusPct ?? 25),
           presaleStocks: {
-            pionero: Number(data.presaleStocks?.pionero ?? 10),
-            campeon: Number(data.presaleStocks?.campeon ?? 6),
-            leyenda: Number(data.presaleStocks?.leyenda ?? 4),
+            pionero: Number(d.presaleStocks?.pionero ?? 10),
+            campeon: Number(d.presaleStocks?.campeon ?? 6),
+            leyenda: Number(d.presaleStocks?.leyenda ?? 4),
           },
         }
       }
@@ -225,7 +226,7 @@ export const plantsTokenService = {
     }
 
     try {
-      const { data, error } = await supabase.rpc('get_plants_price_history', { p_limit: limit })
+      const { data, error } = await (supabase.rpc as any)('get_plants_price_history', { p_limit: limit })
       if (error) {
         console.warn('[plantsTokenService] getPriceHistory error:', error.message)
         return this.getFallbackPriceHistory()
@@ -260,7 +261,7 @@ export const plantsTokenService = {
     }
 
     try {
-      const { data, error } = await supabase.rpc('buy_plants_presale_pack', {
+      const { data, error } = await (supabase.rpc as any)('buy_plants_presale_pack', {
         p_pack_id: packId,
         p_payment_method: paymentMethod,
       })
@@ -287,7 +288,7 @@ export const plantsTokenService = {
     }
 
     try {
-      const { data, error } = await supabase.rpc('swap_plants_for_gems', {
+      const { data, error } = await (supabase.rpc as any)('swap_plants_for_gems', {
         p_amount: plantsAmount,
       })
 
@@ -314,7 +315,7 @@ export const plantsTokenService = {
     }
 
     try {
-      const { data, error } = await supabase.rpc('request_plants_cashout', {
+      const { data, error } = await (supabase.rpc as any)('request_plants_cashout', {
         p_amount: plantsAmount,
         p_wallet: walletAddress,
       })
@@ -346,7 +347,7 @@ export const plantsTokenService = {
     }
 
     try {
-      const { data, error } = await supabase.rpc('claim_pvp_plants_reward', {
+      const { data, error } = await (supabase.rpc as any)('claim_pvp_plants_reward', {
         p_room_id: params.roomId,
         p_match_duration_sec: params.matchDurationSec,
         p_enemy_kills: params.enemyKills,
@@ -384,22 +385,23 @@ export const plantsTokenService = {
     }
 
     try {
-      const { data, error } = await supabase.rpc('get_user_plants_vesting_summary')
+      const { data, error } = await (supabase.rpc as any)('get_user_plants_vesting_summary')
       if (error) {
         console.warn('[plantsTokenService] getUserVestingSummary error:', error.message)
         return null
       }
       if (data) {
+        const d = data as any
         return {
-          liquidBalance: Number(data.liquidBalance ?? 0),
-          vestingLocked: Number(data.vestingLocked ?? 0),
-          totalPlants: Number(data.totalPlants ?? 0),
-          claimablePlantsNow: Number(data.claimablePlantsNow ?? 0),
-          dailyAccrualRate: Number(data.dailyAccrualRate ?? 0),
-          activeOrdersCount: Number(data.activeOrdersCount ?? 0),
-          secondsToNextUnlock: Number(data.secondsToNextUnlock ?? 0),
-          orders: Array.isArray(data.orders)
-            ? data.orders.map((o: any) => ({
+          liquidBalance: Number(d.liquidBalance ?? 0),
+          vestingLocked: Number(d.vestingLocked ?? 0),
+          totalPlants: Number(d.totalPlants ?? 0),
+          claimablePlantsNow: Number(d.claimablePlantsNow ?? 0),
+          dailyAccrualRate: Number(d.dailyAccrualRate ?? 0),
+          activeOrdersCount: Number(d.activeOrdersCount ?? 0),
+          secondsToNextUnlock: Number(d.secondsToNextUnlock ?? 0),
+          orders: Array.isArray(d.orders)
+            ? d.orders.map((o: any) => ({
                 id: String(o.id),
                 packId: String(o.packId),
                 priceUsdt: Number(o.priceUsdt ?? 0),
@@ -440,20 +442,21 @@ export const plantsTokenService = {
     }
 
     try {
-      const { data, error } = await supabase.rpc('claim_daily_vesting_plants')
+      const { data, error } = await (supabase.rpc as any)('claim_daily_vesting_plants')
       if (error) {
         return { success: false, error: error.message }
       }
-      if (!data?.success) {
-        return { success: false, error: data?.error || 'No fue posible reclamar tokens en este momento' }
+      const d = data as any
+      if (!d?.success) {
+        return { success: false, error: d?.error || 'No fue posible reclamar tokens en este momento' }
       }
 
       window.dispatchEvent(new CustomEvent('refresh_user_balance'))
       return {
         success: true,
-        unlockedPlants: Number(data.unlockedPlants ?? 0),
-        newLiquidBalance: Number(data.newLiquidBalance ?? 0),
-        remainingVestingLocked: Number(data.remainingVestingLocked ?? 0),
+        unlockedPlants: Number(d.unlockedPlants ?? 0),
+        newLiquidBalance: Number(d.newLiquidBalance ?? 0),
+        remainingVestingLocked: Number(d.remainingVestingLocked ?? 0),
       }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error al reclamar liberación de vesting' }

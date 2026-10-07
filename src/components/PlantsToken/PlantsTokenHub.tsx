@@ -9,7 +9,6 @@ import {
   type PresalePackDefinition,
   type PlantsVestingSummary,
 } from '../../services/plantsTokenService'
-import moneda from '../../assets/ico/moneda.webp'
 import gema from '../../assets/ico/gema.webp'
 import './PlantsTokenHub.css'
 
@@ -37,9 +36,9 @@ type Timeframe = '1H' | '24H' | '7D' | 'ALL'
 export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   onBack,
   userTokens = 0,
-  userGold = 0,
+  userGold: _userGold = 0,
   userElo = 1000,
-  hasVipPass = false,
+  hasVipPass: _hasVipPass = false,
   userProfile,
   onRefreshProfile,
 }) => {
@@ -49,7 +48,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   const [priceHistory, setPriceHistory] = useState<PlantsPriceHistoryPoint[]>([])
   const [vestingSummary, setVestingSummary] = useState<PlantsVestingSummary | null>(null)
   const [countdownSeconds, setCountdownSeconds] = useState<number>(0)
-  const [isLoading, setIsLoading] = useState(true)
+  const [, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isClaimingVesting, setIsClaimingVesting] = useState(false)
   const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)

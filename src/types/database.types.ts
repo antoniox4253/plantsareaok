@@ -1004,6 +1004,59 @@ export interface Database {
         }
         Returns: Json
       }
+      my_balance: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_plants_market_state: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_plants_price_history: {
+        Args: {
+          p_limit?: number
+        }
+        Returns: Json
+      }
+      buy_plants_presale_pack: {
+        Args: {
+          p_pack_id: string
+          p_payment_method?: string
+        }
+        Returns: Json
+      }
+      swap_plants_for_gems: {
+        Args: {
+          p_amount: number
+        }
+        Returns: Json
+      }
+      request_plants_cashout: {
+        Args: {
+          p_amount: number
+          p_wallet: string
+        }
+        Returns: Json
+      }
+      claim_pvp_plants_reward: {
+        Args: {
+          p_room_id: string
+          p_match_duration_sec: number
+          p_enemy_kills: number
+          p_suns_collected: number
+          p_plants_placed: number
+          p_enemy_plants_placed: number
+        }
+        Returns: Json
+      }
+      get_user_plants_vesting_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      claim_daily_vesting_plants: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
 
     Enums: {

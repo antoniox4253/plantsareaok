@@ -102,6 +102,7 @@ describe('PLANTS Token & AMM Ecosystem Tests', () => {
       const retainedInPool = grossUsdt * 0.05
 
       expect(grossUsdt).toBeGreaterThan(0)
+      expect(feeUsdt).toBeCloseTo(grossUsdt * 0.1, 4)
       expect(netUsdt).toBe(grossUsdt * 0.9)
       expect(retainedInPool).toBe(grossUsdt * 0.05)
 
