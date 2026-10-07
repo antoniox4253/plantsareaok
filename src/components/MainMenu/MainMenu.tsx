@@ -1274,8 +1274,8 @@ export default function MainMenu({
         data-action="banner-lateral"
         role="button"
         tabIndex={0}
-        aria-label="Token PLANTS - Curva AMM, Preventa y Ganancias en Arena 3"
-        title="Token PLANTS (Clic para abrir el mercado y preventa)"
+        aria-label="Token Plants"
+        title="Token Plants (Clic para abrir el mercado y preventa)"
         onClick={() => {
           soundManager.playSound('click', 0.5)
           onOpenPlantsToken?.()
@@ -1288,20 +1288,8 @@ export default function MainMenu({
         }}
       >
         <div className="bosque-plants-token-banner__glow" />
-        <div className="bosque-plants-token-banner__art">
-          <span className="bosque-plants-token-banner__icon">🌱</span>
-        </div>
-        <div className="bosque-plants-token-banner__body">
-          <div className="bosque-plants-token-banner__top">
-            <span className="bosque-plants-token-banner__badge">AMM ACTIVO</span>
-            <span className="bosque-plants-token-banner__price">$0.000200</span>
-          </div>
-          <span className="bosque-plants-token-banner__title">TOKEN PLANTS</span>
-          <span className="bosque-plants-token-banner__desc">
-            {(Number((userProfile as any)?.plants_balance ?? 0) > 0 || Number((userProfile as any)?.plants_vesting_locked ?? 0) > 0)
-              ? `Mis Tokens: ${Number((userProfile as any)?.plants_balance ?? 0).toFixed(1)} 🌱${Number((userProfile as any)?.plants_vesting_locked ?? 0) > 0 ? ` (+${Number((userProfile as any)?.plants_vesting_locked ?? 0).toFixed(1)}v)` : ''}`
-              : 'Preventa Fundadores · Vesting 45d · Retiro USDT'}
-          </span>
+        <div className="bosque-plants-token-banner__content">
+          <span className="bosque-plants-token-banner__title">Token Plants</span>
         </div>
         <span className="bosque-plants-token-banner__arrow">➔</span>
       </div>
