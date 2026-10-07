@@ -12,6 +12,7 @@ import { TOKEN_ASSETS } from './tokenAssets'
 import { TokenSummaryTab } from './tabs/TokenSummaryTab'
 import { TokenPresaleTab } from './tabs/TokenPresaleTab'
 import { TokenVestingTab } from './tabs/TokenVestingTab'
+import { TokenStakingTab } from './tabs/TokenStakingTab'
 import { TokenSwapTab } from './tabs/TokenSwapTab'
 import { TokenomicsTab } from './tabs/TokenomicsTab'
 import { TokenGuideTab } from './tabs/TokenGuideTab'
@@ -271,104 +272,90 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
              TOP STATUS BAR (MATCHING WIREFRAMES)
              data-section="top-status-bar"
              ===================================================== */}
+        {/* =====================================================
+             TOP STATUS BAR (MATCHING IN-GAME HUD)
+             data-section="top-status-bar"
+             ===================================================== */}
         <header className="top-status" data-section="top-status-bar" data-label="TOP STATUS BAR">
-          {/* LOGO */}
+          {/* BRAND LOGO / HOME BACK */}
           <div
             className="status-box status-box--brand"
             data-section="brand-logo-slot"
             data-label="LOGO"
-            onClick={() => handleTabChange('summary')}
-            title="Ir al Resumen Principal"
+            onClick={onBack}
+            title="Volver al Menú Principal"
           >
-            <img src={TOKEN_ASSETS.logo || logoImg} alt="Plants Arena Logo" className="status-brand-img" />
-            <div>
-              <span className="status-brand-title">TOKEN PLANTS</span>
-              <span className="status-brand-sub">AMM HUB</span>
+            <img src={TOKEN_ASSETS.logo || logoImg} alt="Plant Arena" className="status-brand-img" />
+            <div className="status-brand-texts">
+              <span className="status-brand-title">PLANT ARENA</span>
             </div>
           </div>
 
-          {/* PLAYER */}
-          <div className="status-box" data-section="player-profile-slot" data-label="PLAYER">
-            <span className="status-item-icon">👤</span>
+          {/* PLAYER AVATAR & USERNAME */}
+          <div className="status-box status-box--player" data-section="player-profile-slot" data-label="PLAYER">
+            <span className="status-item-avatar">
+              <img src="/game-assets/greenfoot/peashooterpacket1.webp" alt="Avatar" onError={(e) => { (e.target as HTMLElement).style.display = 'none' }} />
+              <span className="status-avatar-fallback">🌱</span>
+            </span>
             <div className="status-item-data">
-              <span className="status-item-lbl">JUGADOR</span>
-              <strong className="status-item-val">{userProfile?.username || 'Gladiador'}</strong>
+              <strong className="status-item-val">{userProfile?.username || 'Admin'}</strong>
             </div>
           </div>
 
-          {/* PASS */}
-          <div className="status-box" data-section="battle-pass-slot" data-label="PASS">
-            <span className="status-item-icon">🎟️</span>
+          {/* BATTLE PASS */}
+          <div className="status-box status-box--pass" data-section="battle-pass-slot" data-label="PASS">
+            <span className="status-item-icon">👑</span>
             <div className="status-item-data">
-              <span className="status-item-lbl">PASE BATALLA</span>
-              <strong className={`status-item-val ${hasVipPass ? 'text-gold' : 'text-cyan'}`}>
-                {hasVipPass ? 'VIP ACTIVO' : 'PASE GRATIS'}
-              </strong>
+              <strong className="status-item-val text-gold">PASE NV 0/20</strong>
             </div>
           </div>
 
-          {/* ARENA / RANKING */}
-          <div className="status-box" data-section="energy-slot" data-label="ENERGY">
-            <span className="status-item-icon">🏆</span>
+          {/* ENERGY */}
+          <div className="status-box status-box--energy" data-section="energy-slot" data-label="ENERGY">
+            <span className="status-item-icon">⚡</span>
             <div className="status-item-data">
-              <span className="status-item-lbl">RANGO RANKED</span>
-              <strong className={`status-item-val ${isArena3Plus ? 'text-green' : 'text-gold'}`}>
-                {currentElo.toLocaleString()} COPAS {isArena3Plus ? '(ARENA 3+)' : '(ARENA 1-2)'}
-              </strong>
+              <strong className="status-item-val text-yellow">20/20</strong>
             </div>
           </div>
 
           {/* GOLD */}
-          <div className="status-box" data-section="gold-slot" data-label="GOLD">
+          <div className="status-box status-box--gold" data-section="gold-slot" data-label="GOLD">
             <span className="status-item-icon">
               <img src={monedaImg} alt="Oro" />
             </span>
             <div className="status-item-data">
-              <span className="status-item-lbl">ORO DISPONIBLE</span>
               <strong className="status-item-val text-gold">{userGold.toLocaleString()}</strong>
             </div>
           </div>
 
           {/* GEMS */}
-          <div className="status-box" data-section="gems-slot" data-label="GEMS">
+          <div className="status-box status-box--gems" data-section="gems-slot" data-label="GEMS">
             <span className="status-item-icon">
               <img src={gemaImg} alt="Gemas" />
             </span>
             <div className="status-item-data">
-              <span className="status-item-lbl">GEMAS</span>
-              <strong className="status-item-val text-cyan">{userTokens.toLocaleString()} 💎</strong>
+              <strong className="status-item-val text-cyan">{userTokens.toLocaleString()}</strong>
             </div>
           </div>
 
-          {/* PLANTS WALLET */}
-          <div className="status-box" data-section="plants-wallet-slot" data-label="PLANTS">
-            <span className="status-item-icon">🌱</span>
-            <div className="status-item-data">
-              <span className="status-item-lbl">BILLETERA PLANTS</span>
-              <strong className="status-item-val text-green">
-                {liquidPlants.toFixed(1)} <small>({totalPlants.toFixed(1)})</small>
-              </strong>
-            </div>
-          </div>
-
-          {/* BACK BUTTON */}
+          {/* SETTINGS / EXIT BUTTON */}
           <button
             type="button"
-            className="status-box status-box--back-btn"
+            className="status-box status-box--settings-btn"
             data-section="settings-slot"
-            data-label="SALIR"
+            data-label="AJUSTES"
             onClick={() => {
               soundManager.playSound('click', 0.5)
               onBack()
             }}
-            title="Volver al menú principal"
+            title="Ajustes / Volver al Inicio"
           >
-            ✕
+            ⚙️
           </button>
         </header>
 
         {/* =====================================================
-             TOKEN SUB-NAVIGATION TABS (ALL 6 TABS)
+             TOKEN SUB-NAVIGATION TABS (EXACTLY 6 TABS)
              data-section="token-navigation"
              ===================================================== */}
         <nav className="token-nav" data-section="token-navigation" data-label="TOKEN NAVIGATION">
@@ -378,7 +365,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             data-target="summary"
             onClick={() => handleTabChange('summary')}
           >
-            <span className="token-tab__icon">🌐</span>
+            <span className="token-tab__icon">🌱</span>
             <span>RESUMEN</span>
           </button>
 
@@ -390,7 +377,6 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
           >
             <span className="token-tab__icon">🛒</span>
             <span>PREVENTA</span>
-            <span className="token-tab__badge">20 PACKS</span>
           </button>
 
           <button
@@ -399,9 +385,9 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             data-target="vesting"
             onClick={() => handleTabChange('vesting')}
           >
-            <span className="token-tab__icon">🌱</span>
-            <span>VESTING</span>
-            {claimableNow > 0 && <span className="token-tab__badge">¡LIBERAR!</span>}
+            <span className="token-tab__icon">🪙</span>
+            <span>MIS PLANTS & VESTING</span>
+            {claimableNow > 0 && <span className="token-tab__badge">¡DISPONIBLE!</span>}
           </button>
 
           <button
@@ -411,7 +397,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             onClick={() => handleTabChange('swap')}
           >
             <span className="token-tab__icon">🔄</span>
-            <span>SWAP AMM</span>
+            <span>SWAP & CASH-OUT</span>
           </button>
 
           <button
@@ -430,7 +416,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             data-target="guide"
             onClick={() => handleTabChange('guide')}
           >
-            <span className="token-tab__icon">📖</span>
+            <span className="token-tab__icon">📜</span>
             <span>GUÍA & REGLAS</span>
           </button>
         </nav>
@@ -442,6 +428,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
           {activeTab === 'summary' && <TokenSummaryTab {...sharedProps} />}
           {activeTab === 'presale' && <TokenPresaleTab {...sharedProps} />}
           {activeTab === 'vesting' && <TokenVestingTab {...sharedProps} />}
+          {activeTab === 'staking' && <TokenStakingTab {...sharedProps} />}
           {activeTab === 'swap' && <TokenSwapTab {...sharedProps} />}
           {activeTab === 'tokenomics' && <TokenomicsTab {...sharedProps} />}
           {activeTab === 'guide' && <TokenGuideTab {...sharedProps} />}

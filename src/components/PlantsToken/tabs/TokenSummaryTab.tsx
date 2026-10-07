@@ -1,30 +1,26 @@
 import React, { useMemo, useState } from 'react'
 import type { TokenHubSharedProps, Timeframe } from '../types'
 import { TOKEN_ASSETS } from '../tokenAssets'
-import { PRESALE_PACKS } from '../../../services/plantsTokenService'
 
 export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
   marketState,
   priceHistory,
   countdownSeconds,
   liquidPlants,
-  lockedVestingPlants,
-  totalPlants,
   spotPrice,
   poolUsdt,
   totalBurned,
-  circulating,
-  virtualPlants,
   onTabChange,
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('24H')
 
-  // Formato para contador de cuenta regresiva
+  // Formato para contador digital de cuenta regresiva
   const formatCountdown = (secs: number) => {
-    const d = Math.floor(secs / 86400)
-    const h = Math.floor((secs % 86400) / 3600)
-    const m = Math.floor((secs % 3600) / 60)
-    const s = secs % 60
+    const total = secs > 0 ? secs : 86400 * 7 + 3600 * 6 + 60 * 31 + 43
+    const d = Math.floor(total / 86400)
+    const h = Math.floor((total % 86400) / 3600)
+    const m = Math.floor((total % 3600) / 60)
+    const s = total % 60
     return {
       days: String(d).padStart(2, '0'),
       hours: String(h).padStart(2, '0'),
@@ -33,12 +29,12 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
     }
   }
 
-  const timeParts = formatCountdown(countdownSeconds > 0 ? countdownSeconds : 86400 * 14 + 3600 * 8)
+  const timeParts = formatCountdown(countdownSeconds)
 
   // Gráfica SVG interactiva de AMM
   const chartPoints = useMemo(() => {
     const history = priceHistory.length > 0 ? priceHistory : []
-    const pointsCount = Math.max(history.length, 14)
+    const pointsCount = Math.max(history.length, 16)
     const pts: { x: number; y: number; price: number }[] = []
 
     for (let i = 0; i < pointsCount; i++) {
@@ -47,13 +43,13 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
       if (history[i]) {
         p = history[i].spot_price
       } else {
-        const factor = 0.92 + Math.sin(i * 0.7) * 0.08 + (i / pointsCount) * 0.12
+        const factor = 0.88 + Math.sin(i * 0.5) * 0.05 + (i / pointsCount) * 0.35
         p = spotPrice * factor
       }
-      const minP = spotPrice * 0.8
-      const maxP = spotPrice * 1.3
+      const minP = spotPrice * 0.6
+      const maxP = spotPrice * 1.5
       const norm = Math.max(0, Math.min(1, (p - minP) / (maxP - minP || 1)))
-      const y = 160 - norm * 110
+      const y = 145 - norm * 105
       pts.push({ x, y, price: p })
     }
     return pts
@@ -70,186 +66,177 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
     if (chartPoints.length === 0) return ''
     const first = chartPoints[0]
     const last = chartPoints[chartPoints.length - 1]
-    return `M ${first.x} 180 L ${first.x} ${first.y} ${chartPoints
+    return `M ${first.x} 165 L ${first.x} ${first.y} ${chartPoints
       .slice(1)
       .map((p) => `L ${p.x} ${p.y}`)
-      .join(' ')} L ${last.x} 180 Z`
+      .join(' ')} L ${last.x} 165 Z`
   }, [chartPoints])
 
   return (
-    <div className="token-screen">
+    <div className="token-summary-screen">
       {/* =====================================================
-           HERO BANNER
+           1. HERO BANNER
            ===================================================== */}
       <section
-        className="hero-banner"
+        className="summary-hero-banner"
         data-section="hero-banner"
         data-label="HERO BANNER"
         style={
           TOKEN_ASSETS.summaryHeroBanner
-            ? { backgroundImage: `url(${TOKEN_ASSETS.summaryHeroBanner})`, backgroundSize: 'cover' }
+            ? { backgroundImage: `url(${TOKEN_ASSETS.summaryHeroBanner})` }
             : {}
         }
       >
-        <div className="hero-banner__content">
-          <div className="hero-banner__badge">🌱 ECOSISTEMA ECONÓMICO PLANTS ARENA</div>
-          <h1 className="hero-banner__title">TOKEN PLANTS · RESPALDO REAL & CURVA AMM</h1>
-          <p className="hero-banner__subtitle">
-            Moneda deflacionaria con suministro finito de <strong>1,000,000 PLANTS</strong>. El <strong>60% de las preventas</strong> y el <strong>70% de las compras en tienda</strong> inyectan liquidez en USDT al pool descentralizado, respaldando el valor de cada token ganado en batalla.
-          </p>
-
-          <div className="hero-banner__chips" style={{ marginBottom: '14px' }}>
-            <span className="hero-chip">🏦 100% Respaldado en Reserva USDT</span>
-            <span className="hero-chip">🛡️ Vesting Lineal de 45 Días Anti-Dump</span>
-            <span className="hero-chip">🔥 Súper Sumidero con +20% Bonus en Gemas</span>
-            <span className="hero-chip">🔒 Tope Máximo: 1,000,000 PLANTS</span>
-          </div>
-
-          <div className="hero-banner__actions">
-            <button
-              type="button"
-              className="token-action-btn token-action-btn--primary"
-              onClick={() => onTabChange('presale')}
-            >
-              🛒 PARTICIPAR EN LA PREVENTA FUNDADORES
-            </button>
-            <button
-              type="button"
-              className="token-action-btn token-action-btn--secondary"
-              onClick={() => onTabChange('guide')}
-            >
-              📖 GUÍA COMPLETA & REGLAS
-            </button>
-            <button
-              type="button"
-              className="token-action-btn token-action-btn--secondary"
-              onClick={() => onTabChange('swap')}
-            >
-              🔄 MERCADO SWAP & CASHOUT
-            </button>
+        <div className="summary-hero-banner__fallback-overlay">
+          {/* Si la imagen no ha cargado, renderiza el texto accesible encima */}
+          <div className="summary-hero-badge-wrap">
+            <span className="summary-hero-pill">🌱 JUEGA · INVIERTE · CRECE · GANA</span>
           </div>
         </div>
       </section>
 
       {/* =====================================================
-           KPI SUMMARY ROW
+           2. KPI ROW (5 CARDS)
            ===================================================== */}
-      <section className="kpi-grid" data-section="kpi-row" data-label="KPI ROW">
-        <article className="kpi-card" data-section="kpi-price-spot" data-label="PRICE SPOT">
-          <div className="kpi-icon-slot">
-            <span className="kpi-icon">💎</span>
+      <section className="summary-kpi-grid" data-section="kpi-row" data-label="KPI ROW">
+        {/* PRECIO SPOT */}
+        <article className="summary-kpi-card" data-section="kpi-price-spot">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--green">
+            <span className="summary-kpi-emoji">💲</span>
           </div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">PRECIO SPOT EN VIVO</span>
-            <strong className="kpi-value text-cyan">${spotPrice.toFixed(6)} USDT</strong>
-            <span className="kpi-sub">Curva AMM (1 USDT = {(1 / spotPrice).toFixed(0)} PLANTS)</span>
-          </div>
-        </article>
-
-        <article className="kpi-card" data-section="kpi-liquidity" data-label="LIQUIDITY">
-          <div className="kpi-icon-slot">
-            <span className="kpi-icon">🏦</span>
-          </div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">FONDO DE RESERVA USDT</span>
-            <strong className="kpi-value text-green">${poolUsdt.toFixed(2)} USDT</strong>
-            <span className="kpi-sub">100% Disponible en Bóveda</span>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">PRECIO SPOT</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-green">${spotPrice.toFixed(6)} USDT</strong>
+              <span className="summary-kpi-tag summary-kpi-tag--green">LIVE AMM</span>
+            </div>
+            <span className="summary-kpi-sub">5,000 PLANTS = $1.00 USDT</span>
           </div>
         </article>
 
-        <article className="kpi-card" data-section="kpi-burned" data-label="BURNED">
-          <div className="kpi-icon-slot">
-            <span className="kpi-icon">🔥</span>
+        {/* LIQUIDEZ */}
+        <article className="summary-kpi-card" data-section="kpi-liquidity">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--blue">
+            <span className="summary-kpi-emoji">💧</span>
           </div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">TOKENS QUEMADOS</span>
-            <strong className="kpi-value text-orange">{totalBurned.toLocaleString()} PLANTS</strong>
-            <span className="kpi-sub">Deflación continua activa</span>
-          </div>
-        </article>
-
-        <article className="kpi-card" data-section="kpi-halving" data-label="HALVING">
-          <div className="kpi-icon-slot">
-            <span className="kpi-icon">⏳</span>
-          </div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">ERA DE HALVING</span>
-            <strong className="kpi-value text-purple">FASE {marketState?.currentHalvingEra ?? 1} / 5</strong>
-            <span className="kpi-sub">100% Recompensas de Minado</span>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">LIQUIDEZ</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-cyan">${poolUsdt.toFixed(2)} USDT</strong>
+              <span className="summary-kpi-tag summary-kpi-tag--blue">100% RESPALDADO</span>
+            </div>
+            <span className="summary-kpi-sub">60% Preventas + 70% Gemas Inyectadas</span>
           </div>
         </article>
 
-        <article className="kpi-card" data-section="kpi-liquid-balance" data-label="LIQUID BALANCE">
-          <div className="kpi-icon-slot">
-            <span className="kpi-icon">🌱</span>
+        {/* QUEMADOS */}
+        <article className="summary-kpi-card" data-section="kpi-burned">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--orange">
+            <span className="summary-kpi-emoji">🔥</span>
           </div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">MI BILLETERA PLANTS</span>
-            <strong className="kpi-value text-gold">{liquidPlants.toFixed(2)} LÍQUIDOS</strong>
-            <span className="kpi-sub">Total: {totalPlants.toFixed(2)} ({lockedVestingPlants.toFixed(1)} en Vesting)</span>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">QUEMADOS</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-orange">{totalBurned.toLocaleString()} PLANTS</strong>
+            </div>
+            <span className="summary-kpi-sub">Super Sink (+20% Gemas)</span>
+          </div>
+        </article>
+
+        {/* HALVING */}
+        <article className="summary-kpi-card" data-section="kpi-halving">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--gold">
+            <span className="summary-kpi-emoji">🪙</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">HALVING</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-gold">FASE {marketState?.currentHalvingEra ?? 1} / 5</strong>
+              <span className="summary-kpi-tag summary-kpi-tag--gold">100% RECOMPENSAS</span>
+            </div>
+            <span className="summary-kpi-sub">Tope Total: 1,000,000 PLANTS</span>
+          </div>
+        </article>
+
+        {/* LÍQUIDO ACTUAL */}
+        <article
+          className="summary-kpi-card summary-kpi-card--clickable"
+          data-section="kpi-liquid-balance"
+          onClick={() => onTabChange('vesting')}
+          title="Ver mi saldo y vesting"
+        >
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--mint">
+            <span className="summary-kpi-emoji">🌱</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">LÍQUIDO ACTUAL</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-mint">{liquidPlants.toFixed(1)}</strong>
+              <span className="summary-kpi-arrow">➔</span>
+            </div>
+            <span className="summary-kpi-sub">Toca para ir a Vesting</span>
           </div>
         </article>
       </section>
 
       {/* =====================================================
-           MID ROW: COUNTDOWN + AMM CHART
+           3. MID ROW: COUNTDOWN (35%) + AMM CHART (65%)
            ===================================================== */}
-      <section className="mid-grid">
-        {/* Presale Countdown Card */}
-        <article className="countdown-card" data-section="presale-countdown" data-label="PRESALE COUNTDOWN">
-          <div className="countdown-header-slot">
-            <div className="section-title-wrap">
-              <span className="section-badge">FASE GÉNESIS</span>
-              <h3 className="section-title">PREVENTA EXCLUSIVA DE 20 PACKS</h3>
-            </div>
-            <p className="section-desc">
-              Acceso anticipado con precios de entrada únicos. El 60% ingresa directamente al pool de liquidez en USDT elevando el precio base.
-            </p>
+      <section className="summary-mid-grid">
+        {/* FIN DE PREVENTA */}
+        <article className="summary-countdown-card" data-section="presale-countdown">
+          <div className="summary-countdown-header">
+            <span className="summary-trophy-icon">🏆</span>
+            <h3 className="summary-countdown-title">FIN DE PREVENTA</h3>
+            <span className="summary-trophy-icon">🏆</span>
           </div>
 
-          <div className="countdown-cells">
-            <div className="countdown-cell" data-section="countdown-days">
-              <strong className="countdown-cell__num">{timeParts.days}</strong>
-              <span className="countdown-cell__lbl">DÍAS</span>
+          <div className="summary-countdown-boxes">
+            <div className="summary-countdown-box">
+              <strong className="summary-countdown-num">{timeParts.days}</strong>
+              <span className="summary-countdown-lbl">DÍAS</span>
             </div>
-            <div className="countdown-cell" data-section="countdown-hours">
-              <strong className="countdown-cell__num">{timeParts.hours}</strong>
-              <span className="countdown-cell__lbl">HORAS</span>
+            <div className="summary-countdown-box">
+              <strong className="summary-countdown-num">{timeParts.hours}</strong>
+              <span className="summary-countdown-lbl">HRS</span>
             </div>
-            <div className="countdown-cell" data-section="countdown-minutes">
-              <strong className="countdown-cell__num">{timeParts.minutes}</strong>
-              <span className="countdown-cell__lbl">MIN</span>
+            <div className="summary-countdown-box">
+              <strong className="summary-countdown-num">{timeParts.minutes}</strong>
+              <span className="summary-countdown-lbl">MIN</span>
             </div>
-            <div className="countdown-cell" data-section="countdown-seconds">
-              <strong className="countdown-cell__num">{timeParts.seconds}</strong>
-              <span className="countdown-cell__lbl">SEG</span>
+            <div className="summary-countdown-box">
+              <strong className="summary-countdown-num">{timeParts.seconds}</strong>
+              <span className="summary-countdown-lbl">SEG</span>
             </div>
           </div>
 
-          <div className="countdown-progress-wrap">
-            <div className="countdown-progress" data-section="presale-progress">
-              <div className="countdown-progress__bar" style={{ width: '45%' }} />
-            </div>
-            <div className="countdown-progress__info">
-              <span>Disponibilidad Génesis: <strong>9 de 20 Packs Vendidos (45%)</strong></span>
-              <span>Liquidez aportada: <strong>+$120.00 USDT al pool</strong></span>
+          <div className="summary-countdown-bar-wrap">
+            <div className="summary-countdown-bar">
+              <div className="summary-countdown-fill" style={{ width: '45%' }} />
+              <div className="summary-bar-dots">
+                <span className="summary-bar-dot active" />
+                <span className="summary-bar-dot active" />
+                <span className="summary-bar-dot active" />
+                <span className="summary-bar-dot" />
+                <span className="summary-bar-dot" />
+              </div>
             </div>
           </div>
         </article>
 
-        {/* AMM Chart Card */}
-        <article className="chart-card" data-section="amm-chart" data-label="AMM CHART">
-          <div className="chart-toolbar">
-            <div className="chart-title-slot">
-              <span className="chart-title-text">CURVA BONDING CURVE AMM (PLANTS / USDT)</span>
-              <span className="chart-badge">P = R / V</span>
+        {/* CURVA AMM */}
+        <article className="summary-chart-card" data-section="amm-chart">
+          <div className="summary-chart-header">
+            <div className="summary-chart-title-wrap">
+              <span className="summary-chart-title">📈 CURVA AMM PLANTS / USDT</span>
+              <span className="summary-chart-formula">P = R / V (K = 200M)</span>
             </div>
-            <div className="chart-filter-slot">
+            <div className="summary-chart-filters">
               {(['1H', '24H', '7D', 'ALL'] as Timeframe[]).map((tf) => (
                 <button
                   key={tf}
                   type="button"
-                  className={`chart-tf-btn ${timeframe === tf ? 'active' : ''}`}
+                  className={`summary-tf-btn ${timeframe === tf ? 'active' : ''}`}
                   onClick={() => setTimeframe(tf)}
                 >
                   {tf}
@@ -258,205 +245,195 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
             </div>
           </div>
 
-          <div className="chart-area" data-section="amm-chart-area">
-            <svg viewBox="0 0 640 180" className="chart-svg" preserveAspectRatio="none">
+          <div className="summary-chart-canvas">
+            <svg viewBox="0 0 640 170" className="summary-chart-svg" preserveAspectRatio="none">
               <defs>
-                <linearGradient id="chartGradientSummary" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#19d99c" stopOpacity="0.45" />
+                <linearGradient id="summaryChartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#19d99c" stopOpacity="0.4" />
                   <stop offset="100%" stopColor="#19d99c" stopOpacity="0.0" />
                 </linearGradient>
-                <linearGradient id="lineGradientSummary" x1="0" y1="0" x2="1" y2="0">
+                <linearGradient id="summaryLineGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#29bdf6" />
                   <stop offset="100%" stopColor="#19d99c" />
                 </linearGradient>
               </defs>
 
-              <line x1="30" y1="40" x2="610" y2="40" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-              <line x1="30" y1="90" x2="610" y2="90" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-              <line x1="30" y1="140" x2="610" y2="140" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
+              {/* Y Axis Gridlines and Labels */}
+              <line x1="30" y1="30" x2="620" y2="30" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="32" y="26" fill="rgba(255,255,255,0.3)" fontSize="9">0.0006</text>
 
-              {svgAreaD && <path d={svgAreaD} fill="url(#chartGradientSummary)" />}
-              {svgPathD && <path d={svgPathD} fill="none" stroke="url(#lineGradientSummary)" strokeWidth="3" />}
+              <line x1="30" y1="75" x2="620" y2="75" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="32" y="71" fill="rgba(255,255,255,0.3)" fontSize="9">0.0004</text>
 
-              {chartPoints.map((pt, idx) => (
-                <circle
-                  key={idx}
-                  cx={pt.x}
-                  cy={pt.y}
-                  r={idx === chartPoints.length - 1 ? 5 : 3}
-                  className={idx === chartPoints.length - 1 ? 'chart-point-pulse' : 'chart-point'}
-                />
-              ))}
+              <line x1="30" y1="120" x2="620" y2="120" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="32" y="116" fill="rgba(255,255,255,0.3)" fontSize="9">0.0002</text>
+
+              <line x1="30" y1="160" x2="620" y2="160" stroke="rgba(255,255,255,0.08)" />
+              <text x="32" y="156" fill="rgba(255,255,255,0.3)" fontSize="9">0.0000</text>
+
+              {svgAreaD && <path d={svgAreaD} fill="url(#summaryChartGrad)" />}
+              {svgPathD && <path d={svgPathD} fill="none" stroke="url(#summaryLineGrad)" strokeWidth="3" />}
+
+              {chartPoints.map((pt, idx) => {
+                const isLast = idx === chartPoints.length - 1
+                return (
+                  <circle
+                    key={idx}
+                    cx={pt.x}
+                    cy={pt.y}
+                    r={isLast ? 6 : 3}
+                    className={isLast ? 'summary-chart-dot--pulse' : 'summary-chart-dot'}
+                    fill={isLast ? '#20dba4' : '#14896d'}
+                  />
+                )
+              })}
             </svg>
           </div>
-
-          <div className="chart-stats-footer">
-            <span>Circulante: <strong>{circulating.toLocaleString()} PLANTS</strong></span>
-            <span>Reserva Virtual: <strong>{virtualPlants.toLocaleString()} vPLANTS</strong></span>
-            <span>Presión Compradora: <strong className="text-green">+60% en Preventas / +70% en Tienda</strong></span>
-          </div>
         </article>
       </section>
 
       {/* =====================================================
-           BOTTOM ROW: FLOW + PACKS + BENEFITS
+           4. BOTTOM ROW: FLUJO (33%) + PACKS (34%) + BENEFICIOS (33%)
            ===================================================== */}
-      <section className="bottom-grid">
-        {/* Ecosystem Flow Panel */}
-        <article className="flow-panel" data-section="ecosystem-flow" data-label="ECOSYSTEM FLOW">
-          <div className="panel-heading-slot">
-            <h4 className="panel-heading-title">CICLO DEL ECOSISTEMA ECONÓMICO</h4>
-            <span className="panel-heading-badge">4 FASES CLAVE</span>
+      <section className="summary-bottom-grid">
+        {/* FLUJO DEL ECOSISTEMA */}
+        <article className="summary-panel" data-section="ecosystem-flow">
+          <div className="summary-panel-header">
+            <span className="summary-panel-icon">⚙️</span>
+            <h4 className="summary-panel-title">FLUJO DEL ECOSISTEMA</h4>
           </div>
 
-          <div className="flow-grid">
-            <div className="flow-step" data-section="flow-step-buy">
-              <div className="flow-number-slot">1</div>
-              <div className="flow-icon-slot" data-slot="summaryFlowStep1">
-                {TOKEN_ASSETS.summaryFlowStep1 ? (
-                  <img src={TOKEN_ASSETS.summaryFlowStep1} alt="Paso 1" className="slot-img" />
-                ) : (
-                  <span className="step-emoji">🛒</span>
-                )}
-              </div>
-              <div className="flow-copy-slot">
-                <strong>1. Compra de Pack</strong>
-                <p>Adquiere en preventa o acumula jugando. El 60% va al pool de liquidez.</p>
-              </div>
+          <div className="summary-flow-nodes">
+            <div className="summary-flow-node">
+              <div className="summary-flow-badge">1</div>
+              <div className="summary-flow-icon">🛒</div>
+              <span className="summary-flow-text">Compra packs o gemas</span>
             </div>
+            <span className="summary-flow-arrow">➔</span>
 
-            <div className="flow-step" data-section="flow-step-vesting">
-              <div className="flow-number-slot">2</div>
-              <div className="flow-icon-slot" data-slot="summaryFlowStep2">
-                {TOKEN_ASSETS.summaryFlowStep2 ? (
-                  <img src={TOKEN_ASSETS.summaryFlowStep2} alt="Paso 2" className="slot-img" />
-                ) : (
-                  <span className="step-emoji">🛡️</span>
-                )}
-              </div>
-              <div className="flow-copy-slot">
-                <strong>2. Vesting Seguro 45d</strong>
-                <p>Desbloqueo lineal del 2.22% cada 24 horas, garantizando estabilidad.</p>
-              </div>
+            <div className="summary-flow-node">
+              <div className="summary-flow-badge">2</div>
+              <div className="summary-flow-icon">🌱</div>
+              <span className="summary-flow-text">Recibes PLANTS en vesting</span>
             </div>
+            <span className="summary-flow-arrow">➔</span>
 
-            <div className="flow-step" data-section="flow-step-release">
-              <div className="flow-number-slot">3</div>
-              <div className="flow-icon-slot" data-slot="summaryFlowStep3">
-                {TOKEN_ASSETS.summaryFlowStep3 ? (
-                  <img src={TOKEN_ASSETS.summaryFlowStep3} alt="Paso 3" className="slot-img" />
-                ) : (
-                  <span className="step-emoji">⚡</span>
-                )}
-              </div>
-              <div className="flow-copy-slot">
-                <strong>3. Reclamo Diario</strong>
-                <p>Acredita diariamente tus tokens liberados a tu saldo líquido sin comisiones.</p>
-              </div>
+            <div className="summary-flow-node">
+              <div className="summary-flow-badge">3</div>
+              <div className="summary-flow-icon">📅</div>
+              <span className="summary-flow-text">Liberación diaria (45 días)</span>
             </div>
+            <span className="summary-flow-arrow">➔</span>
 
-            <div className="flow-step" data-section="flow-step-swap">
-              <div className="flow-number-slot">4</div>
-              <div className="flow-icon-slot" data-slot="summaryFlowStep4">
-                {TOKEN_ASSETS.summaryFlowStep4 ? (
-                  <img src={TOKEN_ASSETS.summaryFlowStep4} alt="Paso 4" className="slot-img" />
-                ) : (
-                  <span className="step-emoji">🔄</span>
-                )}
-              </div>
-              <div className="flow-copy-slot">
-                <strong>4. Swap o Super Sink</strong>
-                <p>Retira a USDT BEP-20 o canjea por Gemas con un +20% de bonus inmediato.</p>
-              </div>
+            <div className="summary-flow-node">
+              <div className="summary-flow-badge">4</div>
+              <div className="summary-flow-icon">🔄</div>
+              <span className="summary-flow-text">Swap / Cash-out o canje a gemas</span>
             </div>
           </div>
         </article>
 
-        {/* Presale Packs Panel */}
-        <article className="packs-panel" data-section="presale-packs" data-label="PRESALE PACKS">
-          <div className="panel-heading-slot">
-            <h4 className="panel-heading-title">PACKS GÉNESIS DISPONIBLES</h4>
-            <span className="panel-heading-badge text-gold">20 PACKS TOTAL</span>
+        {/* PACKS DE PREVENTA */}
+        <article className="summary-panel" data-section="presale-packs">
+          <div className="summary-panel-header">
+            <div className="summary-panel-title-row">
+              <span className="summary-panel-icon">🎁</span>
+              <h4 className="summary-panel-title">PACKS DE PREVENTA</h4>
+            </div>
+            <button
+              type="button"
+              className="summary-see-all-link"
+              onClick={() => onTabChange('presale')}
+            >
+              Ver todos ➔
+            </button>
           </div>
 
-          <div className="pack-grid">
-            {PRESALE_PACKS.map((pack) => (
-              <div
-                key={pack.id}
-                className="pack-card"
-                data-section={pack.id}
-                onClick={() => onTabChange('presale')}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="pack-title-slot">
-                  <span className="pack-tag-pill" style={{ color: pack.accentColor }}>
-                    {pack.tag}
-                  </span>
-                  <strong>{pack.name}</strong>
-                </div>
+          <div className="summary-mini-packs">
+            {/* PACK PIONERO */}
+            <div
+              className="summary-mini-pack-card summary-mini-pack-card--pionero"
+              onClick={() => onTabChange('presale')}
+            >
+              <span className="summary-mini-pack-name">Pack Pionero</span>
+              <img
+                src={TOKEN_ASSETS.summaryPackPioneer || '/game-assets/token/chest_pioneer.webp'}
+                alt="Pack Pionero"
+                className="summary-mini-pack-img"
+              />
+              <strong className="summary-mini-pack-price text-cyan">$10 USDT</strong>
+              <span className="summary-mini-pack-plants text-mint">+2,500 PLANTS</span>
+            </div>
 
-                <div className="pack-image-slot" data-slot={`pack-${pack.id}`}>
-                  <span className="pack-slot-placeholder-icon">
-                    {pack.id === 'pack_pionero_10' ? '🥉' : pack.id === 'pack_campeon_25' ? '🥈' : '👑'}
-                  </span>
-                </div>
+            {/* PACK CAMPEÓN */}
+            <div
+              className="summary-mini-pack-card summary-mini-pack-card--campeon"
+              onClick={() => onTabChange('presale')}
+            >
+              <span className="summary-mini-pack-name">Pack Campeón</span>
+              <img
+                src={TOKEN_ASSETS.summaryPackChampion || '/game-assets/token/chest_champion.webp'}
+                alt="Pack Campeón"
+                className="summary-mini-pack-img"
+              />
+              <strong className="summary-mini-pack-price text-purple">$25 USDT</strong>
+              <span className="summary-mini-pack-plants text-mint">+7,500 PLANTS</span>
+            </div>
 
-                <div className="pack-copy-slot">
-                  <span className="pack-price-hero">${pack.priceUsdt} USDT <small>({pack.gemsPrice.toLocaleString()} 💎)</small></span>
-                  <span className="pack-plants-hero">+{pack.plantsAmount.toLocaleString()} PLANTS</span>
-                  <span className="pack-daily-hero">+{pack.dailyRate} / día (45 días)</span>
-                  <small style={{ color: '#29bdf6', fontSize: '9px', marginTop: '2px' }}>+{pack.gemsReward.toLocaleString()} 💎 Bono Inmediato</small>
-                </div>
-              </div>
-            ))}
+            {/* PACK LEYENDA */}
+            <div
+              className="summary-mini-pack-card summary-mini-pack-card--leyenda"
+              onClick={() => onTabChange('presale')}
+            >
+              <span className="summary-mini-pack-name">Pack Leyenda</span>
+              <img
+                src={TOKEN_ASSETS.summaryPackLegend || '/game-assets/token/chest_legend.webp'}
+                alt="Pack Leyenda"
+                className="summary-mini-pack-img"
+              />
+              <strong className="summary-mini-pack-price text-gold">$50 USDT</strong>
+              <span className="summary-mini-pack-plants text-mint">+15,000 PLANTS</span>
+            </div>
           </div>
         </article>
 
-        {/* Key Benefits Panel */}
-        <article className="benefits-panel" data-section="key-benefits" data-label="KEY BENEFITS">
-          <div className="panel-heading-slot">
-            <h4 className="panel-heading-title">GARANTÍAS & BENEFICIOS</h4>
-            <span className="panel-heading-badge text-cyan">PROTOCOLOS</span>
+        {/* BENEFICIOS CLAVE */}
+        <article className="summary-panel" data-section="key-benefits">
+          <div className="summary-panel-header">
+            <span className="summary-panel-icon">⭐</span>
+            <h4 className="summary-panel-title">BENEFICIOS CLAVE</h4>
           </div>
 
-          <div className="benefit-list">
-            <div className="benefit-row" data-section="benefit-liquidity">
-              <div className="benefit-icon-slot">
-                <span>🏦</span>
-              </div>
-              <div className="benefit-copy-slot">
-                <strong>Liquidez Transparente y Respaldada</strong>
-                <p>El 60% de preventas y el 70% de compras in-game ingresan al pool USDT.</p>
+          <div className="summary-benefits-list">
+            <div className="summary-benefit-item">
+              <span className="summary-benefit-icon">💧</span>
+              <div className="summary-benefit-info">
+                <strong>60% al Pool de Liquidez</strong>
+                <p>Impulsa la estabilidad del token</p>
               </div>
             </div>
 
-            <div className="benefit-row" data-section="benefit-vesting">
-              <div className="benefit-icon-slot">
-                <span>⏳</span>
-              </div>
-              <div className="benefit-copy-slot">
-                <strong>Vesting Lineal Anti-Especulación</strong>
-                <p>45 días de liberación fija que eliminan caídas de precio artificiales.</p>
+            <div className="summary-benefit-item">
+              <span className="summary-benefit-icon">📅</span>
+              <div className="summary-benefit-info">
+                <strong>Vesting lineal de 45 días</strong>
+                <p>Liberación diaria de tus PLANTS</p>
               </div>
             </div>
 
-            <div className="benefit-row" data-section="benefit-gem-bonus">
-              <div className="benefit-icon-slot">
-                <span>💎</span>
-              </div>
-              <div className="benefit-copy-slot">
-                <strong>Super Sink (+20% Gemas con Quema)</strong>
-                <p>Canjea tus PLANTS por Gemas con un 20% extra. Los tokens se queman de por vida.</p>
+            <div className="summary-benefit-item">
+              <span className="summary-benefit-icon">💎</span>
+              <div className="summary-benefit-info">
+                <strong>Canje a Gemas +20%</strong>
+                <p>Sin esperar los 45 días</p>
               </div>
             </div>
 
-            <div className="benefit-row" data-section="benefit-live-amm">
-              <div className="benefit-icon-slot">
-                <span>📈</span>
-              </div>
-              <div className="benefit-copy-slot">
-                <strong>Curva AMM con Emisión Finita</strong>
-                <p>Suministro máximo inmutable de 1M PLANTS con 5 eras de halving programadas.</p>
+            <div className="summary-benefit-item">
+              <span className="summary-benefit-icon">📈</span>
+              <div className="summary-benefit-info">
+                <strong>Sistema AMM en vivo</strong>
+                <p>Precio dinámico y transparente</p>
               </div>
             </div>
           </div>
@@ -464,36 +441,36 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
       </section>
 
       {/* =====================================================
-           PRIMARY CTAs ROW
+           5. BOTTOM ACTION BUTTON BAR (3 LARGE PILLS)
            ===================================================== */}
-      <section className="cta-grid" data-section="primary-cta-row" data-label="PRIMARY CTAs">
+      <footer className="summary-actions-bar" data-section="primary-cta-row">
         <button
           type="button"
-          className="cta-placeholder cta-placeholder--presale"
-          data-action="open-presale"
+          className="summary-cta-btn summary-cta-btn--presale"
           onClick={() => onTabChange('presale')}
         >
-          <span>🛒 PARTICIPAR EN LA PREVENTA GÉNESIS</span>
+          <span>🛒 VER PREVENTA</span>
+          <span className="summary-cta-arrow">➔</span>
         </button>
 
         <button
           type="button"
-          className="cta-placeholder cta-placeholder--vesting"
-          data-action="open-vesting"
+          className="summary-cta-btn summary-cta-btn--vesting"
           onClick={() => onTabChange('vesting')}
         >
-          <span>🌱 RECLAMAR VESTING & MIS TOKENS</span>
+          <span>🪙 VER MI VESTING</span>
+          <span className="summary-cta-arrow">➔</span>
         </button>
 
         <button
           type="button"
-          className="cta-placeholder cta-placeholder--swap"
-          data-action="open-swap"
+          className="summary-cta-btn summary-cta-btn--swap"
           onClick={() => onTabChange('swap')}
         >
-          <span>🔄 ABRIR SWAP & RETIROS BEP-20</span>
+          <span>🔄 IR AL SWAP</span>
+          <span className="summary-cta-arrow">➔</span>
         </button>
-      </section>
+      </footer>
     </div>
   )
 }

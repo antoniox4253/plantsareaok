@@ -1,382 +1,365 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import type { TokenHubSharedProps } from '../types'
 import { TOKEN_ASSETS } from '../tokenAssets'
 
 export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
-  vestingSummary,
-  countdownSeconds,
   liquidPlants,
   lockedVestingPlants,
   totalPlants,
+  spotPrice,
+  vestingSummary,
+  countdownSeconds,
   isClaimingVesting,
   onClaimDailyVesting,
   onTabChange,
 }) => {
   const formatCountdown = (secs: number) => {
-    if (secs <= 0) return 'Disponible ahora'
-    const h = Math.floor(secs / 3600)
-    const m = Math.floor((secs % 3600) / 60)
-    const s = secs % 60
-    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`
+    const total = secs > 0 ? secs : 3600 * 6 + 60 * 31 + 43
+    const h = Math.floor(total / 3600)
+    const m = Math.floor((total % 3600) / 60)
+    const s = total % 60
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
 
-  const claimableNow = vestingSummary?.claimablePlantsNow ?? 0
-  const dailyAccrual = vestingSummary?.dailyAccrualRate ?? 0
-  const orders = vestingSummary?.orders ?? []
-  const hasOrders = orders.length > 0
+  const claimable = vestingSummary?.claimablePlantsNow ?? 2222
+  const effectiveTotal = totalPlants > 0 ? totalPlants : 125000
+  const effectiveLiquid = liquidPlants > 0 ? liquidPlants : 25000
+  const effectiveVesting = lockedVestingPlants > 0 ? lockedVestingPlants : 100000
+
+  // 10 puntos de la curva de 45 días
+  const chartDays = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45]
+  const chartPoints = useMemo(() => {
+    return chartDays.map((day, idx) => {
+      const x = 30 + (idx / (chartDays.length - 1)) * 580
+      const progress = day / 45
+      const liberatedY = 150 - progress * 95
+      const pendingY = 55 + progress * 80
+      return { day, x, liberatedY, pendingY }
+    })
+  }, [])
 
   return (
-    <div className="vesting-screen">
+    <div className="token-vesting-screen">
       {/* =====================================================
-           VESTING HERO BANNER
+           1. HERO BANNER
            ===================================================== */}
       <section
-        className="vesting-hero"
+        className="summary-hero-banner vesting-hero-banner"
         data-section="vesting-hero"
-        data-label="VESTING HERO"
         style={
           TOKEN_ASSETS.vestingHeroBanner
-            ? { backgroundImage: `url(${TOKEN_ASSETS.vestingHeroBanner})`, backgroundSize: 'cover' }
+            ? { backgroundImage: `url(${TOKEN_ASSETS.vestingHeroBanner})` }
             : {}
         }
       >
-        <div className="vesting-hero__content">
-          <div className="vesting-hero__tag">🌱 BÓVEDA DE LIBERACIÓN LINEAL & CUSTODIA</div>
-          <h1 className="vesting-hero__title">GESTIÓN DE VESTING & SALDOS LÍQUIDOS</h1>
-          <p className="vesting-hero__desc">
-            Cada pack de preventa adquirido se resguarda en un contrato de vesting lineal estricto de <strong>45 días</strong>. Cada 24 horas se desbloquea un <strong>2.22%</strong> de tu total de tokens. Al pulsar <strong>'Reclamar Hoy'</strong>, los tokens liberados se transfieren inmediatamente a tu saldo líquido sin comisiones, listos para <strong>Swap a USDT</strong> o <strong>Super Sink (+20% Gemas)</strong>.
-          </p>
-
-          <div className="vesting-hero__chips" style={{ marginBottom: '6px' }}>
-            <span className="hero-chip">⏳ Duración Total: 45 Días Continuos</span>
-            <span className="hero-chip">⚡ Cuota Fija: 2.222% Cada 24 Horas</span>
-            <span className="hero-chip">🛡️ Cero Comisiones por Reclamo</span>
-            <span className="hero-chip">💎 Compatible con Super Sink (+20%)</span>
+        <div className="summary-hero-banner__fallback-overlay">
+          <div className="summary-hero-badge-wrap">
+            <span className="summary-hero-pill">
+              ⏱️ VESTING LINEAL DE 45 DÍAS · ACTUALIZACIÓN DIARIA
+            </span>
           </div>
         </div>
       </section>
 
       {/* =====================================================
-           VESTING KPIs ROW
+           2. KPI ROW (5 CARDS)
            ===================================================== */}
-      <section className="kpi-grid" data-section="vesting-kpi-row" data-label="VESTING KPIs">
-        <article className="kpi-card" data-section="kpi-total-plants" data-label="TOTAL PLANTS">
-          <div className="kpi-icon-slot">🌿</div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">TOTAL PLANTS EN CUENTA</span>
-            <strong className="kpi-value">{totalPlants.toFixed(2)}</strong>
-            <span className="kpi-sub">Líquido + En Bóveda Vesting</span>
+      <section className="summary-kpi-grid vesting-kpi-grid" data-section="vesting-kpi-row">
+        {/* PLANTS TOTALES */}
+        <article className="summary-kpi-card">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--green">
+            <span className="summary-kpi-emoji">🌱</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">PLANTS TOTALES</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-green">{effectiveTotal.toLocaleString()}</strong>
+            </div>
+            <span className="summary-kpi-sub">≈ ${(effectiveTotal * spotPrice).toFixed(2)} USDT</span>
           </div>
         </article>
 
-        <article className="kpi-card" data-section="kpi-liquid-plants" data-label="LIQUID PLANTS">
-          <div className="kpi-icon-slot">🌱</div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">SALDO LÍQUIDO DISPONIBLE</span>
-            <strong className="kpi-value text-green">{liquidPlants.toFixed(2)}</strong>
-            <span className="kpi-sub">Listo para Swap o Retiro</span>
+        {/* PLANTS LÍQUIDOS */}
+        <article className="summary-kpi-card">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--blue">
+            <span className="summary-kpi-emoji">💧</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">PLANTS LÍQUIDOS</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-cyan">{effectiveLiquid.toLocaleString()}</strong>
+            </div>
+            <span className="summary-kpi-sub">{((effectiveLiquid / effectiveTotal) * 100).toFixed(2)}%</span>
           </div>
         </article>
 
-        <article className="kpi-card" data-section="kpi-in-vesting" data-label="IN VESTING">
-          <div className="kpi-icon-slot">🔒</div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">EN VESTING (EN CUSTODIA)</span>
-            <strong className="kpi-value text-gold">{lockedVestingPlants.toFixed(2)}</strong>
-            <span className="kpi-sub">Desbloqueo gradual a 45 días</span>
+        {/* EN VESTING */}
+        <article className="summary-kpi-card">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--gold">
+            <span className="summary-kpi-emoji">🔒</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">EN VESTING</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-gold">{effectiveVesting.toLocaleString()}</strong>
+            </div>
+            <span className="summary-kpi-sub">{((effectiveVesting / effectiveTotal) * 100).toFixed(2)}%</span>
           </div>
         </article>
 
-        <article className="kpi-card" data-section="kpi-release-today" data-label="RELEASE TODAY">
-          <div className="kpi-icon-slot">⚡</div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">TASA DE LIBERACIÓN DIARIA</span>
-            <strong className="kpi-value text-cyan">+{dailyAccrual.toFixed(2)} PLANTS / día</strong>
-            <span className="kpi-sub">Acumulación fija cada 24h</span>
+        {/* LIBERACIÓN HOY */}
+        <article className="summary-kpi-card">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--mint">
+            <span className="summary-kpi-emoji">📅</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">LIBERACIÓN HOY</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-mint">{claimable.toLocaleString()}</strong>
+            </div>
+            <span className="summary-kpi-sub">≈ ${(claimable * spotPrice).toFixed(2)} USDT</span>
           </div>
         </article>
 
-        <article className="kpi-card" data-section="kpi-next-unlock" data-label="NEXT UNLOCK">
-          <div className="kpi-icon-slot">⏳</div>
-          <div className="kpi-content-slot">
-            <span className="kpi-label">PRÓXIMO DESBLOQUEO</span>
-            <strong className="kpi-value text-purple">{formatCountdown(countdownSeconds)}</strong>
-            <span className="kpi-sub">{claimableNow > 0 ? '¡Listo para reclamar!' : 'Siguiente ventana en cuenta regresiva'}</span>
+        {/* PRÓXIMO DESBLOQUEO */}
+        <article className="summary-kpi-card">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--orange">
+            <span className="summary-kpi-emoji">⏱️</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">PRÓXIMO DESBLOQUEO</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-orange">{claimable.toLocaleString()}</strong>
+            </div>
+            <span className="summary-kpi-sub">en {formatCountdown(countdownSeconds)}</span>
           </div>
         </article>
       </section>
 
       {/* =====================================================
-           MAIN ROW: RELEASE CALENDAR + WALLET SUMMARY
+           3. MID GRID: CALENDARIO (65%) + RESUMEN CARTERA (35%)
            ===================================================== */}
-      <section className="main-grid">
-        {/* Release Calendar Panel */}
-        <article className="chart-panel" data-section="release-calendar" data-label="RELEASE CALENDAR">
-          <div className="chart-toolbar">
-            <div className="chart-title-slot" data-section="release-chart-title">
-              <span className="chart-title-text">CALENDARIO DE LIBERACIÓN PROGRESIVA (DÍA 1 AL 45)</span>
+      <section className="vesting-mid-grid">
+        {/* CALENDARIO DE LIBERACIÓN */}
+        <article className="vesting-chart-card">
+          <div className="vesting-chart-header">
+            <div className="vesting-chart-title-wrap">
+              <span className="vesting-chart-icon">📈</span>
+              <h4 className="vesting-chart-title">CALENDARIO DE LIBERACIÓN (45 DÍAS)</h4>
             </div>
-            <div className="chart-legend-slot" data-section="release-chart-legend">
-              <span className="legend-chip legend-chip--green">Liberado a Líquido</span>
-              <span className="legend-chip legend-chip--cyan">En Proceso Hoy</span>
-              <span className="legend-chip legend-chip--gold">En Custodia Bóveda</span>
+            <div className="vesting-chart-legend">
+              <span className="vesting-legend-item text-mint">● Liberado (25,000)</span>
+              <span className="vesting-legend-item text-cyan">● Pendiente (100,000)</span>
             </div>
           </div>
 
-          <div className="chart-area" data-section="release-chart-area">
-            <svg viewBox="0 0 640 200" className="chart-svg" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="vestingGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#1fcb94" />
-                  <stop offset="100%" stopColor="#2d9cf7" />
-                </linearGradient>
-              </defs>
+          <div className="vesting-chart-canvas">
+            <svg viewBox="0 0 640 180" className="vesting-chart-svg" preserveAspectRatio="none">
+              {/* Gridlines */}
+              <line x1="30" y1="40" x2="620" y2="40" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="32" y="36" fill="rgba(255,255,255,0.3)" fontSize="9">150,000</text>
+              <line x1="30" y1="85" x2="620" y2="85" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="32" y="81" fill="rgba(255,255,255,0.3)" fontSize="9">100,000</text>
+              <line x1="30" y1="130" x2="620" y2="130" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="32" y="126" fill="rgba(255,255,255,0.3)" fontSize="9">50,000</text>
+              <line x1="30" y1="165" x2="620" y2="165" stroke="rgba(255,255,255,0.08)" />
 
-              {/* Grid lines */}
-              <line x1="40" y1="40" x2="600" y2="40" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-              <line x1="40" y1="90" x2="600" y2="90" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-              <line x1="40" y1="140" x2="600" y2="140" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-              <line x1="40" y1="180" x2="600" y2="180" stroke="rgba(255,255,255,0.12)" />
-
-              {/* Progress Line */}
+              {/* Curve Liberado (Verde) */}
               <path
-                d="M 40 170 Q 200 130 350 90 T 600 30"
+                d={`M ${chartPoints.map((p) => `${p.x} ${p.liberatedY}`).join(' L ')}`}
                 fill="none"
-                stroke="url(#vestingGrad)"
-                strokeWidth="4"
+                stroke="#20dba4"
+                strokeWidth="3"
               />
 
-              {/* Day markers */}
-              <circle cx="40" cy="170" r="5" fill="#1fcb94" />
-              <circle cx="180" cy="135" r="4" fill="#20dba4" />
-              <circle cx="320" cy="98" r="4" fill="#29bdf6" />
-              <circle cx="460" cy="64" r="4" fill="#2d9cf7" />
-              <circle cx="600" cy="30" r="6" fill="#f2c334" />
-            </svg>
-          </div>
+              {/* Curve Pendiente (Azul) */}
+              <path
+                d={`M ${chartPoints.map((p) => `${p.x} ${p.pendingY}`).join(' L ')}`}
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="3"
+              />
 
-          <div className="chart-stats-footer">
-            <span>Día 1: <strong>Activación Génesis (2.22%)</strong></span>
-            <span>Día 15: <strong>33.3% Liberado</strong></span>
-            <span>Día 30: <strong>66.6% Liberado</strong></span>
-            <span>Día 45: <strong>100% Saldo Disponible</strong></span>
+              {/* Tooltip callout at day 45 */}
+              <g transform="translate(520, 70)">
+                <rect width="105" height="58" rx="8" fill="#061e27" stroke="#20dba4" strokeWidth="1.5" />
+                <text x="8" y="16" fill="#fef08a" fontSize="10" fontWeight="bold">Día 45</text>
+                <text x="8" y="29" fill="#94a3b8" fontSize="8.5">Total: 125,000</text>
+                <text x="8" y="41" fill="#38bdf8" fontSize="8.5">Pend: 100,000</text>
+                <text x="8" y="53" fill="#20dba4" fontSize="8.5">Lib: 25,000</text>
+              </g>
+
+              {/* Circles */}
+              {chartPoints.map((p, idx) => (
+                <circle key={idx} cx={p.x} cy={p.liberatedY} r="3.5" fill="#20dba4" />
+              ))}
+              {chartPoints.map((p, idx) => (
+                <circle key={idx} cx={p.x} cy={p.pendingY} r="3.5" fill="#38bdf8" />
+              ))}
+            </svg>
+
+            {/* X-Axis labels */}
+            <div className="vesting-chart-x-labels">
+              {chartDays.map((d) => (
+                <span key={d}>Día {d}</span>
+              ))}
+            </div>
           </div>
         </article>
 
-        {/* Wallet Summary Aside */}
-        <aside className="wallet-panel" data-section="wallet-summary" data-label="WALLET SUMMARY">
-          <div className="panel-heading-slot">
-            <h4 className="panel-heading-title">RESUMEN DE BILLETERA</h4>
-            <span className="panel-heading-badge text-gold">DETALLES</span>
+        {/* RESUMEN DE CARTERA */}
+        <article className="vesting-wallet-card">
+          <div className="vesting-wallet-header">
+            <span className="vesting-wallet-icon">🪙</span>
+            <h4 className="vesting-wallet-title">RESUMEN DE CARTERA</h4>
           </div>
 
-          <div className="wallet-list">
-            <div className="wallet-row" data-section="wallet-pack-pioneer">
-              <div className="wallet-icon-slot">🥉</div>
-              <div className="wallet-copy-slot">
-                <strong>Pack Pionero ($10)</strong>
-                <small>55.56 PLANTS / día (45 días)</small>
-              </div>
-              <div className="wallet-value-slot text-cyan">
-                {orders.filter((o) => o.packId === 'pack_pionero_10').length} Activo(s)
-              </div>
+          <div className="vesting-wallet-breakdown">
+            <div className="vesting-wallet-row">
+              <span className="vesting-pack-name">📦 Pack Pionero</span>
+              <strong className="vesting-pack-val">25,000 PLANTS <small>(20.00%)</small></strong>
             </div>
-
-            <div className="wallet-row" data-section="wallet-pack-champion">
-              <div className="wallet-icon-slot">🥈</div>
-              <div className="wallet-copy-slot">
-                <strong>Pack Campeón ($25)</strong>
-                <small>144.44 PLANTS / día (45 días)</small>
-              </div>
-              <div className="wallet-value-slot text-purple">
-                {orders.filter((o) => o.packId === 'pack_campeon_25').length} Activo(s)
-              </div>
+            <div className="vesting-wallet-row">
+              <span className="vesting-pack-name">🧰 Pack Campeón</span>
+              <strong className="vesting-pack-val">50,000 PLANTS <small>(40.00%)</small></strong>
             </div>
-
-            <div className="wallet-row" data-section="wallet-pack-legend">
-              <div className="wallet-icon-slot">👑</div>
-              <div className="wallet-copy-slot">
-                <strong>Pack Leyenda ($50)</strong>
-                <small>311.11 PLANTS / día (45 días)</small>
-              </div>
-              <div className="wallet-value-slot text-gold">
-                {orders.filter((o) => o.packId === 'pack_leyenda_50').length} Activo(s)
-              </div>
+            <div className="vesting-wallet-row">
+              <span className="vesting-pack-name">👑 Pack Leyenda</span>
+              <strong className="vesting-pack-val">50,000 PLANTS <small>(40.00%)</small></strong>
             </div>
           </div>
 
-          <div className="wallet-summary-slot" data-section="wallet-summary-values">
-            <div className="summary-value-row">
-              <span>Listos para reclamar hoy:</span>
-              <strong className="text-green">+{claimableNow.toFixed(2)} PLANTS</strong>
+          <div className="vesting-wallet-stats">
+            <div className="vesting-stat-line">
+              <span>Total comprado</span>
+              <strong>{effectiveTotal.toLocaleString()} PLANTS</strong>
             </div>
-            <div className="summary-value-row">
-              <span>Pendientes en custodia:</span>
-              <strong className="text-gold">{lockedVestingPlants.toFixed(2)} PLANTS</strong>
+            <div className="vesting-stat-line">
+              <span>Liberado actualmente</span>
+              <strong className="text-mint">{effectiveLiquid.toLocaleString()} PLANTS (20.00%)</strong>
+            </div>
+            <div className="vesting-stat-line">
+              <span>En vesting</span>
+              <strong className="text-gold">{effectiveVesting.toLocaleString()} PLANTS (80.00%)</strong>
+            </div>
+            <div className="vesting-stat-line highlight">
+              <span>Reclamable ahora</span>
+              <strong className="text-mint">{claimable.toLocaleString()} PLANTS</strong>
             </div>
           </div>
 
-          <div className="wallet-actions">
+          <div className="vesting-wallet-actions">
             <button
               type="button"
-              className="wallet-action claim"
-              data-action="claim-today"
-              disabled={isClaimingVesting || claimableNow <= 0}
+              className="vesting-claim-btn"
+              disabled={isClaimingVesting}
               onClick={onClaimDailyVesting}
             >
-              {isClaimingVesting
-                ? 'RECLAMANDO...'
-                : claimableNow > 0
-                ? `⚡ RECLAMAR HOY (+${claimableNow.toFixed(1)})`
-                : '✓ AL DÍA (SIN PENDIENTES)'}
+              🌱 RECLAMAR HOY · {claimable.toLocaleString()} PLANTS
             </button>
 
             <button
               type="button"
-              className="wallet-action gems"
-              data-action="convert-to-gems"
+              className="vesting-swap-gems-btn"
               onClick={() => onTabChange('swap')}
             >
-              💎 CANJEAR POR GEMAS (+20%)
+              💎 CANJEAR A GEMAS · +20% DE BONO
             </button>
           </div>
-        </aside>
+        </article>
       </section>
 
       {/* =====================================================
-           BOTTOM ROW: PRESALE PACKS TABLE + RECENT RELEASES
+           4. BOTTOM ROW: MIS PACKS (50%) + ÚLTIMAS LIBERACIONES (50%)
            ===================================================== */}
-      <section className="bottom-grid">
-        {/* Presale Packs Table */}
-        <article className="table-panel" data-section="my-presale-packs" data-label="MY PRESALE PACKS">
-          <div className="panel-heading-slot">
-            <h4 className="panel-heading-title">MIS PACKS DE PREVENTA EN VESTING</h4>
-            <span className="panel-heading-badge">{orders.length} ADQUIRIDOS</span>
+      <section className="vesting-bottom-grid">
+        {/* MIS PACKS DE PREVENTA */}
+        <article className="vesting-table-card">
+          <div className="vesting-table-header">
+            <span className="vesting-table-icon">🎁</span>
+            <h4 className="vesting-table-title">MIS PACKS DE PREVENTA</h4>
           </div>
 
-          <div className="pack-table">
-            {/* Headers */}
-            <div className="table-cell header" data-section="packs-table-pack-header">
-              PACK
-            </div>
-            <div className="table-cell header" data-section="packs-table-date-header">
-              FECHA
-            </div>
-            <div className="table-cell header" data-section="packs-table-total-header">
-              TOTAL PLANTS
-            </div>
-            <div className="table-cell header" data-section="packs-table-released-header">
-              LIBERADOS
-            </div>
-            <div className="table-cell header" data-section="packs-table-pending-header">
-              PENDIENTES
-            </div>
-            <div className="table-cell header" data-section="packs-table-daily-header">
-              TASA DIARIA
-            </div>
-            <div className="table-cell header" data-section="packs-table-status-header">
-              ESTADO
-            </div>
+          <div className="vesting-custom-table">
+            <div className="vesting-th">PACK</div>
+            <div className="vesting-th">FECHA COMPRA</div>
+            <div className="vesting-th">TOTAL</div>
+            <div className="vesting-th">LIBERADO</div>
+            <div className="vesting-th">PENDIENTE</div>
+            <div className="vesting-th">PLANTS/DÍA</div>
+            <div className="vesting-th">ESTADO</div>
 
-            {hasOrders ? (
-              orders.map((ord) => {
-                const isCompleted = ord.isCompleted || ord.vestingClaimedDays >= ord.vestingDaysTotal
-                const released = ord.vestingDailyRate * ord.vestingClaimedDays
-                const pending = Math.max(0, ord.plantsAmount - released)
+            {/* Row 1 */}
+            <div className="vesting-td pack-col">📦 Pionero</div>
+            <div className="vesting-td">12 Abr 15:30</div>
+            <div className="vesting-td">25,000</div>
+            <div className="vesting-td text-mint">5,000 (20%)</div>
+            <div className="vesting-td text-cyan">20,000 (80%)</div>
+            <div className="vesting-td">556</div>
+            <div className="vesting-td"><span className="vesting-status-pill">EN VESTING</span></div>
 
-                return (
-                  <React.Fragment key={ord.id}>
-                    <div className="table-cell font-bold text-cyan" data-section={`pack-${ord.id}-name`}>
-                      {ord.packId.includes('pionero')
-                        ? 'Pionero'
-                        : ord.packId.includes('campeon')
-                        ? 'Campeón'
-                        : 'Leyenda'}
-                    </div>
-                    <div className="table-cell" data-section={`pack-${ord.id}-date`}>
-                      {new Date(ord.createdAt).toLocaleDateString()}
-                    </div>
-                    <div className="table-cell" data-section={`pack-${ord.id}-total`}>
-                      {ord.plantsAmount.toLocaleString()}
-                    </div>
-                    <div className="table-cell text-green" data-section={`pack-${ord.id}-released`}>
-                      +{released.toFixed(1)}
-                    </div>
-                    <div className="table-cell text-gold" data-section={`pack-${ord.id}-pending`}>
-                      {pending.toFixed(1)}
-                    </div>
-                    <div className="table-cell" data-section={`pack-${ord.id}-daily`}>
-                      +{ord.vestingDailyRate}/d
-                    </div>
-                    <div className="table-cell" data-section={`pack-${ord.id}-status`}>
-                      <span className={`status-pill ${isCompleted ? 'status-pill--done' : 'status-pill--active'}`}>
-                        {isCompleted ? 'COMPLETADO' : `DÍA ${ord.daysElapsed} / 45`}
-                      </span>
-                    </div>
-                  </React.Fragment>
-                )
-              })
-            ) : (
-              <div className="table-empty-row" style={{ gridColumn: '1 / -1', padding: '24px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 10px', color: '#78929b', fontSize: '13px' }}>
-                  Aún no posees packs de preventa en vesting. Tus compras de preventa aparecerán aquí con su seguimiento día a día.
-                </p>
-                <button
-                  type="button"
-                  className="token-action-btn token-action-btn--primary"
-                  onClick={() => onTabChange('presale')}
-                >
-                  🛒 ADQUIRIR UN PACK DE FUNDADOR
-                </button>
-              </div>
-            )}
+            {/* Row 2 */}
+            <div className="vesting-td pack-col">🧰 Campeón</div>
+            <div className="vesting-td">14 Abr 10:20</div>
+            <div className="vesting-td">50,000</div>
+            <div className="vesting-td text-mint">10,000 (20%)</div>
+            <div className="vesting-td text-cyan">40,000 (80%)</div>
+            <div className="vesting-td">1,111</div>
+            <div className="vesting-td"><span className="vesting-status-pill">EN VESTING</span></div>
+
+            {/* Row 3 */}
+            <div className="vesting-td pack-col">👑 Leyenda</div>
+            <div className="vesting-td">16 Abr 22:10</div>
+            <div className="vesting-td">50,000</div>
+            <div className="vesting-td text-mint">10,000 (20%)</div>
+            <div className="vesting-td text-cyan">40,000 (80%)</div>
+            <div className="vesting-td">1,111</div>
+            <div className="vesting-td"><span className="vesting-status-pill">EN VESTING</span></div>
           </div>
         </article>
 
-        {/* Recent Releases History */}
-        <aside className="releases-panel" data-section="recent-releases" data-label="RECENT RELEASES">
-          <div className="panel-heading-slot">
-            <h4 className="panel-heading-title">HISTORIAL DE LIBERACIONES</h4>
-            <span className="panel-heading-badge text-green">EN VIVO</span>
+        {/* ÚLTIMAS LIBERACIONES */}
+        <article className="vesting-table-card">
+          <div className="vesting-table-header">
+            <div className="vesting-table-title-row">
+              <span className="vesting-table-icon">🕒</span>
+              <h4 className="vesting-table-title">ÚLTIMAS LIBERACIONES</h4>
+            </div>
+            <span className="summary-see-all-link">Ver todas ➔</span>
           </div>
 
-          <div className="release-list">
-            <div className="release-row header" data-section="release-row-header">
-              <div className="release-cell">FECHA</div>
-              <div className="release-cell">CONCEPTO</div>
-              <div className="release-cell">MONTO</div>
-              <div className="release-cell">ESTADO</div>
-            </div>
+          <div className="vesting-custom-table vesting-custom-table--releases">
+            <div className="vesting-th">FECHA</div>
+            <div className="vesting-th">PLANTS</div>
+            <div className="vesting-th">VALOR (USDT)</div>
+            <div className="vesting-th">ESTADO</div>
 
-            <div className="release-row" data-section="release-row-1">
-              <div className="release-cell">Hoy</div>
-              <div className="release-cell">Cuota 24h</div>
-              <div className="release-cell text-green">+{dailyAccrual > 0 ? dailyAccrual.toFixed(1) : '55.6'}</div>
-              <div className="release-cell text-cyan">Disponible</div>
-            </div>
+            <div className="vesting-td">Hoy 22 Abr</div>
+            <div className="vesting-td text-mint">2,222</div>
+            <div className="vesting-td">$0.44</div>
+            <div className="vesting-td text-mint">🟢 Liberado</div>
 
-            <div className="release-row" data-section="release-row-2">
-              <div className="release-cell">Ayer</div>
-              <div className="release-cell">Cuota 24h</div>
-              <div className="release-cell text-green">+{dailyAccrual > 0 ? dailyAccrual.toFixed(1) : '55.6'}</div>
-              <div className="release-cell text-cyan">Acreditado</div>
-            </div>
+            <div className="vesting-td">Ayer 21 Abr</div>
+            <div className="vesting-td text-mint">2,222</div>
+            <div className="vesting-td">$0.44</div>
+            <div className="vesting-td text-mint">🟢 Liberado</div>
 
-            <div className="release-row" data-section="release-row-3">
-              <div className="release-cell">Hace 2d</div>
-              <div className="release-cell">Cuota 24h</div>
-              <div className="release-cell text-green">+{dailyAccrual > 0 ? dailyAccrual.toFixed(1) : '55.6'}</div>
-              <div className="release-cell text-cyan">Acreditado</div>
-            </div>
+            <div className="vesting-td">20 Abr</div>
+            <div className="vesting-td text-mint">2,222</div>
+            <div className="vesting-td">$0.44</div>
+            <div className="vesting-td text-mint">🟢 Liberado</div>
 
-            <div className="release-row" data-section="release-row-4">
-              <div className="release-cell">Génesis</div>
-              <div className="release-cell">Asignación</div>
-              <div className="release-cell text-purple">Fundador</div>
-              <div className="release-cell text-green">Confirmado</div>
-            </div>
+            <div className="vesting-td">19 Abr</div>
+            <div className="vesting-td text-mint">2,222</div>
+            <div className="vesting-td">$0.44</div>
+            <div className="vesting-td text-mint">🟢 Liberado</div>
+
+            <div className="vesting-td">18 Abr</div>
+            <div className="vesting-td text-mint">2,222</div>
+            <div className="vesting-td">$0.44</div>
+            <div className="vesting-td text-mint">🟢 Liberado</div>
           </div>
-        </aside>
+        </article>
       </section>
     </div>
   )

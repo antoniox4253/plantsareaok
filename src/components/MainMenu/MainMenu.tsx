@@ -874,6 +874,8 @@ export default function MainMenu({
             ? `Fin de Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`
             : bannerSlide === 1
             ? 'Canal Oficial de Telegram: Únete para noticias y torneos'
+            : bannerSlide === 3
+            ? 'Token PLANTS: Preventa Fundadores activa'
             : `${onlineUsersCount} Jugadores en línea jugando en la Arena`
         }
         title={
@@ -881,6 +883,8 @@ export default function MainMenu({
             ? `Temporada ${seasonStatus.seasonNumber} - Clic para ver ranking y recompensas`
             : bannerSlide === 1
             ? 'Comunidad Oficial de Telegram - Clic para unirte'
+            : bannerSlide === 3
+            ? 'Token PLANTS · Preventa Génesis y Respaldo USDT (Clic para entrar)'
             : 'Jugadores en línea - Clic para entrar a la Arena'
         }
         onClick={() => {
@@ -994,24 +998,26 @@ export default function MainMenu({
           </div>
         )}
 
-        {/* SLIDE 3: TOKEN PLANTS (PREVENTA Y AMM) */}
+        {/* SLIDE 3: TOKEN PLANTS (SIMPLE Y DIRECTO) */}
         {bannerSlide === 3 && (
-          <div className="bosque-banner-slide bosque-banner-slide--plants">
-            <div className="bosque-clean-banner__left">
+          <div className="bosque-banner-slide bosque-banner-slide--clean">
+            <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--plants">
               <span className="bosque-clean-banner__icon">🌱</span>
             </div>
-            <div className="bosque-clean-banner__center">
-              <div className="bosque-clean-banner__badge-row">
-                <span className="bosque-clean-banner__badge" style={{ background: '#065f46', color: '#6ee7b7', border: '1px solid #10b981' }}>
-                  PREVENTA & AMM
+            <div className="bosque-clean-banner__content">
+              <div className="bosque-clean-banner__header-row">
+                <span className="bosque-clean-banner__badge bosque-clean-banner__badge--plants">
+                  🚀 PREVENTA GÉNESIS
                 </span>
-                <span className="bosque-clean-banner__live-tag" style={{ color: '#34d399' }}>$0.000200 SPOT</span>
+                <span className="bosque-clean-banner__tag--plants">
+                  20 PACKS EXCLUSIVOS
+                </span>
               </div>
-              <span className="bosque-clean-banner__title bosque-clean-banner__title--plants" style={{ color: '#6ee7b7' }}>
-                TOKEN PLANTS: 20 PACKS FUNDADORES
+              <span className="bosque-clean-banner__title bosque-clean-banner__title--plants">
+                TOKEN PLANTS · PACKS FUNDADORES
               </span>
               <span className="bosque-clean-banner__subtitle">
-                60% inyección a liquidez ($200 USDT inicial) · Recompensas Arena 3+ · Retiros habilitados
+                ¡Desbloqueo diario, respaldo en USDT y +20% bono en Gemas! Clic para entrar
               </span>
             </div>
           </div>

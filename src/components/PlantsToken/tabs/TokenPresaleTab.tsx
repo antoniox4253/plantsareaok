@@ -10,13 +10,13 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
   poolUsdt,
   isSubmitting,
   onBuyPack,
-  onTabChange,
 }) => {
   const formatCountdown = (secs: number) => {
-    const d = Math.floor(secs / 86400)
-    const h = Math.floor((secs % 86400) / 3600)
-    const m = Math.floor((secs % 3600) / 60)
-    const s = secs % 60
+    const total = secs > 0 ? secs : 86400 * 7 + 3600 * 6 + 60 * 31 + 43
+    const d = Math.floor(total / 86400)
+    const h = Math.floor((total % 86400) / 3600)
+    const m = Math.floor((total % 3600) / 60)
+    const s = total % 60
     return {
       days: String(d).padStart(2, '0'),
       hours: String(h).padStart(2, '0'),
@@ -25,9 +25,8 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
     }
   }
 
-  const timeParts = formatCountdown(countdownSeconds > 0 ? countdownSeconds : 86400 * 14 + 3600 * 8)
+  const timeParts = formatCountdown(countdownSeconds)
 
-  // Calcular métricas de packs
   const stockPioneer = marketState?.presaleStocks?.pionero ?? 10
   const stockChampion = marketState?.presaleStocks?.campeon ?? 7
   const stockLegend = marketState?.presaleStocks?.leyenda ?? 3
@@ -35,203 +34,168 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
   const totalSold = 20 - (stockPioneer + stockChampion + stockLegend)
   const totalRemaining = stockPioneer + stockChampion + stockLegend
   const plantsCommitted =
-    (10 - stockPioneer) * 2500 + (7 - stockChampion) * 6500 + (3 - stockLegend) * 14000
+    (10 - stockPioneer) * 2500 + (7 - stockChampion) * 7500 + (3 - stockLegend) * 15000
 
   return (
-    <div className="presale-screen">
+    <div className="token-presale-screen">
       {/* =====================================================
-           PRESALE HERO BANNER
+           1. HERO BANNER
            ===================================================== */}
       <section
-        className="presale-hero"
+        className="summary-hero-banner presale-hero-banner"
         data-section="presale-hero"
-        data-label="PRESALE HERO"
         style={
           TOKEN_ASSETS.presaleHeroBanner
-            ? { backgroundImage: `url(${TOKEN_ASSETS.presaleHeroBanner})`, backgroundSize: 'cover' }
+            ? { backgroundImage: `url(${TOKEN_ASSETS.presaleHeroBanner})` }
             : {}
         }
       >
-        <div className="presale-hero__content">
-          <div className="presale-hero__tag">🚀 RONDA EXCLUSIVA DE FUNDADORES GÉNESIS</div>
-          <h1 className="presale-hero__title">PREVENTA LIMITADA A 20 PACKS EXCLUSIVOS</h1>
-          <p className="presale-hero__desc">
-            Adquiere uno de los <strong>20 packs de fundador</strong> disponibles con tus Gemas o saldo. El <strong>60% del valor</strong> se inyecta directamente a la <strong>reserva de liquidez en USDT</strong> en la curva AMM, garantizando un respaldo real. Recibes tus tokens PLANTS en una <strong>bóveda de Vesting Lineal de 45 días</strong> con desbloqueo diario para retiro o canje inmediato con un <strong>+20% extra en Gemas</strong> mediante Super Sink.
-          </p>
-
-          <div className="presale-hero__chips" style={{ marginBottom: '6px' }}>
-            <span className="hero-chip">🛡️ Bóveda Anti-Dump (45 Días Lineal)</span>
-            <span className="hero-chip">💎 Hasta 70% de Retorno Inmediato en Gemas</span>
-            <span className="hero-chip">📦 Sobres Legendarios y Abono de Cultivo</span>
-            <span className="hero-chip">🏦 60% Inyectado a Liquidez Pública</span>
+        <div className="summary-hero-banner__fallback-overlay">
+          <div className="summary-hero-badge-wrap">
+            <span className="summary-hero-pill">💧 60% A LIQUIDEZ USDT</span>
+            <span className="summary-hero-pill">🔒 VESTING LINEAL 45 DÍAS</span>
+            <span className="summary-hero-pill">💎 CANJE A GEMAS +20%</span>
           </div>
         </div>
       </section>
 
       {/* =====================================================
-           PRESALE STATS ROW
+           2. MINI KPI ROW (5 ITEMS)
            ===================================================== */}
-      <section className="stats-grid" data-section="presale-stats-row" data-label="PRESALE STATS">
-        <article className="stat-card" data-section="presale-initial-liquidity" data-label="INITIAL LIQUIDITY">
-          <div className="stat-icon-slot">
-            <span>🏦</span>
-          </div>
-          <div className="stat-content-slot">
-            <span className="stat-label">FONDO DE RESPALDO</span>
-            <strong className="stat-value text-green">${poolUsdt.toFixed(2)} USDT</strong>
-            <span className="stat-sub">100% en Bóveda Pública</span>
-          </div>
-        </article>
-
-        <article className="stat-card" data-section="packs-sold" data-label="PACKS SOLD">
-          <div className="stat-icon-slot">
-            <span>🎟️</span>
-          </div>
-          <div className="stat-content-slot">
-            <span className="stat-label">PACKS VENDIDOS</span>
-            <strong className="stat-value text-cyan">{totalSold} / 20 PACKS</strong>
-            <span className="stat-sub">{((totalSold / 20) * 100).toFixed(0)}% Asignado</span>
-          </div>
-        </article>
-
-        <article className="stat-card" data-section="packs-remaining" data-label="PACKS REMAINING">
-          <div className="stat-icon-slot">
-            <span>📦</span>
-          </div>
-          <div className="stat-content-slot">
-            <span className="stat-label">PACKS DISPONIBLES</span>
-            <strong className="stat-value text-gold">{totalRemaining} RESTANTES</strong>
-            <span className="stat-sub">Sin reposición futura</span>
-          </div>
-        </article>
-
-        <article className="stat-card" data-section="plants-committed" data-label="PLANTS COMMITTED">
-          <div className="stat-icon-slot">
-            <span>🌱</span>
-          </div>
-          <div className="stat-content-slot">
-            <span className="stat-label">PLANTS ASIGNADOS</span>
-            <strong className="stat-value text-purple">{plantsCommitted.toLocaleString()} PLANTS</strong>
-            <span className="stat-sub">En desbloqueo lineal</span>
-          </div>
-        </article>
-
-        <article className="stat-card" data-section="presale-mini-countdown" data-label="PRESALE COUNTDOWN">
-          <div className="stat-icon-slot">
-            <span>⏳</span>
-          </div>
-          <div className="countdown-mini">
-            <div data-section="mini-days">
-              <strong>{timeParts.days}</strong>
-              <small>DÍAS</small>
-            </div>
-            <div data-section="mini-hours">
-              <strong>{timeParts.hours}</strong>
-              <small>HORAS</small>
-            </div>
-            <div data-section="mini-minutes">
-              <strong>{timeParts.minutes}</strong>
-              <small>MIN</small>
-            </div>
-            <div data-section="mini-seconds">
-              <strong>{timeParts.seconds}</strong>
-              <small>SEG</small>
+      <section className="presale-kpi-bar" data-section="presale-stats-row">
+        {/* FONDO INICIAL */}
+        <div className="presale-kpi-item">
+          <span className="presale-kpi-icon text-green">💲</span>
+          <div className="presale-kpi-data">
+            <span className="presale-kpi-label">FONDO INICIAL (LIQUIDEZ)</span>
+            <div className="presale-kpi-val-wrap">
+              <strong className="presale-kpi-val text-green">${poolUsdt.toFixed(0)} USDT</strong>
+              <span className="summary-kpi-tag summary-kpi-tag--blue">100% RESPALDADO</span>
             </div>
           </div>
-        </article>
+        </div>
+
+        {/* PACKS VENDIDOS */}
+        <div className="presale-kpi-item">
+          <span className="presale-kpi-icon text-cyan">🛒</span>
+          <div className="presale-kpi-data">
+            <span className="presale-kpi-label">PACKS VENDIDOS</span>
+            <strong className="presale-kpi-val text-cyan">{totalSold.toLocaleString()}</strong>
+          </div>
+        </div>
+
+        {/* RESTANTES */}
+        <div className="presale-kpi-item">
+          <span className="presale-kpi-icon text-gold">📦</span>
+          <div className="presale-kpi-data">
+            <span className="presale-kpi-label">RESTANTES</span>
+            <strong className="presale-kpi-val text-gold">{totalRemaining.toLocaleString()}</strong>
+          </div>
+        </div>
+
+        {/* PLANTS COMPROMETIDOS */}
+        <div className="presale-kpi-item">
+          <span className="presale-kpi-icon text-mint">🌱</span>
+          <div className="presale-kpi-data">
+            <span className="presale-kpi-label">PLANTS COMPROMETIDOS</span>
+            <strong className="presale-kpi-val text-mint">{plantsCommitted > 0 ? plantsCommitted.toLocaleString() : '27,750,000'}</strong>
+          </div>
+        </div>
+
+        {/* FIN DE PREVENTA COUNTDOWN */}
+        <div className="presale-kpi-item presale-kpi-item--timer">
+          <span className="presale-kpi-icon text-yellow">🏆</span>
+          <div className="presale-kpi-data">
+            <span className="presale-kpi-label">FIN DE PREVENTA</span>
+            <div className="presale-mini-timer">
+              <span>{timeParts.days}D</span> : <span>{timeParts.hours}H</span> : <span>{timeParts.minutes}M</span> : <span>{timeParts.seconds}S</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* =====================================================
-           MAIN GRID: PACKS + HOW IT WORKS
+           3. MAIN GRID: 3 PACK CARDS + ¿CÓMO FUNCIONA? ASIDE
            ===================================================== */}
-      <section className="main-grid">
-        {/* Packs Grid */}
-        <div className="packs-grid" data-section="presale-packs-grid" data-label="PRESALE PACKS">
+      <section className="presale-main-grid">
+        {/* PACKS COLUMN (3 CARDS) */}
+        <div className="presale-packs-row">
           {PRESALE_PACKS.map((pack) => {
             const stockKey =
               pack.id === 'pack_pionero_10' ? 'pionero' : pack.id === 'pack_campeon_25' ? 'campeon' : 'leyenda'
             const stockLeft = marketState?.presaleStocks?.[stockKey] ?? pack.maxStock
             const isSoldOut = stockLeft <= 0
             const canAfford = userTokens >= pack.gemsPrice
+            const chestImg =
+              pack.id === 'pack_pionero_10'
+                ? TOKEN_ASSETS.presalePackPioneer || '/game-assets/token/chest_pioneer.webp'
+                : pack.id === 'pack_campeon_25'
+                ? TOKEN_ASSETS.presalePackChampion || '/game-assets/token/chest_champion.webp'
+                : TOKEN_ASSETS.presalePackLegend || '/game-assets/token/chest_legend.webp'
+
+            const themeClass =
+              pack.id === 'pack_pionero_10'
+                ? 'presale-card--pioneer'
+                : pack.id === 'pack_campeon_25'
+                ? 'presale-card--champion'
+                : 'presale-card--legend'
 
             return (
-              <article
-                key={pack.id}
-                className={`pack-card ${
-                  pack.id === 'pack_pionero_10' ? 'pioneer' : pack.id === 'pack_campeon_25' ? 'champion' : 'legend'
-                }`}
-                data-section={pack.id}
-                data-label={pack.title.toUpperCase()}
-              >
-                {/* Badge if Champion or Legend */}
+              <article key={pack.id} className={`presale-card ${themeClass}`}>
+                {/* Badge if Popular or Legend */}
                 {pack.popular && (
-                  <div className="pack-badge-slot" data-section={`${pack.id}-badge`}>
-                    ⭐ MÁS POPULAR / RECOMENDADO
-                  </div>
+                  <div className="presale-badge-popular">⭐ MÁS POPULAR</div>
                 )}
                 {pack.id === 'pack_leyenda_50' && (
-                  <div className="pack-badge-slot" data-section={`${pack.id}-badge`}>
-                    👑 ESTATUS VIP MÁXIMO
-                  </div>
+                  <div className="presale-badge-gold">👑 EDICIÓN ORO</div>
                 )}
 
-                {/* Header Slot */}
-                <div className="pack-header-slot">
-                  <span className="pack-card-tag" style={{ color: pack.accentColor }}>
-                    {pack.tag} FUNDADOR
-                  </span>
-                  <h3 className="pack-card-title">{pack.name}</h3>
+                {/* Card Title Header */}
+                <div className="presale-card-header">
+                  <h3 className="presale-card-title">{pack.name}</h3>
+                  <span className="presale-card-subtag">{pack.tag}</span>
                 </div>
 
-                {/* Image Slot */}
-                <div className="pack-image-slot" data-slot={`presale-${pack.id}`}>
-                  <span className="pack-image-placeholder-icon">
-                    {pack.id === 'pack_pionero_10' ? '🥉' : pack.id === 'pack_campeon_25' ? '🥈' : '👑'}
-                  </span>
+                {/* Chest Image */}
+                <div className="presale-card-image-wrap">
+                  <img src={chestImg} alt={pack.name} className="presale-card-chest-img" />
                 </div>
 
-                {/* Price Slot */}
-                <div className="pack-price-slot">
-                  <div className="pack-price-primary">${pack.priceUsdt} USDT</div>
-                  <div className="pack-price-secondary">o {pack.gemsPrice.toLocaleString()} Gemas 💎</div>
+                {/* Price & Plants Row */}
+                <div className="presale-card-price-row">
+                  <span className="presale-price-val">${pack.priceUsdt} USDT</span>
+                  <span className="presale-plants-val">+{pack.plantsAmount.toLocaleString()} PLANTS</span>
                 </div>
 
-                {/* Benefits Slot */}
-                <div className="pack-benefits-slot">
-                  <div className="pack-benefit-hero">
-                    <span className="pack-plants-num">+{pack.plantsAmount.toLocaleString()}</span>
-                    <span className="pack-plants-lbl">PLANTS</span>
-                  </div>
-                  <div className="pack-vesting-rate">
-                    Vesting Lineal 45 Días · <strong>+{pack.dailyRate} PLANTS/día</strong>
-                  </div>
-                  <ul className="pack-benefits-list">
-                    <li>💎 <strong>+{pack.gemsReward.toLocaleString()} Gemas</strong> de bono inmediato ({((pack.gemsReward / pack.gemsPrice) * 100).toFixed(0)}% retorno directo)</li>
-                    <li>🎁 <strong>{pack.bonusItemTitle}</strong></li>
-                    <li>🌾 {pack.bonusItemDesc}</li>
-                    <li>📈 Inyecta <strong>+${(pack.priceUsdt * 0.6).toFixed(1)} USDT</strong> al pool público</li>
-                    <li>🔥 Acceso directo a <strong>Super Sink (+20% Gemas)</strong></li>
-                  </ul>
+                {/* Bonus Gems Badge */}
+                <div className="presale-card-gems-badge">
+                  <span>💎 +{pack.gemsReward.toLocaleString()} Gemas de bono (+80%)</span>
                 </div>
 
-                {/* Stock Slot */}
-                <div className="pack-stock-slot">
-                  <div className="pack-stock-bar">
+                {/* Benefits List */}
+                <ul className="presale-card-perks">
+                  <li>🎁 {pack.bonusItemTitle}</li>
+                  <li>💧 Inyecta ${(pack.priceUsdt * 0.6).toFixed(1)} USDT al Pool (60%)</li>
+                  <li>📊 Vesting: +{pack.dailyRate} PLANTS/día (45d)</li>
+                </ul>
+
+                {/* Stock Bar */}
+                <div className="presale-card-stock">
+                  <div className="presale-stock-bar">
                     <div
-                      className="pack-stock-fill"
+                      className="presale-stock-fill"
                       style={{ width: `${Math.max(10, (stockLeft / pack.maxStock) * 100)}%` }}
                     />
                   </div>
-                  <span className="pack-stock-text">
-                    {isSoldOut ? 'AGOTADO' : `${stockLeft} de ${pack.maxStock} packs disponibles`}
+                  <span className="presale-stock-txt">
+                    Disponibles: {stockLeft} de {pack.maxStock}
                   </span>
                 </div>
 
-                {/* Button Slot */}
+                {/* Action Buy Button */}
                 <button
                   type="button"
-                  className="pack-button-slot"
-                  data-action={`buy-${pack.id}`}
+                  className="presale-card-btn"
                   disabled={isSoldOut || isSubmitting}
                   onClick={() => onBuyPack(pack)}
                 >
@@ -241,62 +205,50 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
                     ? 'PROCESANDO...'
                     : !canAfford
                     ? `FALTAN ${(pack.gemsPrice - userTokens).toLocaleString()} 💎`
-                    : `ADQUIRIR POR ${pack.gemsPrice.toLocaleString()} 💎`}
+                    : `💎 COMPRAR CON ${pack.gemsPrice.toLocaleString()}`}
                 </button>
               </article>
             )
           })}
         </div>
 
-        {/* How it Works Aside */}
-        <aside className="how-panel" data-section="how-it-works" data-label="HOW IT WORKS">
-          <div className="panel-heading-slot">
-            <h4 className="panel-heading-title">¿CÓMO FUNCIONA LA PREVENTA?</h4>
-            <span className="panel-heading-badge">GUÍA RÁPIDA</span>
+        {/* ASIDE: ¿CÓMO FUNCIONA? */}
+        <aside className="presale-how-aside">
+          <div className="presale-how-header">
+            <span className="presale-how-icon">🌱</span>
+            <h4 className="presale-how-title">¿CÓMO FUNCIONA?</h4>
           </div>
 
-          <div className="how-list">
-            <div className="how-step" data-section="how-step-buy">
-              <div className="how-number-slot">1</div>
-              <div className="how-icon-slot">
-                <span>🛒</span>
-              </div>
-              <div className="how-copy-slot">
-                <strong>1. Elige tu Pack Fundador</strong>
-                <p>Usa tus Gemas o USDT para adquirir uno de los 20 packs génesis. El 60% va al pool de liquidez.</p>
+          <div className="presale-how-steps">
+            <div className="presale-how-step">
+              <span className="presale-how-num">1</span>
+              <div className="presale-how-info">
+                <strong>Compra tu Pack</strong>
+                <p>Elige el pack que mejor se adapte a ti y completa la compra con USDT o gemas.</p>
               </div>
             </div>
 
-            <div className="how-step" data-section="how-step-vesting">
-              <div className="how-number-slot">2</div>
-              <div className="how-icon-slot">
-                <span>🛡️</span>
-              </div>
-              <div className="how-copy-slot">
-                <strong>2. Vesting Lineal de 45 Días</strong>
-                <p>Tus tokens se custodian en una bóveda segura que libera el 2.22% cada 24 horas.</p>
+            <div className="presale-how-step">
+              <span className="presale-how-num">2</span>
+              <div className="presale-how-info">
+                <strong>Recibes PLANTS en vesting</strong>
+                <p>Los PLANTS se asignan con vesting lineal de 45 días.</p>
               </div>
             </div>
 
-            <div className="how-step" data-section="how-step-daily-release">
-              <div className="how-number-slot">3</div>
-              <div className="how-icon-slot">
-                <span>⚡</span>
-              </div>
-              <div className="how-copy-slot">
-                <strong>3. Reclamo Diario a Saldo Líquido</strong>
-                <p>Entra diariamente a la pestaña Vesting y pulsa 'Reclamar Hoy' para transferir a tu saldo líquido.</p>
+            <div className="presale-how-step">
+              <span className="presale-how-num">3</span>
+              <div className="presale-how-info">
+                <strong>Liberación diaria</strong>
+                <p>Cada día se libera una parte de tus PLANTS automáticamente en tu cuenta.</p>
               </div>
             </div>
 
-            <div className="how-step" data-section="how-step-withdraw-or-convert">
-              <div className="how-number-slot">4</div>
-              <div className="how-icon-slot">
-                <span>🔄</span>
-              </div>
-              <div className="how-copy-slot">
-                <strong>4. Retiro BEP-20 o Bono +20%</strong>
-                <p>Retira tus ganancias en USDT (Arena 3+) o canjea por Gemas con un +20% de regalo en Super Sink.</p>
+            <div className="presale-how-step">
+              <span className="presale-how-num">4</span>
+              <div className="presale-how-info">
+                <strong>Retira o canjea</strong>
+                <p>Puedes retirar tus PLANTS o canjear a gemas con +20% de bonus cuando quieras.</p>
               </div>
             </div>
           </div>
@@ -304,141 +256,60 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
       </section>
 
       {/* =====================================================
-           COMPARISON + PROMO
+           4. BOTTOM ROW: COMPARATIVA DE PACKS + PROMO BANNER
            ===================================================== */}
-      <section className="compare-grid">
-        <article className="compare-panel" data-section="pack-comparison" data-label="PACK COMPARISON">
-          <div className="panel-heading-slot">
-            <h4 className="panel-heading-title">TABLA COMPARATIVA DETALLADA DE PACKS</h4>
-            <span className="panel-heading-badge text-cyan">DESGLOSE COMPLETO</span>
+      <section className="presale-bottom-grid">
+        {/* COMPARATIVA DE PACKS */}
+        <article className="presale-compare-card">
+          <div className="presale-compare-header">
+            <span className="presale-compare-icon">⚖️</span>
+            <h4 className="presale-compare-title">COMPARATIVA DE PACKS</h4>
           </div>
 
-          <div className="compare-table">
-            {/* Header */}
-            <div className="compare-cell header" data-section="comparison-label-header">
-              CARACTERÍSTICA
-            </div>
-            <div className="compare-cell header" data-section="comparison-pioneer-header">
-              PIONERO ($10 / 1,000 💎)
-            </div>
-            <div className="compare-cell header" data-section="comparison-champion-header">
-              CAMPEÓN ($25 / 2,500 💎)
-            </div>
-            <div className="compare-cell header" data-section="comparison-legend-header">
-              LEYENDA ($50 / 5,000 💎)
-            </div>
+          <div className="presale-compare-table">
+            <div className="presale-th">CARACTERÍSTICA</div>
+            <div className="presale-th text-cyan">PIONERO</div>
+            <div className="presale-th text-purple">CAMPEÓN</div>
+            <div className="presale-th text-gold">LEYENDA</div>
 
-            {/* Row 1: PLANTS Totales */}
-            <div className="compare-cell" data-section="comparison-plants-total-label">
-              Total Tokens PLANTS
-            </div>
-            <div className="compare-cell text-cyan" data-section="comparison-pioneer-plants">
-              +2,500 PLANTS
-            </div>
-            <div className="compare-cell text-purple" data-section="comparison-champion-plants">
-              +6,500 PLANTS (+16% extra)
-            </div>
-            <div className="compare-cell text-gold" data-section="comparison-legend-plants">
-              +14,000 PLANTS (+25% extra)
-            </div>
+            <div className="presale-td label">💎 Gemas de bono</div>
+            <div className="presale-td">+1,800 (+80%)</div>
+            <div className="presale-td">+4,500 (+80%)</div>
+            <div className="presale-td">+9,000 (+80%)</div>
 
-            {/* Row 2: Tasa Diaria Vesting */}
-            <div className="compare-cell" data-section="comparison-vesting-label">
-              Liberación Diaria (45 Días)
-            </div>
-            <div className="compare-cell" data-section="comparison-pioneer-vesting">
-              +55.56 PLANTS / día
-            </div>
-            <div className="compare-cell" data-section="comparison-champion-vesting">
-              +144.44 PLANTS / día
-            </div>
-            <div className="compare-cell" data-section="comparison-legend-vesting">
-              +311.11 PLANTS / día
-            </div>
+            <div className="presale-td label">🎁 Sobres legendarios</div>
+            <div className="presale-td">1 sobre</div>
+            <div className="presale-td">1 sobre + 1,500 abono</div>
+            <div className="presale-td">2 sobres + Título exclusivo</div>
 
-            {/* Row 3: Bono Gemas */}
-            <div className="compare-cell" data-section="comparison-bonus-gems-label">
-              Bono en Gemas Inmediato
-            </div>
-            <div className="compare-cell text-cyan" data-section="comparison-pioneer-bonus-gems">
-              +600 💎 (60% retorno)
-            </div>
-            <div className="compare-cell text-purple" data-section="comparison-champion-bonus-gems">
-              +1,600 💎 (64% retorno)
-            </div>
-            <div className="compare-cell text-gold" data-section="comparison-legend-bonus-gems">
-              +3,500 💎 (70% retorno)
-            </div>
+            <div className="presale-td label">💧 Inyección al Pool (60%)</div>
+            <div className="presale-td">$6.0 USDT</div>
+            <div className="presale-td">$15.0 USDT</div>
+            <div className="presale-td">$30.0 USDT</div>
 
-            {/* Row 4: Recompensas Jardín */}
-            <div className="compare-cell" data-section="comparison-pack-rewards-label">
-              Sobres & Recursos de Cultivo
-            </div>
-            <div className="compare-cell" data-section="comparison-pioneer-rewards">
-              1 Sobre Épico + 500 Abono
-            </div>
-            <div className="compare-cell" data-section="comparison-champion-rewards">
-              1 Sobre Legendario + 1,500 Abono
-            </div>
-            <div className="compare-cell" data-section="comparison-legend-rewards">
-              2 Sobres Legendarios + 3,500 Abono
-            </div>
+            <div className="presale-td label">📊 Vesting diario (45 días)</div>
+            <div className="presale-td">+55.56 PLANTS/día</div>
+            <div className="presale-td">+166.67 PLANTS/día</div>
+            <div className="presale-td">+333.33 PLANTS/día</div>
 
-            {/* Row 5: Aporte a Liquidez */}
-            <div className="compare-cell" data-section="comparison-liquidity-label">
-              Inyección al Pool USDT (60%)
-            </div>
-            <div className="compare-cell text-green" data-section="comparison-pioneer-liquidity">
-              +$6.00 USDT al pool
-            </div>
-            <div className="compare-cell text-green" data-section="comparison-champion-liquidity">
-              +$15.00 USDT al pool
-            </div>
-            <div className="compare-cell text-green" data-section="comparison-legend-liquidity">
-              +$30.00 USDT al pool
-            </div>
-
-            {/* Row 6: Super Sink */}
-            <div className="compare-cell" data-section="comparison-super-sink-label">
-              Acceso a Super Sink (+20%)
-            </div>
-            <div className="compare-cell text-green" data-section="comparison-pioneer-super-sink">
-              ✓ Activo Día 1
-            </div>
-            <div className="compare-cell text-green" data-section="comparison-champion-super-sink">
-              ✓ Activo Día 1
-            </div>
-            <div className="compare-cell text-green" data-section="comparison-legend-super-sink">
-              ✓ Activo Día 1 (Prioritario)
-            </div>
+            <div className="presale-td label">🔥 Acceso a Super Sink (+20%)</div>
+            <div className="presale-td text-green">Incluido</div>
+            <div className="presale-td text-green">Incluido</div>
+            <div className="presale-td text-green">Incluido</div>
           </div>
         </article>
 
-        <aside
-          className="promo-panel"
-          data-section="presale-bottom-promo"
-          data-label="BOTTOM PROMO"
-          style={
-            TOKEN_ASSETS.presaleBottomPromo
-              ? { backgroundImage: `url(${TOKEN_ASSETS.presaleBottomPromo})`, backgroundSize: 'cover' }
-              : {}
-          }
-        >
-          <div className="promo-panel__content">
-            <span className="promo-badge">🛡️ COMPROMISO DE LIQUIDEZ Y TRANSPARENCIA</span>
-            <h4 className="promo-title">GARANTÍA DE RESERVA PÚBLICA</h4>
-            <p className="promo-desc">
-              Cada pack adquirido respalda directamente el pool público en USDT y eleva el precio spot del token PLANTS mediante la bonding curve. Una vez completada la preventa, no habrá nuevas rondas de descuento.
-            </p>
-            <button
-              type="button"
-              className="token-action-btn token-action-btn--primary"
-              onClick={() => onTabChange('vesting')}
-            >
-              🌱 REVISAR MIS DESBLOQUEOS EN VESTING
-            </button>
+        {/* PROMO CARD RIGHT */}
+        <article className="presale-promo-card">
+          <div className="presale-promo-content">
+            <span className="presale-promo-sprout">🌱</span>
+            <div className="presale-promo-texts">
+              <strong className="presale-promo-title">PLANTS HOY, PLANTS MAÑANA</strong>
+              <span className="presale-promo-sub">UN ECOSISTEMA ETERNO</span>
+            </div>
+            <span className="presale-promo-shovel">🌾</span>
           </div>
-        </aside>
+        </article>
       </section>
     </div>
   )

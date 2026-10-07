@@ -1057,6 +1057,29 @@ export interface Database {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      stake_plants: {
+        Args: {
+          p_amount: number
+          p_duration_days: number
+        }
+        Returns: Json
+      }
+      get_my_staking_positions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      claim_staking_daily_rewards: {
+        Args: {
+          p_position_id?: string | null
+        }
+        Returns: Json
+      }
+      unstake_plants: {
+        Args: {
+          p_position_id: string
+        }
+        Returns: Json
+      }
     }
 
     Enums: {

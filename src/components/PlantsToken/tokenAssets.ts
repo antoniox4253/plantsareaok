@@ -60,26 +60,26 @@ export interface TokenAssetsRegistry {
 
 export const TOKEN_ASSETS: TokenAssetsRegistry = {
   // Brand & Common
-  logo: null,
+  logo: '/game-assets/dashboard/logo.webp',
   tokenPlantsIcon: null,
   tokenUsdtIcon: null,
   tokenGemsIcon: null,
 
   // Summary Tab
-  summaryHeroBanner: null,
+  summaryHeroBanner: '/game-assets/token/hero_summary.webp',
   summaryFlowStep1: null,
   summaryFlowStep2: null,
   summaryFlowStep3: null,
   summaryFlowStep4: null,
-  summaryPackPioneer: null,
-  summaryPackChampion: null,
-  summaryPackLegend: null,
+  summaryPackPioneer: '/game-assets/token/chest_pioneer.webp',
+  summaryPackChampion: '/game-assets/token/chest_champion.webp',
+  summaryPackLegend: '/game-assets/token/chest_legend.webp',
 
   // Presale Tab
-  presaleHeroBanner: null,
-  presalePackPioneer: null,
-  presalePackChampion: null,
-  presalePackLegend: null,
+  presaleHeroBanner: '/game-assets/token/hero_presale.webp',
+  presalePackPioneer: '/game-assets/token/chest_pioneer.webp',
+  presalePackChampion: '/game-assets/token/chest_champion.webp',
+  presalePackLegend: '/game-assets/token/chest_legend.webp',
   presaleHowStep1: null,
   presaleHowStep2: null,
   presaleHowStep3: null,
@@ -87,17 +87,17 @@ export const TOKEN_ASSETS: TokenAssetsRegistry = {
   presaleBottomPromo: null,
 
   // Vesting Tab
-  vestingHeroBanner: null,
-  vestingWalletPioneer: null,
-  vestingWalletChampion: null,
-  vestingWalletLegend: null,
+  vestingHeroBanner: '/game-assets/token/hero_vesting.webp',
+  vestingWalletPioneer: '/game-assets/token/chest_pioneer.webp',
+  vestingWalletChampion: '/game-assets/token/chest_champion.webp',
+  vestingWalletLegend: '/game-assets/token/chest_legend.webp',
 
   // Swap Tab
-  swapHeroBanner: null,
+  swapHeroBanner: '/game-assets/token/hero_swap.webp',
   swapSuperSinkImage: null,
 
   // Tokenomics Tab
-  tokenomicsHeroBanner: null,
+  tokenomicsHeroBanner: '/game-assets/token/hero_tokenomics.webp',
   tokenomicsFlowUsdt: null,
   tokenomicsFlowGems: null,
   tokenomicsFlowPool: null,
@@ -106,7 +106,7 @@ export const TOKEN_ASSETS: TokenAssetsRegistry = {
   tokenomicsFlowBurn: null,
 
   // Guide Tab
-  guideHeroBanner: null,
+  guideHeroBanner: '/game-assets/token/hero_summary.webp',
   guideStep1Image: null,
   guideStep2Image: null,
   guideStep3Image: null,

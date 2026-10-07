@@ -57,6 +57,34 @@ export interface PlantsVestingSummary {
   orders: PlantsVestingOrder[]
 }
 
+export interface StakingPosition {
+  id: string
+  amount: number
+  durationDays: 30 | 60 | 90
+  startDate: string
+  endDate: string
+  dailyGemRate: number
+  dailyGoldRate: number
+  totalGemsClaimed: number
+  totalGoldClaimed: number
+  claimableGemsNow: number
+  claimableGoldNow: number
+  secondsRemaining: number
+  isMature: boolean
+  status: 'active' | 'completed'
+  bonusPacksClaimed: boolean
+  completedAt?: string | null
+  createdAt: string
+}
+
+export interface StakingSummary {
+  totalStaked: number
+  totalClaimableGems: number
+  totalClaimableGold: number
+  activeCount: number
+  positions: StakingPosition[]
+}
+
 export interface PresalePackDefinition {
   id: 'pack_pionero_10' | 'pack_campeon_25' | 'pack_leyenda_50'
   name: string
@@ -460,6 +488,209 @@ export const plantsTokenService = {
       }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error al reclamar liberación de vesting' }
+    }
+  },
+
+  /**
+   * Calcula la previsualización de ganancias para un monto y duración de staking
+   */
+  calculateStakingPreview(amount: number, durationDays: 30 | 60 | 90) {
+    let dailyGemRate = 0
+    let dailyGoldRate = 0
+    let minAmount = 500
+    let bonusDesc = ''
+
+    if (durationDays === 30) {
+      minAmount = 500
+      dailyGemRate = Number((amount * 0.0008).toFixed(4))
+      dailyGoldRate = Number((amount * 0.0050).toFixed(4))
+      bonusDesc = '1 Sobre Básico garantizado'
+    } else if (durationDays === 60) {
+      minAmount = 5000
+      dailyGemRate = Number((amount * 0.0010).toFixed(4))
+      dailyGoldRate = Number((amount * 0.0060).toFixed(4))
+      bonusDesc = amount >= 15000 
+        ? '3 Sobres Básicos + 1 Sobre Épico adicional' 
+        : '3 Sobres Básicos garantizados'
+    } else {
+      minAmount = 25000
+      dailyGemRate = Number((amount * 0.0012).toFixed(4))
+      dailyGoldRate = Number((amount * 0.0070).toFixed(4))
+      bonusDesc = '3 Sobres Épicos + 1 Sobre Legendario + Skin/Item Oro 24K'
+    }
+
+    const totalEstimatedGems = Number((dailyGemRate * durationDays).toFixed(2))
+    const totalEstimatedGold = Math.floor(dailyGoldRate * durationDays)
+
+    return {
+      minAmount,
+      dailyGemRate,
+      dailyGoldRate,
+      totalEstimatedGems,
+      totalEstimatedGold,
+      bonusDesc,
+      isValidAmount: amount >= minAmount
+    }
+  },
+
+  /**
+   * Inicia una nueva posición de staking de PLANTS
+   */
+  async stakePlants(amount: number, durationDays: 30 | 60 | 90): Promise<{
+    success: boolean
+    positionId?: string
+    newLiquidBalance?: number
+    newStakedBalance?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('stake_plants', {
+        p_amount: amount,
+        p_duration_days: durationDays,
+      })
+      if (error) {
+        return { success: false, error: error.message }
+      }
+      const d = data as any
+      if (!d?.success) {
+        return { success: false, error: d?.error || 'No fue posible iniciar el staking' }
+      }
+      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      return {
+        success: true,
+        positionId: String(d.positionId),
+        newLiquidBalance: Number(d.newLiquidBalance ?? 0),
+        newStakedBalance: Number(d.newStakedBalance ?? 0),
+      }
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Error al iniciar staking' }
+    }
+  },
+
+  /**
+   * Obtiene las posiciones de staking y acumulaciones en tiempo real
+   */
+  async getMyStakingPositions(): Promise<StakingSummary | null> {
+    if (!isSupabaseConfigured()) return null
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_my_staking_positions')
+      if (error) {
+        console.warn('[plantsTokenService] getMyStakingPositions error:', error)
+        return null
+      }
+      const d = data as any
+      if (d && typeof d === 'object') {
+        return {
+          totalStaked: Number(d.totalStaked ?? 0),
+          totalClaimableGems: Number(d.totalClaimableGems ?? 0),
+          totalClaimableGold: Number(d.totalClaimableGold ?? 0),
+          activeCount: Number(d.activeCount ?? 0),
+          positions: Array.isArray(d.positions)
+            ? d.positions.map((p: any) => ({
+                id: String(p.id),
+                amount: Number(p.amount ?? 0),
+                durationDays: Number(p.durationDays ?? 30) as 30 | 60 | 90,
+                startDate: String(p.startDate),
+                endDate: String(p.endDate),
+                dailyGemRate: Number(p.dailyGemRate ?? 0),
+                dailyGoldRate: Number(p.dailyGoldRate ?? 0),
+                totalGemsClaimed: Number(p.totalGemsClaimed ?? 0),
+                totalGoldClaimed: Number(p.totalGoldClaimed ?? 0),
+                claimableGemsNow: Number(p.claimableGemsNow ?? 0),
+                claimableGoldNow: Number(p.claimableGoldNow ?? 0),
+                secondsRemaining: Number(p.secondsRemaining ?? 0),
+                isMature: Boolean(p.isMature),
+                status: p.status === 'completed' ? 'completed' : 'active',
+                bonusPacksClaimed: Boolean(p.bonusPacksClaimed),
+                completedAt: p.completedAt ? String(p.completedAt) : null,
+                createdAt: String(p.createdAt),
+              }))
+            : [],
+        }
+      }
+      return null
+    } catch (e) {
+      console.warn('[plantsTokenService] getMyStakingPositions exception:', e)
+      return null
+    }
+  },
+
+  /**
+   * Reclama las recompensas diarias acumuladas de staking (Gemas y Oro)
+   */
+  async claimStakingDailyRewards(positionId?: string): Promise<{
+    success: boolean
+    claimedGems?: number
+    claimedGold?: number
+    positionsCount?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('claim_staking_daily_rewards', {
+        p_position_id: positionId || null,
+      })
+      if (error) {
+        return { success: false, error: error.message }
+      }
+      const d = data as any
+      if (!d?.success) {
+        return { success: false, error: d?.error || 'No fue posible reclamar recompensas' }
+      }
+      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      return {
+        success: true,
+        claimedGems: Number(d.claimedGems ?? 0),
+        claimedGold: Number(d.claimedGold ?? 0),
+        positionsCount: Number(d.positionsCount ?? 0),
+      }
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Error al reclamar recompensas diarias de staking' }
+    }
+  },
+
+  /**
+   * Finaliza el staking maduro, devuelve los PLANTS al balance líquido y acredita los sobres/skin
+   */
+  async unstakePlants(positionId: string): Promise<{
+    success: boolean
+    unlockedPlants?: number
+    finalGemsGranted?: number
+    finalGoldGranted?: number
+    bonusDescription?: string
+    bonusPacks?: string[]
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('unstake_plants', {
+        p_position_id: positionId,
+      })
+      if (error) {
+        return { success: false, error: error.message }
+      }
+      const d = data as any
+      if (!d?.success) {
+        return { success: false, error: d?.error || 'No fue posible retirar el staking' }
+      }
+      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      return {
+        success: true,
+        unlockedPlants: Number(d.unlockedPlants ?? 0),
+        finalGemsGranted: Number(d.finalGemsGranted ?? 0),
+        finalGoldGranted: Number(d.finalGoldGranted ?? 0),
+        bonusDescription: String(d.bonusDescription ?? ''),
+        bonusPacks: Array.isArray(d.bonusPacks) ? d.bonusPacks : [],
+      }
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Error al retirar staking' }
     }
   },
 

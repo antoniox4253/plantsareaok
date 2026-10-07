@@ -170,4 +170,46 @@ describe('PLANTS Token & AMM Ecosystem Tests', () => {
       expect(finalReward - baseReward).toBe(1.0) // +1 PLANTS (+25%)
     })
   })
+
+  describe('Staking Botánico (30, 60 y 90 Días)', () => {
+    it('Plan 30 Días: calcula correctamente gemas, oro y regalo de 1 Sobre Básico', () => {
+      const preview = plantsTokenService.calculateStakingPreview(5000, 30)
+      expect(preview.minAmount).toBe(500)
+      expect(preview.isValidAmount).toBe(true)
+      expect(preview.dailyGemRate).toBe(4) // 5000 * 0.0008 = 4 Gemas/día
+      expect(preview.dailyGoldRate).toBe(25) // 5000 * 0.0050 = 25 Oro/día
+      expect(preview.totalEstimatedGems).toBe(120) // 4 * 30 = 120 Gemas
+      expect(preview.totalEstimatedGold).toBe(750) // 25 * 30 = 750 Oro
+      expect(preview.bonusDesc).toContain('1 Sobre Básico')
+    })
+
+    it('Plan 60 Días: calcula tasas superiores y agrega Sobre Épico si supera 15,000 PLANTS', () => {
+      // Menos de 15,000 PLANTS
+      const p1 = plantsTokenService.calculateStakingPreview(10000, 60)
+      expect(p1.minAmount).toBe(5000)
+      expect(p1.isValidAmount).toBe(true)
+      expect(p1.dailyGemRate).toBe(10) // 10000 * 0.0010 = 10 Gemas/día
+      expect(p1.dailyGoldRate).toBe(60) // 10000 * 0.0060 = 60 Oro/día
+      expect(p1.totalEstimatedGems).toBe(600)
+      expect(p1.bonusDesc).toBe('3 Sobres Básicos garantizados')
+
+      // 15,000 PLANTS o más
+      const p2 = plantsTokenService.calculateStakingPreview(15000, 60)
+      expect(p2.bonusDesc).toBe('3 Sobres Básicos + 1 Sobre Épico adicional')
+    })
+
+    it('Plan 90 Días: exige mínimo 25,000 PLANTS y entrega 3 Épicos + 1 Legendario + Skin', () => {
+      const invalidPreview = plantsTokenService.calculateStakingPreview(10000, 90)
+      expect(invalidPreview.minAmount).toBe(25000)
+      expect(invalidPreview.isValidAmount).toBe(false)
+
+      const validPreview = plantsTokenService.calculateStakingPreview(25000, 90)
+      expect(validPreview.isValidAmount).toBe(true)
+      expect(validPreview.dailyGemRate).toBe(30) // 25000 * 0.0012 = 30 Gemas/día
+      expect(validPreview.dailyGoldRate).toBe(175) // 25000 * 0.0070 = 175 Oro/día
+      expect(validPreview.totalEstimatedGems).toBe(2700)
+      expect(validPreview.totalEstimatedGold).toBe(15750)
+      expect(validPreview.bonusDesc).toContain('3 Sobres Épicos + 1 Sobre Legendario + Skin/Item Oro 24K')
+    })
+  })
 })

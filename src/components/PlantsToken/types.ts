@@ -5,7 +5,7 @@ import type {
   PresalePackDefinition,
 } from '../../services/plantsTokenService'
 
-export type TokenTabType = 'summary' | 'presale' | 'vesting' | 'swap' | 'tokenomics' | 'guide'
+export type TokenTabType = 'summary' | 'presale' | 'vesting' | 'staking' | 'swap' | 'tokenomics' | 'guide'
 export type Timeframe = '1H' | '24H' | '7D' | 'ALL'
 
 export interface TokenHubSharedProps {
