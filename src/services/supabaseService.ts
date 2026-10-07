@@ -172,6 +172,9 @@ export const SupabaseService = {
     colosseum_max_streak: number
     energy_current?: number
     energy_last_reset_utc?: string
+    plants_balance?: number
+    plants_vesting_locked?: number
+    last_plants_cashout_at?: string | null
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
@@ -191,7 +194,7 @@ export const SupabaseService = {
           const { data: userData } = await supabase.auth.getUser()
           if (userData?.user) {
             const { data: prof } = await (supabase.from as any)('profiles')
-              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, claimed_vip_levels, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels')
+              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, claimed_vip_levels, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels, plants_balance, plants_vesting_locked, last_plants_cashout_at')
               .eq('id', userData.user.id)
               .single()
             if (prof) {
@@ -211,6 +214,9 @@ export const SupabaseService = {
                 colosseum_max_streak: Number(prof.colosseum_max_streak ?? 0),
                 energy_current: prof.energy_current ?? (prof.has_vip_pass ? 25 : 20),
                 energy_last_reset_utc: prof.energy_last_reset_utc,
+                plants_balance: Number(prof.plants_balance ?? 0),
+                plants_vesting_locked: Number(prof.plants_vesting_locked ?? 0),
+                last_plants_cashout_at: prof.last_plants_cashout_at ?? null,
               }
             }
           }
@@ -226,6 +232,9 @@ export const SupabaseService = {
           locked_gems_balance: locked,
           withdrawable_gems: Number(data.withdrawable_gems ?? Math.max(0, total - locked)),
           claimed_arena_ads_levels: Array.isArray(data.claimed_arena_ads_levels) ? data.claimed_arena_ads_levels : [],
+          plants_balance: Number(data.plants_balance ?? 0),
+          plants_vesting_locked: Number(data.plants_vesting_locked ?? 0),
+          last_plants_cashout_at: data.last_plants_cashout_at ?? null,
         }
       }
       return data

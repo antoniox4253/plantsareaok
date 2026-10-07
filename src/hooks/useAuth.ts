@@ -113,6 +113,9 @@ export function useAuth() {
                 colosseum_max_streak: Number(b.colosseum_max_streak),
                 elo_rating: Number(b.elo_rating),
                 energy_current: b.energy_current !== undefined ? Number(b.energy_current) : (prev as any).energy_current,
+                plants_balance: b.plants_balance !== undefined ? Number(b.plants_balance) : (prev as any).plants_balance,
+                plants_vesting_locked: b.plants_vesting_locked !== undefined ? Number(b.plants_vesting_locked) : (prev as any).plants_vesting_locked,
+                last_plants_cashout_at: b.last_plants_cashout_at !== undefined ? b.last_plants_cashout_at : (prev as any).last_plants_cashout_at,
               }
             : prev
         )

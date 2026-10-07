@@ -1059,14 +1059,6 @@ export default function Shop({
                 ))}
               </div>
             </div>
-
-            {/* NOTA INFORMATIVA DE ENERGÍA */}
-            <div className="shop-energy-group" style={{ background: 'rgba(56, 189, 248, 0.08)', borderColor: 'rgba(56, 189, 248, 0.3)', padding: '12px 16px', borderRadius: '12px', marginTop: '16px', textAlign: 'center' }}>
-              <div style={{ color: '#38bdf8', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <span>⚡</span>
-                <span>La energía se restablece automáticamente cada día a las 00:00 UTC. Las recargas adicionales se adquieren exclusivamente con Gemas para financiar el ecosistema.</span>
-              </div>
-            </div>
           </div>
         )}
 

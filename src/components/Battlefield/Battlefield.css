@@ -2411,5 +2411,183 @@ div[style*="fixed"][style*="bottom:1"] {
   }
 }
 
+/* ==========================================================================
+   PLANTS TOKEN COMBAT INTEGRATION (LIVE DUEL BANNER & REWARD CARD)
+   ========================================================================== */
+
+.battlefield-live-duel-banner {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  pointer-events: none;
+  animation: liveDuelBannerDrop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes liveDuelBannerDrop {
+  0% { opacity: 0; transform: translate(-50%, -30px) scale(0.9); }
+  100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.battlefield-live-duel-banner__inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: radial-gradient(circle at 50% 50%, rgba(6, 78, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border: 2px solid #10b981;
+  border-radius: 14px;
+  padding: 10px 22px;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.6), inset 0 0 15px rgba(52, 211, 153, 0.3);
+}
+
+.battlefield-live-duel-banner__icon {
+  font-size: 26px;
+  filter: drop-shadow(0 0 8px #10b981);
+}
+
+.battlefield-live-duel-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.battlefield-live-duel-banner__title {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #a7f3d0;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+}
+
+.battlefield-live-duel-banner__sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fde047;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.battlefield-live-duel-banner__badge {
+  font-size: 9px;
+  font-weight: 900;
+  background: #10b981;
+  color: #022c22;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.6px;
+}
+
+/* Tarjeta de Recompensa de PLANTS en Pantalla de Victoria */
+.victory-plants-reward-card {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.4) 0%, rgba(15, 23, 42, 0.7) 100%);
+  border: 1.5px solid rgba(16, 185, 129, 0.5);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 0 12px rgba(16, 185, 129, 0.15);
+}
+
+.victory-plants-reward-card--empty,
+.victory-plants-reward-card--locked {
+  border-color: rgba(148, 163, 184, 0.3);
+  background: rgba(30, 41, 59, 0.4);
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.victory-plants-reward-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.victory-plants-reward-card__icon {
+  font-size: 20px;
+}
+
+.victory-plants-reward-card__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.victory-plants-reward-card__title {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  color: #a7f3d0;
+}
+
+.victory-plants-reward-card__arena-tag {
+  font-size: 8px;
+  font-weight: 900;
+  background: #065f46;
+  color: #6ee7b7;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid #10b981;
+}
+
+.victory-plants-reward-card__hero {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.victory-plants-reward-card__amount {
+  font-size: 22px;
+  font-weight: 900;
+  color: #34d399;
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+.victory-plants-reward-card__unit {
+  font-size: 11px;
+  font-weight: 800;
+  color: #a7f3d0;
+}
+
+.victory-plants-reward-card__score-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.victory-plants-reward-card__score-row {
+  display: flex;
+  justify-content: space-between;
+  color: #94a3b8;
+}
+
+.victory-plants-reward-card__score-row strong {
+  color: #fff;
+}
+
+.victory-plants-reward-card__score-row--bonus strong {
+  color: #fde047;
+}
+
+.victory-plants-reward-card__empty-text {
+  display: flex;
+  flex-direction: column;
+  font-size: 10.5px;
+  color: #cbd5e1;
+}
+
+.victory-plants-reward-card__empty-text small {
+  color: #94a3b8;
+  font-size: 9px;
+}
+
 
 

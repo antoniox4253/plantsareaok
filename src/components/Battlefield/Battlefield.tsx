@@ -51,6 +51,7 @@ import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { ArenaAdsManager, getBotStatsForLevel } from '../../utils/arenaAdsManager'
 import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
 import { arenaAdsService } from '../../services/arenaAdsService'
+import { plantsTokenService } from '../../services/plantsTokenService'
 import { setCombatAdsBlocked, resetPopunderQuota, activateMonetagVignette } from '../../utils/arenaAdsNetwork'
 import './Battlefield.css'
 
@@ -389,6 +390,48 @@ export default function Battlefield({
   const rivalTreeSkin = treeSkins?.rival ?? null
   const rivalTreeSkinRef = useRef<string | null>(rivalTreeSkin)
   rivalTreeSkinRef.current = rivalTreeSkin
+
+  // ── ESTADO DEL TOKEN PLANTS EN COMBATE ──
+  const [plantsRewardResult, setPlantsRewardResult] = useState<{
+    plantsAwarded: number
+    score: number
+    isLivePvP: boolean
+    bonusActive: boolean
+    bonusPct: number
+    dailyClaimsUsed: number
+    dailyClaimsMax: number
+  } | null>(null)
+
+  const [pvpBonusState, setPvpBonusState] = useState<{
+    isActive: boolean
+    endsAt: string | null
+    formatted: string
+  }>({ isActive: false, endsAt: null, formatted: '' })
+
+  const [showLiveDuelBanner, setShowLiveDuelBanner] = useState<boolean>(false)
+
+  // Consultar estado del bono PvP de lanzamiento (primeros 7 días)
+  useEffect(() => {
+    void plantsTokenService.getMarketState().then((market) => {
+      if (market?.pvpBonusEndsAt) {
+        const timer = plantsTokenService.getPvpBonusTimeRemaining(market.pvpBonusEndsAt)
+        setPvpBonusState({
+          isActive: timer.isActive,
+          endsAt: market.pvpBonusEndsAt,
+          formatted: timer.formatted,
+        })
+      }
+    })
+  }, [])
+
+  // Mostrar insignia de duelo en vivo durante los primeros 6 segundos de combate
+  useEffect(() => {
+    if (gameStatus === 'playing' && userElo >= 2001 && !isAsyncMatch && roomId) {
+      setShowLiveDuelBanner(true)
+      const t = setTimeout(() => setShowLiveDuelBanner(false), 6000)
+      return () => clearTimeout(t)
+    }
+  }, [gameStatus, userElo, isAsyncMatch, roomId])
 
   useEffect(() => {
     if (typeof treeLevels?.mio === 'number' || typeof treeLevels?.rival === 'number' || treeSkins) {
@@ -1539,7 +1582,7 @@ export default function Battlefield({
             onServerEloUpdated(liq.eloAfter)
           }
 
-          if (liq.statusServidor === 'liquidada' && liq.resultadoFinal === 'victory' && onBattleComplete && matchMode !== 'tournament' && matchMode !== 'friendly') {
+            if (liq.statusServidor === 'liquidada' && liq.resultadoFinal === 'victory' && onBattleComplete && matchMode !== 'tournament' && matchMode !== 'friendly') {
             try {
               const res = await onBattleComplete(true)
               if (res) {
@@ -1551,6 +1594,26 @@ export default function Battlefield({
               }
             } catch (e) {
               console.warn('[Battlefield] Error obteniendo pack de victoria:', e)
+            }
+
+            // ── RECLAMO DE TOKEN PLANTS (EXCLUSIVO ARENA 3+ / 2,001+ COPAS) ──
+            if (userElo >= 2001 && roomId && matchMode !== 'clan_fortress') {
+              try {
+                const matchDurationSec = Math.max(1, Math.round(tick * 0.033))
+                const plantsClaimRes = await plantsTokenService.claimPvpPlantsReward({
+                  roomId,
+                  matchDurationSec,
+                  enemyKills: stats.enemyPlantsDefeated,
+                  sunsCollected: stats.sunsCollected,
+                  plantsPlaced: stats.plantsPlaced,
+                  enemyPlantsPlaced: Math.max(4, stats.enemyPlantsDefeated),
+                })
+                if (plantsClaimRes.success && plantsClaimRes.data) {
+                  setPlantsRewardResult(plantsClaimRes.data)
+                }
+              } catch (err) {
+                console.warn('[Battlefield] Error reclamando Token PLANTS:', err)
+              }
             }
           }
 
@@ -2207,9 +2270,55 @@ export default function Battlefield({
                 </>
               ) : null}
             </div>
+          ) : userElo >= 2001 ? (
+            <div
+              className="battlefield-colosseum-header-pill"
+              style={{
+                borderColor: !isAsyncMatch ? '#10b981' : '#38bdf8',
+                boxShadow: !isAsyncMatch
+                  ? '0 0 15px rgba(16, 185, 129, 0.45)'
+                  : '0 0 10px rgba(56, 189, 248, 0.3)',
+                background: 'rgba(15, 23, 42, 0.94)',
+                whiteSpace: 'nowrap',
+              }}
+              title={
+                !isAsyncMatch
+                  ? '¡Duelo contra humano real! Recompensa en Token PLANTS con +25% de Bonus activo'
+                  : 'Rival asíncrono: Recompensa estándar de Token PLANTS activa'
+              }
+            >
+              <span className="battlefield-colosseum-icon">{!isAsyncMatch ? '⚔️' : '🤖'}</span>
+              <span>{!isAsyncMatch ? 'PvP EN VIVO' : 'ASÍNCRONO'}</span>
+              <span>•</span>
+              <span style={{ color: '#34d399', fontWeight: 800 }}>🌱 PLANTS</span>
+              {!isAsyncMatch && pvpBonusState.isActive && (
+                <>
+                  <span>•</span>
+                  <span style={{ color: '#fde047', fontWeight: 900 }}>+25% BONUS</span>
+                </>
+              )}
+            </div>
           ) : undefined
         }
       />
+
+      {/* ── INSIGNIA FLOTANTE DE DUELO EN VIVO (ARENA 3+) ── */}
+      {showLiveDuelBanner && (
+        <div className="battlefield-live-duel-banner">
+          <div className="battlefield-live-duel-banner__inner">
+            <span className="battlefield-live-duel-banner__icon">⚔️</span>
+            <div className="battlefield-live-duel-banner__text">
+              <strong className="battlefield-live-duel-banner__title">¡DUELO EN VIVO ENCONTRADO!</strong>
+              <span className="battlefield-live-duel-banner__sub">
+                {pvpBonusState.isActive
+                  ? `🔥 +25% BONUS DE PLANTS ACTIVO (${pvpBonusState.formatted} RESTANTES)`
+                  : '🌱 RECOMPENSA DE PLANTS ACTIVA (ARENA 3+)'}
+              </span>
+            </div>
+            <span className="battlefield-live-duel-banner__badge">LIVE PvP</span>
+          </div>
+        </div>
+      )}
 
       {/* PANEL DE PREPARACIÓN EN ASALTO A FORTALEZA (120S) */}
       {matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && (
@@ -3492,6 +3601,61 @@ export default function Battlefield({
                             : '¡Buen intento! Revisa tu mazo y tus plantas en el Jardín para volver con más fuerza.'}
                         </span>
                       </div>
+                    )}
+
+                    {/* RECOMPENSA DE TOKEN PLANTS (ARENA 3+ / 2,001+ COPAS) */}
+                    {esVictoriaFinal && matchMode !== 'friendly' && (
+                      plantsRewardResult && plantsRewardResult.plantsAwarded > 0 ? (
+                        <div className="victory-plants-reward-card">
+                          <div className="victory-plants-reward-card__header">
+                            <span className="victory-plants-reward-card__icon">🌱</span>
+                            <div className="victory-plants-reward-card__title-wrap">
+                              <span className="victory-plants-reward-card__title">RECOMPENSA TOKEN PLANTS</span>
+                              <span className="victory-plants-reward-card__arena-tag">ARENA 3+ ELEGIBLE</span>
+                            </div>
+                          </div>
+
+                          <div className="victory-plants-reward-card__hero">
+                            <span className="victory-plants-reward-card__amount">
+                              +{plantsRewardResult.plantsAwarded.toFixed(2)}
+                            </span>
+                            <span className="victory-plants-reward-card__unit">PLANTS</span>
+                          </div>
+
+                          <div className="victory-plants-reward-card__score-details">
+                            <div className="victory-plants-reward-card__score-row">
+                              <span>Score de Batalla:</span>
+                              <strong>{plantsRewardResult.score?.toFixed(0) ?? 0} / 100 pts</strong>
+                            </div>
+                            {plantsRewardResult.bonusActive && (
+                              <div className="victory-plants-reward-card__score-row victory-plants-reward-card__score-row--bonus">
+                                <span>Bonus PvP en Vivo:</span>
+                                <strong>+25% (+{((plantsRewardResult.plantsAwarded * 0.25) / 1.25).toFixed(2)} PLANTS)</strong>
+                              </div>
+                            )}
+                            <div className="victory-plants-reward-card__score-row">
+                              <span>Tope Diario:</span>
+                              <span>{plantsRewardResult.dailyClaimsUsed} / {plantsRewardResult.dailyClaimsMax} victorias hoy</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : userElo >= 2001 ? (
+                        <div className="victory-plants-reward-card victory-plants-reward-card--empty">
+                          <span className="victory-plants-reward-card__icon">🌱</span>
+                          <div className="victory-plants-reward-card__empty-text">
+                            <span>Token PLANTS:</span>
+                            <small>Anti-colusión activa (mínimo 45s de combate) o tope diario completado.</small>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="victory-plants-reward-card victory-plants-reward-card--locked">
+                          <span className="victory-plants-reward-card__icon">🔒</span>
+                          <div className="victory-plants-reward-card__empty-text">
+                            <span>Token PLANTS Bloqueado:</span>
+                            <small>Alcanza Arena 3 (2,001+ copas) para mintear tokens jugando.</small>
+                          </div>
+                        </div>
+                      )
                     )}
                   </div>
                 )}

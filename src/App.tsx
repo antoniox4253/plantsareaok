@@ -45,6 +45,7 @@ import { StrategicPlaytestLauncherModal } from './components/StrategicPlaytest/S
 import type { StrategicPlaytestConfig } from './engine/strategicPlaytest'
 import { SeasonManager } from './utils/seasonManager'
 import BetaPhaseModal from './components/BetaPhaseModal/BetaPhaseModal'
+import PlantsTokenHub from './components/PlantsToken/PlantsTokenHub'
 import { isStrategicPlaytestAuthorized } from './utils/strategicPlaytestAuth'
 import { useOnlineUsers } from './hooks/useOnlineUsers'
 import { VIP_PASS_PRECIO_GEMAS } from './utils/gameConstants'
@@ -1471,6 +1472,7 @@ function App() {
             onOpenMarketplace={() => setScreen('market')}
             onOpenMisiones={() => setScreen('misiones')}
             onOpenLoteria={() => setScreen('loteria')}
+            onOpenPlantsToken={() => setScreen('plants-token')}
             onOpenLanding={handleGoToLanding}
             onOpenAdmin={() => setIsAdminPanelOpen(true)}
             onOpenBetaInfo={() => setIsBetaPhaseModalOpen(true)}
@@ -1879,6 +1881,18 @@ function App() {
               userElo={userElo}
             />
           </div>
+        )}
+
+        {screen === 'plants-token' && (
+          <PlantsTokenHub
+            onBack={() => setScreen('menu')}
+            userTokens={userTokens}
+            userGold={userGold}
+            userElo={userElo}
+            hasVipPass={hasVipPass}
+            userProfile={profile}
+            onRefreshProfile={refreshFromServer}
+          />
         )}
 
         {/* Global Pack Opening Reveal Modal */}

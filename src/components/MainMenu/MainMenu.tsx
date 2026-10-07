@@ -67,6 +67,7 @@ interface MainMenuProps {
   onOpenMarketplace?: () => void
   onOpenMisiones?: () => void
   onOpenLoteria?: () => void
+  onOpenPlantsToken?: () => void
   onOpenLanding?: () => void
   onOpenAdmin?: () => void
   onOpenStrategicPlaytest?: () => void
@@ -120,6 +121,7 @@ export default function MainMenu({
   onOpenClan,
   onOpenMisiones,
   onOpenLoteria,
+  onOpenPlantsToken,
   onOpenLanding,
   onOpenAdmin,
   onOpenStrategicPlaytest,
@@ -587,7 +589,7 @@ export default function MainMenu({
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setBannerSlide((prev) => (prev + 1) % 3)
+      setBannerSlide((prev) => (prev + 1) % 4)
     }, 10000)
     return () => clearInterval(timer)
   }, [])
@@ -887,6 +889,8 @@ export default function MainMenu({
             onOpenRanking?.()
           } else if (bannerSlide === 1) {
             window.open('https://t.me/+HY1gbZZKmAE5ZDcx', '_blank')
+          } else if (bannerSlide === 3) {
+            onOpenPlantsToken?.()
           } else {
             handlePlayClick()
           }
@@ -896,6 +900,7 @@ export default function MainMenu({
             soundManager.playSound('click', 0.5)
             if (bannerSlide === 0) onOpenRanking?.()
             else if (bannerSlide === 1) window.open('https://t.me/+HY1gbZZKmAE5ZDcx', '_blank')
+            else if (bannerSlide === 3) onOpenPlantsToken?.()
             else handlePlayClick()
           }
         }}
@@ -989,9 +994,32 @@ export default function MainMenu({
           </div>
         )}
 
+        {/* SLIDE 3: TOKEN PLANTS (PREVENTA Y AMM) */}
+        {bannerSlide === 3 && (
+          <div className="bosque-banner-slide bosque-banner-slide--plants">
+            <div className="bosque-clean-banner__left">
+              <span className="bosque-clean-banner__icon">🌱</span>
+            </div>
+            <div className="bosque-clean-banner__center">
+              <div className="bosque-clean-banner__badge-row">
+                <span className="bosque-clean-banner__badge" style={{ background: '#065f46', color: '#6ee7b7', border: '1px solid #10b981' }}>
+                  PREVENTA & AMM
+                </span>
+                <span className="bosque-clean-banner__live-tag" style={{ color: '#34d399' }}>$0.000200 SPOT</span>
+              </div>
+              <span className="bosque-clean-banner__title bosque-clean-banner__title--plants" style={{ color: '#6ee7b7' }}>
+                TOKEN PLANTS: 20 PACKS FUNDADORES
+              </span>
+              <span className="bosque-clean-banner__subtitle">
+                60% inyección a liquidez ($200 USDT inicial) · Recompensas Arena 3+ · Retiros habilitados
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* INDICADORES DE CARRUSEL (PUNTOS NAVEGABLES) */}
         <div className="bosque-banner-dots">
-          {[0, 1, 2].map((idx) => (
+          {[0, 1, 2, 3].map((idx) => (
             <button
               key={idx}
               type="button"
@@ -1241,21 +1269,42 @@ export default function MainMenu({
         </div>
         <span className="bosque-news-code__arrow">➔</span>
       </div>
-      <button
-        type="button"
-        className="hit"
+      <div
+        className="bosque-plants-token-banner"
         data-action="banner-lateral"
-        aria-label="banner lateral"
-        title="LeafTech Tecnología"
-        onClick={() =>
-          handleOpenNews(
-            'LeafTech Solutions',
-            'Tecnología que hace crecer tu mundo. Potencia tus plantas con el equipamiento y recursos botánicos del juego.'
-          )
-        }
+        role="button"
+        tabIndex={0}
+        aria-label="Token PLANTS - Curva AMM, Preventa y Ganancias en Arena 3"
+        title="Token PLANTS (Clic para abrir el mercado y preventa)"
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          onOpenPlantsToken?.()
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            soundManager.playSound('click', 0.5)
+            onOpenPlantsToken?.()
+          }
+        }}
       >
-        banner-lateral
-      </button>
+        <div className="bosque-plants-token-banner__glow" />
+        <div className="bosque-plants-token-banner__art">
+          <span className="bosque-plants-token-banner__icon">🌱</span>
+        </div>
+        <div className="bosque-plants-token-banner__body">
+          <div className="bosque-plants-token-banner__top">
+            <span className="bosque-plants-token-banner__badge">AMM ACTIVO</span>
+            <span className="bosque-plants-token-banner__price">$0.000200</span>
+          </div>
+          <span className="bosque-plants-token-banner__title">TOKEN PLANTS</span>
+          <span className="bosque-plants-token-banner__desc">
+            {(Number((userProfile as any)?.plants_balance ?? 0) > 0 || Number((userProfile as any)?.plants_vesting_locked ?? 0) > 0)
+              ? `Mis Tokens: ${Number((userProfile as any)?.plants_balance ?? 0).toFixed(1)} 🌱${Number((userProfile as any)?.plants_vesting_locked ?? 0) > 0 ? ` (+${Number((userProfile as any)?.plants_vesting_locked ?? 0).toFixed(1)}v)` : ''}`
+              : 'Preventa Fundadores · Vesting 45d · Retiro USDT'}
+          </span>
+        </div>
+        <span className="bosque-plants-token-banner__arrow">➔</span>
+      </div>
 
       {/* ── 3. MENÚ DESPLEGABLE DE AJUSTES (GEAR ICON) ── */}
       {isSettingsOpen && (

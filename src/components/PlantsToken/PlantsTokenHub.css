@@ -1,0 +1,1623 @@
+/* ==========================================================================
+   PLANTS TOKEN HUB - ESTILOS VISUALES 3D RPG Y AMM BONDING CURVE
+   ========================================================================== */
+
+.plants-hub {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at 50% 15%, #0f231c 0%, #06110d 60%, #030806 100%);
+  color: #f1f5f9;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 16px 24px;
+  user-select: none;
+}
+
+/* ── HEADER ── */
+.plants-hub__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.plants-hub__back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1.5px solid #334155;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.plants-hub__back-btn:hover {
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+  border-color: #10b981;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.plants-hub__back-arrow {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.plants-hub__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.plants-hub__title-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.6));
+}
+
+.plants-hub__title-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.plants-hub__title {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin: 0;
+  background: linear-gradient(135deg, #a7f3d0 0%, #34d399 50%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.plants-hub__subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #6ee7b7;
+  opacity: 0.85;
+}
+
+.plants-hub__user-pills {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.plants-hub__pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.plants-hub__pill--plants {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(6, 78, 59, 0.3);
+}
+
+.plants-hub__pill--gems {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(12, 74, 110, 0.3);
+}
+
+.plants-hub__pill-icon {
+  font-size: 20px;
+}
+
+.plants-hub__pill-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.plants-hub__pill-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.plants-hub__pill-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+}
+
+.plants-hub__pill-val {
+  font-size: 15px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.plants-hub__vesting-badge {
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  color: #fde047;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* ── TICKER GLOBAL AMM ── */
+.plants-hub__ticker-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 78, 59, 0.2) 50%, rgba(16, 185, 129, 0.12) 100%);
+  border: 1.5px solid rgba(16, 185, 129, 0.3);
+  border-radius: 14px;
+  padding: 12px 20px;
+  margin-bottom: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.plants-hub__ticker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.plants-hub__ticker-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #94a3b8;
+}
+
+.plants-hub__ticker-val-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plants-hub__spot-price {
+  font-size: 18px;
+  font-weight: 900;
+  color: #34d399;
+}
+
+.plants-hub__pool-val {
+  font-size: 18px;
+  font-weight: 900;
+  color: #38bdf8;
+}
+
+.plants-hub__burn-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f87171;
+}
+
+.plants-hub__era-val {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fbbf24;
+}
+
+.plants-hub__ticker-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.plants-hub__ticker-badge--live {
+  background: #065f46;
+  color: #6ee7b7;
+  border: 1px solid #10b981;
+  animation: pulseLive 1.5s infinite;
+}
+
+.plants-hub__ticker-badge--pool {
+  background: #075985;
+  color: #7dd3fc;
+  border: 1px solid #38bdf8;
+}
+
+.plants-hub__ticker-badge--era {
+  background: #854d0e;
+  color: #fde047;
+  border: 1px solid #eab308;
+}
+
+.plants-hub__ticker-sub {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.plants-hub__ticker-sep {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes pulseLive {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(0.97); }
+}
+
+/* ── ALERTAS Y NOTIFICACIONES ── */
+.plants-hub__alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  animation: slideDown 0.3s ease;
+}
+
+.plants-hub__alert--success {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1.5px solid #10b981;
+  color: #6ee7b7;
+}
+
+.plants-hub__alert--error {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1.5px solid #ef4444;
+  color: #fca5a5;
+}
+
+.plants-hub__alert--info {
+  background: rgba(56, 189, 248, 0.2);
+  border: 1.5px solid #38bdf8;
+  color: #7dd3fc;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── CUERPO PRINCIPAL ── */
+.plants-hub__body {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  gap: 16px;
+  flex: 1;
+}
+
+@media (max-width: 1200px) {
+  .plants-hub__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── TARJETA DE LA GRÁFICA ── */
+.plants-hub__chart-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1.5px solid rgba(16, 185, 129, 0.25);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.plants-hub__chart-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.plants-hub__chart-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plants-hub__chart-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #e2e8f0;
+}
+
+.plants-hub__chart-formula-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 2px 8px;
+  border-radius: 6px;
+  align-self: flex-start;
+}
+
+.plants-hub__timeframe-selector {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.plants-hub__tf-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.plants-hub__tf-btn:hover {
+  color: #fff;
+}
+
+.plants-hub__tf-btn--active {
+  background: #10b981;
+  color: #022c22;
+}
+
+.plants-hub__svg-container {
+  width: 100%;
+  height: 220px;
+  position: relative;
+  background: rgba(6, 15, 12, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.plants-hub__svg-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.plants-hub__chart-point {
+  fill: #34d399;
+  stroke: #064e3b;
+  stroke-width: 2;
+  transition: r 0.2s;
+}
+
+.plants-hub__chart-point-pulse {
+  fill: #6ee7b7;
+  stroke: #fff;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px #10b981);
+}
+
+.plants-hub__chart-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.plants-hub__chart-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #94a3b8;
+}
+
+.plants-hub__chart-stat strong {
+  color: #fff;
+}
+
+.plants-hub__stat-green {
+  color: #34d399 !important;
+}
+
+/* ── CONTENIDO DERECHO (PESTAÑAS) ── */
+.plants-hub__content-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1.5px solid rgba(16, 185, 129, 0.25);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.plants-hub__tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+
+.plants-hub__tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.plants-hub__tab-btn:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.plants-hub__tab-btn--active {
+  color: #34d399;
+  border-bottom-color: #10b981;
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.plants-hub__tab-pane {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ── PREVENTA FUNDADORES ── */
+.plants-hub__presale-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 78, 59, 0.3) 100%);
+  border: 1.5px solid rgba(52, 211, 153, 0.4);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.plants-hub__presale-banner-info h3 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #a7f3d0;
+}
+
+.plants-hub__presale-banner-info p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.plants-hub__presale-banner-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(52, 211, 153, 0.5);
+  padding: 8px 16px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.plants-hub__presale-banner-badge span {
+  font-size: 9px;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.plants-hub__presale-banner-badge strong {
+  font-size: 18px;
+  font-weight: 900;
+  color: #34d399;
+}
+
+.plants-hub__packs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .plants-hub__packs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plants-hub__pack-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 2px solid var(--pack-accent, #38bdf8);
+  border-radius: 16px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.plants-hub__pack-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+}
+
+.plants-hub__pack-card--popular {
+  border-color: #a855f7;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+.plants-hub__pack-popular-ribbon {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #9333ea, #a855f7);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  padding: 3px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.plants-hub__pack-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.plants-hub__pack-tag {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--pack-accent, #38bdf8);
+  letter-spacing: 1px;
+}
+
+.plants-hub__pack-name {
+  font-size: 18px;
+  font-weight: 900;
+  margin: 4px 0 8px 0;
+  color: #fff;
+}
+
+.plants-hub__pack-price-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plants-hub__pack-usd {
+  font-size: 18px;
+  font-weight: 900;
+  color: #38bdf8;
+}
+
+.plants-hub__pack-or {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.plants-hub__pack-gems {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fde047;
+}
+
+.plants-hub__pack-reward-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.plants-hub__pack-plants-hero {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+
+.plants-hub__pack-plants-amount {
+  font-size: 26px;
+  font-weight: 900;
+  color: #34d399;
+}
+
+.plants-hub__pack-plants-token {
+  font-size: 13px;
+  font-weight: 800;
+  color: #a7f3d0;
+}
+
+.plants-hub__pack-vesting-sub {
+  display: block;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.plants-hub__pack-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  flex: 1;
+}
+
+.plants-hub__pack-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+}
+
+.plants-hub__feat-icon {
+  font-size: 14px;
+}
+
+.plants-hub__pack-stock-bar {
+  margin-bottom: 14px;
+}
+
+.plants-hub__pack-stock-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.plants-hub__pack-stock-info strong {
+  color: #fde047;
+}
+
+.plants-hub__pack-stock-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.plants-hub__pack-stock-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.plants-hub__pack-buy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid #34d399;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.plants-hub__pack-buy-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.plants-hub__pack-buy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #334155;
+  border-color: #475569;
+}
+
+.plants-hub__btn-gema {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* ── SWAP & CASHOUT ── */
+.plants-hub__swap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .plants-hub__swap-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plants-hub__action-box {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.plants-hub__action-box--swap {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.plants-hub__action-box--cashout {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.plants-hub__action-badge {
+  font-size: 10px;
+  font-weight: 900;
+  color: #34d399;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.plants-hub__action-badge--cashout {
+  color: #38bdf8;
+}
+
+.plants-hub__action-title {
+  font-size: 18px;
+  font-weight: 900;
+  margin: 0 0 8px 0;
+  color: #fff;
+}
+
+.plants-hub__action-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #94a3b8;
+  margin: 0 0 18px 0;
+}
+
+.plants-hub__input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.plants-hub__input-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.plants-hub__input-max {
+  color: #34d399;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.plants-hub__input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.plants-hub__input-wrapper input,
+.plants-hub__input-text {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1.5px solid #334155;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 10px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.plants-hub__input-wrapper input:focus,
+.plants-hub__input-text:focus {
+  border-color: #10b981;
+}
+
+.plants-hub__input-unit {
+  position: absolute;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.plants-hub__swap-preview-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.plants-hub__preview-row {
+  display: flex;
+  justify-content: space-between;
+  color: #94a3b8;
+}
+
+.plants-hub__preview-row--bonus {
+  color: #34d399;
+  font-weight: 700;
+}
+
+.plants-hub__preview-row--total {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+  color: #fff;
+}
+
+.plants-hub__preview-gems {
+  color: #fde047;
+  font-size: 15px;
+}
+
+.plants-hub__preview-usdt {
+  color: #38bdf8;
+  font-size: 15px;
+}
+
+.plants-hub__action-btn {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border: 1.5px solid #34d399;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.plants-hub__action-btn--cashout {
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  border-color: #38bdf8;
+}
+
+.plants-hub__action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.plants-hub__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.plants-hub__lock-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1.5px solid #ef4444;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: auto;
+}
+
+.plants-hub__lock-icon {
+  font-size: 28px;
+}
+
+.plants-hub__lock-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plants-hub__lock-info strong {
+  font-size: 13px;
+  color: #fca5a5;
+}
+
+.plants-hub__lock-info span {
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+/* ── TOKENOMICS & HALVING ── */
+.plants-hub__tokenomics-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .plants-hub__tokenomics-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.plants-hub__t-stat-card {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plants-hub__t-stat-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+}
+
+.plants-hub__t-stat-val {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.plants-hub__stat-red {
+  color: #f87171 !important;
+}
+
+.plants-hub__t-stat-card small {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.plants-hub__section-subheading {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  color: #a7f3d0;
+  margin: 0 0 14px 0;
+}
+
+.plants-hub__halving-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plants-hub__halving-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 12px;
+}
+
+.plants-hub__halving-step--current {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+}
+
+.plants-hub__step-badge {
+  font-weight: 900;
+  color: #94a3b8;
+}
+
+.plants-hub__halving-step--current .plants-hub__step-badge {
+  color: #34d399;
+}
+
+.plants-hub__step-range {
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.plants-hub__step-reward strong {
+  color: #fde047;
+}
+
+.plants-hub__step-match {
+  color: #94a3b8;
+}
+
+.plants-hub__step-active-tag {
+  background: #10b981;
+  color: #022c22;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+/* ── REGLAS PVP ── */
+.plants-hub__rules-hero {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(30, 41, 59, 0.4) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.plants-hub__rules-hero h3 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #a7f3d0;
+}
+
+.plants-hub__rules-hero p {
+  margin: 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.plants-hub__rules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .plants-hub__rules-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plants-hub__rule-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.plants-hub__rule-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.plants-hub__rule-card h4 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.plants-hub__rule-card p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   PESTAÑA: MIS TOKENS & VESTING (ESTILOS VISUALES 3D RPG)
+   ========================================================================== */
+
+.plants-hub__tab-badge {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+  animation: pulseBadge 1.5s infinite alternate;
+}
+
+@keyframes pulseBadge {
+  0% { transform: scale(0.95); opacity: 0.85; }
+  100% { transform: scale(1.05); opacity: 1; }
+}
+
+.plants-hub__my-tokens-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.plants-hub__my-tokens-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.plants-hub__my-token-card {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.plants-hub__my-token-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.plants-hub__my-token-card--liquid {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.plants-hub__my-token-card--locked {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.plants-hub__my-token-card--rate {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.plants-hub__my-token-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.plants-hub__card-chip {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.plants-hub__card-chip--green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.plants-hub__card-chip--gold {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.plants-hub__card-chip--blue {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.plants-hub__card-est {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.plants-hub__my-token-num {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.plants-hub__my-token-num strong {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+
+.plants-hub__my-token-num span {
+  font-size: 12px;
+  font-weight: 800;
+  color: #6ee7b7;
+}
+
+.plants-hub__my-token-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin: 0 0 14px 0;
+  flex: 1;
+}
+
+.plants-hub__my-token-btn {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.plants-hub__my-token-btn:hover {
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+  border-color: #64748b;
+  color: #fff;
+}
+
+.plants-hub__my-token-btn--bonus {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.15) 100%);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+}
+
+.plants-hub__my-token-btn--bonus:hover {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.4) 0%, rgba(217, 119, 6, 0.3) 100%);
+  border-color: #f59e0b;
+  color: #fff;
+}
+
+.plants-hub__my-token-countdown-tag {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px dashed rgba(56, 189, 248, 0.35);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.plants-hub__my-token-countdown-tag strong {
+  color: #38bdf8;
+  font-weight: 800;
+}
+
+/* ── CAJA DE ACCIÓN: RECLAMO DIARIO DE VESTING ── */
+.plants-hub__claim-box {
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.plants-hub__claim-box--active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%);
+  border: 2px solid #10b981;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+  animation: glowClaim 2s infinite alternate;
+}
+
+@keyframes glowClaim {
+  0% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
+  100% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.4); }
+}
+
+.plants-hub__claim-box--waiting {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+}
+
+.plants-hub__claim-box--empty {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(3, 7, 18, 0.9) 100%);
+  border: 1.5px dashed rgba(255, 255, 255, 0.15);
+}
+
+.plants-hub__claim-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plants-hub__claim-badge {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.plants-hub__claim-badge--waiting {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.plants-hub__claim-title {
+  margin: 4px 0 2px 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.plants-hub__claim-desc {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.45;
+  max-width: 520px;
+}
+
+.plants-hub__claim-btn {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border: 2px solid #34d399;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s ease;
+}
+
+.plants-hub__claim-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
+.plants-hub__claim-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.plants-hub__empty-action-btn {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  border: 1.5px solid #7dd3fc;
+  color: #031326;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+  transition: all 0.2s ease;
+}
+
+.plants-hub__empty-action-btn:hover {
+  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 100%);
+  transform: translateY(-2px);
+}
+
+/* ── LISTA DE ÓRDENES EN VESTING ── */
+.plants-hub__orders-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plants-hub__orders-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.plants-hub__orders-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #e2e8f0;
+}
+
+.plants-hub__orders-subtitle {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.plants-hub__orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.plants-hub__order-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plants-hub__order-card--completed {
+  border-color: rgba(16, 185, 129, 0.3);
+  opacity: 0.85;
+}
+
+.plants-hub__order-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plants-hub__order-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.plants-hub__order-status {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.plants-hub__order-status--active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.plants-hub__order-status--done {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.plants-hub__order-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.plants-hub__order-progress-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.plants-hub__order-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #34d399 0%, #10b981 100%);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.plants-hub__order-progress-text {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.plants-hub__order-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.plants-hub__order-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.plants-hub__order-stat small {
+  font-size: 9px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.plants-hub__order-stat strong {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.plants-hub__order-stat span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.plants-hub__no-orders {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* ── BANNER INFORMATIVO BYPASS SUPER SINK ── */
+.plants-hub__bypass-banner {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(180, 83, 9, 0.05) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.plants-hub__bypass-icon {
+  font-size: 26px;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.5));
+}
+
+.plants-hub__bypass-content {
+  flex: 1;
+}
+
+.plants-hub__bypass-content h4 {
+  margin: 0 0 3px 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.plants-hub__bypass-content p {
+  margin: 0;
+  font-size: 11px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.plants-hub__bypass-btn {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  border: 1.5px solid #fde68a;
+  color: #000;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+  transition: all 0.2s ease;
+}
+
+.plants-hub__bypass-btn:hover {
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+  transform: translateY(-1px);
+}
