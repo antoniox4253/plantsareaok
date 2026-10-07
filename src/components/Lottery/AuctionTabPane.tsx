@@ -366,7 +366,23 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
         </div>
       ) : !activeAuction ? (
         <div className="lottery-auction-empty">
-          No hay información de subasta disponible en este momento.
+          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🏁</div>
+          <strong>No hay subastas en vivo en este momento</strong>
+          <p style={{ margin: '8px 0 14px', fontSize: '13px', opacity: 0.8 }}>
+            La última subasta ha concluido. Puedes consultar los ganadores y detalles en el historial.
+          </p>
+          <button
+            type="button"
+            className="lottery-auction-subtab-btn lottery-auction-subtab-btn--active"
+            onClick={() => {
+              soundManager.playSound('click', 0.4)
+              setSubTab('completed')
+              setRankingPage(0)
+            }}
+            style={{ margin: '0 auto', display: 'inline-block' }}
+          >
+            🏆 Ver Subastas Finalizadas
+          </button>
         </div>
       ) : (
         <div className="lottery-auction-grid">
@@ -436,15 +452,21 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
                   </div>
 
                   {isExpired ? (
-                    activeAuction.highestBidderId === resolvedUserId && !activeAuction.rewardClaimed ? (
-                      <button
-                        type="button"
-                        className="lottery-auction-claim-btn"
-                        onClick={handleClaimReward}
-                        disabled={isClaiming}
-                      >
-                        {isClaiming ? 'RECLAMANDO CARTA...' : '🏆 ¡ERES EL GANADOR! RECLAMAR CARTA'}
-                      </button>
+                    activeAuction.highestBidderId === resolvedUserId ? (
+                      !activeAuction.rewardClaimed ? (
+                        <button
+                          type="button"
+                          className="lottery-auction-claim-btn"
+                          onClick={handleClaimReward}
+                          disabled={isClaiming}
+                        >
+                          {isClaiming ? 'RECLAMANDO CARTA...' : '🏆 ¡ERES EL GANADOR! RECLAMAR CARTA'}
+                        </button>
+                      ) : (
+                        <div className="lottery-auction-banner-note" style={{ background: 'rgba(74, 222, 128, 0.15)', borderColor: '#4ade80', color: '#4ade80' }}>
+                          🎉 ¡ERES EL GANADOR! Tu carta ha sido asignada automáticamente a tu Jardín 🌿
+                        </div>
+                      )
                     ) : (
                       <div className="lottery-auction-banner-note">
                         🏁 La subasta ha concluido. Ganador: @{activeAuction.highestBidderName || 'Nadie'}
@@ -501,14 +523,42 @@ export const AuctionTabPane: React.FC<AuctionTabPaneProps> = ({
                   )}
                 </>
               ) : (
-                <div className="lottery-auction-completed-note">
-                  <div className="lottery-auction-completed-note__icon">🏆</div>
+                <div className={`lottery-auction-completed-note ${activeAuction.highestBidderId === resolvedUserId ? 'lottery-auction-completed-note--winner' : ''}`}>
+                  <div className="lottery-auction-completed-note__icon">
+                    {activeAuction.highestBidderId === resolvedUserId ? '👑' : '🏆'}
+                  </div>
                   <div>
-                    <strong>Subasta concluida exitosamente</strong>
-                    <p>
-                      El postor <strong>@{activeAuction.highestBidderName}</strong> se adjudicó la carta exclusiva con una oferta ganadora de{' '}
-                      <strong>{activeAuction.currentBid.toLocaleString()} {currencySymbol} {currencyName}</strong>.
-                    </p>
+                    {activeAuction.highestBidderId === resolvedUserId ? (
+                      <>
+                        <strong style={{ color: '#4ade80', fontSize: '15px' }}>¡ERES EL GANADOR DE ESTA SUBASTA! 🎉</strong>
+                        <p>
+                          Te adjudicaste <strong>{activeAuction.itemName}</strong> con tu oferta ganadora de{' '}
+                          <strong>{activeAuction.currentBid.toLocaleString()} {currencySymbol} {currencyName}</strong>.
+                        </p>
+                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#86efac', fontWeight: 600 }}>
+                          ✓ Carta asignada automáticamente a tu Jardín 🌿 (Lista para usar en combate).
+                        </div>
+                        {!activeAuction.rewardClaimed && (
+                          <button
+                            type="button"
+                            className="lottery-auction-claim-btn"
+                            style={{ marginTop: '10px' }}
+                            onClick={handleClaimReward}
+                            disabled={isClaiming}
+                          >
+                            {isClaiming ? 'SINCRONIZANDO CARTA...' : '🏆 SINCRONIZAR A MI JARDÍN'}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <strong>Subasta concluida exitosamente</strong>
+                        <p>
+                          El postor <strong>@{activeAuction.highestBidderName}</strong> se adjudicó la carta exclusiva con una oferta ganadora de{' '}
+                          <strong>{activeAuction.currentBid.toLocaleString()} {currencySymbol} {currencyName}</strong>.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
