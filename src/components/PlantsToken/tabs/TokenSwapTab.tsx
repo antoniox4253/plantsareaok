@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { soundManager } from '../../../utils/audioManager'
 import type { TokenHubSharedProps } from '../types'
 import { AmmCurveModal } from '../modals/AmmCurveModal'
+import { StakingModal } from '../modals/StakingModal'
+import { plantsTokenService, type StakingSummary } from '../../../services/plantsTokenService'
 
 export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   liquidPlants,
@@ -14,6 +16,8 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   isSubmitting,
   onSwapToGems,
   onCashoutUsdt,
+  onTabChange,
+  onRefreshData,
   showNotification,
 }) => {
   const [swapMode, setSwapMode] = useState<'usdt' | 'gems'>('usdt')
@@ -21,6 +25,24 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   const [slippage, setSlippage] = useState<number>(1)
   const [walletAddress, setWalletAddress] = useState<string>('')
   const [isAmmModalOpen, setIsAmmModalOpen] = useState<boolean>(false)
+  const [isStakingModalOpen, setIsStakingModalOpen] = useState<boolean>(false)
+  const [stakingSummary, setStakingSummary] = useState<StakingSummary | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+    plantsTokenService.getMyStakingPositions().then((summary) => {
+      if (isMounted && summary) setStakingSummary(summary)
+    })
+    const timer = setInterval(() => {
+      plantsTokenService.getMyStakingPositions().then((summary) => {
+        if (isMounted && summary) setStakingSummary(summary)
+      })
+    }, 10000)
+    return () => {
+      isMounted = false
+      clearInterval(timer)
+    }
+  }, [])
 
   const parsedAmount = useMemo(() => {
     const n = parseFloat(amountStr)
@@ -374,46 +396,123 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
             </div>
           </article>
 
-          {/* VISTA PREVIA DE LA OPERACIÓN */}
-          <article className="swap-audit-card">
-            <div className="swap-audit-header">
-              <span className="swap-audit-icon">📄</span>
-              <h4 className="swap-audit-title">VISTA PREVIA DE LA OPERACIÓN</h4>
-            </div>
+          {/* SECCIÓN DIVIDIDA EN 2: VISTA PREVIA DE OPERACIÓN + SECCIÓN DE STAKING */}
+          <div className="swap-audit-staking-grid">
+            {/* 1. INFORMACIÓN DE VISTA PREVIA DE LA OPERACIÓN */}
+            <article className="swap-audit-card">
+              <div className="swap-audit-header">
+                <span className="swap-audit-icon">📄</span>
+                <h4 className="swap-audit-title">VISTA PREVIA OPERACIÓN</h4>
+              </div>
 
-            <div className="swap-audit-rows">
-              <div className="swap-audit-line">
-                <span>Cantidad a convertir</span>
-                <strong>{parsedAmount.toLocaleString()} PLANTS</strong>
-              </div>
-              {swapMode === 'usdt' && (
-                <>
-                  <div className="swap-audit-line">
-                    <span>Comisión de resguardo (5%)</span>
-                    <strong className="text-orange">- {effectiveFee.toFixed(0)} PLANTS</strong>
-                  </div>
-                  <div className="swap-audit-line">
-                    <span>🔥 Tokens que se quemarán</span>
-                    <strong className="text-orange">{effectiveFee.toFixed(0)} PLANTS</strong>
-                  </div>
-                </>
-              )}
-              {swapMode === 'gems' && (
+              <div className="swap-audit-rows">
                 <div className="swap-audit-line">
-                  <span>🔥 Quema Super Sink (100%)</span>
-                  <strong className="text-orange">{parsedAmount.toLocaleString()} PLANTS</strong>
+                  <span>Monto a convertir</span>
+                  <strong>{parsedAmount.toLocaleString()} PLANTS</strong>
                 </div>
-              )}
-              <div className="swap-audit-line highlight">
-                <span>Recibirás (estimado)</span>
-                <strong className={swapMode === 'gems' ? 'text-gold' : 'text-green'}>
-                  {swapMode === 'usdt'
-                    ? `${estimatedUsdt.toFixed(4)} USDT`
-                    : `${Math.floor(estimatedGems).toLocaleString()} GEMAS (+20% BONO)`}
-                </strong>
+                {swapMode === 'usdt' && (
+                  <>
+                    <div className="swap-audit-line">
+                      <span>Comisión (5%)</span>
+                      <strong className="text-orange">- {effectiveFee.toFixed(0)} PLANTS</strong>
+                    </div>
+                    <div className="swap-audit-line">
+                      <span>🔥 Quema de retiro</span>
+                      <strong className="text-orange">{effectiveFee.toFixed(0)} PLANTS</strong>
+                    </div>
+                  </>
+                )}
+                {swapMode === 'gems' && (
+                  <div className="swap-audit-line">
+                    <span>🔥 Quema Super Sink</span>
+                    <strong className="text-orange">{parsedAmount.toLocaleString()} PLANTS</strong>
+                  </div>
+                )}
+                <div className="swap-audit-line highlight">
+                  <span>Recibirás</span>
+                  <strong className={swapMode === 'gems' ? 'text-gold' : 'text-green'}>
+                    {swapMode === 'usdt'
+                      ? `${estimatedUsdt.toFixed(4)} USDT`
+                      : `${Math.floor(estimatedGems).toLocaleString()} GEMAS`}
+                  </strong>
+                </div>
               </div>
-            </div>
-          </article>
+            </article>
+
+            {/* 2. SECCIÓN DE STAKING (BLOQUEADO, RECOMPENSAS, BLOQUES Y MÍNIMOS) */}
+            <article
+              className="swap-staking-card"
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setIsStakingModalOpen(true)
+              }}
+              title="Abrir la sección de Staking de PLANTS"
+            >
+              <div className="swap-staking-header">
+                <div className="swap-staking-title-wrap">
+                  <span className="swap-staking-icon">🌿</span>
+                  <div>
+                    <h4 className="swap-staking-title">STAKING PLANTS</h4>
+                    <span className="swap-staking-sub">Rendimiento diario sin riesgo</span>
+                  </div>
+                </div>
+                <div className="swap-staking-badge">
+                  <span>{stakingSummary?.activeCount ?? 0} BLOQUES</span>
+                </div>
+              </div>
+
+              <div className="swap-staking-stats-body">
+                <div className="swap-staking-stat-row">
+                  <span className="swap-staking-lbl">🔒 Cant. Bloqueada:</span>
+                  <strong className="swap-staking-val text-white">
+                    {(stakingSummary?.totalStaked ?? 0).toLocaleString()} PLANTS
+                  </strong>
+                </div>
+                <div className="swap-staking-stat-row">
+                  <span className="swap-staking-lbl">💎 Ganancias hoy:</span>
+                  <strong className="swap-staking-val text-mint">
+                    +{(stakingSummary?.totalClaimableGems ?? 0).toFixed(2)} 💎 / +{(stakingSummary?.totalClaimableGold ?? 0).toLocaleString()} 🪙
+                  </strong>
+                </div>
+                <div className="swap-staking-stat-row">
+                  <span className="swap-staking-lbl">🧱 Bloques & Mín:</span>
+                  <span className="swap-staking-val text-gold">
+                    30d (500) · 60d (5k) · 90d (25k)
+                  </span>
+                </div>
+              </div>
+
+              <div className="swap-staking-actions-row">
+                <button
+                  type="button"
+                  className="swap-staking-open-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    soundManager.playSound('click', 0.4)
+                    setIsStakingModalOpen(true)
+                  }}
+                  title="Abrir la pantalla de Staking con todos los bloques y recompensas"
+                >
+                  <span>🌿 ABRIR STAKING</span>
+                  <span className="swap-staking-arrow">➔</span>
+                </button>
+                {onTabChange && (
+                  <button
+                    type="button"
+                    className="swap-staking-tab-link"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      soundManager.playSound('click', 0.4)
+                      onTabChange('staking')
+                    }}
+                    title="Ir directamente a la pestaña completa de Staking"
+                  >
+                    PESTAÑA ↗
+                  </button>
+                )}
+              </div>
+            </article>
+          </div>
 
           {/* REGLAS DE RETIRO & SUPER SINK INTERACTIVO */}
           <div className="swap-rules-and-sink">
@@ -461,6 +560,16 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
         spotPrice={spotPrice}
         priceHistory={priceHistory}
         marketState={marketState}
+      />
+
+      {/* MODAL DE CULTIVO Y STAKING DE PLANTS */}
+      <StakingModal
+        isOpen={isStakingModalOpen}
+        onClose={() => setIsStakingModalOpen(false)}
+        liquidPlants={liquidPlants}
+        onTabChange={onTabChange}
+        onRefreshData={onRefreshData}
+        showNotification={showNotification}
       />
     </div>
   )
