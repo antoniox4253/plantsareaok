@@ -186,7 +186,7 @@ describe('Certify High ELO Plans against All Human Archetypes', () => {
   const styles = [
     { name: 'HUMAN_AGGRESSIVE', archetype: HUMAN_ARCHETYPES.HUMAN_AGGRESSIVE },
     { name: 'HUMAN_DEFENSIVE', archetype: HUMAN_ARCHETYPES.HUMAN_DEFENSIVE },
-    { name: 'HUMAN_RUSHER', archetype: HUMAN_ARCHETYPES.HUMAN_RUSHER },
+    { name: 'HUMAN_BALANCED', archetype: HUMAN_ARCHETYPES.HUMAN_BALANCED },
     { name: 'AFK_HUMAN', archetype: null },
   ]
 
