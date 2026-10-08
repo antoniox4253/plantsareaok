@@ -145,7 +145,9 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
                 {countdownSeconds > 0 ? formatCountdown(countdownSeconds) : '¡LISTO!'}
               </strong>
             </div>
-            <span className="summary-kpi-sub">Ciclo cada 24 Horas</span>
+            <span className="summary-kpi-sub">
+              {countdownSeconds > 86400 ? 'Al Finalizar la Beta' : 'Ciclo cada 24 Horas'}
+            </span>
           </div>
         </article>
       </section>

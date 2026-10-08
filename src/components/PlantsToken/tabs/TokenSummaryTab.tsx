@@ -113,7 +113,7 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               <h4 className="summary-panel-title">FIN DE PREVENTA</h4>
               <span className="summary-panel-subtitle">
                 {countdownSeconds > 0
-                  ? 'Fondo base $200 USDT · 5 días'
+                  ? 'Fondo base $200 USDT · Fase Beta'
                   : 'Preventa finalizada'}
               </span>
             </div>
