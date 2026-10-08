@@ -6,7 +6,6 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
   marketState,
   priceHistory,
   countdownSeconds,
-  liquidPlants,
   spotPrice,
   poolUsdt,
   totalBurned,
@@ -134,26 +133,6 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               <span className="summary-kpi-tag summary-kpi-tag--gold">100% RECOMPENSAS</span>
             </div>
             <span className="summary-kpi-sub">Tope Total: 1,000,000 PLANTS</span>
-          </div>
-        </article>
-
-        {/* LÍQUIDO ACTUAL */}
-        <article
-          className="summary-kpi-card summary-kpi-card--clickable"
-          data-section="kpi-liquid-balance"
-          onClick={() => onTabChange('vesting')}
-          title="Ver mi saldo y vesting"
-        >
-          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--mint">
-            <span className="summary-kpi-emoji">🌱</span>
-          </div>
-          <div className="summary-kpi-content">
-            <span className="summary-kpi-label">LÍQUIDO ACTUAL</span>
-            <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-mint">{liquidPlants.toFixed(1)}</strong>
-              <span className="summary-kpi-arrow">➔</span>
-            </div>
-            <span className="summary-kpi-sub">Toca para ir a Vesting</span>
           </div>
         </article>
       </section>
@@ -418,38 +397,6 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
           </div>
         </article>
       </section>
-
-      {/* =====================================================
-           5. BOTTOM ACTION BUTTON BAR (3 LARGE PILLS)
-           ===================================================== */}
-      <footer className="summary-actions-bar" data-section="primary-cta-row">
-        <button
-          type="button"
-          className="summary-cta-btn summary-cta-btn--presale"
-          onClick={() => onTabChange('presale')}
-        >
-          <span>🛒 VER PREVENTA</span>
-          <span className="summary-cta-arrow">➔</span>
-        </button>
-
-        <button
-          type="button"
-          className="summary-cta-btn summary-cta-btn--vesting"
-          onClick={() => onTabChange('vesting')}
-        >
-          <span>🪙 VER MI VESTING</span>
-          <span className="summary-cta-arrow">➔</span>
-        </button>
-
-        <button
-          type="button"
-          className="summary-cta-btn summary-cta-btn--swap"
-          onClick={() => onTabChange('swap')}
-        >
-          <span>🔄 IR AL SWAP</span>
-          <span className="summary-cta-arrow">➔</span>
-        </button>
-      </footer>
     </div>
   )
 }
