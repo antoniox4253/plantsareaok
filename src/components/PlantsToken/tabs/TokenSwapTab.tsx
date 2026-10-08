@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { soundManager } from '../../../utils/audioManager'
-import type { TokenHubSharedProps, Timeframe } from '../types'
+import type { TokenHubSharedProps } from '../types'
+import { AmmCurveModal } from '../modals/AmmCurveModal'
 
 export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   liquidPlants,
@@ -8,6 +9,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   poolUsdt,
   totalBurned,
   priceHistory,
+  marketState,
   countdownSeconds,
   isSubmitting,
   onSwapToGems,
@@ -17,8 +19,8 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   const [swapMode, setSwapMode] = useState<'usdt' | 'gems'>('usdt')
   const [amountStr, setAmountStr] = useState<string>(liquidPlants > 0 ? String(Math.floor(liquidPlants)) : '1000')
   const [slippage, setSlippage] = useState<number>(1)
-  const [timeframe, setTimeframe] = useState<Timeframe>('24H')
   const [walletAddress, setWalletAddress] = useState<string>('')
+  const [isAmmModalOpen, setIsAmmModalOpen] = useState<boolean>(false)
 
   const parsedAmount = useMemo(() => {
     const n = parseFloat(amountStr)
@@ -39,94 +41,6 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
     const s = total % 60
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
-
-  // Filtrado y renderizado dinámico de la Curva AMM según Timeframe y Genesis Seed
-  const { chartPoints, minDisplayPrice, maxDisplayPrice, xAxisLabels } = useMemo(() => {
-    const now = Date.now()
-    let cutoff = 0
-    let labels: string[] = []
-
-    if (timeframe === '1H') {
-      cutoff = now - 3600 * 1000
-      labels = ['-60m', '-45m', '-30m', '-15m', 'Ahora']
-    } else if (timeframe === '24H') {
-      cutoff = now - 24 * 3600 * 1000
-      labels = ['-24h', '-18h', '-12h', '-6h', 'Ahora']
-    } else if (timeframe === '7D') {
-      cutoff = now - 7 * 24 * 3600 * 1000
-      labels = ['Día -7', 'Día -5', 'Día -3', 'Día -1', 'Hoy']
-    } else {
-      cutoff = 0 // ALL
-      labels = ['Génesis Seed', 'Fase Inicial', 'Halving 1', 'Actual']
-    }
-
-    // Filtrar puntos por tiempo
-    const validHistory = (priceHistory || []).filter((p) => {
-      const t = new Date(p.created_at).getTime()
-      return isNaN(t) || t >= cutoff
-    })
-
-    // El punto de partida de génesis es siempre 0.00020000 USDT
-    const genesisPrice = 0.0002
-    const currentPrice = spotPrice > 0 ? spotPrice : genesisPrice
-
-    // Si hay pocos puntos históricos, generamos una curva interpolada desde el punto de inicio
-    const sampleCount = 14
-    const pts: { x: number; y: number; price: number }[] = []
-
-    let prices: number[] = []
-    if (validHistory.length >= sampleCount) {
-      prices = validHistory.slice(-sampleCount).map((p) => p.spot_price)
-    } else if (validHistory.length > 1) {
-      prices = validHistory.map((p) => p.spot_price)
-      while (prices.length < sampleCount) {
-        prices.push(currentPrice)
-      }
-    } else {
-      // Desde el punto de partida (Génesis: 0.00020000) hasta el spot actual
-      for (let i = 0; i < sampleCount; i++) {
-        const progress = i / (sampleCount - 1)
-        const p = genesisPrice + (currentPrice - genesisPrice) * progress
-        prices.push(p)
-      }
-    }
-
-    const minP = Math.min(genesisPrice * 0.95, ...prices) * 0.98
-    const maxP = Math.max(currentPrice * 1.05, ...prices) * 1.02
-    const range = maxP - minP || 0.0001
-
-    for (let i = 0; i < prices.length; i++) {
-      const x = 40 + (i / (prices.length - 1)) * 560
-      const p = prices[i]
-      const norm = Math.max(0, Math.min(1, (p - minP) / range))
-      const y = 145 - norm * 105
-      pts.push({ x, y, price: p })
-    }
-
-    return {
-      chartPoints: pts,
-      minDisplayPrice: minP,
-      maxDisplayPrice: maxP,
-      xAxisLabels: labels,
-    }
-  }, [priceHistory, spotPrice, timeframe])
-
-  const svgPathD = useMemo(() => {
-    if (chartPoints.length === 0) return ''
-    return chartPoints.reduce((acc, pt, idx) => {
-      return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`
-    }, '')
-  }, [chartPoints])
-
-  const svgAreaD = useMemo(() => {
-    if (chartPoints.length === 0) return ''
-    const first = chartPoints[0]
-    const last = chartPoints[chartPoints.length - 1]
-    return `M ${first.x} 155 L ${first.x} ${first.y} ${chartPoints
-      .slice(1)
-      .map((p) => `L ${p.x} ${p.y}`)
-      .join(' ')} L ${last.x} 155 Z`
-  }, [chartPoints])
 
   const handleMaxClick = () => {
     soundManager.playSound('click', 0.4)
@@ -412,91 +326,51 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
           </button>
         </article>
 
-        {/* RIGHT COLUMN: AMM CHART & AUDIT */}
+        {/* RIGHT COLUMN: AMM LAUNCHER, AUDIT & RULES */}
         <div className="swap-right-col">
-          {/* AMM Chart with Timeframe Switchers and Genesis Seed */}
-          <article className="summary-chart-card swap-chart-card">
-            <div className="summary-chart-header">
-              <div className="summary-chart-title-wrap">
-                <span className="summary-chart-title">📈 CURVA AMM PLANTS / USDT</span>
-                <span className="summary-chart-formula">
-                  P = R / V · Semilla Génesis: $0.00020000
-                </span>
+          {/* BOTÓN / TARJETA INTERACTIVA DE ACCESO A LA PANTALLA DEDICADA DE CURVA AMM */}
+          <article
+            className="swap-amm-launcher-card"
+            onClick={() => {
+              soundManager.playSound('click', 0.4)
+              setIsAmmModalOpen(true)
+            }}
+            title="Abrir la Curva AMM en pantalla completa dedicada"
+          >
+            <div className="swap-amm-launcher-top">
+              <div className="swap-amm-launcher-title-wrap">
+                <span className="swap-amm-launcher-icon">📈</span>
+                <div>
+                  <h4 className="swap-amm-launcher-title">CURVA AMM PLANTS / USDT</h4>
+                  <span className="swap-amm-launcher-sub">
+                    P = R / V · Semilla Génesis: $0.00020000
+                  </span>
+                </div>
               </div>
-              <div className="summary-chart-filters">
-                {(['1H', '24H', '7D', 'ALL'] as Timeframe[]).map((tf) => (
-                  <button
-                    key={tf}
-                    type="button"
-                    className={`summary-tf-btn ${timeframe === tf ? 'active' : ''}`}
-                    onClick={() => {
-                      soundManager.playSound('click', 0.4)
-                      setTimeframe(tf)
-                    }}
-                  >
-                    {tf}
-                  </button>
-                ))}
+              <div className="swap-amm-launcher-price-badge">
+                <span className="swap-amm-launcher-price-lbl">SPOT</span>
+                <strong className="swap-amm-launcher-price-val">${spotPrice.toFixed(6)}</strong>
               </div>
             </div>
 
-            <div className="summary-chart-canvas">
-              <svg viewBox="0 0 640 170" className="summary-chart-svg" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="swapChartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#19d99c" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#19d99c" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-
-                {/* Guías horizontales con valores de precio reales */}
-                <line x1="40" y1="40" x2="600" y2="40" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                <text x="42" y="36" fill="rgba(255,255,255,0.35)" fontSize="8.5">
-                  ${maxDisplayPrice.toFixed(6)}
-                </text>
-
-                <line x1="40" y1="92" x2="600" y2="92" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                <text x="42" y="88" fill="rgba(255,255,255,0.35)" fontSize="8.5">
-                  ${((maxDisplayPrice + minDisplayPrice) / 2).toFixed(6)}
-                </text>
-
-                <line x1="40" y1="145" x2="600" y2="145" stroke="rgba(255,255,255,0.08)" />
-                <text x="42" y="141" fill="rgba(255,255,255,0.35)" fontSize="8.5">
-                  ${minDisplayPrice.toFixed(6)}
-                </text>
-
-                {/* Área y Curva */}
-                {svgAreaD && <path d={svgAreaD} fill="url(#swapChartGrad)" />}
-                {svgPathD && <path d={svgPathD} fill="none" stroke="#20dba4" strokeWidth="3" />}
-
-                {/* Marcadores de puntos */}
-                {chartPoints.map((p, idx) => (
-                  <circle
-                    key={idx}
-                    cx={p.x}
-                    cy={p.y}
-                    r={idx === 0 || idx === chartPoints.length - 1 ? 4.5 : 2}
-                    fill={idx === 0 ? '#38bdf8' : idx === chartPoints.length - 1 ? '#20dba4' : '#20dba4'}
-                  />
-                ))}
-
-                {/* Tooltip en punto actual */}
-                {chartPoints.length > 0 && (
-                  <g transform={`translate(${chartPoints[chartPoints.length - 1].x - 90}, ${chartPoints[chartPoints.length - 1].y - 32})`}>
-                    <rect width="95" height="22" rx="4" fill="#041a20" stroke="#20dba4" strokeWidth="1" />
-                    <text x="8" y="15" fill="#20dba4" fontSize="9" fontWeight="bold">
-                      ${spotPrice.toFixed(6)}
-                    </text>
-                  </g>
-                )}
-              </svg>
-
-              {/* Etiquetas del eje X según el marco temporal */}
-              <div className="summary-chart-x-labels">
-                {xAxisLabels.map((lbl, idx) => (
-                  <span key={idx}>{lbl}</span>
-                ))}
+            <div className="swap-amm-launcher-preview">
+              <div className="swap-amm-launcher-stats">
+                <span>🛡️ Respaldo: $37,000 USDT</span>
+                <span>💎 Paridad: 1.00x</span>
+                <span>🪙 185M Circulante</span>
               </div>
+              <button
+                type="button"
+                className="swap-amm-launcher-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  soundManager.playSound('click', 0.4)
+                  setIsAmmModalOpen(true)
+                }}
+              >
+                <span>📊 VER CURVA AMM COMPLETA</span>
+                <span className="swap-amm-launcher-arrow">➔</span>
+              </button>
             </div>
           </article>
 
@@ -579,6 +453,15 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
           </div>
         </div>
       </section>
+
+      {/* PANTALLA DEDICADA / MODAL DE LA CURVA AMM */}
+      <AmmCurveModal
+        isOpen={isAmmModalOpen}
+        onClose={() => setIsAmmModalOpen(false)}
+        spotPrice={spotPrice}
+        priceHistory={priceHistory}
+        marketState={marketState}
+      />
     </div>
   )
 }

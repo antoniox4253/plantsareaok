@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react'
+import { soundManager } from '../../../utils/audioManager'
 import type { TokenHubSharedProps, Timeframe } from '../types'
 import { TOKEN_ASSETS } from '../tokenAssets'
+import { AmmCurveModal } from '../modals/AmmCurveModal'
 
 export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
   marketState,
@@ -12,6 +14,7 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
   onTabChange,
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('24H')
+  const [isAmmModalOpen, setIsAmmModalOpen] = useState(false)
 
   // Formato para contador digital de cuenta regresiva
   const formatCountdown = (secs: number) => {
@@ -242,6 +245,17 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
                   {tf}
                 </button>
               ))}
+              <button
+                type="button"
+                className="summary-tf-btn summary-tf-btn--expand"
+                onClick={() => {
+                  soundManager.playSound('click', 0.4)
+                  setIsAmmModalOpen(true)
+                }}
+                title="Ver Curva AMM en pantalla completa"
+              >
+                ⛶
+              </button>
             </div>
           </div>
 
@@ -443,6 +457,15 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
           </div>
         </article>
       </section>
+
+      {/* PANTALLA DEDICADA / MODAL DE LA CURVA AMM */}
+      <AmmCurveModal
+        isOpen={isAmmModalOpen}
+        onClose={() => setIsAmmModalOpen(false)}
+        spotPrice={spotPrice}
+        priceHistory={priceHistory}
+        marketState={marketState}
+      />
     </div>
   )
 }

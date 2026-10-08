@@ -786,6 +786,20 @@
   box-shadow: 0 0 8px rgba(32, 219, 164, 0.35);
 }
 
+.summary-tf-btn--expand {
+  border-color: #38bdf8;
+  color: #38bdf8;
+  padding: 2px 5px;
+  font-size: 9px;
+}
+
+.summary-tf-btn--expand:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #7dd3fc;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+}
+
 .summary-chart-canvas {
   width: 100%;
   height: 80px;
@@ -4672,7 +4686,127 @@ input.swap-value-slot:focus {
   display: flex;
   flex-direction: column;
   height: 100%;
+  gap: 5px;
+}
+
+/* LAUNCHER CARD PARA PANTALLA DEDICADA DE CURVA AMM */
+.swap-amm-launcher-card {
+  background: linear-gradient(180deg, rgba(8, 28, 33, 0.96) 0%, rgba(5, 18, 22, 0.98) 100%);
+  border: 1.5px solid rgba(20, 137, 109, 0.55);
+  border-radius: 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 64px;
+  min-height: 64px;
+  max-height: 64px;
+  flex-shrink: 0;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  transition: all 0.18s ease;
+}
+
+.swap-amm-launcher-card:hover {
+  border-color: #20dba4;
+  box-shadow: 0 0 14px rgba(32, 219, 164, 0.35);
+  transform: translateY(-1px);
+}
+
+.swap-amm-launcher-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.swap-amm-launcher-title-wrap {
+  display: flex;
+  align-items: center;
   gap: 6px;
+}
+
+.swap-amm-launcher-icon {
+  font-size: 15px;
+}
+
+.swap-amm-launcher-title {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 950;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  line-height: 1.1;
+}
+
+.swap-amm-launcher-sub {
+  font-size: 7.5px;
+  color: #78929b;
+  display: block;
+  line-height: 1;
+}
+
+.swap-amm-launcher-price-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(32, 219, 164, 0.4);
+  padding: 2px 6px;
+  border-radius: 99px;
+}
+
+.swap-amm-launcher-price-lbl {
+  font-size: 7px;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.swap-amm-launcher-price-val {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #20dba4;
+  font-family: monospace;
+}
+
+.swap-amm-launcher-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+  padding-top: 3px;
+  border-top: 1px solid rgba(20, 137, 109, 0.25);
+}
+
+.swap-amm-launcher-stats {
+  display: flex;
+  gap: 8px;
+  font-size: 7.5px;
+  color: #94a3b8;
+}
+
+.swap-amm-launcher-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+  border: 1px solid #34d399;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 950;
+  padding: 2.5px 8px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.swap-amm-launcher-btn:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 8px rgba(32, 219, 164, 0.5);
+}
+
+.swap-amm-launcher-arrow {
+  font-size: 8.5px;
+  color: #facc15;
 }
 
 .swap-audit-card {
@@ -4732,8 +4866,8 @@ input.swap-value-slot:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
-  height: 155px;
-  min-height: 155px;
+  height: 135px;
+  min-height: 135px;
   flex-shrink: 0;
 }
 
@@ -6533,6 +6667,115 @@ input.swap-value-slot:focus {
   background: rgba(239, 68, 68, 0.3);
   border-color: #f87171;
 }
+
+/* =========================================================
+   PANTALLA DEDICADA DE CURVA AMM (MODAL FULLSCREEN)
+   ========================================================= */
+.amm-curve-modal {
+  width: 920px;
+  height: 500px;
+  max-width: 920px;
+  max-height: 500px;
+}
+
+.amm-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.amm-modal-filters {
+  display: flex;
+  gap: 4px;
+}
+
+.amm-modal-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(4, 16, 21, 0.7);
+  border-bottom: 1px solid rgba(20, 137, 109, 0.25);
+  flex-shrink: 0;
+}
+
+.amm-modal-kpi-card {
+  background: linear-gradient(180deg, rgba(8, 28, 33, 0.8) 0%, rgba(5, 18, 22, 0.9) 100%);
+  border: 1px solid rgba(20, 137, 109, 0.4);
+  border-radius: 8px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.amm-modal-kpi-lbl {
+  font-size: 7px;
+  font-weight: 800;
+  color: #78929b;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.amm-modal-kpi-val-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.amm-modal-kpi-val {
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.amm-modal-kpi-tag {
+  font-size: 6.5px;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid #10b981;
+}
+
+.amm-modal-kpi-sub {
+  font-size: 6.5px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.amm-modal-chart-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 14px 4px;
+  position: relative;
+}
+
+.amm-modal-chart-svg {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.amm-modal-x-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 45px;
+  font-size: 8px;
+  color: #64748b;
+  font-weight: 700;
+  height: 20px;
+  line-height: 20px;
+  flex-shrink: 0;
+}
+
+.amm-modal-x-labels span.active {
+  color: #20dba4;
+  font-weight: 900;
+}
+
 
 
 
