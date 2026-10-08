@@ -189,8 +189,8 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               </div>
               <div className="summary-pack-details">
                 <strong className="pack-name">Pack Pionero</strong>
-                <span className="pack-plants-gain text-mint">+2,500 PLANTS</span>
-                <span className="pack-bonus-tag text-cyan">+1x Sobre Básico</span>
+                <span className="pack-plants-gain text-mint">+2,500 PLANTS · 45d</span>
+                <span className="pack-bonus-tag text-cyan">💎 +200 · 🎁 1 Común + 1K Oro</span>
               </div>
             </div>
 
@@ -212,8 +212,8 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               </div>
               <div className="summary-pack-details">
                 <strong className="pack-name">Pack Campeón</strong>
-                <span className="pack-plants-gain text-mint">+7,500 PLANTS</span>
-                <span className="pack-bonus-tag text-purple">+3x Sobres Básicos</span>
+                <span className="pack-plants-gain text-mint">+7,500 PLANTS · 45d</span>
+                <span className="pack-bonus-tag text-purple">💎 +500 · 🎁 1 Épico + 2.5K Oro</span>
               </div>
             </div>
 
@@ -235,8 +235,8 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               </div>
               <div className="summary-pack-details">
                 <strong className="pack-name">Pack Leyenda</strong>
-                <span className="pack-plants-gain text-mint">+15,000 PLANTS</span>
-                <span className="pack-bonus-tag text-gold">+Skin Oro 24K</span>
+                <span className="pack-plants-gain text-mint">+15,000 PLANTS · 45d</span>
+                <span className="pack-bonus-tag text-gold">💎 +1,000 · 🎁 1 Legendario + 4K Oro</span>
               </div>
             </div>
           </div>

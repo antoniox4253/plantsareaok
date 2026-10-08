@@ -32,37 +32,43 @@ describe('PLANTS Token & AMM Ecosystem Tests', () => {
       expect(totalUnits).toBe(20) // 10 Pionero + 6 Campeón + 4 Leyenda
     })
 
-    it('Pack Pionero ($10): 2,500 PLANTS, 1,000 Gemas, inyección del 60% ($6 USDT) al pool, vesting 45d (55.56/d)', () => {
+    it('Pack Pionero ($10): 2,500 PLANTS, 1,000 Gemas, 200 Gemas bono, 1 Sobre Común + 1,000 ORO, $6 USDT al pool, vesting 45d', () => {
       const pack = PRESALE_PACKS.find((p) => p.id === 'pack_pionero_10')!
       expect(pack).toBeDefined()
       expect(pack.priceUsdt).toBe(10)
       expect(pack.gemsPrice).toBe(1000)
       expect(pack.plantsAmount).toBe(2500)
-      expect(pack.gemsReward).toBe(600)
+      expect(pack.gemsReward).toBe(200)
+      expect(pack.goldReward).toBe(1000)
+      expect(pack.bonusItemTitle).toBe('1 Sobre Común + 1,000 ORO')
       expect(pack.priceUsdt * 0.6).toBe(6)
       expect(pack.vestingDays).toBe(45)
       expect(pack.dailyRate).toBeCloseTo(2500 / 45, 1)
     })
 
-    it('Pack Campeón ($25): 7,500 PLANTS, 2,500 Gemas, inyección del 60% ($15 USDT) al pool, vesting 45d (166.67/d)', () => {
+    it('Pack Campeón ($25): 7,500 PLANTS, 2,500 Gemas, 500 Gemas bono, 1 Sobre Épico + 2,500 ORO, $15 USDT al pool, vesting 45d', () => {
       const pack = PRESALE_PACKS.find((p) => p.id === 'pack_campeon_25')!
       expect(pack).toBeDefined()
       expect(pack.priceUsdt).toBe(25)
       expect(pack.gemsPrice).toBe(2500)
       expect(pack.plantsAmount).toBe(7500)
-      expect(pack.gemsReward).toBe(1800)
+      expect(pack.gemsReward).toBe(500)
+      expect(pack.goldReward).toBe(2500)
+      expect(pack.bonusItemTitle).toBe('1 Sobre Épico + 2,500 ORO')
       expect(pack.priceUsdt * 0.6).toBe(15)
       expect(pack.vestingDays).toBe(45)
       expect(pack.dailyRate).toBeCloseTo(7500 / 45, 1)
     })
 
-    it('Pack Leyenda ($50): 15,000 PLANTS, 5,000 Gemas, inyección del 60% ($30 USDT) al pool, vesting 45d (333.33/d)', () => {
+    it('Pack Leyenda ($50): 15,000 PLANTS, 5,000 Gemas, 1,000 Gemas bono, 1 Sobre Legendario + 4,000 ORO, $30 USDT al pool, vesting 45d', () => {
       const pack = PRESALE_PACKS.find((p) => p.id === 'pack_leyenda_50')!
       expect(pack).toBeDefined()
       expect(pack.priceUsdt).toBe(50)
       expect(pack.gemsPrice).toBe(5000)
       expect(pack.plantsAmount).toBe(15000)
-      expect(pack.gemsReward).toBe(4000)
+      expect(pack.gemsReward).toBe(1000)
+      expect(pack.goldReward).toBe(4000)
+      expect(pack.bonusItemTitle).toBe('1 Sobre Legendario + 4,000 ORO')
       expect(pack.priceUsdt * 0.6).toBe(30)
       expect(pack.vestingDays).toBe(45)
       expect(pack.dailyRate).toBeCloseTo(15000 / 45, 1)

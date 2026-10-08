@@ -148,7 +148,7 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
 
                 {/* Bonus Gems Badge */}
                 <div className="presale-card-gems-badge">
-                  <span>💎 +{pack.gemsReward.toLocaleString()} Gemas de bono (+80%)</span>
+                  <span>💎 +{pack.gemsReward.toLocaleString()} Gemas de bono</span>
                 </div>
 
                 {/* Benefits List */}
@@ -252,14 +252,14 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
             <div className="presale-th text-gold">LEYENDA</div>
 
             <div className="presale-td label">💎 Gemas de bono</div>
-            <div className="presale-td">+1,800 (+80%)</div>
-            <div className="presale-td">+4,500 (+80%)</div>
-            <div className="presale-td">+9,000 (+80%)</div>
+            <div className="presale-td text-cyan">+200 Gemas</div>
+            <div className="presale-td text-purple">+500 Gemas</div>
+            <div className="presale-td text-gold">+1,000 Gemas</div>
 
-            <div className="presale-td label">🎁 Sobres legendarios</div>
-            <div className="presale-td">1 sobre</div>
-            <div className="presale-td">1 sobre + 1,500 abono</div>
-            <div className="presale-td">2 sobres + Título exclusivo</div>
+            <div className="presale-td label">🎁 Recompensas Exclusivas</div>
+            <div className="presale-td">1 Sobre Común + 1,000 ORO</div>
+            <div className="presale-td">1 Sobre Épico + 2,500 ORO</div>
+            <div className="presale-td">1 Sobre Legendario + 4,000 ORO</div>
 
             <div className="presale-td label">💧 Inyección al Pool (60%)</div>
             <div className="presale-td">$6.0 USDT</div>

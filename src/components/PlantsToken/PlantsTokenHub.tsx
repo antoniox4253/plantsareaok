@@ -160,7 +160,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
       if (res.success) {
         soundManager.playSound('claim', 0.7)
         showNotification(
-          `¡Éxito! Adquiriste ${pack.title}. +${pack.plantsAmount.toLocaleString()} PLANTS (Vesting 45 días a ${pack.dailyRate} PLANTS/día) y +${pack.gemsReward.toLocaleString()} 💎 acreditadas.`,
+          `¡Éxito! Adquiriste ${pack.title}. +${pack.plantsAmount.toLocaleString()} PLANTS (Vesting 45 días a ${pack.dailyRate} PLANTS/día), +${pack.gemsReward.toLocaleString()} 💎 y ${pack.bonusItemTitle} acreditados.`,
           'success'
         )
         await loadData()
@@ -391,12 +391,6 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
              ===================================================== */}
         {activeTab === 'summary' && (
           <div className="token-summary-hd-banner">
-            <div
-              className="token-summary-hd-banner__bg"
-              style={{
-                backgroundImage: `url(${TOKEN_ASSETS.summaryHeroBanner || '/game-assets/token/hero_summary.webp'})`,
-              }}
-            />
             <img
               src={TOKEN_ASSETS.summaryHeroBanner || '/game-assets/token/hero_summary.webp'}
               alt="Token Plants"

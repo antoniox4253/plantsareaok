@@ -135,6 +135,8 @@ export interface PresalePackDefinition {
   gemsPrice: number
   plantsAmount: number
   gemsReward: number
+  goldReward: number
+  packReward: string
   dailyRate: number
   vestingDays: number
   maxStock: number
@@ -153,12 +155,14 @@ export const PRESALE_PACKS: PresalePackDefinition[] = [
     priceUsdt: 10,
     gemsPrice: 1000,
     plantsAmount: 2500,
-    gemsReward: 600,
+    gemsReward: 200,
+    goldReward: 1000,
+    packReward: 'Sobre Común',
     dailyRate: 55.56,
     vestingDays: 45,
     maxStock: 10,
-    bonusItemTitle: '1 Sobre Épico + 500 Abono',
-    bonusItemDesc: 'Impulso directo para tu jardín y colección.',
+    bonusItemTitle: '1 Sobre Común + 1,000 ORO',
+    bonusItemDesc: '1 Sobre Común de cartas y 1,000 de Oro para mejoras.',
     accentColor: '#38bdf8',
     tag: 'BRONCE',
   },
@@ -169,12 +173,14 @@ export const PRESALE_PACKS: PresalePackDefinition[] = [
     priceUsdt: 25,
     gemsPrice: 2500,
     plantsAmount: 7500,
-    gemsReward: 1800,
+    gemsReward: 500,
+    goldReward: 2500,
+    packReward: 'Sobre Épico',
     dailyRate: 166.67,
     vestingDays: 45,
     maxStock: 6,
-    bonusItemTitle: '1 Sobre Legendario + 1,500 Abono',
-    bonusItemDesc: 'Cartas legendarias y recursos de alta velocidad.',
+    bonusItemTitle: '1 Sobre Épico + 2,500 ORO',
+    bonusItemDesc: '1 Sobre Épico garantizado y 2,500 de Oro para mejoras.',
     accentColor: '#a855f7',
     tag: 'MÁS POPULAR',
     popular: true,
@@ -186,12 +192,14 @@ export const PRESALE_PACKS: PresalePackDefinition[] = [
     priceUsdt: 50,
     gemsPrice: 5000,
     plantsAmount: 15000,
-    gemsReward: 4000,
+    gemsReward: 1000,
+    goldReward: 4000,
+    packReward: 'Sobre Legendario',
     dailyRate: 333.33,
     vestingDays: 45,
     maxStock: 4,
-    bonusItemTitle: '2 Sobres Legendarios + 4,000 Abono + Título Exclusivo',
-    bonusItemDesc: 'Máxima asignación inicial y título "Titán Fundador".',
+    bonusItemTitle: '1 Sobre Legendario + 4,000 ORO',
+    bonusItemDesc: '1 Sobre Legendario garantizado y 4,000 de Oro para tu inventario.',
     accentColor: '#fbbf24',
     tag: 'EDICIÓN ORO',
   },
