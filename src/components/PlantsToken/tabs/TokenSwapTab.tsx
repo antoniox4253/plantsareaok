@@ -289,9 +289,9 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
             </div>
           </div>
 
-          {/* Wallet Address Input for USDT Cashout */}
-          {swapMode === 'usdt' && (
-            <div className="swap-input-box" style={{ marginTop: '8px' }}>
+          {/* Wallet Address Input for USDT Cashout OR Gems Benefit Info */}
+          {swapMode === 'usdt' ? (
+            <div className="swap-input-box" style={{ marginTop: '6px' }}>
               <div className="swap-input-top">
                 <span className="swap-input-label">Dirección de Billetera de Retiro (BEP-20 / BNB Chain)</span>
               </div>
@@ -304,14 +304,21 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                   width: '100%',
                   background: 'rgba(2, 6, 23, 0.7)',
                   border: '1px solid rgba(20, 137, 109, 0.4)',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
+                  borderRadius: '7px',
+                  padding: '7px 10px',
                   color: '#fff',
-                  fontSize: '11.5px',
+                  fontSize: '11px',
                   fontFamily: 'monospace',
                   outline: 'none',
                 }}
               />
+            </div>
+          ) : (
+            <div className="swap-gems-benefit-box">
+              <div className="gems-benefit-badge">💎 BONO EXCLUSIVO +20% EN GEMAS</div>
+              <p className="gems-benefit-desc">
+                Quema instantánea de PLANTS respaldando la liquidez · Recibes Gemas automáticas en tu perfil sin esperas ni comisiones.
+              </p>
             </div>
           )}
 
@@ -407,7 +414,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                   <div>
                     <h4 className="swap-card-title">VISTA PREVIA OPERACIÓN</h4>
                     <span className="swap-card-subtitle">
-                      {swapMode === 'usdt' ? 'Retiro a Billetera BEP-20' : 'Super Sink Quema a Gemas'}
+                      {swapMode === 'usdt' ? 'Retiro seguro a Billetera BEP-20' : 'Super Sink Quema a Gemas (+20%)'}
                     </span>
                   </div>
                 </div>
@@ -422,7 +429,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                   <strong className="mini-metric-value text-white">
                     {parsedAmount > 0 ? parsedAmount.toLocaleString() : '0'} <small>PLANTS</small>
                   </strong>
-                  <span className="mini-metric-sub">Saldo a debitar</span>
+                  <span className="mini-metric-sub">Saldo líquido a debitar</span>
                 </div>
 
                 <div className="swap-mini-metric">
@@ -433,8 +440,34 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                     {swapMode === 'usdt' ? `-${effectiveFee.toFixed(0)} PLANTS` : '100% QUEMA'}
                   </strong>
                   <span className="mini-metric-sub">
-                    {swapMode === 'usdt' ? 'Quema para el pool' : 'Tokens destruidos'}
+                    {swapMode === 'usdt' ? 'Quema para el pool' : 'Bono +20% activo'}
                   </span>
+                </div>
+              </div>
+
+              {/* LISTA DE AUDITORÍA Y DETALLES EN VIVO */}
+              <div className="swap-preview-details-list">
+                <div className="swap-preview-detail-row">
+                  <span className="detail-row-lbl">Tasa Spot AMM</span>
+                  <span className="detail-row-val font-mono">1 PLANTS = ${(spotPrice).toFixed(6)} USDT</span>
+                </div>
+                <div className="swap-preview-detail-row">
+                  <span className="detail-row-lbl">Destino Acreditado</span>
+                  <span className="detail-row-val">
+                    {swapMode === 'usdt'
+                      ? (walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Billetera BEP-20')
+                      : 'Inventario de Gemas'}
+                  </span>
+                </div>
+                <div className="swap-preview-detail-row">
+                  <span className="detail-row-lbl">Tiempo Estimado</span>
+                  <span className="detail-row-val text-mint">
+                    {swapMode === 'usdt' ? 'Lote diario 18:00 UTC-3' : '⚡ Instantáneo (Automático)'}
+                  </span>
+                </div>
+                <div className="swap-preview-detail-row">
+                  <span className="detail-row-lbl">Slippage Máximo</span>
+                  <span className="detail-row-val text-cyan">&lt; 0.05% (Tolerancia {slippage}%)</span>
                 </div>
               </div>
 
@@ -454,8 +487,8 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 <div className="hero-box-footer">
                   <span>
                     {swapMode === 'usdt'
-                      ? '⏱️ Ventana diaria (18:00 UTC-3)'
-                      : '⚡ Acreditación inmediata en tu perfil'}
+                      ? '⏱️ Retiro sin comisiones ocultas procesado en BNB Chain'
+                      : '⚡ Acreditación automática a tu balance de jugador'}
                   </span>
                 </div>
               </div>
@@ -507,23 +540,45 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 </div>
               </div>
 
-              {/* BLOQUES REALIZADOS Y MÍNIMOS CHIPS */}
+              {/* BLOQUES REALIZADOS Y MÍNIMOS CARDS */}
               <div className="swap-staking-plans-strip">
                 <div className="staking-plan-chip">
-                  <span className="plan-chip-dot">🌱</span>
-                  <span className="plan-chip-name">30D</span>
-                  <span className="plan-chip-min">Mín 500</span>
+                  <div className="plan-chip-header">
+                    <span className="plan-chip-dot">🌱</span>
+                    <strong className="plan-chip-name">30 DÍAS</strong>
+                  </div>
+                  <div className="plan-chip-body">
+                    <span className="plan-chip-min">Mín 500</span>
+                    <span className="plan-chip-yield text-cyan">+Gemas</span>
+                  </div>
                 </div>
+
                 <div className="staking-plan-chip">
-                  <span className="plan-chip-dot">🌿</span>
-                  <span className="plan-chip-name">60D</span>
-                  <span className="plan-chip-min">Mín 5K</span>
+                  <div className="plan-chip-header">
+                    <span className="plan-chip-dot">🌿</span>
+                    <strong className="plan-chip-name">60 DÍAS</strong>
+                  </div>
+                  <div className="plan-chip-body">
+                    <span className="plan-chip-min">Mín 5,000</span>
+                    <span className="plan-chip-yield text-gold">+Oro & Gemas</span>
+                  </div>
                 </div>
+
                 <div className="staking-plan-chip highlight">
-                  <span className="plan-chip-dot">👑</span>
-                  <span className="plan-chip-name">90D</span>
-                  <span className="plan-chip-min">Mín 25K</span>
+                  <div className="plan-chip-header">
+                    <span className="plan-chip-dot">👑</span>
+                    <strong className="plan-chip-name">90 DÍAS</strong>
+                  </div>
+                  <div className="plan-chip-body">
+                    <span className="plan-chip-min">Mín 25,000</span>
+                    <span className="plan-chip-yield text-green">Máx Retorno</span>
+                  </div>
                 </div>
+              </div>
+
+              {/* BENEFIT GUARANTEE ROW */}
+              <div className="staking-card-guarantee-row">
+                <span>🌾 Cosecha diaria flexible · 100% de capital devuelto al madurar</span>
               </div>
 
               {/* ACTION CTA BUTTON */}
@@ -547,13 +602,16 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
             <article className="swap-rules-card">
               <h5 className="swap-rules-title">📜 REGLAS Y HORARIOS DE RETIRO</h5>
               <div className="swap-rule-item">
-                <span>⏱️ Ventana de retiros:</span> Lotes diarios a las 18:00 (UTC-3).
+                <span>⏱️ Ventana diaria:</span> Lotes procesados a las 18:00 (UTC-3).
               </div>
               <div className="swap-rule-item">
-                <span>🛡️ Auditoría:</span> Verificación contra bots y partidas fraudulentas.
+                <span>🛡️ Auditoría:</span> Verificación anti-bot y validación de partidas.
               </div>
               <div className="swap-rule-item">
                 <span>⚔️ Requisito:</span> Arena 3 (2,001+ copas) para retiros en USDT.
+              </div>
+              <div className="swap-rule-guarantee">
+                <span>🔒 Bóveda de liquidez auditada y verificada</span>
               </div>
             </article>
 
@@ -565,7 +623,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
               title="Activar canje a Gemas con bono +20%"
             >
               <div className="swap-sink-badge">
-                {swapMode === 'gems' ? '✓ MODO SUPER SINK SELECCIONADO' : '💎 ACTIVAR SUPER SINK (PLANTS ➔ GEMAS)'}
+                {swapMode === 'gems' ? '✓ MODO SUPER SINK ACTIVO' : '💎 ACTIVAR SUPER SINK (+20% GEMAS)'}
               </div>
               <div className="swap-sink-body">
                 <span className="swap-sink-bonus">+20% GEMAS BONUS</span>
@@ -573,8 +631,8 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
               </div>
               <p className="swap-sink-desc">
                 {swapMode === 'gems'
-                  ? 'Modo activo: El monto ingresado se canjeará por gemas con +20% extra.'
-                  : 'Haz clic aquí para seleccionar el canje directo a gemas y quemar tus tokens.'}
+                  ? 'Modo activo: Quema instantánea sin ventana de espera ni comisiones.'
+                  : 'Canjea directo a Gemas: se queman tus tokens y recibes bono de +20% inmediato.'}
               </p>
             </button>
           </div>
