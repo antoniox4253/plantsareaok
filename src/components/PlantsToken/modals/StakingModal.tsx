@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { soundManager } from '../../../utils/audioManager'
 import { plantsTokenService, type StakingSummary } from '../../../services/plantsTokenService'
-import type { TokenTabType } from '../types'
 
 interface StakingModalProps {
   isOpen: boolean
   onClose: () => void
   liquidPlants: number
-  onTabChange?: (tab: TokenTabType) => void
   onRefreshData?: () => Promise<void>
   showNotification: (message: string, type?: 'success' | 'error' | 'info') => void
 }
@@ -16,7 +14,6 @@ export const StakingModal: React.FC<StakingModalProps> = ({
   isOpen,
   onClose,
   liquidPlants,
-  onTabChange,
   onRefreshData,
   showNotification,
 }) => {
@@ -67,14 +64,6 @@ export const StakingModal: React.FC<StakingModalProps> = ({
   const handleClose = () => {
     soundManager.playSound('click', 0.4)
     onClose()
-  }
-
-  const handleGoToTab = () => {
-    soundManager.playSound('click', 0.4)
-    onClose()
-    if (onTabChange) {
-      onTabChange('staking')
-    }
   }
 
   // Atajos rápidos de monto
@@ -199,16 +188,6 @@ export const StakingModal: React.FC<StakingModalProps> = ({
           </div>
 
           <div className="staking-modal-header-actions">
-            {onTabChange && (
-              <button
-                type="button"
-                className="staking-modal-tab-btn"
-                onClick={handleGoToTab}
-                title="Abrir pestaña completa en el centro"
-              >
-                <span>↗ IR A PESTAÑA</span>
-              </button>
-            )}
             <button type="button" className="token-modal-close-btn" onClick={handleClose} title="Cerrar">
               ✕
             </button>

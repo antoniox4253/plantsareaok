@@ -433,15 +433,6 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
 
           <button
             type="button"
-            className={`token-nav-tab ${activeTab === 'staking' ? 'active' : ''}`}
-            onClick={() => handleTabChange('staking')}
-          >
-            <span className="token-nav-tab-icon">🌿</span>
-            <span>STAKING</span>
-          </button>
-
-          <button
-            type="button"
             className={`token-nav-tab ${activeTab === 'swap' ? 'active' : ''}`}
             onClick={() => handleTabChange('swap')}
           >
