@@ -390,12 +390,19 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
              BANNER EN ALTA DEFINICIÓN (SÓLO EN RESUMEN, SIN OVERLAYS)
              ===================================================== */}
         {activeTab === 'summary' && (
-          <div
-            className="token-summary-hd-banner"
-            style={{
-              backgroundImage: `url(${TOKEN_ASSETS.summaryHeroBanner})`,
-            }}
-          />
+          <div className="token-summary-hd-banner">
+            <div
+              className="token-summary-hd-banner__bg"
+              style={{
+                backgroundImage: `url(${TOKEN_ASSETS.summaryHeroBanner || '/game-assets/token/hero_summary.webp'})`,
+              }}
+            />
+            <img
+              src={TOKEN_ASSETS.summaryHeroBanner || '/game-assets/token/hero_summary.webp'}
+              alt="Token Plants"
+              className="token-summary-hd-banner__img"
+            />
+          </div>
         )}
 
         {/* =====================================================
