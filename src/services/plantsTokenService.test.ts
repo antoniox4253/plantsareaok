@@ -147,7 +147,7 @@ describe('PLANTS Token & AMM Ecosystem Tests', () => {
 
   describe('Bono PvP de Lanzamiento (+25% por 7 días)', () => {
     it('debe calcular el tiempo restante correctamente cuando el plazo está activo', () => {
-      const inFuture = new Date(Date.now() + 6 * 24 * 3600 * 1000 + 12 * 3600 * 1000).toISOString()
+      const inFuture = new Date(Date.now() + 6 * 24 * 3600 * 1000 + 12 * 3600 * 1000 + 5000).toISOString()
       const timer = plantsTokenService.getPvpBonusTimeRemaining(inFuture)
       expect(timer.isActive).toBe(true)
       expect(timer.days).toBe(6)
