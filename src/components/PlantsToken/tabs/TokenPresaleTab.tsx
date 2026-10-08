@@ -144,7 +144,8 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
 
                 {/* Price & Plants Row */}
                 <div className="presale-card-price-row">
-                  <span className="presale-price-val">${pack.priceUsdt} USDT</span>
+                  <span className="presale-price-val">💎 {pack.gemsPrice.toLocaleString()}</span>
+                  <span className="presale-usdt-equiv">(${pack.priceUsdt} USDT)</span>
                   <span className="presale-plants-val">+{pack.plantsAmount.toLocaleString()} PLANTS</span>
                 </div>
 

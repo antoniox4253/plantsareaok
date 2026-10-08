@@ -3893,6 +3893,12 @@ input.swap-value-slot:focus {
   color: #38bdf8;
 }
 
+.presale-usdt-equiv {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
 .presale-plants-val {
   font-size: 10px;
   font-weight: 900;
