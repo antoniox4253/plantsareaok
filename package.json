@@ -14,6 +14,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
     "@types/pg": "^8.23.1",
+    "pdfkit": "^0.20.2",
     "pg": "^8.23.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
