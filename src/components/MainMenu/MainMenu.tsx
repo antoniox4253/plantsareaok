@@ -312,93 +312,115 @@ export default function MainMenu({
     setNewsModal({ title, message, actionLabel, onAction })
   }
 
-  const handleOpenJalapenoNews = () => {
+  const handleOpenPlantsTokenNews = () => {
     soundManager.playSound('click', 0.5)
     setNewsModal({
-      title: 'Subasta de Jalapeños: Furia Ígnea',
-      actionLabel: '🔥 IR A LA SUBASTA',
+      title: 'Token PLANTS: Preventa Génesis y Packs Fundadores',
+      actionLabel: '🌱 IR A LA PREVENTA',
       onAction: () => {
         soundManager.playSound('click', 0.5)
-        setLotteryInitialTab('auction')
-        setShowLotteryModal(true)
+        onOpenPlantsToken?.()
       },
       message: (
-        <div className="bosque-jalapeno-news">
-          <div className="bosque-jalapeno-news__hero">
-            <div className="bosque-jalapeno-news__avatar-wrap">
+        <div className="bosque-plants-news">
+          <div className="bosque-plants-news__hero">
+            <div className="bosque-plants-news__avatar-wrap">
               <img
-                src="/game-assets/plants/jalapeno_hd.png"
-                alt="Jalapeño"
-                className="bosque-jalapeno-news__avatar-img"
+                src="/game-assets/token/logo.webp"
+                alt="Token PLANTS"
+                className="bosque-plants-news__avatar-img"
               />
             </div>
-            <div className="bosque-jalapeno-news__hero-info">
-              <span className="bosque-jalapeno-news__hero-tag">🔥 EVENTO RELÁMPAGO · 24 HORAS</span>
-              <h4 className="bosque-jalapeno-news__hero-title">El Titán Incendiario de la Arena</h4>
-              <p className="bosque-jalapeno-news__hero-sub">
-                ¡Quema toda la línea enemiga con <strong>1,000 de daño devastador</strong>! 
-                El Jalapeño elimina oleadas masivas y tanques acorazados de un solo estallido (+150 por nivel).
+            <div className="bosque-plants-news__hero-info">
+              <span className="bosque-plants-news__hero-tag">🌱 ECO-FINANZAS · FASE PREVENTA (5 DÍAS)</span>
+              <h4 className="bosque-plants-news__hero-title">¡Lanzamiento Oficial del Token PLANTS!</h4>
+              <p className="bosque-plants-news__hero-sub">
+                Participa en la <strong>Preventa Génesis</strong> exclusiva. Cada compra inyecta un <strong>60% directamente al Pool de Liquidez en USDT</strong>, otorga sobres, oro masivo y activa un vesting diario de 45 días al finalizar la beta.
               </p>
             </div>
           </div>
 
-          <div className="bosque-jalapeno-news__rooms-grid">
-            {/* SALA 1: ORO */}
-            <div className="bosque-jalapeno-news__room-card bosque-jalapeno-news__room-card--gold">
-              <div className="bosque-jalapeno-news__room-header">
-                <span className="bosque-jalapeno-news__room-badge bosque-jalapeno-news__room-badge--gold">SALA ORO 🪙</span>
-                <span className="bosque-jalapeno-news__room-copies">1x Jalapeño</span>
+          <div className="bosque-plants-news__packs-grid">
+            {/* PACK BÁSICO */}
+            <div className="bosque-plants-news__pack-card bosque-plants-news__pack-card--common">
+              <div className="bosque-plants-news__pack-header">
+                <span className="bosque-plants-news__pack-badge">PACK BÁSICO</span>
+                <span className="bosque-plants-news__pack-gems text-gems">+200 Gemas 💎</span>
               </div>
-              <div className="bosque-jalapeno-news__room-body">
-                <div className="bosque-jalapeno-news__stat-row">
-                  <span>Puja Inicial:</span>
-                  <strong className="text-gold">3,000 Oro</strong>
+              <div className="bosque-plants-news__pack-body">
+                <div className="bosque-plants-news__stat-row">
+                  <span>Recompensas:</span>
+                  <strong>1 Sobre Común + 1,000 Oro</strong>
                 </div>
-                <div className="bosque-jalapeno-news__stat-row">
-                  <span>Incremento Mínimo:</span>
-                  <span>+250 Oro</span>
+                <div className="bosque-plants-news__stat-row">
+                  <span>Inyección Pool:</span>
+                  <strong className="text-usdt">$6.0 USDT (60%)</strong>
                 </div>
-                <p className="bosque-jalapeno-news__room-hint">
-                  Desbloquea la carta base si no la tienes, o suma +1 copia si ya la posees.
-                </p>
+                <div className="bosque-plants-news__stat-row">
+                  <span>Vesting (45d):</span>
+                  <strong className="text-plants">+55.56 PLANTS / día</strong>
+                </div>
               </div>
             </div>
 
-            {/* SALA 2: GEMAS VIP */}
-            <div className="bosque-jalapeno-news__room-card bosque-jalapeno-news__room-card--gems">
-              <div className="bosque-jalapeno-news__room-header">
-                <span className="bosque-jalapeno-news__room-badge bosque-jalapeno-news__room-badge--gems">SALA VIP GEMAS 💎</span>
-                <span className="bosque-jalapeno-news__room-copies bosque-jalapeno-news__room-copies--gems">2x Jalapeños</span>
+            {/* PACK ÉPICO */}
+            <div className="bosque-plants-news__pack-card bosque-plants-news__pack-card--epic">
+              <div className="bosque-plants-news__pack-header">
+                <span className="bosque-plants-news__pack-badge bosque-plants-news__pack-badge--epic">PACK ÉPICO</span>
+                <span className="bosque-plants-news__pack-gems text-gems">+500 Gemas 💎</span>
               </div>
-              <div className="bosque-jalapeno-news__room-body">
-                <div className="bosque-jalapeno-news__stat-row">
-                  <span>Puja Inicial:</span>
-                  <strong className="text-gems">800 Gemas</strong>
+              <div className="bosque-plants-news__pack-body">
+                <div className="bosque-plants-news__stat-row">
+                  <span>Recompensas:</span>
+                  <strong>1 Sobre Épico + 2,500 Oro</strong>
                 </div>
-                <div className="bosque-jalapeno-news__stat-row">
-                  <span>Incremento Mínimo:</span>
-                  <span>+50 Gemas</span>
+                <div className="bosque-plants-news__stat-row">
+                  <span>Inyección Pool:</span>
+                  <strong className="text-usdt">$15.0 USDT (60%)</strong>
                 </div>
-                <p className="bosque-jalapeno-news__room-hint">
-                  Carta base + 1 copia (o +2 copias si ya la tienes) para fusionar y mejorar.
-                </p>
+                <div className="bosque-plants-news__stat-row">
+                  <span>Vesting (45d):</span>
+                  <strong className="text-plants">+166.67 PLANTS / día</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* PACK LEGENDARIO */}
+            <div className="bosque-plants-news__pack-card bosque-plants-news__pack-card--legendary">
+              <div className="bosque-plants-news__pack-header">
+                <span className="bosque-plants-news__pack-badge bosque-plants-news__pack-badge--legendary">PACK LEGENDARIO</span>
+                <span className="bosque-plants-news__pack-gems text-gems">+1,000 Gemas 💎</span>
+              </div>
+              <div className="bosque-plants-news__pack-body">
+                <div className="bosque-plants-news__stat-row">
+                  <span>Recompensas:</span>
+                  <strong>1 Sobre Legendario + 4,000 Oro</strong>
+                </div>
+                <div className="bosque-plants-news__stat-row">
+                  <span>Inyección Pool:</span>
+                  <strong className="text-usdt">$30.0 USDT (60%)</strong>
+                </div>
+                <div className="bosque-plants-news__stat-row">
+                  <span>Vesting (45d):</span>
+                  <strong className="text-plants">+333.33 PLANTS / día</strong>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bosque-jalapeno-news__guarantees">
-            <div className="bosque-jalapeno-news__guarantee-item">
-              <span className="bosque-jalapeno-news__guarantee-icon">🃏</span>
+          <div className="bosque-plants-news__guarantees">
+            <div className="bosque-plants-news__guarantee-item">
+              <span className="bosque-plants-news__guarantee-icon">💧</span>
               <div>
-                <strong>Entrega Inteligente de Carta o Copias</strong>
-                <p>Si no tienes a Jalapeño, se crea tu carta base. Si ya lo posees, se suman directamente como copias para el Jardín.</p>
+                <strong>Respaldo de Liquidez Real</strong>
+                <p>El 60% de cada compra se inyecta directamente al Pool USDT de respaldo para garantizar valor de intercambio.</p>
               </div>
             </div>
-            <div className="bosque-jalapeno-news__guarantee-item">
-              <span className="bosque-jalapeno-news__guarantee-icon">⚡</span>
+            <div className="bosque-plants-news__guarantee-item">
+              <span className="bosque-plants-news__guarantee-icon">📊</span>
               <div>
-                <strong>Reembolso Instantáneo Atómico</strong>
-                <p>Si otro jugador supera tu oferta, tu oro o gemas regresan al instante a tu saldo sin demoras.</p>
+                <strong>Economía y Vesting Diario</strong>
+                <p>Tokens liberados gradualmente durante 45 días sin inflación descontrolada para proteger a los jugadores.</p>
               </div>
             </div>
           </div>
@@ -1198,12 +1220,11 @@ export default function MainMenu({
         title="Noticias y Actualizaciones"
         onClick={() =>
           handleOpenNews(
-            'Noticias del Bosque Renovado',
-            '¡La Gran Subasta de Jalapeños ya está disponible! Consigue la carta legendaria por Oro o el Lote VIP por Gemas. Además, disfruta de los nuevos escenarios forestales, notas de balance y optimizaciones del jardín.',
-            '🔥 VER SUBASTA',
+            '¡Preventa Oficial del Token PLANTS!',
+            '¡El Token PLANTS ya está disponible! Adquiere Packs Fundadores con hasta +1,000 Gemas de bono, sobres de cartas, oro y vesting diario respaldado en liquidez USDT.',
+            '🌱 VER PREVENTA',
             () => {
-              setLotteryInitialTab('auction')
-              setShowLotteryModal(true)
+              onOpenPlantsToken?.()
             }
           )
         }
@@ -1211,39 +1232,39 @@ export default function MainMenu({
         noticias
       </button>
 
-      {/* Tarjeta Interactiva Viva: Subasta de Jalapeños */}
+      {/* Tarjeta Interactiva Viva: Lanzamiento Token PLANTS */}
       <div
-        className="bosque-news-item--jalapeno"
+        className="bosque-news-item--plants"
         data-action="noticia-arena"
         role="button"
         tabIndex={0}
-        aria-label="Subasta de Jalapeños: 24 horas activas para pujar por 1 Jalapeño en Oro y 2 en Gemas"
-        title="Gran Subasta de Jalapeños (Clic para ver detalles y pujar)"
-        onClick={handleOpenJalapenoNews}
+        aria-label="Token PLANTS: Preventa activa con Packs Fundadores y respaldo USDT"
+        title="Preventa Token PLANTS (Clic para ver detalles y adquirir packs)"
+        onClick={handleOpenPlantsTokenNews}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            handleOpenJalapenoNews()
+            handleOpenPlantsTokenNews()
           }
         }}
       >
-        <div className="bosque-news-jalapeno__art-wrap">
+        <div className="bosque-news-plants__art-wrap">
           <img
-            src="/game-assets/plants/jalapeno_hd.png"
-            alt="Jalapeño"
-            className="bosque-news-jalapeno__img"
+            src="/game-assets/token/logo.webp"
+            alt="Token PLANTS"
+            className="bosque-news-plants__img"
           />
         </div>
-        <div className="bosque-news-jalapeno__content">
-          <div className="bosque-news-jalapeno__top-row">
-            <span className="bosque-news-jalapeno__badge">🔥 24H ACTIVA</span>
-            <span className="bosque-news-jalapeno__type-tag">SUBASTA</span>
+        <div className="bosque-news-plants__content">
+          <div className="bosque-news-plants__top-row">
+            <span className="bosque-news-plants__badge">🌱 PREVENTA ACTIVA</span>
+            <span className="bosque-news-plants__type-tag">TOKEN PLANTS</span>
           </div>
-          <span className="bosque-news-jalapeno__title">Subasta de Jalapeños</span>
-          <span className="bosque-news-jalapeno__desc">
-            1000 Daño · Pujas en Oro 🪙 y Gemas 💎
+          <span className="bosque-news-plants__title">Packs Fundadores PLANTS</span>
+          <span className="bosque-news-plants__desc">
+            Vesting Diario · Bono Gemas 💎 y Respaldo USDT 💧
           </span>
         </div>
-        <span className="bosque-news-jalapeno__arrow">➔</span>
+        <span className="bosque-news-plants__arrow">➔</span>
       </div>
       {/* Tarjeta Interactiva Viva: Código Secreto Ronda 6 */}
       <div
