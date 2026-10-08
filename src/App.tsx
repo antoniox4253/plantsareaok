@@ -1891,6 +1891,7 @@ function App() {
             userElo={userElo}
             hasVipPass={hasVipPass}
             userProfile={profile}
+            playerEnergy={playerEnergy}
             onRefreshProfile={refreshFromServer}
           />
         )}

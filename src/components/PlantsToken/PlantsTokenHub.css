@@ -25,17 +25,18 @@
   --token-muted: #78929b;
 }
 
-/* Base Container */
+/* Base Container - 100vh NO SCROLL */
 .plants-token-root {
-  width: 100%;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   background:
     radial-gradient(circle at 50% -10%, rgba(18, 115, 82, 0.22), transparent 45%),
     linear-gradient(180deg, #071219 0%, #041015 100%);
   color: var(--token-text);
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   box-sizing: border-box;
-  padding-bottom: 40px;
 }
 
 .plants-token-root *,
@@ -45,197 +46,285 @@
 }
 
 .plants-token-shell {
-  max-width: 1680px;
-  margin: 0 auto;
-  padding: 12px 16px 24px;
-}
-
-/* =========================================================
-   TOP STATUS BAR (MATCHING IN-GAME HUD)
-   data-section="top-status-bar"
-   ========================================================= */
-.top-status {
-  display: grid;
-  grid-template-columns: 210px 180px 170px 140px 160px 160px 60px;
-  gap: 10px;
-  margin-bottom: 12px;
-  align-items: stretch;
-}
-
-.status-box {
-  min-height: 56px;
-  border: 1.5px solid var(--token-line);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(8, 30, 24, 0.95), rgba(4, 18, 14, 0.98));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(25, 217, 156, 0.12);
-  display: flex;
-  align-items: center;
-  padding: 6px 14px;
-  gap: 10px;
-  position: relative;
-  overflow: hidden;
-}
-
-.status-box--brand {
-  cursor: pointer;
-  background: linear-gradient(180deg, rgba(14, 45, 52, 0.95), rgba(8, 28, 33, 0.98));
-  gap: 12px;
-  transition: transform 0.15s ease, border-color 0.2s ease;
-}
-
-.status-box--brand:hover {
-  border-color: var(--token-glow);
-  transform: translateY(-1px);
-}
-
-.status-brand-img {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
-}
-
-.status-brand-title {
-  font-size: 14px;
-  font-weight: 950;
-  color: #fff;
-  letter-spacing: 0.8px;
-  display: block;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.status-item-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 2px solid #20dba4;
-  box-shadow: 0 0 10px rgba(32, 219, 164, 0.4);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #064e3b;
-  flex-shrink: 0;
-}
-
-.status-item-avatar img {
   width: 100%;
+  max-width: 1680px;
   height: 100%;
-  object-fit: cover;
-}
-
-.status-avatar-fallback {
-  font-size: 20px;
-}
-
-.status-item-icon {
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.status-item-icon img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
-}
-
-.status-item-data {
+  margin: 0 auto;
+  padding: 6px 14px 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.status-item-val {
-  font-size: 14.5px;
-  font-weight: 950;
-  color: var(--token-text);
-  white-space: nowrap;
-  letter-spacing: 0.3px;
+/* =========================================================
+   TOP STATUS BAR (MATCHING IN-GAME HUD & MAIN MENU)
+   ========================================================= */
+.token-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+  height: 42px;
 }
 
-.status-box--settings-btn {
-  background: linear-gradient(180deg, rgba(14, 45, 52, 0.95), rgba(8, 28, 33, 0.98));
-  border: 1.5px solid var(--token-line);
-  color: #fff;
-  font-size: 22px;
+.token-topbar-logo-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #0d2c20 0%, #061912 100%);
+  border: 1.5px solid #2d7350;
+  border-radius: 12px;
+  padding: 0 12px;
+  height: 38px;
   cursor: pointer;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7), 0 3px 8px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease, border-color 0.2s ease;
+}
+
+.token-topbar-logo-btn:hover {
+  border-color: #4ade80;
+  transform: scale(1.02);
+}
+
+.token-topbar-logo-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.token-topbar-logo-text {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.token-topbar-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.token-topbar-pill {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(180deg, #0d2c20 0%, #061912 100%);
+  border: 1.5px solid #2d7350;
+  border-radius: 12px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7), 0 3px 8px rgba(0, 0, 0, 0.5);
+  height: 38px;
+  padding: 0 10px;
+  gap: 7px;
+  cursor: default;
+  transition: transform 0.15s ease, border-color 0.2s ease;
+  user-select: none;
+}
+
+.token-topbar-pill--profile {
+  cursor: pointer;
+}
+
+.token-topbar-pill--settings {
+  cursor: pointer;
+  padding: 0 10px;
+}
+
+.token-topbar-pill:hover {
+  border-color: #4ade80;
+}
+
+.token-topbar-avatar-wrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.4);
+  overflow: hidden;
+  background: #05140e;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
 }
 
-.status-box--settings-btn:hover {
-  border-color: var(--token-glow);
-  transform: rotate(45deg) scale(1.08);
-  box-shadow: 0 0 16px rgba(32, 219, 164, 0.4);
+.token-topbar-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.token-topbar-player-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.token-topbar-vip-crown {
+  font-size: 15px;
+}
+
+.token-topbar-vip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.token-topbar-vip-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #ffde59;
+}
+
+.token-topbar-vip-bar-track {
+  width: 55px;
+  height: 4px;
+  background: #061710;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.token-topbar-vip-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  border-radius: 2px;
+}
+
+.token-topbar-energy-icon {
+  font-size: 13px;
+  color: #facc15;
+}
+
+.token-topbar-stat-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.token-topbar-stat-val {
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.token-topbar-stat-val--energy {
+  color: #facc15;
+}
+
+.token-topbar-stat-val--gold {
+  color: #ffde59;
+}
+
+.token-topbar-stat-val--gems {
+  color: #38bdf8;
+}
+
+.token-topbar-settings-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.token-topbar-pill--settings:hover .token-topbar-settings-img {
+  transform: rotate(45deg);
 }
 
 /* =========================================================
-   TOKEN SUB-NAVIGATION TABS
-   data-section="token-navigation"
+   SUMMARY HERO HD BANNER (CLEAN, NO OVERLAYS, COMPACT)
    ========================================================= */
-.token-nav {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-  padding: 6px;
-  border: 1.5px solid var(--token-line-soft);
-  background: #06161d;
-  border-radius: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+.token-summary-hd-banner {
+  width: 100%;
+  height: 105px;
+  min-height: 105px;
+  max-height: 105px;
+  border-radius: 14px;
+  border: 1.5px solid #14896d;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 6px;
+  flex-shrink: 0;
 }
 
-.token-tab {
-  min-height: 52px;
-  border: 1px solid transparent;
+/* =========================================================
+   GAMING SUB-NAVIGATION TABS (COMPACT PILLS)
+   ========================================================= */
+.token-nav-bar {
+  display: flex;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1px solid rgba(20, 137, 109, 0.35);
+  background: rgba(6, 22, 29, 0.9);
   border-radius: 12px;
-  background: #0a171e;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+  height: 38px;
+  align-items: center;
+}
+
+.token-nav-tab {
+  flex: 1;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #091a20;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--token-muted);
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.3px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 6px 12px;
+  transition: all 0.15s ease;
+  padding: 0 8px;
 }
 
-.token-tab:hover {
-  background: #0e222a;
-  color: var(--token-text);
+.token-nav-tab:hover {
+  background: #0e2730;
+  color: #fff;
   border-color: rgba(25, 217, 156, 0.3);
 }
 
-.token-tab.active {
+.token-nav-tab.active {
   border-color: #20dba4;
-  background: linear-gradient(180deg, #0d8065, #0a4d41);
+  background: linear-gradient(180deg, #0d8065 0%, #084c3e 100%);
   color: #ffffff;
-  box-shadow: 0 0 18px rgba(32, 219, 164, 0.25);
+  box-shadow: 0 0 12px rgba(32, 219, 164, 0.35);
 }
 
-.token-tab__icon {
-  font-size: 16px;
+.token-nav-tab-icon {
+  font-size: 13px;
 }
 
-.token-tab__badge {
-  font-size: 9px;
+.token-nav-badge {
+  font-size: 8.5px;
   background: #f2c334;
   color: #111;
   font-weight: 900;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 99px;
-  margin-left: 4px;
+  margin-left: 2px;
+}
+
+/* Tab Content Area */
+.token-tab-content-area {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* =========================================================
@@ -2970,36 +3059,7 @@ input.swap-value-slot:focus {
   border-radius: inherit;
 }
 
-/* Optional Developer Labels */
-[data-label] {
-  position: relative;
-}
-
-[data-label]::before {
-  content: attr(data-label);
-  position: absolute;
-  z-index: 10;
-  top: 4px;
-  left: 6px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #7fffd1;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
-  pointer-events: none;
-  opacity: 0.35;
-  transition: opacity 0.2s;
-}
-
-[data-label]:hover::before {
-  opacity: 0.95;
-}
-
-.hide-dev-labels [data-label]::before {
-  display: none !important;
-}
+/* Developer labels removed for production */
 
 /* =========================================================
    RESPONSIVE DESIGN BREAKPOINTS
@@ -4900,3 +4960,443 @@ input.swap-value-slot:focus {
     display: none;
   }
 }
+
+/* =========================================================
+   NEW TOKENOMICS CENTERED FLOW, HOLDERS & MINTING
+   ========================================================= */
+.tokenomics-flow-centered-panel {
+  background: linear-gradient(180deg, rgba(8, 28, 22, 0.95), rgba(4, 16, 12, 0.98));
+  border: 1.5px solid rgba(20, 137, 109, 0.5);
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.tokenomics-flow-centered-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.tokenomics-flow-nodes-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.tokenomics-flow-card {
+  flex: 1;
+  background: #061914;
+  border: 1px solid rgba(20, 137, 109, 0.4);
+  border-radius: 10px;
+  padding: 6px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tokenomics-node-icon {
+  font-size: 18px;
+}
+
+.tokenomics-flow-card strong {
+  font-size: 11px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.tokenomics-flow-card p {
+  font-size: 9px;
+  color: #78929b;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.tokenomics-flow-arrow {
+  color: #20dba4;
+  font-size: 13px;
+  font-weight: 900;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+.tokenomics-holders-minting-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.tokenomics-card-header-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.tokenomics-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tokenomics-subtab-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.tokenomics-subtab-pill {
+  height: 24px;
+  background: #061914;
+  border: 1px solid rgba(20, 137, 109, 0.4);
+  border-radius: 6px;
+  color: #78929b;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 0 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tokenomics-subtab-pill.active {
+  background: #0d8065;
+  color: #fff;
+  border-color: #20dba4;
+}
+
+.tokenomics-holders-view {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tokenomics-donut-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tokenomics-donut-mini-wrap {
+  width: 90px;
+  height: 90px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tokenomics-donut-mini-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.tokenomics-donut-mini-center strong {
+  font-size: 13px;
+  color: #fff;
+  line-height: 1;
+}
+
+.tokenomics-donut-mini-center small {
+  font-size: 7.5px;
+  color: #20dba4;
+  font-weight: 900;
+}
+
+.tokenomics-holders-table-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tokenomics-holder-row {
+  display: flex;
+  align-items: center;
+  background: rgba(4, 18, 14, 0.7);
+  border: 1px solid rgba(20, 137, 109, 0.25);
+  border-radius: 8px;
+  padding: 4px 8px;
+  gap: 8px;
+}
+
+.holder-rank {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #facc15;
+}
+
+.holder-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.holder-info strong {
+  font-size: 10px;
+  color: #fff;
+}
+
+.holder-info small {
+  font-size: 8.5px;
+  color: #78929b;
+}
+
+.holder-amount {
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.tokenomics-minting-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 135px;
+  overflow-y: auto;
+}
+
+.mint-event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(4, 18, 14, 0.7);
+  border: 1px solid rgba(20, 137, 109, 0.25);
+  border-radius: 8px;
+  padding: 4px 8px;
+  gap: 8px;
+}
+
+.mint-block-badge {
+  font-size: 9px;
+  font-weight: 900;
+  background: #064e3b;
+  color: #6ee7b7;
+  border: 1px solid #10b981;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.mint-block-badge--burn {
+  background: #7c2d12;
+  color: #fdba74;
+  border-color: #f97316;
+}
+
+.mint-event-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.mint-event-info strong {
+  font-size: 10px;
+  color: #fff;
+}
+
+.mint-event-info small {
+  font-size: 8.5px;
+  color: #78929b;
+}
+
+.mint-amount {
+  font-size: 10.5px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.mint-time {
+  font-size: 9px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.tokenomics-halving-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tokenomics-liquidity-compact-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.source-mini-tag {
+  background: rgba(4, 24, 18, 0.85);
+  border: 1px solid #10b981;
+  color: #6ee7b7;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* =========================================================
+   NEW GAMING GUIDE SCREEN (NO SCROLL, VISUAL RPG STYLE)
+   ========================================================= */
+.token-guide-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.guide-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.guide-kpi-card {
+  min-height: 48px;
+  padding: 4px 10px;
+}
+
+.guide-rules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+}
+
+.guide-rule-card {
+  background: linear-gradient(180deg, rgba(8, 28, 22, 0.95), rgba(4, 16, 12, 0.98));
+  border: 1.5px solid rgba(20, 137, 109, 0.5);
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.guide-rule-card--presale { border-color: #10b981; }
+.guide-rule-card--vesting { border-color: #06b6d4; }
+.guide-rule-card--ranked { border-color: #f59e0b; }
+.guide-rule-card--sink { border-color: #a855f7; }
+
+.guide-rule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-rule-badge {
+  font-size: 9.5px;
+  font-weight: 900;
+  background: #064e3b;
+  color: #6ee7b7;
+  border: 1px solid #10b981;
+  padding: 1px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.5px;
+}
+
+.guide-rule-card--vesting .guide-rule-badge { background: #0c4a6e; color: #7dd3fc; border-color: #38bdf8; }
+.guide-rule-card--ranked .guide-rule-badge { background: #78350f; color: #fde047; border-color: #f59e0b; }
+.guide-rule-card--sink .guide-rule-badge { background: #581c87; color: #e9d5ff; border-color: #a855f7; }
+
+.guide-rule-icon {
+  font-size: 18px;
+}
+
+.guide-rule-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  margin: 0;
+}
+
+.guide-rule-desc {
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.35;
+  flex: 1;
+}
+
+.guide-rule-desc strong {
+  color: #6ee7b7;
+}
+
+.guide-rule-pill-footer {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.rule-pill-tag {
+  font-size: 9px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.guide-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.guide-action-btn {
+  flex: 1;
+  height: 32px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  color: #fff;
+}
+
+.guide-action-btn--presale {
+  background: linear-gradient(180deg, #10b981, #047857);
+  border-color: #34d399;
+}
+
+.guide-action-btn--vesting {
+  background: linear-gradient(180deg, #0284c7, #0369a1);
+  border-color: #38bdf8;
+}
+
+.guide-action-btn--swap {
+  background: linear-gradient(180deg, #7c3aed, #6d28d9);
+  border-color: #a78bfa;
+}
+
+.guide-action-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+

@@ -1,6 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
 import type { TokenHubSharedProps } from '../types'
-import { TOKEN_ASSETS } from '../tokenAssets'
 
 export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
   spotPrice,
@@ -8,31 +7,14 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
   totalBurned,
   marketState,
 }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'holders' | 'minting'>('holders')
+
   return (
     <div className="token-tokenomics-screen">
       {/* =====================================================
-           1. HERO BANNER
+           1. KPI ROW (5 CARDS)
            ===================================================== */}
-      <section
-        className="summary-hero-banner tokenomics-hero-banner"
-        data-section="tokenomics-hero"
-        style={
-          TOKEN_ASSETS.tokenomicsHeroBanner
-            ? { backgroundImage: `url(${TOKEN_ASSETS.tokenomicsHeroBanner})` }
-            : {}
-        }
-      >
-        <div className="summary-hero-banner__fallback-overlay">
-          <div className="summary-hero-badge-wrap">
-            <span className="summary-hero-pill">📊 ECONOMÍA CIRCULAR SOSTENIBLE DE PLANTS ARENA</span>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-           2. KPI ROW (5 CARDS)
-           ===================================================== */}
-      <section className="summary-kpi-grid tokenomics-kpi-grid" data-section="tokenomics-kpi-row">
+      <section className="summary-kpi-grid tokenomics-kpi-grid">
         {/* SUPPLY MÁXIMO */}
         <article className="summary-kpi-card">
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--green">
@@ -43,7 +25,7 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-green">1,000,000 PLANTS</strong>
             </div>
-            <span className="summary-kpi-sub">Suministro total y definitivo</span>
+            <span className="summary-kpi-sub">Suministro total definitivo</span>
           </div>
         </article>
 
@@ -73,7 +55,7 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
               <strong className="summary-kpi-value text-cyan">${poolUsdt.toFixed(2)} USDT</strong>
               <span className="summary-kpi-tag summary-kpi-tag--blue">100% RESPALDADO</span>
             </div>
-            <span className="summary-kpi-sub">60% Preventas + 70% Gemas Inyectadas</span>
+            <span className="summary-kpi-sub">60% Preventas + 70% Gemas</span>
           </div>
         </article>
 
@@ -108,291 +90,249 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
       </section>
 
       {/* =====================================================
-           3. MID GRID: FLUJO ECONÓMICO (65%) + FASES DE HALVING (35%)
+           2. CHART DEL FLUJO DEL TOKEN (CENTRADO)
            ===================================================== */}
-      <section className="tokenomics-mid-grid">
-        {/* FLUJO ECONÓMICO */}
-        <article className="tokenomics-panel">
-          <div className="tokenomics-panel-header">
-            <span className="tokenomics-panel-icon">⚙️</span>
-            <div>
-              <h4 className="tokenomics-panel-title">FLUJO ECONÓMICO</h4>
-              <p className="tokenomics-panel-sub">Un ciclo diseñado para crecer, recompensar y ser sostenible en el tiempo.</p>
-            </div>
+      <section className="tokenomics-flow-centered-panel">
+        <div className="tokenomics-flow-centered-header">
+          <span className="tokenomics-panel-icon">⚙️</span>
+          <div>
+            <h4 className="tokenomics-panel-title">CICLO DEL FLUJO ECONÓMICO DEL TOKEN PLANTS</h4>
+            <p className="tokenomics-panel-sub">Circulación cerrada y sostenible: cada token generado está respaldado por reservas reales o quemado de forma deflacionaria.</p>
           </div>
+        </div>
 
-          <div className="tokenomics-flow-nodes">
-            {/* 1. USDT */}
-            <div className="tokenomics-flow-card tokenomics-flow-card--usdt">
-              <span className="tokenomics-node-icon">💵</span>
-              <strong>USDT</strong>
-              <p>Compra de gemas · Preventa</p>
-            </div>
-            <span className="tokenomics-flow-arrow">➔</span>
-
-            {/* 2. GEMAS */}
-            <div className="tokenomics-flow-card tokenomics-flow-card--gems">
-              <span className="tokenomics-node-icon">💎</span>
-              <strong>GEMAS</strong>
-              <p>60% a Preventa · 70% a Liquidez AMM</p>
-            </div>
-            <span className="tokenomics-flow-arrow">➔</span>
-
-            {/* 3. POOL DE LIQUIDEZ */}
-            <div className="tokenomics-flow-card tokenomics-flow-card--pool">
-              <span className="tokenomics-node-icon">🪙</span>
-              <strong>POOL DE LIQUIDEZ</strong>
-              <p>PLANTS / USDT · 100% respaldado en AMM</p>
-            </div>
-            <span className="tokenomics-flow-arrow">➔</span>
-
-            {/* 4. PLANTS */}
-            <div className="tokenomics-flow-card tokenomics-flow-card--plants">
-              <span className="tokenomics-node-icon">🌱</span>
-              <strong>PLANTS</strong>
-              <p>Recompensas · Vesting (45d) · Uso en Arena 3+</p>
-            </div>
-            <span className="tokenomics-flow-arrow">➔</span>
-
-            {/* 5. SWAP */}
-            <div className="tokenomics-flow-card tokenomics-flow-card--swap">
-              <span className="tokenomics-node-icon">🔄</span>
-              <strong>SWAP / CASH-OUT</strong>
-              <p>Intercambio en AMM · Uso en USDT</p>
-            </div>
-            <span className="tokenomics-flow-arrow">➔</span>
-
-            {/* 6. BURN */}
-            <div className="tokenomics-flow-card tokenomics-flow-card--burn">
-              <span className="tokenomics-node-icon">🔥</span>
-              <strong>BURN</strong>
-              <p>Super Sink +20% Gemas · Reduce supply</p>
-            </div>
+        <div className="tokenomics-flow-nodes-grid">
+          {/* 1. USDT */}
+          <div className="tokenomics-flow-card tokenomics-flow-card--usdt">
+            <span className="tokenomics-node-icon">💵</span>
+            <strong>1. USDT ENTRADA</strong>
+            <p>Depósitos y Preventa Génesis</p>
           </div>
-        </article>
+          <span className="tokenomics-flow-arrow">➔</span>
 
-        {/* FASES DE HALVING */}
-        <article className="tokenomics-panel tokenomics-panel--halving">
-          <div className="tokenomics-panel-header">
-            <span className="tokenomics-panel-icon">🏆</span>
-            <div>
-              <h4 className="tokenomics-panel-title">FASES DE HALVING</h4>
-              <p className="tokenomics-panel-sub">Las recompensas se reducen por fases para asegurar la escasez.</p>
-            </div>
+          {/* 2. GEMAS */}
+          <div className="tokenomics-flow-card tokenomics-flow-card--gems">
+            <span className="tokenomics-node-icon">💎</span>
+            <strong>2. GEMAS RESPALDO</strong>
+            <p>60% Preventas · 70% Gemas al Pool</p>
           </div>
+          <span className="tokenomics-flow-arrow">➔</span>
 
-          <div className="tokenomics-halving-list">
-            <div className="tokenomics-halving-row tokenomics-halving-row--fase1">
-              <span className="halving-badge">FASE 1</span>
-              <span className="halving-range">0 - 500,000 PLANTS</span>
-              <strong className="halving-pct text-green">100%</strong>
-            </div>
-
-            <div className="tokenomics-halving-row tokenomics-halving-row--fase2">
-              <span className="halving-badge">FASE 2</span>
-              <span className="halving-range">500,000 - 750,000 PLANTS</span>
-              <strong className="halving-pct text-gold">50%</strong>
-            </div>
-
-            <div className="tokenomics-halving-row tokenomics-halving-row--fase3">
-              <span className="halving-badge">FASE 3</span>
-              <span className="halving-range">750,000 - 875,000 PLANTS</span>
-              <strong className="halving-pct text-orange">25%</strong>
-            </div>
-
-            <div className="tokenomics-halving-row tokenomics-halving-row--fase4">
-              <span className="halving-badge">FASE 4</span>
-              <span className="halving-range">875,000 - 937,500 PLANTS</span>
-              <strong className="halving-pct text-purple">12.5%</strong>
-            </div>
-
-            <div className="tokenomics-halving-row tokenomics-halving-row--fase5">
-              <span className="halving-badge">FASE 5</span>
-              <span className="halving-range">937,500 - 1,000,000 PLANTS</span>
-              <strong className="halving-pct text-cyan">6.25%</strong>
-            </div>
+          {/* 3. POOL DE LIQUIDEZ */}
+          <div className="tokenomics-flow-card tokenomics-flow-card--pool">
+            <span className="tokenomics-node-icon">🪙</span>
+            <strong>3. POOL LIQUIDEZ</strong>
+            <p>Reserva AMM P = R / V (100% Seguro)</p>
           </div>
-        </article>
+          <span className="tokenomics-flow-arrow">➔</span>
+
+          {/* 4. PLANTS */}
+          <div className="tokenomics-flow-card tokenomics-flow-card--plants">
+            <span className="tokenomics-node-icon">🌱</span>
+            <strong>4. TOKEN PLANTS</strong>
+            <p>Recompensas Ranked & Vesting 45d</p>
+          </div>
+          <span className="tokenomics-flow-arrow">➔</span>
+
+          {/* 5. SWAP */}
+          <div className="tokenomics-flow-card tokenomics-flow-card--swap">
+            <span className="tokenomics-node-icon">🔄</span>
+            <strong>5. SWAP & CASHOUT</strong>
+            <p>Retiro BEP-20 (Arena 3+ 2001+ copas)</p>
+          </div>
+          <span className="tokenomics-flow-arrow">➔</span>
+
+          {/* 6. BURN */}
+          <div className="tokenomics-flow-card tokenomics-flow-card--burn">
+            <span className="tokenomics-node-icon">🔥</span>
+            <strong>6. QUEMA TOTAL</strong>
+            <p>Super Sink (+20% Gemas) Deflacionario</p>
+          </div>
+        </div>
       </section>
 
       {/* =====================================================
-           4. BOTTOM GRID: 3 PANELS (33% CADA UNO)
+           3. DUAL SECTION: HOLDERS & MINTING HISTORY + HALVING
            ===================================================== */}
-      <section className="tokenomics-bottom-grid">
-        {/* FUENTES DEL POOL DE LIQUIDEZ */}
+      <section className="tokenomics-holders-minting-grid">
+        {/* LEFT: SECCIÓN DE HOLDERS Y DISTRIBUCIÓN */}
         <article className="tokenomics-card">
-          <div className="tokenomics-card-header">
-            <span className="tokenomics-card-icon">🪙</span>
-            <div>
-              <h5 className="tokenomics-card-title">FUENTES DEL POOL DE LIQUIDEZ</h5>
-              <p className="tokenomics-card-sub">El pool se alimenta de múltiples fuentes del ecosistema.</p>
+          <div className="tokenomics-card-header-tabs">
+            <div className="tokenomics-header-left">
+              <span className="tokenomics-card-icon">👥</span>
+              <h5 className="tokenomics-card-title">SECCIÓN DE HOLDERS & DISTRIBUCIÓN</h5>
+            </div>
+            <div className="tokenomics-subtab-pills">
+              <button
+                type="button"
+                className={`tokenomics-subtab-pill ${activeSubTab === 'holders' ? 'active' : ''}`}
+                onClick={() => setActiveSubTab('holders')}
+              >
+                Top Holders
+              </button>
+              <button
+                type="button"
+                className={`tokenomics-subtab-pill ${activeSubTab === 'minting' ? 'active' : ''}`}
+                onClick={() => setActiveSubTab('minting')}
+              >
+                Historial de Minteo
+              </button>
             </div>
           </div>
 
-          <div className="tokenomics-sources-list">
-            <div className="tokenomics-source-row">
-              <div>
-                <strong>60% Preventa</strong>
-                <p>De las gemas gastadas en preventa</p>
-              </div>
-              <span className="source-tag source-tag--green">PRINCIPAL</span>
-            </div>
+          {activeSubTab === 'holders' ? (
+            <div className="tokenomics-holders-view">
+              <div className="tokenomics-donut-row">
+                {/* SVG Donut */}
+                <div className="tokenomics-donut-mini-wrap">
+                  <svg viewBox="0 0 140 140" className="tokenomics-donut-svg">
+                    <circle cx="70" cy="70" r="50" fill="transparent" stroke="#061920" strokeWidth="18" />
+                    {/* 40% Pool AMM (Mint) */}
+                    <circle cx="70" cy="70" r="50" fill="transparent" stroke="#20dba4" strokeWidth="18" strokeDasharray="125.6 314" strokeDashoffset="0" />
+                    {/* 35% Recompensas (Gold) */}
+                    <circle cx="70" cy="70" r="50" fill="transparent" stroke="#facc15" strokeWidth="18" strokeDasharray="109.9 314" strokeDashoffset="-125.6" />
+                    {/* 15% Preventa (Purple) */}
+                    <circle cx="70" cy="70" r="50" fill="transparent" stroke="#a855f7" strokeWidth="18" strokeDasharray="47.1 314" strokeDashoffset="-235.5" />
+                    {/* 10% Staking (Cyan) */}
+                    <circle cx="70" cy="70" r="50" fill="transparent" stroke="#38bdf8" strokeWidth="18" strokeDasharray="31.4 314" strokeDashoffset="-282.6" />
+                  </svg>
+                  <div className="tokenomics-donut-mini-center">
+                    <strong>1M</strong>
+                    <small>PLANTS</small>
+                  </div>
+                </div>
 
-            <div className="tokenomics-source-row">
-              <div>
-                <strong>70% Compras de gemas</strong>
-                <p>De todas las compras en el juego</p>
-              </div>
-              <span className="source-tag source-tag--cyan">CONSTANTE</span>
-            </div>
+                {/* Table of Top Holders */}
+                <div className="tokenomics-holders-table-wrap">
+                  <div className="tokenomics-holder-row">
+                    <span className="holder-rank">#1</span>
+                    <div className="holder-info">
+                      <strong>Pool Reserva AMM (Contrato Público)</strong>
+                      <small>0x7f3a...91e4 · Liquidez respaldada</small>
+                    </div>
+                    <span className="holder-amount text-mint">400,000 PLANTS (40.0%)</span>
+                  </div>
 
-            <div className="tokenomics-source-row">
-              <div>
-                <strong>Fees del ecosistema</strong>
-                <p>Comisiones de marketplace y acciones</p>
-              </div>
-              <span className="source-tag source-tag--blue">ADICIONAL</span>
-            </div>
+                  <div className="tokenomics-holder-row">
+                    <span className="holder-rank">#2</span>
+                    <div className="holder-info">
+                      <strong>Bóveda de Recompensas Ranked PvP</strong>
+                      <small>0x12b8...4a29 · Coliseo y Torneos</small>
+                    </div>
+                    <span className="holder-amount text-gold">350,000 PLANTS (35.0%)</span>
+                  </div>
 
-            <div className="tokenomics-source-row">
-              <div>
-                <strong>Super Sink (opcional)</strong>
-                <p>Parte de gemas destinadas a quemas</p>
+                  <div className="tokenomics-holder-row">
+                    <span className="holder-rank">#3</span>
+                    <div className="holder-info">
+                      <strong>Contrato Vesting Preventa Fundadores</strong>
+                      <small>0x48e2...bc71 · Bloqueo 45 Días Lineal</small>
+                    </div>
+                    <span className="holder-amount text-purple">150,000 PLANTS (15.0%)</span>
+                  </div>
+
+                  <div className="tokenomics-holder-row">
+                    <span className="holder-rank">#4</span>
+                    <div className="holder-info">
+                      <strong>Staking Pool & Fondo Comunitario</strong>
+                      <small>0x99f0...3d82 · Recompensas de Bloque</small>
+                    </div>
+                    <span className="holder-amount text-cyan">100,000 PLANTS (10.0%)</span>
+                  </div>
+                </div>
               </div>
-              <span className="source-tag source-tag--orange">DEFLACIONARIO</span>
             </div>
-          </div>
+          ) : (
+            /* HISTORIAL DE MINTEO */
+            <div className="tokenomics-minting-table-wrap">
+              <div className="mint-event-row">
+                <span className="mint-block-badge">BLOQUE #001</span>
+                <div className="mint-event-info">
+                  <strong>Emisión Génesis de Reserva AMM</strong>
+                  <small>Génesis Pool Inicial · Contrato Autorizado</small>
+                </div>
+                <strong className="mint-amount text-green">+200,000 PLANTS</strong>
+                <span className="mint-time">01/10/2026</span>
+              </div>
+
+              <div className="mint-event-row">
+                <span className="mint-block-badge">BLOQUE #002</span>
+                <div className="mint-event-info">
+                  <strong>Pack Fundador Pionero #01</strong>
+                  <small>Vesting Lineal 45 Días asignado</small>
+                </div>
+                <strong className="mint-amount text-cyan">+50,000 PLANTS</strong>
+                <span className="mint-time">03/10/2026</span>
+              </div>
+
+              <div className="mint-event-row">
+                <span className="mint-block-badge">BLOQUE #003</span>
+                <div className="mint-event-info">
+                  <strong>Pack Fundador Campeón #01</strong>
+                  <small>Vesting Lineal 45 Días asignado</small>
+                </div>
+                <strong className="mint-amount text-purple">+125,000 PLANTS</strong>
+                <span className="mint-time">05/10/2026</span>
+              </div>
+
+              <div className="mint-event-row">
+                <span className="mint-block-badge mint-block-badge--burn">QUEMA #001</span>
+                <div className="mint-event-info">
+                  <strong>Super Sink Canje a Gemas</strong>
+                  <small>Incineración permanente con +20% bono</small>
+                </div>
+                <strong className="mint-amount text-orange">-10,000 PLANTS 🔥</strong>
+                <span className="mint-time">07/10/2026</span>
+              </div>
+            </div>
+          )}
         </article>
 
-        {/* DISTRIBUCIÓN Y UTILIDADES */}
+        {/* RIGHT: HALVING & FUENTES DE LIQUIDEZ */}
         <article className="tokenomics-card">
           <div className="tokenomics-card-header">
-            <span className="tokenomics-card-icon">⚙️</span>
+            <span className="tokenomics-card-icon">🏆</span>
             <div>
-              <h5 className="tokenomics-card-title">DISTRIBUCIÓN Y UTILIDADES</h5>
-              <p className="tokenomics-card-sub">PLANTS tiene múltiples utilidades dentro y fuera del juego.</p>
+              <h5 className="tokenomics-card-title">FASES DE HALVING & FUENTES</h5>
+              <p className="tokenomics-card-sub">Reducción programada de emisiones para impulsar la escasez del token.</p>
             </div>
           </div>
 
-          <div className="tokenomics-utilities-grid">
-            <div className="tokenomics-util-box">
-              <span className="util-icon">⚔️</span>
-              <div>
-                <strong>Uso en Arena 3+</strong>
-                <p>Recompensas en PLANTS por victorias y torneos</p>
-              </div>
+          <div className="tokenomics-halving-compact-list">
+            <div className="tokenomics-halving-row tokenomics-halving-row--fase1">
+              <span className="halving-badge">FASE 1 (ACTIVA)</span>
+              <span className="halving-range">0 - 500k PLANTS</span>
+              <strong className="halving-pct text-green">100% RECOMPENSAS</strong>
             </div>
 
-            <div className="tokenomics-util-box">
-              <span className="util-icon">🔒</span>
-              <div>
-                <strong>Vesting 45 días</strong>
-                <p>PLANTS adquiridos sujetos a vesting por 45 días</p>
-              </div>
+            <div className="tokenomics-halving-row">
+              <span className="halving-badge">FASE 2</span>
+              <span className="halving-range">500k - 750k PLANTS</span>
+              <strong className="halving-pct text-gold">50% (-50% Halving)</strong>
             </div>
 
-            <div className="tokenomics-util-box">
-              <span className="util-icon">📈</span>
-              <div>
-                <strong>AMM Spot</strong>
-                <p>Trading en tiempo real en el pool PLANTS / USDT</p>
-              </div>
+            <div className="tokenomics-halving-row">
+              <span className="halving-badge">FASE 3</span>
+              <span className="halving-range">750k - 875k PLANTS</span>
+              <strong className="halving-pct text-orange">25% (-75% Halving)</strong>
             </div>
 
-            <div className="tokenomics-util-box">
-              <span className="util-icon">🔥</span>
-              <div>
-                <strong>Super Sink</strong>
-                <p>Quema de PLANTS con +20% de gemas inyectadas</p>
-              </div>
-            </div>
-          </div>
-        </article>
-
-        {/* ESTADO DEL SUMINISTRO (DONUT CHART) */}
-        <article className="tokenomics-card">
-          <div className="tokenomics-card-header">
-            <span className="tokenomics-card-icon">📊</span>
-            <div>
-              <h5 className="tokenomics-card-title">ESTADO DEL SUMINISTRO</h5>
-              <p className="tokenomics-card-sub">Distribución actual del suministro total.</p>
+            <div className="tokenomics-halving-row">
+              <span className="halving-badge">FASE 4 - 5</span>
+              <span className="halving-range">875k - 1,000,000 PLANTS</span>
+              <strong className="halving-pct text-cyan">12.5% a 6.25%</strong>
             </div>
           </div>
 
-          <div className="tokenomics-donut-container">
-            {/* SVG Donut Chart */}
-            <div className="tokenomics-donut-wrap">
-              <svg viewBox="0 0 160 160" className="tokenomics-donut-svg">
-                {/* Background Ring */}
-                <circle cx="80" cy="80" r="60" fill="transparent" stroke="#061920" strokeWidth="22" />
-                {/* 80% Recompensas (Gold) */}
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="60"
-                  fill="transparent"
-                  stroke="#facc15"
-                  strokeWidth="22"
-                  strokeDasharray="301.6 377"
-                  strokeDashoffset="0"
-                />
-                {/* 15% Vesting (Purple) */}
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="60"
-                  fill="transparent"
-                  stroke="#a855f7"
-                  strokeWidth="22"
-                  strokeDasharray="56.5 377"
-                  strokeDashoffset="-301.6"
-                />
-                {/* 5% Otros (Cyan) */}
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="60"
-                  fill="transparent"
-                  stroke="#38bdf8"
-                  strokeWidth="22"
-                  strokeDasharray="18.8 377"
-                  strokeDashoffset="-358.1"
-                />
-              </svg>
-              <div className="tokenomics-donut-center">
-                <strong>1,000,000</strong>
-                <small>PLANTS</small>
-                <span>Total Supply</span>
-              </div>
+          <div className="tokenomics-liquidity-compact-footer">
+            <div className="source-mini-tag">
+              <span>💧 60% Preventas</span>
             </div>
-
-            {/* Legend List */}
-            <div className="tokenomics-legend-list">
-              <div className="tokenomics-legend-item">
-                <span className="legend-dot" style={{ background: '#38bdf8' }} />
-                <span>En circulación</span>
-                <strong>0% · 0</strong>
-              </div>
-              <div className="tokenomics-legend-item">
-                <span className="legend-dot" style={{ background: '#facc15' }} />
-                <span>Recompensas</span>
-                <strong>80% · 800,000</strong>
-              </div>
-              <div className="tokenomics-legend-item">
-                <span className="legend-dot" style={{ background: '#a855f7' }} />
-                <span>Vesting</span>
-                <strong>15% · 150,000</strong>
-              </div>
-              <div className="tokenomics-legend-item">
-                <span className="legend-dot" style={{ background: '#ef4444' }} />
-                <span>Quemados</span>
-                <strong>0% · 0</strong>
-              </div>
-              <div className="tokenomics-legend-item">
-                <span className="legend-dot" style={{ background: '#94a3b8' }} />
-                <span>Otros</span>
-                <strong>5% · 50,000</strong>
-              </div>
+            <div className="source-mini-tag">
+              <span>💎 70% Gemas Inyectadas</span>
+            </div>
+            <div className="source-mini-tag">
+              <span>🛡️ 100% Solvencia USDT</span>
             </div>
           </div>
         </article>

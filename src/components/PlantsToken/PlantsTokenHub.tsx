@@ -19,6 +19,8 @@ import { TokenGuideTab } from './tabs/TokenGuideTab'
 import logoImg from '../../assets/images/logo.webp'
 import gemaImg from '../../assets/ico/gema.webp'
 import monedaImg from '../../assets/ico/moneda.webp'
+import ajustesIcon from '../../assets/ico/ajustes.webp'
+import { getPlayerAvatarUrl } from '../../utils/userManager'
 import './PlantsTokenHub.css'
 
 interface PlantsTokenHubProps {
@@ -27,9 +29,13 @@ interface PlantsTokenHubProps {
   userGold?: number
   userElo?: number
   hasVipPass?: boolean
+  playerEnergy?: number
+  maxPlayerEnergy?: number
   userProfile?: {
     id?: string
     username?: string
+    avatar_id?: string
+    avatar_url?: string
     plants_balance?: number
     plants_vesting_locked?: number
     last_plants_cashout_at?: string | null
@@ -46,6 +52,8 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   userGold = 0,
   userElo = 1000,
   hasVipPass = false,
+  playerEnergy = 20,
+  maxPlayerEnergy = 20,
   userProfile,
   onRefreshProfile,
   initialTab = 'summary',
@@ -265,166 +273,172 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
 
   const claimableNow = vestingSummary?.claimablePlantsNow ?? 0
 
+  const displayAvatar = getPlayerAvatarUrl(
+    userProfile?.avatar_id || userProfile?.avatar_url || 'peashooter'
+  )
+  const displayName = userProfile?.username || 'Admin'
+
   return (
     <div className="plants-token-root">
       <div className="plants-token-shell">
         {/* =====================================================
-             TOP STATUS BAR (MATCHING WIREFRAMES)
-             data-section="top-status-bar"
+             TOPBAR (IDÉNTICO A LA PÁGINA DE INICIO CON DATOS REALES)
              ===================================================== */}
-        {/* =====================================================
-             TOP STATUS BAR (MATCHING IN-GAME HUD)
-             data-section="top-status-bar"
-             ===================================================== */}
-        <header className="top-status" data-section="top-status-bar" data-label="TOP STATUS BAR">
-          {/* BRAND LOGO / HOME BACK */}
-          <div
-            className="status-box status-box--brand"
-            data-section="brand-logo-slot"
-            data-label="LOGO"
+        <header className="token-topbar">
+          {/* Logo / Botón Volver al Menú Principal */}
+          <button
+            type="button"
+            className="token-topbar-logo-btn"
             onClick={onBack}
             title="Volver al Menú Principal"
           >
-            <img src={TOKEN_ASSETS.logo || logoImg} alt="Plant Arena" className="status-brand-img" />
-            <div className="status-brand-texts">
-              <span className="status-brand-title">PLANT ARENA</span>
-            </div>
-          </div>
-
-          {/* PLAYER AVATAR & USERNAME */}
-          <div className="status-box status-box--player" data-section="player-profile-slot" data-label="PLAYER">
-            <span className="status-item-avatar">
-              <img src="/game-assets/greenfoot/peashooterpacket1.webp" alt="Avatar" onError={(e) => { (e.target as HTMLElement).style.display = 'none' }} />
-              <span className="status-avatar-fallback">🌱</span>
-            </span>
-            <div className="status-item-data">
-              <strong className="status-item-val">{userProfile?.username || 'Admin'}</strong>
-            </div>
-          </div>
-
-          {/* BATTLE PASS */}
-          <div className="status-box status-box--pass" data-section="battle-pass-slot" data-label="PASS">
-            <span className="status-item-icon">👑</span>
-            <div className="status-item-data">
-              <strong className="status-item-val text-gold">PASE NV 0/20</strong>
-            </div>
-          </div>
-
-          {/* ENERGY */}
-          <div className="status-box status-box--energy" data-section="energy-slot" data-label="ENERGY">
-            <span className="status-item-icon">⚡</span>
-            <div className="status-item-data">
-              <strong className="status-item-val text-yellow">20/20</strong>
-            </div>
-          </div>
-
-          {/* GOLD */}
-          <div className="status-box status-box--gold" data-section="gold-slot" data-label="GOLD">
-            <span className="status-item-icon">
-              <img src={monedaImg} alt="Oro" />
-            </span>
-            <div className="status-item-data">
-              <strong className="status-item-val text-gold">{userGold.toLocaleString()}</strong>
-            </div>
-          </div>
-
-          {/* GEMS */}
-          <div className="status-box status-box--gems" data-section="gems-slot" data-label="GEMS">
-            <span className="status-item-icon">
-              <img src={gemaImg} alt="Gemas" />
-            </span>
-            <div className="status-item-data">
-              <strong className="status-item-val text-cyan">{userTokens.toLocaleString()}</strong>
-            </div>
-          </div>
-
-          {/* SETTINGS / EXIT BUTTON */}
-          <button
-            type="button"
-            className="status-box status-box--settings-btn"
-            data-section="settings-slot"
-            data-label="AJUSTES"
-            onClick={() => {
-              soundManager.playSound('click', 0.5)
-              onBack()
-            }}
-            title="Ajustes / Volver al Inicio"
-          >
-            ⚙️
+            <img src={TOKEN_ASSETS.logo || logoImg} alt="Plant Arena" className="token-topbar-logo-img" />
+            <span className="token-topbar-logo-text">PLANT ARENA</span>
           </button>
+
+          <div className="token-topbar-pills">
+            {/* 1. Perfil del Jugador */}
+            <div className="token-topbar-pill token-topbar-pill--profile" title="Mi Perfil">
+              <div className="token-topbar-avatar-wrap">
+                <img
+                  src={displayAvatar}
+                  alt="Avatar"
+                  className="token-topbar-avatar-img"
+                  onError={(e) => {
+                    e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.webp'
+                  }}
+                />
+              </div>
+              <span className="token-topbar-player-name">{displayName}</span>
+            </div>
+
+            {/* 2. Pase de Batalla */}
+            <div className="token-topbar-pill token-topbar-pill--vip" title="Pase de Batalla VIP">
+              <span className="token-topbar-vip-crown" role="img" aria-label="Corona">👑</span>
+              <div className="token-topbar-vip-info">
+                <div className="token-topbar-vip-title-row">
+                  <span>{hasVipPass ? 'PASE VIP' : 'PASE'}</span>
+                  <span>NV 0/20</span>
+                </div>
+                <div className="token-topbar-vip-bar-track">
+                  <div className="token-topbar-vip-bar-fill" style={{ width: '0%' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Energía */}
+            <div className="token-topbar-pill token-topbar-pill--energy" title="Energía">
+              <span className="token-topbar-energy-icon">⚡</span>
+              <span className="token-topbar-stat-val token-topbar-stat-val--energy">
+                {playerEnergy}/{maxPlayerEnergy}
+              </span>
+            </div>
+
+            {/* 4. Oro */}
+            <div className="token-topbar-pill token-topbar-pill--gold" title="Monedas de Oro">
+              <img src={monedaImg} alt="Oro" className="token-topbar-stat-icon" />
+              <span className="token-topbar-stat-val token-topbar-stat-val--gold">
+                {userGold.toLocaleString()}
+              </span>
+            </div>
+
+            {/* 5. Gemas */}
+            <div className="token-topbar-pill token-topbar-pill--gems" title="Gemas">
+              <img src={gemaImg} alt="Gemas" className="token-topbar-stat-icon" />
+              <span className="token-topbar-stat-val token-topbar-stat-val--gems">
+                {userTokens.toLocaleString()}
+              </span>
+            </div>
+
+            {/* 6. Ajustes / Volver */}
+            <button
+              type="button"
+              className="token-topbar-pill token-topbar-pill--settings"
+              onClick={onBack}
+              title="Ajustes / Volver al Menú Principal"
+            >
+              <img src={ajustesIcon} alt="Ajustes" className="token-topbar-settings-img" />
+            </button>
+          </div>
         </header>
 
         {/* =====================================================
-             TOKEN SUB-NAVIGATION TABS (EXACTLY 6 TABS)
-             data-section="token-navigation"
+             BANNER EN ALTA DEFINICIÓN (SÓLO EN RESUMEN, SIN OVERLAYS)
              ===================================================== */}
-        <nav className="token-nav" data-section="token-navigation" data-label="TOKEN NAVIGATION">
+        {activeTab === 'summary' && (
+          <div
+            className="token-summary-hd-banner"
+            style={{
+              backgroundImage: `url(${TOKEN_ASSETS.summaryHeroBanner})`,
+            }}
+          />
+        )}
+
+        {/* =====================================================
+             SUB-NAVEGACIÓN GAMING DE PESTAÑAS (NO MUY GRANDES)
+             Debajo del banner en Resumen, o debajo del header en las demás
+             ===================================================== */}
+        <nav className="token-nav-bar">
           <button
             type="button"
-            className={`token-tab ${activeTab === 'summary' ? 'active' : ''}`}
-            data-target="summary"
+            className={`token-nav-tab ${activeTab === 'summary' ? 'active' : ''}`}
             onClick={() => handleTabChange('summary')}
           >
-            <span className="token-tab__icon">🌱</span>
+            <span className="token-nav-tab-icon">🌱</span>
             <span>RESUMEN</span>
           </button>
 
           <button
             type="button"
-            className={`token-tab ${activeTab === 'presale' ? 'active' : ''}`}
-            data-target="presale"
+            className={`token-nav-tab ${activeTab === 'presale' ? 'active' : ''}`}
             onClick={() => handleTabChange('presale')}
           >
-            <span className="token-tab__icon">🛒</span>
+            <span className="token-nav-tab-icon">🛒</span>
             <span>PREVENTA</span>
           </button>
 
           <button
             type="button"
-            className={`token-tab ${activeTab === 'vesting' ? 'active' : ''}`}
-            data-target="vesting"
+            className={`token-nav-tab ${activeTab === 'vesting' ? 'active' : ''}`}
             onClick={() => handleTabChange('vesting')}
           >
-            <span className="token-tab__icon">🪙</span>
-            <span>MIS PLANTS & VESTING</span>
-            {claimableNow > 0 && <span className="token-tab__badge">¡DISPONIBLE!</span>}
+            <span className="token-nav-tab-icon">🪙</span>
+            <span>MIS PLANTS</span>
+            {claimableNow > 0 && <span className="token-nav-badge">DISPONIBLE</span>}
           </button>
 
           <button
             type="button"
-            className={`token-tab ${activeTab === 'swap' ? 'active' : ''}`}
-            data-target="swap"
+            className={`token-nav-tab ${activeTab === 'swap' ? 'active' : ''}`}
             onClick={() => handleTabChange('swap')}
           >
-            <span className="token-tab__icon">🔄</span>
-            <span>SWAP & CASH-OUT</span>
+            <span className="token-nav-tab-icon">🔄</span>
+            <span>SWAP</span>
           </button>
 
           <button
             type="button"
-            className={`token-tab ${activeTab === 'tokenomics' ? 'active' : ''}`}
-            data-target="tokenomics"
+            className={`token-nav-tab ${activeTab === 'tokenomics' ? 'active' : ''}`}
             onClick={() => handleTabChange('tokenomics')}
           >
-            <span className="token-tab__icon">📊</span>
+            <span className="token-nav-tab-icon">📊</span>
             <span>TOKENOMICS</span>
           </button>
 
           <button
             type="button"
-            className={`token-tab ${activeTab === 'guide' ? 'active' : ''}`}
-            data-target="guide"
+            className={`token-nav-tab ${activeTab === 'guide' ? 'active' : ''}`}
             onClick={() => handleTabChange('guide')}
           >
-            <span className="token-tab__icon">📜</span>
-            <span>GUÍA & REGLAS</span>
+            <span className="token-nav-tab-icon">📜</span>
+            <span>GUÍA</span>
           </button>
         </nav>
 
         {/* =====================================================
-             ACTIVE TAB CONTENT RENDERING
+             ÁREA DE CONTENIDO DE PESTAÑA (COMPACTA, SIN SCROLL)
              ===================================================== */}
-        <main className="token-content-body">
+        <main className="token-tab-content-area">
           {activeTab === 'summary' && <TokenSummaryTab {...sharedProps} />}
           {activeTab === 'presale' && <TokenPresaleTab {...sharedProps} />}
           {activeTab === 'vesting' && <TokenVestingTab {...sharedProps} />}

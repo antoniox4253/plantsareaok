@@ -75,30 +75,9 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
   return (
     <div className="token-summary-screen">
       {/* =====================================================
-           1. HERO BANNER
+           1. KPI ROW (5 CARDS)
            ===================================================== */}
-      <section
-        className="summary-hero-banner"
-        data-section="hero-banner"
-        data-label="HERO BANNER"
-        style={
-          TOKEN_ASSETS.summaryHeroBanner
-            ? { backgroundImage: `url(${TOKEN_ASSETS.summaryHeroBanner})` }
-            : {}
-        }
-      >
-        <div className="summary-hero-banner__fallback-overlay">
-          {/* Si la imagen no ha cargado, renderiza el texto accesible encima */}
-          <div className="summary-hero-badge-wrap">
-            <span className="summary-hero-pill">🌱 JUEGA · INVIERTE · CRECE · GANA</span>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-           2. KPI ROW (5 CARDS)
-           ===================================================== */}
-      <section className="summary-kpi-grid" data-section="kpi-row" data-label="KPI ROW">
+      <section className="summary-kpi-grid">
         {/* PRECIO SPOT */}
         <article className="summary-kpi-card" data-section="kpi-price-spot">
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--green">

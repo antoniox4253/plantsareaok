@@ -39,28 +39,7 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
   return (
     <div className="token-presale-screen">
       {/* =====================================================
-           1. HERO BANNER
-           ===================================================== */}
-      <section
-        className="summary-hero-banner presale-hero-banner"
-        data-section="presale-hero"
-        style={
-          TOKEN_ASSETS.presaleHeroBanner
-            ? { backgroundImage: `url(${TOKEN_ASSETS.presaleHeroBanner})` }
-            : {}
-        }
-      >
-        <div className="summary-hero-banner__fallback-overlay">
-          <div className="summary-hero-badge-wrap">
-            <span className="summary-hero-pill">💧 60% A LIQUIDEZ USDT</span>
-            <span className="summary-hero-pill">🔒 VESTING LINEAL 45 DÍAS</span>
-            <span className="summary-hero-pill">💎 CANJE A GEMAS +20%</span>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-           2. MINI KPI ROW (5 ITEMS)
+           1. MINI KPI ROW (5 ITEMS)
            ===================================================== */}
       <section className="presale-kpi-bar" data-section="presale-stats-row">
         {/* FONDO INICIAL */}

@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react'
 import type { TokenHubSharedProps, Timeframe } from '../types'
-import { TOKEN_ASSETS } from '../tokenAssets'
 
 export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   liquidPlants,
@@ -95,26 +94,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   return (
     <div className="token-swap-screen">
       {/* =====================================================
-           1. HERO BANNER
-           ===================================================== */}
-      <section
-        className="summary-hero-banner swap-hero-banner"
-        data-section="swap-hero"
-        style={
-          TOKEN_ASSETS.swapHeroBanner
-            ? { backgroundImage: `url(${TOKEN_ASSETS.swapHeroBanner})` }
-            : {}
-        }
-      >
-        <div className="summary-hero-banner__fallback-overlay">
-          <div className="summary-hero-badge-wrap">
-            <span className="summary-hero-pill">🔄 INTERCAMBIO DIRECTO A USDT BEP-20 O GEMAS</span>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-           2. KPI ROW (5 CARDS)
+           1. KPI ROW (5 CARDS)
            ===================================================== */}
       <section className="summary-kpi-grid swap-kpi-grid" data-section="swap-kpi-row">
         {/* PRECIO SPOT */}

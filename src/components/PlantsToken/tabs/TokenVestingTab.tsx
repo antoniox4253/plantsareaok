@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 import type { TokenHubSharedProps } from '../types'
-import { TOKEN_ASSETS } from '../tokenAssets'
 
 export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
   liquidPlants,
@@ -41,28 +40,7 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
   return (
     <div className="token-vesting-screen">
       {/* =====================================================
-           1. HERO BANNER
-           ===================================================== */}
-      <section
-        className="summary-hero-banner vesting-hero-banner"
-        data-section="vesting-hero"
-        style={
-          TOKEN_ASSETS.vestingHeroBanner
-            ? { backgroundImage: `url(${TOKEN_ASSETS.vestingHeroBanner})` }
-            : {}
-        }
-      >
-        <div className="summary-hero-banner__fallback-overlay">
-          <div className="summary-hero-badge-wrap">
-            <span className="summary-hero-pill">
-              ⏱️ VESTING LINEAL DE 45 DÍAS · ACTUALIZACIÓN DIARIA
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-           2. KPI ROW (5 CARDS)
+           1. KPI ROW (5 CARDS)
            ===================================================== */}
       <section className="summary-kpi-grid vesting-kpi-grid" data-section="vesting-kpi-row">
         {/* PLANTS TOTALES */}
