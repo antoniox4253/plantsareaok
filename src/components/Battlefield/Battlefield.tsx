@@ -394,13 +394,17 @@ export default function Battlefield({
   // ── ESTADO DEL TOKEN PLANTS EN COMBATE ──
   const [plantsRewardResult, setPlantsRewardResult] = useState<{
     plantsAwarded: number
-    score: number
-    isLivePvP: boolean
-    bonusActive: boolean
-    bonusPct: number
-    dailyClaimsUsed: number
-    dailyClaimsMax: number
+    score?: number
+    isLivePvP?: boolean
+    bonusActive?: boolean
+    bonusPct?: number
+    dailyClaimsUsed?: number
+    dailyClaimsMax?: number
+    reason?: string
+    message?: string
   } | null>(null)
+
+  const [isPresaleActive, setIsPresaleActive] = useState<boolean>(true)
 
   const [pvpBonusState, setPvpBonusState] = useState<{
     isActive: boolean
@@ -410,9 +414,12 @@ export default function Battlefield({
 
   const [showLiveDuelBanner, setShowLiveDuelBanner] = useState<boolean>(false)
 
-  // Consultar estado del bono PvP de lanzamiento (primeros 7 días)
+  // Consultar estado del bono PvP de lanzamiento (primeros 7 días) y preventa
   useEffect(() => {
     void plantsTokenService.getMarketState().then((market) => {
+      if (market) {
+        setIsPresaleActive(Boolean(market.presaleActive))
+      }
       if (market?.pvpBonusEndsAt) {
         const timer = plantsTokenService.getPvpBonusTimeRemaining(market.pvpBonusEndsAt)
         setPvpBonusState({
@@ -1608,7 +1615,7 @@ export default function Battlefield({
                   plantsPlaced: stats.plantsPlaced,
                   enemyPlantsPlaced: Math.max(4, stats.enemyPlantsDefeated),
                 })
-                if (plantsClaimRes.success && plantsClaimRes.data) {
+                if (plantsClaimRes.data) {
                   setPlantsRewardResult(plantsClaimRes.data)
                 }
               } catch (err) {
@@ -3644,7 +3651,11 @@ export default function Battlefield({
                           <span className="victory-plants-reward-card__icon">🌱</span>
                           <div className="victory-plants-reward-card__empty-text">
                             <span>Token PLANTS:</span>
-                            <small>Anti-colusión activa (mínimo 45s de combate) o tope diario completado.</small>
+                            <small>
+                              {isPresaleActive || plantsRewardResult?.reason === 'PRESALE_ACTIVE_MINING_PAUSED'
+                                ? 'Al terminar la preventa podrás ganar tokens plants.'
+                                : 'Anti-colusión activa (mínimo 45s de combate) o tope diario completado.'}
+                            </small>
                           </div>
                         </div>
                       ) : (
