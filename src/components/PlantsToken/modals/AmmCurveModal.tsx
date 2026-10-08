@@ -113,8 +113,8 @@ export const AmmCurveModal: React.FC<AmmCurveModalProps> = ({
 
   if (!isOpen) return null
 
-  const usdtReserves = marketState?.usdt_reserves ?? 37000
-  const circulating = marketState?.plants_circulating ?? 185000000
+  const usdtReserves = marketState?.usdtPool ?? 37000
+  const circulating = marketState?.circulatingSupply ?? 185000000
 
   return (
     <div className="token-modal-backdrop" onClick={handleClose}>
