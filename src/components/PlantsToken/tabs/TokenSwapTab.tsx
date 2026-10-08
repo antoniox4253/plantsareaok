@@ -68,15 +68,6 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
     setAmountStr(String(Math.floor(liquidPlants)))
   }
 
-  const handleSelectSuperSink = () => {
-    soundManager.playSound('click', 0.5)
-    setSwapMode('gems')
-    showNotification(
-      '🔥 Super Sink seleccionado: Recibirás un +20% de bono en Gemas y el 100% de tus PLANTS serán quemados.',
-      'info'
-    )
-  }
-
   const handleSubmit = async () => {
     if (parsedAmount <= 0) {
       showNotification('Por favor ingresa una cantidad válida de PLANTS para canjear.', 'error')
@@ -597,44 +588,41 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
             </article>
           </div>
 
-          {/* REGLAS DE RETIRO & SUPER SINK INTERACTIVO */}
+          {/* 2 COLUMNAS: REGLAS DE RETIRO Y HORARIOS DE RETIRO */}
           <div className="swap-rules-and-sink">
+            {/* COLUMNA 1: REGLAS DE RETIRO */}
             <article className="swap-rules-card">
-              <h5 className="swap-rules-title">📜 REGLAS Y HORARIOS DE RETIRO</h5>
+              <h5 className="swap-rules-title">📜 REGLAS DE RETIRO</h5>
               <div className="swap-rule-item">
-                <span>⏱️ Ventana diaria:</span> Lotes procesados a las 18:00 (UTC-3).
+                <span>⚔️ Requisito:</span> Arena 3 (2,001+ copas) para retiros en USDT.
               </div>
               <div className="swap-rule-item">
                 <span>🛡️ Auditoría:</span> Verificación anti-bot y validación de partidas.
               </div>
               <div className="swap-rule-item">
-                <span>⚔️ Requisito:</span> Arena 3 (2,001+ copas) para retiros en USDT.
+                <span>🔥 Tasa / Quema:</span> 5% retención de resguardo y quema de liquidez.
               </div>
               <div className="swap-rule-guarantee">
-                <span>🔒 Bóveda de liquidez auditada y verificada</span>
+                <span>🔒 Aplica a saldo líquido no sujeto a vesting</span>
               </div>
             </article>
 
-            {/* BOTÓN INTERACTIVO DE SUPER SINK */}
-            <button
-              type="button"
-              className={`swap-sink-card ${swapMode === 'gems' ? 'swap-sink-card--active' : ''}`}
-              onClick={handleSelectSuperSink}
-              title="Activar canje a Gemas con bono +20%"
-            >
-              <div className="swap-sink-badge">
-                {swapMode === 'gems' ? '✓ MODO SUPER SINK ACTIVO' : '💎 ACTIVAR SUPER SINK (+20% GEMAS)'}
+            {/* COLUMNA 2: HORARIOS DE RETIRO */}
+            <article className="swap-rules-card swap-schedules-card">
+              <h5 className="swap-rules-title">⏱️ HORARIOS DE RETIRO</h5>
+              <div className="swap-rule-item">
+                <span>📅 Ventana diaria:</span> Lotes procesados a las 18:00 (UTC-3).
               </div>
-              <div className="swap-sink-body">
-                <span className="swap-sink-bonus">+20% GEMAS BONUS</span>
-                <span className="swap-sink-arrow">➔</span>
+              <div className="swap-rule-item">
+                <span>⚡ Liquidación:</span> Directa a tu billetera BEP-20 tras auditoría.
               </div>
-              <p className="swap-sink-desc">
-                {swapMode === 'gems'
-                  ? 'Modo activo: Quema instantánea sin ventana de espera ni comisiones.'
-                  : 'Canjea directo a Gemas: se queman tus tokens y recibes bono de +20% inmediato.'}
-              </p>
-            </button>
+              <div className="swap-rule-item">
+                <span>💎 Super Sink:</span> Canje instantáneo a Gemas (+20% bonus) 24/7.
+              </div>
+              <div className="swap-rule-guarantee">
+                <span>🔒 Bóveda auditada y respaldada 100% USDT</span>
+              </div>
+            </article>
           </div>
         </div>
       </section>

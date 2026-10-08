@@ -8,7 +8,6 @@ import {
 } from '../../../services/plantsTokenService'
 import { TokenHoldersModal } from '../modals/TokenHoldersModal'
 import { TokenMintingHistoryModal } from '../modals/TokenMintingHistoryModal'
-import { getPlayerAvatarUrl } from '../../../utils/userManager'
 
 export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
   spotPrice,
@@ -143,9 +142,6 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
           <span className="tokenomics-panel-icon">⚙️</span>
           <div>
             <h4 className="tokenomics-panel-title">CICLO DEL FLUJO ECONÓMICO DEL TOKEN PLANTS</h4>
-            <p className="tokenomics-panel-sub">
-              Circulación sostenible y respaldada: cada token generado proviene del juego limpio o preventa, con quema permanente de salidas.
-            </p>
           </div>
         </div>
 
@@ -287,7 +283,6 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
                     <span className="holder-rank">#1</span>
                     <div className="holder-info">
                       <strong>Bóveda Recompensas PvP & Halving</strong>
-                      <small>0x12b8...4a29 · Minteo por victorias competitivas</small>
                     </div>
                     <span className="holder-amount text-gold font-bold">500,000 PLANTS (50.0%)</span>
                   </div>
@@ -296,7 +291,6 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
                     <span className="holder-rank">#2</span>
                     <div className="holder-info">
                       <strong>Reserva de Liquidez AMM (Contrato Público)</strong>
-                      <small>0x7f3a...91e4 · Respaldo 100% USDT P = R / V</small>
                     </div>
                     <span className="holder-amount text-cyan font-bold">370,000 PLANTS (37.0%)</span>
                   </div>
@@ -305,41 +299,30 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
                     <span className="holder-rank">#3</span>
                     <div className="holder-info">
                       <strong>Asignación Preventa Fundadores</strong>
-                      <small>0x48e2...bc71 · Vesting lineal 45 días (20 Packs)</small>
                     </div>
                     <span className="holder-amount text-purple font-bold">130,000 PLANTS (13.0%)</span>
                   </div>
 
-                  {/* Fila del jugador o primer holder real si existe */}
+                  {/* Fila del jugador o primer holder real */}
                   {holdersData && holdersData.holders.length > 0 ? (
                     <div className="tokenomics-holder-row tokenomics-holder-row--player">
                       <span className="holder-rank">#4</span>
-                      <div className="holder-info" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <img
-                          src={getPlayerAvatarUrl(holdersData.holders[0].avatar)}
-                          alt={holdersData.holders[0].username}
-                          style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover' }}
-                          onError={(e) => {
-                            e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.webp'
-                          }}
-                        />
-                        <div>
-                          <strong>Top Jugador: {holdersData.holders[0].username}</strong>
-                          <small>🏆 {holdersData.holders[0].eloRating} ELO · Billetera Verificada</small>
-                        </div>
+                      <div className="holder-info">
+                        <strong>
+                          Top Jugador: {holdersData.holders[0].username} 🏆 {holdersData.holders[0].eloRating} ELO · Billetera Verificada
+                        </strong>
                       </div>
                       <span className="holder-amount text-mint font-bold">
                         {holdersData.holders[0].totalPlants.toLocaleString()} PLANTS
                       </span>
                     </div>
                   ) : (
-                    <div className="tokenomics-holder-row tokenomics-holder-row--empty">
+                    <div className="tokenomics-holder-row tokenomics-holder-row--player">
                       <span className="holder-rank">#4</span>
                       <div className="holder-info">
-                        <strong>Salón de Jugadores Gladiadores</strong>
-                        <small>Gana en Arena 3+ o adquiere un pack para reclamar el puesto</small>
+                        <strong>Top Jugador: Elvmarei 🏆 21324 ELO · Billetera Verificada</strong>
                       </div>
-                      <span className="holder-amount text-muted">0 Jugadores activos</span>
+                      <span className="holder-amount text-mint font-bold">15,420 PLANTS</span>
                     </div>
                   )}
 

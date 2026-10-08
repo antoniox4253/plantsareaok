@@ -5319,6 +5319,10 @@ input.swap-value-slot:focus {
   font-weight: 800;
 }
 
+.swap-schedules-card {
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
 .swap-sink-card {
   background: linear-gradient(135deg, rgba(3, 105, 161, 0.7), rgba(4, 28, 20, 0.95));
   border: 1.5px solid #38bdf8;
