@@ -75,7 +75,8 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   const [marketState, setMarketState] = useState<PlantsMarketState | null>(null)
   const [priceHistory, setPriceHistory] = useState<PlantsPriceHistoryPoint[]>([])
   const [vestingSummary, setVestingSummary] = useState<PlantsVestingSummary | null>(null)
-  const [countdownSeconds, setCountdownSeconds] = useState<number>(0)
+  const [presaleCountdownSeconds, setPresaleCountdownSeconds] = useState<number>(5 * 86400)
+  const [vestingUnlockSeconds, setVestingUnlockSeconds] = useState<number>(0)
   const [, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isClaimingVesting, setIsClaimingVesting] = useState(false)
@@ -109,11 +110,17 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
         plantsTokenService.getPriceHistory(50),
         plantsTokenService.getUserVestingSummary(),
       ])
-      if (market) setMarketState(market)
+      if (market) {
+        setMarketState(market)
+        if (market.presaleEndsAt) {
+          const diff = Math.max(0, Math.floor((new Date(market.presaleEndsAt).getTime() - Date.now()) / 1000))
+          setPresaleCountdownSeconds(diff)
+        }
+      }
       if (history) setPriceHistory(history)
       if (vesting) {
         setVestingSummary(vesting)
-        setCountdownSeconds(vesting.secondsToNextUnlock)
+        setVestingUnlockSeconds(vesting.secondsToNextUnlock)
       }
     } finally {
       setIsLoading(false)
@@ -126,14 +133,14 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     return () => clearInterval(interval)
   }, [loadData])
 
-  // Temporizador local de cuenta regresiva
+  // Temporizadores locales de cuenta regresiva
   useEffect(() => {
-    if (countdownSeconds <= 0) return
     const timer = setInterval(() => {
-      setCountdownSeconds((prev) => (prev > 0 ? prev - 1 : 0))
+      setPresaleCountdownSeconds((prev) => (prev > 0 ? prev - 1 : 0))
+      setVestingUnlockSeconds((prev) => (prev > 0 ? prev - 1 : 0))
     }, 1000)
     return () => clearInterval(timer)
-  }, [countdownSeconds])
+  }, [])
 
   // Manejador de cambio de pestaña con sonido
   const handleTabChange = (tab: TokenTabType) => {
@@ -262,7 +269,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     marketState,
     priceHistory,
     vestingSummary,
-    countdownSeconds,
+    countdownSeconds: activeTab === 'vesting' ? vestingUnlockSeconds : presaleCountdownSeconds,
     isSubmitting,
     isClaimingVesting,
     liquidPlants,

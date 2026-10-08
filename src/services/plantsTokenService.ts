@@ -10,6 +10,11 @@ export interface PlantsMarketState {
   marketCapUsdt: number
   currentHalvingEra: number
   presaleActive: boolean
+  presaleEndsAt?: string | null
+  presalePacksSold?: number
+  presalePacksRemaining?: number
+  presalePlantsCommitted?: number
+  initialPoolUsdt?: number
   pvpBonusEndsAt: string | null
   pvpBonusPct: number
   presaleStocks: {
@@ -279,6 +284,11 @@ export const plantsTokenService = {
           marketCapUsdt: Number(d.marketCapUsdt ?? 40),
           currentHalvingEra: Number(d.currentHalvingEra ?? 1),
           presaleActive: Boolean(d.presaleActive ?? true),
+          presaleEndsAt: d.presaleEndsAt ? String(d.presaleEndsAt) : null,
+          presalePacksSold: Number(d.presalePacksSold ?? 0),
+          presalePacksRemaining: Number(d.presalePacksRemaining ?? 20),
+          presalePlantsCommitted: Number(d.presalePlantsCommitted ?? 0),
+          initialPoolUsdt: Number(d.initialPoolUsdt ?? 200),
           pvpBonusEndsAt: d.pvpBonusEndsAt ? String(d.pvpBonusEndsAt) : null,
           pvpBonusPct: Number(d.pvpBonusPct ?? 25),
           presaleStocks: {
@@ -840,6 +850,11 @@ export const plantsTokenService = {
       marketCapUsdt: 40,
       currentHalvingEra: 1,
       presaleActive: true,
+      presaleEndsAt: new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString(),
+      presalePacksSold: 0,
+      presalePacksRemaining: 20,
+      presalePlantsCommitted: 0,
+      initialPoolUsdt: 200,
       pvpBonusEndsAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
       pvpBonusPct: 25,
       presaleStocks: {

@@ -12,7 +12,7 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
   onBuyPack,
 }) => {
   const formatCountdown = (secs: number) => {
-    const total = secs > 0 ? secs : 86400 * 7 + 3600 * 6 + 60 * 31 + 43
+    const total = secs > 0 ? secs : 0
     const d = Math.floor(total / 86400)
     const h = Math.floor((total % 86400) / 3600)
     const m = Math.floor((total % 3600) / 60)
@@ -28,13 +28,15 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
   const timeParts = formatCountdown(countdownSeconds)
 
   const stockPioneer = marketState?.presaleStocks?.pionero ?? 10
-  const stockChampion = marketState?.presaleStocks?.campeon ?? 7
-  const stockLegend = marketState?.presaleStocks?.leyenda ?? 3
+  const stockChampion = marketState?.presaleStocks?.campeon ?? 6
+  const stockLegend = marketState?.presaleStocks?.leyenda ?? 4
 
-  const totalSold = 20 - (stockPioneer + stockChampion + stockLegend)
-  const totalRemaining = stockPioneer + stockChampion + stockLegend
+  const totalSold = marketState?.presalePacksSold ?? (20 - (stockPioneer + stockChampion + stockLegend))
+  const totalRemaining = marketState?.presalePacksRemaining ?? (stockPioneer + stockChampion + stockLegend)
   const plantsCommitted =
-    (10 - stockPioneer) * 2500 + (7 - stockChampion) * 7500 + (3 - stockLegend) * 15000
+    marketState?.presalePlantsCommitted && marketState.presalePlantsCommitted > 0
+      ? marketState.presalePlantsCommitted
+      : (10 - stockPioneer) * 2500 + (6 - stockChampion) * 7500 + (4 - stockLegend) * 15000
 
   return (
     <div className="token-presale-screen">
@@ -48,7 +50,7 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
           <div className="presale-kpi-data">
             <span className="presale-kpi-label">FONDO INICIAL (LIQUIDEZ)</span>
             <div className="presale-kpi-val-wrap">
-              <strong className="presale-kpi-val text-green">${poolUsdt.toFixed(0)} USDT</strong>
+              <strong className="presale-kpi-val text-green">${poolUsdt.toFixed(2)} USDT</strong>
               <span className="summary-kpi-tag summary-kpi-tag--blue">100% RESPALDADO</span>
             </div>
           </div>
@@ -59,7 +61,7 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
           <span className="presale-kpi-icon text-cyan">🛒</span>
           <div className="presale-kpi-data">
             <span className="presale-kpi-label">PACKS VENDIDOS</span>
-            <strong className="presale-kpi-val text-cyan">{totalSold.toLocaleString()}</strong>
+            <strong className="presale-kpi-val text-cyan">{totalSold} / 20</strong>
           </div>
         </div>
 
@@ -68,7 +70,7 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
           <span className="presale-kpi-icon text-gold">📦</span>
           <div className="presale-kpi-data">
             <span className="presale-kpi-label">RESTANTES</span>
-            <strong className="presale-kpi-val text-gold">{totalRemaining.toLocaleString()}</strong>
+            <strong className="presale-kpi-val text-gold">{totalRemaining} / 20</strong>
           </div>
         </div>
 
@@ -77,7 +79,7 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
           <span className="presale-kpi-icon text-mint">🌱</span>
           <div className="presale-kpi-data">
             <span className="presale-kpi-label">PLANTS COMPROMETIDOS</span>
-            <strong className="presale-kpi-val text-mint">{plantsCommitted > 0 ? plantsCommitted.toLocaleString() : '27,750,000'}</strong>
+            <strong className="presale-kpi-val text-mint">{plantsCommitted.toLocaleString()} PLANTS</strong>
           </div>
         </div>
 

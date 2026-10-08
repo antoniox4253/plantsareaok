@@ -15,9 +15,9 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
 }) => {
   const [isAmmModalOpen, setIsAmmModalOpen] = useState(false)
 
-  // Formato para contador digital de cuenta regresiva
+  // Formato para contador digital de cuenta regresiva sincronizado con la BD (5 días)
   const formatCountdown = (secs: number) => {
-    const total = secs > 0 ? secs : 86400 * 7 + 3600 * 6 + 60 * 31 + 43
+    const total = secs > 0 ? secs : 0
     const d = Math.floor(total / 86400)
     const h = Math.floor((total % 86400) / 3600)
     const m = Math.floor((total % 3600) / 60)
@@ -31,6 +31,9 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
   }
 
   const timeParts = formatCountdown(countdownSeconds)
+  const packsSold = marketState?.presalePacksSold ?? 0
+  const packsRemaining = marketState?.presalePacksRemaining ?? 20
+  const pctSold = Math.min(100, Math.max(0, Math.round((packsSold / 20) * 100)))
 
   return (
     <div className="token-summary-screen">
@@ -108,7 +111,11 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
             <span className="summary-panel-icon">🏆</span>
             <div>
               <h4 className="summary-panel-title">FIN DE PREVENTA</h4>
-              <span className="summary-panel-subtitle">Cierre de fase inicial</span>
+              <span className="summary-panel-subtitle">
+                {countdownSeconds > 0
+                  ? 'Fondo base $200 USDT · 5 días'
+                  : 'Preventa finalizada'}
+              </span>
             </div>
             <span className="summary-badge-live">FASE 1</span>
           </div>
@@ -134,18 +141,18 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
 
           <div className="summary-countdown-bar-wrap">
             <div className="summary-countdown-bar">
-              <div className="summary-countdown-fill" style={{ width: '45%' }} />
+              <div className="summary-countdown-fill" style={{ width: `${Math.max(5, pctSold)}%` }} />
               <div className="summary-bar-dots">
-                <span className="summary-bar-dot active" />
-                <span className="summary-bar-dot active" />
-                <span className="summary-bar-dot active" />
-                <span className="summary-bar-dot" />
-                <span className="summary-bar-dot" />
+                <span className={`summary-bar-dot ${pctSold >= 20 ? 'active' : ''}`} />
+                <span className={`summary-bar-dot ${pctSold >= 40 ? 'active' : ''}`} />
+                <span className={`summary-bar-dot ${pctSold >= 60 ? 'active' : ''}`} />
+                <span className={`summary-bar-dot ${pctSold >= 80 ? 'active' : ''}`} />
+                <span className={`summary-bar-dot ${pctSold >= 100 ? 'active' : ''}`} />
               </div>
             </div>
             <div className="summary-countdown-progress-lbl">
-              <span>Meta: 185,000,000 PLANTS</span>
-              <strong className="text-mint">45% COMPLETADO</strong>
+              <span>Meta: 20 Packs (130K PLANTS) · {packsSold} Vendidos ({packsRemaining} Libres)</span>
+              <strong className="text-mint">{pctSold}% COMPLETADO</strong>
             </div>
           </div>
         </article>
