@@ -60,7 +60,7 @@ export interface TokenAssetsRegistry {
 
 export const TOKEN_ASSETS: TokenAssetsRegistry = {
   // Brand & Common
-  logo: '/game-assets/dashboard/logo.webp',
+  logo: '/game-assets/token/logo.webp',
   tokenPlantsIcon: null,
   tokenUsdtIcon: null,
   tokenGemsIcon: null,

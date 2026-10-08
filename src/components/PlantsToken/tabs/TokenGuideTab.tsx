@@ -1,141 +1,221 @@
-import React from 'react'
+import React, { useState } from 'react'
 import type { TokenHubSharedProps } from '../types'
 
+interface FaqItem {
+  id: string
+  icon: string
+  question: string
+  answer: string
+}
+
+const FAQ_ITEMS: FaqItem[] = [
+  {
+    id: 'what-is-plants',
+    icon: '🌱',
+    question: '¿Qué es el token PLANTS y cómo está respaldado?',
+    answer:
+      'PLANTS es el token oficial de Plant Arena. Su precio se calcula mediante un contrato AMM (P = R / V), respaldado al 100% por una reserva pública en USDT alimentada por la preventa y la economía del juego.',
+  },
+  {
+    id: 'vesting-time',
+    icon: '⏳',
+    question: '¿Cómo funciona el vesting de 45 días?',
+    answer:
+      'Tus tokens se desbloquean de forma lineal a razón de 2.22% cada 24 horas. Puedes entrar diariamente a "Mis Plants" y presionar "Reclamar" para moverlos a tu saldo líquido sin comisiones.',
+  },
+  {
+    id: 'convert-gems',
+    icon: '💎',
+    question: '¿Cómo funciona el Super Sink (+20% Gemas)?',
+    answer:
+      'Puedes canjear tus tokens PLANTS líquidos directamente por Gemas del juego recibiendo un bono del +20%. El 100% de los PLANTS canjeados se queman permanentemente para generar deflación.',
+  },
+  {
+    id: 'prohibited-actions',
+    icon: '🛡️',
+    question: '¿Qué requisitos y reglas aplican para el retiro?',
+    answer:
+      'Para solicitar retiro en USDT vía BEP-20 debes alcanzar Arena 3 (2,001+ copas). Cada solicitud pasa por una verificación de 24h para garantizar juego limpio contra bots. Se aplica una quema del 5% de protección.',
+  },
+]
+
 export const TokenGuideTab: React.FC<TokenHubSharedProps> = ({ onTabChange }) => {
+  const [openFaq, setOpenFaq] = useState<string | null>('what-is-plants')
+
+  const toggleFaq = (id: string) => {
+    setOpenFaq((prev) => (prev === id ? null : id))
+  }
+
   return (
     <div className="token-guide-screen">
       {/* =====================================================
-           1. MINI KPI REGLAS CLAVE (4 CARDS)
+           1. SUMMARY KPI ROW (5 CARDS SEGÚN WIREFRAME)
            ===================================================== */}
-      <section className="guide-kpi-grid">
-        <article className="summary-kpi-card guide-kpi-card">
+      <section className="summary-kpi-grid guide-kpi-grid">
+        {/* MINIMUM ARENA */}
+        <article className="summary-kpi-card">
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--gold">
             <span className="summary-kpi-emoji">🏆</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">REQUISITO CASHOUT</span>
+            <span className="summary-kpi-label">MINIMUM ARENA</span>
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-gold">ARENA 3 (2,001+)</strong>
             </div>
-            <span className="summary-kpi-sub">Solo gladiadores reales</span>
+            <span className="summary-kpi-sub">Filtro gladiador real</span>
           </div>
         </article>
 
-        <article className="summary-kpi-card guide-kpi-card">
+        {/* VESTING */}
+        <article className="summary-kpi-card">
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--mint">
             <span className="summary-kpi-emoji">⏳</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">VESTING LINEAL</span>
+            <span className="summary-kpi-label">VESTING</span>
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-mint">45 DÍAS (2.22%/DÍA)</strong>
             </div>
-            <span className="summary-kpi-sub">Desbloqueo diario automático</span>
+            <span className="summary-kpi-sub">Desbloqueo lineal 24h</span>
           </div>
         </article>
 
-        <article className="summary-kpi-card guide-kpi-card">
+        {/* CASH-OUT */}
+        <article className="summary-kpi-card">
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--blue">
+            <span className="summary-kpi-emoji">💵</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">CASH-OUT</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-cyan">BEP-20 (BNB CHAIN)</strong>
+            </div>
+            <span className="summary-kpi-sub">5% quema de seguridad</span>
+          </div>
+        </article>
+
+        {/* GEM BONUS */}
+        <article className="summary-kpi-card">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--green">
+            <span className="summary-kpi-emoji">💎</span>
+          </div>
+          <div className="summary-kpi-content">
+            <span className="summary-kpi-label">GEM BONUS</span>
+            <div className="summary-kpi-val-row">
+              <strong className="summary-kpi-value text-green">+20% EXTRA</strong>
+            </div>
+            <span className="summary-kpi-sub">Super Sink deflacionario</span>
+          </div>
+        </article>
+
+        {/* ANTI-FARMING */}
+        <article className="summary-kpi-card">
+          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--orange">
             <span className="summary-kpi-emoji">🛡️</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">RESPALDO USDT</span>
+            <span className="summary-kpi-label">ANTI-FARMING</span>
             <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-cyan">100% AUDITADO</strong>
+              <strong className="summary-kpi-value text-orange">FAIR PLAY 24H</strong>
             </div>
-            <span className="summary-kpi-sub">Fórmula AMM P = R / V</span>
-          </div>
-        </article>
-
-        <article className="summary-kpi-card guide-kpi-card">
-          <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--orange">
-            <span className="summary-kpi-emoji">🔥</span>
-          </div>
-          <div className="summary-kpi-content">
-            <span className="summary-kpi-label">SUPER SINK GEMAS</span>
-            <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-orange">+20% BONO EXTRA</strong>
-            </div>
-            <span className="summary-kpi-sub">100% de quema deflacionaria</span>
+            <span className="summary-kpi-sub">Protección contra bots</span>
           </div>
         </article>
       </section>
 
       {/* =====================================================
-           2. 4 MASTER RULES GAMING CARDS (2x2 GRID COMPACTO)
+           2. MAIN CONTENT: 5 STEPS (LEFT) + FAQ PANEL (RIGHT)
            ===================================================== */}
-      <section className="guide-rules-grid">
-        {/* CARD 1: PREVENTA & RESPALDO */}
-        <article className="guide-rule-card guide-rule-card--presale">
-          <div className="guide-rule-header">
-            <div className="guide-rule-badge">PASO 1</div>
-            <span className="guide-rule-icon">🚀</span>
+      <section className="guide-main-grid">
+        {/* LEFT: 5 GUIDE STEPS */}
+        <article className="guide-steps-list">
+          {/* STEP 1 */}
+          <div className="guide-step-row guide-step-row--step1">
+            <div className="guide-step-badge">1</div>
+            <span className="guide-step-icon">🛒</span>
+            <div className="guide-step-info">
+              <strong>Adquiere tu Pack en Preventa</strong>
+              <p>60% de tu compra inyecta liquidez directa al pool en USDT. Recibes bono de hasta +80% en gemas.</p>
+            </div>
+            <span className="guide-step-arrow">➔</span>
           </div>
-          <h4 className="guide-rule-title">Preventa Génesis & Respaldo 100%</h4>
-          <p className="guide-rule-desc">
-            Al adquirir un pack de fundador, el <strong>60% del costo</strong> ingresa inmediatamente al contrato público de liquidez en USDT.
-            Recibes un bono inmediato de hasta <strong>+80% en Gemas</strong> y sobres legendarios sin esperas.
-          </p>
-          <div className="guide-rule-pill-footer">
-            <span className="rule-pill-tag text-green">✓ Reserva USDT Garantizada</span>
-            <span className="rule-pill-tag text-gold">✓ Edición Limitada 20 Packs</span>
+
+          {/* STEP 2 */}
+          <div className="guide-step-row guide-step-row--step2">
+            <div className="guide-step-badge">2</div>
+            <span className="guide-step-icon">⏳</span>
+            <div className="guide-step-info">
+              <strong>Desbloqueo Diario de Vesting</strong>
+              <p>Cada 24 horas se libera 2.22% de tus tokens. Pulsa "Reclamar" en Mis Plants sin comisiones.</p>
+            </div>
+            <span className="guide-step-arrow">➔</span>
+          </div>
+
+          {/* STEP 3 */}
+          <div className="guide-step-row guide-step-row--step3">
+            <div className="guide-step-badge">3</div>
+            <span className="guide-step-icon">🔄</span>
+            <div className="guide-step-info">
+              <strong>Retira a USDT o Canjea por Gemas</strong>
+              <p>Envía USDT a tu wallet BEP-20 o elige el Super Sink a gemas con +20% de bono y quema 100%.</p>
+            </div>
+            <span className="guide-step-arrow">➔</span>
+          </div>
+
+          {/* STEP 4 */}
+          <div className="guide-step-row guide-step-row--step4">
+            <div className="guide-step-badge">4</div>
+            <span className="guide-step-icon">⚔️</span>
+            <div className="guide-step-info">
+              <strong>Requisito Arena 3 (2,001+ Copas)</strong>
+              <p>El retiro a billetera externa requiere alcanzar Arena 3 para asegurar recompensas a jugadores activos.</p>
+            </div>
+            <span className="guide-step-arrow">➔</span>
+          </div>
+
+          {/* STEP 5 */}
+          <div className="guide-step-row guide-step-row--step5">
+            <div className="guide-step-badge">5</div>
+            <span className="guide-step-icon">🛡️</span>
+            <div className="guide-step-info">
+              <strong>Protocolo Anti-Farming & Seguridad</strong>
+              <p>Retiros procesados en ventanas de 24h con auditoría automatizada y 5% de quema de resguardo.</p>
+            </div>
+            <span className="guide-step-arrow">➔</span>
           </div>
         </article>
 
-        {/* CARD 2: VESTING 45 DÍAS */}
-        <article className="guide-rule-card guide-rule-card--vesting">
-          <div className="guide-rule-header">
-            <div className="guide-rule-badge">PASO 2</div>
-            <span className="guide-rule-icon">⏳</span>
+        {/* RIGHT: FAQ ACCORDION PANEL */}
+        <aside className="guide-faq-panel">
+          <div className="guide-faq-header">
+            <span className="guide-faq-title-icon">❓</span>
+            <h4 className="guide-faq-title">PREGUNTAS FRECUENTES (FAQ)</h4>
           </div>
-          <h4 className="guide-rule-title">Vesting Diario de 45 Días</h4>
-          <p className="guide-rule-desc">
-            Tus tokens PLANTS se liberan a razón de <strong>2.22% cada 24 horas</strong>.
-            Puedes entrar diariamente a la pestaña <em>Mis Plants</em> y pulsar reclamar para mover tus tokens a saldo líquido sin comisiones.
-          </p>
-          <div className="guide-rule-pill-footer">
-            <span className="rule-pill-tag text-cyan">✓ Sin penalizaciones de retiro</span>
-            <span className="rule-pill-tag text-mint">✓ Protección anti-dumping</span>
-          </div>
-        </article>
 
-        {/* CARD 3: REQUISITO ARENA 3 */}
-        <article className="guide-rule-card guide-rule-card--ranked">
-          <div className="guide-rule-header">
-            <div className="guide-rule-badge">PASO 3</div>
-            <span className="guide-rule-icon">⚔️</span>
+          <div className="guide-faq-list">
+            {FAQ_ITEMS.map((item) => {
+              const isOpen = openFaq === item.id
+              return (
+                <div
+                  key={item.id}
+                  className={`guide-faq-item ${isOpen ? 'active' : ''}`}
+                  onClick={() => toggleFaq(item.id)}
+                >
+                  <div className="guide-faq-item-header">
+                    <span className="guide-faq-item-icon">{item.icon}</span>
+                    <strong className="guide-faq-question">{item.question}</strong>
+                    <span className="guide-faq-chevron">{isOpen ? '▲' : '▼'}</span>
+                  </div>
+                  {isOpen && <p className="guide-faq-answer">{item.answer}</p>}
+                </div>
+              )
+            })}
           </div>
-          <h4 className="guide-rule-title">Juego Limpio: Arena 3 (2,001+ Copas)</h4>
-          <p className="guide-rule-desc">
-            Para realizar Cash-out a billetera externa BEP-20, tu cuenta debe haber alcanzado al menos <strong>2,001 copas</strong> en el Coliseo Ranked.
-            Esto protege el fondo contra granjas de bots y asegura que las ganancias vayan a jugadores legítimos.
-          </p>
-          <div className="guide-rule-pill-footer">
-            <span className="rule-pill-tag text-orange">✓ Tolerancia Cero a Bots</span>
-            <span className="rule-pill-tag text-gold">✓ Auditoría previa en 24h</span>
-          </div>
-        </article>
-
-        {/* CARD 4: CASHOUT VS SUPER SINK */}
-        <article className="guide-rule-card guide-rule-card--sink">
-          <div className="guide-rule-header">
-            <div className="guide-rule-badge">PASO 4</div>
-            <span className="guide-rule-icon">💎</span>
-          </div>
-          <h4 className="guide-rule-title">Opciones: USDT o Super Sink (+20% Gemas)</h4>
-          <p className="guide-rule-desc">
-            Puedes retirar USDT directo a tu wallet BEP-20 (5% de quema de protección), o utilizar el <strong>Super Sink</strong> para convertir a Gemas con <strong>+20% extra</strong>.
-            El 100% de los tokens canjeados se queman para siempre, reduciendo el supply.
-          </p>
-          <div className="guide-rule-pill-footer">
-            <span className="rule-pill-tag text-purple">✓ +20% Bonus en Gemas</span>
-            <span className="rule-pill-tag text-red">🔥 Quema Deflacionaria</span>
-          </div>
-        </article>
+        </aside>
       </section>
 
       {/* =====================================================
-           3. ACTION BUTTONS BAR (COMPACTA)
+           3. BOTTOM CTA BUTTONS (COMPACTOS)
            ===================================================== */}
       <footer className="guide-actions-bar">
         <button
