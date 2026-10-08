@@ -30,29 +30,71 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
 
   const timeParts = formatCountdown(countdownSeconds)
 
-  // Gráfica SVG interactiva de AMM
-  const chartPoints = useMemo(() => {
-    const history = priceHistory.length > 0 ? priceHistory : []
-    const pointsCount = Math.max(history.length, 16)
+  // Gráfica SVG interactiva de AMM con soporte dinámico de timeframes
+  const { chartPoints, minDisplayPrice, maxDisplayPrice, xAxisLabels } = useMemo(() => {
+    const now = Date.now()
+    let cutoff = 0
+    let labels: string[] = []
+
+    if (timeframe === '1H') {
+      cutoff = now - 3600 * 1000
+      labels = ['-60m', '-45m', '-30m', '-15m', 'Ahora']
+    } else if (timeframe === '24H') {
+      cutoff = now - 24 * 3600 * 1000
+      labels = ['-24h', '-18h', '-12h', '-6h', 'Ahora']
+    } else if (timeframe === '7D') {
+      cutoff = now - 7 * 24 * 3600 * 1000
+      labels = ['Día -7', 'Día -5', 'Día -3', 'Día -1', 'Hoy']
+    } else {
+      cutoff = 0
+      labels = ['Génesis Seed', 'Fase Inicial', 'Halving 1', 'Actual']
+    }
+
+    const validHistory = (priceHistory || []).filter((p) => {
+      const t = new Date(p.created_at).getTime()
+      return isNaN(t) || t >= cutoff
+    })
+
+    const genesisPrice = 0.0002
+    const currentPrice = spotPrice > 0 ? spotPrice : genesisPrice
+    const sampleCount = 16
     const pts: { x: number; y: number; price: number }[] = []
 
-    for (let i = 0; i < pointsCount; i++) {
-      const x = 30 + (i / (pointsCount - 1)) * 580
-      let p = spotPrice
-      if (history[i]) {
-        p = history[i].spot_price
-      } else {
-        const factor = 0.88 + Math.sin(i * 0.5) * 0.05 + (i / pointsCount) * 0.35
-        p = spotPrice * factor
+    let prices: number[] = []
+    if (validHistory.length >= sampleCount) {
+      prices = validHistory.slice(-sampleCount).map((p) => p.spot_price)
+    } else if (validHistory.length > 1) {
+      prices = validHistory.map((p) => p.spot_price)
+      while (prices.length < sampleCount) {
+        prices.push(currentPrice)
       }
-      const minP = spotPrice * 0.6
-      const maxP = spotPrice * 1.5
-      const norm = Math.max(0, Math.min(1, (p - minP) / (maxP - minP || 1)))
+    } else {
+      for (let i = 0; i < sampleCount; i++) {
+        const progress = i / (sampleCount - 1)
+        const p = genesisPrice + (currentPrice - genesisPrice) * progress
+        prices.push(p)
+      }
+    }
+
+    const minP = Math.min(genesisPrice * 0.95, ...prices) * 0.98
+    const maxP = Math.max(currentPrice * 1.05, ...prices) * 1.02
+    const range = maxP - minP || 0.0001
+
+    for (let i = 0; i < prices.length; i++) {
+      const x = 30 + (i / (prices.length - 1)) * 580
+      const p = prices[i]
+      const norm = Math.max(0, Math.min(1, (p - minP) / range))
       const y = 145 - norm * 105
       pts.push({ x, y, price: p })
     }
-    return pts
-  }, [priceHistory, spotPrice])
+
+    return {
+      chartPoints: pts,
+      minDisplayPrice: minP,
+      maxDisplayPrice: maxP,
+      xAxisLabels: labels,
+    }
+  }, [priceHistory, spotPrice, timeframe])
 
   const svgPathD = useMemo(() => {
     if (chartPoints.length === 0) return ''
@@ -65,10 +107,10 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
     if (chartPoints.length === 0) return ''
     const first = chartPoints[0]
     const last = chartPoints[chartPoints.length - 1]
-    return `M ${first.x} 165 L ${first.x} ${first.y} ${chartPoints
+    return `M ${first.x} 160 L ${first.x} ${first.y} ${chartPoints
       .slice(1)
       .map((p) => `L ${p.x} ${p.y}`)
-      .join(' ')} L ${last.x} 165 Z`
+      .join(' ')} L ${last.x} 160 Z`
   }, [chartPoints])
 
   return (
@@ -218,16 +260,13 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
 
               {/* Y Axis Gridlines and Labels */}
               <line x1="30" y1="30" x2="620" y2="30" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <text x="32" y="26" fill="rgba(255,255,255,0.3)" fontSize="9">0.0006</text>
+              <text x="32" y="26" fill="rgba(255,255,255,0.35)" fontSize="8.5">${maxDisplayPrice.toFixed(6)}</text>
 
-              <line x1="30" y1="75" x2="620" y2="75" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <text x="32" y="71" fill="rgba(255,255,255,0.3)" fontSize="9">0.0004</text>
+              <line x1="30" y1="85" x2="620" y2="85" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="32" y="81" fill="rgba(255,255,255,0.35)" fontSize="8.5">${((maxDisplayPrice + minDisplayPrice) / 2).toFixed(6)}</text>
 
-              <line x1="30" y1="120" x2="620" y2="120" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <text x="32" y="116" fill="rgba(255,255,255,0.3)" fontSize="9">0.0002</text>
-
-              <line x1="30" y1="160" x2="620" y2="160" stroke="rgba(255,255,255,0.08)" />
-              <text x="32" y="156" fill="rgba(255,255,255,0.3)" fontSize="9">0.0000</text>
+              <line x1="30" y1="140" x2="620" y2="140" stroke="rgba(255,255,255,0.08)" />
+              <text x="32" y="136" fill="rgba(255,255,255,0.35)" fontSize="8.5">${minDisplayPrice.toFixed(6)}</text>
 
               {svgAreaD && <path d={svgAreaD} fill="url(#summaryChartGrad)" />}
               {svgPathD && <path d={svgPathD} fill="none" stroke="url(#summaryLineGrad)" strokeWidth="3" />}
@@ -246,6 +285,13 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
                 )
               })}
             </svg>
+
+            {/* X Axis Labels */}
+            <div className="summary-chart-x-labels" style={{ display: 'flex', justifyContent: 'space-between', padding: '0 20px', marginTop: '2px', fontSize: '8px', color: '#78929b' }}>
+              {xAxisLabels.map((lbl, idx) => (
+                <span key={idx}>{lbl}</span>
+              ))}
+            </div>
           </div>
         </article>
       </section>

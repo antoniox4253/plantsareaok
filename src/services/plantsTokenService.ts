@@ -57,6 +57,48 @@ export interface PlantsVestingSummary {
   orders: PlantsVestingOrder[]
 }
 
+export interface PlantsHolderItem {
+  rank: number
+  userId: string
+  username: string
+  avatar: string
+  eloRating: number
+  liquidPlants: number
+  vestingPlants: number
+  totalPlants: number
+  sharePct: number
+}
+
+export interface PlantsVaultAllocation {
+  name: string
+  type: string
+  address: string
+  allocation: number
+  sharePct: number
+  desc: string
+}
+
+export interface PlantsTopHoldersData {
+  totalCirculating: number
+  holdersCount: number
+  holders: PlantsHolderItem[]
+  vaults: PlantsVaultAllocation[]
+}
+
+export interface PlantsMintingEvent {
+  id: number
+  eventType: string
+  deltaPlants: number
+  deltaUsdt: number
+  spotPrice: number
+  usdtPool: number
+  userId: string | null
+  username: string
+  avatar: string
+  metadata: any
+  createdAt: string
+}
+
 export interface StakingPosition {
   id: string
   amount: number
@@ -274,6 +316,90 @@ export const plantsTokenService = {
     } catch (e) {
       console.warn('[plantsTokenService] getPriceHistory exception:', e)
       return this.getFallbackPriceHistory()
+    }
+  },
+
+  /**
+   * Obtiene la distribución y lista real de Top Holders desde la base de datos
+   */
+  async getTopHolders(limit = 50): Promise<PlantsTopHoldersData | null> {
+    if (!isSupabaseConfigured()) {
+      return this.getFallbackTopHolders()
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_plants_top_holders', { p_limit: limit })
+      if (error) {
+        console.warn('[plantsTokenService] getTopHolders error:', error.message)
+        return this.getFallbackTopHolders()
+      }
+      if (data && data.success) {
+        return {
+          totalCirculating: Number(data.totalCirculating ?? 0),
+          holdersCount: Number(data.holdersCount ?? 0),
+          holders: Array.isArray(data.holders)
+            ? data.holders.map((h: any) => ({
+                rank: Number(h.rank),
+                userId: String(h.user_id),
+                username: String(h.username),
+                avatar: String(h.avatar ?? 'peashooter'),
+                eloRating: Number(h.elo_rating ?? 1000),
+                liquidPlants: Number(h.liquid_plants ?? 0),
+                vestingPlants: Number(h.vesting_plants ?? 0),
+                totalPlants: Number(h.total_plants ?? 0),
+                sharePct: Number(h.share_pct ?? 0),
+              }))
+            : [],
+          vaults: Array.isArray(data.vaults)
+            ? data.vaults.map((v: any) => ({
+                name: String(v.name),
+                type: String(v.type),
+                address: String(v.address),
+                allocation: Number(v.allocation),
+                sharePct: Number(v.sharePct),
+                desc: String(v.desc),
+              }))
+            : [],
+        }
+      }
+      return this.getFallbackTopHolders()
+    } catch (e) {
+      console.warn('[plantsTokenService] getTopHolders exception:', e)
+      return this.getFallbackTopHolders()
+    }
+  },
+
+  /**
+   * Obtiene el historial completo y auditable de minteo y quemas
+   */
+  async getMintingHistory(limit = 100): Promise<PlantsMintingEvent[]> {
+    if (!isSupabaseConfigured()) {
+      return this.getFallbackMintingHistory()
+    }
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_plants_minting_history', { p_limit: limit })
+      if (error) {
+        console.warn('[plantsTokenService] getMintingHistory error:', error.message)
+        return this.getFallbackMintingHistory()
+      }
+      if (data && data.success && Array.isArray(data.events)) {
+        return data.events.map((e: any) => ({
+          id: Number(e.id),
+          eventType: String(e.event_type),
+          deltaPlants: Number(e.delta_plants ?? 0),
+          deltaUsdt: Number(e.delta_usdt ?? 0),
+          spotPrice: Number(e.spot_price ?? 0.0002),
+          usdtPool: Number(e.usdt_pool ?? 200),
+          userId: e.user_id ? String(e.user_id) : null,
+          username: String(e.username ?? 'Sistema Génesis'),
+          avatar: String(e.avatar ?? 'peashooter'),
+          metadata: e.metadata ?? {},
+          createdAt: String(e.created_at),
+        }))
+      }
+      return this.getFallbackMintingHistory()
+    } catch (e) {
+      console.warn('[plantsTokenService] getMintingHistory exception:', e)
+      return this.getFallbackMintingHistory()
     }
   },
 
@@ -753,6 +879,58 @@ export const plantsTokenService = {
         delta_usdt: 200,
         delta_plants: 0,
         created_at: new Date(now - 3600000 * 24).toISOString(),
+      },
+    ]
+  },
+
+  getFallbackTopHolders(): PlantsTopHoldersData {
+    return {
+      totalCirculating: 0,
+      holdersCount: 0,
+      holders: [],
+      vaults: [
+        {
+          name: 'Bóveda de Recompensas PvP & Halving',
+          type: 'vault_pvp',
+          address: '0x12b8...4a29 (Contrato de Recompensas)',
+          allocation: 500000,
+          sharePct: 50.0,
+          desc: 'Minteo programado por victorias clasificatorias en Arena 3+ (5 Eras de Halving)',
+        },
+        {
+          name: 'Reserva de Liquidez AMM & Respaldo USDT',
+          type: 'vault_amm',
+          address: '0x7f3a...91e4 (Pool Público P=R/V)',
+          allocation: 370000,
+          sharePct: 37.0,
+          desc: 'Fondo de respaldo contractual AMM con 100% de solvencia garantizada',
+        },
+        {
+          name: 'Asignación Preventa Fundadores',
+          type: 'vault_presale',
+          address: '0x48e2...bc71 (Contrato de Vesting)',
+          allocation: 130000,
+          sharePct: 13.0,
+          desc: 'Contrato de Vesting Lineal de 45 Días para los 20 Packs de Preventa Fundadores',
+        },
+      ],
+    }
+  },
+
+  getFallbackMintingHistory(): PlantsMintingEvent[] {
+    return [
+      {
+        id: 1,
+        eventType: 'seed',
+        deltaPlants: 0,
+        deltaUsdt: 200,
+        spotPrice: 0.0002,
+        usdtPool: 200,
+        userId: null,
+        username: 'Sistema Génesis',
+        avatar: 'peashooter',
+        metadata: {},
+        createdAt: new Date().toISOString(),
       },
     ]
   },

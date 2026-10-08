@@ -13,34 +13,64 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
   onTabChange,
 }) => {
   const formatCountdown = (secs: number) => {
-    const total = secs > 0 ? secs : 3600 * 6 + 60 * 31 + 43
+    const total = secs > 0 ? secs : 0
     const h = Math.floor(total / 3600)
     const m = Math.floor((total % 3600) / 60)
     const s = total % 60
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
 
-  const claimable = vestingSummary?.claimablePlantsNow ?? 2222
-  const effectiveTotal = totalPlants > 0 ? totalPlants : 125000
-  const effectiveLiquid = liquidPlants > 0 ? liquidPlants : 25000
-  const effectiveVesting = lockedVestingPlants > 0 ? lockedVestingPlants : 100000
+  // Valores reales del usuario
+  const claimable = vestingSummary?.claimablePlantsNow ?? 0
+  const effectiveTotal = totalPlants ?? 0
+  const effectiveLiquid = liquidPlants ?? 0
+  const effectiveVesting = lockedVestingPlants ?? 0
+  const orders = vestingSummary?.orders ?? []
+  const hasOrders = orders.length > 0 || effectiveTotal > 0
 
-  // 10 puntos de la curva de 45 días
+  // Cálculo del día de progreso (1 a 45) según órdenes activas
+  const currentVestingDay = useMemo(() => {
+    if (orders.length === 0) return 0
+    const maxElapsed = Math.max(...orders.map((o) => o.daysElapsed ?? 0))
+    return Math.min(45, Math.max(1, maxElapsed))
+  }, [orders])
+
+  // Puntos de la curva de 45 días (Liberación lineal 2.22% por día)
   const chartDays = [1, 5, 10, 15, 20, 25, 30, 35, 40, 45]
   const chartPoints = useMemo(() => {
     return chartDays.map((day, idx) => {
-      const x = 30 + (idx / (chartDays.length - 1)) * 580
-      const progress = day / 45
-      const liberatedY = 150 - progress * 95
-      const pendingY = 55 + progress * 80
-      return { day, x, liberatedY, pendingY }
+      const x = 40 + (idx / (chartDays.length - 1)) * 560
+      const pct = (day / 45) * 100
+      // y = 145 en 0% a y = 35 en 100%
+      const y = 145 - (pct / 100) * 110
+      return { day, x, y, pct }
     })
   }, [])
+
+  // Posición actual del usuario en la curva
+  const userProgressPoint = useMemo(() => {
+    if (currentVestingDay <= 0) return null
+    const x = 40 + ((currentVestingDay - 1) / 44) * 560
+    const pct = (currentVestingDay / 45) * 100
+    const y = 145 - (pct / 100) * 110
+    return { day: currentVestingDay, x, y, pct }
+  }, [currentVestingDay])
+
+  // Conteo de packs por categoría
+  const packCounts = useMemo(() => {
+    const counts = { pionero: 0, campeon: 0, leyenda: 0 }
+    orders.forEach((o) => {
+      if (o.packId.includes('pionero')) counts.pionero += 1
+      else if (o.packId.includes('campeon')) counts.campeon += 1
+      else if (o.packId.includes('leyenda')) counts.leyenda += 1
+    })
+    return counts
+  }, [orders])
 
   return (
     <div className="token-vesting-screen">
       {/* =====================================================
-           1. KPI ROW (5 CARDS)
+           1. KPI ROW (5 CARDS) - DATOS REALES DE BASE DE DATOS
            ===================================================== */}
       <section className="summary-kpi-grid vesting-kpi-grid" data-section="vesting-kpi-row">
         {/* PLANTS TOTALES */}
@@ -67,7 +97,9 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-cyan">{effectiveLiquid.toLocaleString()}</strong>
             </div>
-            <span className="summary-kpi-sub">{((effectiveLiquid / effectiveTotal) * 100).toFixed(2)}%</span>
+            <span className="summary-kpi-sub">
+              {effectiveTotal > 0 ? `${((effectiveLiquid / effectiveTotal) * 100).toFixed(1)}%` : '0%'} Disponible
+            </span>
           </div>
         </article>
 
@@ -77,21 +109,23 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
             <span className="summary-kpi-emoji">🔒</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">EN VESTING</span>
+            <span className="summary-kpi-label">EN VESTING (45 DÍAS)</span>
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-gold">{effectiveVesting.toLocaleString()}</strong>
             </div>
-            <span className="summary-kpi-sub">{((effectiveVesting / effectiveTotal) * 100).toFixed(2)}%</span>
+            <span className="summary-kpi-sub">
+              {effectiveTotal > 0 ? `${((effectiveVesting / effectiveTotal) * 100).toFixed(1)}%` : '0%'} En Desbloqueo
+            </span>
           </div>
         </article>
 
-        {/* LIBERACIÓN HOY */}
+        {/* RECLAMABLE HOY */}
         <article className="summary-kpi-card">
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--mint">
             <span className="summary-kpi-emoji">📅</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">LIBERACIÓN HOY</span>
+            <span className="summary-kpi-label">RECLAMABLE HOY</span>
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-mint">{claimable.toLocaleString()}</strong>
             </div>
@@ -107,79 +141,137 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
           <div className="summary-kpi-content">
             <span className="summary-kpi-label">PRÓXIMO DESBLOQUEO</span>
             <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-orange">{claimable.toLocaleString()}</strong>
+              <strong className="summary-kpi-value text-orange">
+                {countdownSeconds > 0 ? formatCountdown(countdownSeconds) : '¡LISTO!'}
+              </strong>
             </div>
-            <span className="summary-kpi-sub">en {formatCountdown(countdownSeconds)}</span>
+            <span className="summary-kpi-sub">Ciclo cada 24 Horas</span>
           </div>
         </article>
       </section>
 
       {/* =====================================================
-           3. MID GRID: CALENDARIO (65%) + RESUMEN CARTERA (35%)
+           2. MID GRID: CALENDARIO REAL (65%) + RESUMEN CARTERA (35%)
            ===================================================== */}
       <section className="vesting-mid-grid">
-        {/* CALENDARIO DE LIBERACIÓN */}
+        {/* CALENDARIO DE LIBERACIÓN LINEAL */}
         <article className="vesting-chart-card">
           <div className="vesting-chart-header">
             <div className="vesting-chart-title-wrap">
               <span className="vesting-chart-icon">📈</span>
-              <h4 className="vesting-chart-title">CALENDARIO DE LIBERACIÓN (45 DÍAS)</h4>
+              <div>
+                <h4 className="vesting-chart-title">CALENDARIO DE LIBERACIÓN LINEAL (45 DÍAS)</h4>
+                <p className="vesting-chart-sub">
+                  Desbloqueo acumulativo constante a razón de 2.22% cada 24 horas sin penalizaciones
+                </p>
+              </div>
             </div>
             <div className="vesting-chart-legend">
-              <span className="vesting-legend-item text-mint">● Liberado (25,000)</span>
-              <span className="vesting-legend-item text-cyan">● Pendiente (100,000)</span>
+              <span className="vesting-legend-item text-mint">● Liberado Acumulado</span>
+              <span className="vesting-legend-item text-cyan">⋯ Cronograma Programado</span>
             </div>
           </div>
 
           <div className="vesting-chart-canvas">
-            <svg viewBox="0 0 640 180" className="vesting-chart-svg" preserveAspectRatio="none">
-              {/* Gridlines */}
-              <line x1="30" y1="40" x2="620" y2="40" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <text x="32" y="36" fill="rgba(255,255,255,0.3)" fontSize="9">150,000</text>
-              <line x1="30" y1="85" x2="620" y2="85" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <text x="32" y="81" fill="rgba(255,255,255,0.3)" fontSize="9">100,000</text>
-              <line x1="30" y1="130" x2="620" y2="130" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-              <text x="32" y="126" fill="rgba(255,255,255,0.3)" fontSize="9">50,000</text>
-              <line x1="30" y1="165" x2="620" y2="165" stroke="rgba(255,255,255,0.08)" />
+            <svg viewBox="0 0 640 175" className="vesting-chart-svg" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="vestingAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#20dba4" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#20dba4" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
 
-              {/* Curve Liberado (Verde) */}
-              <path
-                d={`M ${chartPoints.map((p) => `${p.x} ${p.liberatedY}`).join(' L ')}`}
-                fill="none"
-                stroke="#20dba4"
-                strokeWidth="3"
-              />
+              {/* Guías horizontales de porcentaje */}
+              <line x1="40" y1="35" x2="600" y2="35" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="12" y="38" fill="rgba(255,255,255,0.4)" fontSize="9">100%</text>
 
-              {/* Curve Pendiente (Azul) */}
-              <path
-                d={`M ${chartPoints.map((p) => `${p.x} ${p.pendingY}`).join(' L ')}`}
-                fill="none"
+              <line x1="40" y1="72" x2="600" y2="72" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="16" y="75" fill="rgba(255,255,255,0.4)" fontSize="9">66%</text>
+
+              <line x1="40" y1="108" x2="600" y2="108" stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
+              <text x="16" y="111" fill="rgba(255,255,255,0.4)" fontSize="9">33%</text>
+
+              <line x1="40" y1="145" x2="600" y2="145" stroke="rgba(255,255,255,0.08)" />
+              <text x="20" y="148" fill="rgba(255,255,255,0.4)" fontSize="9">0%</text>
+
+              {/* Línea completa de proyección (Cian / Punteada) */}
+              <line
+                x1={chartPoints[0].x}
+                y1={chartPoints[0].y}
+                x2={chartPoints[chartPoints.length - 1].x}
+                y2={chartPoints[chartPoints.length - 1].y}
                 stroke="#38bdf8"
-                strokeWidth="3"
+                strokeWidth="2.5"
+                strokeDasharray="4 4"
               />
 
-              {/* Tooltip callout at day 45 */}
-              <g transform="translate(520, 70)">
-                <rect width="105" height="58" rx="8" fill="#061e27" stroke="#20dba4" strokeWidth="1.5" />
-                <text x="8" y="16" fill="#fef08a" fontSize="10" fontWeight="bold">Día 45</text>
-                <text x="8" y="29" fill="#94a3b8" fontSize="8.5">Total: 125,000</text>
-                <text x="8" y="41" fill="#38bdf8" fontSize="8.5">Pend: 100,000</text>
-                <text x="8" y="53" fill="#20dba4" fontSize="8.5">Lib: 25,000</text>
+              {/* Área y Curva de progreso acumulado (Verde) */}
+              {userProgressPoint && (
+                <>
+                  <polygon
+                    points={`${chartPoints[0].x},145 ${chartPoints[0].x},${chartPoints[0].y} ${userProgressPoint.x},${userProgressPoint.y} ${userProgressPoint.x},145`}
+                    fill="url(#vestingAreaGrad)"
+                  />
+                  <line
+                    x1={chartPoints[0].x}
+                    y1={chartPoints[0].y}
+                    x2={userProgressPoint.x}
+                    y2={userProgressPoint.y}
+                    stroke="#20dba4"
+                    strokeWidth="3.5"
+                  />
+                  {/* Marcador vertical del día actual */}
+                  <line
+                    x1={userProgressPoint.x}
+                    y1="30"
+                    x2={userProgressPoint.x}
+                    y2="145"
+                    stroke="#facc15"
+                    strokeWidth="1.5"
+                    strokeDasharray="2 2"
+                  />
+                  <circle cx={userProgressPoint.x} cy={userProgressPoint.y} r="5" fill="#facc15" stroke="#041419" strokeWidth="2" />
+                </>
+              )}
+
+              {/* Hitos clave en la curva */}
+              {chartPoints.map((p, idx) => (
+                <circle
+                  key={idx}
+                  cx={p.x}
+                  cy={p.y}
+                  r={p.day === 1 || p.day === 15 || p.day === 30 || p.day === 45 ? 4 : 2.5}
+                  fill={p.day === 45 ? '#facc15' : '#38bdf8'}
+                />
+              ))}
+
+              {/* Tooltip con información en el día 45 */}
+              <g transform="translate(480, 45)">
+                <rect width="115" height="42" rx="6" fill="#061e27" stroke="#20dba4" strokeWidth="1" />
+                <text x="8" y="15" fill="#fef08a" fontSize="9" fontWeight="bold">Día 45 · 100% Total</text>
+                <text x="8" y="27" fill="#94a3b8" fontSize="8">
+                  {effectiveTotal > 0 ? `Total: ${effectiveTotal.toLocaleString()} PLANTS` : 'Liberación Completa'}
+                </text>
+                <text x="8" y="37" fill="#20dba4" fontSize="7.5">2.22% desbloqueado/día</text>
               </g>
 
-              {/* Circles */}
-              {chartPoints.map((p, idx) => (
-                <circle key={idx} cx={p.x} cy={p.liberatedY} r="3.5" fill="#20dba4" />
-              ))}
-              {chartPoints.map((p, idx) => (
-                <circle key={idx} cx={p.x} cy={p.pendingY} r="3.5" fill="#38bdf8" />
-              ))}
+              {/* Tooltip si el usuario tiene progreso activo */}
+              {userProgressPoint && (
+                <g transform={`translate(${Math.min(470, Math.max(50, userProgressPoint.x - 50))}, 10)`}>
+                  <rect width="100" height="20" rx="4" fill="#0f2b2b" stroke="#facc15" strokeWidth="1" />
+                  <text x="6" y="14" fill="#facc15" fontSize="8.5" fontWeight="bold">
+                    HOY: Día {currentVestingDay} ({userProgressPoint.pct.toFixed(1)}%)
+                  </text>
+                </g>
+              )}
             </svg>
 
             {/* X-Axis labels */}
             <div className="vesting-chart-x-labels">
               {chartDays.map((d) => (
-                <span key={d}>Día {d}</span>
+                <span key={d} className={d === currentVestingDay ? 'text-gold font-bold' : ''}>
+                  Día {d}
+                </span>
               ))}
             </div>
           </div>
@@ -195,30 +287,40 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
           <div className="vesting-wallet-breakdown">
             <div className="vesting-wallet-row">
               <span className="vesting-pack-name">📦 Pack Pionero</span>
-              <strong className="vesting-pack-val">25,000 PLANTS <small>(20.00%)</small></strong>
+              <strong className="vesting-pack-val">
+                {packCounts.pionero > 0 ? `${packCounts.pionero} adquirido(s)` : '0 adquiridos'}
+              </strong>
             </div>
             <div className="vesting-wallet-row">
               <span className="vesting-pack-name">🧰 Pack Campeón</span>
-              <strong className="vesting-pack-val">50,000 PLANTS <small>(40.00%)</small></strong>
+              <strong className="vesting-pack-val">
+                {packCounts.campeon > 0 ? `${packCounts.campeon} adquirido(s)` : '0 adquiridos'}
+              </strong>
             </div>
             <div className="vesting-wallet-row">
               <span className="vesting-pack-name">👑 Pack Leyenda</span>
-              <strong className="vesting-pack-val">50,000 PLANTS <small>(40.00%)</small></strong>
+              <strong className="vesting-pack-val">
+                {packCounts.leyenda > 0 ? `${packCounts.leyenda} adquirido(s)` : '0 adquiridos'}
+              </strong>
             </div>
           </div>
 
           <div className="vesting-wallet-stats">
             <div className="vesting-stat-line">
-              <span>Total comprado</span>
+              <span>Total en custodia</span>
               <strong>{effectiveTotal.toLocaleString()} PLANTS</strong>
             </div>
             <div className="vesting-stat-line">
               <span>Liberado actualmente</span>
-              <strong className="text-mint">{effectiveLiquid.toLocaleString()} PLANTS (20.00%)</strong>
+              <strong className="text-mint">
+                {effectiveLiquid.toLocaleString()} PLANTS ({effectiveTotal > 0 ? ((effectiveLiquid / effectiveTotal) * 100).toFixed(1) : '0'}%)
+              </strong>
             </div>
             <div className="vesting-stat-line">
-              <span>En vesting</span>
-              <strong className="text-gold">{effectiveVesting.toLocaleString()} PLANTS (80.00%)</strong>
+              <span>En vesting bloqueado</span>
+              <strong className="text-gold">
+                {effectiveVesting.toLocaleString()} PLANTS ({effectiveTotal > 0 ? ((effectiveVesting / effectiveTotal) * 100).toFixed(1) : '0'}%)
+              </strong>
             </div>
             <div className="vesting-stat-line highlight">
               <span>Reclamable ahora</span>
@@ -230,10 +332,14 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
             <button
               type="button"
               className="vesting-claim-btn"
-              disabled={isClaimingVesting}
+              disabled={isClaimingVesting || claimable <= 0}
               onClick={onClaimDailyVesting}
             >
-              🌱 RECLAMAR HOY · {claimable.toLocaleString()} PLANTS
+              {isClaimingVesting
+                ? 'RECLAMANDO...'
+                : claimable > 0
+                ? `🌱 RECLAMAR HOY · ${claimable.toLocaleString()} PLANTS`
+                : '🌱 NADA PENDIENTE HOY'}
             </button>
 
             <button
@@ -248,52 +354,74 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
       </section>
 
       {/* =====================================================
-           4. BOTTOM ROW: MIS PACKS (50%) + ÚLTIMAS LIBERACIONES (50%)
+           3. BOTTOM ROW: MIS PACKS (50%) + ÚLTIMAS LIBERACIONES (50%)
            ===================================================== */}
       <section className="vesting-bottom-grid">
         {/* MIS PACKS DE PREVENTA */}
         <article className="vesting-table-card">
           <div className="vesting-table-header">
             <span className="vesting-table-icon">🎁</span>
-            <h4 className="vesting-table-title">MIS PACKS DE PREVENTA</h4>
+            <div className="vesting-table-title-row">
+              <h4 className="vesting-table-title">MIS PACKS DE PREVENTA</h4>
+              <span className="vesting-orders-count-badge">
+                {orders.length} {orders.length === 1 ? 'Pack' : 'Packs'}
+              </span>
+            </div>
           </div>
 
-          <div className="vesting-custom-table">
-            <div className="vesting-th">PACK</div>
-            <div className="vesting-th">FECHA COMPRA</div>
-            <div className="vesting-th">TOTAL</div>
-            <div className="vesting-th">LIBERADO</div>
-            <div className="vesting-th">PENDIENTE</div>
-            <div className="vesting-th">PLANTS/DÍA</div>
-            <div className="vesting-th">ESTADO</div>
+          {!hasOrders ? (
+            <div className="vesting-empty-state">
+              <span className="vesting-empty-icon">📦</span>
+              <h5 className="vesting-empty-title">Aún no has adquirido packs de preventa</h5>
+              <p className="vesting-empty-desc">
+                Adquiere tu Pack Fundador en la pestaña Preventa para activar tu asignación inicial con liberación diaria durante 45 días.
+              </p>
+              <button
+                type="button"
+                className="vesting-go-presale-btn"
+                onClick={() => onTabChange('presale')}
+              >
+                🛒 IR A LA PREVENTA
+              </button>
+            </div>
+          ) : (
+            <div className="vesting-custom-table">
+              <div className="vesting-th">PACK</div>
+              <div className="vesting-th">FECHA COMPRA</div>
+              <div className="vesting-th">TOTAL</div>
+              <div className="vesting-th">LIBERADO</div>
+              <div className="vesting-th">PENDIENTE</div>
+              <div className="vesting-th">PLANTS/DÍA</div>
+              <div className="vesting-th">ESTADO</div>
 
-            {/* Row 1 */}
-            <div className="vesting-td pack-col">📦 Pionero</div>
-            <div className="vesting-td">12 Abr 15:30</div>
-            <div className="vesting-td">25,000</div>
-            <div className="vesting-td text-mint">5,000 (20%)</div>
-            <div className="vesting-td text-cyan">20,000 (80%)</div>
-            <div className="vesting-td">556</div>
-            <div className="vesting-td"><span className="vesting-status-pill">EN VESTING</span></div>
+              {orders.map((o) => {
+                const isPionero = o.packId.includes('pionero')
+                const isCampeon = o.packId.includes('campeon')
+                const packName = isPionero ? '📦 Pionero' : isCampeon ? '🧰 Campeón' : '👑 Leyenda'
+                const claimedPlants = o.vestingClaimedDays * o.vestingDailyRate
+                const pendingPlants = Math.max(0, o.plantsAmount - claimedPlants)
+                const pct = ((claimedPlants / o.plantsAmount) * 100).toFixed(0)
 
-            {/* Row 2 */}
-            <div className="vesting-td pack-col">🧰 Campeón</div>
-            <div className="vesting-td">14 Abr 10:20</div>
-            <div className="vesting-td">50,000</div>
-            <div className="vesting-td text-mint">10,000 (20%)</div>
-            <div className="vesting-td text-cyan">40,000 (80%)</div>
-            <div className="vesting-td">1,111</div>
-            <div className="vesting-td"><span className="vesting-status-pill">EN VESTING</span></div>
-
-            {/* Row 3 */}
-            <div className="vesting-td pack-col">👑 Leyenda</div>
-            <div className="vesting-td">16 Abr 22:10</div>
-            <div className="vesting-td">50,000</div>
-            <div className="vesting-td text-mint">10,000 (20%)</div>
-            <div className="vesting-td text-cyan">40,000 (80%)</div>
-            <div className="vesting-td">1,111</div>
-            <div className="vesting-td"><span className="vesting-status-pill">EN VESTING</span></div>
-          </div>
+                return (
+                  <React.Fragment key={o.id}>
+                    <div className="vesting-td pack-col">{packName}</div>
+                    <div className="vesting-td">
+                      {new Date(o.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                    </div>
+                    <div className="vesting-td">{o.plantsAmount.toLocaleString()}</div>
+                    <div className="vesting-td text-mint">{claimedPlants.toFixed(0)} ({pct}%)</div>
+                    <div className="vesting-td text-cyan">{pendingPlants.toFixed(0)}</div>
+                    <div className="vesting-td">{o.vestingDailyRate.toFixed(1)}</div>
+                    <div className="vesting-td">
+                      <span className={`vesting-status-pill ${o.isCompleted ? 'vesting-status-pill--completed' : ''}`}>
+                        {o.isCompleted ? 'COMPLETADO' : `DÍA ${o.daysElapsed}/45`}
+                      </span>
+                    </div>
+                  </React.Fragment>
+                )
+              })}
+            </div>
+          )}
         </article>
 
         {/* ÚLTIMAS LIBERACIONES */}
@@ -303,40 +431,40 @@ export const TokenVestingTab: React.FC<TokenHubSharedProps> = ({
               <span className="vesting-table-icon">🕒</span>
               <h4 className="vesting-table-title">ÚLTIMAS LIBERACIONES</h4>
             </div>
-            <span className="summary-see-all-link">Ver todas ➔</span>
           </div>
 
-          <div className="vesting-custom-table vesting-custom-table--releases">
-            <div className="vesting-th">FECHA</div>
-            <div className="vesting-th">PLANTS</div>
-            <div className="vesting-th">VALOR (USDT)</div>
-            <div className="vesting-th">ESTADO</div>
+          {!hasOrders ? (
+            <div className="vesting-empty-state">
+              <span className="vesting-empty-icon">⏳</span>
+              <h5 className="vesting-empty-title">Sin liberaciones pendientes</h5>
+              <p className="vesting-empty-desc">
+                Una vez adquieras un pack de preventa, tus liberaciones diarias de tokens aparecerán aquí para ser reclamadas a tu saldo líquido.
+              </p>
+            </div>
+          ) : (
+            <div className="vesting-custom-table vesting-custom-table--releases">
+              <div className="vesting-th">CICLO</div>
+              <div className="vesting-th">PLANTS</div>
+              <div className="vesting-th">VALOR (USDT)</div>
+              <div className="vesting-th">ESTADO</div>
 
-            <div className="vesting-td">Hoy 22 Abr</div>
-            <div className="vesting-td text-mint">2,222</div>
-            <div className="vesting-td">$0.44</div>
-            <div className="vesting-td text-mint">🟢 Liberado</div>
+              <div className="vesting-td">Día Actual</div>
+              <div className="vesting-td text-mint">{claimable.toLocaleString()}</div>
+              <div className="vesting-td">${(claimable * spotPrice).toFixed(2)}</div>
+              <div className="vesting-td text-mint">
+                {claimable > 0 ? '🟢 Reclamable Ahora' : '⏳ En Acumulación 24h'}
+              </div>
 
-            <div className="vesting-td">Ayer 21 Abr</div>
-            <div className="vesting-td text-mint">2,222</div>
-            <div className="vesting-td">$0.44</div>
-            <div className="vesting-td text-mint">🟢 Liberado</div>
-
-            <div className="vesting-td">20 Abr</div>
-            <div className="vesting-td text-mint">2,222</div>
-            <div className="vesting-td">$0.44</div>
-            <div className="vesting-td text-mint">🟢 Liberado</div>
-
-            <div className="vesting-td">19 Abr</div>
-            <div className="vesting-td text-mint">2,222</div>
-            <div className="vesting-td">$0.44</div>
-            <div className="vesting-td text-mint">🟢 Liberado</div>
-
-            <div className="vesting-td">18 Abr</div>
-            <div className="vesting-td text-mint">2,222</div>
-            <div className="vesting-td">$0.44</div>
-            <div className="vesting-td text-mint">🟢 Liberado</div>
-          </div>
+              <div className="vesting-td">Próximo Desbloqueo</div>
+              <div className="vesting-td text-cyan">
+                {orders.length > 0 ? (orders.reduce((acc, o) => acc + o.vestingDailyRate, 0)).toFixed(1) : '0'}
+              </div>
+              <div className="vesting-td">
+                ${((orders.reduce((acc, o) => acc + o.vestingDailyRate, 0)) * spotPrice).toFixed(2)}
+              </div>
+              <div className="vesting-td text-orange">⏱️ en {formatCountdown(countdownSeconds)}</div>
+            </div>
+          )}
         </article>
       </section>
     </div>
