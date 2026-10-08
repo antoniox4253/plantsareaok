@@ -121,42 +121,42 @@ export function buildDeterministicArchetypePlan(deck: CartaDeMazo[]): any[] {
     curTick += 10
   }
 
-  // 2. Early attacker
-  if (attackerSlot >= 0) {
-    tryAddAction(attackerSlot, 1, 1, false, curTick)
-    curTick += 10
-  }
-
-  // 3. Tank or Melee on mid lane
-  if (tankSlot >= 0) {
-    tryAddAction(tankSlot, 1, 3, false, curTick)
-    curTick += 10
-  } else if (meleeSlot >= 0) {
-    tryAddAction(meleeSlot, 1, 4, true, curTick)
-    curTick += 10
-  }
-
-  // 4. Attacker on lane 0
+  // 2. Early attacker on top flank (Lane 0)
   if (attackerSlot >= 0) {
     tryAddAction(attackerSlot, 0, 1, false, curTick)
     curTick += 10
   }
 
-  // 5. Attacker on lane 2
+  // 3. Tank or Melee on bottom flank (Lane 2)
+  if (tankSlot >= 0) {
+    tryAddAction(tankSlot, 2, 3, false, curTick)
+    curTick += 10
+  } else if (meleeSlot >= 0) {
+    tryAddAction(meleeSlot, 2, 4, true, curTick)
+    curTick += 10
+  }
+
+  // 4. Attacker on bottom flank (Lane 2) behind tank
   if (attackerSlot >= 0) {
     tryAddAction(attackerSlot, 2, 1, false, curTick)
     curTick += 10
   }
 
-  // 6. Tank on lane 0
+  // 5. Attacker on center lane (Lane 1)
+  if (attackerSlot >= 0) {
+    tryAddAction(attackerSlot, 1, 1, false, curTick)
+    curTick += 10
+  }
+
+  // 6. Tank on top flank (Lane 0)
   if (tankSlot >= 0) {
     tryAddAction(tankSlot, 0, 3, false, curTick)
     curTick += 10
   }
 
-  // 7. Tank on lane 2
+  // 7. Tank on center lane (Lane 1)
   if (tankSlot >= 0) {
-    tryAddAction(tankSlot, 2, 3, false, curTick)
+    tryAddAction(tankSlot, 1, 3, false, curTick)
     curTick += 10
   }
 
