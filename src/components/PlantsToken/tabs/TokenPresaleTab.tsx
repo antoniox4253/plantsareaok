@@ -149,10 +149,12 @@ export const TokenPresaleTab: React.FC<TokenHubSharedProps> = ({
                   <span className="presale-plants-val">+{pack.plantsAmount.toLocaleString()} PLANTS</span>
                 </div>
 
-                {/* Bonus Gems Badge */}
-                <div className="presale-card-gems-badge">
-                  <span>💎 +{pack.gemsReward.toLocaleString()} Gemas de bono</span>
-                </div>
+                {/* Bonus Gems Badge (si aplica) */}
+                {pack.gemsReward > 0 && (
+                  <div className="presale-card-gems-badge">
+                    <span>💎 +{pack.gemsReward.toLocaleString()} Gemas de bono</span>
+                  </div>
+                )}
 
                 {/* Benefits List */}
                 <ul className="presale-card-perks">

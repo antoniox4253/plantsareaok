@@ -166,8 +166,9 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
       const res = await plantsTokenService.buyPresalePack(pack.id, 'gems')
       if (res.success) {
         soundManager.playSound('claim', 0.7)
+        const gemsBonusMsg = pack.gemsReward > 0 ? `, +${pack.gemsReward.toLocaleString()} 💎` : ''
         showNotification(
-          `¡Éxito! Adquiriste ${pack.title}. +${pack.plantsAmount.toLocaleString()} PLANTS (Vesting 45 días a ${pack.dailyRate} PLANTS/día), +${pack.gemsReward.toLocaleString()} 💎 y ${pack.bonusItemTitle} acreditados.`,
+          `¡Éxito! Adquiriste ${pack.title}. +${pack.plantsAmount.toLocaleString()} PLANTS (Vesting 45 días a ${pack.dailyRate} PLANTS/día)${gemsBonusMsg} y ${pack.bonusItemTitle} acreditados.`,
           'success'
         )
         await loadData()
