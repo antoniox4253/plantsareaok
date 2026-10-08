@@ -21,6 +21,8 @@ import gemaImg from '../../assets/ico/gema.webp'
 import monedaImg from '../../assets/ico/moneda.webp'
 import ajustesIcon from '../../assets/ico/ajustes.webp'
 import { getPlayerAvatarUrl } from '../../utils/userManager'
+import { toggleFullscreen } from '../../utils/fullscreen'
+import ProfileModal from '../ProfileModal/ProfileModal'
 import './PlantsTokenHub.css'
 
 interface PlantsTokenHubProps {
@@ -44,6 +46,10 @@ interface PlantsTokenHubProps {
   } | null
   onRefreshProfile?: () => void
   initialTab?: TokenTabType
+  isAdmin?: boolean
+  onOpenAdmin?: () => void
+  onOpenBetaInfo?: () => void
+  onSignOut?: () => void
 }
 
 export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
@@ -57,8 +63,15 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   userProfile,
   onRefreshProfile,
   initialTab = 'summary',
+  isAdmin = false,
+  onOpenAdmin,
+  onOpenBetaInfo,
+  onSignOut,
 }) => {
   const [activeTab, setActiveTab] = useState<TokenTabType>(initialTab)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [marketState, setMarketState] = useState<PlantsMarketState | null>(null)
   const [priceHistory, setPriceHistory] = useState<PlantsPriceHistoryPoint[]>([])
   const [vestingSummary, setVestingSummary] = useState<PlantsVestingSummary | null>(null)
@@ -298,7 +311,15 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
 
           <div className="token-topbar-pills">
             {/* 1. Perfil del Jugador */}
-            <div className="token-topbar-pill token-topbar-pill--profile" title="Mi Perfil">
+            <button
+              type="button"
+              className="token-topbar-pill token-topbar-pill--profile"
+              onClick={() => {
+                soundManager.playSound('click', 0.5)
+                setIsProfileModalOpen(true)
+              }}
+              title="Mi Perfil y Billetera"
+            >
               <div className="token-topbar-avatar-wrap">
                 <img
                   src={displayAvatar}
@@ -310,7 +331,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
                 />
               </div>
               <span className="token-topbar-player-name">{displayName}</span>
-            </div>
+            </button>
 
             {/* 2. Pase de Batalla */}
             <div className="token-topbar-pill token-topbar-pill--vip" title="Pase de Batalla VIP">
@@ -350,12 +371,15 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
               </span>
             </div>
 
-            {/* 6. Ajustes / Volver */}
+            {/* 6. Ajustes */}
             <button
               type="button"
               className="token-topbar-pill token-topbar-pill--settings"
-              onClick={onBack}
-              title="Ajustes / Volver al Menú Principal"
+              onClick={() => {
+                soundManager.playSound('click', 0.5)
+                setIsSettingsOpen((prev) => !prev)
+              }}
+              title="Ajustes y Opciones"
             >
               <img src={ajustesIcon} alt="Ajustes" className="token-topbar-settings-img" />
             </button>
@@ -455,6 +479,101 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             <span>{feedback.message}</span>
           </div>
         )}
+
+        {/* =====================================================
+             MENÚ DESPLEGABLE DE AJUSTES (GEAR ICON) - IDÉNTICO AL INICIO
+             ===================================================== */}
+        {isSettingsOpen && (
+          <div className="bosque-settings-backdrop" onClick={() => setIsSettingsOpen(false)}>
+            <div className="bosque-settings-menu" onClick={(e) => e.stopPropagation()}>
+              <h4 className="bosque-settings-menu__title">AJUSTES</h4>
+              <button
+                type="button"
+                className="bosque-settings-menu__btn"
+                onClick={() => {
+                  soundManager.toggleMute()
+                  setIsMuted(soundManager.isMuted())
+                }}
+              >
+                {isMuted ? '🔇 Activar Música' : '🔊 Silenciar Música'}
+              </button>
+              <button
+                type="button"
+                className="bosque-settings-menu__btn"
+                onClick={toggleFullscreen}
+              >
+                ⛶ Pantalla Completa
+              </button>
+              <button
+                type="button"
+                className="bosque-settings-menu__btn"
+                onClick={() => {
+                  setIsSettingsOpen(false)
+                  setIsProfileModalOpen(true)
+                }}
+              >
+                👤 Perfil y Billetera
+              </button>
+              {onOpenBetaInfo && (
+                <button
+                  type="button"
+                  className="bosque-settings-menu__btn"
+                  onClick={() => {
+                    setIsSettingsOpen(false)
+                    onOpenBetaInfo()
+                  }}
+                >
+                  🧪 Info Temporada 1
+                </button>
+              )}
+              {isAdmin && onOpenAdmin && (
+                <button
+                  type="button"
+                  className="bosque-settings-menu__btn"
+                  onClick={() => {
+                    setIsSettingsOpen(false)
+                    onOpenAdmin()
+                  }}
+                >
+                  🛡️ Panel de Admin
+                </button>
+              )}
+              <button
+                type="button"
+                className="bosque-settings-menu__btn"
+                onClick={() => {
+                  setIsSettingsOpen(false)
+                  onBack()
+                }}
+              >
+                🏠 Volver al Menú Principal
+              </button>
+              {onSignOut && (
+                <button
+                  type="button"
+                  className="bosque-settings-menu__btn bosque-settings-menu__btn--danger"
+                  onClick={() => {
+                    setIsSettingsOpen(false)
+                    onSignOut()
+                  }}
+                >
+                  🚪 Cerrar Sesión
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =====================================================
+             MODAL DE PERFIL Y BILLETERA
+             ===================================================== */}
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          userElo={userElo}
+          userTokens={userTokens}
+          hasVipPass={hasVipPass}
+          onClose={() => setIsProfileModalOpen(false)}
+        />
       </div>
     </div>
   )

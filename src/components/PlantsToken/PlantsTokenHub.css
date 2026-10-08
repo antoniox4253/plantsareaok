@@ -4092,12 +4092,12 @@ input.swap-value-slot:focus {
 }
 
 /* =========================================================
-   PAGE 3: VESTING TAB
+   PAGE 3: VESTING TAB (OPTIMIZED TO PREVENT COLLISION & OVERLAP)
    ========================================================= */
 .token-vesting-screen {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
   height: 100%;
   flex: 1;
@@ -4108,18 +4108,20 @@ input.swap-value-slot:focus {
 .vesting-kpi-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-  height: 48px;
-  min-height: 48px;
+  gap: 5px;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
   flex-shrink: 0;
 }
 
 .vesting-mid-grid {
   display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 6px;
-  height: 205px;
-  min-height: 205px;
+  grid-template-columns: 1fr 280px;
+  gap: 5px;
+  height: 172px;
+  min-height: 172px;
+  max-height: 172px;
   flex-shrink: 0;
 }
 
@@ -4129,12 +4131,16 @@ input.swap-value-slot:focus {
   background: linear-gradient(180deg, rgba(8, 28, 33, 0.96) 0%, rgba(5, 18, 22, 0.98) 100%);
   border: 1.5px solid rgba(20, 137, 109, 0.55);
   border-radius: 10px;
-  padding: 6px 10px;
+  padding: 5px 8px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   height: 100%;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.vesting-chart-card {
+  justify-content: flex-start;
 }
 
 .vesting-chart-header,
@@ -4143,42 +4149,63 @@ input.swap-value-slot:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.vesting-chart-header {
+  height: 22px;
 }
 
 .vesting-chart-title-wrap,
 .vesting-table-title-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
 }
 
 .vesting-chart-title,
 .vesting-wallet-title,
 .vesting-table-title {
   margin: 0;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 950;
   color: #ffffff;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.vesting-chart-sub {
+  margin: 0;
+  font-size: 7.5px;
+  color: #64748b;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .vesting-chart-legend {
   display: flex;
-  gap: 8px;
-  font-size: 8.5px;
+  gap: 6px;
+  font-size: 8px;
   font-weight: 800;
+  flex-shrink: 0;
 }
 
 .vesting-chart-canvas {
   width: 100%;
-  height: 135px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   position: relative;
 }
 
 .vesting-chart-svg {
   width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .vesting-chart-x-labels {
@@ -4187,89 +4214,128 @@ input.swap-value-slot:focus {
   font-size: 7.5px;
   color: #64748b;
   font-weight: 700;
-  margin-top: 1px;
-  padding: 0 6px;
+  margin-top: 0;
+  padding: 0 38px;
+  height: 14px;
+  line-height: 14px;
+  flex-shrink: 0;
+}
+
+.vesting-wallet-card {
+  justify-content: space-between;
+}
+
+.vesting-wallet-header {
+  height: 18px;
+  gap: 5px;
+  justify-content: flex-start;
 }
 
 .vesting-wallet-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(20, 137, 109, 0.3);
+  flex-shrink: 0;
+}
+
+.vesting-wallet-pill {
+  background: rgba(4, 20, 25, 0.7);
+  border: 1px solid rgba(20, 137, 109, 0.4);
+  border-radius: 5px;
+  padding: 2px 3px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(20, 137, 109, 0.3);
+  align-items: center;
+  gap: 1px;
 }
 
-.vesting-wallet-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-}
-
-.vesting-pack-name {
-  color: #cbd5e1;
+.vesting-wallet-pill .vesting-pack-name {
+  font-size: 7px;
+  color: #94a3b8;
   font-weight: 800;
+  white-space: nowrap;
 }
 
-.vesting-pack-val {
-  color: #ffffff;
+.vesting-wallet-pill .vesting-pack-val {
+  font-size: 9px;
+  color: #facc15;
+  font-weight: 900;
 }
 
 .vesting-wallet-stats {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 4px 0;
-  font-size: 9px;
+  padding: 2px 0;
+  font-size: 8px;
+  flex-shrink: 0;
 }
 
 .vesting-stat-line {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   color: #94a3b8;
+  line-height: 1.2;
 }
 
 .vesting-stat-line.highlight {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.35);
-  padding: 2px 6px;
-  border-radius: 6px;
+  padding: 1.5px 5px;
+  border-radius: 4px;
   margin-top: 1px;
 }
 
 .vesting-wallet-actions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 3px;
+  gap: 3px;
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 
 .vesting-claim-btn {
-  height: 26px;
-  border-radius: 6px;
+  height: 22px;
+  border-radius: 5px;
   border: 1.5px solid #20dba4;
   background: linear-gradient(180deg, #10b981 0%, #065f46 100%);
   color: #ffffff;
-  font-size: 9.5px;
+  font-size: 8.5px;
   font-weight: 950;
   cursor: pointer;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.vesting-claim-btn:hover {
+.vesting-claim-btn:hover:not(:disabled) {
   filter: brightness(1.15);
   box-shadow: 0 0 10px rgba(32, 219, 164, 0.4);
 }
 
+.vesting-claim-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: #065f46;
+}
+
 .vesting-swap-gems-btn {
-  height: 26px;
-  border-radius: 6px;
+  height: 22px;
+  border-radius: 5px;
   border: 1.5px solid #38bdf8;
   background: linear-gradient(180deg, #0284c7 0%, #075985 100%);
   color: #ffffff;
-  font-size: 9.5px;
+  font-size: 8.5px;
   font-weight: 950;
   cursor: pointer;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .vesting-swap-gems-btn:hover {
@@ -4280,9 +4346,30 @@ input.swap-value-slot:focus {
 .vesting-bottom-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 5px;
   flex: 1;
   min-height: 0;
+}
+
+.vesting-table-header {
+  height: 20px;
+}
+
+.vesting-orders-count-badge {
+  font-size: 7.5px;
+  background: rgba(32, 219, 164, 0.15);
+  border: 1px solid #20dba4;
+  color: #20dba4;
+  padding: 1px 5px;
+  border-radius: 99px;
+  font-weight: 900;
+}
+
+.vesting-table-scroll-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border-radius: 6px;
 }
 
 .vesting-custom-table {
@@ -4293,7 +4380,6 @@ input.swap-value-slot:focus {
   border-radius: 6px;
   overflow: hidden;
   font-size: 8px;
-  flex: 1;
 }
 
 .vesting-custom-table--releases {
@@ -4328,6 +4414,12 @@ input.swap-value-slot:focus {
   border-radius: 3px;
   font-size: 7.5px;
   font-weight: 900;
+}
+
+.vesting-status-pill--completed {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #6ee7b7;
 }
 
 /* =========================================================
@@ -5770,39 +5862,41 @@ input.swap-value-slot:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 16px 12px;
+  flex: 1;
+  min-height: 0;
+  padding: 8px 10px;
   text-align: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .vesting-empty-icon {
-  font-size: 26px;
-  margin-bottom: 2px;
+  font-size: 22px;
+  margin-bottom: 1px;
 }
 
 .vesting-empty-title {
   margin: 0;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 900;
   color: #facc15;
 }
 
 .vesting-empty-desc {
   margin: 0;
-  font-size: 8.5px;
+  font-size: 8px;
   color: #94a3b8;
-  max-width: 320px;
-  line-height: 1.3;
+  max-width: 300px;
+  line-height: 1.25;
 }
 
 .vesting-go-presale-btn {
-  margin-top: 6px;
+  margin-top: 4px;
   background: linear-gradient(180deg, #10b981, #047857);
   border: 1px solid #34d399;
   color: #ffffff;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 900;
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: 99px;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
@@ -6363,5 +6457,82 @@ input.swap-value-slot:focus {
 .token-modal-btn-primary:hover {
   transform: translateY(-1px);
 }
+
+/* =========================================================
+   SETTINGS DROPDOWN MENU (MATCHING MAIN MENU BOSQUE STYLES)
+   ========================================================= */
+.bosque-settings-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 48px 16px;
+}
+
+.bosque-settings-menu {
+  background: linear-gradient(180deg, #102e22 0%, #081711 100%);
+  border: 2px solid #34d399;
+  border-radius: 16px;
+  padding: 16px;
+  width: 250px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8), 0 0 20px rgba(52, 211, 153, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: popDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popDown {
+  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.bosque-settings-menu__title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #86efac;
+  text-align: center;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.3);
+  padding-bottom: 8px;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.bosque-settings-menu__btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bosque-settings-menu__btn:hover {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: #86efac;
+  transform: translateX(3px);
+}
+
+.bosque-settings-menu__btn--danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.bosque-settings-menu__btn--danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #f87171;
+}
+
 
 

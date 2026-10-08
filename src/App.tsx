@@ -1892,7 +1892,15 @@ function App() {
             hasVipPass={hasVipPass}
             userProfile={profile}
             playerEnergy={playerEnergy}
+            maxPlayerEnergy={maxPlayerEnergy}
             onRefreshProfile={refreshFromServer}
+            isAdmin={isAdmin}
+            onOpenAdmin={() => setIsAdminPanelOpen(true)}
+            onOpenBetaInfo={() => setIsBetaPhaseModalOpen(true)}
+            onSignOut={async () => {
+              await signOut()
+              setScreen('landing')
+            }}
           />
         )}
 
