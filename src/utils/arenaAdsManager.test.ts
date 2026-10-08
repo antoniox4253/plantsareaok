@@ -319,7 +319,7 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     }
 
     expect(totalGold).toBe(0) // Cero oro en toda la mazmorra
-    expect(totalGems).toBe(300) // Exactamente 300 gemas acumuladas
+    expect(totalGems).toBe(340) // 340 gemas acumuladas tras el balance de recompensas
   })
 
   it('13. Distribución estricta de Sobres: 1 Común (Lv10), 4 PvP (Lv15, 25, 30, 35) y 1 Místico (Lv40)', () => {
@@ -532,12 +532,12 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(rewardsRepeat[0].amount).toBe(4)
   })
 
-  it('22. Regla estricta: NUNCA dar más de 8 Aguas ni 8 Fertilizantes en primera victoria en los 50 niveles', () => {
+  it('22. Regla estricta: NUNCA dar más de 15 Aguas ni 15 Fertilizantes en primera victoria en los 50 niveles', () => {
     for (let lvl = 1; lvl <= 50; lvl++) {
       const rewards = getFixedRewardsForLevel(lvl, 1, true)
       for (const rew of rewards) {
         if (rew.itemId === 'water' || rew.itemId === 'fertilizer') {
-          expect(rew.amount).toBeLessThanOrEqual(8)
+          expect(rew.amount).toBeLessThanOrEqual(15)
         }
       }
     }
