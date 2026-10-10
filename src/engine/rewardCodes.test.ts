@@ -865,4 +865,70 @@ describe('Sistema de Códigos de Recompensa Streamer y Sobres PvP en Jardín (Mi
       })
     })
   })
+
+  // ── AUDITORÍA DE LA MIGRACIÓN 292: FLAMECRYPTOS Y 10 CÓDIGOS EXCLUSIVOS ─────
+  describe('Auditoría estática de 292-assign-rewards-flamecryptos-and-promo-codes.sql', () => {
+    const migrationPath = path.resolve(__dirname, '../../supabase/migrations/292-assign-rewards-flamecryptos-and-promo-codes.sql')
+
+    it('A. El archivo de migración 292 existe y contiene la asignación directa a FlameCryptos', () => {
+      expect(fs.existsSync(migrationPath)).toBe(true)
+      const sqlContent = fs.readFileSync(migrationPath, 'utf-8')
+
+      expect(sqlContent).toContain('7c52505f-c10a-49b1-8b2c-8db8dffad096')
+      expect(sqlContent).toContain('v_old_gold + 2000')
+      expect(sqlContent).toContain('v_old_gems + 600.0')
+      expect(sqlContent).toContain("(v_user.id, 'basic', 'gift')")
+      expect(sqlContent).toContain("(v_user.id, 'epic', 'gift')")
+    })
+
+
+    it('B. Contiene los 10 códigos promocionales únicos y la compatibilidad con farm_item', () => {
+      const sqlContent = fs.readFileSync(migrationPath, 'utf-8')
+      const EXCLUSIVE_CODES = [
+        'FC-79K2-XPLM', 'VRTX-82N9-GLD', 'AURA-61T4-FLM',
+        'PLNT-53R8-BNK', 'SPRD-94W2-RPT', 'CRPT-42Q6-SQS',
+        'FLOR-18M7-SUN', 'BLCK-37Z5-WLN',
+        'FERT-86K3-GRO', 'AQUA-29D1-HYD'
+      ]
+
+      EXCLUSIVE_CODES.forEach((code) => {
+        expect(sqlContent).toContain(`'${code}'`)
+      })
+
+      expect(sqlContent).toContain("'farm_item'")
+      expect(sqlContent).toContain('farm_inventory')
+    })
+  })
+
+  // ── AUDITORÍA DE LA MIGRACIÓN 293: CÓDIGOS MARKETING MISTERIOSOS ALEATORIOS ─
+  describe('Auditoría estática de 293-marketing-random-codes-and-mystery-box-rpc.sql', () => {
+    const migrationPath = path.resolve(__dirname, '../../supabase/migrations/293-marketing-random-codes-and-mystery-box-rpc.sql')
+
+    it('A. El archivo de migración 293 existe y contiene la lógica aleatoria mystery_box', () => {
+      expect(fs.existsSync(migrationPath)).toBe(true)
+      const sqlContent = fs.readFileSync(migrationPath, 'utf-8')
+
+      expect(sqlContent).toContain("'mystery_box'")
+      expect(sqlContent).toContain('v_gold_amt := 300 +')
+      expect(sqlContent).toContain("ARRAY['sunflower', 'peashooter', 'wallnut', 'chomper', 'garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash']")
+      expect(sqlContent).toContain("v_item_id := 'fertilizer'")
+      expect(sqlContent).toContain("v_item_id := 'water'")
+    })
+
+    it('B. Contiene los 10 códigos oficiales de marketing con alta entropía', () => {
+      const sqlContent = fs.readFileSync(migrationPath, 'utf-8')
+      const MARKETING_CODES = [
+        'FLAME-X8K2-9M4P', 'FLAME-7P3Q-W6T1', 'FLAME-9N2V-5R8B',
+        'FLAME-4L6H-8Y3Z', 'FLAME-2B9T-7K1D', 'FLAME-5W1M-3X8C',
+        'FLAME-8R4D-6P2Q', 'FLAME-3T7K-9V5N', 'FLAME-6Y2P-4L8W',
+        'FLAME-1M8B-5T7R'
+      ]
+
+      MARKETING_CODES.forEach((code) => {
+        expect(sqlContent).toContain(`'${code}'`)
+      })
+    })
+  })
 })
+
+
