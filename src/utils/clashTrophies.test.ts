@@ -56,6 +56,12 @@ describe('Sistema de Copas Ranked estilo Clash Royale', () => {
       const deltas5000 = getEloDeltasForElo(5000)
       expect(deltas5000.winElo).toBe(30)
       expect(deltas5000.loseElo).toBe(30)
+
+      expect(getArenaForElo(4001).id).toBe(5)
+      expect(getArenaForElo(5000).id).toBe(5)
+      expect(getArenaForElo(10000).id).toBe(5)
+      expect(getArenaForElo(19907).id).toBe(5)
+      expect(getArenaForElo(33587).id).toBe(5)
     })
   })
 

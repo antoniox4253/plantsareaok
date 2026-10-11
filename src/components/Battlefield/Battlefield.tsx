@@ -1525,18 +1525,24 @@ export default function Battlefield({
               onServerEloUpdated(eloAfter)
             }
 
-            if (yoGane && onBattleComplete && matchMode !== 'tournament' && matchMode !== 'friendly') {
-              try {
-                const res = await onBattleComplete(true)
-                if (res) {
-                  setBattleSummaryResult((prev) => ({
-                    ...prev,
-                    packResult: res.packResult,
-                    vipGoldBonus: prev?.vipGoldBonus ?? res.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
-                  }))
-                }
-              } catch (e) {
-                console.warn('[Battlefield] Error obteniendo pack de victoria:', e)
+            if (yoGane && matchMode !== 'tournament' && matchMode !== 'friendly') {
+              const serverChest = (reportRes as any)?.chest || (reportRes as any)?.cofre
+              if (serverChest && serverChest.awarded) {
+                setBattleSummaryResult((prev) => ({
+                  ...prev,
+                  packResult: {
+                    awarded: true,
+                    durationHours: serverChest.durationHours,
+                    arenaLevel: serverChest.arenaLevel,
+                    slotId: serverChest.slotId,
+                  },
+                  vipGoldBonus: prev?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
+                }))
+              } else if ((reportRes as any)?.vipGoldBonus) {
+                setBattleSummaryResult((prev) => ({
+                  ...prev,
+                  vipGoldBonus: prev?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
+                }))
               }
             }
 
@@ -1589,18 +1595,24 @@ export default function Battlefield({
             onServerEloUpdated(liq.eloAfter)
           }
 
-            if (liq.statusServidor === 'liquidada' && liq.resultadoFinal === 'victory' && onBattleComplete && matchMode !== 'tournament' && matchMode !== 'friendly') {
-            try {
-              const res = await onBattleComplete(true)
-              if (res) {
-                setBattleSummaryResult((prev) => ({
-                  ...prev,
-                  packResult: res.packResult,
-                  vipGoldBonus: prev?.vipGoldBonus ?? res.vipGoldBonus ?? verificacion.settlement?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
-                }))
-              }
-            } catch (e) {
-              console.warn('[Battlefield] Error obteniendo pack de victoria:', e)
+          if (liq.statusServidor === 'liquidada' && liq.resultadoFinal === 'victory' && matchMode !== 'tournament' && matchMode !== 'friendly') {
+            const serverChest = verificacion.settlement?.chest || (reportRes as any)?.chest || (verificacion.settlement as any)?.cofre
+            if (serverChest && serverChest.awarded) {
+              setBattleSummaryResult((prev) => ({
+                ...prev,
+                packResult: {
+                  awarded: true,
+                  durationHours: serverChest.durationHours,
+                  arenaLevel: serverChest.arenaLevel,
+                  slotId: serverChest.slotId,
+                },
+                vipGoldBonus: prev?.vipGoldBonus ?? verificacion.settlement?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
+              }))
+            } else if (verificacion.settlement?.vipGoldBonus || (reportRes as any)?.vipGoldBonus) {
+              setBattleSummaryResult((prev) => ({
+                ...prev,
+                vipGoldBonus: prev?.vipGoldBonus ?? verificacion.settlement?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
+              }))
             }
 
             // ── RECLAMO DE TOKEN PLANTS (EXCLUSIVO ARENA 3+ / 2,001+ COPAS) ──

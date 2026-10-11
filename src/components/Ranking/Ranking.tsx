@@ -834,9 +834,11 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                       {previewArena.id === currentArena.id && (
                         <div className="arena-hero-progress-box">
                           <div className="arena-hero-progress-info">
-                            <span>Progreso de Copas hacia {nextArena ? nextArena.name : 'Máximo'}</span>
+                            <span>{nextArena ? `Progreso de Copas hacia ${nextArena.name}` : 'Máximo Rango Competitivo'}</span>
                             <strong>
-                              {userElo} / {nextArena ? nextArena.minElo : currentArena.minElo} 🏆
+                              {nextArena
+                                ? `${userElo.toLocaleString('en-US')} / ${nextArena.minElo.toLocaleString('en-US')} 🏆`
+                                : `${userElo.toLocaleString('en-US')} 🏆 (Rango Supremo)`}
                             </strong>
                           </div>
                           <div className="arena-hero-progress-bar">
@@ -854,7 +856,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
 
               {/* RIGHT SIDE: SCROLLABLE ARENA ROAD TIMELINE */}
               <div className="arena-timeline-box">
-                <h3 className="arena-timeline-title">🛣️ MAPA DE ESCALADA (6 ARENAS)</h3>
+                <h3 className="arena-timeline-title">🛣️ MAPA DE ESCALADA ({ARENAS.length} ARENAS)</h3>
                 <div className="arena-timeline-list">
                   {ARENAS.map((arenaItem) => {
                     const isCurrent = arenaItem.id === currentArena.id

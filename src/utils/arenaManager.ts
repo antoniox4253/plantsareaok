@@ -60,7 +60,7 @@ export const ARENAS: ArenaInfo[] = [
     id: 5,
     name: 'Arena 5: Olimpo de Leyendas',
     minElo: 4001,
-    maxElo: 9999,
+    maxElo: Infinity,
     bgImage: arena5Bg,
     tagline: 'Palacio sagrado de oro supremo para los reyes de Plant Arena.',
     badgeColor: '#f43f5e',
@@ -69,7 +69,11 @@ export const ARENAS: ArenaInfo[] = [
 ]
 
 export function getArenaForElo(elo: number): ArenaInfo {
-  const found = ARENAS.find((a) => elo >= a.minElo && elo <= a.maxElo)
+  const safeElo = Math.max(0, typeof elo === 'number' && !isNaN(elo) ? elo : 0)
+  if (safeElo >= ARENAS[ARENAS.length - 1].minElo) {
+    return ARENAS[ARENAS.length - 1]
+  }
+  const found = ARENAS.find((a) => safeElo >= a.minElo && safeElo <= a.maxElo)
   return found || ARENAS[0]
 }
 
