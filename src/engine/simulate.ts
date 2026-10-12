@@ -802,15 +802,15 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
     }
 
     // ── MARGARITA (MARIGOLD) ──────────────────────────────────────────────────
-    // Genera oro (1 a 3 monedas aleatorias) cada 8 segundos.
+    // Genera oro (1 o 2 oros aleatorios) cada 15 segundos.
     if (planta.plantId === 'marigold') {
-      const cada = 8000
+      const cada = 15000
 
       if (state.tick - planta.lastActionTime > msToTicks(cada)) {
         planta.lastActionTime = state.tick
 
-        // 1 a 3 oros aleatorios
-        const oroDrop = 1 + Math.floor(nextFloat(state.rng) * 3)
+        // 1 o 2 oros aleatorios
+        const oroDrop = 1 + Math.floor(nextFloat(state.rng) * 2)
         const contador = state.entityCounter++
         const variacionX = nextFloat(state.rng)
 

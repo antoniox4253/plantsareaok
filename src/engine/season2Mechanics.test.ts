@@ -204,7 +204,7 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
   })
 
   describe('Marigold (Margarita - Generación de Oro)', () => {
-    it('produce monedas de oro (1 a 3 de oro aleatorios) cada 8 segundos con type === "gold"', () => {
+    it('produce monedas de oro (1 o 2 de oro aleatorios) cada 15 segundos con type === "gold"', () => {
       const estado = createBattleState(55, false, true)
       estado.pending.push({
         atTick: 1,
@@ -214,8 +214,8 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
         col: 0,
       })
 
-      // Correr los 8 segundos (aprox 250 tics)
-      correr(estado, 260)
+      // Correr los 15 segundos (aprox 460 tics)
+      correr(estado, 470)
 
       const monedas = estado.suns.filter((s) => s.type === 'gold')
       expect(monedas.length).toBeGreaterThanOrEqual(1)
@@ -223,7 +223,7 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
       const primeraMoneda = monedas[0]
       expect(primeraMoneda.type).toBe('gold')
       expect(primeraMoneda.value).toBeGreaterThanOrEqual(1)
-      expect(primeraMoneda.value).toBeLessThanOrEqual(3)
+      expect(primeraMoneda.value).toBeLessThanOrEqual(2)
     })
 
     it('la recolección automática acredita goldEarned en las estadísticas y no altera el sunBank', () => {
@@ -236,11 +236,11 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
         col: 0,
       })
 
-      // Esperar a que produzca la moneda (8s) y luego venza el tiempo de auto-recolección (5s más)
-      correr(estado, 420)
+      // Esperar a que produzca la moneda (15s = ~455 tics) y luego venza el tiempo de auto-recolección (5s más = ~150 tics)
+      correr(estado, 630)
 
       expect(estado.stats.goldEarned).toBeGreaterThanOrEqual(1)
-      expect(estado.stats.goldEarned).toBeLessThanOrEqual(6)
+      expect(estado.stats.goldEarned).toBeLessThanOrEqual(4)
     })
   })
 
