@@ -126,4 +126,33 @@ describe('Sistema de Copas Ranked estilo Clash Royale', () => {
       expect(getTrophyGateForElo(eloNuevo)).toBe(0)
     })
   })
+
+  describe('4. Rendimiento Decreciente en Partidas Asíncronas (Opción A / Migración 306)', () => {
+    it('en Arenas 1 y 2, las victorias asíncronas dan las mismas copas que PvP (+15 y +18)', () => {
+      expect(getEloDeltasForElo(1000, true).winElo).toBe(15)
+      expect(getEloDeltasForElo(1800, true).winElo).toBe(18)
+    })
+
+    it('en Arena 3 (2001 - 3000), las victorias asíncronas se atenúan a +15 copas (en vez de +20)', () => {
+      const asyncDeltas = getEloDeltasForElo(2500, true)
+      expect(asyncDeltas.winElo).toBe(15)
+      expect(asyncDeltas.loseElo).toBe(12)
+    })
+
+    it('en Arena 4 (3001 - 4000), las victorias asíncronas se atenúan a +10 copas (en vez de +25)', () => {
+      const asyncDeltas = getEloDeltasForElo(3500, true)
+      expect(asyncDeltas.winElo).toBe(10)
+      expect(asyncDeltas.loseElo).toBe(20)
+    })
+
+    it('en Arena 5 (4001+), las victorias asíncronas otorgan un máximo de +6 copas (en vez de +30)', () => {
+      const asyncDeltas = getEloDeltasForElo(5000, true)
+      expect(asyncDeltas.winElo).toBe(6)
+      expect(asyncDeltas.loseElo).toBe(30)
+
+      const pvpDeltas = getEloDeltasForElo(5000, false)
+      expect(pvpDeltas.winElo).toBe(30)
+      expect(pvpDeltas.loseElo).toBe(30)
+    })
+  })
 })

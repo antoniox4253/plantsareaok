@@ -85,7 +85,21 @@ export function getTrophyGateForElo(_elo?: number): number {
   return 0
 }
 
-export function getEloDeltasForElo(elo: number): { winElo: number; loseElo: number; surrenderElo: number } {
+export function getEloDeltasForElo(elo: number, isAsyncMatch?: boolean): { winElo: number; loseElo: number; surrenderElo: number } {
+  if (isAsyncMatch) {
+    if (elo <= 1600) {
+      return { winElo: 15, loseElo: 5, surrenderElo: 5 }
+    } else if (elo <= 2000) {
+      return { winElo: 18, loseElo: 8, surrenderElo: 8 }
+    } else if (elo <= 3000) {
+      return { winElo: 15, loseElo: 12, surrenderElo: 12 }
+    } else if (elo <= 4000) {
+      return { winElo: 10, loseElo: 20, surrenderElo: 20 }
+    } else {
+      return { winElo: 6, loseElo: 30, surrenderElo: 30 }
+    }
+  }
+
   if (elo <= 1600) {
     return { winElo: 15, loseElo: 5, surrenderElo: 5 }
   } else if (elo <= 2000) {

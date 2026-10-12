@@ -237,6 +237,139 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
     sprite: '/game-assets/plants/kernelpult.webp',
     description: 'Catapulta fija que lanza granos de maíz (30 DMG) y mantequilla paralizante (60 DMG) a cualquiera de las 3 líneas con enemigos (3s a 6s).',
   },
+  explodeonut: {
+    id: 'explodeonut',
+    name: 'Nuez Explosiva',
+    cost: 100,
+    cooldownMs: 15000,
+    maxHp: 800,
+    category: 'melee',
+    moveSpeed: 5.5,
+    damage: 1400,
+    icon: '/game-assets/plants/explodeonut.webp',
+    packetActive: '/game-assets/plants/explodeonut.webp',
+    packetDisabled: '/game-assets/plants/explodeonut.webp',
+    sprite: '/game-assets/plants/explodeonut.webp',
+    description: 'Nuez rodante que avanza hacia el enemigo y detona en impacto causando daño masivo en área (en la casilla y una atrás).',
+  },
+  gatlingpea: {
+    id: 'gatlingpea',
+    name: 'Guisantralladora',
+    cost: 275,
+    cooldownMs: 9000,
+    maxHp: 300,
+    category: 'ranged',
+    attackSpeedMs: 1400,
+    damage: 25,
+    icon: '/game-assets/plants/gatlingpea.webp',
+    packetActive: '/game-assets/plants/gatlingpea.webp',
+    packetDisabled: '/game-assets/plants/gatlingpea.webp',
+    sprite: '/game-assets/plants/gatlingpea.webp',
+    description: 'Dispara una ráfaga devastadora de 4 guisantes continuos a gran velocidad.',
+  },
+  ghostpepper: {
+    id: 'ghostpepper',
+    name: 'Chile Fantasma',
+    cost: 75,
+    cooldownMs: 12000,
+    maxHp: 450,
+    category: 'melee',
+    moveSpeed: 4.2,
+    attackSpeedMs: 800,
+    damage: 40,
+    icon: '/game-assets/plants/ghostpepper.webp',
+    packetActive: '/game-assets/plants/ghostpepper.webp',
+    packetDisabled: '/game-assets/plants/ghostpepper.webp',
+    sprite: '/game-assets/plants/ghostpepper.webp',
+    description: 'Planta fantasmal que avanza flotando y atormenta a los enemigos con daño continuo antes de estallar.',
+  },
+  guacodile: {
+    id: 'guacodile',
+    name: 'Guacodilo',
+    cost: 125,
+    cooldownMs: 8000,
+    maxHp: 550,
+    category: 'melee',
+    moveSpeed: 6.2,
+    attackSpeedMs: 700,
+    damage: 75,
+    icon: '/game-assets/plants/guacodile.webp',
+    packetActive: '/game-assets/plants/guacodile.webp',
+    packetDisabled: '/game-assets/plants/guacodile.webp',
+    sprite: '/game-assets/plants/guacodile.webp',
+    description: 'Avanza a gran velocidad por el carril mordiendo ferozmente a los enemigos a su paso.',
+  },
+  marigold: {
+    id: 'marigold',
+    name: 'Margarita',
+    cost: 50,
+    cooldownMs: 6000,
+    maxHp: 300,
+    category: 'producer',
+    icon: '/game-assets/plants/marigold.webp',
+    packetActive: '/game-assets/plants/marigold.webp',
+    packetDisabled: '/game-assets/plants/marigold.webp',
+    sprite: '/game-assets/plants/marigold.webp',
+    description: 'Produce soles adicionales y otorga monedas de oro periódicamente durante el combate.',
+  },
+  pickledpepper: {
+    id: 'pickledpepper',
+    name: 'Chile en Escabeche',
+    cost: 125,
+    cooldownMs: 45000,
+    maxHp: 1,
+    category: 'defensive',
+    damage: 1000,
+    icon: '/game-assets/plants/pickledpepper.webp',
+    packetActive: '/game-assets/plants/pickledpepper.webp',
+    packetDisabled: '/game-assets/plants/pickledpepper.webp',
+    sprite: '/game-assets/plants/pickledpepper.webp',
+    description: 'Planta de 1 solo uso que detona una columna vertical entera, destruyendo a los enemigos en todos los carriles de esa columna.',
+  },
+  snowpea: {
+    id: 'snowpea',
+    name: 'Hielaguisantes',
+    cost: 150,
+    cooldownMs: 7500,
+    maxHp: 300,
+    category: 'ranged',
+    attackSpeedMs: 1400,
+    damage: 30,
+    icon: '/game-assets/plants/snowpea.webp',
+    packetActive: '/game-assets/plants/snowpea.webp',
+    packetDisabled: '/game-assets/plants/snowpea.webp',
+    sprite: '/game-assets/plants/snowpea.webp',
+    description: 'Dispara guisantes helados que dañan y ralentizan significativamente el avance y ataque enemigo.',
+  },
+  toadstool: {
+    id: 'toadstool',
+    name: 'Seta Sapo',
+    cost: 200,
+    cooldownMs: 10000,
+    maxHp: 650,
+    category: 'melee',
+    moveSpeed: 3.5,
+    attackSpeedMs: 1200,
+    damage: 110,
+    icon: '/game-assets/plants/toadstool.webp',
+    packetActive: '/game-assets/plants/toadstool.webp',
+    packetDisabled: '/game-assets/plants/toadstool.webp',
+    sprite: '/game-assets/plants/toadstool.webp',
+    description: 'Avanza y devora a los enemigos con su lengua elástica, produciendo soles mientras digiere.',
+  },
+  torchwood: {
+    id: 'torchwood',
+    name: 'Tronco de Fuego',
+    cost: 175,
+    cooldownMs: 7500,
+    maxHp: 750,
+    category: 'defensive',
+    icon: '/game-assets/plants/torchwood.webp',
+    packetActive: '/game-assets/plants/torchwood.webp',
+    packetDisabled: '/game-assets/plants/torchwood.webp',
+    sprite: '/game-assets/plants/torchwood.webp',
+    description: 'Planta defensiva que enciende los guisantes aliados que pasan a través de él, transformándolos en bolas de fuego con daño doble y salpicadura.',
+  },
 }
 
 export const ENEMY_PLANT_CONFIGS: Record<EnemyPlantType, EnemyPlantConfig> = {
@@ -311,7 +444,7 @@ export const ENEMY_PLANT_CONFIGS: Record<EnemyPlantType, EnemyPlantConfig> = {
 export const INITIAL_SUN = 0
 export const INITIAL_BASE_HP = 600
 export const SUN_VALUE = 25
-export const RANKED_MATCHMAKING_TIMEOUT_SECONDS = 35
+export const RANKED_MATCHMAKING_TIMEOUT_SECONDS = 3
 
 export const LANES_CONFIG = [
   { id: 0, topPct: 20, heightPct: 19.33 },
@@ -342,6 +475,11 @@ export const TACTICAL_AMBUSH_PLANTS: PlantId[] = [
   'garlic',
   'bonkchoy',
   'chomper',
+  'explodeonut',
+  'ghostpepper',
+  'guacodile',
+  'pickledpepper',
+  'toadstool',
 ]
 
 export const FORTRESS_SUN_COSTS: Record<PlantId, number> = {
@@ -361,6 +499,15 @@ export const FORTRESS_SUN_COSTS: Record<PlantId, number> = {
   garlic: 75,
   squash: 100,
   threepeater: 325,
+  explodeonut: 100,
+  gatlingpea: 275,
+  ghostpepper: 75,
+  guacodile: 125,
+  marigold: 50,
+  pickledpepper: 125,
+  snowpea: 150,
+  toadstool: 200,
+  torchwood: 175,
 }
 
 export const BASE_LEFT_END_X = 15
@@ -386,11 +533,14 @@ export function getEligibleStatsForPlant(plantId: PlantId): PlantStatKey[] {
   if (plantId === 'iceberglettuce') {
     return ['duration', 'cooldown']
   }
-  if (plantId === 'jalapeno') {
+  if (plantId === 'jalapeno' || plantId === 'pickledpepper') {
     return ['damage', 'cooldown']
   }
   if (plantId === 'kernelpult') {
     return ['hp', 'cooldown', 'damage', 'attackSpeed', 'duration']
+  }
+  if (plantId === 'torchwood' || plantId === 'marigold') {
+    return ['hp', 'cooldown']
   }
 
   const base = PLANT_CONFIGS[plantId]
@@ -413,13 +563,13 @@ export function getEligibleStatsForPlant(plantId: PlantId): PlantStatKey[] {
 
 export function getFusionGoldCost(plantId: PlantId, level: number): number {
   let base = 1000
-  if (plantId === 'threepeater' || plantId === 'iceberglettuce') {
+  if (plantId === 'threepeater' || plantId === 'iceberglettuce' || plantId === 'gatlingpea') {
     base = 3500
-  } else if (plantId === 'aloe' || plantId === 'tallnut') {
+  } else if (plantId === 'aloe' || plantId === 'tallnut' || plantId === 'toadstool') {
     base = 3000
-  } else if (plantId === 'twinsunflower' || plantId === 'jalapeno' || plantId === 'kernelpult') {
+  } else if (['twinsunflower', 'jalapeno', 'kernelpult', 'explodeonut', 'ghostpepper', 'pickledpepper', 'torchwood'].includes(plantId)) {
     base = 2500
-  } else if (['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash'].includes(plantId)) {
+  } else if (['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash', 'guacodile', 'snowpea'].includes(plantId)) {
     base = 1500
   }
 
@@ -447,12 +597,12 @@ export function getScaledPlantConfig(
       let extraDamage = 0
 
       levelOrRolls.forEach((stat) => {
-        // Jalapeño e Iceberg Lettuce son de 1 solo uso y no escalan vida
-        if (stat === 'hp' && plantId !== 'jalapeno' && plantId !== 'iceberglettuce') {
+        // Jalapeño, Pickled Pepper e Iceberg Lettuce son de 1 solo uso y no escalan vida
+        if (stat === 'hp' && plantId !== 'jalapeno' && plantId !== 'iceberglettuce' && plantId !== 'pickledpepper') {
           hpMultiplier += 0.15
         }
         if (stat === 'damage') {
-          if (plantId === 'jalapeno') {
+          if (plantId === 'jalapeno' || plantId === 'pickledpepper') {
             extraDamage += 150
           } else {
             dmgMultiplier += 0.15
@@ -470,7 +620,7 @@ export function getScaledPlantConfig(
 
       scaled = {
         ...base,
-        maxHp: plantId === 'jalapeno' || plantId === 'iceberglettuce' ? base.maxHp : Math.round(base.maxHp * hpMultiplier),
+        maxHp: plantId === 'jalapeno' || plantId === 'iceberglettuce' || plantId === 'pickledpepper' ? base.maxHp : Math.round(base.maxHp * hpMultiplier),
         damage: finalDamage,
         attackSpeedMs:
           base.attackSpeedMs !== undefined
@@ -485,7 +635,7 @@ export function getScaledPlantConfig(
     }
   } else if (levelOrRolls <= 0) {
     scaled = base
-  } else if (plantId === 'jalapeno') {
+  } else if (plantId === 'jalapeno' || plantId === 'pickledpepper') {
     scaled = {
       ...base,
       damage: (base.damage ?? 1000) + levelOrRolls * 150,

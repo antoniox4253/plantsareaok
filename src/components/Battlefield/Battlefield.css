@@ -804,8 +804,91 @@
   filter: drop-shadow(0 2px 6px rgba(255, 235, 59, 0.9));
 }
 
+.projectile--frozen-pea {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.95)) drop-shadow(0 2px 4px rgba(14, 165, 233, 0.8));
+  animation: frozenPeaGlow 0.4s ease-in-out infinite alternate;
+}
+
+.projectile--fire-pea {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 0 10px rgba(239, 68, 68, 1)) drop-shadow(0 0 16px rgba(249, 115, 22, 0.9));
+  animation: firePeaFlicker 0.2s ease-in-out infinite alternate;
+}
+
 .projectile--left {
   filter: drop-shadow(0 0 6px rgba(255, 80, 80, 0.8));
+}
+
+@keyframes frozenPeaGlow {
+  0% { transform: scale(0.95); filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.8)); }
+  100% { transform: scale(1.08); filter: drop-shadow(0 0 12px rgba(186, 230, 253, 1)) drop-shadow(0 0 18px rgba(56, 189, 248, 0.95)); }
+}
+
+@keyframes firePeaFlicker {
+  0% { transform: scale(0.95) rotate(-6deg); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9)); }
+  100% { transform: scale(1.12) rotate(6deg); filter: drop-shadow(0 0 16px rgba(249, 115, 22, 1)) drop-shadow(0 0 22px rgba(234, 88, 12, 0.95)); }
+}
+
+/* Season 2 Plant Units Animations */
+.plant-unit--explodeonut-rolling .plant-unit__sprite {
+  animation: explodeonutRoll 0.5s linear infinite !important;
+}
+
+.enemy-unit--explodeonut-rolling .enemy-unit__sprite {
+  animation: explodeonutRollReverse 0.5s linear infinite !important;
+}
+
+@keyframes explodeonutRoll {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes explodeonutRollReverse {
+  0% { transform: scaleX(-1) rotate(0deg); }
+  100% { transform: scaleX(-1) rotate(-360deg); }
+}
+
+.plant-unit--torchwood .plant-unit__sprite,
+.enemy-unit .plant-unit--torchwood .enemy-unit__sprite {
+  animation: torchwoodFireAura 0.7s ease-in-out infinite alternate !important;
+}
+
+@keyframes torchwoodFireAura {
+  0% { filter: drop-shadow(0 -4px 8px rgba(249, 115, 22, 0.75)) drop-shadow(0 -8px 14px rgba(239, 68, 68, 0.6)); }
+  100% { filter: drop-shadow(0 -6px 14px rgba(239, 68, 68, 1)) drop-shadow(0 -12px 22px rgba(245, 158, 11, 0.95)); }
+}
+
+.plant-unit--ghostpepper .plant-unit__sprite,
+.enemy-unit .plant-unit--ghostpepper .enemy-unit__sprite {
+  animation: ghostpepperFloat 1.0s ease-in-out infinite alternate !important;
+}
+
+@keyframes ghostpepperFloat {
+  0% { transform: translateY(0) scale(0.96); filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.7)); }
+  100% { transform: translateY(-7px) scale(1.05); filter: drop-shadow(0 0 16px rgba(168, 85, 247, 0.95)); }
+}
+
+.plant-unit--guacodile .plant-unit__sprite,
+.enemy-unit .plant-unit--guacodile .enemy-unit__sprite {
+  animation: guacodileRush 0.35s ease-in-out infinite alternate !important;
+}
+
+@keyframes guacodileRush {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-3px) scale(1.04); }
+}
+
+.plant-unit--toadstool .plant-unit__sprite,
+.enemy-unit .plant-unit--toadstool .enemy-unit__sprite {
+  animation: toadstoolIdle 0.8s ease-in-out infinite alternate !important;
+}
+
+@keyframes toadstoolIdle {
+  0% { transform: scaleY(0.96); }
+  100% { transform: scaleY(1.04); }
 }
 
 @keyframes melonSpin {

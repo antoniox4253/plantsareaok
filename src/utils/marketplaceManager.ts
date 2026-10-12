@@ -53,22 +53,22 @@ export function getPlantRarityAndMinPrice(plantId: PlantId): {
   const MIN_PLANT_PRICE = 100
 
   // Comunes
-  if (['sunflower', 'peashooter', 'wallnut', 'chomper'].includes(plantId)) {
+  if (['sunflower', 'peashooter', 'wallnut', 'chomper', 'marigold'].includes(plantId)) {
     return { rarity: 'COMÚN', minPrice: MIN_PLANT_PRICE, color: '#4ade80' }
   }
   // Poco Comunes (PC)
-  if (['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash'].includes(plantId)) {
+  if (['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash', 'guacodile'].includes(plantId)) {
     return { rarity: 'POCO COMÚN', minPrice: MIN_PLANT_PRICE, color: '#38bdf8' }
   }
   // Raras
-  if (['twinsunflower', 'jalapeno', 'kernelpult'].includes(plantId)) {
+  if (['twinsunflower', 'jalapeno', 'kernelpult', 'explodeonut', 'snowpea', 'torchwood'].includes(plantId)) {
     return { rarity: 'RARA', minPrice: MIN_PLANT_PRICE, color: '#a855f7' }
   }
   // Épicas
-  if (['aloe', 'tallnut'].includes(plantId)) {
+  if (['aloe', 'tallnut', 'pickledpepper', 'toadstool', 'ghostpepper'].includes(plantId)) {
     return { rarity: 'ÉPICA', minPrice: MIN_PLANT_PRICE, color: '#ec4899' }
   }
-  // Legendarias
+  // Legendarias (iceberglettuce, threepeater, gatlingpea)
   return { rarity: 'LEGENDARIA', minPrice: MIN_PLANT_PRICE, color: '#fbbf24' }
 }
 

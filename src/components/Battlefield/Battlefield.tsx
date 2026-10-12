@@ -2850,6 +2850,16 @@ export default function Battlefield({
               plant.plantId === 'bonkchoy' ? 'plant-unit--bonkchoy' : ''
             } ${
               plant.plantId === 'kernelpult' ? 'plant-unit--kernelpult' : ''
+            } ${
+              plant.plantId === 'explodeonut' && plant.isWalking ? 'plant-unit--explodeonut-rolling' : ''
+            } ${
+              plant.plantId === 'torchwood' ? 'plant-unit--torchwood' : ''
+            } ${
+              plant.plantId === 'ghostpepper' ? 'plant-unit--ghostpepper' : ''
+            } ${
+              plant.plantId === 'guacodile' ? 'plant-unit--guacodile' : ''
+            } ${
+              plant.plantId === 'toadstool' ? 'plant-unit--toadstool' : ''
             } ${plant.state === 'attacking' ? 'plant-unit--attacking' : ''}`}
             style={{
               left: `${plant.x}%`,
@@ -3050,6 +3060,16 @@ export default function Battlefield({
             className={`entity enemy-unit ${
               enemy.plantId === 'kernelpult' ? 'enemy-unit--kernelpult' : ''
             } ${
+              enemy.plantId === 'explodeonut' && enemy.isWalking ? 'enemy-unit--explodeonut-rolling' : ''
+            } ${
+              enemy.plantId === 'torchwood' ? 'plant-unit--torchwood' : ''
+            } ${
+              enemy.plantId === 'ghostpepper' ? 'plant-unit--ghostpepper' : ''
+            } ${
+              enemy.plantId === 'guacodile' ? 'plant-unit--guacodile' : ''
+            } ${
+              enemy.plantId === 'toadstool' ? 'plant-unit--toadstool' : ''
+            } ${
               enemy.state === 'attacking' ? 'enemy-unit--attacking' : ''
             } ${isFrozen ? 'enemy-unit--frozen' : ''}`}
             style={{
@@ -3134,6 +3154,10 @@ export default function Battlefield({
                 ? 'projectile--kernel'
                 : proj.type === 'butter'
                 ? 'projectile--butter'
+                : proj.type === 'frozen_pea'
+                ? 'projectile--frozen-pea'
+                : proj.type === 'fire_pea'
+                ? 'projectile--fire-pea'
                 : 'projectile--pea'
             } ${proj.targetTeam === 'p1' ? 'projectile--left' : ''}`}
             src={
@@ -3145,6 +3169,10 @@ export default function Battlefield({
                 ? kernelImg
                 : proj.type === 'butter'
                 ? butterImg
+                : proj.type === 'frozen_pea'
+                ? '/game-assets/plants/projectile_frozen_pea.webp'
+                : proj.type === 'fire_pea'
+                ? '/game-assets/plants/projectile_fire_pea.webp'
                 : peaImg
             }
             alt=""
@@ -3303,7 +3331,7 @@ export default function Battlefield({
                       )}
 
                       {!esperandoConfirmacionServidor && matchMode !== 'tournament' && matchMode !== 'friendly' && resultadoServidor?.status === 'liquidada' && (() => {
-                        const fallbackDeltas = getEloDeltasForElo(userElo)
+                        const fallbackDeltas = getEloDeltasForElo(userElo, isAsyncMatch)
                         const fallbackDelta = gameStatus === 'victory' ? fallbackDeltas.winElo : -fallbackDeltas.loseElo
                         const fallbackTotal = Math.max(
                           getTrophyGateForElo(userElo),

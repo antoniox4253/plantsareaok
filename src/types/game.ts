@@ -15,6 +15,15 @@ export type PlantId =
   | 'iceberglettuce'
   | 'aloe'
   | 'kernelpult'
+  | 'explodeonut'
+  | 'gatlingpea'
+  | 'ghostpepper'
+  | 'guacodile'
+  | 'marigold'
+  | 'pickledpepper'
+  | 'snowpea'
+  | 'toadstool'
+  | 'torchwood'
 
 export type PlantCategory = 'producer' | 'ranged' | 'defensive' | 'melee'
 
@@ -146,7 +155,7 @@ export interface EnemyPlantEntity {
 
 export interface ProjectileEntity {
   id: string
-  type: 'pea' | 'melon' | 'needle' | 'kernel' | 'butter'
+  type: 'pea' | 'melon' | 'needle' | 'kernel' | 'butter' | 'frozen_pea' | 'fire_pea'
   targetTeam: 'p1' | 'p2'
   lane: number
   x: number // current % x position

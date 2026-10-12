@@ -6,8 +6,8 @@ import { tournamentService } from '../services/tournamentService'
 describe('SISTEMA AUTORITATIVO DE TORNEOS — PRUEBAS DE DOMINIO Y REGLAS', () => {
   const ALL_15_PLANTS = Object.keys(PLANT_CONFIGS) as PlantId[]
 
-  it('1. Catálogo Libre: existen exactamente 16 cartas disponibles para el torneo', () => {
-    expect(ALL_15_PLANTS.length).toBe(16)
+  it('1. Catálogo Libre: existen exactamente 25 cartas disponibles para el torneo', () => {
+    expect(ALL_15_PLANTS.length).toBe(25)
     expect(ALL_15_PLANTS).toContain('sunflower')
     expect(ALL_15_PLANTS).toContain('peashooter')
     expect(ALL_15_PLANTS).toContain('repeater')
@@ -24,6 +24,15 @@ describe('SISTEMA AUTORITATIVO DE TORNEOS — PRUEBAS DE DOMINIO Y REGLAS', () =
     expect(ALL_15_PLANTS).toContain('iceberglettuce')
     expect(ALL_15_PLANTS).toContain('aloe')
     expect(ALL_15_PLANTS).toContain('kernelpult')
+    expect(ALL_15_PLANTS).toContain('explodeonut')
+    expect(ALL_15_PLANTS).toContain('gatlingpea')
+    expect(ALL_15_PLANTS).toContain('ghostpepper')
+    expect(ALL_15_PLANTS).toContain('guacodile')
+    expect(ALL_15_PLANTS).toContain('marigold')
+    expect(ALL_15_PLANTS).toContain('pickledpepper')
+    expect(ALL_15_PLANTS).toContain('snowpea')
+    expect(ALL_15_PLANTS).toContain('toadstool')
+    expect(ALL_15_PLANTS).toContain('torchwood')
   })
 
   it('2. Validación de Mazo: exige exactamente entre 5 y 6 plantas válidas del catálogo', async () => {
