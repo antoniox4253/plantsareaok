@@ -21,7 +21,7 @@
 //   modificar el estado que recibe. determinism.test.ts lo comprueba.
 // ─────────────────────────────────────────────────────────────────────────────
 import { createRng, nextFloat, nextInt, chance, entityId, type Rng } from './rng.ts'
-import { crearSkySunId, crearSunflowerSunId } from './sunId.ts'
+import { crearSkySunId, crearSunflowerSunId, crearMarigoldGoldId } from './sunId.ts'
 import { TICK_SECONDS, msToTicks } from './time.ts'
 import {
   SOL_DEL_CIELO_MS,
@@ -629,7 +629,7 @@ export function aplicarPickledPepper(
     }
   }
 
-  // Visual vertical en los carriles
+  // Visual vertical en los carriles: llamaradas intensas por casilla en la columna afectada
   const totalLanes = state.lanesCount || 3
   for (let l = 0; l < totalLanes; l++) {
     const fx: PlantEntity = {
@@ -643,11 +643,11 @@ export function aplicarPickledPepper(
       lastActionTime: state.tick,
       isWalking: false,
       state: 'attacking',
-      spriteOverride: '/game-assets/plants/pickledpepper.webp',
+      spriteOverride: '/game-assets/plants/jalapeno_flame_fx.webp',
     }
     propias(state, lado).push(fx)
     state.pending.push({
-      atTick: state.tick + msToTicks(1000),
+      atTick: state.tick + msToTicks(1100),
       kind: 'remove_plant',
       plantId: fx.id,
     })
@@ -738,10 +738,10 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
       planta.frozenUntil = undefined
     }
 
-    // ── GIRASOL Y MARIGOLD ────────────────────────────────────────────────────
-    if (planta.plantId === 'sunflower' || planta.plantId === 'twinsunflower' || planta.plantId === 'marigold') {
+    // ── GIRASOL Y GIRASOL DOBLE ───────────────────────────────────────────────
+    if (planta.plantId === 'sunflower' || planta.plantId === 'twinsunflower') {
       const esDoble = planta.plantId === 'twinsunflower'
-      const cada = esDoble ? GIRASOL_DOBLE_MS : (planta.plantId === 'marigold' ? 8000 : GIRASOL_MS)
+      const cada = esDoble ? GIRASOL_DOBLE_MS : GIRASOL_MS
 
       if (state.tick - planta.lastActionTime > msToTicks(cada)) {
         planta.lastActionTime = state.tick
@@ -784,6 +784,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
               targetY: 20 + planta.lane * 20 + 10,
               value: valorSol,
               createdAt: state.tick,
+              type: 'sun',
             })
           }
         }
@@ -796,6 +797,38 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             'p2',
             cuantos * valorSol
           )
+        }
+      }
+    }
+
+    // ── MARGARITA (MARIGOLD) ──────────────────────────────────────────────────
+    // Genera oro (1 a 3 monedas aleatorias) cada 8 segundos.
+    if (planta.plantId === 'marigold') {
+      const cada = 8000
+
+      if (state.tick - planta.lastActionTime > msToTicks(cada)) {
+        planta.lastActionTime = state.tick
+
+        // 1 a 3 oros aleatorios
+        const oroDrop = 1 + Math.floor(nextFloat(state.rng) * 3)
+        const contador = state.entityCounter++
+        const variacionX = nextFloat(state.rng)
+
+        if (lado.equipo === 'p1') {
+          const goldId =
+            state.engineVersion === 'auth-v1'
+              ? entityId('gold-flower', state.tick, contador)
+              : crearMarigoldGoldId(planta.lane, planta.col, state.tick)
+
+          state.suns.push({
+            id: goldId,
+            x: planta.x + (variacionX * 6 - 3),
+            y: 20 + planta.lane * 20 + 5,
+            targetY: 20 + planta.lane * 20 + 10,
+            value: oroDrop,
+            createdAt: state.tick,
+            type: 'gold',
+          })
         }
       }
     }
@@ -1106,6 +1139,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
         )
         if (enfrente) {
           const hitX = enfrente.x
+          const flameCenterX = hitX - (lado.sentido * 2.5)
           const dano = config.damage || 1400
           for (const a of susPlantas) {
             if (a.lane === planta.lane && a.hp > 0 && Math.abs(a.x - hitX) <= 8.5) {
@@ -1118,6 +1152,27 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           }
           sonar('pea_hit', 1.0)
           planta.hp = 0
+
+          // Llamarada y onda expansiva de fuego delimitada estrictamente a 2 casillas
+          const llama2Casillas: PlantEntity = {
+            id: entityId('explodeonut-flame', state.tick, state.entityCounter++),
+            plantId: 'explodeonut',
+            statRolls: [],
+            lane: planta.lane,
+            x: flameCenterX,
+            hp: 1,
+            maxHp: 1,
+            lastActionTime: state.tick,
+            isWalking: false,
+            state: 'attacking',
+            spriteOverride: '/game-assets/plants/jalapeno_flame_fx.webp',
+          }
+          propias(state, lado).push(llama2Casillas)
+          state.pending.push({
+            atTick: state.tick + msToTicks(900),
+            kind: 'remove_plant',
+            plantId: llama2Casillas.id,
+          })
         } else {
           planta.state = 'walking'
           planta.x += (config.moveSpeed || 5.5) * dt * lado.sentido
@@ -1125,29 +1180,108 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             dañarBase(state, lado.objetivo, 350)
             sonar('pea_hit', 1.0)
             planta.hp = 0
+
+            const baseFlame: PlantEntity = {
+              id: entityId('explodeonut-flame', state.tick, state.entityCounter++),
+              plantId: 'explodeonut',
+              statRolls: [],
+              lane: planta.lane,
+              x: planta.x,
+              hp: 1,
+              maxHp: 1,
+              lastActionTime: state.tick,
+              isWalking: false,
+              state: 'attacking',
+              spriteOverride: '/game-assets/plants/jalapeno_flame_fx.webp',
+            }
+            propias(state, lado).push(baseFlame)
+            state.pending.push({
+              atTick: state.tick + msToTicks(900),
+              kind: 'remove_plant',
+              plantId: baseFlame.id,
+            })
+          }
+        }
+      } else if (planta.plantId === 'toadstool') {
+        // Seta Sapo: devora a la planta enemiga, desaparece y se queda masticando hasta digerir y dar soles
+        if (planta.chewingUntilTick !== undefined) {
+          if (state.tick < planta.chewingUntilTick) {
+            planta.state = 'chewing'
+            // Permanece en su sitio masticando: no avanza x
+          } else {
+            // Completó la digestión: genera +50 soles y vuelve a caminar
+            planta.chewingUntilTick = undefined
+            planta.state = 'walking'
+            sumarSoles(state, lado.equipo, 50)
+            sonar('points', 0.6)
+          }
+        } else {
+          const alcance = 5.0
+          const enfrente = susPlantas.find(
+            (a) => a.lane === planta.lane && estaDelante(planta, a, alcance, lado.sentido) && a.hp > 0
+          )
+
+          if (enfrente) {
+            // Devora a la víctima: desaparece de inmediato del combate
+            enfrente.hp = 0
+            sonar('pea_hit', 0.8)
+            if (lado.equipo === 'p1') {
+              state.stats.enemyPlantsDefeated += 1
+              state.stats.score += 100
+            }
+            // Comienza periodo de masticación de 3.5 segundos en este mismo sitio
+            planta.state = 'chewing'
+            planta.chewingUntilTick = state.tick + msToTicks(3500)
+          } else {
+            planta.state = 'walking'
+            planta.x += (config.moveSpeed || 3.5) * dt * lado.sentido
+            if (llegoALaBase(planta, lado)) {
+              dañarBase(state, lado.objetivo, 40)
+              sonar('pea_hit', 0.6)
+              planta.hp = 0
+            }
           }
         }
       } else {
-        const alcance = planta.plantId === 'toadstool' ? 5.0 : 3.8
+        const alcance = planta.plantId === 'ghostpepper' ? 14.0 : 3.8
         const enfrente = susPlantas.find(
           (a) => a.lane === planta.lane && estaDelante(planta, a, alcance, lado.sentido) && a.hp > 0
         )
 
         if (enfrente) {
           planta.state = 'attacking'
-          if (state.tick - planta.lastActionTime >= msToTicks(config.attackSpeedMs || 600)) {
-            planta.lastActionTime = state.tick
-            enfrente.hp -= config.damage || 90
-            sonar('pea_hit', 0.5)
+          if (planta.plantId === 'ghostpepper') {
+            // Chile Fantasma: dispara un proyectil de espíritu fantasmal a la planta que tiene enfrente
+            if (state.tick - planta.lastActionTime >= msToTicks(config.attackSpeedMs || 800)) {
+              planta.lastActionTime = state.tick
+              const salidaX = planta.x + 2 * lado.sentido
+              sonar('plantation', 0.45)
+              state.projectiles.push({
+                id: entityId(`proj-${lado.equipo}-ghost`, state.tick, state.entityCounter++),
+                type: 'ghost_spirit',
+                targetTeam: lado.objetivo,
+                lane: planta.lane,
+                originLane: planta.lane,
+                originX: salidaX,
+                targetX: enfrente.x,
+                targetEntityId: enfrente.id,
+                x: salidaX,
+                y: 20 + planta.lane * 19.33 + 7,
+                speed: 26,
+                damage: config.damage || 40,
+              })
+            }
+          } else {
+            if (state.tick - planta.lastActionTime >= msToTicks(config.attackSpeedMs || 600)) {
+              planta.lastActionTime = state.tick
+              enfrente.hp -= config.damage || 90
+              sonar('pea_hit', 0.5)
 
-            if (enfrente.hp <= 0) {
-              // Seta Sapo devora y genera +50 soles al digerir
-              if (planta.plantId === 'toadstool') {
-                sumarSoles(state, lado.equipo, 50)
-              }
-              if (lado.equipo === 'p1') {
-                state.stats.enemyPlantsDefeated += 1
-                state.stats.score += 100
+              if (enfrente.hp <= 0) {
+                if (lado.equipo === 'p1') {
+                  state.stats.enemyPlantsDefeated += 1
+                  state.stats.score += 100
+                }
               }
             }
           }
@@ -1955,8 +2089,12 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   const quedan: SunEntity[] = []
   for (const s of state.suns) {
     if (state.tick - s.createdAt >= plazoDelSol) {
-      state.sunBank += s.value
-      state.stats.sunsCollected += 1
+      if (s.type === 'gold') {
+        state.stats.goldEarned = (state.stats.goldEarned ?? 0) + s.value
+      } else {
+        state.sunBank += s.value
+        state.stats.sunsCollected += 1
+      }
       state.stats.score += 50
       continue
     }

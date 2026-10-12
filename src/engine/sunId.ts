@@ -38,6 +38,18 @@ export function crearSunflowerSunId(
 }
 
 /**
+  * Genera el ID canónico de una moneda de oro producida por Margarita (Marigold).
+  */
+export function crearMarigoldGoldId(
+  lane: number,
+  col: number | undefined,
+  tick: number
+): string {
+  const c = typeof col === 'number' && Number.isFinite(col) ? col : 0
+  return `gold-flower-${lane}-${c}-${tick}`
+}
+
+/**
  * Función unificada para generar el ID canónico de cualquier sol.
  */
 export function crearSunId(source: SunSource): string {

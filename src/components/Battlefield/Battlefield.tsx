@@ -1453,6 +1453,13 @@ export default function Battlefield({
         roomId,
       })
 
+      // ── ACREDITAR ORO DE MARGARITA (MARIGOLD) EN EL BACKEND ────────────────
+      if (stats.goldEarned && stats.goldEarned > 0) {
+        void supabaseService.creditMarigoldGold(stats.goldEarned).catch((err) => {
+          console.warn('[Battlefield] Error al acreditar oro de Marigold:', err)
+        })
+      }
+
       // ── PARTIDA REAL: LO LIQUIDA EL SERVIDOR ───────────────────────────────
       //
       // Con sala, quien reparte ELO, cofres y gemas es report_match_result, y
@@ -2598,7 +2605,7 @@ export default function Battlefield({
 
               {Array.from({ length: TOTAL_COLUMNS }).map((_, col) => {
                 const isP1Side = col < P1_COLUMNS
-                const isCellSelected = Boolean(selectedCard && isP1Side && !isLaneLocked)
+                const isCellSelected = Boolean(selectedCard && (isP1Side || selectedCard === 'pickledpepper') && !isLaneLocked)
                 const isPlantCard = selectedCard && selectedCard !== 'shovel'
                 const selectedCardConfig = isPlantCard
                   ? (mazoMioParsed && mazoMioParsed.length > 0
@@ -2654,16 +2661,16 @@ export default function Battlefield({
                 const isCellOccupied = isCellOccupiedByPlant || isCellPendingSprout
 
                 // Para la pala sólo son válidas plantas ya materializadas (no brotes en vuelo)
-                // Para plantas caminantes/melee (Bonk Choy, Chomper), se pueden plantar en cualquier columna de nuestro lado
+                // Para plantas caminantes/melee (Bonk Choy, Chomper) y Chile en Escabeche, se pueden plantar libremente
                 // Para plantas estáticas (Girasol, Nuez, Lanzaguisantes), la casilla debe estar libre
                 const isPlantDestination = isCellSelected && !isLaneLocked && (
                   selectedCard === 'shovel'
                     ? isCellOccupiedByPlant
-                    : isWalkingPlantCard
+                    : (isWalkingPlantCard || selectedCard === 'pickledpepper')
                     ? true
                     : !isCellOccupied
                 )
-                const isPrepInstantRestricted = matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && (selectedCard === 'jalapeno' || selectedCard === 'iceberglettuce')
+                const isPrepInstantRestricted = matchMode === 'clan_fortress' && clanRaidPhase === 'prep' && (selectedCard === 'jalapeno' || selectedCard === 'iceberglettuce' || selectedCard === 'pickledpepper')
                 const previewPlantConfig = !isLaneLocked && isPlantCard && isPlantDestination && !isPrepInstantRestricted ? selectedCardConfig : null
 
                 const handleCellAction = () => {
@@ -2675,7 +2682,7 @@ export default function Battlefield({
                     return
                   }
                   if (isAsyncMatch && rankedAsyncInconsistency) return
-                  if (selectedCard && isP1Side) {
+                  if (selectedCard && (isP1Side || selectedCard === 'pickledpepper')) {
                     if (selectedCard === 'shovel') {
                       // Igual que al plantar: sólo se registra si aquí de verdad
                       // se excavó algo. Registrar un pico que no quitó nada haría
@@ -2780,7 +2787,7 @@ export default function Battlefield({
                       if (isPlantDestination) {
                         handleCellAction()
                       } else if (selectedCard) {
-                        if (!isP1Side) {
+                        if (!isP1Side && selectedCard !== 'pickledpepper') {
                           // Tocar el lado rival cancela la selección de forma natural
                           setSelectedCard(null, null)
                         } else if (isCellOccupied) {
@@ -2857,9 +2864,17 @@ export default function Battlefield({
             } ${
               plant.plantId === 'ghostpepper' ? 'plant-unit--ghostpepper' : ''
             } ${
-              plant.plantId === 'guacodile' ? 'plant-unit--guacodile' : ''
+              plant.plantId === 'guacodile'
+                ? plant.state === 'attacking'
+                  ? 'plant-unit--guacodile plant-unit--guacodile-chewing'
+                  : 'plant-unit--guacodile'
+                : ''
             } ${
-              plant.plantId === 'toadstool' ? 'plant-unit--toadstool' : ''
+              plant.plantId === 'toadstool'
+                ? plant.state === 'chewing'
+                  ? 'plant-unit--toadstool plant-unit--toadstool-chewing'
+                  : 'plant-unit--toadstool'
+                : ''
             } ${plant.state === 'attacking' ? 'plant-unit--attacking' : ''}`}
             style={{
               left: `${plant.x}%`,
@@ -2895,7 +2910,18 @@ export default function Battlefield({
                 />
               </div>
             )}
-            {plant.spriteOverride?.includes('jalapeno_flame_fx') ? (
+            {plant.id.includes('pickled-burst') ? (
+              <div className="pickled-tile-flame">
+                <img src="/game-assets/plants/jalapeno_flame_fx.webp" alt="Fuego Vertical" />
+                <div className="pickled-tile-scorch" />
+              </div>
+            ) : plant.id.includes('explodeonut-flame') ? (
+              <div className="explodeonut-2tile-flame">
+                <img src="/game-assets/plants/jalapeno_flame_fx.webp" alt="Explosión Nuez" />
+                <div className="explodeonut-shockwave" />
+                <span className="explodeonut-boom-badge">💥 ¡BOOM!</span>
+              </div>
+            ) : plant.spriteOverride?.includes('jalapeno_flame_fx') ? (
               <div className="jalapeno-lane-flame">
                 <img src="/game-assets/plants/jalapeno_flame_fx.webp" alt="Fuego" />
               </div>
@@ -2976,6 +3002,12 @@ export default function Battlefield({
             {isFrozen && <div className="frozen-ice-badge">🧊 CONGELADO</div>}
             {plant.plantId === 'iceberglettuce' && plant.spriteOverride?.includes('burst') && (
               <div className="iceberg-burst-fx">⚡ ❄️ ¡RÁFAGA HELADA!</div>
+            )}
+            {plant.plantId === 'guacodile' && plant.state === 'attacking' && (
+              <div className="guacodile-chewing-badge">🐊 ¡CHOMP CHOMP!</div>
+            )}
+            {plant.plantId === 'toadstool' && plant.state === 'chewing' && (
+              <div className="toadstool-chewing-badge">🍄 Digeriendo (+50 ☀️)...</div>
             )}
           </div>
         )
@@ -3066,9 +3098,17 @@ export default function Battlefield({
             } ${
               enemy.plantId === 'ghostpepper' ? 'plant-unit--ghostpepper' : ''
             } ${
-              enemy.plantId === 'guacodile' ? 'plant-unit--guacodile' : ''
+              enemy.plantId === 'guacodile'
+                ? enemy.state === 'attacking'
+                  ? 'plant-unit--guacodile enemy-unit--guacodile-chewing'
+                  : 'plant-unit--guacodile'
+                : ''
             } ${
-              enemy.plantId === 'toadstool' ? 'plant-unit--toadstool' : ''
+              enemy.plantId === 'toadstool'
+                ? enemy.state === 'chewing'
+                  ? 'plant-unit--toadstool enemy-unit--toadstool-chewing'
+                  : 'plant-unit--toadstool'
+                : ''
             } ${
               enemy.state === 'attacking' ? 'enemy-unit--attacking' : ''
             } ${isFrozen ? 'enemy-unit--frozen' : ''}`}
@@ -3094,20 +3134,43 @@ export default function Battlefield({
                 style={{ width: `${hpPct}%` }}
               />
             </div>
-            <img
-              className={`enemy-unit__sprite ${
-                enemy.plantId === 'melonpult' ? 'enemy-unit__sprite--melon' : ''
-              } ${
-                enemy.plantId === 'kernelpult' ? 'enemy-unit__sprite--kernelpult' : ''
-              } ${enemy.spriteOverride?.includes('burst') ? 'plant-unit__sprite--burst' : ''} ${
-                isFrozen ? 'enemy-unit__sprite--frozen' : ''
-              }`}
-              src={enemy.spriteOverride || config.sprite}
-              alt={config.name}
-            />
+            {enemy.id.includes('pickled-burst') ? (
+              <div className="pickled-tile-flame">
+                <img src="/game-assets/plants/jalapeno_flame_fx.webp" alt="Fuego Vertical" />
+                <div className="pickled-tile-scorch" />
+              </div>
+            ) : enemy.id.includes('explodeonut-flame') ? (
+              <div className="explodeonut-2tile-flame">
+                <img src="/game-assets/plants/jalapeno_flame_fx.webp" alt="Explosión Nuez" />
+                <div className="explodeonut-shockwave" />
+                <span className="explodeonut-boom-badge">💥 ¡BOOM!</span>
+              </div>
+            ) : enemy.spriteOverride?.includes('jalapeno_flame_fx') ? (
+              <div className="jalapeno-lane-flame">
+                <img src="/game-assets/plants/jalapeno_flame_fx.webp" alt="Fuego" />
+              </div>
+            ) : (
+              <img
+                className={`enemy-unit__sprite ${
+                  enemy.plantId === 'melonpult' ? 'enemy-unit__sprite--melon' : ''
+                } ${
+                  enemy.plantId === 'kernelpult' ? 'enemy-unit__sprite--kernelpult' : ''
+                } ${enemy.spriteOverride?.includes('burst') ? 'plant-unit__sprite--burst' : ''} ${
+                  isFrozen ? 'enemy-unit__sprite--frozen' : ''
+                }`}
+                src={enemy.spriteOverride || config.sprite}
+                alt={config.name}
+              />
+            )}
             {isFrozen && <div className="frozen-ice-badge">🧊 CONGELADO / 🧈</div>}
             {enemy.plantId === 'iceberglettuce' && enemy.spriteOverride?.includes('burst') && (
               <div className="iceberg-burst-fx">⚡ ❄️ ¡RÁFAGA HELADA!</div>
+            )}
+            {enemy.plantId === 'guacodile' && enemy.state === 'attacking' && (
+              <div className="guacodile-chewing-badge">🐊 ¡CHOMP CHOMP!</div>
+            )}
+            {enemy.plantId === 'toadstool' && enemy.state === 'chewing' && (
+              <div className="toadstool-chewing-badge">🍄 Digeriendo...</div>
             )}
           </div>
         )
@@ -3158,6 +3221,8 @@ export default function Battlefield({
                 ? 'projectile--frozen-pea'
                 : proj.type === 'fire_pea'
                 ? 'projectile--fire-pea'
+                : proj.type === 'ghost_spirit'
+                ? 'projectile--ghost-spirit'
                 : 'projectile--pea'
             } ${proj.targetTeam === 'p1' ? 'projectile--left' : ''}`}
             src={
@@ -3173,6 +3238,8 @@ export default function Battlefield({
                 ? '/game-assets/plants/projectile_frozen_pea.webp'
                 : proj.type === 'fire_pea'
                 ? '/game-assets/plants/projectile_fire_pea.webp'
+                : proj.type === 'ghost_spirit'
+                ? '/game-assets/projectiles/ghost_spirit.svg'
                 : peaImg
             }
             alt=""
@@ -3189,17 +3256,15 @@ export default function Battlefield({
         )
       })}
 
-      {/* Collectible Suns (Plant-generated and Sky-fallen across both sides) */}
+      {/* Collectible Suns and Gold Coins (Plant-generated and Sky-fallen across both sides) */}
       {suns.map((sun) => {
         const isCollecting = collectingSunIds.has(sun.id)
+        const isGold = sun.type === 'gold'
         return (
           <button
             key={sun.id}
             type="button"
-            // El último segundo antes de recogerse solo se avisa: si el sol
-            // desapareciera sin más, parecería que se ha perdido — y lo que pasa es
-            // justo lo contrario, que entra igual.
-            className={`sun-item ${
+            className={`sun-item ${isGold ? 'sun-item--gold' : ''} ${
               tick - sun.createdAt >= TICS_ANTES_DE_RECOGERSE_SOLO ? 'sun-item--se-va' : ''
             } ${isCollecting ? 'sun-item--collecting' : ''}`}
             style={{
@@ -3215,7 +3280,14 @@ export default function Battlefield({
               e.stopPropagation()
             }}
           >
-            <img src={sunIcon} alt="Sol" className="sun-item__icon" />
+            {isGold ? (
+              <div className="gold-drop-wrap" title={`+${sun.value} Oro`}>
+                <img src="/game-assets/moneda.webp" alt="Oro" className="gold-item__icon" />
+                <span className="gold-drop-value">+{sun.value}</span>
+              </div>
+            ) : (
+              <img src={sunIcon} alt="Sol" className="sun-item__icon" />
+            )}
           </button>
         )
       })}
@@ -3331,7 +3403,7 @@ export default function Battlefield({
                       )}
 
                       {!esperandoConfirmacionServidor && matchMode !== 'tournament' && matchMode !== 'friendly' && resultadoServidor?.status === 'liquidada' && (() => {
-                        const fallbackDeltas = getEloDeltasForElo(userElo, isAsyncMatch)
+                        const fallbackDeltas = getEloDeltasForElo(userElo)
                         const fallbackDelta = gameStatus === 'victory' ? fallbackDeltas.winElo : -fallbackDeltas.loseElo
                         const fallbackTotal = Math.max(
                           getTrophyGateForElo(userElo),
@@ -3736,6 +3808,14 @@ export default function Battlefield({
                       </span>
                       <strong className="game-card__stat-value">{stats.plantsPlaced}</strong>
                     </div>
+                    {Boolean(stats.goldEarned && stats.goldEarned > 0) && (
+                      <div className="game-card__stat-row" style={{ background: 'rgba(250, 204, 21, 0.12)', border: '1px solid rgba(250, 204, 21, 0.35)', borderRadius: '6px', padding: '4px 8px' }}>
+                        <span className="game-card__stat-label" style={{ color: '#fef08a' }}>
+                          <img src="/game-assets/moneda.webp" alt="Oro" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} /> Oro de Margarita
+                        </span>
+                        <strong className="game-card__stat-value" style={{ color: '#facc15' }}>+{stats.goldEarned} 💰</strong>
+                      </div>
+                    )}
                   </div>
 
                   {/* VIP VICTORY GOLD BONUS BADGE */}
@@ -3979,6 +4059,7 @@ export default function Battlefield({
         slotCooldowns={slotCooldowns}
         activeDeck={effectiveDeck}
         deckCards={mazoMioParsed}
+        goldEarned={stats.goldEarned}
       />
     </div>
   )

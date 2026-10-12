@@ -2672,5 +2672,263 @@ div[style*="fixed"][style*="bottom:1"] {
   font-size: 9px;
 }
 
+/* ==========================================================================
+   SEASON 2 SPECIAL FX & ANIMATIONS (Explode-o-nut, Pickled Pepper, Toadstool)
+   ========================================================================== */
+
+/* Explode-o-nut 2-Tile Scoped Flame & Shockwave FX */
+.explodeonut-2tile-flame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 95px;
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, rgba(255, 69, 0, 0.75) 0%, rgba(255, 140, 0, 0.45) 55%, rgba(255, 0, 0, 0) 80%);
+  border-radius: 20px;
+  animation: explodeonutFlamePulse 0.09s ease-in-out infinite alternate;
+}
+
+.explodeonut-2tile-flame img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  filter: drop-shadow(0 0 25px #ff2a00) drop-shadow(0 0 45px #ffaa00) brightness(1.6);
+}
+
+.explodeonut-shockwave {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 200, 50, 0.9);
+  box-shadow: 0 0 25px rgba(255, 100, 0, 0.9), inset 0 0 15px rgba(255, 230, 100, 0.8);
+  animation: explodeonutShockwaveExpand 0.4s ease-out forwards;
+}
+
+.explodeonut-boom-badge {
+  position: absolute;
+  top: -24px;
+  background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 10px rgba(255, 40, 0, 0.8);
+  animation: explodeonutBadgePop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes explodeonutFlamePulse {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.96); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+@keyframes explodeonutShockwaveExpand {
+  0% { transform: scale(0.4); opacity: 1; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+@keyframes explodeonutBadgePop {
+  0% { transform: scale(0.3) translateY(10px); opacity: 0; }
+  70% { transform: scale(1.15) translateY(-3px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Pickled Pepper Vertical Column Tile Flame FX */
+.pickled-tile-flame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, rgba(255, 69, 0, 0.75) 0%, rgba(255, 140, 0, 0.45) 50%, rgba(255, 0, 0, 0) 80%);
+  animation: pickledFlameBurst 0.12s ease-in-out infinite alternate;
+}
+
+.pickled-tile-flame img {
+  width: 110%;
+  height: 110%;
+  object-fit: contain;
+  transform: rotate(-90deg) scaleY(1.3);
+  filter: drop-shadow(0 0 20px #ff2200) drop-shadow(0 0 35px #ff8800) brightness(1.7);
+}
+
+.pickled-tile-scorch {
+  position: absolute;
+  bottom: 0;
+  width: 80%;
+  height: 15px;
+  background: radial-gradient(ellipse at center, rgba(255, 40, 0, 0.9) 0%, rgba(40, 10, 0, 0.8) 60%, transparent 85%);
+  border-radius: 50%;
+  filter: blur(2px);
+}
+
+@keyframes pickledFlameBurst {
+  0% { opacity: 0.88; transform: translate(-50%, -50%) scale(0.96, 0.92); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.04, 1.12); }
+}
+
+/* Toadstool Chewing & Digestion Animation */
+.plant-unit--toadstool-chewing .entity__sprite,
+.plant-unit--toadstool-chewing .plant-unit__sprite,
+.enemy-unit--toadstool-chewing .enemy-unit__sprite {
+  animation: toadstoolChewing 0.4s ease-in-out infinite alternate !important;
+}
+
+@keyframes toadstoolChewing {
+  0% {
+    transform: scale(1, 1) translateY(0);
+  }
+  30% {
+    transform: scale(1.18, 0.88) translateY(3px);
+  }
+  70% {
+    transform: scale(0.9, 1.15) translateY(-4px);
+  }
+  100% {
+    transform: scale(1.12, 0.92) translateY(2px);
+  }
+}
+
+.toadstool-chewing-badge {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #7b2cbf 0%, #b5179e 100%);
+  color: #ffde59;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 12px;
+  white-space: nowrap;
+  border: 1px solid #ffd166;
+  box-shadow: 0 0 10px rgba(181, 23, 158, 0.7);
+  animation: toadstoolBadgePulse 0.6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 50;
+}
+
+@keyframes toadstoolBadgePulse {
+  0% { transform: translateX(-50%) scale(0.95); opacity: 0.9; }
+  100% { transform: translateX(-50%) scale(1.05); opacity: 1; }
+}
+
+/* Guacodile Chewing & Chomping Animation */
+.plant-unit--guacodile-chewing .entity__sprite,
+.plant-unit--guacodile-chewing .plant-unit__sprite,
+.enemy-unit--guacodile-chewing .enemy-unit__sprite {
+  animation: guacodileChewing 0.35s ease-in-out infinite alternate !important;
+}
+
+@keyframes guacodileChewing {
+  0% {
+    transform: scale(1, 1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.22, 0.84) rotate(-5deg) translateY(2px);
+  }
+  65% {
+    transform: scale(0.92, 1.18) rotate(4deg) translateY(-3px);
+  }
+  100% {
+    transform: scale(1.15, 0.9) rotate(-3deg) translateY(1px);
+  }
+}
+
+.guacodile-chewing-badge {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
+  color: #74c69d;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+  border: 1px solid #52b788;
+  box-shadow: 0 0 10px rgba(45, 106, 79, 0.8), inset 0 0 6px rgba(116, 198, 157, 0.3);
+  animation: guacodileBadgePulse 0.5s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 50;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes guacodileBadgePulse {
+  0% { transform: translateX(-50%) scale(0.92); }
+  100% { transform: translateX(-50%) scale(1.08); }
+}
+
+/* Ghost Pepper Spectral Spirit Projectile */
+.projectile--ghost-spirit {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.9)) drop-shadow(0 0 14px rgba(147, 51, 234, 0.8));
+  animation: ghostSpiritFloat 0.35s ease-in-out infinite alternate;
+}
+
+@keyframes ghostSpiritFloat {
+  0% { transform: translateY(-2px) scale(0.95); opacity: 0.9; }
+  100% { transform: translateY(2px) scale(1.05); opacity: 1; }
+}
+
+/* Marigold Gold Coin Drop Item */
+.sun-item--gold {
+  filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.95)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6)) !important;
+}
+
+.gold-drop-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.gold-item__icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  animation: goldCoinSpin 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes goldCoinSpin {
+  0% { transform: scale(0.94) rotate(-4deg); }
+  100% { transform: scale(1.06) rotate(4deg); }
+}
+
+.gold-drop-value {
+  position: absolute;
+  bottom: -6px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid #facc15;
+  color: #fde047;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 0 5px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+
 
 

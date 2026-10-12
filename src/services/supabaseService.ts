@@ -58,7 +58,7 @@ export interface MisReferidos {
   validos: number
   validosTemporada?: number
   copasNecesarias: number
-  /** Oro que se puede cobrar ahora mismo (100 por cada amigo que llegó a 1300 copas). */
+  /** Oro que se puede cobrar ahora mismo (100 por cada amigo que llegó a 1400 copas). */
   oroPorCobrar: number
   amigosSinCobrar: number
   oroPorAmigo: number
@@ -5932,6 +5932,30 @@ export const SupabaseService = {
     } catch (e: any) {
       logError('adminGetBannedPlayers', e)
       return []
+    }
+  },
+
+  /** Acredita el oro obtenido por Margarita (Marigold) durante el combate en profiles.gold_balance */
+  async creditMarigoldGold(goldAmount: number): Promise<{ success: boolean; newGoldBalance?: number; goldCredited?: number; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    if (!goldAmount || goldAmount <= 0) return { success: true, goldCredited: 0 }
+    try {
+      const { data, error } = await (supabase.rpc as any)('credit_marigold_gold', {
+        p_gold_amount: Math.round(goldAmount),
+      })
+      if (error) {
+        logError('creditMarigoldGold', error)
+        return { success: false, error: error.message }
+      }
+      const res = Array.isArray(data) ? data[0] : data
+      return {
+        success: res?.success ?? true,
+        newGoldBalance: res?.new_gold_balance,
+        goldCredited: res?.gold_credited ?? goldAmount,
+      }
+    } catch (e: any) {
+      logError('creditMarigoldGold', e)
+      return { success: false, error: e?.message }
     }
   },
 }

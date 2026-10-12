@@ -1071,8 +1071,12 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
           continue
         }
         state.suns = state.suns.filter((s) => s.id !== sol.id)
-        state.sunBank += sol.value
-        state.stats.sunsCollected += 1
+        if (sol.type === 'gold') {
+          state.stats.goldEarned = (state.stats.goldEarned ?? 0) + sol.value
+        } else {
+          state.sunBank += sol.value
+          state.stats.sunsCollected += 1
+        }
         state.stats.score += 50
         continue
       }
@@ -1118,6 +1122,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
 
       if (j.kind === 'plant') {
         const plantId = j.plantId as PlantId | undefined
+        const maxCol = plantId === 'pickledpepper' ? TOTAL_COLUMNS : P1_COLUMNS
         if (
           !esPlantId(plantId) ||
           j.lane === undefined ||
@@ -1127,7 +1132,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
           j.col === undefined ||
           !Number.isInteger(j.col) ||
           j.col < 0 ||
-          j.col >= P1_COLUMNS
+          j.col >= maxCol
         ) {
           if (strictAuthoritativeHistory) {
             inconsistencyReason = 'INVALID_PLANT_DATA'
@@ -1173,7 +1178,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         }
 
         const camina = config?.category === 'melee' || !!config?.moveSpeed || plantIdValido === 'chomper'
-        if (!camina) {
+        if (!camina && plantIdValido !== 'pickledpepper' && plantIdValido !== 'jalapeno') {
           const ocupada = state.plants.some(
             (p) => p.lane === j.lane && p.col === j.col && !p.isWalking
           )
@@ -1192,7 +1197,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
           kind: 'own_plant',
           plantId: plantIdValido,
           lane: j.lane,
-          col: camina ? undefined : j.col,
+          col: (camina && plantIdValido !== 'pickledpepper') ? undefined : j.col,
           statRolls,
           level: statRolls.length > 0 ? statRolls.length : (cartaP1.level ?? j.level ?? 0),
           equippedItem,

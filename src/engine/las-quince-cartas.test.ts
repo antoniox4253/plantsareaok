@@ -49,7 +49,7 @@ const QUE_HACE: Record<PlantId, 'produce' | 'daña' | 'aguanta' | 'cura' | 'apar
   garlic: 'daña',
   guacodile: 'daña',
   ghostpepper: 'daña',
-  toadstool: 'daña',
+  toadstool: 'aparte',        // devora plantas enemigas y digiere generando soles
   explodeonut: 'daña',
   wallnut: 'aguanta',
   tallnut: 'aguanta',
@@ -246,4 +246,29 @@ describe('las tres que necesitan su escenario', () => {
     correr(estado, 45)
     expect(estado.plants.length).toBe(0)
   })
+
+  it('toadstool devora a la planta enemiga entera, mastica y genera 50 soles al digerir', () => {
+    const estado = createBattleState(55, false, true)
+    const victima = crearPlantaDelRival(estado, 'peashooter' as PlantId, 1, 6)
+    estado.enemyPlants.push(victima)
+    const solesIniciales = estado.sunBank
+
+    estado.pending.push({ atTick: 1, kind: 'own_plant', plantId: 'toadstool' as PlantId, lane: 1, col: 1 })
+    // Avanzar hasta que alcance y devore a la víctima
+    correr(estado, 400)
+
+    // La víctima desapareció
+    expect(estado.enemyPlants.filter((p) => p.hp > 0)).toHaveLength(0)
+
+    // Seta sapo existe en el campo
+    const toad = estado.plants.find((p) => p.plantId === 'toadstool')
+    expect(toad).toBeDefined()
+
+    // Avanzar para que termine la digestión completa
+    correr(estado, 150)
+
+    // Ha generado +50 soles al digerir
+    expect(estado.sunBank).toBeGreaterThan(solesIniciales)
+  })
 })
+

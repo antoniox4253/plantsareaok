@@ -173,6 +173,7 @@ interface PlantHandProps {
   slotCooldowns?: Record<number, number>
   activeDeck?: PlantId[]
   deckCards?: CartaDeMazo[] | null
+  goldEarned?: number
 }
 
 const CARDS: PlantId[] = Object.keys(PLANT_CONFIGS) as PlantId[]
@@ -188,6 +189,7 @@ export default function PlantHand({
   slotCooldowns,
   activeDeck,
   deckCards,
+  goldEarned,
 }: PlantHandProps) {
   // El reloj de la partida son los tics, no Date.now(). Ver currentTick arriba.
   const now = currentTick ?? 0
@@ -322,6 +324,14 @@ export default function PlantHand({
         <span className="sun-counter__value">{sunBank}</span>
       </div>
 
+      {/* Real-time Marigold Gold Counter Widget */}
+      {Boolean(goldEarned && goldEarned > 0) && (
+        <div className="gold-counter" title="Oro acumulado por Margarita (Marigold) en esta batalla">
+          <img className="gold-counter__icon" src="/game-assets/moneda.webp" alt="Oro" />
+          <span className="gold-counter__value">+{goldEarned}</span>
+        </div>
+      )}
+
       {/* Carousel Container */}
       <div className="plant-hand-carousel">
         {/* Left Arrow */}
@@ -419,6 +429,12 @@ export default function PlantHand({
 
                 {/* PC Keyboard Hotkey Badge */}
                 <span className="plant-hand__hotkey-badge">{vIdx + 1}</span>
+
+                {/* Sun Cost Badge in bottom-right corner of seed packet */}
+                <div className="plant-hand__cost-badge" title={`Coste: ${scaledConfig.cost} soles`}>
+                  <img src={sunIcon} alt="Sol" className="plant-hand__cost-icon" />
+                  <span className="plant-hand__cost-val">{scaledConfig.cost}</span>
+                </div>
 
                 {/* Card Seed Packet */}
                 <div className={`plant-hand__packet-wrap ${cardData.equippedItem ? 'plant-hand__packet-wrap--equipped' : ''}`}>

@@ -28,9 +28,10 @@ node scripts/db.mjs -f supabase/migrations/149-fix-referral-gold-claim.sql
 
 ## 👥 Sistema de Referidos
 
-- **Criterio de Amigo Válido**: Un jugador referido cuenta como válido en cuanto alcanza **1,300 copas** (`elo_rating >= 1300`).
+- **Criterio de Amigo Válido**: Un jugador referido cuenta como válido en cuanto alcanza **1,400 copas** (`elo_rating >= 1400`) y supera la evaluación de arbitraje anti-autowin / anti-win-trading (`_arbitrar_referido`).
+- **Arbitraje Anti-Autowin**: Valida que la cuenta no esté baneada, no tenga victorias amañadas contra su referidor y no presente un patrón desproporcionado de autowins por abandono de rivales inactivos.
 - **Recompensas Permanentes**:
-  - **100 Oro**: Por cada amigo válido que alcance 1,300 copas (`claim_referral_gold`).
+  - **100 Oro**: Por cada amigo válido que alcance 1,400 copas y pase arbitraje (`claim_referral_gold`).
   - **5% Comisión**: En gemas de cada depósito de los referidos (`claim_referral_deposit_gems`).
 - **Metas de Temporada (15 días)**:
   - 10 amigos válidos: 1 Sobre Básico (`claim_referral_season_milestone('sobre_10')`).

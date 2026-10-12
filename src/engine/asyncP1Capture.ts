@@ -76,8 +76,12 @@ export function ejecutarCapturaCollectP1(
   }
 
   state.suns = state.suns.filter((s: SunEntity) => s.id !== sunId)
-  state.sunBank += sol.value
-  state.stats.sunsCollected += 1
+  if (sol.type === 'gold') {
+    state.stats.goldEarned = (state.stats.goldEarned ?? 0) + sol.value
+  } else {
+    state.sunBank += sol.value
+    state.stats.sunsCollected += 1
+  }
   state.stats.score += 50
 
   const accion: AccionP1RankedEstricta | undefined =
@@ -141,7 +145,7 @@ export function ejecutarCapturaPlantP1(
 
   // Prevenir colocación duplicada o concurrente en casillas estáticas ya ocupadas
   const isWalkingUnit = config?.category === 'melee' || !!config?.moveSpeed || card === 'chomper'
-  if (!isWalkingUnit) {
+  if (!isWalkingUnit && card !== 'pickledpepper' && card !== 'jalapeno') {
     const isOccupiedByPlant = state.plants.some(
       (p) => p.lane === lane && p.col === col && !p.isWalking && p.hp > 0
     )

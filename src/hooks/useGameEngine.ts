@@ -186,6 +186,7 @@ export function useGameEngine() {
       enemyPlantsDefeated: 0,
       plantsPlaced: 0,
       score: 0,
+      goldEarned: 0,
     },
   })
 
@@ -859,6 +860,7 @@ export function useGameEngine() {
         enemyPlantsDefeated: 0,
         plantsPlaced: initialPlants.length,
         score: 0,
+        goldEarned: 0,
       },
     }
 
@@ -1310,7 +1312,7 @@ export function useGameEngine() {
 
       // Check cell occupancy for static plants (already sprouted, pending in engine, or pending in outbox)
       const isWalkingUnit = config?.category === 'melee' || !!config?.moveSpeed || card === 'chomper'
-      if (!isWalkingUnit) {
+      if (!isWalkingUnit && card !== 'pickledpepper' && card !== 'jalapeno') {
         const existing = state.plants.find((p) => p.lane === lane && p.col === col && !p.isWalking && p.hp > 0)
         const pendingSprout = state.pending.find((p) => p.kind === 'own_plant' && p.lane === lane && p.col === col)
         const pendingOutbox = accionesP1PendingRef.current.find((a) => a.kind === 'plant' && a.lane === lane && a.col === col)

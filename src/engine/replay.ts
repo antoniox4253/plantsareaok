@@ -448,8 +448,12 @@ function validarYAplicarIntencion(
       return
     }
     propia.suns = propia.suns.filter((s) => s.id !== sol.id)
-    propia.sunBank += sol.value
-    propia.stats.sunsCollected += 1
+    if (sol.type === 'gold') {
+      propia.stats.goldEarned = (propia.stats.goldEarned ?? 0) + sol.value
+    } else {
+      propia.sunBank += sol.value
+      propia.stats.sunsCollected += 1
+    }
     propia.stats.score += 50
     return
   }

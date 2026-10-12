@@ -79,7 +79,7 @@ export interface PlantEntity {
   maxHp: number
   lastActionTime: number
   isWalking: boolean
-  state: 'idle' | 'walking' | 'attacking'
+  state: 'idle' | 'walking' | 'attacking' | 'chewing'
   isSmashing?: boolean
   smashStartTime?: number
   isArmed?: boolean
@@ -88,6 +88,7 @@ export interface PlantEntity {
   frozenUntil?: number
   isHealingFx?: boolean
   equippedItem?: string | null
+  chewingUntilTick?: number
 }
 
 export type EnemyPlantType =
@@ -148,14 +149,15 @@ export interface EnemyPlantEntity {
   speed: number
   damage: number
   isWalking: boolean
-  state: 'idle' | 'walking' | 'attacking'
+  state: 'idle' | 'walking' | 'attacking' | 'chewing'
   lastAttackTime: number
   frozenUntil?: number
+  chewingUntilTick?: number
 }
 
 export interface ProjectileEntity {
   id: string
-  type: 'pea' | 'melon' | 'needle' | 'kernel' | 'butter' | 'frozen_pea' | 'fire_pea'
+  type: 'pea' | 'melon' | 'needle' | 'kernel' | 'butter' | 'frozen_pea' | 'fire_pea' | 'ghost_spirit'
   targetTeam: 'p1' | 'p2'
   lane: number
   x: number // current % x position
@@ -177,6 +179,7 @@ export interface SunEntity {
   targetY: number // percentage to fall to
   value: number
   createdAt: number
+  type?: 'sun' | 'gold'
 }
 
 export type GameStatus = 'ready' | 'playing' | 'victory' | 'defeat' | 'paused'
@@ -191,6 +194,7 @@ export interface GameStats {
   enemyPlantsDefeated: number
   plantsPlaced: number
   score: number
+  goldEarned?: number
 }
 
 export interface PlantCardInstance {
