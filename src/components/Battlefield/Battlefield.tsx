@@ -1551,6 +1551,11 @@ export default function Battlefield({
                   vipGoldBonus: prev?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
                 }))
               }
+
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+                window.dispatchEvent(new CustomEvent('refresh_pack_slots'))
+              }
             }
 
             terminarPorOrdenDelServidor(yoGane ? 'victory' : 'defeat')
@@ -1620,6 +1625,11 @@ export default function Battlefield({
                 ...prev,
                 vipGoldBonus: prev?.vipGoldBonus ?? verificacion.settlement?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
               }))
+            }
+
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+              window.dispatchEvent(new CustomEvent('refresh_pack_slots'))
             }
 
             // ── RECLAMO DE TOKEN PLANTS (EXCLUSIVO ARENA 3+ / 2,001+ COPAS) ──

@@ -133,7 +133,7 @@ export function useMatchmaking() {
 
     const segundosEsperados = r.waitedSeconds ?? 0
 
-    // En Ranked: si ya pasaron >= 3 segundos o el servidor marca ghostAvailable, solicitar automáticamente Rival Semilla
+    // En Ranked: si ya pasaron >= 30 segundos o el servidor marca ghostAvailable, solicitar automáticamente Rival Semilla
     if (modoRef.current === 'ranked' && (segundosEsperados >= RANKED_MATCHMAKING_TIMEOUT_SECONDS || Boolean((r as any).ghostAvailable)) && !claimingRef.current) {
       claimingRef.current = true
       try {

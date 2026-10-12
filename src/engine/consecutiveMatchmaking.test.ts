@@ -95,7 +95,7 @@ describe('D. Rematch / Matchmaking Consecutivo & Ciclo de Vida Limpio', () => {
     expect(searching).toBe(true)
   })
 
-  it('3. Secuencia: Buscar -> Rival Fallback (3s) -> Terminar -> Buscar', async () => {
+  it('3. Secuencia: Buscar -> Rival Fallback (30s) -> Terminar -> Buscar', async () => {
     let queueWaited = 0
 
     vi.spyOn(SupabaseService, 'enterMatchmaking').mockResolvedValue({
@@ -120,20 +120,17 @@ describe('D. Rematch / Matchmaking Consecutivo & Ciclo de Vida Limpio', () => {
     // 1. Iniciar búsqueda
     await SupabaseService.enterMatchmaking('ranked')
 
-    // 2. Sondeos sucesivos hasta superar 3s
+    // 2. Sondeos sucesivos hasta superar 30s
     let poll = await SupabaseService.pollMatchmaking() // 1s
     expect(poll.waitedSeconds).toBe(1)
     expect(poll.waitedSeconds! >= RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(false)
 
-    poll = await SupabaseService.pollMatchmaking() // 2s
-    expect(poll.waitedSeconds).toBe(2)
-    expect(poll.waitedSeconds! >= RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(false)
-
-    poll = await SupabaseService.pollMatchmaking() // 3s
-    expect(poll.waitedSeconds).toBe(3)
+    queueWaited = 29
+    poll = await SupabaseService.pollMatchmaking() // 30s
+    expect(poll.waitedSeconds).toBe(30)
     expect(poll.waitedSeconds! >= RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(true)
 
-    // 3. Al alcanzar 3s, se activa claimRankedAsyncOpponent
+    // 3. Al alcanzar 30s, se activa claimRankedAsyncOpponent
     const fallbackRes = await SupabaseService.claimRankedAsyncOpponent()
     expect(fallbackRes.matched).toBe(true)
     expect(fallbackRes.roomId).toBe('room-async-fallback-1')
