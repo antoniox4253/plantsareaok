@@ -828,6 +828,9 @@ export default function Clan({
           settings: myClanData.clan.settings,
           rewardShares: myClanData.clan.rewardShares,
           maxMembers: myClanData.clan.maxMembers || 15,
+          leadershipClaim: myClanData.clan.leadershipClaim || null,
+          isLeaderInactive: Boolean(myClanData.clan.isLeaderInactive),
+          leaderInactiveDays: Number(myClanData.clan.leaderInactiveDays || 0),
         }
         setUserClan(clanObj)
         ClanManager.setUserClanId(clanObj.id)
