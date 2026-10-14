@@ -1140,7 +1140,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
         if (enfrente) {
           const hitX = enfrente.x
           const flameCenterX = hitX - (lado.sentido * 2.5)
-          const dano = config.damage || 1400
+          const dano = config.damage || 1000
           for (const a of susPlantas) {
             if (a.lane === planta.lane && a.hp > 0 && Math.abs(a.x - hitX) <= 8.5) {
               a.hp -= dano

@@ -31,7 +31,7 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
       // Correr hasta que choque
       correr(estado, 200)
 
-      // El enemigo impactado debió haber muerto por los 1400 de daño
+      // El enemigo impactado debió haber muerto por los 1000 de daño
       expect(estado.enemyPlants.filter((p) => p.hp > 0)).toHaveLength(0)
 
       // Explode-o-nut original debe haber muerto (hp: 0)
