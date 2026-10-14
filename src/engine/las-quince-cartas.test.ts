@@ -36,7 +36,7 @@ const TODAS = Object.keys(PLANT_CONFIGS) as PlantId[]
 const QUE_HACE: Record<PlantId, 'produce' | 'daña' | 'aguanta' | 'cura' | 'aparte'> = {
   sunflower: 'produce',
   twinsunflower: 'produce',
-  marigold: 'produce',
+  marigold: 'aparte',        // produce monedas de oro (no soles): comprobada en su escenario
   peashooter: 'daña',
   repeater: 'daña',
   threepeater: 'daña',
@@ -270,5 +270,17 @@ describe('las tres que necesitan su escenario', () => {
     // Ha generado +50 soles al digerir
     expect(estado.sunBank).toBeGreaterThan(solesIniciales)
   })
+
+  it('marigold genera monedas de oro periódicamente en el campo', () => {
+    const estado = createBattleState(77, false, true)
+    estado.pending.push({ atTick: 1, kind: 'own_plant', plantId: 'marigold' as PlantId, lane: 1, col: 0 })
+    correr(estado, 480)
+
+    const monedas = estado.suns.filter((s) => s.type === 'gold')
+    expect(monedas.length).toBeGreaterThanOrEqual(1)
+    expect(monedas[0].type).toBe('gold')
+    expect(monedas[0].value).toBeGreaterThanOrEqual(1)
+  })
 })
+
 
