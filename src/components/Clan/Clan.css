@@ -1119,13 +1119,78 @@
   color: #94a3b8;
 }
 
+.clan-status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  user-select: none;
+  cursor: default;
+}
+
 .clan-status-dot {
   display: inline-block;
-  width: 6px;
-  height: 6px;
-  background: #4ade80;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  margin-right: 4px;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.clan-status-dot--online {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+  animation: clanStatusPulse 2s infinite ease-in-out;
+}
+
+.clan-status-dot--recent {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+.clan-status-dot--offline {
+  background: #64748b;
+  box-shadow: 0 0 4px rgba(100, 116, 139, 0.3);
+}
+
+.clan-status-dot--inactive {
+  background: #ef4444;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+  opacity: 0.8;
+}
+
+.clan-status-text--online {
+  color: #4ade80;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.35);
+}
+
+.clan-status-text--recent {
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+.clan-status-text--offline {
+  color: #94a3b8;
+}
+
+.clan-status-text--inactive {
+  color: #f87171;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+@keyframes clanStatusPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+  }
+  50% {
+    transform: scale(1.28);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.95);
+  }
 }
 
 /* TAB 2: WARS & SAQUEO */

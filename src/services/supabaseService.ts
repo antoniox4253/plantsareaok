@@ -2488,6 +2488,16 @@ export const SupabaseService = {
     }
   },
 
+  /** Registra actividad reciente del jugador en el servidor (heartbeat silencioso). */
+  async touchPlayerActivity(): Promise<void> {
+    if (!isSupabaseConfigured()) return
+    try {
+      await (supabase.rpc as any)('touch_player_activity')
+    } catch {
+      // Ignorar errores en heartbeat silencioso
+    }
+  },
+
   /**
    * Obtener ranking dinámico de clanes ordenado por daño infligido
    */

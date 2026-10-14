@@ -11,6 +11,122 @@ export interface ClanMember {
   roundsParticipated?: number // Rondas participadas en la temporada (>= 2 protege contra expulsión hasta fin de temporada)
   walkoverLosses?: number // Derrotas por W.O. por no presentarse (>= 1 permite expulsar)
   rewardPercentage?: number // Cuota porcentual asignada para el reparto de ganancias (0 - 100%)
+  lastActiveAt?: string | null // Timestamp ISO de última actividad o inicio de sesión
+  isOnline?: boolean // Estatus autoritativo en línea según Supabase
+}
+
+export function formatMemberActivityStatus(
+  lastActiveAt?: string | null,
+  isOnlinePresence?: boolean,
+  isMe?: boolean
+): {
+  isOnline: boolean
+  isRecent: boolean
+  label: string
+  dotClass: string
+  textClass: string
+} {
+  if (isMe || isOnlinePresence) {
+    return {
+      isOnline: true,
+      isRecent: false,
+      label: 'En línea',
+      dotClass: 'clan-status-dot clan-status-dot--online',
+      textClass: 'clan-status-text--online',
+    }
+  }
+
+  if (!lastActiveAt) {
+    return {
+      isOnline: false,
+      isRecent: false,
+      label: 'Desconectado',
+      dotClass: 'clan-status-dot clan-status-dot--offline',
+      textClass: 'clan-status-text--offline',
+    }
+  }
+
+  const now = Date.now()
+  const activeTime = new Date(lastActiveAt).getTime()
+  if (isNaN(activeTime)) {
+    return {
+      isOnline: false,
+      isRecent: false,
+      label: 'Desconectado',
+      dotClass: 'clan-status-dot clan-status-dot--offline',
+      textClass: 'clan-status-text--offline',
+    }
+  }
+
+  const diffMs = Math.max(0, now - activeTime)
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHours = Math.floor(diffMin / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  // Menos de 5 minutos: En línea
+  if (diffMin < 5) {
+    return {
+      isOnline: true,
+      isRecent: false,
+      label: 'En línea',
+      dotClass: 'clan-status-dot clan-status-dot--online',
+      textClass: 'clan-status-text--online',
+    }
+  }
+
+  // Menos de 60 minutos: Hace X min
+  if (diffMin < 60) {
+    return {
+      isOnline: false,
+      isRecent: true,
+      label: `Hace ${diffMin} min`,
+      dotClass: 'clan-status-dot clan-status-dot--recent',
+      textClass: 'clan-status-text--recent',
+    }
+  }
+
+  // Menos de 24 horas: Hace X h
+  if (diffHours < 24) {
+    return {
+      isOnline: false,
+      isRecent: false,
+      label: `Hace ${diffHours} h`,
+      dotClass: 'clan-status-dot clan-status-dot--offline',
+      textClass: 'clan-status-text--offline',
+    }
+  }
+
+  // Entre 24h y 48h: Ayer
+  if (diffDays === 1) {
+    return {
+      isOnline: false,
+      isRecent: false,
+      label: 'Ayer',
+      dotClass: 'clan-status-dot clan-status-dot--offline',
+      textClass: 'clan-status-text--offline',
+    }
+  }
+
+  // Más de 30 días
+  if (diffDays >= 30) {
+    return {
+      isOnline: false,
+      isRecent: false,
+      label: '+30 días',
+      dotClass: 'clan-status-dot clan-status-dot--inactive',
+      textClass: 'clan-status-text--inactive',
+    }
+  }
+
+  // De 2 a 29 días
+  return {
+    isOnline: false,
+    isRecent: false,
+    label: `Hace ${diffDays} d`,
+    dotClass: 'clan-status-dot clan-status-dot--offline',
+    textClass: 'clan-status-text--offline',
+  }
 }
 
 export interface ClanSettings {

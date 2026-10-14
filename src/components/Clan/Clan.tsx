@@ -7,6 +7,7 @@ import {
   type ClanDonationRequest,
   type ClanDepositLog,
   type KickValidationResult,
+  formatMemberActivityStatus,
 } from '../../utils/clanManager'
 import type { PlantId, ClanFortressData, ClanFortressMatchOpponent, ClanRaidHistoryEntry } from '../../types/game'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
@@ -161,6 +162,7 @@ export default function Clan({
     return c?.id ? clanChatService.getLocalMessages(c.id) : []
   })
   const chatEndRef = React.useRef<HTMLDivElement>(null)
+  const [onlineMemberIds, setOnlineMemberIds] = useState<Set<string>>(new Set())
 
   const playerName = UserManager.getProfile().name || 'Guerrero'
   const myMember = userClan?.members.find(
@@ -927,6 +929,8 @@ export default function Clan({
             donatedCount: m.donatedCount || 0,
             joinedAt: typeof m.joinedAt === 'string' ? m.joinedAt.split('T')[0] : '',
             rewardPercentage: typeof m.rewardPercentage === 'number' ? m.rewardPercentage : undefined,
+            lastActiveAt: m.lastActiveAt || null,
+            isOnline: Boolean(m.isOnline),
           })),
           vaultGems: Number(myClanData.clan.vaultGems || 0),
           vaultUsd: Number(myClanData.clan.vaultGems || 0),
@@ -1033,6 +1037,8 @@ export default function Clan({
                   donatedCount: Number(m.donatedCount || 0),
                   joinedAt: typeof m.joinedAt === 'string' ? m.joinedAt.split('T')[0] : '',
                   rewardPercentage: typeof m.rewardPercentage === 'number' ? m.rewardPercentage : undefined,
+                  lastActiveAt: m.lastActiveAt || null,
+                  isOnline: Boolean(m.isOnline),
                 }))
               : Array(c.member_count || 1).fill({}).map((_, i) => ({
                   id: `mem-${i}`,
@@ -1122,6 +1128,43 @@ export default function Clan({
 
     return () => {
       void supabase.removeChannel(channel)
+    }
+  }, [])
+
+  // 3. Monitoreo de presencia en tiempo real y registro de actividad
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return
+
+    // Registrar actividad del usuario inmediatamente al abrir el Clan
+    void supabaseService.touchPlayerActivity().catch(() => {})
+
+    // Heartbeat ligero cada 2 minutos para mantener la sesión activa mientras se interactúa en el Clan
+    const heartbeatTimer = setInterval(() => {
+      void supabaseService.touchPlayerActivity().catch(() => {})
+    }, 120000)
+
+    // Escuchar el canal global de presencia en tiempo real
+    const presenceChannel = supabase.channel('online-players-presence')
+
+    const syncPresenceState = () => {
+      try {
+        const state = presenceChannel.presenceState()
+        const keys = Object.keys(state)
+        setOnlineMemberIds(new Set(keys))
+      } catch (err) {
+        console.warn('[Clan] Error sincronizando presencia:', err)
+      }
+    }
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, syncPresenceState)
+      .on('presence', { event: 'join' }, syncPresenceState)
+      .on('presence', { event: 'leave' }, syncPresenceState)
+
+    syncPresenceState()
+
+    return () => {
+      clearInterval(heartbeatTimer)
     }
   }, [])
 
@@ -2633,7 +2676,9 @@ export default function Clan({
               </thead>
               <tbody>
                 {userClan.members.map((member, idx) => {
-                  const isMe = member.name === playerName
+                  const isMe =
+                    member.name?.trim().toLowerCase() === playerName?.trim().toLowerCase() ||
+                    (Boolean(myMember?.id) && member.id === myMember?.id)
                   const isUserLeader = userClan.leader === playerName || userClan.members.find((m) => m.name === playerName)?.role === 'Líder'
                   const isUserColeader = userClan.members.find((m) => m.name === playerName)?.role === 'Colíder'
                   const canKickMembers = isUserLeader || isUserColeader
@@ -2702,7 +2747,28 @@ export default function Clan({
                         )}
                       </td>
                       <td>
-                        <span className="clan-status-dot" /> En línea
+                        {(() => {
+                          const isOnlineRealtime = onlineMemberIds.has(member.id) || Boolean(member.isOnline)
+                          const status = formatMemberActivityStatus(
+                            member.lastActiveAt,
+                            isOnlineRealtime,
+                            isMe
+                          )
+                          const tooltip = isMe
+                            ? 'Tú (Conectado actualmente)'
+                            : isOnlineRealtime
+                            ? 'En línea en tiempo real'
+                            : member.lastActiveAt
+                            ? `Última actividad: ${new Date(member.lastActiveAt).toLocaleString()}`
+                            : 'Sin registro de actividad'
+
+                          return (
+                            <div className="clan-status-cell" title={tooltip}>
+                              <span className={status.dotClass} />
+                              <span className={status.textClass}>{status.label}</span>
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>

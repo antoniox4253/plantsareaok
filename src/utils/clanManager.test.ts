@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { ClanManager, type ClanMember } from './clanManager'
+import { ClanManager, type ClanMember, formatMemberActivityStatus } from './clanManager'
 
 const store: Record<string, string> = {}
 const mockLocalStorage = {
@@ -255,6 +255,84 @@ describe('ClanManager & Gem Valuations', () => {
     const rejectRes = ClanManager.respondClanInvitation(sendRes.invitationId!, false)
     expect(rejectRes.success).toBe(true)
     expect(rejectRes.isSponsored).toBe(true)
+  })
+
+  describe('formatMemberActivityStatus', () => {
+    it('returns En línea immediately if isMe is true regardless of lastActiveAt', () => {
+      const status = formatMemberActivityStatus(null, false, true)
+      expect(status.isOnline).toBe(true)
+      expect(status.label).toBe('En línea')
+      expect(status.dotClass).toContain('clan-status-dot--online')
+      expect(status.textClass).toBe('clan-status-text--online')
+    })
+
+    it('returns En línea if isOnlinePresence is true', () => {
+      const status = formatMemberActivityStatus(new Date(Date.now() - 3600000).toISOString(), true, false)
+      expect(status.isOnline).toBe(true)
+      expect(status.label).toBe('En línea')
+      expect(status.dotClass).toContain('clan-status-dot--online')
+    })
+
+    it('returns En línea if active less than 5 minutes ago', () => {
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+      const status = formatMemberActivityStatus(twoMinutesAgo, false, false)
+      expect(status.isOnline).toBe(true)
+      expect(status.label).toBe('En línea')
+    })
+
+    it('returns Hace X min if active between 5 and 59 minutes ago', () => {
+      const twentyMinsAgo = new Date(Date.now() - 20 * 60 * 1000).toISOString()
+      const status = formatMemberActivityStatus(twentyMinsAgo, false, false)
+      expect(status.isOnline).toBe(false)
+      expect(status.isRecent).toBe(true)
+      expect(status.label).toBe('Hace 20 min')
+      expect(status.dotClass).toContain('clan-status-dot--recent')
+      expect(status.textClass).toBe('clan-status-text--recent')
+    })
+
+    it('returns Hace X h if active between 1 and 23 hours ago', () => {
+      const fourHoursAgo = new Date(Date.now() - 4 * 3600 * 1000).toISOString()
+      const status = formatMemberActivityStatus(fourHoursAgo, false, false)
+      expect(status.isOnline).toBe(false)
+      expect(status.label).toBe('Hace 4 h')
+      expect(status.dotClass).toContain('clan-status-dot--offline')
+    })
+
+    it('returns Ayer if active 1 day ago (24-48h)', () => {
+      const yesterday = new Date(Date.now() - 30 * 3600 * 1000).toISOString()
+      const status = formatMemberActivityStatus(yesterday, false, false)
+      expect(status.isOnline).toBe(false)
+      expect(status.label).toBe('Ayer')
+      expect(status.dotClass).toContain('clan-status-dot--offline')
+    })
+
+    it('returns Hace X d if active between 2 and 29 days ago', () => {
+      const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString()
+      const status = formatMemberActivityStatus(fiveDaysAgo, false, false)
+      expect(status.isOnline).toBe(false)
+      expect(status.label).toBe('Hace 5 d')
+      expect(status.dotClass).toContain('clan-status-dot--offline')
+    })
+
+    it('returns +30 días if inactive for 30 or more days', () => {
+      const fortyDaysAgo = new Date(Date.now() - 40 * 24 * 3600 * 1000).toISOString()
+      const status = formatMemberActivityStatus(fortyDaysAgo, false, false)
+      expect(status.isOnline).toBe(false)
+      expect(status.label).toBe('+30 días')
+      expect(status.dotClass).toContain('clan-status-dot--inactive')
+      expect(status.textClass).toBe('clan-status-text--inactive')
+    })
+
+    it('returns Desconectado if lastActiveAt is null or invalid', () => {
+      const statusNull = formatMemberActivityStatus(null, false, false)
+      expect(statusNull.isOnline).toBe(false)
+      expect(statusNull.label).toBe('Desconectado')
+      expect(statusNull.dotClass).toContain('clan-status-dot--offline')
+
+      const statusInvalid = formatMemberActivityStatus('not-a-date', false, false)
+      expect(statusInvalid.isOnline).toBe(false)
+      expect(statusInvalid.label).toBe('Desconectado')
+    })
   })
 })
 
