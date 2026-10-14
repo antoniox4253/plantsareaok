@@ -132,6 +132,16 @@ export const PLANT_ELIGIBLE_STATS_LABELS: Record<string, string[]> = {
   tallnut: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
   iceberglettuce: ['❄️ Duración +2s', '⏱️ Recarga -15%'],
   threepeater: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
+  kernelpult: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '❄️ Inmovilización +0.6s'],
+  explodeonut: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '🏃 Vel. Movimiento +15%'],
+  gatlingpea: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
+  ghostpepper: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%', '🏃 Vel. Movimiento +15%'],
+  guacodile: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%', '🏃 Vel. Movimiento +15%'],
+  marigold: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
+  pickledpepper: ['⚔️ Daño +150', '⏱️ Recarga -15%'],
+  snowpea: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%', '❄️ Congelación +0.5s'],
+  toadstool: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%', '🏃 Vel. Movimiento +15%'],
+  torchwood: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
 }
 
 export default function Jardin({

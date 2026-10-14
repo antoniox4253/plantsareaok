@@ -239,5 +239,41 @@ describe('Sistema de Referidos - Auditoría y Reglas Canónicas', () => {
       expect(sql).toContain('Balto')
     })
   })
+
+  describe('8. Auditoría de la Migración SQL 305 (Umbral 1,400 Copas y Arbitraje Anti-Autowin)', () => {
+    const migration305Path = path.resolve(
+      __dirname,
+      '../../../supabase/migrations/305-unban-blessd-and-referral-1400-trophies-with-arbitration.sql'
+    )
+
+    it('el archivo de migración 305 existe', () => {
+      expect(fs.existsSync(migration305Path)).toBe(true)
+    })
+
+    it('desbanea a Bles_sd y descuenta el oro reclamado de referidos', () => {
+      const sql = fs.readFileSync(migration305Path, 'utf8')
+      expect(sql).toContain('is_banned = FALSE')
+      expect(sql).toContain('GREATEST(0, gold_balance - 300)')
+      expect(sql).toContain('41e0ad2c-e665-42f8-8c22-7498f3ac93e6')
+    })
+
+    it('eleva el umbral de copas a 1400 en shop_config', () => {
+      const sql = fs.readFileSync(migration305Path, 'utf8')
+      expect(sql).toContain("('ref_copas_validas', '1400')")
+    })
+
+    it('implementa la función de arbitraje antifraude _arbitrar_referido', () => {
+      const sql = fs.readFileSync(migration305Path, 'utf8')
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public._arbitrar_referido')
+      expect(sql).toContain('autowin_con_referidor')
+      expect(sql).toContain('autowin_por_abandono')
+    })
+
+    it('integra el arbitraje en claim_referral_gold y _sellar_referido_valido', () => {
+      const sql = fs.readFileSync(migration305Path, 'utf8')
+      expect(sql).toContain('public._arbitrar_referido(v_rec.referred_id, v_uid)')
+      expect(sql).toContain('public._arbitrar_referido(v_ref.referred_id, v_ref.referrer_id)')
+    })
+  })
 })
 

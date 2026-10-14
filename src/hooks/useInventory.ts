@@ -56,6 +56,15 @@ const ALL_15_PLANTS: PlantId[] = [
   'aloe',
   'melonpult',
   'kernelpult',
+  'explodeonut',
+  'gatlingpea',
+  'ghostpepper',
+  'guacodile',
+  'marigold',
+  'pickledpepper',
+  'snowpea',
+  'toadstool',
+  'torchwood',
 ]
 
 const DEFAULT_TOKENS = 0
@@ -78,6 +87,15 @@ const DEFAULT_PLANT_COPIES: Record<PlantId, number> = {
   aloe: 0,
   melonpult: 0,
   kernelpult: 0,
+  explodeonut: 0,
+  gatlingpea: 0,
+  ghostpepper: 0,
+  guacodile: 0,
+  marigold: 0,
+  pickledpepper: 0,
+  snowpea: 0,
+  toadstool: 0,
+  torchwood: 0,
 }
 
 /**
@@ -143,6 +161,15 @@ const DEFAULT_PLANT_LEVELS: Record<PlantId, number> = {
   aloe: 0,
   melonpult: 0,
   kernelpult: 0,
+  explodeonut: 0,
+  gatlingpea: 0,
+  ghostpepper: 0,
+  guacodile: 0,
+  marigold: 0,
+  pickledpepper: 0,
+  snowpea: 0,
+  toadstool: 0,
+  torchwood: 0,
 }
 
 const STORAGE_KEYS = {

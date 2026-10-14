@@ -126,4 +126,14 @@ describe('Sistema de Copas Ranked estilo Clash Royale', () => {
       expect(getTrophyGateForElo(eloNuevo)).toBe(0)
     })
   })
+
+  describe('4. Copas en Temporada 1: Full Nominal (+30 en Arena 5)', () => {
+    it('en Temporada 1, todas las victorias otorgan el ELO completo de la arena (+15, +18, +20, +25, +30)', () => {
+      expect(getEloDeltasForElo(1000).winElo).toBe(15)
+      expect(getEloDeltasForElo(1800).winElo).toBe(18)
+      expect(getEloDeltasForElo(2500).winElo).toBe(20)
+      expect(getEloDeltasForElo(3500).winElo).toBe(25)
+      expect(getEloDeltasForElo(5000).winElo).toBe(30)
+    })
+  })
 })

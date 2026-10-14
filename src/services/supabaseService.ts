@@ -58,7 +58,7 @@ export interface MisReferidos {
   validos: number
   validosTemporada?: number
   copasNecesarias: number
-  /** Oro que se puede cobrar ahora mismo (100 por cada amigo que llegó a 1300 copas). */
+  /** Oro que se puede cobrar ahora mismo (100 por cada amigo que llegó a 1400 copas). */
   oroPorCobrar: number
   amigosSinCobrar: number
   oroPorAmigo: number
@@ -1358,20 +1358,38 @@ export const SupabaseService = {
     error?: string
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
-    try {
-      const { data, error } = await (supabase.rpc as any)('report_match_result', {
-        p_room_id: roomId,
-        p_winner_id: winnerId,
-      })
-      if (error) {
-        logError('reportMatchResult', error)
-        return { success: false, error: error.message }
+    let lastError: any = null
+    for (let intento = 1; intento <= 3; intento++) {
+      try {
+        const { data, error } = await (supabase.rpc as any)('report_match_result', {
+          p_room_id: roomId,
+          p_winner_id: winnerId,
+        })
+        if (error) {
+          logError(`reportMatchResult (intento ${intento})`, error)
+          lastError = error
+          const errMsg = error.message || ''
+          if (errMsg.includes('no encontrada') || errMsg.includes('No participas') || errMsg.includes('No autenticado') || errMsg.includes('cambiar tu reporte')) {
+            return { success: false, error: errMsg }
+          }
+          if (intento < 3) {
+            await new Promise((resolve) => setTimeout(resolve, 800 * intento))
+            continue
+          }
+          return { success: false, error: errMsg }
+        }
+        return data as any
+      } catch (e: any) {
+        logError(`reportMatchResult (intento ${intento})`, e)
+        lastError = e
+        if (intento < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 800 * intento))
+          continue
+        }
+        return { success: false, error: e?.message }
       }
-      return data as any
-    } catch (e: any) {
-      logError('reportMatchResult', e)
-      return { success: false, error: e?.message }
     }
+    return { success: false, error: lastError?.message || 'Error al reportar resultado de partida' }
   },
 
   /**
@@ -2129,6 +2147,51 @@ export const SupabaseService = {
       return { success: true, ...(data as any) }
     } catch (e: any) {
       logError('setClanMemberRole', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async startClanLeadershipClaim(): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('start_clan_leadership_claim')
+      if (error) {
+        logError('startClanLeadershipClaim', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data }
+    } catch (e: any) {
+      logError('startClanLeadershipClaim', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async supportClanLeadershipClaim(): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('support_clan_leadership_claim')
+      if (error) {
+        logError('supportClanLeadershipClaim', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data }
+    } catch (e: any) {
+      logError('supportClanLeadershipClaim', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async cancelClanLeadershipClaim(): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('cancel_clan_leadership_claim')
+      if (error) {
+        logError('cancelClanLeadershipClaim', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data }
+    } catch (e: any) {
+      logError('cancelClanLeadershipClaim', e)
       return { success: false, error: e?.message }
     }
   },
@@ -5932,6 +5995,30 @@ export const SupabaseService = {
     } catch (e: any) {
       logError('adminGetBannedPlayers', e)
       return []
+    }
+  },
+
+  /** Acredita el oro obtenido por Margarita (Marigold) durante el combate en profiles.gold_balance */
+  async creditMarigoldGold(goldAmount: number): Promise<{ success: boolean; newGoldBalance?: number; goldCredited?: number; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    if (!goldAmount || goldAmount <= 0) return { success: true, goldCredited: 0 }
+    try {
+      const { data, error } = await (supabase.rpc as any)('credit_marigold_gold', {
+        p_gold_amount: Math.round(goldAmount),
+      })
+      if (error) {
+        logError('creditMarigoldGold', error)
+        return { success: false, error: error.message }
+      }
+      const res = Array.isArray(data) ? data[0] : data
+      return {
+        success: res?.success ?? true,
+        newGoldBalance: res?.new_gold_balance,
+        goldCredited: res?.gold_credited ?? goldAmount,
+      }
+    } catch (e: any) {
+      logError('creditMarigoldGold', e)
+      return { success: false, error: e?.message }
     }
   },
 }

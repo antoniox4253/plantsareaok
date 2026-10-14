@@ -10,7 +10,7 @@ import './PanelDeReferidos.css'
  * PANEL DE REFERIDOS ACTUALIZADO
  *
  * 1. Recompensas Permanentes:
- *    - 100 de oro por única vez por cada amigo que alcance 1,300 copas por primera vez.
+ *    - 100 de oro por única vez por cada amigo que alcance 1,400 copas por primera vez.
  *    - 5% en gemas de cada depósito que realicen tus amigos referidos (acumulable y retirable).
  * 2. Metas de Temporada (se renuevan cada 15 días):
  *    - 10 amigos válidos en la temporada: 1 Sobre Básico de cartas.
@@ -27,7 +27,7 @@ const POR_QUE_NO: Record<string, string> = {
   cuenta_demasiado_antigua:
     'Tu cuenta tiene más de 7 días. El código de un amigo solo se puede usar al empezar.',
   ya_pasaste_las_copas:
-    'Ya pasaste las copas requeridas a las que un invitado empieza a contar (1,300 copas), por lo que este código ya no aplica.',
+    'Ya pasaste las copas requeridas a las que un invitado empieza a contar (1,400 copas), por lo que este código ya no aplica.',
   ya_tienes_referidor: 'Ya estás vinculado con quien te invitó.',
   sin_perfil: 'No se encontró tu perfil.',
 }
@@ -196,7 +196,7 @@ export default function PanelDeReferidos() {
       window.dispatchEvent(new Event('refresh_user_inventory'))
       void cargar()
     } else {
-      const copasMeta = datos?.copasNecesarias ?? 1300
+      const copasMeta = datos?.copasNecesarias ?? 1400
       decir(
         r.motivo === 'nada_que_cobrar'
           ? `No tienes amigos nuevos que hayan alcanzado las ${copasMeta.toLocaleString()} copas.`
@@ -232,7 +232,7 @@ export default function PanelDeReferidos() {
     }
   }
 
-  const copasMeta = datos.copasNecesarias ?? 1300
+  const copasMeta = datos.copasNecesarias ?? 1400
   const gemasDeposito = Number(datos.gemasDepositoPorCobrar ?? 0)
   const oroACobrar =
     Number(datos.oroPorCobrar ?? 0) > 0

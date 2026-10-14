@@ -21,7 +21,7 @@
 //   modificar el estado que recibe. determinism.test.ts lo comprueba.
 // ─────────────────────────────────────────────────────────────────────────────
 import { createRng, nextFloat, nextInt, chance, entityId, type Rng } from './rng.ts'
-import { crearSkySunId, crearSunflowerSunId } from './sunId.ts'
+import { crearSkySunId, crearSunflowerSunId, crearMarigoldGoldId } from './sunId.ts'
 import { TICK_SECONDS, msToTicks } from './time.ts'
 import {
   SOL_DEL_CIELO_MS,
@@ -597,6 +597,63 @@ export function aplicarJalapeno(
   })
 }
 
+export function aplicarPickledPepper(
+  state: GameState,
+  lado: Lado,
+  col: number | undefined,
+  sonar: SonarFn,
+  statRolls: PlantStatKey[] = [],
+  level = 0
+): void {
+  sonar('pea_hit', 1.0)
+
+  const config = getScaledPlantConfig('pickledpepper', statRolls)
+  const damageRolls = statRolls.filter((r) => r === 'damage').length
+  const extraPorNivel = Math.max(0, (level ?? 0) - damageRolls) * 150
+  const dano = (config.damage ?? 1000) + extraPorNivel
+
+  const effectiveCol = col ?? 2
+  const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
+  const colEspejada = lado.equipo === 'p1' ? effectiveCol : TOTAL_COLUMNS - 1 - effectiveCol
+  const colX = BASE_LEFT_END_X + colEspejada * colWidth + colWidth / 2
+
+  const objetivoLado = lado.equipo === 'p1' ? LADO_P2 : LADO_P1
+  for (const victima of propias(state, objetivoLado)) {
+    if (victima.hp <= 0) continue
+    if (Math.abs(victima.x - colX) <= 6.0) {
+      victima.hp -= dano
+      if (victima.hp <= 0 && lado.equipo === 'p1') {
+        state.stats.enemyPlantsDefeated += 1
+        state.stats.score += 100
+      }
+    }
+  }
+
+  // Visual vertical en los carriles: llamaradas intensas por casilla en la columna afectada
+  const totalLanes = state.lanesCount || 3
+  for (let l = 0; l < totalLanes; l++) {
+    const fx: PlantEntity = {
+      id: entityId('pickled-burst', state.tick, state.entityCounter++),
+      plantId: 'pickledpepper',
+      statRolls: [],
+      lane: l,
+      x: colX,
+      hp: 1,
+      maxHp: 1,
+      lastActionTime: state.tick,
+      isWalking: false,
+      state: 'attacking',
+      spriteOverride: '/game-assets/plants/jalapeno_flame_fx.webp',
+    }
+    propias(state, lado).push(fx)
+    state.pending.push({
+      atTick: state.tick + msToTicks(1100),
+      kind: 'remove_plant',
+      plantId: fx.id,
+    })
+  }
+}
+
 
 /** Las plantas de un lado. */
 function propias(state: GameState, lado: Lado): PlantEntity[] {
@@ -681,7 +738,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
       planta.frozenUntil = undefined
     }
 
-    // ── GIRASOL ───────────────────────────────────────────────────────────────
+    // ── GIRASOL Y GIRASOL DOBLE ───────────────────────────────────────────────
     if (planta.plantId === 'sunflower' || planta.plantId === 'twinsunflower') {
       const esDoble = planta.plantId === 'twinsunflower'
       const cada = esDoble ? GIRASOL_DOBLE_MS : GIRASOL_MS
@@ -727,6 +784,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
               targetY: 20 + planta.lane * 20 + 10,
               value: valorSol,
               createdAt: state.tick,
+              type: 'sun',
             })
           }
         }
@@ -739,6 +797,38 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             'p2',
             cuantos * valorSol
           )
+        }
+      }
+    }
+
+    // ── MARGARITA (MARIGOLD) ──────────────────────────────────────────────────
+    // Genera oro (1 o 2 oros aleatorios) cada 15 segundos.
+    if (planta.plantId === 'marigold') {
+      const cada = 15000
+
+      if (state.tick - planta.lastActionTime > msToTicks(cada)) {
+        planta.lastActionTime = state.tick
+
+        // 1 o 2 oros aleatorios
+        const oroDrop = 1 + Math.floor(nextFloat(state.rng) * 2)
+        const contador = state.entityCounter++
+        const variacionX = nextFloat(state.rng)
+
+        if (lado.equipo === 'p1') {
+          const goldId =
+            state.engineVersion === 'auth-v1'
+              ? entityId('gold-flower', state.tick, contador)
+              : crearMarigoldGoldId(planta.lane, planta.col, state.tick)
+
+          state.suns.push({
+            id: goldId,
+            x: planta.x + (variacionX * 6 - 3),
+            y: 20 + planta.lane * 20 + 5,
+            targetY: 20 + planta.lane * 20 + 10,
+            value: oroDrop,
+            createdAt: state.tick,
+            type: 'gold',
+          })
         }
       }
     }
@@ -839,6 +929,15 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
         } else if (planta.plantId === 'chomper') {
           tipo = 'needle'
           velocidad = 34
+        } else if (planta.plantId === 'snowpea') {
+          tipo = 'frozen_pea'
+          velocidad = 32
+          freezeDurationMs = 2500
+          damage = config.damage || 30
+        } else if (planta.plantId === 'gatlingpea') {
+          tipo = 'pea'
+          velocidad = 32
+          damage = config.damage || 25
         } else if (planta.plantId === 'kernelpult') {
           // Mecánica oficial PvZ 2: 25% probabilidad de mantequilla (inmoviliza) y 75% grano
           const isButter = nextFloat(state.rng) < 0.25
@@ -933,6 +1032,26 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           })
         }
 
+        if (planta.plantId === 'gatlingpea') {
+          // Gatling Pea dispara 3 guisantes adicionales (total 4) a intervalos rápidos de 120ms
+          for (let p = 1; p <= 3; p++) {
+            state.pending.push({
+              atTick: state.tick + msToTicks(120 * p),
+              kind: 'spawn_projectile',
+              projectile: {
+                id: entityId(`proj-${lado.equipo}-gat-${p}`, state.tick, state.entityCounter++),
+                type: 'pea',
+                targetTeam: lado.objetivo,
+                lane: planta.lane,
+                x: salidaX,
+                y: 20 + planta.lane * 19.33 + 7,
+                speed: 32,
+                damage: config.damage || 25,
+              },
+            })
+          }
+        }
+
         if (planta.plantId === 'kernelpult' && tipo === 'butter' && planta.equippedItem === 'witch_hat') {
           // Sombrero Mágico: lanza 2 mantequillas congelantes en vez de una.
           // El segundo proyectil es aleatorio: puede ir a CUALQUIER planta del enemigo.
@@ -1012,23 +1131,166 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             }
           }
         }
-      } else {
+      } else if (planta.plantId === 'explodeonut') {
+        // Explode-o-nut: Nuez rodante que al chocar con una planta enemiga explota en área
+        // (la casilla de impacto y la de atrás) infligiendo daño masivo.
         const enfrente = susPlantas.find(
           (a) => a.lane === planta.lane && estaDelante(planta, a, 3.8, lado.sentido) && a.hp > 0
+        )
+        if (enfrente) {
+          const hitX = enfrente.x
+          const flameCenterX = hitX - (lado.sentido * 2.5)
+          const dano = config.damage || 1400
+          for (const a of susPlantas) {
+            if (a.lane === planta.lane && a.hp > 0 && Math.abs(a.x - hitX) <= 8.5) {
+              a.hp -= dano
+              if (a.hp <= 0 && lado.equipo === 'p1') {
+                state.stats.enemyPlantsDefeated += 1
+                state.stats.score += 100
+              }
+            }
+          }
+          sonar('pea_hit', 1.0)
+          planta.hp = 0
+
+          // Llamarada y onda expansiva de fuego delimitada estrictamente a 2 casillas
+          const llama2Casillas: PlantEntity = {
+            id: entityId('explodeonut-flame', state.tick, state.entityCounter++),
+            plantId: 'explodeonut',
+            statRolls: [],
+            lane: planta.lane,
+            x: flameCenterX,
+            hp: 1,
+            maxHp: 1,
+            lastActionTime: state.tick,
+            isWalking: false,
+            state: 'attacking',
+            spriteOverride: '/game-assets/plants/jalapeno_flame_fx.webp',
+          }
+          propias(state, lado).push(llama2Casillas)
+          state.pending.push({
+            atTick: state.tick + msToTicks(900),
+            kind: 'remove_plant',
+            plantId: llama2Casillas.id,
+          })
+        } else {
+          planta.state = 'walking'
+          planta.x += (config.moveSpeed || 5.5) * dt * lado.sentido
+          if (llegoALaBase(planta, lado)) {
+            dañarBase(state, lado.objetivo, 350)
+            sonar('pea_hit', 1.0)
+            planta.hp = 0
+
+            const baseFlame: PlantEntity = {
+              id: entityId('explodeonut-flame', state.tick, state.entityCounter++),
+              plantId: 'explodeonut',
+              statRolls: [],
+              lane: planta.lane,
+              x: planta.x,
+              hp: 1,
+              maxHp: 1,
+              lastActionTime: state.tick,
+              isWalking: false,
+              state: 'attacking',
+              spriteOverride: '/game-assets/plants/jalapeno_flame_fx.webp',
+            }
+            propias(state, lado).push(baseFlame)
+            state.pending.push({
+              atTick: state.tick + msToTicks(900),
+              kind: 'remove_plant',
+              plantId: baseFlame.id,
+            })
+          }
+        }
+      } else if (planta.plantId === 'toadstool') {
+        // Seta Sapo: devora a la planta enemiga, desaparece y se queda masticando hasta digerir y dar soles
+        if (planta.chewingUntilTick !== undefined) {
+          if (state.tick < planta.chewingUntilTick) {
+            planta.state = 'chewing'
+            // Permanece en su sitio masticando: no avanza x
+          } else {
+            // Completó la digestión: genera +50 soles y vuelve a caminar
+            planta.chewingUntilTick = undefined
+            planta.state = 'walking'
+            sumarSoles(state, lado.equipo, 50)
+            sonar('points', 0.6)
+          }
+        } else {
+          const alcance = 5.0
+          const enfrente = susPlantas.find(
+            (a) => a.lane === planta.lane && estaDelante(planta, a, alcance, lado.sentido) && a.hp > 0
+          )
+
+          if (enfrente) {
+            // Devora a la víctima: desaparece de inmediato del combate
+            enfrente.hp = 0
+            sonar('pea_hit', 0.8)
+            if (lado.equipo === 'p1') {
+              state.stats.enemyPlantsDefeated += 1
+              state.stats.score += 100
+            }
+            // Comienza periodo de masticación de 3.5 segundos en este mismo sitio
+            planta.state = 'chewing'
+            planta.chewingUntilTick = state.tick + msToTicks(3500)
+          } else {
+            planta.state = 'walking'
+            planta.x += (config.moveSpeed || 3.5) * dt * lado.sentido
+            if (llegoALaBase(planta, lado)) {
+              dañarBase(state, lado.objetivo, 40)
+              sonar('pea_hit', 0.6)
+              planta.hp = 0
+            }
+          }
+        }
+      } else {
+        const alcance = planta.plantId === 'ghostpepper' ? 14.0 : 3.8
+        const enfrente = susPlantas.find(
+          (a) => a.lane === planta.lane && estaDelante(planta, a, alcance, lado.sentido) && a.hp > 0
         )
 
         if (enfrente) {
           planta.state = 'attacking'
-          if (state.tick - planta.lastActionTime >= msToTicks(config.attackSpeedMs || 600)) {
-            planta.lastActionTime = state.tick
-            enfrente.hp -= config.damage || 90
-            sonar('pea_hit', 0.5)
+          if (planta.plantId === 'ghostpepper') {
+            // Chile Fantasma: dispara un proyectil de espíritu fantasmal a la planta que tiene enfrente
+            if (state.tick - planta.lastActionTime >= msToTicks(config.attackSpeedMs || 800)) {
+              planta.lastActionTime = state.tick
+              const salidaX = planta.x + 2 * lado.sentido
+              sonar('plantation', 0.45)
+              state.projectiles.push({
+                id: entityId(`proj-${lado.equipo}-ghost`, state.tick, state.entityCounter++),
+                type: 'ghost_spirit',
+                targetTeam: lado.objetivo,
+                lane: planta.lane,
+                originLane: planta.lane,
+                originX: salidaX,
+                targetX: enfrente.x,
+                targetEntityId: enfrente.id,
+                x: salidaX,
+                y: 20 + planta.lane * 19.33 + 7,
+                speed: 26,
+                damage: config.damage || 40,
+              })
+            }
+          } else {
+            if (state.tick - planta.lastActionTime >= msToTicks(config.attackSpeedMs || 600)) {
+              planta.lastActionTime = state.tick
+              enfrente.hp -= config.damage || 90
+              sonar('pea_hit', 0.5)
+
+              if (enfrente.hp <= 0) {
+                if (lado.equipo === 'p1') {
+                  state.stats.enemyPlantsDefeated += 1
+                  state.stats.score += 100
+                }
+              }
+            }
           }
         } else {
           planta.state = 'walking'
           planta.x += (config.moveSpeed || 4.5) * dt * lado.sentido
           if (llegoALaBase(planta, lado)) {
-            dañarBase(state, lado.objetivo, 40)
+            const baseDmg = planta.plantId === 'guacodile' ? 60 : 40
+            dañarBase(state, lado.objetivo, baseDmg)
             sonar('pea_hit', 0.6)
             planta.hp = 0
           }
@@ -1075,6 +1337,27 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
     proy.x += proy.speed * dt * sentido
     let impacto = false
 
+    // ── TORCHWOOD (TRONCO DE FUEGO) ──────────────────────────────────────────
+    // Los proyectiles guisante que cruzan un Torchwood aliado en su carril se encienden
+    // (daño x2 y splash de fuego). Los guisantes helados se descongelan a normales.
+    const aliadas = proy.targetTeam === 'p2' ? state.plants : state.enemyPlants
+    for (const torch of aliadas) {
+      if (torch.plantId === 'torchwood' && torch.lane === proy.lane && torch.hp > 0) {
+        const dist = (proy.x - torch.x) * sentido
+        if (dist >= 0 && dist <= Math.max(4.0, proy.speed * dt * 2)) {
+          if (proy.type === 'pea') {
+            proy.type = 'fire_pea'
+            proy.damage *= 2
+            proy.isSplash = true
+            sonar('pea_shoot', 0.5)
+          } else if (proy.type === 'frozen_pea') {
+            proy.type = 'pea'
+            proy.freezeDurationMs = undefined
+          }
+        }
+      }
+    }
+
     for (const objetivo of blancos) {
       if (proy.targetEntityId) {
         // Proyectil con blanco fijado (ej. segundo tiro aleatorio de Lanzamaíz Bruja):
@@ -1087,10 +1370,12 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
             objetivo.hp -= proy.damage
             sonar('pea_hit', 0.4)
 
-            if (proy.type === 'butter') {
-              const freezeDurationMs = proy.freezeDurationMs || 3000
+            if (proy.type === 'butter' || proy.type === 'frozen_pea') {
+              const freezeDurationMs = proy.freezeDurationMs || (proy.type === 'frozen_pea' ? 2500 : 3000)
               const hasta = state.tick + msToTicks(freezeDurationMs)
               objetivo.frozenUntil = Math.max(objetivo.frozenUntil || 0, hasta)
+            } else if (proy.type === 'fire_pea') {
+              objetivo.frozenUntil = undefined
             }
 
             if (proy.isSplash) {
@@ -1114,10 +1399,12 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
           objetivo.hp -= proy.damage
           sonar('pea_hit', 0.4)
 
-          if (proy.type === 'butter') {
-            const freezeDurationMs = proy.freezeDurationMs || 3000
+          if (proy.type === 'butter' || proy.type === 'frozen_pea') {
+            const freezeDurationMs = proy.freezeDurationMs || (proy.type === 'frozen_pea' ? 2500 : 3000)
             const hasta = state.tick + msToTicks(freezeDurationMs)
             objetivo.frozenUntil = Math.max(objetivo.frozenUntil || 0, hasta)
+          } else if (proy.type === 'fire_pea') {
+            objetivo.frozenUntil = undefined
           }
 
           if (proy.isSplash) {
@@ -1462,6 +1749,15 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
               accion.statRolls ?? [],
               accion.level ?? 0
             )
+          } else if (accion.plantId === 'pickledpepper') {
+            aplicarPickledPepper(
+              state,
+              LADO_P2,
+              accion.col,
+              sonar,
+              accion.statRolls ?? [],
+              accion.level ?? 0
+            )
           } else {
             state.enemyPlants.push(
               crearPlantaDelRival(
@@ -1496,13 +1792,21 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
         }
 
         case 'own_plant':
-          // El jalapeño no deja planta: explota. Y explota AQUÍ, en el motor, para
-          // que las dos pantallas lo apliquen en el mismo tic y al lado correcto.
+          // El jalapeño y chile en escabeche no dejan planta: explotan de inmediato.
           if (accion.plantId === 'jalapeno') {
             aplicarJalapeno(
               state,
               LADO_P1,
               accion.lane,
+              sonar,
+              accion.statRolls ?? [],
+              accion.level ?? 0
+            )
+          } else if (accion.plantId === 'pickledpepper') {
+            aplicarPickledPepper(
+              state,
+              LADO_P1,
+              accion.col,
               sonar,
               accion.statRolls ?? [],
               accion.level ?? 0
@@ -1785,8 +2089,12 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   const quedan: SunEntity[] = []
   for (const s of state.suns) {
     if (state.tick - s.createdAt >= plazoDelSol) {
-      state.sunBank += s.value
-      state.stats.sunsCollected += 1
+      if (s.type === 'gold') {
+        state.stats.goldEarned = (state.stats.goldEarned ?? 0) + s.value
+      } else {
+        state.sunBank += s.value
+        state.stats.sunsCollected += 1
+      }
       state.stats.score += 50
       continue
     }

@@ -19,7 +19,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 // ─────────────────────────────────────────────────────────────────────────────
 import { createRng } from '../engine/rng'
 import { TICK_MS, MAX_TICKS_PER_FRAME, msToTicks } from '../engine/time'
-import { stepTick, createBattleState, crearPlantaPropia, crearPlantaDelRival, aplicarJalapeno, LADO_P2, type GameState, type EngineVersion } from '../engine/simulate'
+import { stepTick, createBattleState, crearPlantaPropia, crearPlantaDelRival, aplicarJalapeno, aplicarPickledPepper, LADO_P2, type GameState, type EngineVersion } from '../engine/simulate'
 import { MARGEN_DE_RED_TICS } from '../engine/pvp'
 import {
   huellaDeLaPartida,
@@ -186,6 +186,7 @@ export function useGameEngine() {
       enemyPlantsDefeated: 0,
       plantsPlaced: 0,
       score: 0,
+      goldEarned: 0,
     },
   })
 
@@ -859,6 +860,7 @@ export function useGameEngine() {
         enemyPlantsDefeated: 0,
         plantsPlaced: initialPlants.length,
         score: 0,
+        goldEarned: 0,
       },
     }
 
@@ -1310,7 +1312,7 @@ export function useGameEngine() {
 
       // Check cell occupancy for static plants (already sprouted, pending in engine, or pending in outbox)
       const isWalkingUnit = config?.category === 'melee' || !!config?.moveSpeed || card === 'chomper'
-      if (!isWalkingUnit) {
+      if (!isWalkingUnit && card !== 'pickledpepper' && card !== 'jalapeno') {
         const existing = state.plants.find((p) => p.lane === lane && p.col === col && !p.isWalking && p.hp > 0)
         const pendingSprout = state.pending.find((p) => p.kind === 'own_plant' && p.lane === lane && p.col === col)
         const pendingOutbox = accionesP1PendingRef.current.find((a) => a.kind === 'plant' && a.lane === lane && a.col === col)
@@ -1342,8 +1344,8 @@ export function useGameEngine() {
       // En fase de preparación (Fortaleza / Asalto previo):
       // La planta se materializa de inmediato en reposo sin desfasajes de tiempo ni combate activo.
       if (isPrepPhaseRef.current) {
-        if (card === 'jalapeno' || card === 'iceberglettuce') {
-          // Jalapeño y Lechuga de Hielo son de acción inmediata: no se permite plantar en el tablero durante preparación
+        if (card === 'jalapeno' || card === 'iceberglettuce' || card === 'pickledpepper') {
+          // Jalapeño, Chile en Escabeche y Lechuga de Hielo son de acción inmediata: no se permite plantar en el tablero durante preparación
           return null
         }
         state.sunBank -= config.cost
@@ -1986,6 +1988,15 @@ export function useGameEngine() {
                   state,
                   LADO_P2,
                   amb.lane,
+                  reproducirSonido,
+                  [],
+                  1
+                )
+              } else if (amb.plantId === 'pickledpepper') {
+                aplicarPickledPepper(
+                  state,
+                  LADO_P2,
+                  amb.col,
                   reproducirSonido,
                   [],
                   1

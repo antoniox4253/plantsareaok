@@ -54,8 +54,8 @@ const ESTADO_INICIAL: EstadoCola = {
   error: null,
 }
 
-/** Cada cuánto se sondea. Bastante por debajo del latido de 45 s del servidor. */
-const SONDEO_MS = 2000
+/** Cada cuánto se sondea (1s para respuesta inmediata del fallback de 3s). */
+const SONDEO_MS = 1000
 
 export function useMatchmaking() {
   const [estado, setEstado] = useState<EstadoCola>(ESTADO_INICIAL)
@@ -133,7 +133,7 @@ export function useMatchmaking() {
 
     const segundosEsperados = r.waitedSeconds ?? 0
 
-    // En Ranked: si ya pasaron >= 35 segundos o el servidor marca ghostAvailable, solicitar automáticamente Rival Semilla
+    // En Ranked: si ya pasaron >= 30 segundos o el servidor marca ghostAvailable, solicitar automáticamente Rival Semilla
     if (modoRef.current === 'ranked' && (segundosEsperados >= RANKED_MATCHMAKING_TIMEOUT_SECONDS || Boolean((r as any).ghostAvailable)) && !claimingRef.current) {
       claimingRef.current = true
       try {

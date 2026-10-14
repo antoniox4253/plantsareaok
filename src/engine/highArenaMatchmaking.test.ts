@@ -90,7 +90,7 @@ describe('Emparejamiento Optimizado en Arenas 4 y 5', () => {
     expect(resPermitido.matched).toBe(true)
   })
 
-  it('7. Timeout de Ranked es 35 segundos exactos', () => {
-    expect(RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(35)
+  it('7. Timeout de Ranked es 30 segundos exactos', () => {
+    expect(RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(30)
   })
 })

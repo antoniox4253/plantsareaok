@@ -40,13 +40,24 @@ export const PLANT_RARITIES: Record<string, { label: string; short: string; colo
   jalapeno: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
   kernelpult: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
 
-  // Épicas (2) -> E
+  // Épicas
   aloe: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
   tallnut: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
+  pickledpepper: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
+  ghostpepper: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
 
-  // Legendarias (2) -> L
+  // Legendarias
   iceberglettuce: { label: 'LEGENDARIA', short: 'L', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.2)' },
   threepeater: { label: 'LEGENDARIA', short: 'L', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.2)' },
+  gatlingpea: { label: 'LEGENDARIA', short: 'L', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.2)' },
+
+  // Temporada 2 Adicionales
+  marigold: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
+  guacodile: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
+  toadstool: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
+  explodeonut: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
+  snowpea: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
+  torchwood: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
 }
 
 const LORE_MAP: Record<string, string> = {
@@ -66,6 +77,15 @@ const LORE_MAP: Record<string, string> = {
   iceberglettuce: 'Iceberg Lettuce cuesta 0 Soles y es de 1 solo uso. Al colocarse en el campo, congela a todos los enemigos durante 7 segundos (+2s por cada nivel).',
   aloe: 'Aloe Curandera escanea el carril y cura con ondas de luz mística a las plantas heridas aliadas.',
   kernelpult: 'Lanzamaíz arroja granos de maíz ligeros a distancia (30 DMG) y, con un 25% de probabilidad, una barra de mantequilla pegajosa de doble impacto (60 DMG) que inmoviliza por completo al objetivo durante 3s (+0.6s por tirada de duración, hasta 6s máx).',
+  explodeonut: 'Nuez Explosiva rueda decidida por el campo de batalla. Al chocar con el enemigo, detona liberando una violenta explosión en área que arrasa la casilla de contacto y la casilla trasera.',
+  gatlingpea: 'Guisantralladora no se anda con rodeos. Equipada con un cañón rotativo de 4 bocas, dispara ráfagas implacables de guisantes de alto impacto a una cadencia arrolladora.',
+  ghostpepper: 'Chile Fantasma flota silenciosamente sobre las líneas enemigas, atormentando a todos los que osan cruzarse en su camino con daño espectral persistente antes de estallar.',
+  guacodile: 'Guacodilo patrulla a gran velocidad. Mitad aguacate, mitad reptil feroz, se abalanza sobre las defensas contrarias desgarrando con poderosas dentelladas.',
+  marigold: 'Margarita alegra la arena con su aura de prosperidad. Cultivarla garantiza un flujo constante de soles y monedas de oro durante el combate.',
+  pickledpepper: 'Chile en Escabeche es una fuerza geológica de 1 solo uso. Al tocar tierra, desencadena una explosión vertical que barre por completo la columna en todos los carriles.',
+  snowpea: 'Hielaguisantes canaliza vientos árticos en cada disparo. Sus guisantes congelados entumecen a los enemigos, reduciendo drásticamente su velocidad de movimiento y ataque.',
+  toadstool: 'Seta Sapo acecha pacientemente antes de desplegar su lengua voraz a distancia, devorando a los invasores y transformando su energía en soles durante la digestión.',
+  torchwood: 'Tronco de Fuego es el bastión del fuego. Colocado frente a tus lanzadores, convierte cada guisante que lo atraviesa en un ardiente proyectil ígneo con daño duplicado y salpicadura.',
 }
 
 export const CATALOG: CollectionPlant[] = (Object.keys(PLANT_CONFIGS) as PlantId[]).map((id) => {

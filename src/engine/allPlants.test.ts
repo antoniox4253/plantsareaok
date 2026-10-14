@@ -27,6 +27,15 @@ const ALL_PLANT_IDS: PlantId[] = [
   'iceberglettuce',
   'aloe',
   'kernelpult',
+  'explodeonut',
+  'gatlingpea',
+  'ghostpepper',
+  'guacodile',
+  'marigold',
+  'pickledpepper',
+  'snowpea',
+  'toadstool',
+  'torchwood',
 ]
 
 const noopSonar = () => {}
@@ -35,10 +44,10 @@ function correr(estado: GameState, tics: number) {
   for (let i = 0; i < tics; i++) stepTick(estado, noopSonar)
 }
 
-describe('allPlants.test.ts - Catálogo completo de las 16 plantas y escalado', () => {
-  it('contiene exactamente las 16 plantas en PLANT_CONFIGS', () => {
+describe('allPlants.test.ts - Catálogo completo de las 25 plantas y escalado', () => {
+  it('contiene exactamente las 25 plantas en PLANT_CONFIGS', () => {
     const catalogKeys = Object.keys(PLANT_CONFIGS) as PlantId[]
-    expect(catalogKeys.length).toBe(16)
+    expect(catalogKeys.length).toBe(25)
     for (const id of ALL_PLANT_IDS) {
       expect(catalogKeys).toContain(id)
       expect(PLANT_CONFIGS[id]).toBeDefined()

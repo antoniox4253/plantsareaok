@@ -94,6 +94,15 @@ const ALL_NON_SUNFLOWER_PLANTS: PlantId[] = [
   'iceberglettuce',
   'aloe',
   'kernelpult',
+  'explodeonut',
+  'gatlingpea',
+  'ghostpepper',
+  'guacodile',
+  'marigold',
+  'pickledpepper',
+  'snowpea',
+  'toadstool',
+  'torchwood',
 ]
 
 // Ítems equipables exclusivos limitados a 5 drops cada uno

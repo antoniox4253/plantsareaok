@@ -176,6 +176,25 @@ export default function Clan({
   const myRole = isLeader ? 'Líder' : (myMember?.role || 'Miembro')
   const isOfficer = isLeader || myRole === 'Colíder' || myRole === 'Veterano'
 
+  const [isSubmittingClaim, setIsSubmittingClaim] = useState(false)
+  const activeClaim = userClan?.leadershipClaim
+  const hasSignedClaim = Boolean(
+    activeClaim &&
+    myMember?.id &&
+    activeClaim.signatures?.includes(myMember.id)
+  )
+  const isClaimCandidate = Boolean(
+    activeClaim &&
+    myMember?.id &&
+    activeClaim.candidateId === myMember.id
+  )
+  const canClaimLeadership = Boolean(
+    userClan &&
+    userClan.isLeaderInactive &&
+    !isLeader &&
+    !activeClaim
+  )
+
   const fetchFortressData = React.useCallback(async (clanId?: string) => {
     const targetClanId = clanId || userClan?.id
     if (!targetClanId || !ClanManager.isValidUuid(targetClanId)) return
@@ -512,6 +531,99 @@ export default function Clan({
     }
   }
 
+  const handleStartLeadershipClaim = async () => {
+    soundManager.playSound('click', 0.5)
+    setIsSubmittingClaim(true)
+    try {
+      const res = await supabaseService.startClanLeadershipClaim()
+      if (!res.success) {
+        showModalAlert('ERROR EN POSTULACIÓN', res.error || 'No se pudo iniciar la postulación.', '⚠️', 'error')
+        return
+      }
+      soundManager.playSound('click', 0.7)
+      if (res.data?.action === 'promoted_immediately') {
+        showModalAlert('¡LIDERAZGO ASUMIDO!', 'Has asumido el liderazgo del clan de forma inmediata por inactividad del líder anterior.', '👑', 'success')
+      } else {
+        showModalAlert(
+          'POSTULACIÓN INICIADA',
+          `Tu postulación se ha registrado exitosamente. Se requieren ${res.data?.claim?.requiredSignatures || 4} firmas de apoyo de compañeros del clan para ratificar el relevo.`,
+          '📢',
+          'success'
+        )
+      }
+      await refreshClanData()
+    } catch (e: any) {
+      showModalAlert('ERROR', e?.message || 'Error de conexión', '⚠️', 'error')
+    } finally {
+      setIsSubmittingClaim(false)
+    }
+  }
+
+  const handleSupportLeadershipClaim = async () => {
+    soundManager.playSound('click', 0.5)
+    setIsSubmittingClaim(true)
+    try {
+      const res = await supabaseService.supportClanLeadershipClaim()
+      if (!res.success) {
+        showModalAlert('ERROR AL FIRMAR', res.error || 'No se pudo registrar tu apoyo.', '⚠️', 'error')
+        return
+      }
+      soundManager.playSound('click', 0.7)
+      if (res.data?.action === 'promoted') {
+        showModalAlert('¡NUEVO LÍDER ELEGIDO!', `¡${res.data.newLeader} ha alcanzado las firmas requeridas y es el NUEVO LÍDER del clan!`, '👑', 'success')
+      } else {
+        showModalAlert('FIRMA REGISTRADA', `Has firmado tu apoyo a la postulación (${res.data?.signaturesCount}/${res.data?.requiredSignatures} firmas obtenidas).`, '👍', 'success')
+      }
+      await refreshClanData()
+    } catch (e: any) {
+      showModalAlert('ERROR', e?.message || 'Error de conexión', '⚠️', 'error')
+    } finally {
+      setIsSubmittingClaim(false)
+    }
+  }
+
+  const handleCancelLeadershipClaim = () => {
+    showModalConfirm(
+      'Cancelar Postulación',
+      '¿Estás seguro de que deseas cancelar esta postulación de liderazgo?',
+      '❓',
+      async () => {
+        setIsSubmittingClaim(true)
+        try {
+          const res = await supabaseService.cancelClanLeadershipClaim()
+          if (!res.success) {
+            showModalAlert('ERROR', res.error || 'No se pudo cancelar.', '⚠️', 'error')
+            return
+          }
+          showModalAlert('POSTULACIÓN CANCELADA', 'La postulación de liderazgo ha sido cancelada.', 'ℹ️', 'info')
+          await refreshClanData()
+        } catch (e: any) {
+          showModalAlert('ERROR', e?.message || 'Error de conexión', '⚠️', 'error')
+        } finally {
+          setIsSubmittingClaim(false)
+        }
+      },
+      'SÍ, CANCELAR',
+      'VOLVER'
+    )
+  }
+
+  const handlePromptStartClaim = () => {
+    const leaderName = userClan?.leader || 'actual'
+    const days = userClan?.leaderInactiveDays || 4
+    const totalMembers = userClan?.members?.length || 1
+    const reqSignatures = Math.max(1, Math.min(6, Math.ceil(totalMembers * 0.35)))
+
+    showModalConfirm(
+      'Postularse como Líder',
+      `El líder actual (${leaderName}) lleva ${days} días inactivo.\n\n¿Deseas postularte para asumir el liderazgo del clan? Se necesitarán ${reqSignatures} firmas de apoyo de compañeros del clan para ratificar el relevo.`,
+      '👑',
+      handleStartLeadershipClaim,
+      '👑 POSTULARME',
+      'CANCELAR'
+    )
+  }
+
   const handleSearchFortressRaid = async () => {
     if (!onStartClanFortressRaid) {
       setActiveDialog({
@@ -828,6 +940,9 @@ export default function Clan({
           settings: myClanData.clan.settings,
           rewardShares: myClanData.clan.rewardShares,
           maxMembers: myClanData.clan.maxMembers || 15,
+          leadershipClaim: myClanData.clan.leadershipClaim || null,
+          isLeaderInactive: Boolean(myClanData.clan.isLeaderInactive),
+          leaderInactiveDays: Number(myClanData.clan.leaderInactiveDays || 0),
         }
         setUserClan(clanObj)
         ClanManager.setUserClanId(clanObj.id)
@@ -2232,7 +2347,25 @@ export default function Clan({
                   <span className="clan-shield-pill">🛡️ ESCUDO {shieldHours}H</span>
                 )}
               </div>
-              <span className="clan-leader-txt">Líder: {userClan.leader} | {userClan.members.length}/{fortressData?.maxMembers || 15} Miembros</span>
+              <div className="clan-leader-info-row">
+                <span className="clan-leader-txt">Líder: <strong>{userClan.leader}</strong> | {userClan.members.length}/{fortressData?.maxMembers || 15} Miembros</span>
+                {userClan.isLeaderInactive && (
+                  <span className="clan-leader-inactive-tag" title={`Inactivo hace ${userClan.leaderInactiveDays || 4} días`}>
+                    💤 Inactivo ({userClan.leaderInactiveDays || 4}d)
+                  </span>
+                )}
+                {canClaimLeadership && (
+                  <button
+                    type="button"
+                    className="clan-claim-leader-btn"
+                    onClick={handlePromptStartClaim}
+                    disabled={isSubmittingClaim}
+                    title="El líder está inactivo. Postúlate para asumir el liderazgo con firmas de tus compañeros."
+                  >
+                    👑 LÍDER
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -2313,6 +2446,62 @@ export default function Clan({
           >
             💎 DONAR AL TESORO
           </button>
+        </div>
+      )}
+
+      {/* BANNER DE POSTULACIÓN DE LIDERAZGO EN CURSO */}
+      {userClan.leadershipClaim && (
+        <div className="clan-leadership-claim-banner">
+          <div className="clan-leadership-claim-left">
+            <span className="clan-claim-badge">👑 ELECCIÓN DE LIDERAZGO</span>
+            <div className="clan-claim-meta">
+              <h4>{userClan.leadershipClaim.candidateName} se ha postulado como Líder</h4>
+              <p>El líder actual está inactivo ({userClan.leaderInactiveDays || 4}d). Apoya esta postulación para ratificar el relevo.</p>
+            </div>
+          </div>
+
+          <div className="clan-leadership-claim-mid">
+            <div className="clan-claim-signatures-count">
+              <span>Firmas reunidas:</span>
+              <strong>{userClan.leadershipClaim.signatures?.length || 1} / {userClan.leadershipClaim.requiredSignatures}</strong>
+            </div>
+            <div className="clan-claim-progress-bar">
+              <div
+                className="clan-claim-progress-fill"
+                style={{
+                  width: `${Math.min(100, Math.round(((userClan.leadershipClaim.signatures?.length || 1) / (userClan.leadershipClaim.requiredSignatures || 1)) * 100))}%`
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="clan-leadership-claim-right">
+            {!hasSignedClaim && !isClaimCandidate && !isLeader && (
+              <button
+                type="button"
+                className="clan-claim-action-btn clan-claim-action-btn--support"
+                disabled={isSubmittingClaim}
+                onClick={handleSupportLeadershipClaim}
+              >
+                👍 APOYAR CON MI FIRMA
+              </button>
+            )}
+
+            {hasSignedClaim && !isClaimCandidate && (
+              <span className="clan-claim-signed-pill">✅ Ya firmaste</span>
+            )}
+
+            {(isClaimCandidate || isLeader) && (
+              <button
+                type="button"
+                className="clan-claim-action-btn clan-claim-action-btn--cancel"
+                disabled={isSubmittingClaim}
+                onClick={handleCancelLeadershipClaim}
+              >
+                ❌ CANCELAR
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -2472,9 +2661,16 @@ export default function Clan({
                       <td>🎁 {member.donatedCount} cartas</td>
                       <td>
                         {member.role === 'Líder' ? (
-                          <span className="clan-war-badge clan-war-badge--leader" title="Líder Supremo del Clan">
-                            👑 Líder
-                          </span>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            <span className="clan-war-badge clan-war-badge--leader" title="Líder Supremo del Clan">
+                              👑 Líder
+                            </span>
+                            {userClan.isLeaderInactive && (
+                              <span className="clan-leader-inactive-tag" title={`Inactivo hace ${userClan.leaderInactiveDays || 4} días`}>
+                                💤 Inactivo ({userClan.leaderInactiveDays || 4}d)
+                              </span>
+                            )}
+                          </div>
                         ) : validation.isProtected ? (
                           <span
                             className="clan-war-badge clan-war-badge--protected"
@@ -2510,6 +2706,17 @@ export default function Clan({
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
+                          {member.role === 'Líder' && canClaimLeadership && (
+                            <button
+                              type="button"
+                              className="clan-claim-leader-table-btn"
+                              onClick={handlePromptStartClaim}
+                              disabled={isSubmittingClaim}
+                              title="El líder está inactivo. Postúlate para relevar el liderazgo mediante firmas de tus compañeros."
+                            >
+                              👑 LÍDER
+                            </button>
+                          )}
                           {!isMe && (isLeader || (myRole === 'Colíder' && member.role !== 'Líder' && member.role !== 'Colíder')) && (
                             <button
                               type="button"

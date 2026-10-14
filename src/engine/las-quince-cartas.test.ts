@@ -23,7 +23,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest'
 import { createBattleState, stepTick, crearPlantaDelRival, crearPlantaPropia, type GameState } from './simulate'
-import { PLANT_CONFIGS } from '../utils/gameConstants'
+import { PLANT_CONFIGS, TOTAL_COLUMNS } from '../utils/gameConstants'
 import type { PlantId } from '../types/game'
 
 const callar = () => {}
@@ -36,20 +36,29 @@ const TODAS = Object.keys(PLANT_CONFIGS) as PlantId[]
 const QUE_HACE: Record<PlantId, 'produce' | 'daña' | 'aguanta' | 'cura' | 'aparte'> = {
   sunflower: 'produce',
   twinsunflower: 'produce',
+  marigold: 'aparte',        // produce monedas de oro (no soles): comprobada en su escenario
   peashooter: 'daña',
   repeater: 'daña',
   threepeater: 'daña',
+  gatlingpea: 'daña',
+  snowpea: 'daña',
   melonpult: 'daña',
+  kernelpult: 'daña',
   chomper: 'daña',
   bonkchoy: 'daña',
   garlic: 'daña',
+  guacodile: 'daña',
+  ghostpepper: 'daña',
+  toadstool: 'aparte',        // devora plantas enemigas y digiere generando soles
+  explodeonut: 'daña',
   wallnut: 'aguanta',
   tallnut: 'aguanta',
+  torchwood: 'aguanta',
   aloe: 'cura',
-  kernelpult: 'daña',
   squash: 'aparte',          // sólo estalla si algo la pisa
   iceberglettuce: 'aparte',  // congela en su primer tic
   jalapeno: 'aparte',        // explota y no deja planta
+  pickledpepper: 'aparte',   // explota toda la columna de 1 solo uso
 }
 
 function correr(estado: GameState, tics: number) {
@@ -67,9 +76,9 @@ function conUnEnemigoDelante(lane = 1) {
 }
 
 describe('el catálogo y el motor no se han separado', () => {
-  it('las dieciséis cartas están declaradas en este test', () => {
+  it('las veinticinco cartas están declaradas en este test', () => {
     // Si esto falla es que se añadió una carta y nadie dijo qué hace.
-    expect(TODAS.length).toBe(16)
+    expect(TODAS.length).toBe(25)
     for (const carta of TODAS) {
       expect(QUE_HACE[carta], `falta declarar qué hace ${carta}`).toBeDefined()
     }
@@ -78,7 +87,7 @@ describe('el catálogo y el motor no se han separado', () => {
   it('ninguna carta se queda sin plantar', () => {
     // El caso más tonto y el más caro: una carta que al plantarse no aparece.
     for (const carta of TODAS) {
-      if (carta === 'jalapeno') continue   // no deja planta: se comprueba abajo
+      if (carta === 'jalapeno' || carta === 'pickledpepper') continue   // no dejan planta: se comprueban aparte
       const estado = createBattleState(1, false, true)
       estado.pending.push({ atTick: 1, kind: 'own_plant', plantId: carta, lane: 1, col: 3 })
       correr(estado, 3)
@@ -212,4 +221,66 @@ describe('las tres que necesitan su escenario', () => {
     correr(estado, 45)
     expect(estado.plants.length).toBe(0)
   })
+
+  it('el chile en escabeche arrasa SU columna en todos los carriles y no deja planta', () => {
+    const estado = createBattleState(14, false, true)
+    // El rival ve las columnas desde su base (espejadas). Para que coincida con la col 4 de P1:
+    const colRival = TOTAL_COLUMNS - 1 - 4
+    for (const lane of [0, 1, 2]) {
+      estado.enemyPlants.push(crearPlantaDelRival(estado, 'peashooter' as PlantId, lane, colRival))
+    }
+    // Y un enemigo en otra columna distante (columna 1 de P1), que NO debe morir
+    estado.enemyPlants.push(crearPlantaDelRival(estado, 'peashooter' as PlantId, 1, TOTAL_COLUMNS - 1 - 1))
+
+    // Plantar pickledpepper en col 4
+    estado.pending.push({ atTick: 1, kind: 'own_plant', plantId: 'pickledpepper' as PlantId, lane: 1, col: 4 })
+    correr(estado, 5)
+
+    // Los de la columna 4 en los 3 carriles deben haber sido eliminados
+    expect(estado.enemyPlants.filter((p) => p.lane === 0 && p.hp > 0)).toHaveLength(0)
+    expect(estado.enemyPlants.filter((p) => p.lane === 2 && p.hp > 0)).toHaveLength(0)
+    // El de la columna 1 sobrevive
+    expect(estado.enemyPlants.filter((p) => p.hp > 0)).toHaveLength(1)
+
+    // Los efectos visuales se desvanecen tras 1s (30 ticks)
+    correr(estado, 45)
+    expect(estado.plants.length).toBe(0)
+  })
+
+  it('toadstool devora a la planta enemiga entera, mastica y genera 50 soles al digerir', () => {
+    const estado = createBattleState(55, false, true)
+    const victima = crearPlantaDelRival(estado, 'peashooter' as PlantId, 1, 6)
+    estado.enemyPlants.push(victima)
+    const solesIniciales = estado.sunBank
+
+    estado.pending.push({ atTick: 1, kind: 'own_plant', plantId: 'toadstool' as PlantId, lane: 1, col: 1 })
+    // Avanzar hasta que alcance y devore a la víctima
+    correr(estado, 400)
+
+    // La víctima desapareció
+    expect(estado.enemyPlants.filter((p) => p.hp > 0)).toHaveLength(0)
+
+    // Seta sapo existe en el campo
+    const toad = estado.plants.find((p) => p.plantId === 'toadstool')
+    expect(toad).toBeDefined()
+
+    // Avanzar para que termine la digestión completa
+    correr(estado, 150)
+
+    // Ha generado +50 soles al digerir
+    expect(estado.sunBank).toBeGreaterThan(solesIniciales)
+  })
+
+  it('marigold genera monedas de oro periódicamente en el campo', () => {
+    const estado = createBattleState(77, false, true)
+    estado.pending.push({ atTick: 1, kind: 'own_plant', plantId: 'marigold' as PlantId, lane: 1, col: 0 })
+    correr(estado, 480)
+
+    const monedas = estado.suns.filter((s) => s.type === 'gold')
+    expect(monedas.length).toBeGreaterThanOrEqual(1)
+    expect(monedas[0].type).toBe('gold')
+    expect(monedas[0].value).toBeGreaterThanOrEqual(1)
+  })
 })
+
+

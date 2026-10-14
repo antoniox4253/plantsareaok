@@ -350,3 +350,77 @@
   }
 }
 
+/* Sun Cost Badge on Seed Packet (Bottom-Right) */
+.plant-hand__cost-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid #facc15;
+  border-radius: 4px;
+  padding: 1px 4px 1px 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7), inset 0 0 4px rgba(250, 204, 21, 0.2);
+  z-index: 16;
+  pointer-events: none;
+}
+
+.plant-hand__cost-icon {
+  width: 11px;
+  height: 11px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 2px rgba(250, 204, 21, 0.9));
+}
+
+.plant-hand__cost-val {
+  color: #fef08a;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.plant-hand__card--disabled .plant-hand__cost-badge {
+  border-color: #64748b;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.plant-hand__card--disabled .plant-hand__cost-val {
+  color: #94a3b8;
+}
+
+/* Real-time in-game gold counter in HUD */
+.gold-counter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(20, 25, 30, 0.92) 0%, rgba(35, 30, 15, 0.92) 100%);
+  border: 1.5px solid #facc15;
+  border-radius: 20px;
+  padding: 3px 10px 3px 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 0 8px rgba(250, 204, 21, 0.25);
+  animation: goldCounterGlow 2s infinite ease-in-out;
+}
+
+.gold-counter__icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+}
+
+.gold-counter__value {
+  color: #fef08a;
+  font-size: 15px;
+  font-weight: 900;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes goldCounterGlow {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(250, 204, 21, 0.2); }
+  50% { box-shadow: 0 2px 12px rgba(250, 204, 21, 0.4), inset 0 0 10px rgba(250, 204, 21, 0.4); }
+}
+

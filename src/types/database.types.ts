@@ -46,6 +46,7 @@ export interface Database {
           plants_daily_claims_date?: string | null
           is_banned?: boolean
           ban_reason?: string | null
+          is_bot_only?: boolean
           is_ip_exempt?: boolean
           exemption_reason?: string | null
           created_at: string
@@ -79,6 +80,7 @@ export interface Database {
           energy_last_reset_utc?: string
           is_banned?: boolean
           ban_reason?: string | null
+          is_bot_only?: boolean
           is_ip_exempt?: boolean
           exemption_reason?: string | null
           created_at?: string
@@ -107,6 +109,7 @@ export interface Database {
           energy_last_reset_utc?: string
           is_banned?: boolean
           ban_reason?: string | null
+          is_bot_only?: boolean
           is_ip_exempt?: boolean
           exemption_reason?: string | null
           created_at?: string

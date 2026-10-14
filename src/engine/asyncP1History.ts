@@ -18,7 +18,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { PlantId, PlantStatKey } from '../types/game.ts'
-import { PLANT_CONFIGS, P1_COLUMNS, P2_COLUMNS, DECK_SIZE } from '../utils/gameConstants.ts'
+import { PLANT_CONFIGS, P1_COLUMNS, P2_COLUMNS, TOTAL_COLUMNS, DECK_SIZE } from '../utils/gameConstants.ts'
 import { MARGEN_DE_RED_TICS } from './pvp.ts'
 import type { CartaDeMazo } from './mazoDeLaSala.ts'
 
@@ -267,13 +267,14 @@ export function validarAccionP1RankedEstricta(
         details: `lane debe ser un entero 0..2, recibido: ${String(a.lane)}`,
       }
     }
-    if (typeof a.col !== 'number' || !Number.isInteger(a.col) || a.col < 0 || a.col >= P1_COLUMNS) {
+    const maxCol = plantId === 'pickledpepper' ? TOTAL_COLUMNS : P1_COLUMNS
+    if (typeof a.col !== 'number' || !Number.isInteger(a.col) || a.col < 0 || a.col >= maxCol) {
       return {
         ok: false,
         reason: 'INVALID_PLANT_DATA',
         seq,
         issuedTick,
-        details: `col debe ser un entero 0..${P1_COLUMNS - 1}, recibido: ${String(a.col)}`,
+        details: `col debe ser un entero 0..${maxCol - 1}, recibido: ${String(a.col)}`,
       }
     }
 
