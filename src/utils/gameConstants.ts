@@ -542,6 +542,12 @@ export function getEligibleStatsForPlant(plantId: PlantId): PlantStatKey[] {
   if (plantId === 'torchwood' || plantId === 'marigold') {
     return ['hp', 'cooldown']
   }
+  if (plantId === 'explodeonut' || plantId === 'ghostpepper' || plantId === 'guacodile' || plantId === 'toadstool') {
+    return ['hp', 'cooldown', 'damage', 'moveSpeed']
+  }
+  if (plantId === 'snowpea' || plantId === 'gatlingpea') {
+    return ['hp', 'cooldown', 'damage', 'attackSpeed']
+  }
 
   const base = PLANT_CONFIGS[plantId]
   if (!base) return ['hp', 'cooldown']
