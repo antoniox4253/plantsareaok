@@ -2151,6 +2151,51 @@ export const SupabaseService = {
     }
   },
 
+  async startClanLeadershipClaim(): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('start_clan_leadership_claim')
+      if (error) {
+        logError('startClanLeadershipClaim', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data }
+    } catch (e: any) {
+      logError('startClanLeadershipClaim', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async supportClanLeadershipClaim(): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('support_clan_leadership_claim')
+      if (error) {
+        logError('supportClanLeadershipClaim', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data }
+    } catch (e: any) {
+      logError('supportClanLeadershipClaim', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async cancelClanLeadershipClaim(): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('cancel_clan_leadership_claim')
+      if (error) {
+        logError('cancelClanLeadershipClaim', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, data }
+    } catch (e: any) {
+      logError('cancelClanLeadershipClaim', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   async searchClanFortressMatch(): Promise<{ success: boolean; data?: ClanFortressMatchOpponent; error?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
