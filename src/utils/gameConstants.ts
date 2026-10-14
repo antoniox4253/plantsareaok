@@ -565,11 +565,11 @@ export function getFusionGoldCost(plantId: PlantId, level: number): number {
   let base = 1000
   if (plantId === 'threepeater' || plantId === 'iceberglettuce' || plantId === 'gatlingpea') {
     base = 3500
-  } else if (plantId === 'aloe' || plantId === 'tallnut' || plantId === 'toadstool') {
+  } else if (plantId === 'aloe' || plantId === 'tallnut' || plantId === 'pickledpepper') {
     base = 3000
-  } else if (['twinsunflower', 'jalapeno', 'kernelpult', 'explodeonut', 'ghostpepper', 'pickledpepper', 'torchwood'].includes(plantId)) {
+  } else if (['twinsunflower', 'jalapeno', 'kernelpult', 'explodeonut', 'ghostpepper', 'torchwood', 'marigold', 'guacodile', 'toadstool'].includes(plantId)) {
     base = 2500
-  } else if (['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash', 'guacodile', 'snowpea'].includes(plantId)) {
+  } else if (['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash', 'snowpea'].includes(plantId)) {
     base = 1500
   }
 

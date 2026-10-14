@@ -40,21 +40,21 @@ export const PLANT_RARITIES: Record<string, { label: string; short: string; colo
   jalapeno: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
   kernelpult: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
 
-  // Épicas (2) -> E
+  // Épicas
   aloe: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
   tallnut: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
   pickledpepper: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
-  toadstool: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
   ghostpepper: { label: 'ÉPICA', short: 'E', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },
 
-  // Legendarias (2) -> L
+  // Legendarias
   iceberglettuce: { label: 'LEGENDARIA', short: 'L', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.2)' },
   threepeater: { label: 'LEGENDARIA', short: 'L', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.2)' },
   gatlingpea: { label: 'LEGENDARIA', short: 'L', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.2)' },
 
   // Temporada 2 Adicionales
-  marigold: { label: 'COMÚN', short: 'C', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.2)' },
-  guacodile: { label: 'POCO COMÚN', short: 'PC', color: '#22d3ee', bg: 'rgba(34, 211, 238, 0.2)' },
+  marigold: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
+  guacodile: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
+  toadstool: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
   explodeonut: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
   snowpea: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },
   torchwood: { label: 'RARA', short: 'R', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },

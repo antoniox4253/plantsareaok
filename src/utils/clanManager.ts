@@ -94,6 +94,16 @@ export interface ClanInvitation {
   amountGems?: number
 }
 
+export interface ClanLeadershipClaim {
+  candidateId: string
+  candidateName: string
+  candidateElo?: number
+  createdAt: string
+  expiresAt: string
+  requiredSignatures: number
+  signatures: string[]
+}
+
 export interface ClanData {
   id: string
   name: string
@@ -118,6 +128,9 @@ export interface ClanData {
   damageDealt?: number
   dailyDamageDealt?: number
   maxMembers?: number
+  leadershipClaim?: ClanLeadershipClaim | null
+  isLeaderInactive?: boolean
+  leaderInactiveDays?: number
 }
 
 const STORAGE_KEYS = {
