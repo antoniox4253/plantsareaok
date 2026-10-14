@@ -308,8 +308,15 @@
   pointer-events: none;
 }
 
+.fortress-field-zone--ancestral {
+  left: 8px;
+  background: rgba(234, 179, 8, 0.35);
+  border: 1px solid #facc15;
+  color: #fef08a;
+}
+
 .fortress-field-zone--defense {
-  left: 20px;
+  left: 110px;
   background: rgba(34, 197, 94, 0.3);
   border: 1px solid rgba(34, 197, 94, 0.5);
   color: #86efac;
@@ -361,7 +368,7 @@
 /* Casillas defensivas (columnas 0 a 6, lado izquierdo) */
 .fortress-lane-tiles {
   position: absolute;
-  left: 2.5%;
+  left: 6.8%;
   right: 48%;
   height: 94%;
   display: grid;
@@ -722,7 +729,10 @@
 
 .fortress-lane-locked-overlay {
   position: absolute;
-  inset: 0;
+  left: 6.8%;
+  right: 0;
+  top: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1158,6 +1168,406 @@
     padding: 3px 8px;
     font-size: 0.68rem;
   }
+}
+
+/* ==========================================================================
+   ANCESTRAL SUNFLOWERS (GIRASOLES ANCESTRALES) & RETAGUARDIA SAGRADA
+   ========================================================================== */
+
+/* Botón en el Header */
+.fortress-editor-btn-sunflower {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+  border: 1px solid #f59e0b;
+  color: #fde047;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fortress-editor-btn-sunflower:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  border-color: #fbbf24;
+}
+
+.fortress-editor-btn-sunflower--ready {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+  color: #ffffff;
+  border-color: #fef08a;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.7);
+  animation: pulseClaimGlow 1.8s infinite alternate;
+}
+
+/* Columna de Retaguardia en cada carril */
+.fortress-ancestral-dock {
+  position: absolute;
+  left: 0.8%;
+  width: 5.4%;
+  height: 94%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.fortress-ancestral-tile {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+}
+
+.fortress-ancestral-tile:hover {
+  transform: scale(1.06);
+}
+
+.fortress-ancestral-tile--ready {
+  filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.8));
+}
+
+/* Pedestal Rúnico Dorado */
+.fortress-ancestral-pedestal {
+  width: 48px;
+  height: 48px;
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #78350f 15%, #451a03 55%, #1e1b4b 100%);
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.55), inset 0 0 8px rgba(251, 191, 36, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.fortress-ancestral-rune-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px dashed rgba(253, 224, 71, 0.6);
+  animation: rotateRuneRing 18s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotateRuneRing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fortress-ancestral-sprite {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.65));
+  animation: sunflowerSway 3s ease-in-out infinite alternate;
+}
+
+@keyframes sunflowerSway {
+  0% { transform: rotate(-3deg) scale(0.98); }
+  100% { transform: rotate(3deg) scale(1.02); }
+}
+
+/* Gran Sol Flotante */
+.fortress-ancestral-sun-drop {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  animation: sunDropBob 1.6s ease-in-out infinite alternate;
+  cursor: pointer;
+}
+
+@keyframes sunDropBob {
+  0% { transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(-50%) translateY(-6px); }
+}
+
+.fortress-ancestral-sun-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.95));
+}
+
+.fortress-ancestral-sun-val {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #facc15;
+  color: #fef08a;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+  margin-top: -3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.fortress-ancestral-timer-pill {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #cbd5e1;
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.fortress-ancestral-tile--dormant {
+  border: 1.5px dashed rgba(100, 116, 139, 0.35);
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  opacity: 0.5;
+  cursor: not-allowed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fortress-ancestral-dormant-rune {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Modal de Cuidado y Aceleración */
+.fortress-sunflower-modal {
+  width: 92vw;
+  max-width: 440px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(245, 158, 11, 0.25);
+  overflow: hidden;
+  animation: modalPopIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fortress-sf-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.8);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.fortress-sf-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fortress-sf-modal-icon {
+  font-size: 28px;
+}
+
+.fortress-sf-header-title h3 {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #fbbf24;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.fortress-sf-header-title small {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.fortress-sf-modal-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fortress-sf-status-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 12px;
+  padding: 12px 14px;
+  border: 1px solid #334155;
+}
+
+.fortress-sf-status-card.is-ready {
+  border-color: #22c55e;
+  background: rgba(20, 83, 45, 0.25);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.2);
+}
+
+.fortress-sf-status-card.is-cooldown {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.fortress-sf-pedestal-preview {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.fortress-sf-pulse-sun {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 22px;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.9));
+  animation: sunDropBob 1.4s ease-in-out infinite alternate;
+}
+
+.fortress-sf-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fortress-sf-status-badge {
+  font-size: 11px;
+  font-weight: 900;
+  color: #fde047;
+}
+
+.fortress-sf-status-desc {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.fortress-sf-claim-btn {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  border: 2px solid #bbf7d0;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.6);
+  animation: pulseClaimGlow 1.8s infinite alternate;
+  width: 100%;
+}
+
+.fortress-sf-claim-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.fortress-sf-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fortress-sf-action-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fortress-sf-action-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fortress-sf-action-icon {
+  font-size: 24px;
+}
+
+.fortress-sf-action-text strong {
+  display: block;
+  font-size: 11.5px;
+  color: #f8fafc;
+}
+
+.fortress-sf-action-text small {
+  font-size: 9.5px;
+  color: #94a3b8;
+}
+
+.fortress-sf-action-stock {
+  font-size: 10.5px;
+  color: #cbd5e1;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.fortress-sf-action-btn {
+  font-size: 11px;
+  font-weight: 900;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.fortress-sf-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fortress-sf-action-btn--water {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border-color: #7dd3fc;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+}
+
+.fortress-sf-action-btn--fertilizer {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  color: #ffffff;
+  border-color: #86efac;
+  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.4);
+}
+
+.fortress-sf-modal-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.fortress-sf-modal-tip small {
+  font-size: 9.5px;
+  color: #94a3b8;
+  line-height: 1.35;
 }
 
 

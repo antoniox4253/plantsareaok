@@ -3282,9 +3282,23 @@ export default function Clan({
                           <h3 className="clan-fhub-card__title">DEFENSAS</h3>
                           <span className="clan-fhub-card__tag">Arena 1 • 5 Carriles</span>
                         </div>
-                        <span className="clan-fhub-card__badge clan-fhub-card__badge--def">
-                          {fortressData?.layout?.length ?? 0} Plantas Desplegadas
-                        </span>
+                        {fortressData?.sunflowerCanHarvest ? (
+                          <span
+                            className="clan-fhub-card__badge clan-fhub-card__badge--harvest-ready"
+                            style={{
+                              background: '#f59e0b',
+                              color: '#1e1b4b',
+                              fontWeight: 900,
+                              boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)',
+                            }}
+                          >
+                            ☀️ ¡COSECHA SOLAR LISTA!
+                          </span>
+                        ) : (
+                          <span className="clan-fhub-card__badge clan-fhub-card__badge--def">
+                            {fortressData?.layout?.length ?? 0} Plantas Desplegadas
+                          </span>
+                        )}
                       </div>
 
                       <div className="clan-fhub-card__body">
@@ -3308,7 +3322,11 @@ export default function Clan({
                             🌱 Formación: <strong>{fortressData?.layout?.length ? `${fortressData.layout.length} Unidades` : '¡Sin Plantas!'}</strong>
                           </span>
                           <span className="clan-fhub-pill">
-                            🏟️ Campo: <strong>Arena 1 (5 Carriles)</strong>
+                            {fortressData?.sunflowerCanHarvest ? (
+                              <strong style={{ color: '#facc15' }}>☀️ ¡Sol Listo (+{fortressData?.sunflowerTotalSuns || 100})!</strong>
+                            ) : (
+                              <>🌻 Cosecha: <strong>{typeof fortressData?.sunflowerSecondsRemaining === 'number' ? `${Math.ceil(fortressData.sunflowerSecondsRemaining / 60)}m` : 'Cargando...'}</strong></>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -3820,6 +3838,17 @@ export default function Clan({
                   defenseSunsBudget={fortressData.defenseSunsBudget || 2500}
                   canEdit={isOfficer}
                   plantCopies={plantCopies}
+                  sunflowerData={{
+                    sunflowerLastHarvestAt: fortressData.sunflowerLastHarvestAt,
+                    sunflowerCycleSeconds: fortressData.sunflowerCycleSeconds,
+                    sunflowerTimeReducedSeconds: fortressData.sunflowerTimeReducedSeconds,
+                    sunflowerCount: fortressData.sunflowerCount,
+                    sunsPerSunflower: fortressData.sunsPerSunflower,
+                    sunflowerTotalSuns: fortressData.sunflowerTotalSuns,
+                    sunflowerSecondsRemaining: fortressData.sunflowerSecondsRemaining,
+                    sunflowerCanHarvest: fortressData.sunflowerCanHarvest,
+                  }}
+                  userFarmingInv={userFarmingInv}
                   onClose={() => setFortressSubView('hub')}
                   onOpenAltar={() => setShowFortressDonateModal(true)}
                   onSaved={(newLayout, newAmbushes, sunsSpent) => {
@@ -3829,6 +3858,26 @@ export default function Clan({
                   onArsenalUpdated={(newUnlocked) => {
                     setFortressData((prev) => (prev ? { ...prev, unlockedPlants: newUnlocked } : null))
                     if (onRefreshUserData) void onRefreshUserData()
+                  }}
+                  onSunsHarvested={(_sunsGained, newBudget) => {
+                    setFortressData((prev) => (prev ? {
+                      ...prev,
+                      defenseSunsBudget: newBudget,
+                      sunflowerCanHarvest: false,
+                      sunflowerSecondsRemaining: 14400,
+                    } : null))
+                    if (onRefreshUserData) void onRefreshUserData()
+                  }}
+                  onAccelerated={(type, amount, newRemainingSec) => {
+                    setUserFarmingInv((prev) => ({
+                      ...prev,
+                      [type]: Math.max(0, (prev[type] || 0) - amount),
+                    }))
+                    setFortressData((prev) => (prev ? {
+                      ...prev,
+                      sunflowerSecondsRemaining: newRemainingSec,
+                      sunflowerCanHarvest: newRemainingSec <= 0,
+                    } : null))
                   }}
                 />
               )}

@@ -396,6 +396,15 @@ export interface ClanFortressData {
   dailyPassiveSuns?: number
   isMine: boolean
   canEdit: boolean
+  // Girasoles Ancestrales de la Base
+  sunflowerLastHarvestAt?: string
+  sunflowerCycleSeconds?: number
+  sunflowerTimeReducedSeconds?: number
+  sunflowerCount?: number
+  sunsPerSunflower?: number
+  sunflowerTotalSuns?: number
+  sunflowerSecondsRemaining?: number
+  sunflowerCanHarvest?: boolean
 }
 
 export interface ClanFortressAmbush {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { PlantId, ClanFortressPlant, ClanFortressAmbush } from '../../types/game'
 import { PLANT_CONFIGS, LANES_CONFIG_5, FORTRESS_SUN_COSTS, TACTICAL_AMBUSH_PLANTS } from '../../utils/gameConstants'
 import { supabaseService } from '../../services/supabaseService'
@@ -16,10 +16,24 @@ interface FortressEditorProps {
   defenseSunsBudget: number
   canEdit?: boolean
   plantCopies?: Record<string, number>
+  // Girasoles Ancestrales props
+  sunflowerData?: {
+    sunflowerLastHarvestAt?: string
+    sunflowerCycleSeconds?: number
+    sunflowerTimeReducedSeconds?: number
+    sunflowerCount?: number
+    sunsPerSunflower?: number
+    sunflowerTotalSuns?: number
+    sunflowerSecondsRemaining?: number
+    sunflowerCanHarvest?: boolean
+  }
+  userFarmingInv?: { water: number; fertilizer: number }
   onClose: () => void
   onOpenAltar?: () => void
   onSaved: (newLayout: ClanFortressPlant[], newAmbushes: ClanFortressAmbush[], sunsSpent: number) => void
   onArsenalUpdated?: (newUnlocked: PlantId[]) => void
+  onSunsHarvested?: (sunsGained: number, newBudget: number) => void
+  onAccelerated?: (resourceType: 'water' | 'fertilizer', amount: number, newRemainingSeconds: number) => void
 }
 
 const SELECTABLE_PLANTS: PlantId[] = [
@@ -62,10 +76,14 @@ export default function FortressEditor({
   defenseSunsBudget,
   canEdit = true,
   plantCopies,
+  sunflowerData,
+  userFarmingInv,
   onClose,
   onOpenAltar,
   onSaved,
   onArsenalUpdated,
+  onSunsHarvested,
+  onAccelerated,
 }: FortressEditorProps) {
   // Determinación de carriles permitidos según el nivel del Árbol Madre
   // Nivel 1 y 2: Carriles centrales 1, 2 y 3 (3 líneas)
@@ -102,6 +120,183 @@ export default function FortressEditor({
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
+  // Presupuesto reactivo en tiempo real
+  const [sunsBudget, setSunsBudget] = useState<number>(defenseSunsBudget)
+
+  // Estado reactivo de los Girasoles Ancestrales
+  const [sunflowerRemainingSec, setSunflowerRemainingSec] = useState<number>(() => {
+    return sunflowerData?.sunflowerSecondsRemaining ?? 0
+  })
+  const [canHarvest, setCanHarvest] = useState<boolean>(() => {
+    return sunflowerData?.sunflowerCanHarvest ?? (sunflowerData?.sunflowerSecondsRemaining === 0)
+  })
+  const [isHarvesting, setIsHarvesting] = useState<boolean>(false)
+  const [isAccelerating, setIsAccelerating] = useState<boolean>(false)
+  const [showSunflowerCareModal, setShowSunflowerCareModal] = useState<boolean>(false)
+  const [activeFarmingInv, setActiveFarmingInv] = useState<{ water: number; fertilizer: number }>(() => {
+    return userFarmingInv || { water: 0, fertilizer: 0 }
+  })
+
+  // Sincronizaciones con props
+  useEffect(() => {
+    setSunsBudget(defenseSunsBudget)
+  }, [defenseSunsBudget])
+
+  useEffect(() => {
+    if (userFarmingInv) {
+      setActiveFarmingInv(userFarmingInv)
+    }
+  }, [userFarmingInv])
+
+  useEffect(() => {
+    if (sunflowerData) {
+      if (typeof sunflowerData.sunflowerSecondsRemaining === 'number') {
+        setSunflowerRemainingSec(sunflowerData.sunflowerSecondsRemaining)
+      }
+      if (typeof sunflowerData.sunflowerCanHarvest === 'boolean') {
+        setCanHarvest(sunflowerData.sunflowerCanHarvest)
+      }
+    }
+  }, [sunflowerData])
+
+  // Temporizador regresivo en segundos
+  useEffect(() => {
+    if (sunflowerRemainingSec <= 0) {
+      setCanHarvest(true)
+      return
+    }
+    const timer = setInterval(() => {
+      setSunflowerRemainingSec((prev) => {
+        if (prev <= 1) {
+          setCanHarvest(true)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [sunflowerRemainingSec])
+
+  const formatRemainingTime = (sec: number) => {
+    if (sec <= 0) return '¡Listo!'
+    const h = Math.floor(sec / 3600)
+    const m = Math.floor((sec % 3600) / 60)
+    const s = sec % 60
+    if (h > 0) return `${h}h ${m}m ${s}s`
+    return `${m}m ${s}s`
+  }
+
+  // Carriles donde crecen Girasoles Ancestrales según nivel del Árbol Madre
+  const ancestralLanes = useMemo(() => {
+    if (treeLevel >= 4) return [0, 1, 3, 4]
+    if (treeLevel >= 2) return [1, 2, 3]
+    return [1, 3]
+  }, [treeLevel])
+
+  const sunflowerConfig = useMemo(() => {
+    let count = 2
+    let each = 50
+    if (treeLevel >= 4) {
+      count = 4
+      each = 125
+    } else if (treeLevel === 3) {
+      count = 3
+      each = 100
+    } else if (treeLevel === 2) {
+      count = 3
+      each = 75
+    }
+    return {
+      count: sunflowerData?.sunflowerCount ?? count,
+      sunsPerSunflower: sunflowerData?.sunsPerSunflower ?? each,
+      totalSuns: sunflowerData?.sunflowerTotalSuns ?? (count * each),
+    }
+  }, [treeLevel, sunflowerData])
+
+  // Cosecha comunal de soles
+  const handleHarvestSunflowers = async () => {
+    if (isHarvesting || !canHarvest) return
+    setIsHarvesting(true)
+    soundManager.playSound('points', 0.8)
+    try {
+      const res = await supabaseService.harvestAncestralSunflowers()
+      if (res.success && res.sunsGained) {
+        soundManager.playSound('points', 0.9)
+        const gained = res.sunsGained
+        const updatedBudget = res.newBudget ?? (sunsBudget + gained)
+        setSunsBudget(updatedBudget)
+        setCanHarvest(false)
+        setSunflowerRemainingSec(14400)
+        setSaveStatus({
+          type: 'success',
+          message: `☀️ ¡Cosechados +${gained} Soles para la Fortaleza! (${res.sunflowerCount || sunflowerConfig.count} Girasoles × ${res.sunsPerSunflower || sunflowerConfig.sunsPerSunflower} ☀️).`,
+        })
+        setShowSunflowerCareModal(false)
+        if (onSunsHarvested) onSunsHarvested(gained, updatedBudget)
+      } else {
+        setSaveStatus({
+          type: 'error',
+          message: res.error || 'No se pudieron cosechar los soles en este momento.',
+        })
+      }
+    } catch (e: any) {
+      setSaveStatus({
+        type: 'error',
+        message: e?.message || 'Error al cosechar soles ancestrales.',
+      })
+    } finally {
+      setIsHarvesting(false)
+    }
+  }
+
+  // Acelerar con agua o fertilizante
+  const handleAccelerateSunflowers = async (type: 'water' | 'fertilizer', amount: number = 1) => {
+    if (isAccelerating) return
+    const userBalance = type === 'water' ? (activeFarmingInv.water || 0) : (activeFarmingInv.fertilizer || 0)
+    if (userBalance < amount) {
+      setSaveStatus({
+        type: 'error',
+        message: `No tienes suficiente ${type === 'water' ? 'Agua 💧' : 'Fertilizante 🌱'} en tu inventario.`,
+      })
+      return
+    }
+
+    setIsAccelerating(true)
+    soundManager.playSound('plantation', 0.7)
+    try {
+      const res = await supabaseService.accelerateAncestralSunflowers(type, amount)
+      if (res.success) {
+        soundManager.playSound('plantation', 0.8)
+        const newRem = res.newRemainingSeconds ?? Math.max(0, sunflowerRemainingSec - (type === 'water' ? 300 : 600) * amount)
+        setSunflowerRemainingSec(newRem)
+        if (newRem <= 0 || res.canHarvestNow) {
+          setCanHarvest(true)
+        }
+        setActiveFarmingInv((prev) => ({
+          ...prev,
+          [type]: Math.max(0, (prev[type] || 0) - amount),
+        }))
+        setSaveStatus({
+          type: 'success',
+          message: `✨ ¡Girasoles acelerados! -${type === 'water' ? 5 * amount : 10 * amount} minutos al temporizador de cosecha.`,
+        })
+        if (onAccelerated) onAccelerated(type, amount, newRem)
+      } else {
+        setSaveStatus({
+          type: 'error',
+          message: res.error || 'No se pudo aplicar la aceleración en este momento.',
+        })
+      }
+    } catch (e: any) {
+      setSaveStatus({
+        type: 'error',
+        message: e?.message || 'Error al acelerar girasoles.',
+      })
+    } finally {
+      setIsAccelerating(false)
+    }
+  }
+
   // Modal para programar emboscada táctica
   const [ambushModalPlant, setAmbushModalPlant] = useState<PlantId | null>(null)
   const [ambushLane, setAmbushLane] = useState<number>(allowedLanes[0] || 1)
@@ -117,7 +312,7 @@ export default function FortressEditor({
     return layoutSuns + ambushSuns
   }, [layout, ambushes])
 
-  const sunsRemaining = defenseSunsBudget - sunsSpent
+  const sunsRemaining = sunsBudget - sunsSpent
 
   // Grid defensivo: 7 columnas (0 a 6) en la mitad izquierda
   const defenseCols = [0, 1, 2, 3, 4, 5, 6]
@@ -408,14 +603,14 @@ export default function FortressEditor({
                 <strong>{sunsRemaining} ☀️</strong>
               </span>
               <small>
-                {sunsSpent} / {defenseSunsBudget} ☀️
+                {sunsSpent} / {sunsBudget} ☀️
               </small>
             </div>
             <div className="fortress-sun-meter__track">
               <div
                 className="fortress-sun-meter__fill"
                 style={{
-                  width: `${Math.min(100, Math.max(0, (sunsSpent / defenseSunsBudget) * 100))}%`,
+                  width: `${Math.min(100, Math.max(0, (sunsSpent / sunsBudget) * 100))}%`,
                   background:
                     sunsRemaining < 100
                       ? 'linear-gradient(90deg, #ef4444, #f97316)'
@@ -424,6 +619,22 @@ export default function FortressEditor({
               />
             </div>
           </div>
+
+          {/* Botón de acceso rápido a los Girasoles Ancestrales */}
+          <button
+            type="button"
+            className={`fortress-editor-btn-sunflower ${canHarvest ? 'fortress-editor-btn-sunflower--ready' : ''}`}
+            onClick={() => {
+              if (canHarvest) {
+                void handleHarvestSunflowers()
+              } else {
+                setShowSunflowerCareModal(true)
+              }
+            }}
+            title={canHarvest ? `¡Cosechar +${sunflowerConfig.totalSuns} Soles!` : `Girasoles Ancestrales: Cosecha en ${formatRemainingTime(sunflowerRemainingSec)}`}
+          >
+            {canHarvest ? `☀️ ¡COSECHAR (+${sunflowerConfig.totalSuns})!` : `🌻 GIRASOLES (${formatRemainingTime(sunflowerRemainingSec)})`}
+          </button>
 
           {onOpenAltar && (
             <button
@@ -522,6 +733,9 @@ export default function FortressEditor({
           <div className="fortress-editor-depth-overlay" />
 
           {/* División visual del campo */}
+          <div className="fortress-field-zone fortress-field-zone--ancestral">
+            <span>🌻 RETAGUARDIA</span>
+          </div>
           <div className="fortress-field-zone fortress-field-zone--defense">
             <span>🏰 TU BASTIÓN DEFENSIVO (C0 A C6)</span>
           </div>
@@ -534,6 +748,7 @@ export default function FortressEditor({
           {/* Renderizado de carriles */}
           {LANES_CONFIG_5.map((laneCfg) => {
             const isLaneLocked = !allowedLanes.includes(laneCfg.id)
+            const isAncestralLane = ancestralLanes.includes(laneCfg.id)
 
             return (
               <div
@@ -544,6 +759,58 @@ export default function FortressEditor({
                   height: `${laneCfg.heightPct}%`,
                 }}
               >
+                {/* ── COLUMNA RETAGUARDIA SAGRADA (GIRASOLES ANCESTRALES) ── */}
+                <div className="fortress-ancestral-dock">
+                  {isAncestralLane ? (
+                    <div
+                      className={`fortress-ancestral-tile ${canHarvest ? 'fortress-ancestral-tile--ready' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (canHarvest) {
+                          void handleHarvestSunflowers()
+                        } else {
+                          setShowSunflowerCareModal(true)
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      title={
+                        canHarvest
+                          ? `☀️ ¡Cosecha Solar Lista! Toca para recolectar +${sunflowerConfig.sunsPerSunflower} ☀️`
+                          : `🌻 Girasol Ancestral (Cosecha en ${formatRemainingTime(sunflowerRemainingSec)}). Toca para regar o abonar.`
+                      }
+                    >
+                      <div className="fortress-ancestral-pedestal">
+                        <div className="fortress-ancestral-rune-ring" />
+                        <img
+                          src="/game-assets/greenfoot/transparentsunflower.webp"
+                          alt="Girasol Ancestral"
+                          className="fortress-ancestral-sprite"
+                        />
+                      </div>
+
+                      {canHarvest ? (
+                        <div className="fortress-ancestral-sun-drop">
+                          <span className="fortress-ancestral-sun-glow" />
+                          <span className="fortress-ancestral-sun-icon">☀️</span>
+                          <span className="fortress-ancestral-sun-val">+{sunflowerConfig.sunsPerSunflower}</span>
+                        </div>
+                      ) : (
+                        <div className="fortress-ancestral-timer-pill">
+                          <span>⏳ {formatRemainingTime(sunflowerRemainingSec)}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      className="fortress-ancestral-tile fortress-ancestral-tile--dormant"
+                      title={`🔒 Ranura Ancestral Durmiente. Desbloquea más girasoles al subir el Árbol Madre a Nivel ${laneCfg.id === 0 || laneCfg.id === 4 ? 4 : 2}.`}
+                    >
+                      <span className="fortress-ancestral-dormant-rune">ᛟ</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="fortress-lane-tag">
                   {isLaneLocked ? '🔒 BLOQUEADO' : `LÍNEA ${laneCfg.id + 1}`}
                 </div>
@@ -733,6 +1000,126 @@ export default function FortressEditor({
               >
                 ⚡ Guardar Emboscada ({FORTRESS_SUN_COSTS[ambushModalPlant] || 100} ☀️)
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL DE CUIDADO DE GIRASOLES ANCESTRALES (REGAR / FERTILIZAR) ─────── */}
+      {showSunflowerCareModal && (
+        <div className="fortress-ambush-modal-backdrop" onClick={() => setShowSunflowerCareModal(false)}>
+          <div className="fortress-sunflower-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="fortress-sf-modal-header">
+              <div className="fortress-sf-header-title">
+                <span className="fortress-sf-modal-icon">🌻</span>
+                <div>
+                  <h3>GIRASOLES ANCESTRALES DE LA BASE</h3>
+                  <small>Santuario Solar Comunal • Nutre y acelera la cosecha</small>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="fortress-ambush-modal__close-btn"
+                onClick={() => setShowSunflowerCareModal(false)}
+              >
+                ✖
+              </button>
+            </div>
+
+            <div className="fortress-sf-modal-body">
+              {/* Banner de Estado */}
+              <div className={`fortress-sf-status-card ${canHarvest ? 'is-ready' : 'is-cooldown'}`}>
+                <div className="fortress-sf-pedestal-preview">
+                  <div className="fortress-ancestral-pedestal">
+                    <div className="fortress-ancestral-rune-ring" />
+                    <img
+                      src="/game-assets/greenfoot/transparentsunflower.webp"
+                      alt="Girasol Ancestral"
+                      className="fortress-ancestral-sprite"
+                    />
+                  </div>
+                  {canHarvest && (
+                    <div className="fortress-sf-pulse-sun">☀️</div>
+                  )}
+                </div>
+
+                <div className="fortress-sf-status-info">
+                  <div className="fortress-sf-status-badge">
+                    {canHarvest ? '✨ ¡COSECHA SOLAR LISTA!' : `⏳ RECARGANDO: ${formatRemainingTime(sunflowerRemainingSec)}`}
+                  </div>
+                  <p className="fortress-sf-status-desc">
+                    {canHarvest
+                      ? `Los ${sunflowerConfig.count} Girasoles Ancestrales florecieron con +${sunflowerConfig.totalSuns} ☀️ listos para tu Altar Defensivo.`
+                      : `Generan ${sunflowerConfig.sunsPerSunflower} ☀️ cada uno (+${sunflowerConfig.totalSuns} ☀️ en total). Acelera el reloj regando o abonando.`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Botón de Cosecha Directa si está listo */}
+              {canHarvest ? (
+                <button
+                  type="button"
+                  className="fortress-sf-claim-btn"
+                  disabled={isHarvesting}
+                  onClick={() => void handleHarvestSunflowers()}
+                >
+                  {isHarvesting ? '⏳ COSECHANDO SOLES...' : `☀️ ¡RECOLECTAR +${sunflowerConfig.totalSuns} SOLES!`}
+                </button>
+              ) : (
+                /* Opciones de Aceleración con Agua y Fertilizante */
+                <div className="fortress-sf-actions-grid">
+                  {/* Opción 1: Regar */}
+                  <div className="fortress-sf-action-card">
+                    <div className="fortress-sf-action-top">
+                      <span className="fortress-sf-action-icon">💧</span>
+                      <div className="fortress-sf-action-text">
+                        <strong>Regar con Agua</strong>
+                        <small>-5 minutos al reloj</small>
+                      </div>
+                    </div>
+                    <div className="fortress-sf-action-stock">
+                      Tu Agua: <b>{activeFarmingInv.water} 💧</b>
+                    </div>
+                    <button
+                      type="button"
+                      className="fortress-sf-action-btn fortress-sf-action-btn--water"
+                      disabled={isAccelerating || activeFarmingInv.water <= 0}
+                      onClick={() => void handleAccelerateSunflowers('water', 1)}
+                    >
+                      {isAccelerating ? '...' : '💧 REGAR (-5m)'}
+                    </button>
+                  </div>
+
+                  {/* Opción 2: Fertilizante */}
+                  <div className="fortress-sf-action-card">
+                    <div className="fortress-sf-action-top">
+                      <span className="fortress-sf-action-icon">🌱</span>
+                      <div className="fortress-sf-action-text">
+                        <strong>Abonar Fertilizante</strong>
+                        <small>-10 minutos al reloj</small>
+                      </div>
+                    </div>
+                    <div className="fortress-sf-action-stock">
+                      Tu Fertilizante: <b>{activeFarmingInv.fertilizer} 🌱</b>
+                    </div>
+                    <button
+                      type="button"
+                      className="fortress-sf-action-btn fortress-sf-action-btn--fertilizer"
+                      disabled={isAccelerating || activeFarmingInv.fertilizer <= 0}
+                      onClick={() => void handleAccelerateSunflowers('fertilizer', 1)}
+                    >
+                      {isAccelerating ? '...' : '🌱 ABONAR (-10m)'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="fortress-sf-modal-tip">
+                <span>🌿</span>
+                <small>
+                  Cualquier miembro del clan puede cosechar o acelerar. Los soles cosechados se suman al presupuesto del clan para desplegar mejores defensas en Arena 1.
+                </small>
+              </div>
             </div>
           </div>
         </div>

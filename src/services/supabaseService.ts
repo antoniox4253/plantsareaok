@@ -2234,6 +2234,60 @@ export const SupabaseService = {
     }
   },
 
+  async harvestAncestralSunflowers(): Promise<{
+    success: boolean
+    sunsGained?: number
+    newBudget?: number
+    sunflowerCount?: number
+    sunsPerSunflower?: number
+    harvestedBy?: string
+    harvestedAt?: string
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('harvest_ancestral_sunflowers')
+      if (error) {
+        logError('harvestAncestralSunflowers', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('harvestAncestralSunflowers', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async accelerateAncestralSunflowers(
+    resourceType: 'water' | 'fertilizer',
+    amount: number = 1
+  ): Promise<{
+    success: boolean
+    resourceType?: string
+    amountUsed?: number
+    secondsReduced?: number
+    newRemainingSeconds?: number
+    canHarvestNow?: boolean
+    remainingUserResource?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('accelerate_ancestral_sunflowers', {
+        p_resource_type: resourceType,
+        p_amount: amount,
+      })
+      if (error) {
+        logError('accelerateAncestralSunflowers', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('accelerateAncestralSunflowers', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   async startClanLeadershipClaim(): Promise<{ success: boolean; data?: any; error?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
