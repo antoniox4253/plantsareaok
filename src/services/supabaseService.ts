@@ -1358,20 +1358,38 @@ export const SupabaseService = {
     error?: string
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
-    try {
-      const { data, error } = await (supabase.rpc as any)('report_match_result', {
-        p_room_id: roomId,
-        p_winner_id: winnerId,
-      })
-      if (error) {
-        logError('reportMatchResult', error)
-        return { success: false, error: error.message }
+    let lastError: any = null
+    for (let intento = 1; intento <= 3; intento++) {
+      try {
+        const { data, error } = await (supabase.rpc as any)('report_match_result', {
+          p_room_id: roomId,
+          p_winner_id: winnerId,
+        })
+        if (error) {
+          logError(`reportMatchResult (intento ${intento})`, error)
+          lastError = error
+          const errMsg = error.message || ''
+          if (errMsg.includes('no encontrada') || errMsg.includes('No participas') || errMsg.includes('No autenticado') || errMsg.includes('cambiar tu reporte')) {
+            return { success: false, error: errMsg }
+          }
+          if (intento < 3) {
+            await new Promise((resolve) => setTimeout(resolve, 800 * intento))
+            continue
+          }
+          return { success: false, error: errMsg }
+        }
+        return data as any
+      } catch (e: any) {
+        logError(`reportMatchResult (intento ${intento})`, e)
+        lastError = e
+        if (intento < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 800 * intento))
+          continue
+        }
+        return { success: false, error: e?.message }
       }
-      return data as any
-    } catch (e: any) {
-      logError('reportMatchResult', e)
-      return { success: false, error: e?.message }
     }
+    return { success: false, error: lastError?.message || 'Error al reportar resultado de partida' }
   },
 
   /**

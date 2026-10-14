@@ -540,6 +540,19 @@ export default function Battlefield({
     isSurrendered?: boolean
   } | null>(null)
 
+  const [isNetworkOnline, setIsNetworkOnline] = useState<boolean>(() => (typeof navigator !== 'undefined' ? navigator.onLine : true))
+
+  useEffect(() => {
+    const onOnline = () => setIsNetworkOnline(true)
+    const onOffline = () => setIsNetworkOnline(false)
+    window.addEventListener('online', onOnline)
+    window.addEventListener('offline', onOffline)
+    return () => {
+      window.removeEventListener('online', onOnline)
+      window.removeEventListener('offline', onOffline)
+    }
+  }, [])
+
   const [clockSyncStatus, setClockSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle')
   const [clockSyncError, setClockSyncError] = useState<string | null>(null)
   const matchClockGenRef = useRef<number>(0)
@@ -2353,6 +2366,35 @@ export default function Battlefield({
             </div>
             <span className="battlefield-live-duel-banner__badge">LIVE PvP</span>
           </div>
+        </div>
+      )}
+
+      {/* ── ALERTA VISUAL DE CONEXIÓN DE RED EN COMBATE ── */}
+      {!isNetworkOnline && Boolean(roomId) && (
+        <div
+          className="battlefield-network-warning-banner"
+          style={{
+            position: 'fixed',
+            top: '14px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.95), rgba(153, 27, 27, 0.95))',
+            color: '#ffffff',
+            padding: '8px 20px',
+            borderRadius: '24px',
+            boxShadow: '0 4px 18px rgba(0,0,0,0.5), 0 0 14px rgba(239, 68, 68, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontWeight: 800,
+            fontSize: '0.88rem',
+            border: '1px solid rgba(254, 202, 202, 0.7)',
+            pointerEvents: 'none',
+          }}
+        >
+          <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+          <span>Conexión interrumpida. Tus jugadas se sincronizarán al reconectar...</span>
         </div>
       )}
 
