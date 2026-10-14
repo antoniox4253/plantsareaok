@@ -16,6 +16,7 @@ import { UserManager } from '../../utils/userManager'
 import { supabaseService } from '../../services/supabaseService'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import { clanChatService, type ClanChatMessage } from '../../services/clanChatService'
+import { subscribeToOnlineUserIds } from '../../hooks/useOnlineUsers'
 import FortressEditor from './FortressEditor'
 import FortressDonateModal from './FortressDonateModal'
 import GoldIcon from '../Common/GoldIcon'
@@ -1143,28 +1144,14 @@ export default function Clan({
       void supabaseService.touchPlayerActivity().catch(() => {})
     }, 120000)
 
-    // Escuchar el canal global de presencia en tiempo real
-    const presenceChannel = supabase.channel('online-players-presence')
-
-    const syncPresenceState = () => {
-      try {
-        const state = presenceChannel.presenceState()
-        const keys = Object.keys(state)
-        setOnlineMemberIds(new Set(keys))
-      } catch (err) {
-        console.warn('[Clan] Error sincronizando presencia:', err)
-      }
-    }
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, syncPresenceState)
-      .on('presence', { event: 'join' }, syncPresenceState)
-      .on('presence', { event: 'leave' }, syncPresenceState)
-
-    syncPresenceState()
+    // Escuchar el canal global de presencia en tiempo real de forma segura y centralizada
+    const unsubscribePresence = subscribeToOnlineUserIds((ids) => {
+      setOnlineMemberIds(ids)
+    })
 
     return () => {
       clearInterval(heartbeatTimer)
+      unsubscribePresence()
     }
   }, [])
 
@@ -2370,6 +2357,7 @@ export default function Clan({
   const isDefeated = userClan.status === 'defeated' && currentVaultGems <= 0
   const isShielded = userClan.shieldUntil && userClan.shieldUntil > Date.now()
   const shieldHours = isShielded ? Math.ceil((userClan.shieldUntil! - Date.now()) / 3600000) : 0
+  const currentClanMaxMembers = fortressData?.maxMembers || userClan.maxMembers || 15
 
   return (
     <div className="clan-container">
@@ -2391,7 +2379,7 @@ export default function Clan({
                 )}
               </div>
               <div className="clan-leader-info-row">
-                <span className="clan-leader-txt">Líder: <strong>{userClan.leader}</strong> | {userClan.members.length}/{fortressData?.maxMembers || 15} Miembros</span>
+                <span className="clan-leader-txt">Líder: <strong>{userClan.leader}</strong> | {userClan.members.length}/{currentClanMaxMembers} Miembros</span>
                 {userClan.isLeaderInactive && (
                   <span className="clan-leader-inactive-tag" title={`Inactivo hace ${userClan.leaderInactiveDays || 4} días`}>
                     💤 Inactivo ({userClan.leaderInactiveDays || 4}d)
@@ -2555,7 +2543,7 @@ export default function Clan({
           className={`clan-tab-btn ${activeTab === 'members' ? 'clan-tab-btn--active' : ''}`}
           onClick={() => setActiveTab('members')}
         >
-          👥 MIEMBROS ({userClan.members.length}/{fortressData?.maxMembers || 15})
+          👥 MIEMBROS ({userClan.members.length}/{currentClanMaxMembers})
         </button>
         <button
           type="button"
@@ -2640,7 +2628,7 @@ export default function Clan({
           {/* Barra de herramientas para miembros: Invitar Jugador */}
           <div className="clan-members-toolbar">
             <span className="clan-members-toolbar__hint">
-              👥 Miembros del clan ({userClan.members.length}/{fortressData?.maxMembers || 15}). ¡Invita a tus amigos directamente o patrocina su entrada gratis!
+              👥 Miembros del clan ({userClan.members.length}/{currentClanMaxMembers}). ¡Invita a tus amigos directamente o patrocina su entrada gratis!
             </span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button
@@ -2652,8 +2640,8 @@ export default function Clan({
                   setIsSponsoringInvite(false)
                   setShowInviteModal(true)
                 }}
-                disabled={userClan.members.length >= (fortressData?.maxMembers || 15)}
-                title={userClan.members.length >= (fortressData?.maxMembers || 15) ? `El clan ya alcanzó el cupo máximo de ${fortressData?.maxMembers || 15} miembros` : 'Invitar jugador al clan'}
+                disabled={userClan.members.length >= currentClanMaxMembers}
+                title={userClan.members.length >= currentClanMaxMembers ? `El clan ya alcanzó el cupo máximo de ${currentClanMaxMembers} miembros` : 'Invitar jugador al clan'}
               >
                 ✉️ INVITAR AL CLAN
               </button>
@@ -3118,7 +3106,7 @@ export default function Clan({
                         <div className="clan-fhub-perks-preview">
                           <span className="clan-fhub-perk-item">☀️ +{fortressData?.dailyPassiveSuns || 0} Soles/Día</span>
                           <span className="clan-fhub-perk-item">🥊 +{fortressData?.pvpDamageBonusPct || 0}% Daño PvP</span>
-                          <span className="clan-fhub-perk-item">👥 Cupo: {fortressData?.maxMembers || 15} Miembros</span>
+                          <span className="clan-fhub-perk-item">👥 Cupo: {currentClanMaxMembers} Miembros</span>
                         </div>
                       </div>
 
@@ -3628,7 +3616,7 @@ export default function Clan({
                             <span className="clan-tree-perk-icon">👥</span>
                             <div className="clan-tree-perk-meta">
                               <span className="clan-tree-perk-label">Capacidad del Clan</span>
-                              <strong className="clan-tree-perk-val">{fortressData?.maxMembers || 15} Miembros</strong>
+                              <strong className="clan-tree-perk-val">{currentClanMaxMembers} Miembros</strong>
                             </div>
                           </div>
 
