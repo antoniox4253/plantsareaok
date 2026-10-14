@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createBattleState, stepTick, crearPlantaDelRival, type GameState } from './simulate'
-import { TOTAL_COLUMNS } from '../utils/gameConstants'
+import { TOTAL_COLUMNS, getScaledPlantConfig, getEligibleStatsForPlant } from '../utils/gameConstants'
 import type { PlantId } from '../types/game'
 import { validarAccionP1RankedEstricta } from './asyncP1History'
 import { runAsyncTimeline } from './asyncOpponent'
@@ -305,6 +305,61 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
       // Seguir corriendo para verificar que inflige daño continuo al masticar
       correr(estado, 40)
       expect(enemigo.hp).toBeLessThan(hpInicialEnemigo)
+    })
+  })
+
+  describe('Temporada 2 - Escalado por Tiradas de Atributos Aleatorias (Stat Rolls)', () => {
+    it('Nuez Explosiva (explodeonut) escala únicamente el atributo sorteado y preserva el resto', () => {
+      const base = getScaledPlantConfig('explodeonut', [])
+      expect(base.cost).toBe(150)
+      expect(base.damage).toBe(1000)
+      expect(base.maxHp).toBe(800)
+
+      // Tirada 1: Solo daño (+15%)
+      const conDano = getScaledPlantConfig('explodeonut', ['damage'])
+      expect(conDano.damage).toBe(1150)
+      expect(conDano.maxHp).toBe(800) // HP intacto
+
+      // Tirada 2: Solo vida (+15%)
+      const conHp = getScaledPlantConfig('explodeonut', ['hp'])
+      expect(conHp.maxHp).toBe(920)
+      expect(conHp.damage).toBe(1000) // Daño intacto
+    })
+
+    it('Seta Sapo (toadstool) escala con vida base 500 y coste 150', () => {
+      const base = getScaledPlantConfig('toadstool', [])
+      expect(base.cost).toBe(150)
+      expect(base.maxHp).toBe(500)
+      expect(base.damage).toBe(110)
+
+      // Tirada: Solo HP
+      const conHp = getScaledPlantConfig('toadstool', ['hp'])
+      expect(conHp.maxHp).toBe(575)
+
+      // Tirada: Solo daño (+15%)
+      const conDmg = getScaledPlantConfig('toadstool', ['damage'])
+      expect(conDmg.damage).toBe(126)
+    })
+
+    it('Margarita (marigold) escala vida o recarga de forma independiente', () => {
+      const base = getScaledPlantConfig('marigold', [])
+      expect(base.cost).toBe(50)
+      expect(base.maxHp).toBe(300)
+      expect(base.cooldownMs).toBe(6000)
+
+      const conCd = getScaledPlantConfig('marigold', ['cooldown'])
+      expect(conCd.cooldownMs).toBe(5100)
+      expect(conCd.maxHp).toBe(300)
+    })
+
+    it('getEligibleStatsForPlant retorna los atributos autoritativos exactos para cada planta de Temporada 2', () => {
+      expect(getEligibleStatsForPlant('explodeonut' as PlantId)).toEqual(['hp', 'cooldown', 'damage', 'moveSpeed'])
+      expect(getEligibleStatsForPlant('toadstool' as PlantId)).toEqual(['hp', 'cooldown', 'damage', 'moveSpeed'])
+      expect(getEligibleStatsForPlant('marigold' as PlantId)).toEqual(['hp', 'cooldown'])
+      expect(getEligibleStatsForPlant('pickledpepper' as PlantId)).toEqual(['damage', 'cooldown'])
+      expect(getEligibleStatsForPlant('torchwood' as PlantId)).toEqual(['hp', 'cooldown'])
+      expect(getEligibleStatsForPlant('gatlingpea' as PlantId)).toEqual(['hp', 'cooldown', 'damage', 'attackSpeed'])
+      expect(getEligibleStatsForPlant('snowpea' as PlantId)).toEqual(['hp', 'cooldown', 'damage', 'attackSpeed'])
     })
   })
 })
