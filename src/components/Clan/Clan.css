@@ -7342,68 +7342,92 @@
   padding-bottom: 24px;
 }
 
-/* 1. Hero Card */
-.clan-weekly-hero-card {
-  display: flex;
-  align-items: center;
-  gap: 18px;
+/* 1. TOP GAMING DASHBOARD (2 COMPACT COLUMNS) */
+.clan-weekly-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 820px) {
+  .clan-weekly-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.clan-weekly-dash-card {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 2px solid #f59e0b;
   border-radius: 16px;
-  padding: 18px 22px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Left Card: Cofre & Progreso Comunal */
+.clan-weekly-dash-card--chest {
+  border: 1.5px solid #f59e0b;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(245, 158, 11, 0.2);
 }
 
-.clan-weekly-hero-chest {
+.clan-weekly-chest-top-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.clan-weekly-chest-badge-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
 }
 
 .clan-weekly-chest-icon {
-  font-size: 48px;
-  filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.5));
+  font-size: 46px;
+  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.55));
   animation: chestBob 2.5s ease-in-out infinite alternate;
 }
 
 @keyframes chestBob {
   0% { transform: translateY(0); }
-  100% { transform: translateY(-6px) scale(1.04); }
+  100% { transform: translateY(-5px) scale(1.05); }
 }
 
 .clan-weekly-chest-lvl-pill {
   background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
   color: #1e1b4b;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 900;
-  padding: 3px 8px;
-  border-radius: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
   border: 1px solid #fef08a;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   white-space: nowrap;
 }
 
-.clan-weekly-hero-info {
+.clan-weekly-chest-titles {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+  gap: 4px;
 }
 
-.clan-weekly-hero-top {
+.clan-weekly-hero-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.clan-weekly-hero-top h3 {
-  font-size: 16px;
+.clan-weekly-hero-header-row h3 {
+  font-size: 15px;
   font-weight: 900;
   color: #fbbf24;
   margin: 0;
@@ -7416,23 +7440,23 @@
   border: 1px solid #f59e0b;
   font-size: 10px;
   font-weight: 800;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 6px;
   font-family: monospace;
+  white-space: nowrap;
 }
 
 .clan-weekly-hero-desc {
   font-size: 11px;
   color: #cbd5e1;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .clan-weekly-progress-wrap {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: 6px;
 }
 
 .clan-weekly-progress-labels {
@@ -7447,10 +7471,16 @@
   color: #fbbf24;
 }
 
+.clan-weekly-pct-badge {
+  color: #fbbf24;
+  font-weight: 900;
+  font-size: 11px;
+}
+
 .clan-weekly-progress-bar-bg {
   width: 100%;
-  height: 12px;
-  background: rgba(15, 23, 42, 0.8);
+  height: 11px;
+  background: rgba(15, 23, 42, 0.85);
   border: 1px solid #475569;
   border-radius: 8px;
   overflow: hidden;
@@ -7475,49 +7505,6 @@
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
 }
 
-/* Claim Banner */
-.clan-weekly-claim-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  background: linear-gradient(135deg, rgba(20, 83, 45, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 2px solid #22c55e;
-  border-radius: 14px;
-  padding: 14px 20px;
-  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
-  animation: pulseClaimGlow 2s infinite alternate;
-}
-
-@keyframes pulseClaimGlow {
-  0% { box-shadow: 0 4px 16px rgba(34, 197, 94, 0.25); border-color: #22c55e; }
-  100% { box-shadow: 0 6px 28px rgba(34, 197, 94, 0.55); border-color: #86efac; }
-}
-
-.clan-weekly-claim-content {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex: 1;
-}
-
-.clan-weekly-claim-icon {
-  font-size: 36px;
-}
-
-.clan-weekly-claim-text h4 {
-  font-size: 14px;
-  font-weight: 900;
-  color: #86efac;
-  margin: 0 0 2px 0;
-}
-
-.clan-weekly-claim-text p {
-  font-size: 11px;
-  color: #e2e8f0;
-  margin: 0;
-}
-
 .clan-weekly-open-chest-btn {
   background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
   border: 2px solid #bbf7d0;
@@ -7532,55 +7519,69 @@
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
+.clan-weekly-open-chest-btn--integrated {
+  width: 100%;
+  text-align: center;
+  margin-top: 2px;
+  animation: pulseClaimGlow 2s infinite alternate;
+}
+
+@keyframes pulseClaimGlow {
+  0% { box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4); border-color: #22c55e; }
+  100% { box-shadow: 0 6px 20px rgba(34, 197, 94, 0.7); border-color: #86efac; }
+}
+
 .clan-weekly-open-chest-btn:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.02);
   filter: brightness(1.1);
 }
 
-.clan-weekly-claimed-notice {
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 10px 16px;
-  text-align: center;
+.clan-weekly-claimed-pill {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid #22c55e;
+  color: #86efac;
   font-size: 11px;
-  color: #94a3b8;
-  font-weight: 700;
+  font-weight: 800;
+  padding: 7px 12px;
+  border-radius: 8px;
+  text-align: center;
 }
 
-/* 2. Honor de Batalla Card */
-.clan-weekly-honor-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+/* Right Card: Honor & Podio */
+.clan-weekly-dash-card--honor-podium {
   border: 1.5px solid #3b82f6;
-  border-radius: 14px;
-  padding: 14px 18px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(59, 130, 246, 0.15);
+  gap: 10px;
+}
+
+.clan-weekly-honor-subcard {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 12px;
+  padding: 9px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .clan-weekly-honor-header h4 {
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 900;
   color: #93c5fd;
-  margin: 0 0 8px 0;
-  line-height: 1.4;
-}
-
-.clan-weekly-honor-body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin: 0;
+  line-height: 1.35;
 }
 
 .clan-weekly-honor-progress-wrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .clan-weekly-honor-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 10.5px;
   color: #cbd5e1;
 }
 
@@ -7589,7 +7590,7 @@
 }
 
 .clan-weekly-honor-status-msg {
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.35;
 }
 
@@ -7603,94 +7604,89 @@
   font-weight: 700;
 }
 
-/* 3. Podium Card */
-.clan-weekly-podium-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-  border: 1.5px solid #64748b;
-  border-radius: 14px;
-  padding: 16px 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.clan-weekly-podium-header {
-  margin-bottom: 12px;
-}
-
-.clan-weekly-podium-header h4 {
-  font-size: 13.5px;
-  font-weight: 900;
-  color: #f1f5f9;
-  margin: 0 0 2px 0;
-}
-
-.clan-weekly-podium-header span {
-  font-size: 10px;
-  color: #94a3b8;
-}
-
-.clan-weekly-podium-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.clan-weekly-podium-col {
+/* Podio Subcard */
+.clan-weekly-podium-subcard {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  padding: 9px 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  background: rgba(15, 23, 42, 0.85);
-  border-radius: 12px;
-  padding: 12px 14px;
-  gap: 4px;
+  gap: 6px;
 }
 
-.clan-weekly-podium-col--mvp {
-  border: 1.5px solid #facc15;
-  box-shadow: 0 0 14px rgba(250, 204, 21, 0.25);
-}
-
-.clan-weekly-podium-col--elite {
-  border: 1.5px solid #94a3b8;
-  box-shadow: 0 0 14px rgba(148, 163, 184, 0.2);
-}
-
-.clan-podium-trophy {
-  font-size: 26px;
-}
-
-.clan-podium-rank {
-  font-size: 9px;
+.clan-weekly-podium-header-mini {
+  font-size: 10px;
   font-weight: 900;
+  color: #e2e8f0;
   letter-spacing: 0.5px;
+}
+
+.clan-weekly-podium-mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.clan-podium-mini-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30, 41, 59, 0.85);
+  border-radius: 8px;
+  padding: 6px 8px;
+  border: 1px solid #475569;
+}
+
+.clan-podium-mini-box--mvp {
+  border-color: #facc15;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.2);
+}
+
+.clan-podium-mini-box--elite {
+  border-color: #94a3b8;
+  box-shadow: 0 0 8px rgba(148, 163, 184, 0.15);
+}
+
+.clan-podium-mini-trophy {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.clan-podium-mini-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.clan-podium-mini-lbl {
+  font-size: 8px;
+  font-weight: 900;
   color: #94a3b8;
+  text-transform: uppercase;
 }
 
-.clan-weekly-podium-col--mvp .clan-podium-rank {
-  color: #facc15;
-}
-
-.clan-podium-user {
-  font-size: 13px;
+.clan-podium-mini-user {
+  font-size: 11px;
   font-weight: 900;
   color: #ffffff;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  white-space: nowrap;
 }
 
-.clan-podium-perk {
-  font-size: 9.5px;
-  color: #cbd5e1;
-  font-weight: 700;
+.clan-podium-mini-info small {
+  font-size: 9px;
+  color: #fbbf24;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .clan-weekly-active-bonus-pill {
-  margin-top: 12px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 900;
   text-align: center;
 }
@@ -7699,129 +7695,278 @@
   background: linear-gradient(90deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.3) 100%);
   border: 1px solid #facc15;
   color: #fef08a;
-  box-shadow: 0 0 12px rgba(250, 204, 21, 0.3);
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
 }
 
 .clan-weekly-active-bonus-pill--elite {
   background: linear-gradient(90deg, rgba(148, 163, 184, 0.25) 0%, rgba(100, 116, 139, 0.3) 100%);
   border: 1px solid #cbd5e1;
   color: #f1f5f9;
-  box-shadow: 0 0 12px rgba(203, 213, 225, 0.25);
+  box-shadow: 0 0 10px rgba(203, 213, 225, 0.25);
 }
 
-/* 4. 10-Level Reward Progression Track */
-.clan-weekly-tiers-card {
+/* 2. COMPACT GAMING ROADMAP TRACK (10 HITOS INTERACTIVOS) */
+.clan-weekly-roadmap-card {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
   border: 1.5px solid #475569;
-  border-radius: 14px;
-  padding: 16px 20px;
-}
-
-.clan-weekly-tiers-header h4 {
-  font-size: 13.5px;
-  font-weight: 900;
-  color: #f8fafc;
-  margin: 0 0 2px 0;
-}
-
-.clan-weekly-tiers-header p {
-  font-size: 10px;
-  color: #94a3b8;
-  margin: 0 0 12px 0;
-}
-
-.clan-weekly-tiers-list {
+  border-radius: 16px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.clan-weekly-tier-row {
+.clan-weekly-roadmap-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clan-weekly-roadmap-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 8px 14px;
-  transition: all 0.2s ease;
-}
-
-.clan-weekly-tier-row--reached {
-  background: rgba(30, 58, 138, 0.25);
-  border-color: #3b82f6;
-}
-
-.clan-weekly-tier-row--current {
-  background: rgba(245, 158, 11, 0.2);
-  border-color: #f59e0b;
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
-}
-
-.clan-weekly-tier-row--max {
-  background: linear-gradient(90deg, rgba(234, 179, 8, 0.2) 0%, rgba(249, 115, 22, 0.2) 100%);
-  border: 1.5px solid #fbbf24;
-}
-
-.clan-weekly-tier-lvl {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-.clan-weekly-tier-badge {
-  font-size: 9.5px;
+.clan-weekly-roadmap-title-row h4 {
+  font-size: 12.5px;
   font-weight: 900;
-  color: #cbd5e1;
-  background: rgba(51, 65, 85, 0.8);
-  padding: 2px 6px;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.clan-weekly-roadmap-hint {
+  font-size: 9.5px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.clan-weekly-roadmap-sub {
+  font-size: 9.5px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* 10 Nodes Responsive Track */
+.clan-weekly-roadmap-track {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px 8px 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.clan-roadmap-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid #334155;
+  border-radius: 10px;
+  padding: 8px 3px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 54px;
+  user-select: none;
+  position: relative;
+}
+
+.clan-roadmap-node:hover {
+  transform: translateY(-2px);
+  border-color: #64748b;
+  background: rgba(30, 41, 59, 0.95);
+}
+
+.clan-roadmap-node--reached {
+  border-color: #22c55e;
+  background: rgba(20, 83, 45, 0.25);
+}
+
+.clan-roadmap-node--current {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.22);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.clan-roadmap-node--selected {
+  transform: translateY(-3px) scale(1.05);
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.6) !important;
+}
+
+.clan-roadmap-node--max {
+  border-color: #fbbf24;
+  background: linear-gradient(180deg, rgba(234, 179, 8, 0.25) 0%, rgba(249, 115, 22, 0.25) 100%);
+}
+
+.clan-roadmap-lvl-tag {
+  font-size: 9px;
+  font-weight: 900;
+  color: #94a3b8;
+}
+
+.clan-roadmap-node--current .clan-roadmap-lvl-tag,
+.clan-roadmap-node--selected .clan-roadmap-lvl-tag {
+  color: #f8fafc;
+}
+
+.clan-roadmap-icon {
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.clan-roadmap-status-pill {
+  font-size: 7.5px;
+  font-weight: 900;
+  padding: 1px 4px;
   border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #94a3b8;
   white-space: nowrap;
 }
 
-.clan-weekly-tier-icon {
-  font-size: 16px;
+.clan-roadmap-node--reached .clan-roadmap-status-pill {
+  color: #4ade80;
 }
 
-.clan-weekly-tier-desc {
+.clan-roadmap-node--current .clan-roadmap-status-pill {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.25);
+  border: 1px solid #f59e0b;
+}
+
+/* Showcase Box for Selected Level */
+.clan-roadmap-showcase-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid #38bdf8;
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s ease;
+}
+
+@media (max-width: 700px) {
+  .clan-roadmap-showcase-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+.clan-roadmap-showcase-box--max {
+  border-color: #fbbf24;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.35);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(69, 26, 3, 0.4) 100%);
+}
+
+.clan-roadmap-showcase-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex: 1;
-  font-size: 11px;
-  color: #e2e8f0;
+}
+
+.clan-roadmap-showcase-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
+}
+
+.clan-roadmap-showcase-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.clan-roadmap-showcase-top {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.clan-weekly-tier-legend-tag {
-  background: #f59e0b;
-  color: #1e1b4b;
+.clan-roadmap-showcase-top h5 {
+  font-size: 12.5px;
+  font-weight: 900;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.clan-showcase-badge {
   font-size: 8.5px;
   font-weight: 900;
   padding: 1px 6px;
   border-radius: 4px;
-  letter-spacing: 0.5px;
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  border: 1px solid #3b82f6;
+  text-transform: uppercase;
 }
 
-.clan-weekly-tier-status {
+.clan-showcase-badge--max {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fde047;
+  border-color: #f59e0b;
+}
+
+.clan-showcase-badge-legendary {
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #ea580c 0%, #d97706 100%);
+  color: #ffffff;
+}
+
+.clan-roadmap-showcase-desc {
+  font-size: 11.5px;
+  color: #fef08a;
+  font-weight: 700;
+}
+
+.clan-roadmap-showcase-status {
   flex-shrink: 0;
 }
 
-.clan-tier-status-tag {
-  font-size: 9px;
-  font-weight: 800;
-  color: #64748b;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(51, 65, 85, 0.5);
+.clan-showcase-status-tag {
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 4px 9px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.clan-tier-status-tag--reached {
+.clan-showcase-status-tag--current {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid #f59e0b;
+}
+
+.clan-showcase-status-tag--reached {
   background: rgba(34, 197, 94, 0.2);
   color: #4ade80;
-  border: 1px solid #4ade80;
+  border: 1px solid #22c55e;
+}
+
+.clan-showcase-status-tag--locked {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid #475569;
 }
 
 /* ==========================================================================

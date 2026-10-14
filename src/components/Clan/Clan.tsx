@@ -209,6 +209,7 @@ export default function Clan({
     week?: string
   } | null>(null)
   const [isCardFlipped, setIsCardFlipped] = useState(false)
+  const [selectedRewardTierLevel, setSelectedRewardTierLevel] = useState<number>(1)
 
   // Floating Clan Chat State & Realtime
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -296,6 +297,9 @@ export default function Clan({
           eliteUsernames: res.elite_usernames || [],
           myActiveBonus: res.my_active_bonus || 0,
         })
+        if (res.clan_chest_level && res.clan_chest_level > 0) {
+          setSelectedRewardTierLevel(res.clan_chest_level)
+        }
       }
     } catch (e) {
       console.error('Error fetching clan weekly chest status:', e)
@@ -2531,7 +2535,7 @@ export default function Clan({
                     disabled={isSubmittingClaim}
                     title="El líder está inactivo. Postúlate para asumir el liderazgo con firmas de tus compañeros."
                   >
-                    👑 LÍDER
+                    👑 Postular a Líder
                   </button>
                 )}
               </div>
@@ -4156,36 +4160,36 @@ export default function Clan({
             const m = Math.floor((diffMs % 3600000) / 60000)
             const countdownStr = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`
 
-            const settledTier = WEEKLY_CHEST_LEVELS.find((t) => t.level === settledLevel)
-
             return (
               <>
-                {/* Hero Card */}
-                <div className="clan-weekly-hero-card">
-                  <div className="clan-weekly-hero-chest">
-                    <span className="clan-weekly-chest-icon">🏆</span>
-                    <span className="clan-weekly-chest-lvl-pill">
-                      NIVEL {currentLevel} / 10
-                    </span>
-                  </div>
-
-                  <div className="clan-weekly-hero-info">
-                    <div className="clan-weekly-hero-top">
-                      <h3>COFRE DE CLAN SEMANAL</h3>
-                      <span className="clan-weekly-countdown-tag">
-                        ⏳ Cierre: {countdownStr}
-                      </span>
+                {/* 1. TOP GAMING DASHBOARD: 2 COMPACT COLUMNS */}
+                <div className="clan-weekly-dashboard-grid">
+                  {/* Left Column: Gran Cofre de Clan y Progreso Comunal */}
+                  <div className="clan-weekly-dash-card clan-weekly-dash-card--chest">
+                    <div className="clan-weekly-chest-top-row">
+                      <div className="clan-weekly-chest-badge-wrap">
+                        <span className="clan-weekly-chest-icon">🏆</span>
+                        <span className="clan-weekly-chest-lvl-pill">
+                          NIVEL {currentLevel} / 10
+                        </span>
+                      </div>
+                      <div className="clan-weekly-chest-titles">
+                        <div className="clan-weekly-hero-header-row">
+                          <h3>COFRE DE CLAN</h3>
+                          <span className="clan-weekly-countdown-tag">
+                            ⏳ Cierra: {countdownStr}
+                          </span>
+                        </div>
+                        <p className="clan-weekly-hero-desc">
+                          Victorias en <strong>Ranked</strong> suman coronas 👑 al cofre. Al cierre dominical (23:59 UTC), los miembros con Honor reclaman el botín de su nivel alcanzado.
+                        </p>
+                      </div>
                     </div>
-
-                    <p className="clan-weekly-hero-desc">
-                      Gana partidas en <strong>Ranked</strong> para aportar coronas 👑 a la barra comunal.
-                      El domingo a las 23:59 UTC, todos los miembros con Honor de Batalla reciben el botín del nivel alcanzado.
-                    </p>
 
                     <div className="clan-weekly-progress-wrap">
                       <div className="clan-weekly-progress-labels">
-                        <span>Progreso del Clan: <strong>{weeklyCrowns} / {targetLvl10} 👑</strong></span>
-                        <span>{progressPct}%</span>
+                        <span>Progreso Comunal: <strong>{weeklyCrowns} / {targetLvl10} 👑</strong></span>
+                        <span className="clan-weekly-pct-badge">{progressPct}%</span>
                       </div>
                       <div className="clan-weekly-progress-bar-bg">
                         <div
@@ -4194,161 +4198,177 @@ export default function Clan({
                         />
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Claim Box if settled chest is ready */}
-                {canClaim && (
-                  <div className="clan-weekly-claim-banner">
-                    <div className="clan-weekly-claim-content">
-                      <span className="clan-weekly-claim-icon">🎁</span>
-                      <div className="clan-weekly-claim-text">
-                        <h4>¡COFRE DE CLAN LISTO PARA ABRIR!</h4>
-                        <p>
-                          Tu clan alcanzó el <strong>Nivel {settledLevel}</strong> ({settledTier?.rewardDesc || ''}).
-                          ¡Abre tu cofre para revelar tu recompensa exclusiva!
-                        </p>
+                    {/* Integrated Claim / Claimed state */}
+                    {canClaim && (
+                      <button
+                        type="button"
+                        className="clan-weekly-open-chest-btn clan-weekly-open-chest-btn--integrated"
+                        disabled={isClaimingWeeklyChest}
+                        onClick={handleClaimWeeklyChest}
+                      >
+                        {isClaimingWeeklyChest ? '⏳ ABRIENDO...' : `🎁 ¡ABRIR COFRE (NIVEL ${settledLevel})!`}
+                      </button>
+                    )}
+                    {hasClaimed && !canClaim && (
+                      <div className="clan-weekly-claimed-pill">
+                        ✅ Ya cobraste tu cofre de la semana anterior
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: Tu Honor & Podio Semanal */}
+                  <div className="clan-weekly-dash-card clan-weekly-dash-card--honor-podium">
+                    {/* Honor de Batalla */}
+                    <div className="clan-weekly-honor-subcard">
+                      <div className="clan-weekly-honor-header">
+                        <h4>🛡️ Honor de Batalla Requerido: 35 Coronas 👑 (Aporta al menos 35 victorias en Ranked para tener derecho al Cofre semanal).</h4>
+                      </div>
+                      <div className="clan-weekly-honor-progress-wrap">
+                        <div className="clan-weekly-honor-labels">
+                          <span>Tu Aporte: <strong>{myCrowns} / 35 👑</strong></span>
+                          <span style={{ color: honorMet ? '#4ade80' : '#fbbf24', fontWeight: 900 }}>
+                            {honorMet ? '✅ CUMPLIDO' : `${35 - myCrowns} restantes`}
+                          </span>
+                        </div>
+                        <div className="clan-weekly-progress-bar-bg">
+                          <div
+                            className={`clan-weekly-progress-bar-fill ${honorMet ? 'clan-weekly-progress-bar-fill--green' : 'clan-weekly-progress-bar-fill--amber'}`}
+                            style={{ width: `${Math.min(100, Math.round((myCrowns / 35) * 100))}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="clan-weekly-honor-status-msg">
+                        {honorMet ? (
+                          <span className="clan-honor-met-text">
+                            ✅ ¡Honor de Batalla Cumplido! Aportaste suficientes victorias ({myCrowns}/35 👑). Tienes derecho al cofre del clan al cierre del domingo.
+                          </span>
+                        ) : (
+                          <span className="clan-honor-unmet-text">
+                            🔒 Tu Honor de Batalla fue insuficiente esta semana ({myCrowns}/35 👑). Participa en la próxima contienda para reclamar el botín comunal.
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className="clan-weekly-open-chest-btn"
-                      disabled={isClaimingWeeklyChest}
-                      onClick={handleClaimWeeklyChest}
-                    >
-                      {isClaimingWeeklyChest ? '⏳ ABRIENDO...' : `🎁 ABRIR COFRE (NIVEL ${settledLevel})`}
-                    </button>
-                  </div>
-                )}
 
-                {/* Notice if already claimed */}
-                {hasClaimed && !canClaim && (
-                  <div className="clan-weekly-claimed-notice">
-                    <span>✅ Ya has cobrado tu Cofre Semanal de la contienda anterior. ¡Sigue aportando victorias para el cofre actual!</span>
-                  </div>
-                )}
-
-                {/* 2. Battle Honor Card */}
-                <div className="clan-weekly-honor-card">
-                  <div className="clan-weekly-honor-header">
-                    <h4>🛡️ Honor de Batalla Requerido: 35 Coronas 👑 (Aporta al menos 35 victorias en Ranked para tener derecho al Cofre semanal).</h4>
-                  </div>
-                  <div className="clan-weekly-honor-body">
-                    <div className="clan-weekly-honor-progress-wrap">
-                      <div className="clan-weekly-honor-labels">
-                        <span>Tu Aporte Esta Semana: <strong>{myCrowns} / 35 👑</strong></span>
-                        <span style={{ color: honorMet ? '#4ade80' : '#fbbf24', fontWeight: 900 }}>
-                          {honorMet ? 'CUMPLIDO' : `${35 - myCrowns} restantes`}
-                        </span>
+                    {/* Podio de Honor */}
+                    <div className="clan-weekly-podium-subcard">
+                      <div className="clan-weekly-podium-header-mini">
+                        <span>👑 PODIO DE HONOR (Mejores Aportadores Anteriores)</span>
                       </div>
-                      <div className="clan-weekly-progress-bar-bg">
-                        <div
-                          className={`clan-weekly-progress-bar-fill ${honorMet ? 'clan-weekly-progress-bar-fill--green' : 'clan-weekly-progress-bar-fill--amber'}`}
-                          style={{ width: `${Math.min(100, Math.round((myCrowns / 35) * 100))}%` }}
-                        />
+                      <div className="clan-weekly-podium-mini-grid">
+                        <div className="clan-podium-mini-box clan-podium-mini-box--mvp">
+                          <span className="clan-podium-mini-trophy">👑</span>
+                          <div className="clan-podium-mini-info">
+                            <span className="clan-podium-mini-lbl">MVP (TOP 1)</span>
+                            <strong className="clan-podium-mini-user">{weeklyChestStatus?.mvpUsername || 'En disputa'}</strong>
+                            <small>+15🪙 Oro por Ranked</small>
+                          </div>
+                        </div>
+                        <div className="clan-podium-mini-box clan-podium-mini-box--elite">
+                          <span className="clan-podium-mini-trophy">⚔️</span>
+                          <div className="clan-podium-mini-info">
+                            <span className="clan-podium-mini-lbl">ÉLITE (TOP 2-3)</span>
+                            <strong className="clan-podium-mini-user">
+                              {weeklyChestStatus?.eliteUsernames?.length ? weeklyChestStatus.eliteUsernames.join(', ') : 'En disputa'}
+                            </strong>
+                            <small>+7🪙 Oro por Ranked</small>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="clan-weekly-honor-status-msg">
-                      {honorMet ? (
-                        <span className="clan-honor-met-text">
-                          ✅ ¡Honor de Batalla Cumplido! Aportaste suficientes victorias ({myCrowns}/35 👑). Tienes derecho al cofre del clan al cierre del domingo.
-                        </span>
-                      ) : (
-                        <span className="clan-honor-unmet-text">
-                          🔒 Tu Honor de Batalla fue insuficiente esta semana ({myCrowns}/35 👑). Participa en la próxima contienda para reclamar el botín comunal.
-                        </span>
+                      {weeklyChestStatus && weeklyChestStatus.myActiveBonus > 0 && (
+                        <div className={`clan-weekly-active-bonus-pill ${weeklyChestStatus.myActiveBonus >= 15 ? 'clan-weekly-active-bonus-pill--mvp' : 'clan-weekly-active-bonus-pill--elite'}`}>
+                          {weeklyChestStatus.myActiveBonus >= 15
+                            ? '👑 ¡Eres el MVP de la Semana! Recibes +15 🪙 Oro extra en cada victoria Ranked.'
+                            : '⚔️ ¡Eres Élite del Clan! Recibes +7 🪙 Oro extra en cada victoria Ranked.'}
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* 3. Weekly Podium (MVP & Elite) */}
-                <div className="clan-weekly-podium-card">
-                  <div className="clan-weekly-podium-header">
-                    <h4>👑 PODIO DE HONOR SEMANAL</h4>
-                    <span>Bonificaciones activas en Ranked para los mejores aportadores de la semana anterior</span>
+                {/* 2. SENDA DE RECOMPENSAS DE 10 NIVELES (COMPACT GAMING ROADMAP) */}
+                <div className="clan-weekly-roadmap-card">
+                  <div className="clan-weekly-roadmap-header">
+                    <div className="clan-weekly-roadmap-title-row">
+                      <h4>🗺️ SENDA DE HITOS DEL COFRE (NIVELES 1 AL 10)</h4>
+                      <span className="clan-weekly-roadmap-hint">Toca cualquier nivel para ver su botín</span>
+                    </div>
+                    <p className="clan-weekly-roadmap-sub">
+                      * El clan recibe ÚNICAMENTE la recompensa del nivel alcanzado al cierre de la semana (no acumulativo).
+                    </p>
                   </div>
 
-                  <div className="clan-weekly-podium-grid">
-                    {/* MVP Spot */}
-                    <div className="clan-weekly-podium-col clan-weekly-podium-col--mvp">
-                      <div className="clan-podium-trophy">👑</div>
-                      <div className="clan-podium-rank">MVP DEL CLAN (TOP 1)</div>
-                      <div className="clan-podium-user">
-                        {weeklyChestStatus?.mvpUsername || 'En disputa'}
-                      </div>
-                      <div className="clan-podium-perk">
-                        +15 Oro extra por victoria en Ranked
-                      </div>
-                    </div>
-
-                    {/* Elite Spot */}
-                    <div className="clan-weekly-podium-col clan-weekly-podium-col--elite">
-                      <div className="clan-podium-trophy">⚔️</div>
-                      <div className="clan-podium-rank">ÉLITE DEL CLAN (TOP 2 Y 3)</div>
-                      <div className="clan-podium-user">
-                        {weeklyChestStatus?.eliteUsernames && weeklyChestStatus.eliteUsernames.length > 0
-                          ? weeklyChestStatus.eliteUsernames.join(', ')
-                          : 'En disputa'}
-                      </div>
-                      <div className="clan-podium-perk">
-                        +7 Oro extra por victoria en Ranked
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Active bonus banner for user */}
-                  {weeklyChestStatus && weeklyChestStatus.myActiveBonus > 0 && (
-                    <div className={`clan-weekly-active-bonus-pill ${weeklyChestStatus.myActiveBonus >= 15 ? 'clan-weekly-active-bonus-pill--mvp' : 'clan-weekly-active-bonus-pill--elite'}`}>
-                      {weeklyChestStatus.myActiveBonus >= 15
-                        ? '👑 ¡Eres el MVP de la Semana! Recibes +15 🪙 Oro extra en cada victoria Ranked.'
-                        : '⚔️ ¡Eres Élite del Clan! Recibes +7 🪙 Oro extra en cada victoria Ranked.'}
-                    </div>
-                  )}
-                </div>
-
-                {/* 4. 10-Level Reward Progression Track */}
-                <div className="clan-weekly-tiers-card">
-                  <div className="clan-weekly-tiers-header">
-                    <h4>🎁 BOTÍN POR NIVELES DEL COFRE</h4>
-                    <p>* El clan recibe ÚNICAMENTE la recompensa del nivel alcanzado al cierre de la semana (no acumulativo).</p>
-                  </div>
-
-                  <div className="clan-weekly-tiers-list">
+                  {/* 10-Milestone Interactive Strip / Grid */}
+                  <div className="clan-weekly-roadmap-track">
                     {WEEKLY_CHEST_LEVELS.map((tier) => {
                       const isReached = currentLevel >= tier.level
                       const isCurrent = currentLevel === tier.level
+                      const isSelected = selectedRewardTierLevel === tier.level
                       return (
                         <div
                           key={tier.level}
-                          className={`clan-weekly-tier-row ${isReached ? 'clan-weekly-tier-row--reached' : ''} ${isCurrent ? 'clan-weekly-tier-row--current' : ''} ${tier.isMax ? 'clan-weekly-tier-row--max' : ''}`}
+                          className={`clan-roadmap-node ${isReached ? 'clan-roadmap-node--reached' : ''} ${isCurrent ? 'clan-roadmap-node--current' : ''} ${isSelected ? 'clan-roadmap-node--selected' : ''} ${tier.isMax ? 'clan-roadmap-node--max' : ''}`}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.2)
+                            setSelectedRewardTierLevel(tier.level)
+                          }}
+                          role="button"
+                          tabIndex={0}
                         >
-                          <div className="clan-weekly-tier-lvl">
-                            <span className="clan-weekly-tier-badge">Nivel {tier.level}</span>
-                            <span className="clan-weekly-tier-icon">{tier.icon}</span>
-                          </div>
-
-                          <div className="clan-weekly-tier-desc">
-                            <strong>{tier.rewardDesc}</strong>
-                            {tier.isMax && <span className="clan-weekly-tier-legend-tag">¡PREMIO MÁXIMO!</span>}
-                          </div>
-
-                          <div className="clan-weekly-tier-status">
-                            {isReached ? (
-                              <span className="clan-tier-status-tag clan-tier-status-tag--reached">
-                                {isCurrent ? '⭐ ALCANZADO' : '✓ SUPERADO'}
-                              </span>
-                            ) : (
-                              <span className="clan-tier-status-tag">
-                                BLOQUEADO
-                              </span>
-                            )}
-                          </div>
+                          <span className="clan-roadmap-lvl-tag">Nv {tier.level}</span>
+                          <span className="clan-roadmap-icon">{tier.icon}</span>
+                          <span className="clan-roadmap-status-pill">
+                            {isCurrent ? '⭐ ACTUAL' : isReached ? '✓ OK' : '🔒'}
+                          </span>
                         </div>
                       )
                     })}
                   </div>
+
+                  {/* Showcase panel for the selected level */}
+                  {(() => {
+                    const activeTier = WEEKLY_CHEST_LEVELS.find((t) => t.level === selectedRewardTierLevel) || WEEKLY_CHEST_LEVELS[0]
+                    const isReached = currentLevel >= activeTier.level
+                    const isCurrent = currentLevel === activeTier.level
+                    return (
+                      <div className={`clan-roadmap-showcase-box ${activeTier.isMax ? 'clan-roadmap-showcase-box--max' : ''}`}>
+                        <div className="clan-roadmap-showcase-left">
+                          <span className="clan-roadmap-showcase-icon">{activeTier.icon}</span>
+                          <div className="clan-roadmap-showcase-info">
+                            <div className="clan-roadmap-showcase-top">
+                              <h5>NIVEL {activeTier.level}: {activeTier.name.toUpperCase()}</h5>
+                              <span className={`clan-showcase-badge ${activeTier.isMax ? 'clan-showcase-badge--max' : ''}`}>
+                                {activeTier.badge}
+                              </span>
+                              {activeTier.isMax && (
+                                <span className="clan-showcase-badge-legendary">👑 GRAN PREMIO FINAL</span>
+                              )}
+                            </div>
+                            <div className="clan-roadmap-showcase-desc">
+                              🎁 <strong>{activeTier.rewardDesc}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="clan-roadmap-showcase-status">
+                          {isCurrent ? (
+                            <span className="clan-showcase-status-tag clan-showcase-status-tag--current">
+                              ⭐ NIVEL ACTUAL DEL CLAN
+                            </span>
+                          ) : isReached ? (
+                            <span className="clan-showcase-status-tag clan-showcase-status-tag--reached">
+                              ✓ NIVEL SUPERADO
+                            </span>
+                          ) : (
+                            <span className="clan-showcase-status-tag clan-showcase-status-tag--locked">
+                              🔒 BLOQUEADO (Faltan Coronas)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               </>
             )
