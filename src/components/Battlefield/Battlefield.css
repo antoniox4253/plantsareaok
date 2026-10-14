@@ -1598,6 +1598,24 @@
   }
 }
 
+/* Clan Podium Victory Gold Bonus */
+.victory-clan-gold-box {
+  margin: 4px 0 8px 0;
+}
+
+.victory-clan-gold-badge--mvp {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(217, 119, 6, 0.25) 100%) !important;
+  border-color: #facc15 !important;
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.55) !important;
+}
+
+.victory-clan-gold-badge--elite {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.35) 0%, rgba(100, 116, 139, 0.25) 100%) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 0 16px rgba(203, 213, 225, 0.45) !important;
+}
+
+
 .victory-vip-gold-badge__crown {
   font-size: 16px;
 }

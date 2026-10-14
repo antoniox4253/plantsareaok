@@ -537,6 +537,9 @@ export default function Battlefield({
     newElo?: number
     packResult?: { awarded: boolean; durationHours?: 2 | 4 | 8 | 12; arenaLevel?: number; isSlotsFull?: boolean }
     vipGoldBonus?: number
+    clanGoldBonus?: number
+    isClanMvp?: boolean
+    isClanElite?: boolean
     isSurrendered?: boolean
   } | null>(null)
 
@@ -1546,6 +1549,18 @@ export default function Battlefield({
             }
 
             if (yoGane && matchMode !== 'tournament' && matchMode !== 'friendly') {
+              if (matchMode === 'ranked') {
+                supabaseService.recordClanMatchWin().then((cRes) => {
+                  if (cRes && cRes.success && cRes.gold_bonus && cRes.gold_bonus > 0) {
+                    setBattleSummaryResult((prev) => ({
+                      ...prev,
+                      clanGoldBonus: cRes.gold_bonus,
+                      isClanMvp: cRes.is_mvp,
+                      isClanElite: cRes.is_elite,
+                    }))
+                  }
+                }).catch((e) => console.warn('[Battlefield] Error registrando victoria de clan:', e))
+              }
               const serverChest = (reportRes as any)?.chest || (reportRes as any)?.cofre
               if (serverChest && serverChest.awarded) {
                 setBattleSummaryResult((prev) => ({
@@ -1849,6 +1864,9 @@ export default function Battlefield({
                   newElo: prev?.newElo ?? res.newElo,
                   packResult: res.packResult,
                   vipGoldBonus: res.vipGoldBonus,
+                  clanGoldBonus: res.clanGoldBonus,
+                  isClanMvp: res.isClanMvp,
+                  isClanElite: res.isClanElite,
                 }))
               }
             })()
@@ -3878,6 +3896,25 @@ export default function Battlefield({
                         <span className="victory-vip-gold-badge__title">BONUS VIP:</span>
                         <span className="victory-vip-gold-badge__val">
                           +{resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus}
+                        </span>
+                        <GoldIcon size={16} />
+                        <span className="victory-vip-gold-badge__lbl">Oro</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLAN PODIUM VICTORY GOLD BONUS BADGE */}
+                  {esVictoriaFinal && Boolean(battleSummaryResult?.clanGoldBonus && battleSummaryResult.clanGoldBonus > 0) && (
+                    <div className="victory-vip-gold-box victory-clan-gold-box">
+                      <div className={`victory-vip-gold-badge victory-clan-gold-badge ${battleSummaryResult?.isClanMvp ? 'victory-clan-gold-badge--mvp' : 'victory-clan-gold-badge--elite'}`}>
+                        <span className="victory-vip-gold-badge__crown">
+                          {battleSummaryResult?.isClanMvp ? '👑' : '⚔️'}
+                        </span>
+                        <span className="victory-vip-gold-badge__title">
+                          {battleSummaryResult?.isClanMvp ? 'MVP DEL CLAN:' : 'ÉLITE DEL CLAN:'}
+                        </span>
+                        <span className="victory-vip-gold-badge__val">
+                          +{battleSummaryResult?.clanGoldBonus}
                         </span>
                         <GoldIcon size={16} />
                         <span className="victory-vip-gold-badge__lbl">Oro</span>

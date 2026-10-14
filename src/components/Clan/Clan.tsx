@@ -36,7 +36,30 @@ interface ClanProps {
   onBackToMenu: () => void
   onRefreshUserData?: () => Promise<void> | void
   onStartClanFortressRaid?: (opponent: ClanFortressMatchOpponent) => void
+  onPlayFriendly?: (roomCode: string, betGems: number) => void
 }
+
+export interface WeeklyChestTier {
+  level: number
+  name: string
+  rewardDesc: string
+  icon: string
+  badge: string
+  isMax?: boolean
+}
+
+export const WEEKLY_CHEST_LEVELS: WeeklyChestTier[] = [
+  { level: 1, name: 'Cofre Nivel 1', rewardDesc: '1 Planta Común aleatoria', icon: '🌱', badge: 'COMÚN' },
+  { level: 2, name: 'Cofre Nivel 2', rewardDesc: '1 Planta Poco Común aleatoria', icon: '🌿', badge: 'POCO COMÚN' },
+  { level: 3, name: 'Cofre Nivel 3', rewardDesc: '30 Gemas 💎 y 1 Planta Poco Común', icon: '💎', badge: '30 💎 + CARTA' },
+  { level: 4, name: 'Cofre Nivel 4', rewardDesc: '1 Sobre Básico 📦', icon: '📦', badge: 'SOBRE BÁSICO' },
+  { level: 5, name: 'Cofre Nivel 5', rewardDesc: '1 Planta Rara aleatoria', icon: '⭐', badge: 'RARA' },
+  { level: 6, name: 'Cofre Nivel 6', rewardDesc: '2 Sobres Básicos 📦 + 300 Oro 🪙', icon: '💰', badge: '2 SOBRES + 300 🪙' },
+  { level: 7, name: 'Cofre Nivel 7', rewardDesc: '1 Pack Épico 🔮', icon: '🔮', badge: 'PACK ÉPICO' },
+  { level: 8, name: 'Cofre Nivel 8', rewardDesc: '2 Plantas Raras y 1 Planta Poco Común', icon: '🌟', badge: '2 RARAS + 1 POCO COMÚN' },
+  { level: 9, name: 'Cofre Nivel 9', rewardDesc: '1 Pack Legendario 👑', icon: '👑', badge: 'PACK LEGENDARIO' },
+  { level: 10, name: 'Cofre Nivel 10', rewardDesc: '1 Guisantralladora 💥', icon: '💥', badge: 'LEGENDARIA', isMax: true },
+]
 
 const BADGES = ['👑', '⚡', '🛡️', '🔥', '🌿', '❄️', '💚', '🥊', '🎯', '💀', '💎', '🌸', '🌭']
 
@@ -64,6 +87,7 @@ export default function Clan({
   onBackToMenu,
   onRefreshUserData,
   onStartClanFortressRaid,
+  onPlayFriendly,
 }: ClanProps) {
   const userGems = Math.floor(userTokens)
   const [userClan, setUserClan] = useState<ClanData | null>(() => {
@@ -155,6 +179,37 @@ export default function Clan({
   const [donationRequests, setDonationRequests] = useState<ClanDonationRequest[]>([])
   const [vaultDeposits, setVaultDeposits] = useState<ClanDepositLog[]>([])
 
+  // Weekly Clan Chest State
+  const [weeklyChestStatus, setWeeklyChestStatus] = useState<{
+    currentWeek: string
+    clanWeeklyCrowns: number
+    clanChestLevel: number
+    targetLvl10: number
+    myWeeklyCrowns: number
+    honorRequired: number
+    isHonorMet: boolean
+    settledLevel: number
+    canClaimSettledChest: boolean
+    hasClaimedThisWeek: boolean
+    mvpUsername: string | null
+    eliteUsernames: string[]
+    myActiveBonus: number
+  } | null>(null)
+  const [isLoadingWeeklyChest, setIsLoadingWeeklyChest] = useState(false)
+  const [isClaimingWeeklyChest, setIsClaimingWeeklyChest] = useState(false)
+  const [showWeeklyGachaModal, setShowWeeklyGachaModal] = useState(false)
+  const [gachaClaimResult, setGachaClaimResult] = useState<{
+    success: boolean
+    level?: number
+    plants?: Array<{ plant_id: string; qty: number }>
+    gold?: number
+    gems?: number
+    pack_type?: string
+    pack_qty?: number
+    week?: string
+  } | null>(null)
+  const [isCardFlipped, setIsCardFlipped] = useState(false)
+
   // Floating Clan Chat State & Realtime
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatInput, setChatInput] = useState('')
@@ -219,6 +274,41 @@ export default function Clan({
       void fetchFortressData(userClan.id)
     }
   }, [activeTab, userClan?.id, fetchFortressData])
+
+  const loadWeeklyChestStatus = React.useCallback(async () => {
+    if (!userClan?.id || !ClanManager.isValidUuid(userClan.id)) return
+    setIsLoadingWeeklyChest(true)
+    try {
+      const res = await supabaseService.getClanWeeklyChestStatus()
+      if (res && res.success) {
+        setWeeklyChestStatus({
+          currentWeek: res.current_week || '',
+          clanWeeklyCrowns: res.clan_weekly_crowns || 0,
+          clanChestLevel: res.clan_chest_level || 0,
+          targetLvl10: res.target_lvl10 || 120,
+          myWeeklyCrowns: res.my_weekly_crowns || 0,
+          honorRequired: res.honor_required || 35,
+          isHonorMet: Boolean(res.is_honor_met),
+          settledLevel: res.settled_level || 0,
+          canClaimSettledChest: Boolean(res.can_claim_settled_chest),
+          hasClaimedThisWeek: Boolean(res.has_claimed_this_week),
+          mvpUsername: res.mvp_username || null,
+          eliteUsernames: res.elite_usernames || [],
+          myActiveBonus: res.my_active_bonus || 0,
+        })
+      }
+    } catch (e) {
+      console.error('Error fetching clan weekly chest status:', e)
+    } finally {
+      setIsLoadingWeeklyChest(false)
+    }
+  }, [userClan?.id])
+
+  useEffect(() => {
+    if (userClan?.id) {
+      void loadWeeklyChestStatus()
+    }
+  }, [activeTab, userClan?.id, loadWeeklyChestStatus])
 
   const handleRepairBase = async () => {
     setActiveDialog({
@@ -1830,6 +1920,21 @@ export default function Clan({
         try {
           const res = await supabaseService.donateClanPlantCopy(req.id)
           if (!res.success) {
+            if (res.error === 'DAILY_DONATION_LIMIT_REACHED' || res.error?.includes('DAILY_DONATION_LIMIT')) {
+              const now = new Date()
+              const reset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0))
+              const diffMs = Math.max(0, reset.getTime() - now.getTime())
+              const hours = String(Math.floor(diffMs / 3600000)).padStart(2, '0')
+              const minutes = String(Math.floor((diffMs % 3600000) / 60000)).padStart(2, '0')
+              const seconds = String(Math.floor((diffMs % 60000) / 1000)).padStart(2, '0')
+              showModalAlert(
+                'LÍMITE DIARIO',
+                `Has alcanzado tu límite diario (300/300 🪙). Podras donar en [${hours}:${minutes}:${seconds}].`,
+                '⏳',
+                'warning'
+              )
+              return
+            }
             if (res.error === 'REQUESTER_ALREADY_MAX_COPIES') {
               showModalAlert(
                 'LÍMITE ALCANZADO',
@@ -1851,8 +1956,15 @@ export default function Clan({
           if (onRefreshUserData) void onRefreshUserData()
 
           soundManager.playSound('plantation', 0.9)
-          showModalAlert('¡DONACIÓN EXITOSA!', `¡Has donado 1 copia de ${req.plantName} a ${req.requesterName}!\n¡Gracias por apoyar a tu clan!`, '🎁', 'success')
+          const goldEarned = res.gold_earned || 40
+          showModalAlert(
+            '¡DONACIÓN EXITOSA!',
+            `¡Has donado 1 copia de ${req.plantName} a ${req.requesterName} y recibiste +${goldEarned} Oro 🪙!\n¡Gracias por apoyar a tu clan!`,
+            '🎁',
+            'success'
+          )
           await refreshClanData()
+          void loadWeeklyChestStatus()
         } catch (e: any) {
           showModalAlert('ERROR', e?.message || 'Error al donar copia.', '❌', 'error')
         }
@@ -1903,7 +2015,30 @@ export default function Clan({
       'CANCELAR'
     )
   }
-  void _handleExecuteRaid
+  // CLAIM WEEKLY CLAN CHEST (COFRE SEMANAL DE 10 NIVELES)
+  const handleClaimWeeklyChest = async () => {
+    if (!userClan || isClaimingWeeklyChest) return
+    try {
+      setIsClaimingWeeklyChest(true)
+      const res = await supabaseService.claimWeeklyClanChest()
+      setIsClaimingWeeklyChest(false)
+      if (!res.success) {
+        showModalAlert('COFRE DE CLAN', res.message || res.error || 'No se pudo reclamar el cofre semanal.', '⚠️', 'warning')
+        return
+      }
+      soundManager.playSound('victory', 1)
+      setGachaClaimResult(res)
+      setIsCardFlipped(false)
+      setShowWeeklyGachaModal(true)
+      window.dispatchEvent(new Event('refresh_user_balance'))
+      window.dispatchEvent(new Event('player_profile_updated'))
+      if (onRefreshUserData) void onRefreshUserData()
+      void loadWeeklyChestStatus()
+    } catch (e: any) {
+      setIsClaimingWeeklyChest(false)
+      showModalAlert('ERROR', e?.message || 'Error al reclamar cofre semanal.', '❌', 'error')
+    }
+  }
 
   // CLAIM 15/15 FULL CLAN BONUS (2 GREEN PACKS CON CANDADOS ANTI-TRAMPAS)
   const handleClaimFullBonus = async () => {
@@ -1999,6 +2134,9 @@ export default function Clan({
       showModalAlert('RESERVA PROTEGIDA', 'No hay ganancias por encima de la reserva de guerra de 2,800 Gemas.', '🛡️', 'info')
     }
   }
+  void _handleExecuteRaid
+  void handleClaimFullBonus
+  void handleClaimSeasonPayout
 
   // NON-CLAN VIEW (BROWSE OR CREATE)
   if (!userClan) {
@@ -3988,96 +4126,341 @@ export default function Clan({
         )
       })()}
 
-      {/* TAB 4: REWARDS */}
+      {/* TAB 4: REWARDS - WEEKLY CLAN CHEST & PODIUM */}
       {activeTab === 'rewards' && (
-        <div className="clan-rewards-pane">
-          {/* Card 1: 15/15 Full Clan Bonus */}
-          <div className="clan-reward-card">
-            <div className="clan-reward-card__icon">🎁</div>
-            <div className="clan-reward-card__content">
-              <h4>BONO DE CLAN LLENO (15/15 MIEMBROS)</h4>
-              <p>
-                Al alcanzar los 15 miembros, cada jugador recibe <strong>2 Sobres Pack Verde Básico</strong>.
-                Solo se puede reclamar 1 vez por jugador para evitar abusos al cambiarse de clan.
-              </p>
-              <div className="clan-reward-status-row">
-                <span>Progreso: <strong>{userClan.members.length}/15 Miembros</strong></span>
-                {(hasClaimedRemoteBonus || ClanManager.hasClaimedFullClanBonus(playerName)) && (
-                  <span className="clan-claimed-badge">✓ YA RECLAMADO EN ESTA CUENTA</span>
-                )}
-              </div>
+        <div className="clan-rewards-pane clan-weekly-chest-pane">
+          {isLoadingWeeklyChest && !weeklyChestStatus && (
+            <div style={{ textAlign: 'center', padding: '16px', color: '#fbbf24', fontSize: '12px', fontWeight: 800 }}>
+              ⏳ Sincronizando estado del Cofre Semanal con el Altar comunal...
             </div>
-            <button
-              type="button"
-              className="clan-claim-reward-btn"
-              disabled={userClan.members.length < 15 || hasClaimedRemoteBonus || ClanManager.hasClaimedFullClanBonus(playerName) || isClaimingFullBonus}
-              onClick={handleClaimFullBonus}
-            >
-              {(hasClaimedRemoteBonus || ClanManager.hasClaimedFullClanBonus(playerName))
-                ? '✅ YA COBRADO'
-                : isClaimingFullBonus
-                ? '⏳ RECLAMANDO...'
-                : '✨ RECLAMAR 2 SOBRES'}
-            </button>
-          </div>
-
-          {/* Card 2: Season Vault Payout */}
+          )}
+          {/* 1. Hero Header Banner */}
           {(() => {
-            const seasonStatus = SeasonManager.getSeasonStatus()
-            const isClaimed = userClan.seasonPayoutClaimedMembers.includes(playerName)
-            const WAR_RESERVE = 2800.0
-            const currentVault = Number(userClan.vaultGems ?? userClan.vaultUsd)
-            const surplusEarnings = Math.max(0, currentVault - WAR_RESERVE)
-            const memberCount = Math.max(1, userClan.members.length)
-            const myMember = userClan.members.find((m) => m.name === playerName || m.id === playerName)
-            const myPct = typeof myMember?.rewardPercentage === 'number'
-              ? myMember.rewardPercentage
-              : (memberCount > 0 ? Math.round(100 / memberCount) : 0)
-            const shareEstimate = Math.floor(surplusEarnings * (myPct / 100))
-            const canWithdraw = seasonStatus.isEnded && surplusEarnings > 0 && !isClaimed && myPct > 0
+            const currentLevel = weeklyChestStatus?.clanChestLevel ?? 0
+            const weeklyCrowns = weeklyChestStatus?.clanWeeklyCrowns ?? 0
+            const targetLvl10 = weeklyChestStatus?.targetLvl10 ?? 120
+            const progressPct = Math.min(100, Math.round((weeklyCrowns / Math.max(1, targetLvl10)) * 100))
+            const myCrowns = weeklyChestStatus?.myWeeklyCrowns ?? 0
+            const honorMet = myCrowns >= 35
+            const canClaim = Boolean(weeklyChestStatus?.canClaimSettledChest && weeklyChestStatus?.settledLevel && weeklyChestStatus.settledLevel > 0)
+            const settledLevel = weeklyChestStatus?.settledLevel ?? 0
+            const hasClaimed = Boolean(weeklyChestStatus?.hasClaimedThisWeek)
+
+            const now = new Date()
+            const day = now.getUTCDay()
+            const daysUntilSunday = day === 0 ? 0 : 7 - day
+            const target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilSunday, 23, 59, 59))
+            const diffMs = Math.max(0, target.getTime() - now.getTime())
+            const d = Math.floor(diffMs / 86400000)
+            const h = Math.floor((diffMs % 86400000) / 3600000)
+            const m = Math.floor((diffMs % 3600000) / 60000)
+            const countdownStr = d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`
+
+            const settledTier = WEEKLY_CHEST_LEVELS.find((t) => t.level === settledLevel)
 
             return (
-              <div className="clan-reward-card clan-reward-card--payout">
-                <div className="clan-reward-card__icon">💎</div>
-                <div className="clan-reward-card__content">
-                  <h4>RETIRO DE GANANCIAS DE TEMPORADA (EXCEDENTE)</h4>
-                  <p>
-                    Al finalizar los 30 días de temporada, las <strong>ganancias netas generadas en guerras</strong> (todo excedente por encima de la <strong>Reserva Operativa de Guerra de 2,800 Gemas 💎</strong>) se dividen <strong>porcentualmente</strong> entre los miembros del clan según la participación asignada por el Líder en los Ajustes del Clan. La reserva base de 2,800 💎 permanece siempre resguardada para los eventos y asaltos de guerra.
-                  </p>
-                  <div className="clan-reward-status-row">
-                    <span>
-                      Tesoro Total: <strong>{currentVault.toFixed(0)} 💎</strong> | Reserva: <strong>2,800 💎</strong> | Ganancias: <strong style={{ color: '#4ade80' }}>+{surplusEarnings.toFixed(0)} 💎</strong>
+              <>
+                {/* Hero Card */}
+                <div className="clan-weekly-hero-card">
+                  <div className="clan-weekly-hero-chest">
+                    <span className="clan-weekly-chest-icon">🏆</span>
+                    <span className="clan-weekly-chest-lvl-pill">
+                      NIVEL {currentLevel} / 10
                     </span>
                   </div>
-                  <div className="clan-reward-status-row">
-                    <span>
-                      Tu cuota de ganancia ({myPct}%): <strong style={{ color: surplusEarnings > 0 && myPct > 0 ? '#4ade80' : '#94a3b8' }}>
-                        {shareEstimate} Gemas 💎 {myPct === 0 ? '(0% asignado)' : ''}
-                      </strong>
-                    </span>
-                    {!seasonStatus.isEnded && (
-                      <span className="clan-season-time-tag">⏳ Cierra en: {seasonStatus.formattedCountdown}</span>
-                    )}
+
+                  <div className="clan-weekly-hero-info">
+                    <div className="clan-weekly-hero-top">
+                      <h3>COFRE DE CLAN SEMANAL</h3>
+                      <span className="clan-weekly-countdown-tag">
+                        ⏳ Cierre: {countdownStr}
+                      </span>
+                    </div>
+
+                    <p className="clan-weekly-hero-desc">
+                      Gana partidas en <strong>Ranked</strong> para aportar coronas 👑 a la barra comunal.
+                      El domingo a las 23:59 UTC, todos los miembros con Honor de Batalla reciben el botín del nivel alcanzado.
+                    </p>
+
+                    <div className="clan-weekly-progress-wrap">
+                      <div className="clan-weekly-progress-labels">
+                        <span>Progreso del Clan: <strong>{weeklyCrowns} / {targetLvl10} 👑</strong></span>
+                        <span>{progressPct}%</span>
+                      </div>
+                      <div className="clan-weekly-progress-bar-bg">
+                        <div
+                          className="clan-weekly-progress-bar-fill"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className={`clan-claim-reward-btn clan-claim-reward-btn--gold ${!canWithdraw ? 'clan-claim-reward-btn--disabled' : ''}`}
-                  disabled={!canWithdraw}
-                  onClick={handleClaimSeasonPayout}
-                  title={!seasonStatus.isEnded ? `Disponible en ${seasonStatus.formattedCountdown}` : surplusEarnings <= 0 ? 'No hay ganancias sobre la reserva de 2,800 💎' : 'Retirar ganancias'}
-                >
-                  {isClaimed
-                    ? '✅ YA RETIRADO'
-                    : !seasonStatus.isEnded
-                    ? `⏳ RETIRAR (${seasonStatus.formattedCountdown})`
-                    : surplusEarnings <= 0
-                    ? '🛡️ RESERVA PROTEGIDA'
-                    : '💎 RETIRAR GANANCIAS'}
-                </button>
-              </div>
+
+                {/* Claim Box if settled chest is ready */}
+                {canClaim && (
+                  <div className="clan-weekly-claim-banner">
+                    <div className="clan-weekly-claim-content">
+                      <span className="clan-weekly-claim-icon">🎁</span>
+                      <div className="clan-weekly-claim-text">
+                        <h4>¡COFRE DE CLAN LISTO PARA ABRIR!</h4>
+                        <p>
+                          Tu clan alcanzó el <strong>Nivel {settledLevel}</strong> ({settledTier?.rewardDesc || ''}).
+                          ¡Abre tu cofre para revelar tu recompensa exclusiva!
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="clan-weekly-open-chest-btn"
+                      disabled={isClaimingWeeklyChest}
+                      onClick={handleClaimWeeklyChest}
+                    >
+                      {isClaimingWeeklyChest ? '⏳ ABRIENDO...' : `🎁 ABRIR COFRE (NIVEL ${settledLevel})`}
+                    </button>
+                  </div>
+                )}
+
+                {/* Notice if already claimed */}
+                {hasClaimed && !canClaim && (
+                  <div className="clan-weekly-claimed-notice">
+                    <span>✅ Ya has cobrado tu Cofre Semanal de la contienda anterior. ¡Sigue aportando victorias para el cofre actual!</span>
+                  </div>
+                )}
+
+                {/* 2. Battle Honor Card */}
+                <div className="clan-weekly-honor-card">
+                  <div className="clan-weekly-honor-header">
+                    <h4>🛡️ Honor de Batalla Requerido: 35 Coronas 👑 (Aporta al menos 35 victorias en Ranked para tener derecho al Cofre semanal).</h4>
+                  </div>
+                  <div className="clan-weekly-honor-body">
+                    <div className="clan-weekly-honor-progress-wrap">
+                      <div className="clan-weekly-honor-labels">
+                        <span>Tu Aporte Esta Semana: <strong>{myCrowns} / 35 👑</strong></span>
+                        <span style={{ color: honorMet ? '#4ade80' : '#fbbf24', fontWeight: 900 }}>
+                          {honorMet ? 'CUMPLIDO' : `${35 - myCrowns} restantes`}
+                        </span>
+                      </div>
+                      <div className="clan-weekly-progress-bar-bg">
+                        <div
+                          className={`clan-weekly-progress-bar-fill ${honorMet ? 'clan-weekly-progress-bar-fill--green' : 'clan-weekly-progress-bar-fill--amber'}`}
+                          style={{ width: `${Math.min(100, Math.round((myCrowns / 35) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="clan-weekly-honor-status-msg">
+                      {honorMet ? (
+                        <span className="clan-honor-met-text">
+                          ✅ ¡Honor de Batalla Cumplido! Aportaste suficientes victorias ({myCrowns}/35 👑). Tienes derecho al cofre del clan al cierre del domingo.
+                        </span>
+                      ) : (
+                        <span className="clan-honor-unmet-text">
+                          🔒 Tu Honor de Batalla fue insuficiente esta semana ({myCrowns}/35 👑). Participa en la próxima contienda para reclamar el botín comunal.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Weekly Podium (MVP & Elite) */}
+                <div className="clan-weekly-podium-card">
+                  <div className="clan-weekly-podium-header">
+                    <h4>👑 PODIO DE HONOR SEMANAL</h4>
+                    <span>Bonificaciones activas en Ranked para los mejores aportadores de la semana anterior</span>
+                  </div>
+
+                  <div className="clan-weekly-podium-grid">
+                    {/* MVP Spot */}
+                    <div className="clan-weekly-podium-col clan-weekly-podium-col--mvp">
+                      <div className="clan-podium-trophy">👑</div>
+                      <div className="clan-podium-rank">MVP DEL CLAN (TOP 1)</div>
+                      <div className="clan-podium-user">
+                        {weeklyChestStatus?.mvpUsername || 'En disputa'}
+                      </div>
+                      <div className="clan-podium-perk">
+                        +15 Oro extra por victoria en Ranked
+                      </div>
+                    </div>
+
+                    {/* Elite Spot */}
+                    <div className="clan-weekly-podium-col clan-weekly-podium-col--elite">
+                      <div className="clan-podium-trophy">⚔️</div>
+                      <div className="clan-podium-rank">ÉLITE DEL CLAN (TOP 2 Y 3)</div>
+                      <div className="clan-podium-user">
+                        {weeklyChestStatus?.eliteUsernames && weeklyChestStatus.eliteUsernames.length > 0
+                          ? weeklyChestStatus.eliteUsernames.join(', ')
+                          : 'En disputa'}
+                      </div>
+                      <div className="clan-podium-perk">
+                        +7 Oro extra por victoria en Ranked
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active bonus banner for user */}
+                  {weeklyChestStatus && weeklyChestStatus.myActiveBonus > 0 && (
+                    <div className={`clan-weekly-active-bonus-pill ${weeklyChestStatus.myActiveBonus >= 15 ? 'clan-weekly-active-bonus-pill--mvp' : 'clan-weekly-active-bonus-pill--elite'}`}>
+                      {weeklyChestStatus.myActiveBonus >= 15
+                        ? '👑 ¡Eres el MVP de la Semana! Recibes +15 🪙 Oro extra en cada victoria Ranked.'
+                        : '⚔️ ¡Eres Élite del Clan! Recibes +7 🪙 Oro extra en cada victoria Ranked.'}
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. 10-Level Reward Progression Track */}
+                <div className="clan-weekly-tiers-card">
+                  <div className="clan-weekly-tiers-header">
+                    <h4>🎁 BOTÍN POR NIVELES DEL COFRE</h4>
+                    <p>* El clan recibe ÚNICAMENTE la recompensa del nivel alcanzado al cierre de la semana (no acumulativo).</p>
+                  </div>
+
+                  <div className="clan-weekly-tiers-list">
+                    {WEEKLY_CHEST_LEVELS.map((tier) => {
+                      const isReached = currentLevel >= tier.level
+                      const isCurrent = currentLevel === tier.level
+                      return (
+                        <div
+                          key={tier.level}
+                          className={`clan-weekly-tier-row ${isReached ? 'clan-weekly-tier-row--reached' : ''} ${isCurrent ? 'clan-weekly-tier-row--current' : ''} ${tier.isMax ? 'clan-weekly-tier-row--max' : ''}`}
+                        >
+                          <div className="clan-weekly-tier-lvl">
+                            <span className="clan-weekly-tier-badge">Nivel {tier.level}</span>
+                            <span className="clan-weekly-tier-icon">{tier.icon}</span>
+                          </div>
+
+                          <div className="clan-weekly-tier-desc">
+                            <strong>{tier.rewardDesc}</strong>
+                            {tier.isMax && <span className="clan-weekly-tier-legend-tag">¡PREMIO MÁXIMO!</span>}
+                          </div>
+
+                          <div className="clan-weekly-tier-status">
+                            {isReached ? (
+                              <span className="clan-tier-status-tag clan-tier-status-tag--reached">
+                                {isCurrent ? '⭐ ALCANZADO' : '✓ SUPERADO'}
+                              </span>
+                            ) : (
+                              <span className="clan-tier-status-tag">
+                                BLOQUEADO
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
             )
           })()}
+        </div>
+      )}
+
+      {/* WEEKLY CLAN CHEST GACHA MODAL */}
+      {showWeeklyGachaModal && gachaClaimResult && (
+        <div className="clan-modal-backdrop clan-gacha-backdrop" onClick={() => setShowWeeklyGachaModal(false)}>
+          <div className="clan-gacha-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="clan-gacha-header">
+              <span className="clan-gacha-header-trophy">🏆</span>
+              <h3>¡COFRE DE CLAN RECLAMADO!</h3>
+              <p>Recompensa comunal alcanzada: <strong>Nivel {gachaClaimResult.level || 1}</strong></p>
+            </div>
+
+            <div
+              className="clan-gacha-card-stage"
+              onClick={() => {
+                if (!isCardFlipped) {
+                  soundManager.playSound('fusion_success', 1)
+                  setIsCardFlipped(true)
+                }
+              }}
+            >
+              <div className={`clan-gacha-3d-card ${isCardFlipped ? 'clan-gacha-3d-card--flipped' : ''}`}>
+                {/* Back Face: Mystery Silhouette */}
+                <div className="clan-gacha-card-face clan-gacha-card-face--back">
+                  <div className="clan-gacha-back-shimmer" />
+                  <div className="clan-gacha-card-back-pattern">
+                    <span className="clan-gacha-card-back-icon">🎁</span>
+                    <span className="clan-gacha-card-back-title">COFRE DE CLAN</span>
+                    <span className="clan-gacha-card-back-sub">PLANTA MISTERIOSA</span>
+                    <span className="clan-gacha-card-back-tap">✨ ¡TOCA PARA VOLTEAR! ✨</span>
+                  </div>
+                </div>
+
+                {/* Front Face: Revealed Reward */}
+                <div className="clan-gacha-card-face clan-gacha-card-face--front">
+                  <div className="clan-gacha-reveal-content">
+                    <span className="clan-gacha-reveal-lvl-tag">NIVEL {gachaClaimResult.level}</span>
+                    <div className="clan-gacha-reward-items">
+                      {gachaClaimResult.plants && gachaClaimResult.plants.map((p, idx) => {
+                        const plantCfg = PLANT_CONFIGS[p.plant_id as PlantId]
+                        return (
+                          <div key={idx} className="clan-gacha-item-row">
+                            <img
+                              src={plantCfg?.icon || `/game-assets/plants/${p.plant_id}.webp`}
+                              alt={plantCfg?.name || p.plant_id}
+                              className="clan-gacha-plant-img"
+                              onError={(e) => { (e.currentTarget as any).src = '/game-assets/moneda.webp' }}
+                            />
+                            <div className="clan-gacha-item-info">
+                              <strong>{p.qty}x {plantCfg?.name || p.plant_id}</strong>
+                              <span>Carta de Planta entregada</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+
+                      {Boolean(gachaClaimResult.gold && gachaClaimResult.gold > 0) && (
+                        <div className="clan-gacha-item-row">
+                          <GoldIcon size={32} />
+                          <div className="clan-gacha-item-info">
+                            <strong>+{gachaClaimResult.gold} Oro</strong>
+                            <span>Monedas para tu cuenta</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {Boolean(gachaClaimResult.gems && gachaClaimResult.gems > 0) && (
+                        <div className="clan-gacha-item-row">
+                          <span style={{ fontSize: 32 }}>💎</span>
+                          <div className="clan-gacha-item-info">
+                            <strong>+{gachaClaimResult.gems} Gemas</strong>
+                            <span>Gemas entregadas a tu cuenta</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {Boolean(gachaClaimResult.pack_type) && (
+                        <div className="clan-gacha-item-row">
+                          <span style={{ fontSize: 32 }}>
+                            {gachaClaimResult.pack_type === 'epic' ? '🔮' : gachaClaimResult.pack_type === 'legendary' ? '👑' : '📦'}
+                          </span>
+                          <div className="clan-gacha-item-info">
+                            <strong>
+                              {gachaClaimResult.pack_qty || 1}x {gachaClaimResult.pack_type === 'epic' ? 'Pack Épico' : gachaClaimResult.pack_type === 'legendary' ? 'Pack Legendario' : 'Sobre Básico'}
+                            </strong>
+                            <span>Disponible en tu inventario</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {isCardFlipped ? (
+              <button
+                type="button"
+                className="clan-gacha-done-btn"
+                onClick={() => setShowWeeklyGachaModal(false)}
+              >
+                ✨ ¡EXCELENTE! RECLAMADO
+              </button>
+            ) : (
+              <p className="clan-gacha-hint">Toca la carta misteriosa para girarla 180°</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -5104,6 +5487,48 @@ export default function Clan({
               <div className="clan-chat-body">
                 {chatMessages.map((msg) => {
                   const isMe = msg.sender === playerName
+                  const isMvp = msg.sender === weeklyChestStatus?.mvpUsername
+                  const isElite = Boolean(weeklyChestStatus?.eliteUsernames?.includes(msg.sender))
+                  const duelMatch = msg.text.match(/\[DUELO_AMISTOSO:([^\]]+)\]/)
+
+                  if (duelMatch) {
+                    const roomCode = duelMatch[1]
+                    const challengeDesc = msg.text.replace(/\[DUELO_AMISTOSO:[^\]]+\]/, '').trim()
+                    return (
+                      <div key={msg.id} className={`clan-chat-msg clan-chat-msg--duel ${isMe ? 'clan-chat-msg--me' : ''}`}>
+                        <div className="clan-chat-msg-top">
+                          <span className={`clan-chat-sender ${isMe && hasVipPass ? 'vip-gold-text' : ''}`}>
+                            {isMe && hasVipPass && '👑 '}
+                            {msg.sender}
+                          </span>
+                          <span className="clan-chat-role-tag clan-chat-role-tag--duel">⚔️ DUELO</span>
+                          {isMvp && <span className="clan-chat-podium-badge clan-chat-podium-badge--mvp">👑 MVP</span>}
+                          {isElite && <span className="clan-chat-podium-badge clan-chat-podium-badge--elite">⚔️ ÉLITE</span>}
+                          <span className="clan-chat-time">{msg.time}</span>
+                        </div>
+                        <div className="clan-chat-duel-card">
+                          <div className="clan-chat-duel-title">⚔️ DESAFÍO AMISTOSO</div>
+                          <div className="clan-chat-duel-desc">{challengeDesc || '¡Partida amistosa sin costo ni pérdida de copas!'}</div>
+                          <div className="clan-chat-duel-code">Sala: <strong>{roomCode}</strong></div>
+                          <button
+                            type="button"
+                            className="clan-chat-duel-action-btn"
+                            onClick={() => {
+                              soundManager.playSound('click', 0.8)
+                              if (onPlayFriendly) {
+                                onPlayFriendly(roomCode, 0)
+                              } else {
+                                showModalAlert('DUELO AMISTOSO', `Código de sala: ${roomCode}. Ve al modo Amistoso para combatir.`, '⚔️', 'info')
+                              }
+                            }}
+                          >
+                            {isMe ? '⚔️ ENTRAR A SALA' : '⚔️ ¡ACEPTAR DUELO!'}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  }
+
                   return (
                     <div key={msg.id} className={`clan-chat-msg ${isMe ? 'clan-chat-msg--me' : ''}`}>
                       <div className="clan-chat-msg-top">
@@ -5114,6 +5539,8 @@ export default function Clan({
                         <span className={`clan-chat-role-tag clan-chat-role-tag--${msg.role.toLowerCase()}`}>
                           {msg.role}
                         </span>
+                        {isMvp && <span className="clan-chat-podium-badge clan-chat-podium-badge--mvp">👑 MVP</span>}
+                        {isElite && <span className="clan-chat-podium-badge clan-chat-podium-badge--elite">⚔️ ÉLITE</span>}
                         <span className="clan-chat-time">{msg.time}</span>
                       </div>
                       <div className="clan-chat-text">{msg.text}</div>
@@ -5124,6 +5551,28 @@ export default function Clan({
               </div>
 
               <form className="clan-chat-footer" onSubmit={handleSendChatMessage}>
+                <button
+                  type="button"
+                  className="clan-chat-retar-btn"
+                  title="Lanzar un Desafío Amistoso al chat"
+                  onClick={async () => {
+                    if (!userClan) return
+                    const duelCode = `CLAN-${Math.floor(1000 + Math.random() * 9000)}`
+                    await clanChatService.sendMessage({
+                      clanId: userClan.id,
+                      sender: playerName,
+                      role: myRole,
+                      text: `[DUELO_AMISTOSO:${duelCode}] ¡He lanzado un duelo amistoso! ¿Quién se atreve a probar mazos sin perder copas?`,
+                      hasVip: hasVipPass,
+                    })
+                    soundManager.playSound('click', 0.8)
+                    if (onPlayFriendly) {
+                      onPlayFriendly(duelCode, 0)
+                    }
+                  }}
+                >
+                  ⚔️ RETAR
+                </button>
                 <input
                   type="text"
                   placeholder="Escribe a tus compañeros..."

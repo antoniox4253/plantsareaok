@@ -1998,7 +1998,7 @@ export const SupabaseService = {
     }
   },
 
-  async donateClanPlantCopy(donationId: string): Promise<{ success: boolean; plant_id?: string; error?: string }> {
+  async donateClanPlantCopy(donationId: string): Promise<{ success: boolean; plant_id?: string; gold_earned?: number; daily_donated_gold?: number; error?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       const { data, error } = await (supabase.rpc as any)('donate_clan_plant_copy', {
@@ -2008,9 +2008,92 @@ export const SupabaseService = {
         logError('donateClanPlantCopy', error)
         return { success: false, error: error.message }
       }
-      return data as { success: boolean; plant_id?: string }
+      return data as { success: boolean; plant_id?: string; gold_earned?: number; daily_donated_gold?: number }
     } catch (e: any) {
       logError('donateClanPlantCopy', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async recordClanMatchWin(): Promise<{
+    success: boolean
+    crowns_added?: number
+    my_weekly_crowns?: number
+    clan_weekly_crowns?: number
+    chest_level?: number
+    target_lvl10?: number
+    gold_bonus?: number
+    is_mvp?: boolean
+    is_elite?: boolean
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('record_clan_match_win', {})
+      if (error) {
+        logError('recordClanMatchWin', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('recordClanMatchWin', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async getClanWeeklyChestStatus(): Promise<{
+    success: boolean
+    current_week?: string
+    clan_weekly_crowns?: number
+    clan_chest_level?: number
+    target_lvl10?: number
+    my_weekly_crowns?: number
+    honor_required?: number
+    is_honor_met?: boolean
+    settled_level?: number
+    can_claim_settled_chest?: boolean
+    has_claimed_this_week?: boolean
+    mvp_username?: string | null
+    elite_usernames?: string[]
+    my_active_bonus?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_clan_weekly_chest_status', {})
+      if (error) {
+        logError('getClanWeeklyChestStatus', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('getClanWeeklyChestStatus', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async claimWeeklyClanChest(): Promise<{
+    success: boolean
+    level?: number
+    plants?: Array<{ plant_id: string; qty: number }>
+    gold?: number
+    gems?: number
+    pack_type?: string
+    pack_qty?: number
+    week?: string
+    error?: string
+    message?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('claim_weekly_clan_chest', {})
+      if (error) {
+        logError('claimWeeklyClanChest', error)
+        return { success: false, error: error.message }
+      }
+      return data
+    } catch (e: any) {
+      logError('claimWeeklyClanChest', e)
       return { success: false, error: e?.message }
     }
   },

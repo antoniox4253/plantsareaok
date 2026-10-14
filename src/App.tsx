@@ -1344,7 +1344,25 @@ function App() {
         }
       }
 
-      return { winElo: deltas.winElo, newElo, packResult, vipGoldBonus }
+      let clanGoldBonus: number | undefined
+      let isClanMvp: boolean | undefined
+      let isClanElite: boolean | undefined
+      if (battleMatchMode === 'ranked') {
+        try {
+          const clanWinRes = await supabaseService.recordClanMatchWin()
+          if (clanWinRes && clanWinRes.success) {
+            if (clanWinRes.gold_bonus && clanWinRes.gold_bonus > 0) {
+              clanGoldBonus = clanWinRes.gold_bonus
+              isClanMvp = clanWinRes.is_mvp
+              isClanElite = clanWinRes.is_elite
+            }
+          }
+        } catch (e) {
+          console.warn('[handleBattleComplete] Error registrando victoria de clan:', e)
+        }
+      }
+
+      return { winElo: deltas.winElo, newElo, packResult, vipGoldBonus, clanGoldBonus, isClanMvp, isClanElite }
     } else {
       const gate = getTrophyGateForElo(userElo)
       const newElo = Math.max(gate, userElo - deltas.loseElo)
@@ -1784,6 +1802,7 @@ function App() {
               onBackToMenu={() => setScreen('menu')}
               onRefreshUserData={refreshFromServer}
               onStartClanFortressRaid={handleStartClanFortressRaid}
+              onPlayFriendly={handlePlayFriendly}
             />
           </div>
         )}

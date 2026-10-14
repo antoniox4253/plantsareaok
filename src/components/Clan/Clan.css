@@ -7331,4 +7331,862 @@
   }
 }
 
+/* ==========================================================================
+   WEEKLY CLAN CHEST (COFRE SEMANAL DE 10 NIVELES) & PODIUM
+   ========================================================================== */
+
+.clan-weekly-chest-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 24px;
+}
+
+/* 1. Hero Card */
+.clan-weekly-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+  padding: 18px 22px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(245, 158, 11, 0.2);
+}
+
+.clan-weekly-hero-chest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.clan-weekly-chest-icon {
+  font-size: 48px;
+  filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.5));
+  animation: chestBob 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes chestBob {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-6px) scale(1.04); }
+}
+
+.clan-weekly-chest-lvl-pill {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  color: #1e1b4b;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid #fef08a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.clan-weekly-hero-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.clan-weekly-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.clan-weekly-hero-top h3 {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fbbf24;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.clan-weekly-countdown-tag {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde047;
+  border: 1px solid #f59e0b;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.clan-weekly-hero-desc {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.clan-weekly-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.clan-weekly-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.clan-weekly-progress-labels strong {
+  color: #fbbf24;
+}
+
+.clan-weekly-progress-bar-bg {
+  width: 100%;
+  height: 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #475569;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.clan-weekly-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+  border-radius: 8px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+.clan-weekly-progress-bar-fill--green {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+}
+
+.clan-weekly-progress-bar-fill--amber {
+  background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+/* Claim Banner */
+.clan-weekly-claim-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(20, 83, 45, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid #22c55e;
+  border-radius: 14px;
+  padding: 14px 20px;
+  box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+  animation: pulseClaimGlow 2s infinite alternate;
+}
+
+@keyframes pulseClaimGlow {
+  0% { box-shadow: 0 4px 16px rgba(34, 197, 94, 0.25); border-color: #22c55e; }
+  100% { box-shadow: 0 6px 28px rgba(34, 197, 94, 0.55); border-color: #86efac; }
+}
+
+.clan-weekly-claim-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.clan-weekly-claim-icon {
+  font-size: 36px;
+}
+
+.clan-weekly-claim-text h4 {
+  font-size: 14px;
+  font-weight: 900;
+  color: #86efac;
+  margin: 0 0 2px 0;
+}
+
+.clan-weekly-claim-text p {
+  font-size: 11px;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.clan-weekly-open-chest-btn {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  border: 2px solid #bbf7d0;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.5);
+  white-space: nowrap;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.clan-weekly-open-chest-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.1);
+}
+
+.clan-weekly-claimed-notice {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+/* 2. Honor de Batalla Card */
+.clan-weekly-honor-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1.5px solid #3b82f6;
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.clan-weekly-honor-header h4 {
+  font-size: 12.5px;
+  font-weight: 900;
+  color: #93c5fd;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.clan-weekly-honor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clan-weekly-honor-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clan-weekly-honor-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.clan-weekly-honor-labels strong {
+  color: #60a5fa;
+}
+
+.clan-weekly-honor-status-msg {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.clan-honor-met-text {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.clan-honor-unmet-text {
+  color: #f87171;
+  font-weight: 700;
+}
+
+/* 3. Podium Card */
+.clan-weekly-podium-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid #64748b;
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.clan-weekly-podium-header {
+  margin-bottom: 12px;
+}
+
+.clan-weekly-podium-header h4 {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #f1f5f9;
+  margin: 0 0 2px 0;
+}
+
+.clan-weekly-podium-header span {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.clan-weekly-podium-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.clan-weekly-podium-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 12px;
+  padding: 12px 14px;
+  gap: 4px;
+}
+
+.clan-weekly-podium-col--mvp {
+  border: 1.5px solid #facc15;
+  box-shadow: 0 0 14px rgba(250, 204, 21, 0.25);
+}
+
+.clan-weekly-podium-col--elite {
+  border: 1.5px solid #94a3b8;
+  box-shadow: 0 0 14px rgba(148, 163, 184, 0.2);
+}
+
+.clan-podium-trophy {
+  font-size: 26px;
+}
+
+.clan-podium-rank {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+}
+
+.clan-weekly-podium-col--mvp .clan-podium-rank {
+  color: #facc15;
+}
+
+.clan-podium-user {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.clan-podium-perk {
+  font-size: 9.5px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.clan-weekly-active-bonus-pill {
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.clan-weekly-active-bonus-pill--mvp {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.3) 100%);
+  border: 1px solid #facc15;
+  color: #fef08a;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.3);
+}
+
+.clan-weekly-active-bonus-pill--elite {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.25) 0%, rgba(100, 116, 139, 0.3) 100%);
+  border: 1px solid #cbd5e1;
+  color: #f1f5f9;
+  box-shadow: 0 0 12px rgba(203, 213, 225, 0.25);
+}
+
+/* 4. 10-Level Reward Progression Track */
+.clan-weekly-tiers-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid #475569;
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.clan-weekly-tiers-header h4 {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #f8fafc;
+  margin: 0 0 2px 0;
+}
+
+.clan-weekly-tiers-header p {
+  font-size: 10px;
+  color: #94a3b8;
+  margin: 0 0 12px 0;
+}
+
+.clan-weekly-tiers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clan-weekly-tier-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 8px 14px;
+  transition: all 0.2s ease;
+}
+
+.clan-weekly-tier-row--reached {
+  background: rgba(30, 58, 138, 0.25);
+  border-color: #3b82f6;
+}
+
+.clan-weekly-tier-row--current {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+}
+
+.clan-weekly-tier-row--max {
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.2) 0%, rgba(249, 115, 22, 0.2) 100%);
+  border: 1.5px solid #fbbf24;
+}
+
+.clan-weekly-tier-lvl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.clan-weekly-tier-badge {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #cbd5e1;
+  background: rgba(51, 65, 85, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.clan-weekly-tier-icon {
+  font-size: 16px;
+}
+
+.clan-weekly-tier-desc {
+  flex: 1;
+  font-size: 11px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.clan-weekly-tier-legend-tag {
+  background: #f59e0b;
+  color: #1e1b4b;
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.clan-weekly-tier-status {
+  flex-shrink: 0;
+}
+
+.clan-tier-status-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: #64748b;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(51, 65, 85, 0.5);
+}
+
+.clan-tier-status-tag--reached {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid #4ade80;
+}
+
+/* ==========================================================================
+   GACHA 3D FLIP CARD MODAL
+   ========================================================================== */
+
+.clan-gacha-backdrop {
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(8px);
+}
+
+.clan-gacha-modal-box {
+  width: 95vw;
+  max-width: 420px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 20px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(245, 158, 11, 0.4);
+}
+
+.clan-gacha-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.clan-gacha-header-trophy {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.clan-gacha-header h3 {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fbbf24;
+  margin: 0 0 2px 0;
+}
+
+.clan-gacha-header p {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+/* 3D Card Stage */
+.clan-gacha-card-stage {
+  perspective: 1000px;
+  width: 250px;
+  height: 350px;
+  margin: 12px 0;
+  cursor: pointer;
+}
+
+.clan-gacha-3d-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.clan-gacha-3d-card--flipped {
+  transform: rotateY(180deg);
+}
+
+.clan-gacha-card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+/* Back face (Mystery / Silhouette) */
+.clan-gacha-card-face--back {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+  border: 3px solid #fbbf24;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(251, 191, 36, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.clan-gacha-back-shimmer {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.15) 50%, transparent 60%);
+  animation: cardShimmer 3s infinite linear;
+}
+
+@keyframes cardShimmer {
+  0% { transform: translateY(-50%) rotate(45deg); }
+  100% { transform: translateY(50%) rotate(45deg); }
+}
+
+.clan-gacha-card-back-pattern {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.clan-gacha-card-back-icon {
+  font-size: 56px;
+  filter: drop-shadow(0 4px 12px rgba(251, 191, 36, 0.6));
+}
+
+.clan-gacha-card-back-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: 1px;
+}
+
+.clan-gacha-card-back-sub {
+  font-size: 10px;
+  font-weight: 800;
+  color: #a5b4fc;
+}
+
+.clan-gacha-card-back-tap {
+  margin-top: 18px;
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #fde047;
+  animation: pulseTap 1.5s infinite alternate;
+}
+
+@keyframes pulseTap {
+  0% { transform: scale(0.96); opacity: 0.8; }
+  100% { transform: scale(1.04); opacity: 1; }
+}
+
+/* Front face (Revealed) */
+.clan-gacha-card-face--front {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border: 3px solid #22c55e;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(34, 197, 94, 0.4);
+  transform: rotateY(180deg);
+}
+
+.clan-gacha-reveal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.clan-gacha-reveal-lvl-tag {
+  background: #22c55e;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+.clan-gacha-reward-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.clan-gacha-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.clan-gacha-plant-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.clan-gacha-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.clan-gacha-item-info strong {
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.clan-gacha-item-info span {
+  font-size: 9.5px;
+  color: #94a3b8;
+}
+
+.clan-gacha-done-btn {
+  margin-top: 12px;
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  border: 2px solid #86efac;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 900;
+  padding: 10px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.5);
+  transition: transform 0.15s ease;
+}
+
+.clan-gacha-done-btn:hover {
+  transform: scale(1.03);
+}
+
+.clan-gacha-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 10px 0 0 0;
+}
+
+/* ==========================================================================
+   CLAN CHAT DUELS & PODIUM BADGES
+   ========================================================================== */
+
+.clan-chat-podium-badge {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.clan-chat-podium-badge--mvp {
+  background: #facc15;
+  color: #1e1b4b;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+}
+
+.clan-chat-podium-badge--elite {
+  background: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 0 6px rgba(203, 213, 225, 0.3);
+}
+
+.clan-chat-msg--duel {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1.5px solid #f59e0b;
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.clan-chat-role-tag--duel {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+}
+
+.clan-chat-duel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.clan-chat-duel-title {
+  font-size: 11px;
+  font-weight: 900;
+  color: #facc15;
+}
+
+.clan-chat-duel-desc {
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.clan-chat-duel-code {
+  font-size: 9.5px;
+  color: #94a3b8;
+}
+
+.clan-chat-duel-code strong {
+  color: #ffffff;
+  font-family: monospace;
+}
+
+.clan-chat-duel-action-btn {
+  margin-top: 4px;
+  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+  border: 1.5px solid #fca5a5;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: flex-start;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.clan-chat-duel-action-btn:hover {
+  transform: scale(1.02);
+}
+
+.clan-chat-retar-btn {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  border: 1.5px solid #fef08a;
+  color: #1e1b4b;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.clan-chat-retar-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .clan-weekly-hero-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  .clan-weekly-hero-top {
+    justify-content: center;
+  }
+  .clan-weekly-claim-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+  .clan-weekly-claim-content {
+    flex-direction: column;
+  }
+  .clan-weekly-podium-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 
