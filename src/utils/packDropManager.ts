@@ -60,11 +60,12 @@ export const PACK_DEFINITIONS: Record<PackId, PackDefinition> = {
 
 // 15 Plants categorized strictly by user rarity specifications
 // Jalapeño y Lanzamaíz (kernelpult) son exclusivas de subasta/eventos y están estrictamente excluidas de todos los sobres
-const POOL_COMUN: PlantId[] = ['sunflower', 'peashooter', 'wallnut', 'chomper', 'marigold']
-const POOL_POCO_COMUN: PlantId[] = ['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash', 'guacodile']
-const POOL_RARA: PlantId[] = ['twinsunflower', 'explodeonut', 'snowpea', 'torchwood']
-const POOL_EPICA: PlantId[] = ['aloe', 'tallnut', 'pickledpepper', 'toadstool', 'ghostpepper']
-const POOL_LEGENDARIA: PlantId[] = ['iceberglettuce', 'threepeater', 'gatlingpea']
+// Las plantas de Temporada 2 quedan excluidas de los sobres hasta el reajuste oficial
+const POOL_COMUN: PlantId[] = ['sunflower', 'peashooter', 'wallnut', 'chomper']
+const POOL_POCO_COMUN: PlantId[] = ['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash']
+const POOL_RARA: PlantId[] = ['twinsunflower']
+const POOL_EPICA: PlantId[] = ['aloe', 'tallnut']
+const POOL_LEGENDARIA: PlantId[] = ['iceberglettuce', 'threepeater']
 
 export function rollSingleCardFromPack(
   packId: PackId,
