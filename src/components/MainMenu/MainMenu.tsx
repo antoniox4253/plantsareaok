@@ -37,6 +37,9 @@ interface MainMenuProps {
     elo_rating?: number
     gems_balance?: number
     gold_balance?: number
+    is_returning_churn?: boolean
+    returning_bonus_available?: boolean
+    has_purchased_starter_pack?: boolean
   } | null
   userElo?: number
   userTokens?: number
@@ -270,8 +273,21 @@ export default function MainMenu({
     }
   }
 
+  const isReturningUser = Boolean(
+    userProfile?.is_returning_churn &&
+    (!userProfile?.has_purchased_starter_pack || userProfile?.returning_bonus_available)
+  )
+
   const handlePlayClick = () => {
     soundManager.playSound('click', 0.5)
+    if (userProfile?.is_returning_churn && !userProfile?.has_purchased_starter_pack) {
+      setActiveAlert({
+        title: 'PACK STARTER REQUERIDO',
+        message: '¡Bienvenido de vuelta! Al haber estado inactivo se reiniciaron tus cartas anteriores. Adquiere el Pack Starter en la Tienda con tu 30% de bono extra para volver a combatir y farmear.',
+        icon: '🌱',
+      })
+      return
+    }
     setIsModeSelectorOpen(true)
   }
 
@@ -610,11 +626,12 @@ export default function MainMenu({
   const [bannerSlide, setBannerSlide] = useState<number>(0)
 
   useEffect(() => {
+    if (isReturningUser) return
     const timer = setInterval(() => {
       setBannerSlide((prev) => (prev + 1) % 4)
     }, 10000)
     return () => clearInterval(timer)
-  }, [])
+  }, [isReturningUser])
 
   const displayAvatar = getPlayerAvatarUrl(
     userProfile?.avatar_id || userProfile?.avatar_url || playerProfile.avatar
@@ -898,7 +915,9 @@ export default function MainMenu({
         role="button"
         tabIndex={0}
         aria-label={
-          bannerSlide === 0
+          isReturningUser
+            ? 'Por regresar cuentas con un 30% en tu primera compra'
+            : bannerSlide === 0
             ? `Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`
             : bannerSlide === 1
             ? 'Canal Oficial de Telegram: Únete para noticias y torneos'
@@ -907,7 +926,9 @@ export default function MainMenu({
             : `${onlineUsersCount} Jugadores en línea jugando en la Arena`
         }
         title={
-          bannerSlide === 0
+          isReturningUser
+            ? 'Por regresar cuentas con un 30% en tu primera compra (Clic para comprar Gemas y desbloquear tu Pack Starter)'
+            : bannerSlide === 0
             ? `Temporada ${seasonStatus.seasonNumber} - Clic para ver ranking y recompensas`
             : bannerSlide === 1
             ? 'Comunidad Oficial de Telegram - Clic para unirte'
@@ -917,7 +938,10 @@ export default function MainMenu({
         }
         onClick={() => {
           soundManager.playSound('click', 0.5)
-          if (bannerSlide === 0) {
+          if (isReturningUser) {
+            setProfileInitialTab('deposit')
+            setIsProfileModalOpen(true)
+          } else if (bannerSlide === 0) {
             onOpenRanking?.()
           } else if (bannerSlide === 1) {
             window.open('https://t.me/+HY1gbZZKmAE5ZDcx', '_blank')
@@ -930,143 +954,173 @@ export default function MainMenu({
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             soundManager.playSound('click', 0.5)
-            if (bannerSlide === 0) onOpenRanking?.()
+            if (isReturningUser) {
+              setProfileInitialTab('deposit')
+              setIsProfileModalOpen(true)
+            } else if (bannerSlide === 0) onOpenRanking?.()
             else if (bannerSlide === 1) window.open('https://t.me/+HY1gbZZKmAE5ZDcx', '_blank')
             else if (bannerSlide === 3) onOpenPlantsToken?.()
             else handlePlayClick()
           }
         }}
       >
-        {/* SLIDE 0: TEMPORADA 2 */}
-        {bannerSlide === 0 && (
-          <div className="bosque-banner-slide bosque-banner-slide--season">
-            <div className="bosque-season-banner__left">
-              <div className="bosque-season-banner__icon-wrap">
-                <span className="bosque-season-banner__icon">🏆</span>
-              </div>
-              <div className="bosque-season-banner__titles">
-                <span className="bosque-season-banner__badge">TEMPORADA {seasonStatus.seasonNumber}</span>
-                <span className="bosque-season-banner__main-title">{seasonStatus.seasonNumber >= 2 ? `TEMPORADA ${seasonStatus.seasonNumber}` : 'FIN DE TEMPORADA'}</span>
-              </div>
-            </div>
-
-            <div className="bosque-season-banner__countdown-wrap">
-              <div className="bosque-season-banner__countdown-label">
-                <span className="bosque-season-banner__pulse-dot" />
-                <span>TIEMPO RESTANTE</span>
-              </div>
-              <div className="bosque-season-banner__timer-boxes">
-                <div className="bosque-season-timer-unit">
-                  <span className="bosque-season-timer-val">{String(seasonStatus.daysLeft).padStart(2, '0')}</span>
-                  <span className="bosque-season-timer-lbl">DÍAS</span>
-                </div>
-                <span className="bosque-season-timer-sep">:</span>
-                <div className="bosque-season-timer-unit">
-                  <span className="bosque-season-timer-val">{String(seasonStatus.hoursLeft).padStart(2, '0')}</span>
-                  <span className="bosque-season-timer-lbl">HRS</span>
-                </div>
-                <span className="bosque-season-timer-sep">:</span>
-                <div className="bosque-season-timer-unit">
-                  <span className="bosque-season-timer-val">{String(seasonStatus.minutesLeft).padStart(2, '0')}</span>
-                  <span className="bosque-season-timer-lbl">MIN</span>
-                </div>
-                <span className="bosque-season-timer-sep">:</span>
-                <div className="bosque-season-timer-unit">
-                  <span className="bosque-season-timer-val">{String(seasonStatus.secondsLeft).padStart(2, '0')}</span>
-                  <span className="bosque-season-timer-lbl">SEG</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SLIDE 1: COMUNIDAD TELEGRAM (LIMPIO, SIN BOTÓN, CLIC ABRE ENLACE) */}
-        {bannerSlide === 1 && (
-          <div className="bosque-banner-slide bosque-banner-slide--clean">
-            <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--telegram">
-              <span className="bosque-clean-banner__icon">✈️</span>
+        {/* SLIDE EXCLUSIVO PARA CUENTAS DE RETORNO (CHURN) */}
+        {isReturningUser ? (
+          <div className="bosque-banner-slide bosque-banner-slide--clean bosque-banner-slide--returning">
+            <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--returning">
+              <span className="bosque-clean-banner__icon">🎁</span>
             </div>
             <div className="bosque-clean-banner__content">
               <div className="bosque-clean-banner__header-row">
-                <span className="bosque-clean-banner__badge bosque-clean-banner__badge--telegram">
-                  COMUNIDAD OFICIAL
+                <span className="bosque-clean-banner__badge bosque-clean-banner__badge--returning">
+                  ⭐ OFERTA POR REGRESAR
                 </span>
-                <span className="bosque-clean-banner__url">t.me/+HY1gbZZKmAE5ZDcx ↗</span>
+                <span className="bosque-clean-banner__tag--returning">
+                  +30% EXTRA GEMAS
+                </span>
               </div>
-              <span className="bosque-clean-banner__title bosque-clean-banner__title--telegram">
-                ¡ÚNETE A NUESTRO CANAL DE TELEGRAM!
+              <span className="bosque-clean-banner__title bosque-clean-banner__title--returning">
+                Por regresar cuentas con un 30% en tu primera compra
               </span>
               <span className="bosque-clean-banner__subtitle">
-                Sorteos semanales, notas de balance y torneos oficiales para la comunidad
+                ¡Compra gemas con bono del 30%, desbloquea tu Pack Starter y vuelve al combate! Clic aquí
               </span>
             </div>
           </div>
-        )}
+        ) : (
+          <>
+            {/* SLIDE 0: TEMPORADA 2 */}
+            {bannerSlide === 0 && (
+              <div className="bosque-banner-slide bosque-banner-slide--season">
+                <div className="bosque-season-banner__left">
+                  <div className="bosque-season-banner__icon-wrap">
+                    <span className="bosque-season-banner__icon">🏆</span>
+                  </div>
+                  <div className="bosque-season-banner__titles">
+                    <span className="bosque-season-banner__badge">TEMPORADA {seasonStatus.seasonNumber}</span>
+                    <span className="bosque-season-banner__main-title">{seasonStatus.seasonNumber >= 2 ? `TEMPORADA ${seasonStatus.seasonNumber}` : 'FIN DE TEMPORADA'}</span>
+                  </div>
+                </div>
 
-        {/* SLIDE 2: JUGADORES EN LÍNEA (LIMPIO, SIN BOTÓN, INFO DESTACADA) */}
-        {bannerSlide === 2 && (
-          <div className="bosque-banner-slide bosque-banner-slide--clean">
-            <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--online">
-              <span className="bosque-clean-banner__icon">⚔️</span>
-            </div>
-            <div className="bosque-clean-banner__content">
-              <div className="bosque-clean-banner__header-row">
-                <span className="bosque-clean-banner__badge bosque-clean-banner__badge--online">
-                  <span className="bosque-clean-banner__radar-dot" /> EN VIVO EN LA ARENA
-                </span>
-                <span className="bosque-clean-banner__live-tag">MATCHMAKING ACTIVO</span>
+                <div className="bosque-season-banner__countdown-wrap">
+                  <div className="bosque-season-banner__countdown-label">
+                    <span className="bosque-season-banner__pulse-dot" />
+                    <span>TIEMPO RESTANTE</span>
+                  </div>
+                  <div className="bosque-season-banner__timer-boxes">
+                    <div className="bosque-season-timer-unit">
+                      <span className="bosque-season-timer-val">{String(seasonStatus.daysLeft).padStart(2, '0')}</span>
+                      <span className="bosque-season-timer-lbl">DÍAS</span>
+                    </div>
+                    <span className="bosque-season-timer-sep">:</span>
+                    <div className="bosque-season-timer-unit">
+                      <span className="bosque-season-timer-val">{String(seasonStatus.hoursLeft).padStart(2, '0')}</span>
+                      <span className="bosque-season-timer-lbl">HRS</span>
+                    </div>
+                    <span className="bosque-season-timer-sep">:</span>
+                    <div className="bosque-season-timer-unit">
+                      <span className="bosque-season-timer-val">{String(seasonStatus.minutesLeft).padStart(2, '0')}</span>
+                      <span className="bosque-season-timer-lbl">MIN</span>
+                    </div>
+                    <span className="bosque-season-timer-sep">:</span>
+                    <div className="bosque-season-timer-unit">
+                      <span className="bosque-season-timer-val">{String(seasonStatus.secondsLeft).padStart(2, '0')}</span>
+                      <span className="bosque-season-timer-lbl">SEG</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="bosque-clean-banner__title bosque-clean-banner__title--online">
-                <strong className="bosque-clean-banner__count">{onlineUsersCount}</strong> JUGADORES CONECTADOS AHORA
-              </span>
-              <span className="bosque-clean-banner__subtitle">
-                ¡Rivales listos en tiempo real! Haz clic para entrar a la batalla y subir copas
-              </span>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* SLIDE 3: TOKEN PLANTS (SIMPLE Y DIRECTO) */}
-        {bannerSlide === 3 && (
-          <div className="bosque-banner-slide bosque-banner-slide--clean">
-            <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--plants">
-              <span className="bosque-clean-banner__icon">🌱</span>
-            </div>
-            <div className="bosque-clean-banner__content">
-              <div className="bosque-clean-banner__header-row">
-                <span className="bosque-clean-banner__badge bosque-clean-banner__badge--plants">
-                  🚀 PREVENTA GÉNESIS
-                </span>
-                <span className="bosque-clean-banner__tag--plants">
-                  20 PACKS EXCLUSIVOS
-                </span>
+            {/* SLIDE 1: COMUNIDAD TELEGRAM (LIMPIO, SIN BOTÓN, CLIC ABRE ENLACE) */}
+            {bannerSlide === 1 && (
+              <div className="bosque-banner-slide bosque-banner-slide--clean">
+                <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--telegram">
+                  <span className="bosque-clean-banner__icon">✈️</span>
+                </div>
+                <div className="bosque-clean-banner__content">
+                  <div className="bosque-clean-banner__header-row">
+                    <span className="bosque-clean-banner__badge bosque-clean-banner__badge--telegram">
+                      COMUNIDAD OFICIAL
+                    </span>
+                    <span className="bosque-clean-banner__url">t.me/+HY1gbZZKmAE5ZDcx ↗</span>
+                  </div>
+                  <span className="bosque-clean-banner__title bosque-clean-banner__title--telegram">
+                    ¡ÚNETE A NUESTRO CANAL DE TELEGRAM!
+                  </span>
+                  <span className="bosque-clean-banner__subtitle">
+                    Sorteos semanales, notas de balance y torneos oficiales para la comunidad
+                  </span>
+                </div>
               </div>
-              <span className="bosque-clean-banner__title bosque-clean-banner__title--plants">
-                TOKEN PLANTS · PACKS FUNDADORES
-              </span>
-              <span className="bosque-clean-banner__subtitle">
-                ¡Desbloqueo diario, respaldo en USDT y +20% bono en Gemas! Clic para entrar
-              </span>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* INDICADORES DE CARRUSEL (PUNTOS NAVEGABLES) */}
-        <div className="bosque-banner-dots">
-          {[0, 1, 2, 3].map((idx) => (
-            <button
-              key={idx}
-              type="button"
-              className={`bosque-banner-dot ${bannerSlide === idx ? 'bosque-banner-dot--active' : ''}`}
-              aria-label={`Ir al banner ${idx + 1}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                soundManager.playSound('click', 0.4)
-                setBannerSlide(idx)
-              }}
-            />
-          ))}
-        </div>
+            {/* SLIDE 2: JUGADORES EN LÍNEA (LIMPIO, SIN BOTÓN, INFO DESTACADA) */}
+            {bannerSlide === 2 && (
+              <div className="bosque-banner-slide bosque-banner-slide--clean">
+                <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--online">
+                  <span className="bosque-clean-banner__icon">⚔️</span>
+                </div>
+                <div className="bosque-clean-banner__content">
+                  <div className="bosque-clean-banner__header-row">
+                    <span className="bosque-clean-banner__badge bosque-clean-banner__badge--online">
+                      <span className="bosque-clean-banner__radar-dot" /> EN VIVO EN LA ARENA
+                    </span>
+                    <span className="bosque-clean-banner__live-tag">MATCHMAKING ACTIVO</span>
+                  </div>
+                  <span className="bosque-clean-banner__title bosque-clean-banner__title--online">
+                    <strong className="bosque-clean-banner__count">{onlineUsersCount}</strong> JUGADORES CONECTADOS AHORA
+                  </span>
+                  <span className="bosque-clean-banner__subtitle">
+                    ¡Rivales listos en tiempo real! Haz clic para entrar a la batalla y subir copas
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* SLIDE 3: TOKEN PLANTS (SIMPLE Y DIRECTO) */}
+            {bannerSlide === 3 && (
+              <div className="bosque-banner-slide bosque-banner-slide--clean">
+                <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--plants">
+                  <span className="bosque-clean-banner__icon">🌱</span>
+                </div>
+                <div className="bosque-clean-banner__content">
+                  <div className="bosque-clean-banner__header-row">
+                    <span className="bosque-clean-banner__badge bosque-clean-banner__badge--plants">
+                      🚀 PREVENTA GÉNESIS
+                    </span>
+                    <span className="bosque-clean-banner__tag--plants">
+                      20 PACKS EXCLUSIVOS
+                    </span>
+                  </div>
+                  <span className="bosque-clean-banner__title bosque-clean-banner__title--plants">
+                    TOKEN PLANTS · PACKS FUNDADORES
+                  </span>
+                  <span className="bosque-clean-banner__subtitle">
+                    ¡Desbloqueo diario, respaldo en USDT y +20% bono en Gemas! Clic para entrar
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* INDICADORES DE CARRUSEL (PUNTOS NAVEGABLES) */}
+            <div className="bosque-banner-dots">
+              {[0, 1, 2, 3].map((idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className={`bosque-banner-dot ${bannerSlide === idx ? 'bosque-banner-dot--active' : ''}`}
+                  aria-label={`Ir al banner ${idx + 1}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    soundManager.playSound('click', 0.4)
+                    setBannerSlide(idx)
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
       <button
         type="button"

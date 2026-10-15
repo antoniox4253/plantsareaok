@@ -152,6 +152,7 @@ export interface ShopProps {
   userElo: number
   userGold?: number
   hasVipPass?: boolean
+  hasPurchasedStarterPack?: boolean
   playerEnergy?: number
   maxPlayerEnergy?: number
   inventoryPacks: InventoryPack[]
@@ -185,6 +186,7 @@ export default function Shop({
   userElo,
   userGold = 50000,
   hasVipPass = false,
+  hasPurchasedStarterPack = false,
   playerEnergy = 20,
   maxPlayerEnergy = 20,
   inventoryPacks,
@@ -247,6 +249,7 @@ export default function Shop({
     basic: 1,
     epic: 1,
     legendary: 1,
+    starter: 1,
   })
 
   const getPackCount = (packId: PackId) => {
@@ -552,9 +555,56 @@ export default function Shop({
           <div className="shop-tab-pane">
             <div className="shop-packs-section-bar">
               <span className="shop-section-tagline">
-                🎒 Sobres distribuidos con las 15 plantas del catálogo. ¡Haz click en un sobre para ver sus probabilidades!
+                🎒 Sobres distribuidos con el catálogo oficial. ¡Haz click en un sobre para ver sus probabilidades!
               </span>
             </div>
+
+            {/* PACK STARTER: OFERTA EXCLUSIVA DE BIENVENIDA (COMPRA ÚNICA) */}
+            {!hasPurchasedStarterPack && (
+              <div className="shop-starter-banner">
+                <div className="shop-starter-badge">⭐ OFERTA DE BIENVENIDA • COMPRA ÚNICA ⭐</div>
+                <div
+                  className="shop-starter-img-wrap"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setSelectedPackDetails('starter')
+                  }}
+                  title="Click para ver contenido y probabilidades"
+                >
+                  <img src={commonSeedImg} alt="Pack Starter" className="shop-starter-img" />
+                  <span className="shop-pack-inspect-hint">🔍 Ver Detalles</span>
+                </div>
+                <div className="shop-starter-info">
+                  <div className="shop-starter-header">
+                    <h3 className="shop-starter-title">Pack Starter</h3>
+                    <span className="shop-starter-price-tag">200 💎 Gemas</span>
+                    <span className="shop-starter-gold-tag">
+                      🎁 +500 <GoldIcon size={14} /> Oro de Regalo
+                    </span>
+                  </div>
+                  <p className="shop-starter-desc">
+                    5 Cartas Garantizadas: 1 Girasol, 1 Lanzaguisantes, 1 Wall-nut, 1 Poco Común aleatoria y 1 Rara aleatoria (sin Jalapeño ni Nuez Explosiva).
+                  </p>
+                  <div className="shop-starter-perks">
+                    <span>🌻 Girasol</span>
+                    <span>🌱 Lanzaguisantes</span>
+                    <span>🥜 Wall-nut</span>
+                    <span>🎲 Poco Común</span>
+                    <span>🌟 Rara</span>
+                  </div>
+                </div>
+                <div className="shop-starter-action">
+                  <button
+                    className="shop-starter-btn"
+                    type="button"
+                    disabled={isPurchasingPack}
+                    onClick={() => handleBuyPacksBatch('starter')}
+                  >
+                    {isPurchasingPack ? '⏳ PROCESANDO...' : 'COMPRAR — 200 💎'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="shop-packs-grid">
               {/* Pack 1: Básico */}
@@ -1185,7 +1235,7 @@ export default function Shop({
               <div className="shop-pack-details-header">
                 <img
                   src={
-                    selectedPackDetails === 'basic'
+                    selectedPackDetails === 'starter' || selectedPackDetails === 'basic'
                       ? commonSeedImg
                       : selectedPackDetails === 'epic'
                       ? epicSeedImg
@@ -1196,10 +1246,12 @@ export default function Shop({
                 />
                 <div className="shop-pack-details-meta">
                   <h3 className="shop-pack-details-title">
-                    {selectedPackDetails === 'basic'
+                    {selectedPackDetails === 'starter'
+                      ? 'Pack Starter (Oferta Especial)'
+                      : selectedPackDetails === 'basic'
                       ? 'Sobre de Semillas Básico'
                       : selectedPackDetails === 'epic'
-                      ? 'Sobre de Semillas Épico'
+                      ? 'Sobre de Semillas Místico'
                       : 'Sobre de Semillas Legendario'}
                   </h3>
                   <span className="shop-pack-details-gems-val">
@@ -1209,11 +1261,14 @@ export default function Shop({
               </div>
 
               <p className="shop-pack-details-desc">
+                {selectedPackDetails === 'starter' && (
+                  <>Contiene 5 cartas al abrir + 500 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta. Solo se puede comprar una vez por jugador.</>
+                )}
                 {selectedPackDetails === 'basic' && (
                   <>Contiene 3 cartas al abrir + 300 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
                 )}
                 {selectedPackDetails === 'epic' && (
-                  <>Contiene 4 cartas al abrir + 1,000 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
+                  <>Contiene 3 cartas al abrir + 1,000 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
                 )}
                 {selectedPackDetails === 'legendary' && (
                   <>Contiene 4 cartas al abrir + 2,500 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
@@ -1223,11 +1278,13 @@ export default function Shop({
               <div className="shop-pack-details-odds">
                 <strong>🎯 PROBABILIDADES:</strong>
                 <p>
-                  {selectedPackDetails === 'basic'
-                    ? '70% Común | 20% Poco Común | 10% Rara'
+                  {selectedPackDetails === 'starter'
+                    ? '100% Girasol | 100% Lanzaguisantes | 100% Wall-nut | 100% Poco Común (Aleatoria) | 100% Rara (Aleatoria, sin Jalapeño ni Nuez Explosiva)'
+                    : selectedPackDetails === 'basic'
+                    ? '70% Común | 26.7% Poco Común | 3.3% Rara (10% Rara en carta 3)'
                     : selectedPackDetails === 'epic'
-                    ? '30% Común | 40% Poco Común | 20% Rara | 8% Épica | 2% Legendaria'
-                    : '40% Poco Común | 30% Rara | 20% Épica | 10% Legendaria'}
+                    ? '26.7% Común | 53.3% Poco Común | 16.7% Rara | 2.7% Épica | 0.7% Legendaria (8% Épica, 2% Legendaria en carta 3)'
+                    : '42.5% Poco Común | 40% Rara | 15% Épica | 2.5% Legendaria (10% Legendaria en Jackpot slot)'}
                 </p>
               </div>
 

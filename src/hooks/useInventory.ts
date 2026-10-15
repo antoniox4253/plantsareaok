@@ -732,6 +732,7 @@ export function useInventory() {
    * insignia que un instante con una insignia que no es tuya.
    */
   const [hasVipPass, setHasVipPass] = useState<boolean>(false)
+  const [hasPurchasedStarterPack, setHasPurchasedStarterPack] = useState<boolean>(false)
 
   const [claimedVipLevels, setClaimedVipLevels] = useState<number[]>(() => {
     const saved = localStorage.getItem('plant_arena_claimed_vip_pass')
@@ -1173,6 +1174,7 @@ export function useInventory() {
     if (profile.colosseum_tickets !== undefined) setColosseumTickets(Number(profile.colosseum_tickets))
     if (profile.colosseum_current_streak !== undefined) setColosseumCurrentStreak(Number(profile.colosseum_current_streak))
     if (profile.has_vip_pass !== undefined) setHasVipPass(Boolean(profile.has_vip_pass))
+    if ((profile as any).has_purchased_starter_pack !== undefined) setHasPurchasedStarterPack(Boolean((profile as any).has_purchased_starter_pack))
     if (profile.claimed_vip_levels !== undefined) setClaimedVipLevels(profile.claimed_vip_levels || [])
     if ((profile as any).claimed_arena_ads_levels !== undefined) {
       setClaimedArenaAdsLevels(Array.isArray((profile as any).claimed_arena_ads_levels) ? (profile as any).claimed_arena_ads_levels : [])
@@ -1182,6 +1184,22 @@ export function useInventory() {
       setPlayerEnergy(en)
       try {
         localStorage.setItem(STORAGE_KEYS.ENERGY, en.toString())
+      } catch {}
+    }
+
+    // Si la cuenta es de retorno (churn) y no ha comprado el pack starter,
+    // garantizar que su mazo y plantas locales queden estrictamente vacías
+    if ((profile as any).is_returning_churn && !(profile as any).has_purchased_starter_pack) {
+      setPlantInstances([])
+      setActiveDeck([])
+      setActiveDeckInstances([])
+      setUnlockedPlants([])
+      try {
+        localStorage.removeItem(STORAGE_KEYS.PLANT_INSTANCES)
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_DECK)
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_DECK_INSTANCES)
+        localStorage.removeItem(STORAGE_KEYS.UNLOCKED_PLANTS)
+        localStorage.removeItem(STORAGE_KEYS.PLANT_COPIES)
       } catch {}
     }
   }
@@ -1207,6 +1225,9 @@ export function useInventory() {
     setUserGold(Number(b.gold_balance))
     setColosseumTickets(Number(b.colosseum_tickets))
     setHasVipPass(Boolean(b.has_vip_pass))
+    if ((b as any).has_purchased_starter_pack !== undefined) {
+      setHasPurchasedStarterPack(Boolean((b as any).has_purchased_starter_pack))
+    }
     setClaimedVipLevels(b.claimed_vip_levels || [])
     if ((b as any).claimed_arena_ads_levels !== undefined) {
       setClaimedArenaAdsLevels(Array.isArray((b as any).claimed_arena_ads_levels) ? (b as any).claimed_arena_ads_levels : [])
@@ -1439,6 +1460,10 @@ export function useInventory() {
     } catch (err) {
       console.warn('[useInventory] Error refrescando estado tras compra de sobres:', err)
       await refreshBalance().catch(() => {})
+    }
+
+    if (packId === 'starter') {
+      setHasPurchasedStarterPack(true)
     }
 
     const def = PACK_DEFINITIONS[packId]
@@ -1932,6 +1957,7 @@ export function useInventory() {
     maxPlayerEnergy: hasVipPass ? 25 : 20,
     buyEnergyPack,
     useEnergyPotion,
+    hasPurchasedStarterPack,
   }
 }
 

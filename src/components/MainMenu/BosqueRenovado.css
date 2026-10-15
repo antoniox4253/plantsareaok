@@ -628,6 +628,12 @@
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.5);
 }
 
+.bosque-clean-banner__icon-wrap--returning {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.4), rgba(180, 83, 9, 0.9));
+  border: 1.5px solid #facc15;
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.45);
+}
+
 .bosque-clean-banner__icon {
   font-size: 26px;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
@@ -677,6 +683,14 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
+.bosque-clean-banner__badge--returning {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #fde047;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
 .bosque-clean-banner__radar-dot {
   width: 7px;
   height: 7px;
@@ -717,6 +731,30 @@
   border-radius: 6px;
   padding: 1px 8px;
   letter-spacing: 0.4px;
+}
+
+.bosque-clean-banner__tag--returning {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fef08a;
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid rgba(250, 204, 21, 0.55);
+  border-radius: 6px;
+  padding: 1px 8px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.3);
+}
+
+.bosque-clean-banner__title--returning {
+  color: #fef08a !important;
+  font-size: 13.5px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.3px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.95);
 }
 
 .bosque-clean-banner__title {

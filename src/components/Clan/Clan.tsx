@@ -680,19 +680,29 @@ export default function Clan({
   }
 
   const handleCancelLeadershipClaim = () => {
+    const isLeaderUser = isLeader
     showModalConfirm(
-      'Cancelar Postulación',
-      '¿Estás seguro de que deseas cancelar esta postulación de liderazgo?',
-      '❓',
+      isLeaderUser ? 'Reasumir Liderazgo' : 'Retirar Postulación',
+      isLeaderUser
+        ? 'Has regresado al clan. ¿Deseas desestimar el proceso de relevo y ratificar tu liderazgo activo en el clan?'
+        : '¿Estás seguro de que deseas retirar tu postulación de liderazgo?',
+      isLeaderUser ? '👑' : '❓',
       async () => {
         setIsSubmittingClaim(true)
         try {
           const res = await supabaseService.cancelClanLeadershipClaim()
           if (!res.success) {
-            showModalAlert('ERROR', res.error || 'No se pudo cancelar.', '⚠️', 'error')
+            showModalAlert('ERROR', res.error || 'No se pudo procesar la solicitud.', '⚠️', 'error')
             return
           }
-          showModalAlert('POSTULACIÓN CANCELADA', 'La postulación de liderazgo ha sido cancelada.', 'ℹ️', 'info')
+          showModalAlert(
+            isLeaderUser ? 'LIDERAZGO RATIFICADO' : 'POSTULACIÓN CANCELADA',
+            isLeaderUser
+              ? 'Has desestimado el proceso de relevo y conservas el liderazgo del clan.'
+              : 'Has retirado tu postulación de liderazgo.',
+            isLeaderUser ? '👑' : 'ℹ️',
+            'info'
+          )
           await refreshClanData()
         } catch (e: any) {
           showModalAlert('ERROR', e?.message || 'Error de conexión', '⚠️', 'error')
@@ -700,7 +710,7 @@ export default function Clan({
           setIsSubmittingClaim(false)
         }
       },
-      'SÍ, CANCELAR',
+      isLeaderUser ? '👑 RECLAMAR MANDO' : 'SÍ, RETIRARME',
       'VOLVER'
     )
   }
@@ -2630,7 +2640,11 @@ export default function Clan({
             <span className="clan-claim-badge">👑 ELECCIÓN DE LIDERAZGO</span>
             <div className="clan-claim-meta">
               <h4>{userClan.leadershipClaim.candidateName} se ha postulado como Líder</h4>
-              <p>El líder actual está inactivo ({userClan.leaderInactiveDays || 4}d). Apoya esta postulación para ratificar el relevo.</p>
+              <p>
+                {Number(userClan.leaderInactiveDays || 0) > 0
+                  ? `El líder actual registra ${userClan.leaderInactiveDays}d inactivo. Apoya esta postulación para ratificar el relevo.`
+                  : 'Proceso de relevo iniciado por inactividad. ¡Apoya con tu firma o espera la ratificación del líder!'}
+              </p>
             </div>
           </div>
 
@@ -2668,11 +2682,11 @@ export default function Clan({
             {(isClaimCandidate || isLeader) && (
               <button
                 type="button"
-                className="clan-claim-action-btn clan-claim-action-btn--cancel"
+                className={`clan-claim-action-btn ${isLeader ? 'clan-claim-action-btn--reclaim' : 'clan-claim-action-btn--cancel'}`}
                 disabled={isSubmittingClaim}
                 onClick={handleCancelLeadershipClaim}
               >
-                ❌ CANCELAR
+                {isLeader ? '👑 RECLAMAR MANDO' : '❌ RETIRARME'}
               </button>
             )}
           </div>

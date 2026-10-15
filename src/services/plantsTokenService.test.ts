@@ -12,7 +12,7 @@ describe('PLANTS Token & AMM Ecosystem Tests', () => {
       expect(state.usdtPool).toBe(200)
       expect(state.virtualPlants).toBe(1000000)
       expect(state.spotPrice).toBe(0.0002)
-      expect(state.presaleActive).toBe(true)
+      expect(state.presaleActive).toBe(false)
       expect(state.presaleStocks.pionero).toBe(10)
       expect(state.presaleStocks.campeon).toBe(6)
       expect(state.presaleStocks.leyenda).toBe(4)

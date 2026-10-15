@@ -7307,6 +7307,13 @@
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
+.clan-claim-action-btn--reclaim {
+  background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+  border: 1.5px solid #fde68a;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
 .clan-claim-signed-pill {
   display: inline-flex;
   align-items: center;

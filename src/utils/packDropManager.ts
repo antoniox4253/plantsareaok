@@ -1,6 +1,6 @@
 import type { PlantId } from '../types/game'
 
-export type PackId = 'basic' | 'epic' | 'legendary'
+export type PackId = 'basic' | 'epic' | 'legendary' | 'starter'
 
 export interface InventoryPack {
   instanceId: string
@@ -29,6 +29,15 @@ export interface PackDefinition {
 }
 
 export const PACK_DEFINITIONS: Record<PackId, PackDefinition> = {
+  starter: {
+    name: 'Pack Starter',
+    priceGems: 200,
+    priceUsd: 200,
+    cardCount: 5,
+    goldReward: 500,
+    icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp',
+    rarity: 'common',
+  },
   basic: {
     name: 'Sobre de Semillas Básico',
     priceGems: 300,
@@ -42,7 +51,7 @@ export const PACK_DEFINITIONS: Record<PackId, PackDefinition> = {
     name: 'Sobre de Semillas Místico',
     priceGems: 1000,
     priceUsd: 1000,
-    cardCount: 4,
+    cardCount: 3,
     goldReward: 1000,
     icon: '/game-assets/greenfoot/seed_pack_epic_whitebg.webp',
     rarity: 'epic',
@@ -58,14 +67,13 @@ export const PACK_DEFINITIONS: Record<PackId, PackDefinition> = {
   },
 }
 
-// 15 Plants categorized strictly by user rarity specifications
-// Jalapeño y Lanzamaíz (kernelpult) son exclusivas de subasta/eventos y están estrictamente excluidas de todos los sobres
-// Las plantas de Temporada 2 quedan excluidas de los sobres hasta el reajuste oficial
-const POOL_COMUN: PlantId[] = ['sunflower', 'peashooter', 'wallnut', 'chomper']
-const POOL_POCO_COMUN: PlantId[] = ['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash']
-const POOL_RARA: PlantId[] = ['twinsunflower']
-const POOL_EPICA: PlantId[] = ['aloe', 'tallnut']
-const POOL_LEGENDARIA: PlantId[] = ['iceberglettuce', 'threepeater']
+// Catálogo de plantas categorizado por rareza (Temporada 1 y Temporada 2 autorizada)
+// Jalapeño, Lanzamaíz (kernelpult) y Nuez Explosiva (explodeonut) son exclusivas de subasta/eventos y están estrictamente excluidas de todos los sobres
+export const POOL_COMUN: PlantId[] = ['sunflower', 'peashooter', 'wallnut', 'chomper']
+export const POOL_POCO_COMUN: PlantId[] = ['garlic', 'bonkchoy', 'repeater', 'melonpult', 'squash', 'snowpea']
+export const POOL_RARA: PlantId[] = ['twinsunflower', 'ghostpepper', 'guacodile', 'marigold', 'toadstool', 'torchwood']
+export const POOL_EPICA: PlantId[] = ['aloe', 'tallnut', 'pickledpepper', 'gatlingpea']
+export const POOL_LEGENDARIA: PlantId[] = ['iceberglettuce', 'threepeater']
 
 export function rollSingleCardFromPack(
   packId: PackId,
@@ -106,7 +114,7 @@ export function rollSingleCardFromPack(
       }
     }
   } else if (packId === 'epic') {
-    // 4 Cartas en total: 3 de soporte + 1 destacada (8% Épica, 2% Legendaria en el sobre)
+    // 3 Cartas en total: 2 de soporte + 1 destacada (8% Épica, 2% Legendaria en el sobre)
     if (!isLuckySlot) {
       if (rand < 40) {
         chosenPlant = POOL_COMUN[Math.floor(Math.random() * POOL_COMUN.length)]
@@ -191,6 +199,54 @@ export function rollSingleCardFromPack(
 }
 
 export function openSeedPack(packId: PackId, currentlyUnlocked: PlantId[]): PackDropResult[] {
+  if (packId === 'starter') {
+    const results: PackDropResult[] = []
+
+    // 1. Girasol (Común)
+    results.push({
+      plantId: 'sunflower',
+      rarityLabel: 'COMÚN',
+      rarityColor: '#4ade80',
+      isNew: !currentlyUnlocked.includes('sunflower'),
+    })
+
+    // 2. Lanzaguisantes (Común)
+    results.push({
+      plantId: 'peashooter',
+      rarityLabel: 'COMÚN',
+      rarityColor: '#4ade80',
+      isNew: !currentlyUnlocked.includes('peashooter'),
+    })
+
+    // 3. Wall-nut (Común)
+    results.push({
+      plantId: 'wallnut',
+      rarityLabel: 'COMÚN',
+      rarityColor: '#4ade80',
+      isNew: !currentlyUnlocked.includes('wallnut'),
+    })
+
+    // 4. Planta Poco Común aleatoria (incluye Snow Pea)
+    const randomUncommon = POOL_POCO_COMUN[Math.floor(Math.random() * POOL_POCO_COMUN.length)]
+    results.push({
+      plantId: randomUncommon,
+      rarityLabel: 'POCO COMÚN',
+      rarityColor: '#22d3ee',
+      isNew: !currentlyUnlocked.includes(randomUncommon),
+    })
+
+    // 5. Planta Rara aleatoria (sin Jalapeño, Lanzamaíz ni Nuez Explosiva)
+    const randomRare = POOL_RARA[Math.floor(Math.random() * POOL_RARA.length)]
+    results.push({
+      plantId: randomRare,
+      rarityLabel: 'RARA',
+      rarityColor: '#60a5fa',
+      isNew: !currentlyUnlocked.includes(randomRare),
+    })
+
+    return results
+  }
+
   const packDef = PACK_DEFINITIONS[packId]
   const count = packDef ? packDef.cardCount : 3
   const results: PackDropResult[] = []

@@ -50,6 +50,10 @@ export interface Database {
           is_bot_only?: boolean
           is_ip_exempt?: boolean
           exemption_reason?: string | null
+          has_purchased_starter_pack?: boolean
+          is_returning_churn?: boolean
+          returning_bonus_available?: boolean
+          returning_bonus_used_at?: string | null
           created_at: string
           updated_at: string
         }
@@ -85,6 +89,10 @@ export interface Database {
           is_bot_only?: boolean
           is_ip_exempt?: boolean
           exemption_reason?: string | null
+          has_purchased_starter_pack?: boolean
+          is_returning_churn?: boolean
+          returning_bonus_available?: boolean
+          returning_bonus_used_at?: string | null
           created_at?: string
           updated_at?: string
         }

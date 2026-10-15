@@ -61,6 +61,7 @@ export default function ProfileModal({
     bonusPercent?: number
     bonusActive?: boolean
     bonusExpiresAt?: string | null
+    returningBonus?: boolean
   }>({
     treasuryWallet: '0x721622D8cad39621C731eC286D1EA859365A51b8',
     tokenContract: '0x55d398326f99059fF775485246999027B3197955',
@@ -1069,7 +1070,11 @@ export default function ProfileModal({
                       <span className="crypto-token-badge">💵 TOKEN: USDT</span>
                       <span className="crypto-rate-badge">💎 1 USDT = 100 GEMAS</span>
                       {depositInfo.bonusActive && Number(depositInfo.bonusPercent ?? 0) > 0 && (
-                        <span className="crypto-bonus-badge">🔥 +{depositInfo.bonusPercent}% BONO EXTRA</span>
+                        <span className="crypto-bonus-badge">
+                          {depositInfo.returningBonus
+                            ? '🎁 +30% BONO EXCLUSIVO POR REGRESAR'
+                            : `🔥 +${depositInfo.bonusPercent}% BONO EXTRA`}
+                        </span>
                       )}
                     </div>
 

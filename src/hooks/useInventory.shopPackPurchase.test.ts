@@ -142,4 +142,37 @@ describe('Compra de Sobres en la Tienda - Lógica Autoritativa de Cobro', () => 
 
     expect(nextGold).toBe(1500)
   })
+
+  it('10. PACK_DEFINITIONS.starter define precio de 200 gemas, 5 cartas y 500 de oro de regalo', () => {
+    expect(PACK_DEFINITIONS.starter).toBeDefined()
+    expect(PACK_DEFINITIONS.starter.priceGems).toBe(200)
+    expect(PACK_DEFINITIONS.starter.cardCount).toBe(5)
+    expect(PACK_DEFINITIONS.starter.goldReward).toBe(500)
+  })
+
+  it('11. SupabaseService.buyPacks procesa la compra del Pack Starter (200 gemas, +500 oro)', async () => {
+    vi.spyOn(supabaseClientModule, 'isSupabaseConfigured').mockReturnValue(true)
+
+    const rpcMock = vi.spyOn(supabaseClientModule.supabase, 'rpc' as any).mockResolvedValue({
+      data: {
+        success: true,
+        packIds: ['uuid-pack-starter-1'],
+        spent: 200,
+        goldAdded: 500,
+        quantity: 1,
+      },
+      error: null,
+    } as any)
+
+    const res = await SupabaseService.buyPacks('starter', 1)
+
+    expect(rpcMock).toHaveBeenCalledWith('buy_packs', {
+      p_pack_id: 'starter',
+      p_qty: 1,
+    })
+    expect(res.success).toBe(true)
+    expect(res.spent).toBe(200)
+    expect(res.goldAdded).toBe(500)
+    expect(res.packIds).toEqual(['uuid-pack-starter-1'])
+  })
 })

@@ -220,6 +220,7 @@ function App() {
     activeDeckInstances,
     updateActiveDeck,
     hasVipPass,
+    hasPurchasedStarterPack,
     claimedVipLevels,
     claimedArenaAdsLevels,
     setClaimedArenaAdsLevels,
@@ -1672,6 +1673,7 @@ function App() {
             userElo={userElo}
             userGold={userGold}
             hasVipPass={hasVipPass}
+            hasPurchasedStarterPack={hasPurchasedStarterPack}
             inventoryPacks={inventoryPacks}
             plantCopies={plantCopies}
             plantLevels={plantLevels}

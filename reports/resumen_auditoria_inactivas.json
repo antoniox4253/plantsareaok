@@ -1,0 +1,36 @@
+{
+  "total_cuentas": 1083,
+  "fecha_auditoria": "2026-10-15T04:30:55.356Z",
+  "criterios": {
+    "inactividad": "> 20 dias sin conexion o actividad real",
+    "partidas": "Entre 0 y 15 partidas (wins + losses o salas)"
+  },
+  "distribucion_por_partidas": {
+    "0": 210,
+    "1": 279,
+    "2": 164,
+    "3": 98,
+    "4": 56,
+    "5": 49,
+    "6": 40,
+    "7": 51,
+    "8": 36,
+    "9": 17,
+    "10": 20,
+    "11": 18,
+    "12": 15,
+    "13": 5,
+    "14": 16,
+    "15": 9
+  },
+  "distribucion_por_dias": {
+    "20_a_25_dias": 136,
+    "26_a_30_dias": 204,
+    "31_a_40_dias": 706,
+    "mas_de_40_dias": 37
+  },
+  "con_referidor": 886,
+  "baneadas": 53,
+  "oro_total_inmovilizado": 41206,
+  "gemas_totales_inmovilizadas": 2070.5
+}
