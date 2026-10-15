@@ -89,25 +89,7 @@ export default function ProfileModal({
   const isMetaMaskAvailable = Web3DepositService.isMetaMaskAvailable()
 
 
-  // ── SALDOS FINANCIEROS DUALES (TOTAL, RETIRABLE Y BLOQUEADO/BONO) ────────
-  const [financialBalances, setFinancialBalances] = useState<{
-    totalGems: number
-    lockedGems: number
-    withdrawableGems: number
-  }>({
-    totalGems: userTokens,
-    lockedGems: 0,
-    withdrawableGems: userTokens,
-  })
 
-  // Sincronizar con userTokens recibido por prop si aún no cargó la RPC
-  useEffect(() => {
-    setFinancialBalances((prev) => ({
-      ...prev,
-      totalGems: prev.totalGems || userTokens,
-      withdrawableGems: prev.withdrawableGems !== undefined ? prev.withdrawableGems : userTokens,
-    }))
-  }, [userTokens])
 
   // ── ESTADO DE HISTORIAL FINANCIERO ─────────────────────────────────────────
   const [financialHistory, setFinancialHistory] = useState<{
@@ -142,20 +124,7 @@ export default function ProfileModal({
     const loadData = async () => {
       if (!isSupabaseConfigured()) return
 
-      // 1. Cargar saldos financieros autoritativos (Total, Retirable y Bloqueado/Bono)
-      try {
-        const bal = await accountService.myBalance()
-        if (active && bal) {
-          const total = Number(bal.gems_balance ?? userTokens)
-          const locked = Number(bal.locked_gems_balance ?? 0)
-          const withdrawable = Number(bal.withdrawable_gems ?? Math.max(0, total - locked))
-          setFinancialBalances({
-            totalGems: total,
-            lockedGems: locked,
-            withdrawableGems: withdrawable,
-          })
-        }
-      } catch {}
+
 
       // 2. Información de depósito
       const info = await accountService.getDepositInfo()

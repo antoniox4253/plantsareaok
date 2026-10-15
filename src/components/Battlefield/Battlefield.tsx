@@ -406,7 +406,7 @@ export default function Battlefield({
     message?: string
   } | null>(null)
 
-  const [isPresaleActive, setIsPresaleActive] = useState<boolean>(true)
+  const [isPresaleActive, setIsPresaleActive] = useState<boolean>(false)
 
   const [pvpBonusState, setPvpBonusState] = useState<{
     isActive: boolean
@@ -1596,6 +1596,26 @@ export default function Battlefield({
                   ...prev,
                   vipGoldBonus: prev?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
                 }))
+              }
+
+              // ── RECLAMO DE TOKEN PLANTS (EXCLUSIVO ARENA 3+ / 2,001+ COPAS) ──
+              if (userElo >= 2001 && capturedRoomId && matchMode !== 'clan_fortress') {
+                try {
+                  const matchDurationSec = Math.max(1, Math.round(tick * 0.033))
+                  const plantsClaimRes = await plantsTokenService.claimPvpPlantsReward({
+                    roomId: capturedRoomId,
+                    matchDurationSec,
+                    enemyKills: stats.enemyPlantsDefeated,
+                    sunsCollected: stats.sunsCollected,
+                    plantsPlaced: stats.plantsPlaced,
+                    enemyPlantsPlaced: Math.max(4, stats.enemyPlantsDefeated),
+                  })
+                  if (plantsClaimRes.data) {
+                    setPlantsRewardResult(plantsClaimRes.data)
+                  }
+                } catch (err) {
+                  console.warn('[Battlefield] Error reclamando Token PLANTS:', err)
+                }
               }
 
               if (typeof window !== 'undefined') {

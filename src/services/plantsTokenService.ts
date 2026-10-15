@@ -1027,7 +1027,7 @@ export const plantsTokenService = {
       circulatingSupply: 0,
       marketCapUsdt: 40,
       currentHalvingEra: 1,
-      presaleActive: true,
+      presaleActive: false,
       presaleEndsAt: new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString(),
       presalePacksSold: 0,
       presalePacksRemaining: 20,
