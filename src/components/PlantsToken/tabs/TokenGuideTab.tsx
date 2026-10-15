@@ -59,6 +59,14 @@ const FAQ_ITEMS: FaqItem[] = [
     answer:
       'El suministro total está estrictamente limitado a 1,000,000 PLANTS. Las recompensas de victoria en Arena 3 se reducen automáticamente conforme avanza la emisión: Fase 1 (100% · 2 a 6 PLANTS/victoria), Fase 2 (50% al llegar a 500k), Fase 3 (25% al llegar a 750k), Fase 4 (12.5%) y Fase 5 (6.25%).',
   },
+  {
+    id: 'daily-win-cap-and-vip',
+    category: 'RECOMPENSAS & PASE VIP',
+    icon: '👑',
+    question: '¿Cuántas victorias diarias otorgan token PLANTS y qué ventaja tiene el VIP?',
+    answer:
+      'Los jugadores Free cuentan con un tope diario de 20 victorias recompensadas al día. Por el contrario, los jugadores con Pase VIP tienen victorias recompensadas ILIMITADAS, lo que les permite recargar energía con gemas y seguir farmeando tokens PLANTS sin ninguna restricción.',
+  },
 ]
 
 export const TokenGuideTab: React.FC<TokenHubSharedProps> = ({ onTabChange }) => {

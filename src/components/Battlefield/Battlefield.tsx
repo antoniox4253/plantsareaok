@@ -400,7 +400,8 @@ export default function Battlefield({
     bonusActive?: boolean
     bonusPct?: number
     dailyClaimsUsed?: number
-    dailyClaimsMax?: number
+    dailyClaimsMax?: number | null
+    isVip?: boolean
     reason?: string
     message?: string
   } | null>(null)
@@ -3873,7 +3874,13 @@ export default function Battlefield({
                             )}
                             <div className="victory-plants-reward-card__score-row">
                               <span>Tope Diario:</span>
-                              <span>{plantsRewardResult.dailyClaimsUsed} / {plantsRewardResult.dailyClaimsMax} victorias hoy</span>
+                              {plantsRewardResult.isVip || plantsRewardResult.dailyClaimsMax === null ? (
+                                <strong style={{ color: '#fbbf24', textShadow: '0 0 8px rgba(251,191,36,0.4)' }}>
+                                  👑 Ilimitado (Pase VIP)
+                                </strong>
+                              ) : (
+                                <span>{plantsRewardResult.dailyClaimsUsed} / {plantsRewardResult.dailyClaimsMax ?? 20} victorias hoy</span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -3885,7 +3892,9 @@ export default function Battlefield({
                             <small>
                               {isPresaleActive || plantsRewardResult?.reason === 'PRESALE_ACTIVE_MINING_PAUSED'
                                 ? 'Al terminar la preventa podrás ganar tokens plants.'
-                                : 'Anti-colusión activa (mínimo 45s de combate) o tope diario completado.'}
+                                : plantsRewardResult?.reason === 'DAILY_CLAIM_CAP_REACHED'
+                                ? 'Tope diario de 20 victorias alcanzado. ¡Pasa a VIP para victorias ilimitadas!'
+                                : 'Anti-colusión activa (mínimo 45s de combate) o requisitos no cumplidos.'}
                             </small>
                           </div>
                         </div>
