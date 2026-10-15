@@ -67,7 +67,7 @@ interface MainMenuProps {
   onOpenMarketplace?: () => void
   onOpenMisiones?: () => void
   onOpenLoteria?: () => void
-  onOpenPlantsToken?: () => void
+  onOpenPlantsToken?: (tab?: 'summary' | 'presale' | 'vesting' | 'swap' | 'tokenomics' | 'guide') => void
   onOpenLanding?: () => void
   onOpenAdmin?: () => void
   onOpenStrategicPlaytest?: () => void
@@ -1569,6 +1569,10 @@ export default function MainMenu({
         unlockedPlants={unlockedPlants}
         initialTab={profileInitialTab}
         onClose={() => setIsProfileModalOpen(false)}
+        onOpenSwap={() => {
+          setIsProfileModalOpen(false)
+          onOpenPlantsToken?.('swap')
+        }}
       />
 
       {/* Selector de Modo */}

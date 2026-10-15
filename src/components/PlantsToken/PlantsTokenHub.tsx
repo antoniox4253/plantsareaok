@@ -69,6 +69,12 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   onSignOut,
 }) => {
   const [activeTab, setActiveTab] = useState<TokenTabType>(initialTab)
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab)
+    }
+  }, [initialTab])
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
@@ -667,6 +673,10 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
           userTokens={userTokens}
           hasVipPass={hasVipPass}
           onClose={() => setIsProfileModalOpen(false)}
+          onOpenSwap={() => {
+            setIsProfileModalOpen(false)
+            setActiveTab('swap')
+          }}
         />
       </div>
     </div>

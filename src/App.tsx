@@ -75,6 +75,7 @@ function App() {
     }
     return 'packs'
   })
+  const [plantsTokenInitialTab, setPlantsTokenInitialTab] = useState<'summary' | 'presale' | 'vesting' | 'swap' | 'tokenomics' | 'guide'>('summary')
 
 
   /**
@@ -1238,6 +1239,11 @@ function App() {
     setScreen('shop')
   }
 
+  const handleOpenPlantsToken = (tab: 'summary' | 'presale' | 'vesting' | 'swap' | 'tokenomics' | 'guide' = 'summary') => {
+    setPlantsTokenInitialTab(tab)
+    setScreen('plants-token')
+  }
+
 
   const handleOpenRanking = () => {
     setScreen('ranking')
@@ -1490,7 +1496,7 @@ function App() {
             onOpenMarketplace={() => setScreen('market')}
             onOpenMisiones={() => setScreen('misiones')}
             onOpenLoteria={() => setScreen('loteria')}
-            onOpenPlantsToken={() => setScreen('plants-token')}
+            onOpenPlantsToken={handleOpenPlantsToken}
             onOpenLanding={handleGoToLanding}
             onOpenAdmin={() => setIsAdminPanelOpen(true)}
             onOpenBetaInfo={() => setIsBetaPhaseModalOpen(true)}
@@ -1905,6 +1911,7 @@ function App() {
         {screen === 'plants-token' && (
           <PlantsTokenHub
             onBack={() => setScreen('menu')}
+            initialTab={plantsTokenInitialTab}
             userTokens={userTokens}
             userGold={userGold}
             userElo={userElo}

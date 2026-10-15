@@ -22,6 +22,7 @@ interface ProfileModalProps {
   unlockedPlants?: PlantId[]
   initialTab?: ProfileTab
   onClose: () => void
+  onOpenSwap?: () => void
 }
 
 export type ProfileTab = 'profile' | 'deposit' | 'withdraw' | 'referrals' | 'history'
@@ -34,6 +35,7 @@ export default function ProfileModal({
   unlockedPlants,
   initialTab,
   onClose,
+  onOpenSwap,
 }: ProfileModalProps) {
   const [profile, setProfile] = useState<PlayerProfile>(() => UserManager.getProfile())
   const [activeTab, setActiveTab] = useState<ProfileTab>(initialTab || 'profile')
@@ -86,11 +88,6 @@ export default function ProfileModal({
   const [showManualTransferSection, setShowManualTransferSection] = useState<boolean>(false)
   const isMetaMaskAvailable = Web3DepositService.isMetaMaskAvailable()
 
-  // ── ESTADO DE RETIRO BEP20 (5% COMISIÓN) ──────────────────────────────────
-  const [withdrawGems, setWithdrawGems] = useState<number>(1000)
-  const [withdrawAddress, setWithdrawAddress] = useState('')
-  const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false)
-  const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false)
 
   // ── SALDOS FINANCIEROS DUALES (TOTAL, RETIRABLE Y BLOQUEADO/BONO) ────────
   const [financialBalances, setFinancialBalances] = useState<{
@@ -598,130 +595,6 @@ export default function ProfileModal({
     return () => clearInterval(interval)
   }, [isOpen, activeTab])
 
-  // ── CÁLCULO DE COMISIÓN DE RETIRO (5% SERVER-AUTHORITATIVE, 100 GEMAS = 1 USDT) ──
-  const withdrawalFee = Number((withdrawGems * 0.05).toFixed(2))
-  const netWithdrawalUsdt = Number(((withdrawGems * 0.95) / 100.0).toFixed(2))
-
-  // ── PREPARAR RETIRO Y MOSTRAR CONFIRMACIÓN ─────────────────────────────────
-  const currentTotalGems = financialBalances.totalGems || userTokens
-  const currentWithdrawableGems = financialBalances.withdrawableGems !== undefined ? financialBalances.withdrawableGems : userTokens
-  const currentLockedGems = financialBalances.lockedGems || 0
-
-  const handleOpenWithdrawConfirm = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!withdrawGems || withdrawGems <= 0) {
-      soundManager.playSound('error', 0.5)
-      showFeedback('Por favor ingresa la cantidad de gemas a retirar.', 'error')
-      return
-    }
-    if (withdrawGems < 1000.0) {
-      soundManager.playSound('error', 0.5)
-      showFeedback(
-        `⚠️ El retiro mínimo permitido es de 1,000 Gemas (10.00 USDT). Ingresaste ${withdrawGems.toLocaleString()} 💎.`,
-        'error'
-      )
-      return
-    }
-    if (withdrawGems > currentWithdrawableGems) {
-      soundManager.playSound('error', 0.5)
-      if (currentLockedGems > 0 && withdrawGems <= currentTotalGems) {
-        showFeedback(
-          `Solo tienes ${currentWithdrawableGems.toLocaleString()} gemas retirables. Tus ${currentLockedGems.toLocaleString()} 💎 restantes son saldo bloqueado (bonos y retención de depósito) utilizable en el juego.`,
-          'error'
-        )
-      } else {
-        showFeedback(`Saldo retirable insuficiente. Tienes ${currentWithdrawableGems.toLocaleString()} gemas retirables disponibles.`, 'error')
-      }
-      return
-    }
-    const cleanDest = withdrawAddress.trim()
-    if (!cleanDest) {
-      soundManager.playSound('error', 0.5)
-      showFeedback('Por favor ingresa tu dirección de wallet BEP20 (0x...) de destino.', 'error')
-      return
-    }
-    if (!cleanDest.match(/^0x[a-fA-F0-9]{40}$/)) {
-      soundManager.playSound('error', 0.5)
-      showFeedback('Dirección de destino BEP20 inválida. Debe comenzar con 0x y tener 42 caracteres.', 'error')
-      return
-    }
-
-    setShowWithdrawConfirm(true)
-    soundManager.playSound('click', 0.5)
-  }
-
-  // ── CONFIRMAR RETIRO DEFINITIVO (RPC IDEMPOTENTE + PROCESADOR BLOCKCHAIN) ──
-  const handleExecuteWithdrawal = async () => {
-    try {
-      setIsSubmittingWithdrawal(true)
-      const idempotencyKey = `wd-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-      const res = await accountService.requestWithdrawal(
-        withdrawGems,
-        withdrawAddress.trim(),
-        idempotencyKey
-      )
-
-      if (res.success && res.withdrawal) {
-        const withdrawalInfo = res.withdrawal
-        setShowWithdrawConfirm(false)
-        setWithdrawAddress('')
-
-        // Sincronizar saldos en tiempo real
-        window.dispatchEvent(new Event('refresh_user_balance'))
-        window.dispatchEvent(new Event('player_profile_updated'))
-
-        if (withdrawalInfo.requiresManualReview || withdrawalInfo.status === 'pending_manual_review') {
-          soundManager.playSound('click', 0.5)
-          showFeedback(
-            `🛡️ Solicitud de ${withdrawalInfo.netAmountUsdt} USDT registrada con éxito. Por protocolo de seguridad para montos mayores a 25 USDT, pasará por una breve auditoría de seguridad antes de ser emitida a la blockchain.`,
-            'success'
-          )
-        } else {
-          // Disparar inmediatamente el procesador de retiros on-chain
-          showFeedback(`⏳ Solicitud de ${withdrawalInfo.netAmountUsdt} USDT registrada. Transmitiendo a BNB Smart Chain...`, 'success')
-          
-          try {
-            const procRes = await accountService.triggerWithdrawalProcessor()
-            const matchedItem = (procRes.results || []).find((r: any) => r.id === withdrawalInfo.id)
-
-            if (matchedItem?.status === 'completed' && matchedItem.txHash) {
-              soundManager.playSound('victory', 0.9)
-              showFeedback(
-                `🎉 ¡RETIRO COMPLETADO CON ÉXITO! Se enviaron ${matchedItem.netAmountUsdt} USDT a tu wallet. (TX: ${matchedItem.txHash.slice(0, 10)}...)`,
-                'success'
-              )
-            } else if (matchedItem?.status === 'failed_and_refunded' || matchedItem?.error) {
-              soundManager.playSound('error', 0.5)
-              showFeedback(
-                `⚠️ El retiro en blockchain falló (${matchedItem.error || 'Error de red'}). Tus gemas han sido reembolsadas intactas a tu cuenta.`,
-                'error'
-              )
-            } else if (procRes.error) {
-              showFeedback(`⚠️ Retiro registrado en espera de confirmación: ${procRes.message || procRes.error}`, 'warning')
-            }
-          } catch {
-            // Si la edge function tarda, el retiro queda encolado de forma segura
-            soundManager.playSound('click', 0.5)
-            showFeedback(`✓ Solicitud de retiro encolada correctamente. Recibirás ${withdrawalInfo.netAmountUsdt} USDT al confirmar el bloque.`, 'success')
-          }
-        }
-
-        // Sincronizar nuevamente saldos e historial
-        window.dispatchEvent(new Event('refresh_user_balance'))
-        window.dispatchEvent(new Event('player_profile_updated'))
-        const hist = await accountService.getFinancialHistory()
-        if (hist.success) {
-          setFinancialHistory({ deposits: hist.deposits, withdrawals: hist.withdrawals })
-        }
-      } else {
-        showFeedback(res.message || 'Error al procesar retiro.', 'error')
-      }
-    } catch (err: any) {
-      showFeedback(err?.message || 'Fallo de conexión.', 'error')
-    } finally {
-      setIsSubmittingWithdrawal(false)
-    }
-  }
 
   if (!isOpen) return null
 
@@ -1335,156 +1208,67 @@ export default function ProfileModal({
           )
         })()}
 
-        {/* TAB 3: RETIRAR USDT BEP20 (5% COMISIÓN) */}
+        {/* TAB 3: RETIROS CENTRALIZADOS EN SWAP */}
         {activeTab === 'withdraw' && (
-          <form onSubmit={handleOpenWithdrawConfirm} noValidate className="profile-tab-body">
-            <div className="profile-section-title">
-              <span>💸 RETIRO DE FONDOS (GEMAS → USDT BEP20)</span>
-              <small>Retira tus gemas a cualquier wallet BEP20 compatible con USDT. Comisión de red: <strong>5%</strong>.</small>
-            </div>
+          <div className="profile-tab-body profile-tab-body--swap-redirect">
+            <div className="profile-swap-redirect-card">
+              <div className="profile-swap-redirect-card__badge">🔄 GESTIÓN UNIFICADA DE RETIROS</div>
 
-            {/* DUAL BALANCE BREAKDOWN CARDS */}
-            <div className="profile-dual-balance-grid">
-              <div className="profile-balance-card profile-balance-card--total">
-                <div className="profile-balance-card__icon">💎</div>
-                <div className="profile-balance-card__info">
-                  <span className="profile-balance-card__label">TOTAL DE GEMAS</span>
-                  <strong className="profile-balance-card__value">{currentTotalGems.toLocaleString()} 💎</strong>
-                  <small className="profile-balance-card__sub">Saldo total utilizable en todo el juego</small>
+              <div className="profile-swap-redirect-card__hero">
+                <span className="profile-swap-redirect-card__icon">🏦</span>
+                <h3 className="profile-swap-redirect-card__title">RETIROS CENTRALIZADOS EN SWAP</h3>
+                <p className="profile-swap-redirect-card__desc">
+                  Todas las conversiones y solicitudes de retiro a billeteras externas <strong>USDT BEP-20</strong> ahora se gestionan de forma unificada y segura directamente desde la pantalla de <strong>Swap de Token PLANTS</strong>.
+                </p>
+              </div>
+
+              <div className="profile-swap-redirect-features">
+                <div className="profile-swap-redirect-feat">
+                  <span className="profile-swap-redirect-feat-icon">⚡</span>
+                  <div className="profile-swap-redirect-feat-text">
+                    <strong>Swap Inmediato a USDT</strong>
+                    <span>Convierte tus tokens a saldo USDT disponible para retiro.</span>
+                  </div>
+                </div>
+
+                <div className="profile-swap-redirect-feat">
+                  <span className="profile-swap-redirect-feat-icon">⏱️</span>
+                  <div className="profile-swap-redirect-feat-text">
+                    <strong>Franjas de Liquidación</strong>
+                    <span>Ventana de 24h para VIP y auditoría de 72h para Free.</span>
+                  </div>
+                </div>
+
+                <div className="profile-swap-redirect-feat">
+                  <span className="profile-swap-redirect-feat-icon">🛡️</span>
+                  <div className="profile-swap-redirect-feat-text">
+                    <strong>Seguridad & Auditoría</strong>
+                    <span>Validación anti-bot y trazabilidad en vivo de cada solicitud.</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="profile-balance-card profile-balance-card--withdrawable">
-                <div className="profile-balance-card__icon">💸</div>
-                <div className="profile-balance-card__info">
-                  <span className="profile-balance-card__label">SALDO RETIRABLE</span>
-                  <strong className="profile-balance-card__value profile-balance-card__value--success">
-                    {currentWithdrawableGems.toLocaleString()} 💎
-                  </strong>
-                  <small className="profile-balance-card__sub">Equivalente a ${(currentWithdrawableGems / 100).toFixed(2)} USDT</small>
-                </div>
-              </div>
-
-              <div className="profile-balance-card profile-balance-card--locked">
-                <div className="profile-balance-card__icon">🔒</div>
-                <div className="profile-balance-card__info">
-                  <span className="profile-balance-card__label">NO RETIRABLE / BONOS</span>
-                  <strong className="profile-balance-card__value profile-balance-card__value--warning">
-                    {currentLockedGems.toLocaleString()} 💎
-                  </strong>
-                  <small className="profile-balance-card__sub">Se gasta primero al jugar/comprar</small>
-                </div>
-              </div>
-            </div>
-
-            {/* AVISO TRANSPARENTE DEL SISTEMA DUAL */}
-            <div className="profile-dual-balance-notice">
-              <span className="profile-dual-balance-notice__badge">🛡️ REGLAS DE RETIRO Y BONOS</span>
-              <p>
-                <strong>50% de cada depósito</strong> + el <strong>100% de premios</strong> (Ruleta, Código Secreto, Clanes, Referidos y Mercado) van a tu <strong>Saldo Retirable</strong>. 
-                Los bonos promocionales y la retención se gastan <strong>automáticamente primero</strong> al jugar partidas, comprar en tienda o participar en eventos.
-              </p>
-            </div>
-
-            {/* Quick Amounts */}
-            <div className="profile-quick-amounts">
-              {[1000, 2500, 5000, 10000].map((amt) => (
+              <div className="profile-swap-redirect-action">
                 <button
-                  key={amt}
                   type="button"
-                  disabled={currentWithdrawableGems < amt}
-                  className={`profile-quick-btn ${withdrawGems === amt ? 'profile-quick-btn--active' : ''}`}
-                  onClick={() => setWithdrawGems(amt)}
+                  className="profile-swap-redirect-btn"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.5)
+                    if (onOpenSwap) {
+                      onOpenSwap()
+                    } else {
+                      onClose()
+                    }
+                  }}
                 >
-                  {amt.toLocaleString()} 💎
+                  🚀 IR A PANTALLA DE SWAP Y RETIROS
                 </button>
-              ))}
-              <button
-                type="button"
-                className="profile-quick-btn profile-quick-btn--max"
-                onClick={() => setWithdrawGems(Math.max(1000, currentWithdrawableGems))}
-                disabled={currentWithdrawableGems < 1000}
-              >
-                MÁX RETIRABLE ({currentWithdrawableGems.toLocaleString()} 💎)
-              </button>
-            </div>
-
-            <div className="profile-form-row">
-              <label>Cantidad de Gemas a Retirar (Mínimo: 1,000.00 💎 • Máx Retirable: {currentWithdrawableGems.toLocaleString()} 💎):</label>
-              <div className="profile-input-wrap">
-                <span>💎</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={withdrawGems || ''}
-                  onChange={(e) => setWithdrawGems(Math.max(0, Number(e.target.value)))}
-                  className="profile-number-input"
-                  placeholder="Ej: 1000"
-                />
-              </div>
-              {withdrawGems > 0 && withdrawGems < 1000 && (
-                <div className="profile-withdraw-hint-badge profile-withdraw-hint-badge--warning">
-                  ⚠️ El retiro mínimo es de <strong>1,000 💎 (10.00 USDT)</strong>. Te faltan <strong>{(1000 - withdrawGems).toLocaleString()} 💎</strong>.
-                </div>
-              )}
-              {withdrawGems > currentWithdrawableGems && (
-                <div className="profile-withdraw-hint-badge profile-withdraw-hint-badge--error">
-                  ⚠️ Supera tu saldo retirable disponible ({currentWithdrawableGems.toLocaleString()} 💎).
-                </div>
-              )}
-              {withdrawGems >= 1000 && withdrawGems <= currentWithdrawableGems && (
-                <div className="profile-withdraw-hint-badge profile-withdraw-hint-badge--success">
-                  ✓ Monto válido para retiro: Recibirás aprox. <strong>{netWithdrawalUsdt.toFixed(2)} USDT</strong> netos.
-                </div>
-              )}
-            </div>
-
-            <div className="profile-form-row">
-              <label>Wallet de Destino (Cualquier dirección BNB Smart Chain BEP20):</label>
-              <input
-                type="text"
-                placeholder="0x... (Dirección BEP20 receptora)"
-                value={withdrawAddress}
-                onChange={(e) => setWithdrawAddress(e.target.value)}
-                className="profile-text-input"
-              />
-            </div>
-
-            {/* DESGLOSE DINÁMICO EN TIEMPO REAL */}
-            <div className="crypto-settlement-breakdown-card">
-              <div className="crypto-breakdown-header">
-                <span>📋 RESUMEN DE LIQUIDACIÓN</span>
-                <span className="crypto-net-pill">1 USDT = 100 GEMAS</span>
-              </div>
-              <div className="crypto-breakdown-row">
-                <span>Monto Solicitado:</span>
-                <strong>{withdrawGems.toLocaleString()} 💎</strong>
-              </div>
-              <div className="crypto-breakdown-row crypto-breakdown-row--fee">
-                <span>Comisión de Retiro (5%):</span>
-                <span style={{ color: '#f87171' }}>- {withdrawalFee.toLocaleString()} 💎</span>
-              </div>
-              <div className="crypto-breakdown-divider" />
-              <div className="crypto-breakdown-row crypto-breakdown-row--net">
-                <span>Recibirás en tu Wallet:</span>
-                <strong style={{ color: '#4ade80', fontSize: '16px' }}>
-                  {netWithdrawalUsdt.toFixed(2)} USDT
-                </strong>
-              </div>
-              <div className="crypto-breakdown-row crypto-breakdown-row--meta">
-                <small>Red: <strong>BNB Smart Chain (BEP20)</strong> • Token: <strong>USDT</strong> • Tasa: <strong>100 💎 = 1.00 USDT</strong></small>
+                <small className="profile-swap-redirect-sub">
+                  Redirecciona automáticamente a la sección de Swap con seguimiento de retiros pendientes.
+                </small>
               </div>
             </div>
-
-            <button
-              type="submit"
-              className="profile-submit-action-btn profile-submit-action-btn--withdraw"
-              disabled={isSubmittingWithdrawal}
-            >
-              {isSubmittingWithdrawal ? '⏳ PROCESANDO...' : `💸 SOLICITAR RETIRO DE ${netWithdrawalUsdt.toFixed(2)} USDT`}
-            </button>
-          </form>
+          </div>
         )}
 
         {/* TAB 4: REFERIDOS */}
@@ -1586,58 +1370,6 @@ export default function ProfileModal({
           </div>
         )}
       </div>
-
-      {/* MODAL DE CONFIRMACIÓN PREVIA AL RETIRO */}
-      {showWithdrawConfirm && (
-        <div className="withdraw-confirm-backdrop" onClick={() => setShowWithdrawConfirm(false)}>
-          <div className="withdraw-confirm-card" onClick={(e) => e.stopPropagation()}>
-            <div className="withdraw-confirm-icon">💸</div>
-            <h3 className="withdraw-confirm-title">CONFIRMAR RETIRO DE FONDOS</h3>
-            
-            <div className="withdraw-confirm-details">
-              <div className="withdraw-confirm-item">
-                <span>Gemas a Descontar:</span>
-                <strong>{withdrawGems.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💎</strong>
-              </div>
-              <div className="withdraw-confirm-item">
-                <span>Comisión Plant Arena (5%):</span>
-                <span style={{ color: '#f87171' }}>{withdrawalFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 💎</span>
-              </div>
-              <div className="withdraw-confirm-item withdraw-confirm-item--net">
-                <span>Neto a Recibir:</span>
-                <strong style={{ color: '#4ade80' }}>{netWithdrawalUsdt.toFixed(2)} USDT</strong>
-              </div>
-              <div className="withdraw-confirm-item">
-                <span>Red:</span>
-                <span>BNB Smart Chain (BEP20)</span>
-              </div>
-              <div className="withdraw-confirm-item">
-                <span>Wallet de Destino:</span>
-                <code className="withdraw-confirm-dest">{withdrawAddress}</code>
-              </div>
-            </div>
-
-            <div className="withdraw-confirm-actions">
-              <button
-                type="button"
-                className="withdraw-confirm-cancel-btn"
-                onClick={() => setShowWithdrawConfirm(false)}
-                disabled={isSubmittingWithdrawal}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="withdraw-confirm-submit-btn"
-                onClick={handleExecuteWithdrawal}
-                disabled={isSubmittingWithdrawal}
-              >
-                {isSubmittingWithdrawal ? '⏳ Procesando...' : '✓ CONFIRMAR Y ENVIAR RETIRO'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
