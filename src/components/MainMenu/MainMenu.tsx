@@ -42,6 +42,7 @@ interface MainMenuProps {
     has_purchased_starter_pack?: boolean
   } | null
   userElo?: number
+  userXp?: number
   userTokens?: number
   userGold?: number
   hasVipPass?: boolean
@@ -96,6 +97,7 @@ export default function MainMenu({
   userProfile,
   onlineUsersCount = 25,
   userElo = 1000,
+  userXp = 0,
   userTokens = 0,
   userGold = 0,
   hasVipPass = false,
@@ -518,10 +520,11 @@ export default function MainMenu({
     return () => window.removeEventListener('player_profile_updated', syncProfile)
   }, [])
 
-  const highestLevelReached = BATTLE_PASS_LEVELS.filter((l) => userElo >= l.requiredElo).length
+  const currentPassXp = userXp ?? 0
+  const highestLevelReached = BATTLE_PASS_LEVELS.filter((l) => currentPassXp >= l.requiredXp).length
   const claimableCount = hasVipPass
     ? BATTLE_PASS_LEVELS.filter(
-        (l) => userElo >= l.requiredElo && !claimedVipLevels.includes(l.level)
+        (l) => currentPassXp >= l.requiredXp && !claimedVipLevels.includes(l.level)
       ).length
     : 0
 
@@ -808,14 +811,18 @@ export default function MainMenu({
         className={`topbar-pill topbar-pill--vip ${!hasVipPass ? 'topbar-pill--vip-locked' : ''}`}
         data-action="pase-vip"
         aria-label="pase vip"
-        title={hasVipPass ? 'Pase de Batalla VIP Activo' : 'Pase VIP (En Preparación - Temporada 2)'}
+        title={
+          hasVipPass
+            ? `Pase VIP Activo — Nivel ${highestLevelReached}/20`
+            : `Pase VIP Temporada 2 — Toca para ver los 20 niveles y comprar`
+        }
         onClick={() => {
           soundManager.playSound('click', 0.5)
           onOpenBattlePass?.()
         }}
       >
-        <span className="topbar-vip-crown" role="img" aria-label={hasVipPass ? 'Corona VIP' : 'Pase Bloqueado'}>
-          {hasVipPass ? '👑' : '🔒'}
+        <span className="topbar-vip-crown" role="img" aria-label={hasVipPass ? 'Corona VIP' : 'Pase VIP'}>
+          👑
         </span>
         <div className="topbar-vip-info">
           <div className="topbar-vip-title-row">
@@ -826,13 +833,15 @@ export default function MainMenu({
                 {claimableCount > 0 && ` (✨ ${claimableCount})`}
               </span>
             ) : (
-              <span className="topbar-vip-locked-tag">🔒 BLOQUEADO</span>
+              <span className="topbar-vip-locked-tag">
+                {highestLevelReached > 0 ? `🎁 ${highestLevelReached} LISTOS` : '👑 ACTIVAR'}
+              </span>
             )}
           </div>
           <div className="topbar-vip-bar-track">
             <div
               className="topbar-vip-bar-fill"
-              style={{ width: hasVipPass ? `${Math.min(100, (highestLevelReached / 20) * 100)}%` : '0%' }}
+              style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
             />
           </div>
         </div>

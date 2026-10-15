@@ -775,32 +775,50 @@ function App() {
   }
 
   /** Flujo de compra directa del Pase VIP desde el Pase de Batalla o cualquier sección */
-  const handleBuyVipPassDirect = useCallback(() => {
+  const handleBuyVipPassDirect = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     soundManager.playSound('click', 0.5)
-    setActiveAppAlert({
-      title: 'COMPRAR PASE VIP',
-      message: `¿Deseas comprar el Pase VIP de Temporada por ${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎 gemas?\n\nBeneficios incluidos:\n👑 Desbloqueo y reclamo de todas las recompensas doradas del Pase.\n⚡ +5 Energías máximas diarias (25 energías en total).\n📦 Acceso completo para comerciar cartas en el Mercado P2P.`,
-      icon: '👑',
-      actionLabel: `COMPRAR (${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎)`,
-      onAction: async () => {
-        const { success: ok, error } = await buyVipPass()
-        if (ok) {
-          soundManager.playSound('plantation', 0.9)
-          setActiveAppAlert({
-            title: '¡PASE VIP ACTIVADO!',
-            message: '👑 ¡Pase VIP de Temporada activado con éxito!\nAhora puedes reclamar todas las recompensas doradas que tengas desbloqueadas.',
-            icon: '🎉',
-          })
-        } else {
-          setActiveAppAlert({
-            title: 'NO SE PUDO ACTIVAR',
-            message: error || `Saldo insuficiente. Se requieren ${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎 gemas para comprar el Pase VIP.`,
-            icon: '⚠️',
-          })
-        }
-      },
+
+    if (userTokens < VIP_PASS_PRECIO_GEMAS) {
+      setActiveAppAlert({
+        title: '💎 GEMAS INSUFICIENTES',
+        message: `El Pase VIP de Temporada cuesta ${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎 Gemas ($25.00 USD).\n\nActualmente tienes ${userTokens.toLocaleString()} 💎 Gemas.\n\n¿Deseas adquirir gemas para activar tu Pase VIP y desbloquear los 20 niveles de recompensas?`,
+        icon: '💎',
+        actionLabel: 'OBTENER GEMAS 💎',
+        onAction: () => {
+          setPlantsTokenInitialTab('swap')
+          setScreen('plants-token')
+        },
+      })
+      return { success: false, error: 'Gemas insuficientes' }
+    }
+
+    return new Promise((resolve) => {
+      setActiveAppAlert({
+        title: '👑 COMPRAR PASE VIP',
+        message: `¿Deseas comprar el Pase VIP de Temporada por ${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎 gemas?\n\nBeneficios incluidos:\n👑 Desbloqueo y reclamo de todas las recompensas doradas del Pase (20 niveles).\n⚡ +5 Energías máximas diarias (25 energías en total).\n📦 Acceso completo para comerciar cartas en el Mercado P2P.`,
+        icon: '👑',
+        actionLabel: `COMPRAR (${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎)`,
+        onAction: async () => {
+          const res = await buyVipPass()
+          if (res.success) {
+            soundManager.playSound('plantation', 0.9)
+            setActiveAppAlert({
+              title: '🎉 ¡PASE VIP ACTIVADO!',
+              message: '👑 ¡Pase VIP de Temporada activado con éxito!\nAhora puedes reclamar todas las recompensas doradas que tengas desbloqueadas.',
+              icon: '👑',
+            })
+          } else {
+            setActiveAppAlert({
+              title: 'NO SE PUDO ACTIVAR',
+              message: res.error || `Saldo insuficiente. Se requieren ${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎 gemas para comprar el Pase VIP.`,
+              icon: '⚠️',
+            })
+          }
+          resolve(res)
+        },
+      })
     })
-  }, [buyVipPass])
+  }, [userTokens, buyVipPass])
 
   const handleGoToGame = () => {
     setScreen('menu')
@@ -1469,6 +1487,7 @@ function App() {
             onlineUsersCount={onlineUsersCount}
             userProfile={profile}
             userElo={userElo}
+            userXp={battlePassXp}
             userTokens={userTokens}
             userGold={userGold}
             hasVipPass={hasVipPass}
@@ -1673,7 +1692,9 @@ function App() {
             userTokens={userTokens}
             userElo={userElo}
             userGold={userGold}
+            userXp={battlePassXp}
             hasVipPass={hasVipPass}
+            claimedVipLevels={claimedVipLevels}
             hasPurchasedStarterPack={hasPurchasedStarterPack}
             inventoryPacks={inventoryPacks}
             plantCopies={plantCopies}
@@ -1695,7 +1716,39 @@ function App() {
             onOpenJardin={handleOpenJardin}
             onOpenPackImmediately={handleTriggerPackOpenByInstanceId}
             onOpenMultiplePacks={handleOpenMultiplePacks}
-            onBuyVipPass={buyVipPass}
+            onBuyVipPass={handleBuyVipPassDirect}
+            onClaimPassReward={async (reward, level) => {
+              const res = await claimPassReward(reward, level)
+              if (res?.success) {
+                const isLvl20 = level === 20
+                setActiveAppAlert({
+                  title: isLvl20 ? '🌟 ¡GRAN PREMIO SUPREMO RECLAMADO! 🌟' : '¡RECOMPENSA RECLAMADA!',
+                  message: isLvl20
+                    ? `👑 ¡HAS COMPLETADO EL PASE DE LA TEMPORADA 2!\n\nSe han entregado en tu cuenta:\n📦 1x Sobre de Semillas VIP Legendario en tu inventario de sobres.\n🃏 1x Carta Legendaria Aleatoria Garantizada en tu colección de Mi Jardín.\n💰 +1,000 Monedas de Oro adicionales.`
+                    : `👑 ¡RECOMPENSA VIP DEL NIVEL ${level} RECLAMADA!\n${reward.label}\nSe ha añadido a tu inventario de Mi Jardín.`,
+                  icon: isLvl20 ? '🏆' : '🎉',
+                })
+              } else {
+                setActiveAppAlert({
+                  title: 'NO SE PUDO RECLAMAR',
+                  message: res?.error || 'No se pudo reclamar la recompensa.',
+                  icon: '⚠️',
+                })
+              }
+              return res
+            }}
+            onClaimAllPassRewards={async () => {
+              const res = await claimAllPassRewards()
+              if (res?.success) {
+                const count = res.claimed?.length || 0
+                setActiveAppAlert({
+                  title: '¡TODAS LAS RECOMPENSAS RECLAMADAS!',
+                  message: `👑 Se han reclamado ${count} niveles del Pase VIP y añadido a tu inventario.`,
+                  icon: '🎉',
+                })
+              }
+              return res
+            }}
             onDeductTokens={deductUserTokens}
             onDonatePlant={donatePlantCopy}
             onReceivePlant={receivePlantInstance}
@@ -1726,7 +1779,7 @@ function App() {
               <div className="ranking-header__center">
                 <h1 className="ranking-title">👑 PASE DE TEMPORADA VIP</h1>
                 <span className="ranking-subtitle">
-                  Sube copas ELO en la Arena para desbloquear recompensas exclusivas
+                  Gana partidas Ranked PvP (+25 XP) y completa Misiones Diarias (+35 XP) para reclamar recompensas exclusivas
                 </span>
               </div>
               <div className="ranking-header__right">

@@ -115,6 +115,20 @@
   margin-left: 12px;
 }
 
+.battle-pass-banner-buy-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.battle-pass-buy-badge-sub {
+  font-size: 8px;
+  font-weight: 800;
+  color: #fde047;
+  letter-spacing: 0.4px;
+}
+
 .battle-pass-claim-all-btn {
   background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
   border: 2px solid #86efac;
@@ -774,6 +788,8 @@
 .pass-pedestal-action-box {
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   z-index: 5;
 }
@@ -804,25 +820,95 @@
   50% { border-color: #fef08a; box-shadow: 0 0 26px rgba(254, 240, 138, 0.9); }
 }
 
+/* ENHANCED NON-VIP BUY BOX */
+.pass-pedestal-vip-buy-box {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.pass-pedestal-xp-status {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 8px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.pass-pedestal-xp-status--unlocked {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid #4ade80;
+  color: #86efac;
+}
+
+.pass-pedestal-xp-status--locked {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fde047;
+}
+
 .pass-pedestal-vip-btn {
   width: 100%;
-  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
   border: 2px solid #fef08a;
   color: #ffffff;
-  font-size: 11.5px;
-  font-weight: 900;
-  padding: 10px 18px;
+  padding: 8px 14px;
   border-radius: 12px;
   cursor: pointer;
-  box-shadow: 0 0 14px rgba(217, 119, 6, 0.6);
-  transition: transform 0.15s ease;
+  box-shadow: 0 0 16px rgba(217, 119, 6, 0.6);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   animation: buyBtnGlow 2s infinite ease-in-out;
+}
+
+.pass-pedestal-vip-btn--claim-ready {
+  background: linear-gradient(180deg, #16a34a 0%, #b45309 100%);
+  border-color: #fef08a;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.7);
 }
 
 .pass-pedestal-vip-btn:hover {
   transform: scale(1.03);
-  filter: brightness(1.15);
+  filter: brightness(1.12);
+}
+
+.pass-pedestal-vip-btn-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pass-pedestal-vip-btn-crown {
+  font-size: 14px;
+}
+
+.pass-pedestal-vip-btn-text {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.pass-pedestal-vip-btn-price {
+  font-size: 11px;
+  font-weight: 900;
+  color: #fef08a;
+}
+
+.pass-pedestal-vip-btn-sub {
+  font-size: 8px;
+  color: #fef3c7;
+  font-weight: 600;
+  margin-top: 1px;
+  opacity: 0.95;
+  text-align: center;
 }
 
 .pass-pedestal-status-btn {

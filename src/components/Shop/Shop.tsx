@@ -18,6 +18,8 @@ import {
 } from '../../utils/gameConstants'
 import type { FarmingInventory } from '../../utils/pvpRewardManager'
 import { navigateAndTrack, trackEvent } from '../../utils/analytics'
+import BattlePass from '../BattlePass/BattlePass'
+import type { PassReward } from '../../utils/battlePassManager'
 import './Shop.css'
 
 const commonSeedImg = '/game-assets/greenfoot/seed_pack_common_whitebg.webp'
@@ -151,7 +153,9 @@ export interface ShopProps {
   userTokens: number
   userElo: number
   userGold?: number
+  userXp?: number
   hasVipPass?: boolean
+  claimedVipLevels?: number[]
   hasPurchasedStarterPack?: boolean
   playerEnergy?: number
   maxPlayerEnergy?: number
@@ -174,6 +178,8 @@ export interface ShopProps {
   onOpenPackImmediately: (packInstanceId: string) => void
   onOpenMultiplePacks?: (instanceIds: string[]) => void
   onBuyVipPass?: () => Promise<{ success: boolean; error?: string }>
+  onClaimPassReward?: (reward: PassReward, level: number) => Promise<{ success: boolean; error?: string }>
+  onClaimAllPassRewards?: () => Promise<{ success: boolean; claimedCount?: number; error?: string }>
   onDeductTokens?: (amountUsd: number) => boolean
   onDonatePlant?: (plantId: PlantId) => boolean
   onReceivePlant?: (plantId: PlantId, level?: number, statRolls?: PlantStatKey[]) => void
@@ -185,7 +191,9 @@ export default function Shop({
   userTokens,
   userElo,
   userGold = 50000,
+  userXp = 0,
   hasVipPass = false,
+  claimedVipLevels = [],
   hasPurchasedStarterPack = false,
   playerEnergy = 20,
   maxPlayerEnergy = 20,
@@ -208,6 +216,8 @@ export default function Shop({
   onOpenPackImmediately,
   onOpenMultiplePacks,
   onBuyVipPass,
+  onClaimPassReward,
+  onClaimAllPassRewards,
   onDeductTokens,
   onDonatePlant,
   onReceivePlant,
@@ -376,12 +386,11 @@ export default function Shop({
   }
 
 
-  const handleBuyVipFromShop = async () => {
-    setThemedAlert({
-      title: 'PASE VIP EN PREPARACIÓN',
-      message: '👑 El nuevo Pase VIP de Temporada 2 se encuentra en preparación y estará disponible muy pronto.',
-      icon: '🔒',
-    })
+  const handleBuyVipFromShop = async (): Promise<{ success: boolean; error?: string }> => {
+    if (onBuyVipPass) {
+      return await onBuyVipPass()
+    }
+    return { success: false, error: 'Compra no disponible' }
   }
 
   const handleBuyEnergy = async (pkg: EnergyPackage) => {
@@ -501,18 +510,16 @@ export default function Shop({
           🎒 SOBRES DE SEMILLAS
         </button>
 
-        {!hasVipPass && (
-          <button
-            type="button"
-            className={`shop-nav-tab ${activeTab === 'pass' ? 'shop-nav-tab--active' : ''}`}
-            onClick={() => {
-              soundManager.playSound('click', 0.5)
-              setActiveTab('pass')
-            }}
-          >
-            🔒 PASE VIP (PRÓXIMAMENTE)
-          </button>
-        )}
+        <button
+          type="button"
+          className={`shop-nav-tab ${activeTab === 'pass' ? 'shop-nav-tab--active' : ''}`}
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            setActiveTab('pass')
+          }}
+        >
+          👑 PASE VIP
+        </button>
 
         <button
           type="button"
@@ -751,75 +758,38 @@ export default function Shop({
           </div>
         )}
 
-        {/* TAB 2: VIP BATTLE PASS (Purchase only) */}
-        {activeTab === 'pass' && !hasVipPass && (
-          <div className="shop-tab-pane">
-            <div className="shop-pass-purchase-hero">
-              <div className="shop-pass-hero-card">
-                <div className="shop-pass-hero-badge">⭐ TEMPORADA 2 EXCLUSIVA ⭐</div>
-
-                <div className="shop-pass-hero-header">
-                  <span className="shop-pass-hero-crown">👑</span>
-                  <h2 className="shop-pass-hero-title">PASE DE BATALLA VIP</h2>
-                </div>
-
-                <p className="shop-pass-hero-sub">
-                  Desbloquea <strong>20 niveles de recompensas premium</strong>, nick dorado exclusivo, plantas y acceso total al Mercado.
-                </p>
-
-                <div className="shop-pass-perks-grid">
-                  <div className="shop-pass-perk">
-                    <span className="shop-pass-perk-icon">🎁</span>
-                    <div className="shop-pass-perk-info">
-                      <strong className="shop-pass-perk-title">20 Niveles VIP</strong>
-                      <span className="shop-pass-perk-txt">Premios exclusivos</span>
-                    </div>
-                  </div>
-
-                  <div className="shop-pass-perk">
-                    <span className="shop-pass-perk-icon">🏷️</span>
-                    <div className="shop-pass-perk-info">
-                      <strong className="shop-pass-perk-title">Mercado Libre</strong>
-                      <span className="shop-pass-perk-txt">Compra y venta</span>
-                    </div>
-                  </div>
-
-                  <div className="shop-pass-perk">
-                    <span className="shop-pass-perk-icon">🌟</span>
-                    <div className="shop-pass-perk-info">
-                      <strong className="shop-pass-perk-title">Sobres PVP</strong>
-                    </div>
-                  </div>
-
-                  <div className="shop-pass-perk">
-                    <span className="shop-pass-perk-icon">👑</span>
-                    <div className="shop-pass-perk-info">
-                      <strong className="shop-pass-perk-title">Nick Dorado VIP</strong>
-                      <span className="shop-pass-perk-txt">Insignia y brillo real</span>
-                    </div>
-                  </div>
-
-                  <div className="shop-pass-perk">
-                    <span className="shop-pass-perk-icon">⚡</span>
-                    <div className="shop-pass-perk-info">
-                      <strong className="shop-pass-perk-title">25 Energías Diarias</strong>
-                      <span className="shop-pass-perk-txt">+5 partidas cada día</span>
-                    </div>
-                  </div>
-                </div>
-
-
-                <button
-                  type="button"
-                  className="shop-pass-hero-buy-btn"
-                  disabled
-                  style={{ opacity: 0.7, cursor: 'not-allowed', filter: 'grayscale(0.3)' }}
-                  onClick={handleBuyVipFromShop}
-                >
-                  🔒 PASE VIP EN PREPARACIÓN (TEMPORADA 2)
-                </button>
-              </div>
-            </div>
+        {/* TAB 2: VIP BATTLE PASS (SHOWCASE 20 NIVELES + COMPRA DIRECTA) */}
+        {activeTab === 'pass' && (
+          <div
+            className="shop-tab-pane"
+            style={{
+              padding: 0,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              overflow: 'hidden',
+            }}
+          >
+            <BattlePass
+              userElo={userElo}
+              userXp={userXp}
+              hasVipPass={Boolean(hasVipPass)}
+              claimedVipLevels={claimedVipLevels}
+              onBuyVipPass={handleBuyVipFromShop}
+              onClaimReward={(lvl) => {
+                if (onClaimPassReward) {
+                  void onClaimPassReward(lvl.reward, lvl.level)
+                }
+              }}
+              onClaimAllRewards={
+                onClaimAllPassRewards
+                  ? () => {
+                      void onClaimAllPassRewards()
+                    }
+                  : undefined
+              }
+            />
           </div>
         )}
 

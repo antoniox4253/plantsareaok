@@ -78,7 +78,6 @@ export default function BattlePass({
   const isSelectedUnlocked = currentXp >= selectedPassLvl.requiredXp
   const isSelectedClaimed = claimedVipLevels.includes(selectedPassLvl.level)
   const isSelectedReady = hasVipPass && isSelectedUnlocked && !isSelectedClaimed
-  const isSelectedNeedsVip = !hasVipPass && isSelectedUnlocked
 
   const handleClaimAll = () => {
     if (claimableLevels.length === 0) return
@@ -162,14 +161,17 @@ export default function BattlePass({
               </div>
             </>
           ) : (
-            <button
-              type="button"
-              className="battle-pass-buy-btn"
-              onClick={onBuyVipPass}
-              title="Desbloquea todos los niveles acumulados y recompensas exclusivas"
-            >
-              👑 ACTIVAR PASE VIP (2,500 💎)
-            </button>
+            <div className="battle-pass-banner-buy-wrap">
+              <button
+                type="button"
+                className="battle-pass-buy-btn"
+                onClick={onBuyVipPass}
+                title="Desbloquea todos los niveles acumulados y recompensas exclusivas"
+              >
+                👑 COMPRAR PASE VIP (2,500 💎)
+              </button>
+              <span className="battle-pass-buy-badge-sub">20 Niveles • +5 Energías</span>
+            </div>
           )}
         </div>
       </div>
@@ -379,15 +381,42 @@ export default function BattlePass({
                   ? '✨ RECLAMAR GRAN PREMIO DOBLE SUPREMO'
                   : '✨ RECLAMAR RECOMPENSA'}
               </button>
-            ) : isSelectedNeedsVip ? (
-              <button
-                type="button"
-                className="pass-pedestal-vip-btn"
-                onClick={onBuyVipPass}
-                title="¡Ya alcanzaste la XP requerida! Activa el Pase VIP para reclamar."
-              >
-                👑 ACTIVAR PASE VIP PARA COBRAR (2,500 💎)
-              </button>
+            ) : !hasVipPass ? (
+              /* NON-VIP USER: ALWAYS SHOW THE OPTION TO BUY/UNLOCK WITH XP CONTEXT */
+              <div className="pass-pedestal-vip-buy-box">
+                <div
+                  className={`pass-pedestal-xp-status ${
+                    isSelectedUnlocked
+                      ? 'pass-pedestal-xp-status--unlocked'
+                      : 'pass-pedestal-xp-status--locked'
+                  }`}
+                >
+                  {isSelectedUnlocked
+                    ? `✨ ¡Nivel alcanzado con ${currentXp.toLocaleString()} XP!`
+                    : `🔒 Requiere ${selectedPassLvl.requiredXp.toLocaleString()} XP (Tienes ${currentXp.toLocaleString()} XP)`}
+                </div>
+                <button
+                  type="button"
+                  className={`pass-pedestal-vip-btn ${
+                    isSelectedUnlocked ? 'pass-pedestal-vip-btn--claim-ready' : ''
+                  }`}
+                  onClick={onBuyVipPass}
+                  title="Compra el Pase VIP para desbloquear los 20 niveles y reclamar tus recompensas"
+                >
+                  <div className="pass-pedestal-vip-btn-row">
+                    <span className="pass-pedestal-vip-btn-crown">👑</span>
+                    <span className="pass-pedestal-vip-btn-text">
+                      {isSelectedUnlocked ? 'ACTIVAR VIP Y RECLAMAR' : 'COMPRAR PASE VIP'}
+                    </span>
+                    <span className="pass-pedestal-vip-btn-price">(2,500 💎)</span>
+                  </div>
+                  <span className="pass-pedestal-vip-btn-sub">
+                    {isSelectedUnlocked
+                      ? '¡Reclama esta recompensa y todas las que alcances!'
+                      : 'Desbloquea los 20 niveles VIP, +5 Energías Diarias y Mercado P2P'}
+                  </span>
+                </button>
+              </div>
             ) : (
               <div className="pass-pedestal-status-btn pass-pedestal-status-btn--locked">
                 🔒 REQUIERE {selectedPassLvl.requiredXp} XP (TIENES {currentXp} XP)
