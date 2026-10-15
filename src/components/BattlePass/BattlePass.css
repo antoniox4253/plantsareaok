@@ -488,3 +488,14 @@
     min-height: 260px;
   }
 }
+
+.battle-pass-locked-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}

@@ -317,7 +317,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     }
   }
 
-  const userUsdtBalance = Number(userProfile?.usdt_balance ?? 0)
+  const userUsdtBalance = Number((userProfile as any)?.usdt_balance ?? 0)
 
   // Propiedades compartidas entre pestañas
   const sharedProps: TokenHubSharedProps = {
@@ -404,12 +404,19 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             </button>
 
             {/* 2. Pase de Batalla */}
-            <div className="token-topbar-pill token-topbar-pill--vip" title="Pase de Batalla VIP">
-              <span className="token-topbar-vip-crown" role="img" aria-label="Corona">👑</span>
+            <div
+              className={`token-topbar-pill token-topbar-pill--vip ${!hasVipPass ? 'token-topbar-pill--vip-locked' : ''}`}
+              title={hasVipPass ? 'Pase de Batalla VIP Activo' : 'Pase VIP (Bloqueado)'}
+            >
+              <span className="token-topbar-vip-crown" role="img" aria-label={hasVipPass ? 'Corona' : 'Candado'}>
+                {hasVipPass ? '👑' : '🔒'}
+              </span>
               <div className="token-topbar-vip-info">
                 <div className="token-topbar-vip-title-row">
-                  <span>{hasVipPass ? 'PASE VIP' : 'PASE'}</span>
-                  <span>NV 0/20</span>
+                  <span>PASE VIP</span>
+                  <span style={!hasVipPass ? { color: '#f87171' } : {}}>
+                    {hasVipPass ? 'NV 0/20' : '🔒 BLOQUEADO'}
+                  </span>
                 </div>
                 <div className="token-topbar-vip-bar-track">
                   <div className="token-topbar-vip-bar-fill" style={{ width: '0%' }} />

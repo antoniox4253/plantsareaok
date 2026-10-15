@@ -788,28 +788,34 @@ export default function MainMenu({
       {/* 2. Pase VIP */}
       <button
         type="button"
-        className="topbar-pill topbar-pill--vip"
+        className={`topbar-pill topbar-pill--vip ${!hasVipPass ? 'topbar-pill--vip-locked' : ''}`}
         data-action="pase-vip"
         aria-label="pase vip"
-        title="Pase de Batalla VIP"
+        title={hasVipPass ? 'Pase de Batalla VIP Activo' : 'Pase VIP (En Preparación - Temporada 2)'}
         onClick={() => {
           soundManager.playSound('click', 0.5)
           onOpenBattlePass?.()
         }}
       >
-        <span className="topbar-vip-crown" role="img" aria-label="Corona VIP">👑</span>
+        <span className="topbar-vip-crown" role="img" aria-label={hasVipPass ? 'Corona VIP' : 'Pase Bloqueado'}>
+          {hasVipPass ? '👑' : '🔒'}
+        </span>
         <div className="topbar-vip-info">
           <div className="topbar-vip-title-row">
-            <span>{hasVipPass ? 'PASE VIP' : 'PASE'}</span>
-            <span>
-              NV {highestLevelReached}/20
-              {hasVipPass && claimableCount > 0 && ` (✨ ${claimableCount})`}
-            </span>
+            <span>PASE VIP</span>
+            {hasVipPass ? (
+              <span>
+                NV {highestLevelReached}/20
+                {claimableCount > 0 && ` (✨ ${claimableCount})`}
+              </span>
+            ) : (
+              <span className="topbar-vip-locked-tag">🔒 BLOQUEADO</span>
+            )}
           </div>
           <div className="topbar-vip-bar-track">
             <div
               className="topbar-vip-bar-fill"
-              style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
+              style={{ width: hasVipPass ? `${Math.min(100, (highestLevelReached / 20) * 100)}%` : '0%' }}
             />
           </div>
         </div>

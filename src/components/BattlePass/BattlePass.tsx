@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import { BATTLE_PASS_LEVELS, type PassLevel } from '../../utils/battlePassManager'
+import '../Shop/Shop.css'
 import './BattlePass.css'
 
 interface BattlePassProps {
@@ -60,54 +61,110 @@ export default function BattlePass({
 
   return (
     <div className="battle-pass-container">
-      {/* Top Banner Status */}
-      <div className="battle-pass-banner">
-        <div className="battle-pass-banner__info">
-          <div className="battle-pass-banner__season-badge">
-            <span>🔥 TEMPORADA 2: REBELIÓN BOTÁNICA</span>
-          </div>
-          <h2 className="battle-pass-banner__title">
-            PASE DE TEMPORADA VIP — NIVEL {highestLevelReached}/20
-          </h2>
-          <p className="battle-pass-banner__desc">
-            {nextLevel
-              ? `🏆 Tienes ${userElo} Copas. Alcanza ${nextLevel.requiredElo} Copas para desbloquear el Nivel ${nextLevel.level}.`
-              : `🏆 ¡HAS ALCANZADO EL NIVEL MÁXIMO 20 (4,000+ COPAS)!`}
-          </p>
-        </div>
+      {!hasVipPass ? (
+        <div className="battle-pass-locked-screen">
+          <div className="shop-pass-hero-card">
+            <div className="shop-pass-hero-badge">⭐ TEMPORADA 2 EXCLUSIVA ⭐</div>
 
-        <div className="battle-pass-banner__actions">
-          {claimableLevels.length > 1 && (
-            <button
-              type="button"
-              className="battle-pass-claim-all-btn"
-              onClick={handleClaimAll}
-            >
-              ✨ RECLAMAR TODO ({claimableLevels.length})
-            </button>
-          )}
-
-          {hasVipPass ? (
-            <div className="battle-pass-vip-badge">
-              <span className="battle-pass-vip-crown">👑</span>
-              <span>PASE VIP ACTIVADO ✓</span>
+            <div className="shop-pass-hero-header">
+              <span className="shop-pass-hero-crown">👑</span>
+              <h2 className="shop-pass-hero-title">PASE DE BATALLA VIP</h2>
             </div>
-          ) : (
+
+            <p className="shop-pass-hero-sub">
+              Desbloquea <strong>20 niveles de recompensas premium</strong>, nick dorado exclusivo, plantas y acceso total al Mercado.
+            </p>
+
+            <div className="shop-pass-perks-grid">
+              <div className="shop-pass-perk">
+                <span className="shop-pass-perk-icon">🎁</span>
+                <div className="shop-pass-perk-info">
+                  <strong className="shop-pass-perk-title">20 Niveles VIP</strong>
+                  <span className="shop-pass-perk-txt">Premios exclusivos</span>
+                </div>
+              </div>
+
+              <div className="shop-pass-perk">
+                <span className="shop-pass-perk-icon">🏷️</span>
+                <div className="shop-pass-perk-info">
+                  <strong className="shop-pass-perk-title">Mercado Libre</strong>
+                  <span className="shop-pass-perk-txt">Compra y venta</span>
+                </div>
+              </div>
+
+              <div className="shop-pass-perk">
+                <span className="shop-pass-perk-icon">🌟</span>
+                <div className="shop-pass-perk-info">
+                  <strong className="shop-pass-perk-title">Sobres PVP</strong>
+                  <span className="shop-pass-perk-txt">Apertura rápida</span>
+                </div>
+              </div>
+
+              <div className="shop-pass-perk">
+                <span className="shop-pass-perk-icon">👑</span>
+                <div className="shop-pass-perk-info">
+                  <strong className="shop-pass-perk-title">Nick Dorado VIP</strong>
+                  <span className="shop-pass-perk-txt">Insignia y brillo real</span>
+                </div>
+              </div>
+
+              <div className="shop-pass-perk">
+                <span className="shop-pass-perk-icon">⚡</span>
+                <div className="shop-pass-perk-info">
+                  <strong className="shop-pass-perk-title">25 Energías Diarias</strong>
+                  <span className="shop-pass-perk-txt">+5 partidas cada día</span>
+                </div>
+              </div>
+            </div>
+
             <button
-              className="battle-pass-buy-btn"
               type="button"
+              className="shop-pass-hero-buy-btn"
               disabled
               style={{ opacity: 0.7, cursor: 'not-allowed', filter: 'grayscale(0.3)' }}
-              title="El nuevo Pase VIP se encuentra en preparación para la Temporada 2"
             >
               🔒 PASE VIP EN PREPARACIÓN (TEMPORADA 2)
             </button>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Top Banner Status */}
+          <div className="battle-pass-banner">
+            <div className="battle-pass-banner__info">
+              <div className="battle-pass-banner__season-badge">
+                <span>🔥 TEMPORADA 2: REBELIÓN BOTÁNICA</span>
+              </div>
+              <h2 className="battle-pass-banner__title">
+                PASE DE TEMPORADA VIP — NIVEL {highestLevelReached}/20
+              </h2>
+              <p className="battle-pass-banner__desc">
+                {nextLevel
+                  ? `🏆 Tienes ${userElo} Copas. Alcanza ${nextLevel.requiredElo} Copas para desbloquear el Nivel ${nextLevel.level}.`
+                  : `🏆 ¡HAS ALCANZADO EL NIVEL MÁXIMO 20 (4,000+ COPAS)!`}
+              </p>
+            </div>
 
-      {/* DUAL-PANEL SHOWCASE GAMING LAYOUT */}
-      <div className="battle-pass-showcase-layout">
+            <div className="battle-pass-banner__actions">
+              {claimableLevels.length > 1 && (
+                <button
+                  type="button"
+                  className="battle-pass-claim-all-btn"
+                  onClick={handleClaimAll}
+                >
+                  ✨ RECLAMAR TODO ({claimableLevels.length})
+                </button>
+              )}
+
+              <div className="battle-pass-vip-badge">
+                <span className="battle-pass-vip-crown">👑</span>
+                <span>PASE VIP ACTIVADO ✓</span>
+              </div>
+            </div>
+          </div>
+
+          {/* DUAL-PANEL SHOWCASE GAMING LAYOUT */}
+          <div className="battle-pass-showcase-layout">
         {/* LEFT PANEL: 20 LEVEL SELECTOR GRID */}
         <div className="pass-selector-panel">
           <div className="pass-selector-header">
@@ -235,6 +292,8 @@ export default function BattlePass({
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }
