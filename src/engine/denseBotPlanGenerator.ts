@@ -1,4 +1,7 @@
 import type { CartaDeMazo } from './mazoDeLaSala.ts'
+import type { PlantId } from '../types/game.ts'
+import { getScaledPlantConfig } from '../utils/gameConstants.ts'
+import { msToTicks } from './time.ts'
 
 export interface DenseBotAction {
   seq: number
@@ -11,27 +14,14 @@ export interface DenseBotAction {
   tick: number
 }
 
-export function getPlantCost(plantId: string): number {
-  switch (plantId) {
-    case 'sunflower': return 50
-    case 'peashooter': return 100
-    case 'repeater': return 200
-    case 'threepeater': return 300
-    case 'kernelpult': return 100
-    case 'wallnut': return 50
-    case 'tallnut': return 125
-    case 'garlic': return 50
-    case 'bonkchoy': return 150
-    case 'squash': return 50
-    case 'jalapeno': return 125
-    default: return 100
-  }
+export function getPlantCost(plantId: string, statRolls?: string[]): number {
+  const conf = getScaledPlantConfig(plantId as PlantId, statRolls)
+  return conf?.cost ?? 100
 }
 
-export function getPlantCooldown(plantId: string): number {
-  if (plantId === 'wallnut' || plantId === 'tallnut' || plantId === 'squash') return 600
-  if (plantId === 'jalapeno') return 1050
-  return 225
+export function getPlantCooldown(plantId: string, statRolls?: string[]): number {
+  const conf = getScaledPlantConfig(plantId as PlantId, statRolls)
+  return msToTicks(conf?.cooldownMs ?? 7500)
 }
 
 /**
@@ -71,7 +61,7 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
     for (let i = 0; i < sunflowerProductionTicks.length; i++) {
       while (sunflowerProductionTicks[i] <= targetTick) {
         currentSun += 25
-        sunflowerProductionTicks[i] += 455 // 15s
+        sunflowerProductionTicks[i] += 455 // 15s standard cycle
       }
     }
   }
@@ -79,8 +69,8 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
   const scheduleAction = (slot: number, lane: number, col: number, minDesiredTick: number): boolean => {
     if (slot < 0 || slot >= deck.length) return false
     const card = deck[slot]
-    const cost = getPlantCost(card.plantId)
-    const cd = getPlantCooldown(card.plantId)
+    const cost = getPlantCost(card.plantId, card.statRolls)
+    const cd = getPlantCooldown(card.plantId, card.statRolls)
     const cdAvailableTick = slotCooldowns[slot] || 0
 
     let candidateTick = Math.max(currentTick, minDesiredTick, cdAvailableTick)
@@ -101,7 +91,7 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
     slotCooldowns[slot] = candidateTick + cd
     currentTick = candidateTick + 6 // minimum physical separation
 
-    if (card.plantId === 'sunflower' || card.plantId === 'twinsunflower') {
+    if ((card.plantId === 'sunflower' || card.plantId === 'twinsunflower') && sunflowerProductionTicks.length < 1) {
       sunflowerProductionTicks.push(candidateTick + 6 + 455)
     }
 
@@ -118,43 +108,43 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
     return true
   }
 
-  // ── 1. APERTURA ECONÓMICA DE 3 GIRASOLES (0 - 35s) ──
+  // ── 1. APERTURA ECONÓMICA DE 2 GIRASOLES (0 - 25s) ──
   // Sunflower 1 (Lane 1, Col 0 - Central)
   if (sunSlot >= 0) scheduleAction(sunSlot, 1, 0, 309)
   // Sunflower 2 (Lane 0, Col 0 - Superior)
   if (sunSlot >= 0) scheduleAction(sunSlot, 0, 0, 680)
-  // Sunflower 3 (Lane 2, Col 0 - Inferior)
-  if (sunSlot >= 0) scheduleAction(sunSlot, 2, 0, 1050)
 
-  // ── 2. BLINDAJE INICIAL DE LOS 3 CARRILES (35 - 75s) ──
+  // ── 2. BLINDAJE INICIAL DE LOS 3 CARRILES (25 - 90s) ──
+  const atkCost = getPlantCost(deck[primaryAtk]?.plantId, deck[primaryAtk]?.statRolls)
+  const minAtkTick = atkCost >= 300 ? 2850 : (atkCost >= 200 ? 2125 : 1395)
+
   // Carril 0 (superior): Atacante + Tanque
-  scheduleAction(primaryAtk, 0, 1, 1250)
-  scheduleAction(primaryTank, 0, 3, 1450)
+  scheduleAction(primaryAtk, 0, 1, minAtkTick)
+  scheduleAction(primaryTank, 0, 3, minAtkTick + 360)
 
   // Carril 2 (inferior): Melee caminante + Atacante + Tanque
-  if (primaryMelee >= 0) scheduleAction(primaryMelee, 2, 4, 1650)
-  scheduleAction(secondaryAtk, 2, 1, 1850)
-  scheduleAction(secondaryTank, 2, 3, 2050)
+  const meleeCost = primaryMelee >= 0 ? getPlantCost(deck[primaryMelee]?.plantId, deck[primaryMelee]?.statRolls) : 0
+  const minMeleeTick = meleeCost >= 150 ? minAtkTick + 1460 : minAtkTick + 540
+  if (primaryMelee >= 0) scheduleAction(primaryMelee, 2, 4, minMeleeTick)
+  scheduleAction(secondaryAtk, 2, 1, minMeleeTick + 730)
+  scheduleAction(secondaryTank, 2, 3, minMeleeTick + 1100)
 
   // Carril 1 (central): Atacante + Tanque
-  scheduleAction(primaryAtk, 1, 1, 2250)
-  scheduleAction(primaryTank, 1, 3, 2450)
+  scheduleAction(primaryAtk, 1, 1, minMeleeTick + 1470)
+  scheduleAction(primaryTank, 1, 3, minMeleeTick + 1840)
 
-  // ── 3. OLEADAS OFENSIVAS MULTICARRIL Y REFUERZOS (75 - 180s) ──
+  // ── 3. OLEADAS OFENSIVAS MULTICARRIL Y REFUERZOS (60 - 180s) ──
   for (let wave = 0; wave < 6; wave++) {
     const lane = wave % 3
-    // Flanqueo con unidad de choque (melee o spell)
     if (primaryMelee >= 0 && wave % 2 === 0) {
-      scheduleAction(primaryMelee, (lane + 1) % 3, 4, currentTick + 30)
+      scheduleAction(primaryMelee, (lane + 1) % 3, 4, currentTick + 45)
     }
     if (primarySpell >= 0 && wave % 2 === 1) {
       const sp = wave % 4 === 1 ? primarySpell : secondarySpell
-      scheduleAction(sp, lane, 5, currentTick + 30)
+      scheduleAction(sp, lane, 5, currentTick + 45)
     }
-    // Refuerzo de artillería en columna 2
-    scheduleAction(wave % 2 === 0 ? primaryAtk : secondaryAtk, lane, 2, currentTick + 30)
-    // Refuerzo de muro defensivo en columna 3
-    scheduleAction(wave % 2 === 0 ? primaryTank : secondaryTank, (lane + 2) % 3, 3, currentTick + 30)
+    scheduleAction(wave % 2 === 0 ? primaryAtk : secondaryAtk, lane, 2, currentTick + 45)
+    scheduleAction(wave % 2 === 0 ? primaryTank : secondaryTank, (lane + 2) % 3, 3, currentTick + 45)
   }
 
   return plan.sort((a, b) => a.issuedTick - b.issuedTick)

@@ -672,6 +672,7 @@ function intentarEjecutarPlant(
   const statRolls = rollsValidos(carta.statRolls)
   const config = getScaledPlantConfig(plantId, statRolls)
   if (!config) return false
+  const slot = carta.slot ?? 0
 
   // 1. Comprobar soles
   if (controller.sunBank < config.cost) {
@@ -679,7 +680,6 @@ function intentarEjecutarPlant(
   }
 
   // 2. Comprobar cooldown de slot
-  const slot = carta.slot ?? 0
   if ((controller.slotCooldowns[slot] || 0) > state.tick) {
     return false
   }
