@@ -12,7 +12,6 @@ import { soundManager } from '../../utils/audioManager'
 import { shopService } from '../../services/shopService'
 import Marketplace from '../Marketplace/Marketplace'
 import {
-  VIP_PASS_PRECIO_GEMAS,
   ENERGY_PACKAGES_GEMS,
   type EnergyPackage,
   type PlantStatKey,
@@ -375,28 +374,11 @@ export default function Shop({
 
 
   const handleBuyVipFromShop = async () => {
-    if (onBuyVipPass) {
-      const { success: ok, error } = await onBuyVipPass()
-      if (ok) {
-        trackEvent('purchase_vip_pass', {
-          price_gems: VIP_PASS_PRECIO_GEMAS,
-        })
-        setThemedAlert({
-          title: '¡PASE VIP ACTIVADO!',
-          message: '👑 ¡Pase VIP de Temporada activado con éxito!\nAhora puedes reclamar todas las recompensas doradas desde el Menú Principal.',
-          icon: '👑',
-        })
-        setActiveTab('packs')
-      } else {
-        // El mensaje viene del servidor: distingue entre saldo insuficiente y
-        // "ya tienes el pase", que antes se mostraban igual.
-        setThemedAlert({
-          title: 'NO SE PUDO ACTIVAR',
-          message: error || 'El servidor rechazó la compra del pase VIP.',
-          icon: '⚠️',
-        })
-      }
-    }
+    setThemedAlert({
+      title: 'PASE VIP EN PREPARACIÓN',
+      message: '👑 El nuevo Pase VIP de Temporada 2 se encuentra en preparación y estará disponible muy pronto.',
+      icon: '🔒',
+    })
   }
 
   const handleBuyEnergy = async (pkg: EnergyPackage) => {
@@ -525,7 +507,7 @@ export default function Shop({
               setActiveTab('pass')
             }}
           >
-            👑 ACTIVAR PASE VIP
+            🔒 PASE VIP (PRÓXIMAMENTE)
           </button>
         )}
 
@@ -724,7 +706,7 @@ export default function Shop({
           <div className="shop-tab-pane">
             <div className="shop-pass-purchase-hero">
               <div className="shop-pass-hero-card">
-                <div className="shop-pass-hero-badge">⭐ TEMPORADA 1 EXCLUSIVA ⭐</div>
+                <div className="shop-pass-hero-badge">⭐ TEMPORADA 2 EXCLUSIVA ⭐</div>
 
                 <div className="shop-pass-hero-header">
                   <span className="shop-pass-hero-crown">👑</span>
@@ -780,9 +762,11 @@ export default function Shop({
                 <button
                   type="button"
                   className="shop-pass-hero-buy-btn"
+                  disabled
+                  style={{ opacity: 0.7, cursor: 'not-allowed', filter: 'grayscale(0.3)' }}
                   onClick={handleBuyVipFromShop}
                 >
-                  👑 ACTIVAR PASE VIP — {VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎 Gemas
+                  🔒 PASE VIP EN PREPARACIÓN (TEMPORADA 2)
                 </button>
               </div>
             </div>

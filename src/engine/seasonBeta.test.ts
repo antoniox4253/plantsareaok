@@ -92,6 +92,26 @@ describe('Fase Beta & Temporada 1 Oficial (45 Días - Inicio 31 Agosto 00:00 UTC
     expect(status.daysLeft).toBe(44)
   })
 
+  it('6. Temporada 2 Oficial: Configuración canónica de 25 días y cronómetro', async () => {
+    const { SEASON_2_START_UTC, SEASON_2_DAYS, SEASON_2_END_UTC } = await import('../utils/seasonManager')
+    expect(SEASON_2_DAYS).toBe(25)
+    expect((SEASON_2_END_UTC - SEASON_2_START_UTC) / (86400 * 1000)).toBe(25)
+
+    // Al ejecutarse en runtime, getSeasonStatus devuelve Temporada 2 con 25 días
+    SeasonManager.updateFromSupabase({
+      season_number: 2,
+      starts_at: new Date(SEASON_2_START_UTC).toISOString(),
+      ends_at: new Date(SEASON_2_END_UTC).toISOString(),
+    })
+
+    const statusT2 = SeasonManager.getSeasonStatus(SEASON_2_START_UTC + 1000)
+    expect(statusT2.seasonNumber).toBe(2)
+    expect(statusT2.totalDays).toBe(25)
+    expect(statusT2.daysLeft).toBe(24)
+    expect(statusT2.isStarted).toBe(true)
+    expect(statusT2.isEnded).toBe(false)
+  })
+
   const sqlPath = path.resolve(__dirname, '../../supabase/51-reset-elo-season-beta.sql')
   const filesExist = fs.existsSync(sqlPath)
 

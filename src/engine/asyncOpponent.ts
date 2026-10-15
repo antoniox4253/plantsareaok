@@ -1482,6 +1482,7 @@ export function ejecutarPasoSimulacionAsync(
 }
 
 export interface VerificacionServidorPayload {
+  ok?: boolean
   status?: 'verified' | 'settled' | 'verified_draw' | 'pending' | 'failed' | string
   winnerSide?: 1 | 2 | null
   winnerId?: string | null
@@ -1493,6 +1494,8 @@ export interface VerificacionServidorPayload {
     eloGained?: number
     eloLost?: number
     payout?: number
+    earlySurrender?: boolean
+    energyRestored?: boolean
     [key: string]: unknown
   }
   error?: string
@@ -1509,6 +1512,8 @@ export interface ResultadoLiquidacionMatch {
   eloGained?: number
   eloLost?: number
   payout: number
+  earlySurrender?: boolean
+  energyRestored?: boolean
   error?: string
 }
 
@@ -1527,11 +1532,26 @@ export function resolverLiquidacionPartida(options: {
   const status = serverVerification.status
 
   if (status === 'verified' || status === 'settled') {
+    const s = serverVerification.settlement ?? {}
+    const rawElo = (s as any).rawElo
+    const earlySurrender = Boolean((s as any).earlySurrender || (s as any).isEarlySurrender || rawElo?.isEarlySurrender)
+    const energyRestored = Boolean((s as any).energyRestored || (s as any).energy_restored || earlySurrender)
+
+    if (!serverVerification.winnerSide && !serverVerification.winnerId) {
+      return {
+        mostrarResultado: true,
+        resultadoFinal: 'draw',
+        statusServidor: 'revision_servidor',
+        payout: 0,
+        earlySurrender,
+        energyRestored: true,
+        error: 'El combate finalizó sin ganador definido. Tus copas y energía están a salvo.',
+      }
+    }
+
     const yoGaneServidor = isAsyncMatch
       ? serverVerification.winnerSide === 1
       : (serverVerification.winnerId === currentUserId || serverVerification.winnerSide === (soyP1 ? 1 : 2))
-    const s = serverVerification.settlement ?? {}
-    const rawElo = (s as any).rawElo
 
     const eloDelta = typeof s.eloDelta === 'number'
       ? s.eloDelta
@@ -1571,6 +1591,8 @@ export function resolverLiquidacionPartida(options: {
       eloGained,
       eloLost,
       payout: yoGaneServidor && typeof s.payout === 'number' ? s.payout : 0,
+      earlySurrender,
+      energyRestored,
     }
   }
 

@@ -555,7 +555,7 @@ export default function LandingPage({
           <div className="landing-hero__release-banner">
             <div className="landing-beta-badge">
               <span className="landing-beta-pulse"></span>
-              <span className="landing-beta-tag">{seasonInfo ? 'TEMPORADA 1' : 'EN VIVO'}</span>
+              <span className="landing-beta-tag">{seasonInfo ? seasonInfo.name.toUpperCase() : 'EN VIVO'}</span>
             </div>
             <div className="landing-release-content">
               <span className="landing-release-subtitle">

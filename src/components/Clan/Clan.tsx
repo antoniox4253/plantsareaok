@@ -1152,6 +1152,7 @@ export default function Clan({
             fullBonusClaimedMembers: [],
             seasonPayoutClaimedMembers: [],
             settings: c.settings,
+            maxMembers: Number(c.maxMembers || 15),
           }))
         setAllClans(mappedList)
         ClanManager.saveClans(mappedList)
@@ -3276,60 +3277,82 @@ export default function Clan({
                       role="button"
                       tabIndex={0}
                     >
-                      <div className="clan-fhub-card__top">
-                        <span className="clan-fhub-card__icon">🛡️</span>
-                        <div className="clan-fhub-card__header-text">
-                          <h3 className="clan-fhub-card__title">DEFENSAS</h3>
-                          <span className="clan-fhub-card__tag">Arena 1 • 5 Carriles</span>
-                        </div>
-                        {fortressData?.sunflowerCanHarvest ? (
-                          <span
-                            className="clan-fhub-card__badge clan-fhub-card__badge--harvest-ready"
-                            style={{
-                              background: '#f59e0b',
-                              color: '#1e1b4b',
-                              fontWeight: 900,
-                              boxShadow: '0 0 10px rgba(245, 158, 11, 0.6)',
-                            }}
-                          >
-                            ☀️ ¡COSECHA SOLAR LISTA!
-                          </span>
-                        ) : (
-                          <span className="clan-fhub-card__badge clan-fhub-card__badge--def">
-                            {fortressData?.layout?.length ?? 0} Plantas Desplegadas
-                          </span>
-                        )}
-                      </div>
+                      {(() => {
+                        const sunsBudget = fortressData?.defenseSunsBudget ?? 1000
+                        const sunsSpent = fortressData?.sunsSpent ?? 0
+                        const sunsRemaining = Math.max(0, sunsBudget - sunsSpent)
+                        const accumulatedClaims = fortressData?.sunflowerAccumulatedClaims ?? (fortressData?.sunflowerCanHarvest ? 1 : 0)
+                        const claimableSuns = fortressData?.sunflowerClaimableSuns || ((fortressData?.sunflowerTotalSuns || 100) * (accumulatedClaims || 1))
 
-                      <div className="clan-fhub-card__body">
-                        <div className="clan-fhub-stat-row">
-                          <span className="clan-fhub-stat-label">☀️ Presupuesto Solar:</span>
-                          <span className="clan-fhub-stat-val">
-                            {fortressData?.sunsSpent ?? 0} / {fortressData?.defenseSunsBudget ?? 2500} ☀️
-                          </span>
-                        </div>
-                        <div className="clan-fhub-bar-track">
-                          <div
-                            className="clan-fhub-bar-fill clan-fhub-bar-fill--suns"
-                            style={{
-                              width: `${Math.max(0, Math.min(100, (((fortressData?.sunsSpent ?? 0) / (fortressData?.defenseSunsBudget ?? 2500)) * 100)))}%`,
-                            }}
-                          />
-                        </div>
+                        return (
+                          <>
+                            <div className="clan-fhub-card__top">
+                              <span className="clan-fhub-card__icon">🛡️</span>
+                              <div className="clan-fhub-card__header-text">
+                                <h3 className="clan-fhub-card__title">DEFENSAS</h3>
+                                <span className="clan-fhub-card__tag">Arena 1 • 5 Carriles</span>
+                              </div>
+                              {fortressData?.sunflowerCanHarvest ? (
+                                <span
+                                  className="clan-fhub-card__badge clan-fhub-card__badge--harvest-ready"
+                                  style={{
+                                    background: accumulatedClaims >= 2 ? 'linear-gradient(135deg, #f59e0b, #ef4444)' : 'linear-gradient(135deg, #eab308, #f59e0b)',
+                                    color: '#0f172a',
+                                    fontWeight: 900,
+                                    boxShadow: '0 0 12px rgba(245, 158, 11, 0.7)',
+                                  }}
+                                >
+                                  {accumulatedClaims >= 2 ? `☀️ ¡COSECHA x2 LISTA (+${claimableSuns}☀️)!` : `☀️ ¡COSECHA LISTA (+${claimableSuns}☀️)!`}
+                                </span>
+                              ) : (
+                                <span className="clan-fhub-card__badge clan-fhub-card__badge--def">
+                                  {fortressData?.layout?.length ?? 0} Plantas Desplegadas
+                                </span>
+                              )}
+                            </div>
 
-                        <div className="clan-fhub-pill-row">
-                          <span className="clan-fhub-pill">
-                            🌱 Formación: <strong>{fortressData?.layout?.length ? `${fortressData.layout.length} Unidades` : '¡Sin Plantas!'}</strong>
-                          </span>
-                          <span className="clan-fhub-pill">
-                            {fortressData?.sunflowerCanHarvest ? (
-                              <strong style={{ color: '#facc15' }}>☀️ ¡Sol Listo (+{fortressData?.sunflowerTotalSuns || 100})!</strong>
-                            ) : (
-                              <>🌻 Cosecha: <strong>{typeof fortressData?.sunflowerSecondsRemaining === 'number' ? `${Math.ceil(fortressData.sunflowerSecondsRemaining / 60)}m` : 'Cargando...'}</strong></>
-                            )}
-                          </span>
-                        </div>
-                      </div>
+                            <div className="clan-fhub-card__body">
+                              <div className="clan-fhub-stat-row">
+                                <span className="clan-fhub-stat-label">☀️ Soles Disponibles:</span>
+                                <span className="clan-fhub-stat-val">
+                                  <strong style={{ color: '#facc15' }}>{sunsRemaining} ☀️</strong> ({sunsSpent} / {sunsBudget} ☀️)
+                                </span>
+                              </div>
+                              <div className="clan-fhub-bar-track">
+                                <div
+                                  className="clan-fhub-bar-fill clan-fhub-bar-fill--suns"
+                                  style={{
+                                    width: `${Math.max(0, Math.min(100, (sunsSpent / sunsBudget) * 100))}%`,
+                                    background:
+                                      sunsRemaining < 100
+                                        ? 'linear-gradient(90deg, #ef4444, #f97316)'
+                                        : 'linear-gradient(90deg, #eab308, #22c55e)',
+                                  }}
+                                />
+                              </div>
+
+                              <div className="clan-fhub-pill-row">
+                                <span className="clan-fhub-pill">
+                                  🌱 Formación: <strong>{fortressData?.layout?.length ? `${fortressData.layout.length} Unidades` : '¡Sin Plantas!'}</strong>
+                                </span>
+                                <span className="clan-fhub-pill">
+                                  {fortressData?.sunflowerCanHarvest ? (
+                                    accumulatedClaims >= 2 ? (
+                                      <strong style={{ color: '#facc15' }}>☀️ ¡Tope 2/2 Alcanzado (+${claimableSuns}☀️)!</strong>
+                                    ) : (
+                                      <strong style={{ color: '#facc15' }}>
+                                        ☀️ 1/2 Lista (+{claimableSuns}☀️) • 2da: {typeof fortressData?.sunflowerSecondsRemaining === 'number' && fortressData.sunflowerSecondsRemaining > 0 ? `${Math.ceil(fortressData.sunflowerSecondsRemaining / 60)}m` : '¡Pronto!'}
+                                      </strong>
+                                    )
+                                  ) : (
+                                    <>🌻 Cosecha: <strong>{typeof fortressData?.sunflowerSecondsRemaining === 'number' ? `${Math.ceil(fortressData.sunflowerSecondsRemaining / 60)}m` : '0m'}</strong> (0/2)</>
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        )
+                      })()}
 
                       <div className="clan-fhub-card__footer">
                         <button
@@ -3847,6 +3870,9 @@ export default function Clan({
                     sunflowerTotalSuns: fortressData.sunflowerTotalSuns,
                     sunflowerSecondsRemaining: fortressData.sunflowerSecondsRemaining,
                     sunflowerCanHarvest: fortressData.sunflowerCanHarvest,
+                    sunflowerAccumulatedClaims: fortressData.sunflowerAccumulatedClaims,
+                    sunflowerMaxClaims: fortressData.sunflowerMaxClaims,
+                    sunflowerClaimableSuns: fortressData.sunflowerClaimableSuns,
                   }}
                   userFarmingInv={userFarmingInv}
                   onClose={() => setFortressSubView('hub')}
@@ -3864,6 +3890,8 @@ export default function Clan({
                       ...prev,
                       defenseSunsBudget: newBudget,
                       sunflowerCanHarvest: false,
+                      sunflowerAccumulatedClaims: 0,
+                      sunflowerClaimableSuns: 0,
                       sunflowerSecondsRemaining: 14400,
                     } : null))
                     if (onRefreshUserData) void onRefreshUserData()

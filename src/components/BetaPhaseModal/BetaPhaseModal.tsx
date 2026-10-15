@@ -99,7 +99,7 @@ export const BetaPhaseModal: React.FC<BetaPhaseModalProps> = ({
               ¡BIENVENIDO A LA FASE BETA!
             </h2>
             <p className="beta-modal-season-name">
-              🔥 TEMPORADA 1: <strong>REBELIÓN BOTÁNICA</strong>
+              🔥 TEMPORADA {seasonStatus.seasonNumber}: <strong>REBELIÓN BOTÁNICA</strong>
             </p>
           </div>
         </div>
@@ -110,7 +110,7 @@ export const BetaPhaseModal: React.FC<BetaPhaseModalProps> = ({
             <span className="beta-modal-timer-icon">⏳</span>
             <div className="beta-modal-timer-info">
               <div className="beta-modal-timer-label">DURACIÓN DE LA TEMPORADA</div>
-              <div className="beta-modal-timer-sub">Cronómetro oficial: 45 Días</div>
+              <div className="beta-modal-timer-sub">Cronómetro oficial: {seasonStatus.totalDays} Días</div>
             </div>
           </div>
           <div className="beta-modal-timer-countdown">

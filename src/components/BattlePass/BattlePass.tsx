@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import { BATTLE_PASS_LEVELS, type PassLevel } from '../../utils/battlePassManager'
 import './BattlePass.css'
-import { VIP_PASS_PRECIO_GEMAS } from '../../utils/gameConstants'
 
 interface BattlePassProps {
   userElo: number
@@ -17,7 +16,7 @@ export default function BattlePass({
   userElo,
   hasVipPass,
   claimedVipLevels,
-  onBuyVipPass,
+  onBuyVipPass: _onBuyVipPass,
   onClaimReward,
   onClaimAllRewards,
 }: BattlePassProps) {
@@ -65,7 +64,7 @@ export default function BattlePass({
       <div className="battle-pass-banner">
         <div className="battle-pass-banner__info">
           <div className="battle-pass-banner__season-badge">
-            <span>🔥 TEMPORADA 1: REBELIÓN BOTÁNICA</span>
+            <span>🔥 TEMPORADA 2: REBELIÓN BOTÁNICA</span>
           </div>
           <h2 className="battle-pass-banner__title">
             PASE DE TEMPORADA VIP — NIVEL {highestLevelReached}/20
@@ -94,8 +93,14 @@ export default function BattlePass({
               <span>PASE VIP ACTIVADO ✓</span>
             </div>
           ) : (
-            <button className="battle-pass-buy-btn" type="button" onClick={onBuyVipPass}>
-              👑 COMPRAR PASE VIP ({VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎)
+            <button
+              className="battle-pass-buy-btn"
+              type="button"
+              disabled
+              style={{ opacity: 0.7, cursor: 'not-allowed', filter: 'grayscale(0.3)' }}
+              title="El nuevo Pase VIP se encuentra en preparación para la Temporada 2"
+            >
+              🔒 PASE VIP EN PREPARACIÓN (TEMPORADA 2)
             </button>
           )}
         </div>
@@ -216,9 +221,11 @@ export default function BattlePass({
               <button
                 type="button"
                 className="pass-pedestal-vip-btn"
-                onClick={onBuyVipPass}
+                disabled
+                style={{ opacity: 0.7, cursor: 'not-allowed', filter: 'grayscale(0.3)' }}
+                title="El nuevo Pase VIP se encuentra en preparación para la Temporada 2"
               >
-                👑 COMPRAR PASE VIP ({VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎)
+                🔒 PASE VIP EN PREPARACIÓN (TEMPORADA 2)
               </button>
             ) : (
               <div className="pass-pedestal-status-btn pass-pedestal-status-btn--locked">

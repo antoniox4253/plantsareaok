@@ -893,7 +893,7 @@ export default function MainMenu({
         tabIndex={0}
         aria-label={
           bannerSlide === 0
-            ? `Fin de Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`
+            ? `Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`
             : bannerSlide === 1
             ? 'Canal Oficial de Telegram: Únete para noticias y torneos'
             : bannerSlide === 3
@@ -931,7 +931,7 @@ export default function MainMenu({
           }
         }}
       >
-        {/* SLIDE 0: FIN DE TEMPORADA */}
+        {/* SLIDE 0: TEMPORADA 2 */}
         {bannerSlide === 0 && (
           <div className="bosque-banner-slide bosque-banner-slide--season">
             <div className="bosque-season-banner__left">
@@ -940,7 +940,7 @@ export default function MainMenu({
               </div>
               <div className="bosque-season-banner__titles">
                 <span className="bosque-season-banner__badge">TEMPORADA {seasonStatus.seasonNumber}</span>
-                <span className="bosque-season-banner__main-title">FIN DE TEMPORADA</span>
+                <span className="bosque-season-banner__main-title">{seasonStatus.seasonNumber >= 2 ? `TEMPORADA ${seasonStatus.seasonNumber}` : 'FIN DE TEMPORADA'}</span>
               </div>
             </div>
 
@@ -1348,7 +1348,7 @@ export default function MainMenu({
                   onOpenBetaInfo()
                 }}
               >
-                🧪 Info Temporada 1
+                🧪 Info Temporada {seasonStatus.seasonNumber}
               </button>
             )}
             {isAdmin && onOpenAdmin && (

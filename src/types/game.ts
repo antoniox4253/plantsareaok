@@ -405,6 +405,9 @@ export interface ClanFortressData {
   sunflowerTotalSuns?: number
   sunflowerSecondsRemaining?: number
   sunflowerCanHarvest?: boolean
+  sunflowerAccumulatedClaims?: number
+  sunflowerMaxClaims?: number
+  sunflowerClaimableSuns?: number
 }
 
 export interface ClanFortressAmbush {

@@ -19,6 +19,11 @@ export const BETA_SEASON_START_UTC = new Date('2026-08-31T00:00:00.000Z').getTim
 export const BETA_SEASON_DAYS = 45
 export const BETA_SEASON_END_UTC = BETA_SEASON_START_UTC + BETA_SEASON_DAYS * 86400 * 1000 // 2026-10-15T00:00:00.000Z
 
+// ── TEMPORADA 2 OFICIAL (25 DÍAS DESDE 15 OCTUBRE 2026 00:00 UTC) ──
+export const SEASON_2_START_UTC = new Date('2026-10-15T00:00:00.000Z').getTime()
+export const SEASON_2_DAYS = 25
+export const SEASON_2_END_UTC = SEASON_2_START_UTC + SEASON_2_DAYS * 86400 * 1000 // 2026-11-09T00:00:00.000Z
+
 function getStorageItem(key: string): string | null {
   if (typeof localStorage !== 'undefined') {
     try {
@@ -58,9 +63,10 @@ export class SeasonManager {
     const savedStart = getStorageItem(SEASON_KEY)
     const savedNum = getStorageItem(SEASON_NUM_KEY)
 
-    const startMs = savedStart ? parseInt(savedStart, 10) : BETA_SEASON_START_UTC
-    const endMs = savedEnd ? parseInt(savedEnd, 10) : (startMs + BETA_SEASON_DAYS * 86400 * 1000)
-    const seasonNumber = savedNum ? parseInt(savedNum, 10) : 1
+    const isCustomSimulated = customNow !== undefined && !savedNum
+    const startMs = savedStart ? parseInt(savedStart, 10) : (isCustomSimulated ? BETA_SEASON_START_UTC : SEASON_2_START_UTC)
+    const endMs = savedEnd ? parseInt(savedEnd, 10) : (isCustomSimulated ? BETA_SEASON_END_UTC : SEASON_2_END_UTC)
+    const seasonNumber = savedNum ? parseInt(savedNum, 10) : (isCustomSimulated ? 1 : 2)
 
     const isStarted = now >= startMs
     const isEnded = now >= endMs

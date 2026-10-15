@@ -462,6 +462,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
             description: c.description,
             leader: c.leader_name || c.leader || 'Líder',
             memberCount: Number(c.member_count) || (c.members ? c.members.length : 1),
+            maxMembers: Number(c.max_members || c.maxMembers || 15),
             damageDealt: Number(c.damage_dealt) || 0,
             dailyDamageDealt: Number(c.daily_damage_dealt) || 0,
             wins: Number(c.wins) || 0,
@@ -491,6 +492,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                 description: c.description,
                 leader: c.leader || c.leader_name || 'Líder',
                 memberCount: Number(c.member_count) || (Array.isArray(c.members) ? c.members.length : 1),
+                maxMembers: Number(c.max_members || c.maxMembers || 15),
                 damageDealt: Number(c.damage_dealt) || (Number(c.wins || 0) * 420),
                 dailyDamageDealt: Number(c.daily_damage_dealt) || Math.floor((Number(c.damage_dealt) || (Number(c.wins || 0) * 420)) * 0.35),
                 wins: Number(c.wins) || 0,
@@ -529,6 +531,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
               description: c.description,
               leader: c.leader || c.leader_name || 'Líder',
               memberCount: Number(c.member_count) || (Array.isArray(c.members) ? c.members.length : 1),
+              maxMembers: Number(c.max_members || c.maxMembers || 15),
               damageDealt: Number(c.damage_dealt) || (Number(c.wins || 0) * 420),
               dailyDamageDealt: Number(c.daily_damage_dealt) || Math.floor((Number(c.damage_dealt) || (Number(c.wins || 0) * 420)) * 0.35),
               wins: Number(c.wins) || 0,
@@ -1864,7 +1867,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
 
                         <div className="clan-podium-meta">
                           <span>👑 {clanLeaderboard[0].leader}</span>
-                          <span>👥 {clanLeaderboard[0].memberCount}/15</span>
+                          <span>👥 {clanLeaderboard[0].memberCount}/{clanLeaderboard[0].maxMembers || 15}</span>
                         </div>
 
                         <div className="clan-card-damage-highlight clan-card-damage-highlight--champ">
@@ -2003,7 +2006,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                     </div>
                                   </div>
                                 </td>
-                                <td className="lb-col-members">👥 {cln.memberCount}/15</td>
+                                <td className="lb-col-members">👥 {cln.memberCount}/{cln.maxMembers || 15}</td>
                                 <td className="lb-col-damage">⚔️ {cln.damageDealt.toLocaleString()}</td>
                                 <td className="lb-col-rewards">
                                   <div className="clan-table-rewards-stack">
@@ -2852,7 +2855,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                     <div className="lb-stat-card">
                       <span className="lb-stat-label">Miembros</span>
                       <strong className="lb-stat-value">
-                        👥 {selectedClanReward.memberCount}/15
+                        👥 {selectedClanReward.memberCount}/{selectedClanReward.maxMembers || 15}
                       </strong>
                     </div>
                   </div>

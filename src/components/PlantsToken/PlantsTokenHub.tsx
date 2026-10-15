@@ -532,7 +532,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
                     onOpenBetaInfo()
                   }}
                 >
-                  🧪 Info Temporada 1
+                  🧪 Info Temporada 2
                 </button>
               )}
               {isAdmin && onOpenAdmin && (

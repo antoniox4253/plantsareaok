@@ -511,6 +511,8 @@ export default function Battlefield({
     eloLost?: number
     payout?: number
     vipGoldBonus?: number
+    earlySurrender?: boolean
+    energyRestored?: boolean
     error?: string
   } | null>(null)
 
@@ -1531,6 +1533,18 @@ export default function Battlefield({
             const eloGained = yoGane ? (eloDelta && eloDelta > 0 ? eloDelta : reportRes.eloGained) : undefined
             const eloLost = !yoGane ? (eloDelta && eloDelta < 0 ? Math.abs(eloDelta) : reportRes.eloLost) : undefined
 
+            const isEarlySurrender = Boolean(
+              (reportRes as any)?.earlySurrender ||
+              (reportRes as any)?.isEarlySurrender ||
+              (reportRes as any)?.early_surrender ||
+              (reportRes as any)?.is_early_surrender
+            )
+            const energyRestored = Boolean(
+              (reportRes as any)?.energyRestored ||
+              (reportRes as any)?.energy_restored ||
+              isEarlySurrender
+            )
+
             setResultadoServidor({
               success: true,
               status: 'liquidada',
@@ -1542,6 +1556,8 @@ export default function Battlefield({
               eloLost,
               payout: reportRes.payout ?? 0,
               vipGoldBonus: (reportRes as any)?.vipGoldBonus,
+              earlySurrender: isEarlySurrender,
+              energyRestored,
             })
 
             if (typeof eloAfter === 'number' && onServerEloUpdated && matchMode !== 'tournament' && matchMode !== 'friendly') {
@@ -1628,6 +1644,8 @@ export default function Battlefield({
             eloLost: liq.eloLost,
             payout: finalPayout,
             vipGoldBonus: verificacion.settlement?.vipGoldBonus ?? (reportRes as any)?.vipGoldBonus,
+            earlySurrender: liq.earlySurrender,
+            energyRestored: liq.energyRestored,
             error: liq.error,
           })
 
@@ -3389,6 +3407,11 @@ export default function Battlefield({
             (typeof resultadoServidor.eloLost === 'number' && resultadoServidor.eloLost > 0)
           )
         )
+        const isEarlySurrender = Boolean(
+          resultadoServidor?.earlySurrender ||
+          (resultadoServidor as any)?.isEarlySurrender ||
+          (battleSummaryResult as any)?.isEarlySurrender
+        )
         const esVictoriaServidor = Boolean(
           resultadoServidor?.status === 'liquidada' && (
             resultadoServidor?.resultadoFinal === 'victory' ||
@@ -3434,7 +3457,7 @@ export default function Battlefield({
                     : esDerrotaServidor
                     ? '💀 ¡DERROTA!'
                     : esVictoriaFinal
-                    ? '🏆 ¡VICTORIA!'
+                    ? (isEarlySurrender ? '🏳️ ¡VICTORIA POR ABANDONO!' : '🏆 ¡VICTORIA!')
                     : battleSummaryResult?.isSurrendered
                     ? '🏳️ ¡TE HAS RENDIDO!'
                     : '💀 ¡DERROTA!'}
@@ -3458,7 +3481,7 @@ export default function Battlefield({
                         <div className="elo-result-badge elo-result-badge--draw" style={{ background: 'rgba(234, 179, 8, 0.15)', borderColor: '#eab308' }}>
                           <span>🛡️ COMBATE PROTEGIDO</span>
                           <span className="elo-result-badge__total" style={{ color: '#fef08a' }}>
-                            Tus copas están a salvo (0 Copas modificadas)
+                            Tus copas y tu energía están a salvo (0 Copas · Energía devuelta)
                           </span>
                         </div>
                       )}
@@ -3494,24 +3517,36 @@ export default function Battlefield({
                             ? resultadoServidor.eloAfter
                             : battleSummaryResult?.newElo ?? fallbackTotal
 
-                        return (
+                         return (
                           <div className="game-card__elo-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                            <div
-                              className={`elo-result-badge ${
-                                delta >= 0
-                                  ? 'elo-result-badge--win'
-                                  : 'elo-result-badge--loss'
-                              }`}
-                            >
-                              <span>
-                                {delta >= 0
-                                  ? `🏆 +${delta} COPAS`
-                                  : `🏆 ${delta} COPAS`}
-                              </span>
-                              <span className="elo-result-badge__total">
-                                (Total: {total.toLocaleString('en-US')} 🏆)
-                              </span>
-                            </div>
+                            {esVictoriaFinal && isEarlySurrender ? (
+                              <div className="elo-result-badge elo-result-badge--draw" style={{ background: 'rgba(59, 130, 246, 0.15)', borderColor: '#3b82f6' }}>
+                                <span>🏳️ ¡VICTORIA POR ABANDONO!</span>
+                                <span className="elo-result-badge__total" style={{ color: '#93c5fd', fontWeight: 600 }}>
+                                  No se asignaron copas ni se descontó energía
+                                </span>
+                                <span style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '2px' }}>
+                                  ⚡ 1 Energía restaurada a tu cuenta · Total: {total.toLocaleString('en-US')} 🏆
+                                </span>
+                              </div>
+                            ) : (
+                              <div
+                                className={`elo-result-badge ${
+                                  delta >= 0
+                                    ? 'elo-result-badge--win'
+                                    : 'elo-result-badge--loss'
+                                }`}
+                              >
+                                <span>
+                                  {delta >= 0
+                                    ? `🏆 +${delta} COPAS`
+                                    : `🏆 ${delta} COPAS`}
+                                </span>
+                                <span className="elo-result-badge__total">
+                                  (Total: {total.toLocaleString('en-US')} 🏆)
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )
                       })()}
@@ -3746,7 +3781,14 @@ export default function Battlefield({
                       <span>🎁</span> Recompensa de Batalla
                     </div>
                     {esVictoriaFinal ? (
-                      battleSummaryResult?.packResult?.awarded ? (
+                      isEarlySurrender ? (
+                        <div className="defeat-summary-box" style={{ background: 'rgba(59, 130, 246, 0.12)', borderColor: 'rgba(59, 130, 246, 0.35)' }}>
+                          <span className="defeat-summary-icon">⚡</span>
+                          <span className="defeat-summary-text" style={{ color: '#bfdbfe' }}>
+                            El rival abandonó en los primeros 20 segundos de combate. Tu energía ha sido devuelta y las copas no fueron modificadas.
+                          </span>
+                        </div>
+                      ) : battleSummaryResult?.packResult?.awarded ? (
                         <div className="victory-pack-reward__box">
                           <div className="victory-pack-reward__card">
                             <img
@@ -3793,7 +3835,7 @@ export default function Battlefield({
                     )}
 
                     {/* RECOMPENSA DE TOKEN PLANTS (ARENA 3+ / 2,001+ COPAS) */}
-                    {esVictoriaFinal && matchMode !== 'friendly' && (
+                    {esVictoriaFinal && !isEarlySurrender && matchMode !== 'friendly' && (
                       plantsRewardResult && plantsRewardResult.plantsAwarded > 0 ? (
                         <div className="victory-plants-reward-card">
                           <div className="victory-plants-reward-card__header">
@@ -3889,7 +3931,7 @@ export default function Battlefield({
                   </div>
 
                   {/* VIP VICTORY GOLD BONUS BADGE */}
-                  {esVictoriaFinal && Boolean((resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus) && ((resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus) || 0) > 0) && (
+                  {esVictoriaFinal && !isEarlySurrender && Boolean((resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus) && ((resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus) || 0) > 0) && (
                     <div className="victory-vip-gold-box">
                       <div className="victory-vip-gold-badge">
                         <span className="victory-vip-gold-badge__crown">👑</span>
@@ -3904,7 +3946,7 @@ export default function Battlefield({
                   )}
 
                   {/* CLAN PODIUM VICTORY GOLD BONUS BADGE */}
-                  {esVictoriaFinal && Boolean(battleSummaryResult?.clanGoldBonus && battleSummaryResult.clanGoldBonus > 0) && (
+                  {esVictoriaFinal && !isEarlySurrender && Boolean(battleSummaryResult?.clanGoldBonus && battleSummaryResult.clanGoldBonus > 0) && (
                     <div className="victory-vip-gold-box victory-clan-gold-box">
                       <div className={`victory-vip-gold-badge victory-clan-gold-badge ${battleSummaryResult?.isClanMvp ? 'victory-clan-gold-badge--mvp' : 'victory-clan-gold-badge--elite'}`}>
                         <span className="victory-vip-gold-badge__crown">

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import type { PlantId, ClanFortressPlant, ClanFortressAmbush } from '../../types/game'
 import { PLANT_CONFIGS, LANES_CONFIG_5, FORTRESS_SUN_COSTS, TACTICAL_AMBUSH_PLANTS } from '../../utils/gameConstants'
 import { supabaseService } from '../../services/supabaseService'
@@ -26,6 +26,9 @@ interface FortressEditorProps {
     sunflowerTotalSuns?: number
     sunflowerSecondsRemaining?: number
     sunflowerCanHarvest?: boolean
+    sunflowerAccumulatedClaims?: number
+    sunflowerMaxClaims?: number
+    sunflowerClaimableSuns?: number
   }
   userFarmingInv?: { water: number; fertilizer: number }
   onClose: () => void
@@ -133,9 +136,24 @@ export default function FortressEditor({
   const [isHarvesting, setIsHarvesting] = useState<boolean>(false)
   const [isAccelerating, setIsAccelerating] = useState<boolean>(false)
   const [showSunflowerCareModal, setShowSunflowerCareModal] = useState<boolean>(false)
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
+  const [dismissObserverAlert, setDismissObserverAlert] = useState<boolean>(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const [activeFarmingInv, setActiveFarmingInv] = useState<{ water: number; fertilizer: number }>(() => {
     return userFarmingInv || { water: 0, fertilizer: 0 }
   })
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    if (!isMenuOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+    window.addEventListener('mousedown', handleClickOutside)
+    return () => window.removeEventListener('mousedown', handleClickOutside)
+  }, [isMenuOpen])
 
   // Sincronizaciones con props
   useEffect(() => {
@@ -194,24 +212,18 @@ export default function FortressEditor({
   }, [treeLevel])
 
   const sunflowerConfig = useMemo(() => {
-    let count = 2
-    let each = 50
-    if (treeLevel >= 4) {
-      count = 4
-      each = 125
-    } else if (treeLevel === 3) {
-      count = 3
-      each = 100
-    } else if (treeLevel === 2) {
-      count = 3
-      each = 75
-    }
+    const count = sunflowerData?.sunflowerCount ?? (treeLevel >= 4 ? 4 : treeLevel >= 2 ? 3 : 2)
+    const each = sunflowerData?.sunsPerSunflower ?? (treeLevel >= 4 ? 125 : treeLevel === 3 ? 100 : treeLevel === 2 ? 75 : 50)
+    const baseTotal = count * each
+    const claimable = sunflowerData?.sunflowerClaimableSuns || (baseTotal * (sunflowerData?.sunflowerAccumulatedClaims || 1))
     return {
-      count: sunflowerData?.sunflowerCount ?? count,
-      sunsPerSunflower: sunflowerData?.sunsPerSunflower ?? each,
-      totalSuns: sunflowerData?.sunflowerTotalSuns ?? (count * each),
+      count,
+      sunsPerSunflower: each,
+      totalSuns: baseTotal,
+      claimableSuns: claimable,
+      accumulatedClaims: sunflowerData?.sunflowerAccumulatedClaims ?? (canHarvest ? 1 : 0),
     }
-  }, [treeLevel, sunflowerData])
+  }, [treeLevel, sunflowerData, canHarvest])
 
   // Cosecha comunal de soles
   const handleHarvestSunflowers = async () => {
@@ -227,9 +239,10 @@ export default function FortressEditor({
         setSunsBudget(updatedBudget)
         setCanHarvest(false)
         setSunflowerRemainingSec(14400)
+        const claimsNote = res.claimsHarvested && res.claimsHarvested > 1 ? ` (${res.claimsHarvested} tandas acumuladas)` : ''
         setSaveStatus({
           type: 'success',
-          message: `☀️ ¡Cosechados +${gained} Soles para la Fortaleza! (${res.sunflowerCount || sunflowerConfig.count} Girasoles × ${res.sunsPerSunflower || sunflowerConfig.sunsPerSunflower} ☀️).`,
+          message: `☀️ ¡Cosechados +${gained} Soles para la Fortaleza!${claimsNote} (${res.sunflowerCount || sunflowerConfig.count} Girasoles × ${res.sunsPerSunflower || sunflowerConfig.sunsPerSunflower} ☀️).`,
         })
         setShowSunflowerCareModal(false)
         if (onSunsHarvested) onSunsHarvested(gained, updatedBudget)
@@ -576,7 +589,7 @@ export default function FortressEditor({
 
   return (
     <div className="fortress-editor-fullscreen">
-      {/* ── HEADER TÁCTICO ─────────────────────────────────────────────────── */}
+      {/* ── HEADER TÁCTICO REDISEÑADO CON MENÚ ─────────────────────────────── */}
       <header className="fortress-editor-header">
         <div className="fortress-editor-header__left">
           <button
@@ -590,7 +603,7 @@ export default function FortressEditor({
           <div className="fortress-editor-title">
             <h2>DEFENSAS: {clanName.toUpperCase()}</h2>
             <small>
-              Árbol Madre Nv. {treeLevel} • {allowedLanes.length} Líneas Activas
+              Árbol Nv. {treeLevel} • {allowedLanes.length} Líneas
             </small>
           </div>
         </div>
@@ -619,36 +632,21 @@ export default function FortressEditor({
               />
             </div>
           </div>
-
-          {/* Botón de acceso rápido a los Girasoles Ancestrales */}
-          <button
-            type="button"
-            className={`fortress-editor-btn-sunflower ${canHarvest ? 'fortress-editor-btn-sunflower--ready' : ''}`}
-            onClick={() => {
-              if (canHarvest) {
-                void handleHarvestSunflowers()
-              } else {
-                setShowSunflowerCareModal(true)
-              }
-            }}
-            title={canHarvest ? `¡Cosechar +${sunflowerConfig.totalSuns} Soles!` : `Girasoles Ancestrales: Cosecha en ${formatRemainingTime(sunflowerRemainingSec)}`}
-          >
-            {canHarvest ? `☀️ ¡COSECHAR (+${sunflowerConfig.totalSuns})!` : `🌻 GIRASOLES (${formatRemainingTime(sunflowerRemainingSec)})`}
-          </button>
-
-          {onOpenAltar && (
-            <button
-              type="button"
-              className="fortress-editor-btn-altar"
-              onClick={onOpenAltar}
-              title="Donar y ampliar presupuesto en el Altar Solar"
-            >
-              ☀️ ALTAR SOLAR
-            </button>
-          )}
         </div>
 
         <div className="fortress-editor-header__right">
+          {/* Si hay cosecha comunal lista, mostrar botón de acción rápida */}
+          {canHarvest && (
+            <button
+              type="button"
+              className="fortress-editor-btn-harvest-ready"
+              onClick={() => void handleHarvestSunflowers()}
+              title={`¡Cosechar +${sunflowerConfig.claimableSuns} Soles Ancestrales!`}
+            >
+              ☀️ COSECHAR (+{sunflowerConfig.claimableSuns})
+            </button>
+          )}
+
           <button
             type="button"
             className={`fortress-editor-btn-shovel ${isShovelActive ? 'fortress-editor-btn-shovel--active' : ''}`}
@@ -664,23 +662,77 @@ export default function FortressEditor({
 
           <button
             type="button"
-            className="fortress-editor-btn-clear"
-            onClick={handleClearAll}
-            disabled={layout.length === 0 && ambushes.length === 0}
-            title="Limpiar todas las plantas y emboscadas"
-          >
-            🗑️ LIMPIAR
-          </button>
-
-          <button
-            type="button"
             className={`fortress-editor-btn-save ${!canEdit ? 'fortress-editor-btn-save--readonly' : ''}`}
             onClick={handleSave}
             disabled={isSaving}
             title={canEdit ? 'Guardar formación en la base de datos' : 'Solo oficiales (Líder, Colíder, Veterano) pueden guardar. Haz clic para más información.'}
           >
-            {isSaving ? 'GUARDANDO...' : canEdit ? '💾 GUARDAR DEFENSA' : '🔒 SOLO OFICIALES'}
+            {isSaving ? 'GUARDANDO...' : canEdit ? '💾 GUARDAR' : '🔒 SOLO OFICIALES'}
           </button>
+
+          {/* Menú desplegable para opciones secundarias */}
+          <div className="fortress-menu-wrap" ref={menuRef}>
+            <button
+              type="button"
+              className={`fortress-menu-trigger ${isMenuOpen ? 'fortress-menu-trigger--open' : ''}`}
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              title="Más opciones de fortaleza"
+            >
+              ⚙️ MENÚ ▾
+            </button>
+
+            {isMenuOpen && (
+              <div className="fortress-menu-dropdown">
+                <button
+                  type="button"
+                  className="fortress-menu-item"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    setShowSunflowerCareModal(true)
+                  }}
+                >
+                  <span className="fortress-menu-item-icon">🌻</span>
+                  <div className="fortress-menu-item-text">
+                    <strong>Girasoles Ancestrales</strong>
+                    <small>{canHarvest ? `¡Cosecha lista (+${sunflowerConfig.claimableSuns}☀️)!` : `Cosecha en ${formatRemainingTime(sunflowerRemainingSec)}`}</small>
+                  </div>
+                </button>
+
+                {onOpenAltar && (
+                  <button
+                    type="button"
+                    className="fortress-menu-item"
+                    onClick={() => {
+                      setIsMenuOpen(false)
+                      onOpenAltar()
+                    }}
+                  >
+                    <span className="fortress-menu-item-icon">☀️</span>
+                    <div className="fortress-menu-item-text">
+                      <strong>Altar Solar</strong>
+                      <small>Donar y ampliar presupuesto</small>
+                    </div>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="fortress-menu-item fortress-menu-item--danger"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    handleClearAll()
+                  }}
+                  disabled={layout.length === 0 && ambushes.length === 0}
+                >
+                  <span className="fortress-menu-item-icon">🗑️</span>
+                  <div className="fortress-menu-item-text">
+                    <strong>Limpiar Todo</strong>
+                    <small>Remover plantas y emboscadas</small>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -718,9 +770,17 @@ export default function FortressEditor({
         </div>
       )}
 
-      {!canEdit && !saveStatus && (
-        <div className="fortress-editor-alert fortress-editor-alert--warning" style={{ background: '#78350f', border: '1px solid #f59e0b', color: '#fef3c7' }}>
+      {!canEdit && !saveStatus && !dismissObserverAlert && (
+        <div className="fortress-editor-alert fortress-editor-alert--warning" style={{ background: '#78350f', border: '1px solid #f59e0b', color: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
           <span>👁️ MODO OBSERVADOR: Tu rango es Miembro. Solo el Líder, Colíderes y Veteranos tienen permiso para guardar cambios en la defensa.</span>
+          <button
+            type="button"
+            onClick={() => setDismissObserverAlert(true)}
+            style={{ background: 'transparent', border: 'none', color: '#fef3c7', fontSize: '1rem', cursor: 'pointer', padding: '0 4px', fontWeight: 900 }}
+            title="Cerrar aviso"
+          >
+            ✖
+          </button>
         </div>
       )}
 

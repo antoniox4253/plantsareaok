@@ -1355,6 +1355,9 @@ export const SupabaseService = {
     eloAfter?: number
     winner?: string
     elo?: any
+    earlySurrender?: boolean
+    isEarlySurrender?: boolean
+    energyRestored?: boolean
     error?: string
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
@@ -1429,7 +1432,7 @@ export const SupabaseService = {
     // Helper interno para resolver desde el estado de la base de datos si ya liquidó
     const checkDbSettled = async (): Promise<{
       ok: boolean
-      status: 'verified_draw' | 'settled'
+      status: 'verified_draw' | 'settled' | 'failed'
       winnerId: string | null
       winnerSide: 1 | 2 | null
       isAsyncMatch: boolean
@@ -1437,6 +1440,8 @@ export const SupabaseService = {
         success: boolean
         status: string
         rawElo: any
+        earlySurrender?: boolean
+        energyRestored?: boolean
       }
     } | null> => {
       try {
@@ -1445,19 +1450,33 @@ export const SupabaseService = {
           const isDraw = room.status === 'draw'
           const isP1Winner = room.status === 'p1_won'
           const isP2Winner = room.status === 'p2_won'
+          const isAbandoned = room.status === 'abandoned' || room.status === 'cancelled'
           const winnerSide: 1 | 2 | null = isP1Winner ? 1 : isP2Winner ? 2 : null
           const eloAudit = room.verification_payload?.elo
+          const isEarlySurrender = Boolean(
+            room.verification_payload?.earlySurrender ||
+            room.verification_payload?.is_early_surrender ||
+            room.verification_payload?.isEarlySurrender
+          )
+          const energyRestored = Boolean(
+            room.verification_payload?.energyRestored ||
+            room.verification_payload?.energy_restored ||
+            isEarlySurrender ||
+            isAbandoned
+          )
 
           return {
             ok: true,
-            status: isDraw ? 'verified_draw' : 'settled',
-            winnerId: room.server_winner_id || (winnerSide === 1 ? room.player1_id : (room.player2_id || null)),
+            status: isDraw ? 'verified_draw' : isAbandoned ? 'failed' : 'settled',
+            winnerId: room.server_winner_id || (winnerSide === 1 ? room.player1_id : (winnerSide === 2 ? (room.player2_id || null) : null)),
             winnerSide,
             isAsyncMatch: Boolean(room.is_async_match),
             settlement: {
               success: true,
-              status: isDraw ? 'empate' : 'liquidada',
+              status: isDraw ? 'empate' : isAbandoned ? 'abandonada' : 'liquidada',
               rawElo: eloAudit,
+              earlySurrender: isEarlySurrender,
+              energyRestored,
             },
           }
         }
@@ -2237,6 +2256,7 @@ export const SupabaseService = {
   async harvestAncestralSunflowers(): Promise<{
     success: boolean
     sunsGained?: number
+    claimsHarvested?: number
     newBudget?: number
     sunflowerCount?: number
     sunsPerSunflower?: number

@@ -1218,6 +1218,7 @@ export class ClanManager {
       losses: c.losses || 0,
       vaultGems: c.vaultGems ?? c.vaultUsd ?? 0,
       isUserClan: Boolean(userClanId && c.id === userClanId),
+      maxMembers: c.maxMembers || 15,
     }))
   }
 
@@ -1381,5 +1382,6 @@ export interface ClanRankingEntry {
   losses: number
   vaultGems: number
   isUserClan?: boolean
+  maxMembers?: number
 }
 
