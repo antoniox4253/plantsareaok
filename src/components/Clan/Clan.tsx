@@ -3758,7 +3758,7 @@ export default function Clan({
                           />
                         </div>
 
-                        {/* Barra Única de Experiencia del Árbol */}
+                        {/* Barra de Progreso de Ofrendas del Árbol */}
                         {(fortressData?.motherTreeLevel ?? 1) < 4 ? (() => {
                           const wCur = fortressData?.motherTreeWater ?? 0
                           const wReq = fortressData?.nextTreeWaterReq || 150
@@ -3767,21 +3767,34 @@ export default function Clan({
                           const gCur = fortressData?.motherTreeGems ?? 0
                           const gReq = fortressData?.nextTreeGemsReq || 600
 
-                          const totalCur = wCur + fCur + gCur
-                          const totalReq = wReq + fReq + gReq
-                          const pct = Math.min(100, Math.round(((Math.min(1, wCur / wReq) + Math.min(1, fCur / fReq) + Math.min(1, gCur / gReq)) / 3) * 100))
+                          const wClamped = Math.min(wCur, wReq)
+                          const fClamped = Math.min(fCur, fReq)
+                          const gClamped = Math.min(gCur, gReq)
+
+                          const pct = Math.min(100, Math.round(((wClamped / wReq + fClamped / fReq + gClamped / gReq) / 3) * 100))
 
                           return (
                             <div className="clan-tree-single-xp-wrap">
                               <div className="clan-tree-req-labels">
-                                <span>⭐ Experiencia:</span>
-                                <strong>{totalCur} / {totalReq} XP ({pct}%)</strong>
+                                <span>⭐ Progreso de Ofrendas:</span>
+                                <strong>{pct}% para Nivel {(fortressData?.motherTreeLevel ?? 1) + 1}</strong>
                               </div>
                               <div className="clan-tree-pbar-track">
                                 <div
                                   className="clan-tree-pbar-fill clan-tree-pbar-fill--xp"
                                   style={{ width: `${pct}%` }}
                                 />
+                              </div>
+                              <div className="clan-tree-mini-reqs-row">
+                                <span className={wCur >= wReq ? 'clan-tree-mini-req--done' : ''}>
+                                  💧 {wClamped}/{wReq} {wCur >= wReq ? '✔️' : ''}
+                                </span>
+                                <span className={fCur >= fReq ? 'clan-tree-mini-req--done' : ''}>
+                                  🌱 {fClamped}/{fReq} {fCur >= fReq ? '✔️' : ''}
+                                </span>
+                                <span className={gCur >= gReq ? 'clan-tree-mini-req--done' : ''}>
+                                  💎 {gClamped}/{gReq} {gCur >= gReq ? '✔️' : ''}
+                                </span>
                               </div>
                             </div>
                           )

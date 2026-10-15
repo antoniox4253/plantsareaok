@@ -6331,6 +6331,19 @@
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.45);
 }
 
+.clan-tree-mini-reqs-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  padding: 3px 2px 0 2px;
+}
+
+.clan-tree-mini-req--done {
+  color: #4ade80;
+}
+
 .clan-tree-max-perks-badge {
   font-size: 11px;
   font-weight: 900;

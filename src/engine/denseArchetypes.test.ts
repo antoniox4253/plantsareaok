@@ -78,6 +78,18 @@ describe('Certify Dense Multi-Lane Archetypes with 0 Drops', () => {
           6000
         )
 
+        if (res.telemetria.intentionsDropped > 0) {
+          console.log(`FAIL Archetype ${i} vs ${s.name}: executed = ${res.telemetria.intentionsExecuted}, dropped = ${res.telemetria.intentionsDropped}, tics = ${res.tics}`)
+          for (let k = 1; k <= plan.length; k++) {
+            const sub = plan.slice(0, k)
+            const subSim = simulateAsyncMatch(77700 + i, p1Deck, deck, humanTimeline, sub, 6000)
+            if (subSim.telemetria.intentionsDropped > 0) {
+              console.log(`  FIRST FAILING ACTION (idx ${k - 1}):`, plan[k - 1])
+              break
+            }
+          }
+        }
+
         expect(res.ok).toBe(true)
         expect(res.telemetria.intentionsDropped).toBe(0)
         expect(res.telemetria.intentionsExecuted).toBeGreaterThan(0)
