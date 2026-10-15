@@ -396,6 +396,7 @@ export default function Battlefield({
     plantsAwarded: number
     score?: number
     isLivePvP?: boolean
+    isBotMatch?: boolean
     bonusActive?: boolean
     bonusPct?: number
     dailyClaimsUsed?: number
@@ -3855,12 +3856,18 @@ export default function Battlefield({
 
                           <div className="victory-plants-reward-card__score-details">
                             <div className="victory-plants-reward-card__score-row">
+                              <span>Tipo de Rival:</span>
+                              <strong>
+                                {plantsRewardResult.isBotMatch ? '🤖 Bot (50% Recompensa)' : '⚔️ Jugador en Vivo (100%)'}
+                              </strong>
+                            </div>
+                            <div className="victory-plants-reward-card__score-row">
                               <span>Score de Batalla:</span>
                               <strong>{plantsRewardResult.score?.toFixed(0) ?? 0} / 100 pts</strong>
                             </div>
                             {plantsRewardResult.bonusActive && (
                               <div className="victory-plants-reward-card__score-row victory-plants-reward-card__score-row--bonus">
-                                <span>Bonus PvP en Vivo:</span>
+                                <span>Bono PvP Jugador Real:</span>
                                 <strong>+25% (+{((plantsRewardResult.plantsAwarded * 0.25) / 1.25).toFixed(2)} PLANTS)</strong>
                               </div>
                             )}

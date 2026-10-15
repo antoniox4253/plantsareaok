@@ -235,7 +235,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     }
   }
 
-  // Retirar en USDT (Cash-out)
+  // Retirar en USDT (Cash-out legacy)
   const handleCashoutUsdt = async (amount: number, wallet: string) => {
     setIsSubmitting(true)
     soundManager.playSound('click', 0.5)
@@ -260,12 +260,72 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     }
   }
 
+  // Canjear PLANTS por Saldo USDT
+  const handleSwapPlantsForUsdt = async (amount: number): Promise<boolean> => {
+    setIsSubmitting(true)
+    soundManager.playSound('click', 0.5)
+
+    try {
+      const res = await plantsTokenService.swapPlantsForUsdt(amount)
+      if (res.success) {
+        soundManager.playSound('claim', 0.7)
+        const credited = res.data?.usdtCredited ? Number(res.data.usdtCredited).toFixed(4) : (amount * 0.95 * spotPrice).toFixed(4)
+        showNotification(
+          `¡Canje exitoso! Convertiste ${amount.toLocaleString()} PLANTS y acreditaste +$${credited} USDT a tu saldo disponible para retiro.`,
+          'success'
+        )
+        await loadData()
+        onRefreshProfile?.()
+        return true
+      } else {
+        showNotification(res.error || 'Error al canjear PLANTS por USDT', 'error')
+        return false
+      }
+    } catch (err: any) {
+      showNotification(err.message || 'Error inesperado', 'error')
+      return false
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Solicitar retiro de saldo USDT hacia billetera BEP-20
+  const handleRequestUsdtWithdrawal = async (amount: number, wallet: string): Promise<boolean> => {
+    setIsSubmitting(true)
+    soundManager.playSound('click', 0.5)
+
+    try {
+      const res = await plantsTokenService.requestUsdtWithdrawal(amount, wallet)
+      if (res.success) {
+        soundManager.playSound('claim', 0.8)
+        showNotification(
+          `¡Solicitud registrada! Retiro de $${amount.toFixed(2)} USDT enviado a auditoría. Consulta el estado abajo en la pantalla de Swap.`,
+          'success'
+        )
+        await loadData()
+        onRefreshProfile?.()
+        return true
+      } else {
+        showNotification(res.error || 'No se pudo procesar la solicitud de retiro', 'error')
+        return false
+      }
+    } catch (err: any) {
+      showNotification(err.message || 'Error inesperado', 'error')
+      return false
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const userUsdtBalance = Number(userProfile?.usdt_balance ?? 0)
+
   // Propiedades compartidas entre pestañas
   const sharedProps: TokenHubSharedProps = {
     userTokens,
     userGold,
     userElo,
     hasVipPass,
+    userUsdtBalance,
     userProfile,
     marketState,
     priceHistory,
@@ -288,6 +348,8 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     onClaimDailyVesting: handleClaimDailyVesting,
     onSwapToGems: handleSwapToGems,
     onCashoutUsdt: handleCashoutUsdt,
+    onSwapPlantsForUsdt: handleSwapPlantsForUsdt,
+    onRequestUsdtWithdrawal: handleRequestUsdtWithdrawal,
     onRefreshData: loadData,
     showNotification,
   }
@@ -376,6 +438,22 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
               <img src={gemaImg} alt="Gemas" className="token-topbar-stat-icon" />
               <span className="token-topbar-stat-val token-topbar-stat-val--gems">
                 {userTokens.toLocaleString()}
+              </span>
+            </div>
+
+            {/* 5b. USDT Saldo */}
+            <div
+              className="token-topbar-pill token-topbar-pill--usdt"
+              title="Saldo USDT Disponible para Retiro"
+              style={{
+                background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.5) 0%, rgba(4, 120, 87, 0.4) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.6)',
+                boxShadow: '0 0 10px rgba(16, 185, 129, 0.25)',
+              }}
+            >
+              <span style={{ fontSize: '13px', marginRight: '4px' }}>💵</span>
+              <span className="token-topbar-stat-val" style={{ color: '#6ee7b7', fontWeight: 800 }}>
+                ${userUsdtBalance.toFixed(2)} USDT
               </span>
             </div>
 

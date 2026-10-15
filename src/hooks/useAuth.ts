@@ -116,6 +116,7 @@ export function useAuth() {
                 plants_balance: b.plants_balance !== undefined ? Number(b.plants_balance) : (prev as any).plants_balance,
                 plants_vesting_locked: b.plants_vesting_locked !== undefined ? Number(b.plants_vesting_locked) : (prev as any).plants_vesting_locked,
                 last_plants_cashout_at: b.last_plants_cashout_at !== undefined ? b.last_plants_cashout_at : (prev as any).last_plants_cashout_at,
+                usdt_balance: b.usdt_balance !== undefined ? Number(b.usdt_balance) : (prev as any).usdt_balance,
               }
             : prev
         )

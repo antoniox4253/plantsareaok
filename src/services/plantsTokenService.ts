@@ -104,6 +104,24 @@ export interface PlantsMintingEvent {
   createdAt: string
 }
 
+export interface CashoutRequestItem {
+  id: string
+  userId: string
+  usdtAmount: number
+  feeUsdt: number
+  netUsdt: number
+  walletAddress: string
+  status: 'pending' | 'completed' | 'rejected'
+  createdAt: string
+  processedAt?: string | null
+  txHash?: string | null
+  rejectReason?: string | null
+  userIsVip?: boolean
+  username?: string
+  avatar?: string
+  eloRating?: number
+}
+
 export interface StakingPosition {
   id: string
   amount: number
@@ -476,7 +494,167 @@ export const plantsTokenService = {
   },
 
   /**
-   * Solicitud de Cash-out de PLANTS a USDT BEP20
+   * Conversión instantánea de PLANTS a saldo USDT de la cuenta
+   */
+  async swapPlantsForUsdt(
+    plantsAmount: number
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('swap_plants_for_usdt', {
+        p_amount: plantsAmount,
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      return { success: true, data }
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Error al canjear PLANTS por USDT' }
+    }
+  },
+
+  /**
+   * Solicitud de retiro de USDT disponible hacia billetera externa BEP-20
+   */
+  async requestUsdtWithdrawal(
+    usdtAmount: number,
+    walletAddress: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('request_usdt_withdrawal', {
+        p_usdt_amount: usdtAmount,
+        p_wallet: walletAddress,
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      return { success: true, data }
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Error al procesar la solicitud de retiro de USDT' }
+    }
+  },
+
+  /**
+   * Obtiene las solicitudes de retiro en USDT del usuario actual
+   */
+  async getMyCashoutRequests(limit = 20): Promise<CashoutRequestItem[]> {
+    if (!isSupabaseConfigured()) return []
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_my_cashout_requests', {
+        p_limit: limit,
+      })
+      if (error) {
+        console.warn('[plantsTokenService] getMyCashoutRequests error:', error.message)
+        return []
+      }
+      if (data && data.success && Array.isArray(data.requests)) {
+        return data.requests.map((r: any) => ({
+          id: String(r.id),
+          userId: String(r.user_id),
+          usdtAmount: Number(r.usdt_amount ?? 0),
+          feeUsdt: Number(r.fee_usdt ?? 0),
+          netUsdt: Number(r.net_usdt ?? 0),
+          walletAddress: String(r.wallet_address ?? ''),
+          status: r.status as 'pending' | 'completed' | 'rejected',
+          createdAt: String(r.created_at),
+          processedAt: r.processed_at ? String(r.processed_at) : null,
+          txHash: r.tx_hash ? String(r.tx_hash) : null,
+          rejectReason: r.reject_reason ? String(r.reject_reason) : null,
+          userIsVip: Boolean(r.user_is_vip),
+        }))
+      }
+      return []
+    } catch (e) {
+      console.warn('[plantsTokenService] getMyCashoutRequests exception:', e)
+      return []
+    }
+  },
+
+  /**
+   * Panel de Administrador: Obtiene todas las solicitudes de retiro
+   */
+  async getAdminCashoutRequests(status?: string): Promise<CashoutRequestItem[]> {
+    if (!isSupabaseConfigured()) return []
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_admin_cashout_requests', {
+        p_status: status || null,
+      })
+      if (error) {
+        console.warn('[plantsTokenService] getAdminCashoutRequests error:', error.message)
+        return []
+      }
+      if (data && data.success && Array.isArray(data.requests)) {
+        return data.requests.map((r: any) => ({
+          id: String(r.id),
+          userId: String(r.user_id),
+          usdtAmount: Number(r.usdt_amount ?? 0),
+          feeUsdt: Number(r.fee_usdt ?? 0),
+          netUsdt: Number(r.net_usdt ?? 0),
+          walletAddress: String(r.wallet_address ?? ''),
+          status: r.status as 'pending' | 'completed' | 'rejected',
+          createdAt: String(r.created_at),
+          processedAt: r.processed_at ? String(r.processed_at) : null,
+          txHash: r.tx_hash ? String(r.tx_hash) : null,
+          rejectReason: r.reject_reason ? String(r.reject_reason) : null,
+          userIsVip: Boolean(r.user_is_vip),
+          username: String(r.username ?? 'Desconocido'),
+          avatar: String(r.avatar ?? 'peashooter'),
+          eloRating: Number(r.elo_rating ?? 1000),
+        }))
+      }
+      return []
+    } catch (e) {
+      console.warn('[plantsTokenService] getAdminCashoutRequests exception:', e)
+      return []
+    }
+  },
+
+  /**
+   * Panel de Administrador: Aprueba (con TxHash) o rechaza (con reembolso automático) una solicitud
+   */
+  async resolveAdminCashoutRequest(
+    requestId: string,
+    action: 'complete' | 'reject',
+    txHash?: string,
+    reason?: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    if (!isSupabaseConfigured()) {
+      return { success: false, error: 'Supabase no configurado' }
+    }
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('resolve_admin_cashout_request', {
+        p_request_id: requestId,
+        p_action: action,
+        p_tx_hash: txHash || null,
+        p_reason: reason || null,
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, data }
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Error al resolver solicitud de retiro' }
+    }
+  },
+
+  /**
+   * Solicitud de Cash-out de PLANTS a USDT BEP20 (Legacy)
    */
   async requestCashout(
     plantsAmount: number,

@@ -42,6 +42,7 @@ export interface Database {
           plants_balance?: number
           plants_vesting_locked?: number
           last_plants_cashout_at?: string | null
+          usdt_balance?: number
           plants_daily_claims_count?: number
           plants_daily_claims_date?: string | null
           is_banned?: boolean
@@ -63,6 +64,7 @@ export interface Database {
           plants_balance?: number
           plants_vesting_locked?: number
           last_plants_cashout_at?: string | null
+          usdt_balance?: number
           plants_daily_claims_count?: number
           plants_daily_claims_date?: string | null
           colosseum_tickets?: number
@@ -94,6 +96,10 @@ export interface Database {
           elo_rating?: number
           gems_balance?: number
           gold_balance?: number
+          usdt_balance?: number
+          plants_balance?: number
+          plants_vesting_locked?: number
+          last_plants_cashout_at?: string | null
           colosseum_tickets?: number
           colosseum_current_streak?: number
           colosseum_max_streak?: number

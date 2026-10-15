@@ -1,9 +1,13 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { soundManager } from '../../../utils/audioManager'
 import type { TokenHubSharedProps } from '../types'
 import { AmmCurveModal } from '../modals/AmmCurveModal'
 import { StakingModal } from '../modals/StakingModal'
-import { plantsTokenService, type StakingSummary } from '../../../services/plantsTokenService'
+import {
+  plantsTokenService,
+  type StakingSummary,
+  type CashoutRequestItem,
+} from '../../../services/plantsTokenService'
 
 export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   liquidPlants,
@@ -16,17 +20,30 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   isSubmitting,
   onSwapToGems,
   onCashoutUsdt,
+  onSwapPlantsForUsdt,
+  onRequestUsdtWithdrawal,
   onRefreshData,
   showNotification,
+  userUsdtBalance = 0,
+  hasVipPass = false,
+  userElo = 1000,
+  isArena3Plus = false,
 }) => {
-  const [swapMode, setSwapMode] = useState<'usdt' | 'gems'>('usdt')
+  const [swapMode, setSwapMode] = useState<'usdt' | 'gems' | 'withdraw'>('usdt')
   const [amountStr, setAmountStr] = useState<string>(liquidPlants > 0 ? String(Math.floor(liquidPlants)) : '1000')
+  const [withdrawUsdtStr, setWithdrawUsdtStr] = useState<string>(
+    userUsdtBalance >= 1 ? userUsdtBalance.toFixed(2) : '10.00'
+  )
+  const [withdrawWallet, setWithdrawWallet] = useState<string>('')
   const [slippage, setSlippage] = useState<number>(1)
-  const [walletAddress, setWalletAddress] = useState<string>('')
   const [isAmmModalOpen, setIsAmmModalOpen] = useState<boolean>(false)
   const [isStakingModalOpen, setIsStakingModalOpen] = useState<boolean>(false)
   const [stakingSummary, setStakingSummary] = useState<StakingSummary | null>(null)
+  const [myRequests, setMyRequests] = useState<CashoutRequestItem[]>([])
+  const [loadingRequests, setLoadingRequests] = useState<boolean>(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
+  // Cargar resumen de staking
   useEffect(() => {
     let isMounted = true
     plantsTokenService.getMyStakingPositions().then((summary) => {
@@ -36,17 +53,39 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
       plantsTokenService.getMyStakingPositions().then((summary) => {
         if (isMounted && summary) setStakingSummary(summary)
       })
-    }, 10000)
+    }, 12000)
     return () => {
       isMounted = false
       clearInterval(timer)
     }
   }, [])
 
+  // Cargar solicitudes de retiro del usuario
+  const loadMyCashoutRequests = useCallback(async () => {
+    setLoadingRequests(true)
+    try {
+      const requests = await plantsTokenService.getMyCashoutRequests(20)
+      setMyRequests(requests)
+    } finally {
+      setLoadingRequests(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadMyCashoutRequests()
+    const interval = setInterval(loadMyCashoutRequests, 15000)
+    return () => clearInterval(interval)
+  }, [loadMyCashoutRequests])
+
   const parsedAmount = useMemo(() => {
     const n = parseFloat(amountStr)
     return isNaN(n) || n <= 0 ? 0 : n
   }, [amountStr])
+
+  const parsedWithdrawUsdt = useMemo(() => {
+    const n = parseFloat(withdrawUsdtStr)
+    return isNaN(n) || n <= 0 ? 0 : n
+  }, [withdrawUsdtStr])
 
   const effectiveFee = parsedAmount * 0.05
   const netPlants = Math.max(0, parsedAmount - effectiveFee)
@@ -54,42 +93,126 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   // 1 Gema = 0.01 USDT ($10 = 1,000 gemas). Con +20% bono:
   const estimatedGems = parsedAmount > 0 ? (parsedAmount * spotPrice * 1.20) / 0.01 : 0
 
-  // Formato para temporizador de ventana de retiros
-  const formatTimer = (secs: number) => {
-    const total = secs > 0 ? secs : 3600 * 6 + 60 * 31 + 43
-    const h = Math.floor(total / 3600)
-    const m = Math.floor((total % 3600) / 60)
-    const s = total % 60
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  }
-
-  const handleMaxClick = () => {
+  const handleMaxPlantsClick = () => {
     soundManager.playSound('click', 0.4)
     setAmountStr(String(Math.floor(liquidPlants)))
   }
 
-  const handleSubmit = async () => {
-    if (parsedAmount <= 0) {
-      showNotification('Por favor ingresa una cantidad válida de PLANTS para canjear.', 'error')
-      return
+  const handleMaxWithdrawClick = () => {
+    soundManager.playSound('click', 0.4)
+    setWithdrawUsdtStr(userUsdtBalance > 0 ? userUsdtBalance.toFixed(2) : '0.00')
+  }
+
+  const handleCopy = (text: string, id: string) => {
+    soundManager.playSound('click', 0.3)
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text)
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(null), 2000)
+      showNotification('Copiado al portapapeles', 'info')
     }
-    if (parsedAmount > liquidPlants) {
-      showNotification(
-        `Saldo líquido insuficiente. Tienes ${liquidPlants.toLocaleString()} PLANTS disponibles para canje o retiro.`,
-        'error'
-      )
+  }
+
+  // Ejecutar conversión o retiro
+  const handleSubmit = async () => {
+    if (swapMode === 'gems') {
+      if (parsedAmount <= 0) {
+        showNotification('Ingresa una cantidad válida de PLANTS para canjear a Gemas.', 'error')
+        return
+      }
+      if (parsedAmount > liquidPlants) {
+        showNotification(`Saldo líquido insuficiente. Tienes ${liquidPlants.toLocaleString()} PLANTS.`, 'error')
+        return
+      }
+      await onSwapToGems(parsedAmount)
       return
     }
 
-    if (swapMode === 'gems') {
-      await onSwapToGems(parsedAmount)
-    } else {
-      const targetWallet = walletAddress.trim()
-      if (!targetWallet || targetWallet.length < 10) {
-        showNotification('Por favor ingresa una dirección de wallet BEP-20 válida (BNB Chain) para el retiro.', 'error')
+    if (swapMode === 'usdt') {
+      if (parsedAmount <= 0) {
+        showNotification('Ingresa una cantidad válida de PLANTS para convertir a saldo USDT.', 'error')
         return
       }
-      await onCashoutUsdt(parsedAmount, targetWallet)
+      if (parsedAmount > liquidPlants) {
+        showNotification(`Saldo líquido insuficiente. Tienes ${liquidPlants.toLocaleString()} PLANTS.`, 'error')
+        return
+      }
+
+      if (onSwapPlantsForUsdt) {
+        const ok = await onSwapPlantsForUsdt(parsedAmount)
+        if (ok) {
+          setAmountStr('')
+          await loadMyCashoutRequests()
+        }
+      } else {
+        const res = await plantsTokenService.swapPlantsForUsdt(parsedAmount)
+        if (res.success) {
+          soundManager.playSound('claim', 0.8)
+          showNotification(
+            `¡Canje exitoso! Convertiste ${parsedAmount.toLocaleString()} PLANTS a saldo USDT.`,
+            'success'
+          )
+          setAmountStr('')
+          await onRefreshData()
+          await loadMyCashoutRequests()
+        } else {
+          showNotification(res.error || 'Error al canjear PLANTS a USDT', 'error')
+        }
+      }
+      return
+    }
+
+    // Modo 'withdraw' (Retiro de USDT a wallet externa)
+    if (swapMode === 'withdraw') {
+      if (!isArena3Plus && userElo < 2001) {
+        showNotification(
+          `⚔️ Requieres estar en Arena 3 (2,001+ copas) para solicitar retiros. Tu elo actual: ${userElo}.`,
+          'error'
+        )
+        return
+      }
+      if (parsedWithdrawUsdt < 1.0) {
+        showNotification('El monto mínimo de retiro es de 1.00 USDT.', 'error')
+        return
+      }
+      if (parsedWithdrawUsdt > userUsdtBalance) {
+        showNotification(
+          `Saldo USDT insuficiente. Tu saldo actual es de $${userUsdtBalance.toFixed(2)} USDT.`,
+          'error'
+        )
+        return
+      }
+      const targetWallet = withdrawWallet.trim()
+      const bep20Regex = /^0x[a-fA-F0-9]{40}$/
+      if (!targetWallet || !bep20Regex.test(targetWallet)) {
+        showNotification(
+          'Por favor ingresa una dirección de billetera BEP-20 válida (42 caracteres hexadecimales iniciando con 0x).',
+          'error'
+        )
+        return
+      }
+
+      if (onRequestUsdtWithdrawal) {
+        const ok = await onRequestUsdtWithdrawal(parsedWithdrawUsdt, targetWallet)
+        if (ok) {
+          setWithdrawWallet('')
+          await loadMyCashoutRequests()
+        }
+      } else {
+        const res = await plantsTokenService.requestUsdtWithdrawal(parsedWithdrawUsdt, targetWallet)
+        if (res.success) {
+          soundManager.playSound('claim', 0.8)
+          showNotification(
+            `¡Solicitud enviada! Retiro de $${parsedWithdrawUsdt.toFixed(2)} USDT en proceso de revisión.`,
+            'success'
+          )
+          setWithdrawWallet('')
+          await onRefreshData()
+          await loadMyCashoutRequests()
+        } else {
+          showNotification(res.error || 'Error al registrar retiro de USDT', 'error')
+        }
+      }
     }
   }
 
@@ -127,7 +250,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
               <strong className="summary-kpi-value text-cyan">${poolUsdt.toFixed(2)} USDT</strong>
               <span className="summary-kpi-tag summary-kpi-tag--blue">100% RESPALDADO</span>
             </div>
-            <span className="summary-kpi-sub">60% Preventas + 70% Gemas Inyectadas</span>
+            <span className="summary-kpi-sub">60% Preventas + AMM Contractual</span>
           </div>
         </article>
 
@@ -137,60 +260,66 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
             <span className="summary-kpi-emoji">🔥</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">PLANTS QUEMADOS TOTAL</span>
+            <span className="summary-kpi-label">PLANTS QUEMADOS</span>
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-orange">{totalBurned.toLocaleString()} PLANTS</strong>
             </div>
-            <span className="summary-kpi-sub">Super Sink (+20% Gemas) & Retiros</span>
+            <span className="summary-kpi-sub">Super Sink (+20% Gemas) & Swaps</span>
           </div>
         </article>
 
-        {/* COMISIÓN CASH-OUT */}
-        <article className="summary-kpi-card">
+        {/* MI SALDO USDT DISPONIBLE */}
+        <article className="summary-kpi-card" style={{ border: '1px solid rgba(16, 185, 129, 0.4)' }}>
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--gold">
-            <span className="summary-kpi-emoji">🪙</span>
+            <span className="summary-kpi-emoji">💵</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">COMISIÓN CASH-OUT</span>
+            <span className="summary-kpi-label">MI SALDO USDT</span>
             <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-gold">5%</strong>
-              <span className="summary-kpi-tag summary-kpi-tag--gold">QUEMA DE RETIRO</span>
+              <strong className="summary-kpi-value text-mint">${userUsdtBalance.toFixed(2)} USDT</strong>
+              <span className="summary-kpi-tag summary-kpi-tag--green">DISPONIBLE</span>
             </div>
-            <span className="summary-kpi-sub">Se quema para resguardo del pool</span>
+            <span className="summary-kpi-sub">Convertido listo para retiro BEP-20</span>
           </div>
         </article>
 
-        {/* VENTANA DE RETIROS */}
-        <article className="summary-kpi-card" title="Cada 24h a las 18:00 UTC-3 se procesa el lote de transferencias USDT a billeteras BEP-20">
+        {/* FRANJA HORARIA DE RETIRO */}
+        <article
+          className="summary-kpi-card"
+          title={hasVipPass ? 'Pase VIP activo: franja de revisión de 24 horas' : 'Cuenta Gratuita: franja estándar de 72 horas'}
+        >
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--mint">
-            <span className="summary-kpi-emoji">🏦</span>
+            <span className="summary-kpi-emoji">{hasVipPass ? '👑' : '🛡️'}</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">VENTANA DE RETIROS</span>
+            <span className="summary-kpi-label">FRANJA DE RETIRO</span>
             <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-mint">{formatTimer(countdownSeconds)}</strong>
+              <strong className="summary-kpi-value text-gold">{hasVipPass ? '24 HORAS' : '72 HORAS'}</strong>
+              <span className={`summary-kpi-tag ${hasVipPass ? 'summary-kpi-tag--gold' : 'summary-kpi-tag--blue'}`}>
+                {hasVipPass ? 'VIP PASS' : 'FREE'}
+              </span>
             </div>
-            <span className="summary-kpi-sub">Lote diario USDT (18:00 UTC-3)</span>
+            <span className="summary-kpi-sub">{hasVipPass ? 'Revisión rápida prioritaria' : 'Auditoría estándar programada'}</span>
           </div>
         </article>
       </section>
 
       {/* =====================================================
-           2. MAIN GRID: SWAP WIDGET (45%) + AMM CHART & AUDIT (55%)
+           2. MAIN GRID: SWAP / WITHDRAW WIDGET (45%) + AMM & RULES (55%)
            ===================================================== */}
       <section className="swap-main-grid">
-        {/* LEFT COLUMN: SWAP WIDGET */}
+        {/* LEFT COLUMN: SWAP / WITHDRAW WIDGET */}
         <article className="swap-widget-card">
           <div className="swap-widget-header">
             <span className="swap-widget-icon">🔄</span>
             <div>
-              <h3 className="swap-widget-title">CONVERTIDOR Y RETIRO DE PLANTS</h3>
-              <p className="swap-widget-desc">Canjea a USDT (BEP-20) o aprovecha el Super Sink a Gemas con bono</p>
+              <h3 className="swap-widget-title">CONVERTIDOR Y RETIRO DE TOKENS</h3>
+              <p className="swap-widget-desc">Canjea tus PLANTS a USDT o Gemas, y retira tu balance a BEP-20</p>
             </div>
           </div>
 
-          {/* Mode Switcher */}
-          <div className="swap-mode-tabs">
+          {/* Mode Switcher con 3 opciones */}
+          <div className="swap-mode-tabs" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
             <button
               type="button"
               className={`swap-mode-btn ${swapMode === 'usdt' ? 'active active--usdt' : ''}`}
@@ -198,9 +327,11 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 soundManager.playSound('click', 0.4)
                 setSwapMode('usdt')
               }}
+              title="Convierte tus tokens PLANTS a saldo USDT disponible"
             >
-              💵 PLANTS ➔ USDT (Retiro)
+              💵 PLANTS ➔ USDT
             </button>
+
             <button
               type="button"
               className={`swap-mode-btn ${swapMode === 'gems' ? 'active active--gems' : ''}`}
@@ -208,140 +339,225 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 soundManager.playSound('click', 0.4)
                 setSwapMode('gems')
               }}
+              title="Quema instantánea con bono +20% a Gemas de juego"
             >
-              💎 PLANTS ➔ GEMAS (+20%)
+              💎 ➔ GEMAS (+20%)
             </button>
-          </div>
 
-          {/* Pay Input Box */}
-          <div className="swap-input-box">
-            <div className="swap-input-top">
-              <span className="swap-input-label">Tú pagas</span>
-              <span className="swap-input-balance">
-                Líquido disponible: {liquidPlants.toLocaleString()}{' '}
-                <button type="button" className="swap-max-btn" onClick={handleMaxClick}>
-                  MÁX
-                </button>
-              </span>
-            </div>
-            <div className="swap-input-main">
-              <div className="swap-token-badge">
-                <span>🌱 PLANTS</span>
-              </div>
-              <input
-                type="number"
-                className="swap-field"
-                value={amountStr}
-                onChange={(e) => setAmountStr(e.target.value)}
-                placeholder="0"
-                min="0"
-              />
-            </div>
-          </div>
-
-          {/* Swap Direction Icon */}
-          <div className="swap-arrow-divider">
             <button
               type="button"
-              className="swap-arrow-circle"
+              className={`swap-mode-btn swap-mode-btn--withdraw ${swapMode === 'withdraw' ? 'active' : ''}`}
               onClick={() => {
                 soundManager.playSound('click', 0.4)
-                setSwapMode((prev) => (prev === 'usdt' ? 'gems' : 'usdt'))
+                setSwapMode('withdraw')
               }}
-              title="Cambiar modo de conversión"
+              title="Retira tus USDT convertidos a tu billetera BEP-20"
             >
-              ⇅
+              💸 RETIRAR USDT
             </button>
           </div>
 
-          {/* Receive Output Box */}
-          <div className="swap-input-box">
-            <div className="swap-input-top">
-              <span className="swap-input-label">Tú recibes (estimado)</span>
-              <span className="swap-rate-note">
-                {swapMode === 'usdt'
-                  ? `1 PLANTS = ${(spotPrice * 0.95).toFixed(6)} USDT (neto)`
-                  : `1 PLANTS = ${(spotPrice * 1.20 / 0.01).toFixed(3)} Gemas (+20%)`}
-              </span>
-            </div>
-            <div className="swap-input-main">
-              <div
-                className={`swap-token-badge ${
-                  swapMode === 'gems' ? 'swap-token-badge--gems' : 'swap-token-badge--receive'
-                }`}
-              >
-                <span>{swapMode === 'usdt' ? '💵 USDT' : '💎 GEMAS (+20%)'}</span>
+          {/* CONTENIDO SEGÚN MODO SELECCIONADO */}
+          {swapMode === 'withdraw' ? (
+            /* =====================================================
+                 MODO RETIRO USDT A WALLET EXTERNA
+                 ===================================================== */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {/* Tarjeta de Saldo USDT Disponible */}
+              <div className="swap-usdt-balance-card">
+                <div className="swap-usdt-balance-left">
+                  <span className="swap-usdt-balance-lbl">Saldo USDT Disponible para Retiro</span>
+                  <strong className="swap-usdt-balance-val">${userUsdtBalance.toFixed(2)} USDT</strong>
+                </div>
+                <span className="swap-usdt-balance-badge">100% RESPALDADO</span>
               </div>
-              <div className="swap-receive-val">
-                {swapMode === 'usdt'
-                  ? `${estimatedUsdt.toFixed(4)} USDT`
-                  : `${Math.floor(estimatedGems).toLocaleString()} Gemas`}
-              </div>
-            </div>
-          </div>
 
-          {/* Wallet Address Input for USDT Cashout OR Gems Benefit Info */}
-          {swapMode === 'usdt' ? (
-            <div className="swap-input-box" style={{ marginTop: '6px' }}>
-              <div className="swap-input-top">
-                <span className="swap-input-label">Dirección de Billetera de Retiro (BEP-20 / BNB Chain)</span>
+              {/* Notice de Franja Horaria y Requisito Arena */}
+              <div className={`swap-tier-notice ${hasVipPass ? 'swap-tier-notice--vip' : 'swap-tier-notice--free'}`}>
+                <span>{hasVipPass ? '👑 Cuenta VIP:' : '🛡️ Cuenta Free:'}</span>
+                <span>{hasVipPass ? 'Franja de retiro prioritaria (24 horas)' : 'Franja de retiro estándar (72 horas)'}</span>
               </div>
-              <input
-                type="text"
-                placeholder="0x... (Tu wallet BEP-20 de MetaMask, Trust o Binance)"
-                value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'rgba(2, 6, 23, 0.7)',
-                  border: '1px solid rgba(20, 137, 109, 0.4)',
-                  borderRadius: '7px',
-                  padding: '7px 10px',
-                  color: '#fff',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
-                  outline: 'none',
-                }}
-              />
+
+              {!isArena3Plus && userElo < 2001 ? (
+                <div className="swap-tier-notice swap-tier-notice--locked">
+                  <span>⚔️ Requisito:</span>
+                  <span>Arena 3 requerida (2,001+ copas). Tu elo actual: {userElo}.</span>
+                </div>
+              ) : (
+                <div className="swap-tier-notice" style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#6ee7b7' }}>
+                  <span>⚔️ Arena 3+ Verificada:</span>
+                  <span>Apto para retiros a Binance / Trust / MetaMask</span>
+                </div>
+              )}
+
+              {/* Monto de USDT a retirar */}
+              <div className="swap-input-box">
+                <div className="swap-input-top">
+                  <span className="swap-input-label">Monto a Retirar (Mínimo $1.00 USDT)</span>
+                  <span className="swap-input-balance">
+                    Disponible: ${userUsdtBalance.toFixed(2)} USDT{' '}
+                    <button type="button" className="swap-max-btn" onClick={handleMaxWithdrawClick}>
+                      MÁX
+                    </button>
+                  </span>
+                </div>
+                <div className="swap-input-main">
+                  <div className="swap-token-badge">
+                    <span>💵 USDT</span>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    className="swap-field"
+                    value={withdrawUsdtStr}
+                    onChange={(e) => setWithdrawUsdtStr(e.target.value)}
+                    placeholder="10.00"
+                  />
+                </div>
+              </div>
+
+              {/* Dirección de Billetera BEP-20 */}
+              <div className="swap-input-box">
+                <div className="swap-input-top">
+                  <span className="swap-input-label">Dirección de Billetera BEP-20 (BNB Chain)</span>
+                </div>
+                <input
+                  type="text"
+                  placeholder="0x... (Tu wallet BEP-20 en MetaMask, Binance o Trust)"
+                  value={withdrawWallet}
+                  onChange={(e) => setWithdrawWallet(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(2, 6, 23, 0.7)',
+                    border: '1px solid rgba(20, 137, 109, 0.5)',
+                    borderRadius: '7px',
+                    padding: '8px 10px',
+                    color: '#fff',
+                    fontSize: '11px',
+                    fontFamily: 'monospace',
+                    outline: 'none',
+                  }}
+                />
+              </div>
             </div>
           ) : (
-            <div className="swap-gems-benefit-box">
-              <div className="gems-benefit-badge">💎 BONO EXCLUSIVO +20% EN GEMAS</div>
-              <p className="gems-benefit-desc">
-                Quema instantánea de PLANTS respaldando la liquidez · Recibes Gemas automáticas en tu perfil sin esperas ni comisiones.
-              </p>
-            </div>
-          )}
+            /* =====================================================
+                 MODO SWAP (PLANTS A USDT O GEMAS)
+                 ===================================================== */
+            <>
+              {/* Pay Input Box */}
+              <div className="swap-input-box">
+                <div className="swap-input-top">
+                  <span className="swap-input-label">Tú pagas</span>
+                  <span className="swap-input-balance">
+                    Líquido disponible: {liquidPlants.toLocaleString()}{' '}
+                    <button type="button" className="swap-max-btn" onClick={handleMaxPlantsClick}>
+                      MÁX
+                    </button>
+                  </span>
+                </div>
+                <div className="swap-input-main">
+                  <div className="swap-token-badge">
+                    <span>🌱 PLANTS</span>
+                  </div>
+                  <input
+                    type="number"
+                    className="swap-field"
+                    value={amountStr}
+                    onChange={(e) => setAmountStr(e.target.value)}
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+              </div>
 
-          {/* Slippage Control */}
-          <div className="swap-slippage-row">
-            <span className="swap-slippage-lbl">⚙️ Tolerancia de Slippage</span>
-            <div className="swap-slippage-pills">
-              {[0.5, 1, 3].map((val) => (
+              {/* Swap Direction Icon */}
+              <div className="swap-arrow-divider">
                 <button
-                  key={val}
                   type="button"
-                  className={`swap-slip-pill ${slippage === val ? 'active' : ''}`}
-                  onClick={() => setSlippage(val)}
+                  className="swap-arrow-circle"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setSwapMode((prev) => (prev === 'usdt' ? 'gems' : 'usdt'))
+                  }}
+                  title="Alternar entre saldo USDT y Gemas"
                 >
-                  {val}%
+                  ⇅
                 </button>
-              ))}
-            </div>
-          </div>
+              </div>
+
+              {/* Receive Output Box */}
+              <div className="swap-input-box">
+                <div className="swap-input-top">
+                  <span className="swap-input-label">Tú recibes (estimado)</span>
+                  <span className="swap-rate-note">
+                    {swapMode === 'usdt'
+                      ? `1 PLANTS = ${(spotPrice * 0.95).toFixed(6)} USDT (neto)`
+                      : `1 PLANTS = ${((spotPrice * 1.20) / 0.01).toFixed(3)} Gemas (+20%)`}
+                  </span>
+                </div>
+                <div className="swap-input-main">
+                  <div
+                    className={`swap-token-badge ${
+                      swapMode === 'gems' ? 'swap-token-badge--gems' : 'swap-token-badge--receive'
+                    }`}
+                  >
+                    <span>{swapMode === 'usdt' ? '💵 SALDO USDT' : '💎 GEMAS (+20%)'}</span>
+                  </div>
+                  <div className="swap-receive-val">
+                    {swapMode === 'usdt'
+                      ? `${estimatedUsdt.toFixed(4)} USDT`
+                      : `${Math.floor(estimatedGems).toLocaleString()} Gemas`}
+                  </div>
+                </div>
+              </div>
+
+              {swapMode === 'gems' ? (
+                <div className="swap-gems-benefit-box">
+                  <div className="gems-benefit-badge">💎 BONO EXCLUSIVO +20% EN GEMAS</div>
+                  <p className="gems-benefit-desc">
+                    Quema instantánea de PLANTS respaldando la liquidez · Recibes Gemas automáticas en tu perfil sin esperas ni comisiones.
+                  </p>
+                </div>
+              ) : (
+                <div className="swap-slippage-row">
+                  <span className="swap-slippage-lbl">⚙️ Tolerancia de Slippage</span>
+                  <div className="swap-slippage-pills">
+                    {[0.5, 1, 3].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        className={`swap-slip-pill ${slippage === val ? 'active' : ''}`}
+                        onClick={() => setSlippage(val)}
+                      >
+                        {val}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Submit Action Button */}
           <button
             type="button"
             className="swap-confirm-btn"
-            disabled={isSubmitting || parsedAmount <= 0}
+            disabled={
+              isSubmitting ||
+              (swapMode !== 'withdraw' && parsedAmount <= 0) ||
+              (swapMode === 'withdraw' && (parsedWithdrawUsdt <= 0 || userUsdtBalance < 1 || (!isArena3Plus && userElo < 2001)))
+            }
             onClick={handleSubmit}
           >
             {isSubmitting
               ? 'PROCESANDO...'
+              : swapMode === 'withdraw'
+              ? '💸 SOLICITAR RETIRO EN USDT'
               : swapMode === 'gems'
               ? '💎 CANJEAR POR GEMAS (+20% BONO)'
-              : '💵 SOLICITAR RETIRO EN USDT'}
+              : '💵 CONVERTIR A SALDO USDT'}
           </button>
         </article>
 
@@ -374,7 +590,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
 
             <div className="swap-amm-launcher-preview">
               <div className="swap-amm-launcher-stats">
-                <span>🛡️ Respaldo: $37,000 USDT</span>
+                <span>🛡️ Pool: ${poolUsdt.toFixed(2)} USDT</span>
                 <span>💎 Paridad: 1.00x</span>
                 <span>🪙 185M Circulante</span>
               </div>
@@ -405,7 +621,11 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                   <div>
                     <h4 className="swap-card-title">VISTA PREVIA OPERACIÓN</h4>
                     <span className="swap-card-subtitle">
-                      {swapMode === 'usdt' ? 'Retiro seguro a Billetera BEP-20' : 'Super Sink Quema a Gemas (+20%)'}
+                      {swapMode === 'withdraw'
+                        ? 'Retiro BEP-20 a Billetera Externa'
+                        : swapMode === 'usdt'
+                        ? 'Conversión a saldo USDT interno'
+                        : 'Super Sink Quema a Gemas (+20%)'}
                     </span>
                   </div>
                 </div>
@@ -418,20 +638,24 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 <div className="swap-mini-metric">
                   <span className="mini-metric-label">TÚ ENTREGAS</span>
                   <strong className="mini-metric-value text-white">
-                    {parsedAmount > 0 ? parsedAmount.toLocaleString() : '0'} <small>PLANTS</small>
+                    {swapMode === 'withdraw'
+                      ? `${parsedWithdrawUsdt > 0 ? parsedWithdrawUsdt.toFixed(2) : '0.00'} USDT`
+                      : `${parsedAmount > 0 ? parsedAmount.toLocaleString() : '0'} PLANTS`}
                   </strong>
-                  <span className="mini-metric-sub">Saldo líquido a debitar</span>
+                  <span className="mini-metric-sub">
+                    {swapMode === 'withdraw' ? 'Débito de tu saldo USDT' : 'Saldo líquido a debitar'}
+                  </span>
                 </div>
 
                 <div className="swap-mini-metric">
                   <span className="mini-metric-label">
-                    {swapMode === 'usdt' ? 'COMISIÓN (5%)' : 'SUPER SINK'}
+                    {swapMode === 'withdraw' ? 'COMISIÓN RED' : swapMode === 'usdt' ? 'COMISIÓN (5%)' : 'SUPER SINK'}
                   </span>
                   <strong className="mini-metric-value text-orange">
-                    {swapMode === 'usdt' ? `-${effectiveFee.toFixed(0)} PLANTS` : '100% QUEMA'}
+                    {swapMode === 'withdraw' ? '$0.00 USDT' : swapMode === 'usdt' ? `-${effectiveFee.toFixed(0)} PLANTS` : '100% QUEMA'}
                   </strong>
                   <span className="mini-metric-sub">
-                    {swapMode === 'usdt' ? 'Quema para el pool' : 'Bono +20% activo'}
+                    {swapMode === 'withdraw' ? 'Sin comisiones ocultas' : swapMode === 'usdt' ? 'Quema para el pool' : 'Bono +20% activo'}
                   </span>
                 </div>
               </div>
@@ -440,52 +664,62 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
               <div className="swap-preview-details-list">
                 <div className="swap-preview-detail-row">
                   <span className="detail-row-lbl">Tasa Spot AMM</span>
-                  <span className="detail-row-val font-mono">1 PLANTS = ${(spotPrice).toFixed(6)} USDT</span>
+                  <span className="detail-row-val font-mono">1 PLANTS = ${spotPrice.toFixed(6)} USDT</span>
                 </div>
                 <div className="swap-preview-detail-row">
                   <span className="detail-row-lbl">Destino Acreditado</span>
                   <span className="detail-row-val">
-                    {swapMode === 'usdt'
-                      ? (walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'Billetera BEP-20')
+                    {swapMode === 'withdraw'
+                      ? withdrawWallet
+                        ? `${withdrawWallet.slice(0, 6)}...${withdrawWallet.slice(-4)}`
+                        : 'Billetera Externa BEP-20'
+                      : swapMode === 'usdt'
+                      ? 'Saldo USDT de tu Cuenta'
                       : 'Inventario de Gemas'}
                   </span>
                 </div>
                 <div className="swap-preview-detail-row">
-                  <span className="detail-row-lbl">Tiempo Estimado</span>
+                  <span className="detail-row-lbl">Franja Horaria</span>
                   <span className="detail-row-val text-mint">
-                    {swapMode === 'usdt' ? 'Lote diario 18:00 UTC-3' : '⚡ Instantáneo (Automático)'}
+                    {swapMode === 'withdraw'
+                      ? hasVipPass
+                        ? '👑 VIP (24 Horas)'
+                        : '🛡️ Free (72 Horas)'
+                      : '⚡ Instantáneo (Automático)'}
                   </span>
-                </div>
-                <div className="swap-preview-detail-row">
-                  <span className="detail-row-lbl">Slippage Máximo</span>
-                  <span className="detail-row-val text-cyan">&lt; 0.05% (Tolerancia {slippage}%)</span>
                 </div>
               </div>
 
               {/* HERO RESULT BOX */}
               <div className={`swap-preview-hero-box ${swapMode === 'gems' ? 'gems-mode' : 'usdt-mode'}`}>
                 <div className="hero-box-label-row">
-                  <span className="hero-box-label">RECIBES EN TU CUENTA</span>
+                  <span className="hero-box-label">
+                    {swapMode === 'withdraw' ? 'TRANSFERENCIA EN CAMINO' : 'RECIBES EN TU CUENTA'}
+                  </span>
                   <span className="hero-box-tag">
                     {swapMode === 'gems' ? '💎 +20% EXTRA' : '💵 NETO'}
                   </span>
                 </div>
                 <div className="hero-box-value">
-                  {swapMode === 'usdt'
-                    ? `${estimatedUsdt.toFixed(4)} USDT`
+                  {swapMode === 'withdraw'
+                    ? `$${parsedWithdrawUsdt.toFixed(2)} USDT`
+                    : swapMode === 'usdt'
+                    ? `$${estimatedUsdt.toFixed(4)} USDT`
                     : `${Math.floor(estimatedGems).toLocaleString()} GEMAS`}
                 </div>
                 <div className="hero-box-footer">
                   <span>
-                    {swapMode === 'usdt'
-                      ? '⏱️ Retiro sin comisiones ocultas procesado en BNB Chain'
+                    {swapMode === 'withdraw'
+                      ? `⏱️ Solicitud auditada y liquidada según tu franja (${hasVipPass ? '24h VIP' : '72h Free'})`
+                      : swapMode === 'usdt'
+                      ? '⚡ Acreditado directamente a tu saldo USDT'
                       : '⚡ Acreditación automática a tu balance de jugador'}
                   </span>
                 </div>
               </div>
             </article>
 
-            {/* 2. SECCIÓN DE STAKING (BLOQUEADO, RECOMPENSAS, BLOQUES Y MÍNIMOS) */}
+            {/* 2. SECCIÓN DE STAKING */}
             <article
               className="swap-staking-hub-card"
               onClick={() => {
@@ -531,42 +765,6 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 </div>
               </div>
 
-              {/* BLOQUES REALIZADOS Y MÍNIMOS CARDS */}
-              <div className="swap-staking-plans-strip">
-                <div className="staking-plan-chip">
-                  <div className="plan-chip-header">
-                    <span className="plan-chip-dot">🌱</span>
-                    <strong className="plan-chip-name">30 DÍAS</strong>
-                  </div>
-                  <div className="plan-chip-body">
-                    <span className="plan-chip-min">Mín 500</span>
-                    <span className="plan-chip-yield text-cyan">+Gemas</span>
-                  </div>
-                </div>
-
-                <div className="staking-plan-chip">
-                  <div className="plan-chip-header">
-                    <span className="plan-chip-dot">🌿</span>
-                    <strong className="plan-chip-name">60 DÍAS</strong>
-                  </div>
-                  <div className="plan-chip-body">
-                    <span className="plan-chip-min">Mín 5,000</span>
-                    <span className="plan-chip-yield text-gold">+Oro & Gemas</span>
-                  </div>
-                </div>
-
-                <div className="staking-plan-chip highlight">
-                  <div className="plan-chip-header">
-                    <span className="plan-chip-dot">👑</span>
-                    <strong className="plan-chip-name">90 DÍAS</strong>
-                  </div>
-                  <div className="plan-chip-body">
-                    <span className="plan-chip-min">Mín 25,000</span>
-                    <span className="plan-chip-yield text-green">Máx Retorno</span>
-                  </div>
-                </div>
-              </div>
-
               {/* BENEFIT GUARANTEE ROW */}
               <div className="staking-card-guarantee-row">
                 <span>🌾 Cosecha diaria flexible · 100% de capital devuelto al madurar</span>
@@ -590,7 +788,6 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
 
           {/* 2 COLUMNAS: REGLAS DE RETIRO Y HORARIOS DE RETIRO */}
           <div className="swap-rules-and-sink">
-            {/* COLUMNA 1: REGLAS DE RETIRO */}
             <article className="swap-rules-card">
               <h5 className="swap-rules-title">📜 REGLAS DE RETIRO</h5>
               <div className="swap-rule-item">
@@ -600,31 +797,157 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 <span>🛡️ Auditoría:</span> Verificación anti-bot y validación de partidas.
               </div>
               <div className="swap-rule-item">
-                <span>🔥 Tasa / Quema:</span> 5% retención de resguardo y quema de liquidez.
+                <span>💵 Mínimo:</span> 1.00 USDT por retiro a billeteras BEP-20.
               </div>
               <div className="swap-rule-guarantee">
-                <span>🔒 Aplica a saldo líquido no sujeto a vesting</span>
+                <span>🔒 Aplica a saldo USDT convertido libremente</span>
               </div>
             </article>
 
-            {/* COLUMNA 2: HORARIOS DE RETIRO */}
             <article className="swap-rules-card swap-schedules-card">
-              <h5 className="swap-rules-title">⏱️ HORARIOS DE RETIRO</h5>
+              <h5 className="swap-rules-title">⏱️ FRANJAS HORARIAS</h5>
               <div className="swap-rule-item">
-                <span>📅 Ventana diaria:</span> Lotes procesados a las 18:00 (UTC-3).
+                <span>👑 Jugadores VIP:</span> Franja rápida de 24 horas.
               </div>
               <div className="swap-rule-item">
-                <span>⚡ Liquidación:</span> Directa a tu billetera BEP-20 tras auditoría.
+                <span>🛡️ Jugadores Free:</span> Franja estándar de 72 horas.
               </div>
               <div className="swap-rule-item">
-                <span>💎 Super Sink:</span> Canje instantáneo a Gemas (+20% bonus) 24/7.
+                <span>💰 Reembolso:</span> Si un retiro es rechazado, se reembolsa al 100%.
               </div>
               <div className="swap-rule-guarantee">
-                <span>🔒 Bóveda auditada y respaldada 100% USDT</span>
+                <span>🔒 Bóveda respaldada 100% USDT en BNB Chain</span>
               </div>
             </article>
           </div>
         </div>
+      </section>
+
+      {/* =====================================================
+           3. ESTADO DE SOLICITUDES DE RETIRO (ABAJO DE LA PANTALLA)
+           ===================================================== */}
+      <section className="swap-withdrawal-status-section">
+        <div className="withdrawal-status-header">
+          <div className="withdrawal-status-title-group">
+            <h4 className="withdrawal-status-title">
+              <span>📋</span> ESTADO DE MIS SOLICITUDES DE RETIRO (USDT BEP-20)
+            </h4>
+            <span className="withdrawal-status-badge-count">
+              {myRequests.length} {myRequests.length === 1 ? 'registro' : 'registros'}
+            </span>
+            <span className="withdrawal-status-desc">
+              Seguimiento en vivo respetando tu franja ({hasVipPass ? 'VIP 24h' : 'Free 72h'})
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="withdrawal-refresh-btn"
+            onClick={() => {
+              soundManager.playSound('click', 0.4)
+              loadMyCashoutRequests()
+            }}
+            disabled={loadingRequests}
+          >
+            {loadingRequests ? '🔄 Consultando...' : '🔄 Actualizar Estado'}
+          </button>
+        </div>
+
+        {myRequests.length === 0 ? (
+          <div className="withdrawal-empty-state">
+            <span>ℹ️ No tienes solicitudes de retiro registradas. Convierte tus tokens PLANTS a saldo USDT y solicita tu retiro arriba.</span>
+          </div>
+        ) : (
+          <div className="withdrawal-requests-table">
+            {myRequests.map((req) => {
+              const isVipReq = req.userIsVip
+              const isPending = req.status === 'pending'
+              const isCompleted = req.status === 'completed'
+              const isRejected = req.status === 'rejected'
+
+              const formattedDate = new Date(req.createdAt).toLocaleString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+
+              return (
+                <div key={req.id} className="withdrawal-req-item">
+                  {/* Columna ID & Fecha */}
+                  <div className="withdrawal-req-col-id">
+                    <span className="withdrawal-req-id-tag">#WD-{req.id.slice(0, 8).toUpperCase()}</span>
+                    <span className="withdrawal-req-date">{formattedDate}</span>
+                  </div>
+
+                  {/* Columna Monto */}
+                  <div className="withdrawal-req-col-amount">
+                    <strong className="withdrawal-req-amount-val">${req.netUsdt.toFixed(2)} USDT</strong>
+                    <span className="withdrawal-req-fee-sub">Comisión: ${req.feeUsdt.toFixed(2)}</span>
+                  </div>
+
+                  {/* Columna Destino / Tx / Razón */}
+                  <div className="withdrawal-req-col-dest">
+                    <div className="withdrawal-req-wallet">
+                      <span>Destino:</span>
+                      <strong title={req.walletAddress}>
+                        {req.walletAddress.slice(0, 8)}...{req.walletAddress.slice(-6)}
+                      </strong>
+                      <button
+                        type="button"
+                        className="withdrawal-copy-tag"
+                        onClick={() => handleCopy(req.walletAddress, req.id)}
+                        title="Copiar wallet"
+                      >
+                        {copiedId === req.id ? '✓' : '📋'}
+                      </button>
+                    </div>
+
+                    {isCompleted && req.txHash && (
+                      <a
+                        href={`https://bscscan.com/tx/${req.txHash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="withdrawal-req-tx"
+                        title="Ver en BscScan"
+                      >
+                        🔗 Ver Tx: {req.txHash.slice(0, 10)}... ↗
+                      </a>
+                    )}
+
+                    {isRejected && req.rejectReason && (
+                      <span className="withdrawal-req-reason">
+                        Motivo: {req.rejectReason} (Reembolsado a tu saldo)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Columna Estado & Franja */}
+                  <div className="withdrawal-req-col-status">
+                    {isPending && (
+                      <span className="withdrawal-pill withdrawal-pill--pending">
+                        ⏳ EN REVISIÓN
+                      </span>
+                    )}
+                    {isCompleted && (
+                      <span className="withdrawal-pill withdrawal-pill--completed">
+                        ✅ PAGADO
+                      </span>
+                    )}
+                    {isRejected && (
+                      <span className="withdrawal-pill withdrawal-pill--rejected">
+                        ❌ RECHAZADO
+                      </span>
+                    )}
+                    <span className="withdrawal-window-sub">
+                      {isVipReq ? '👑 Franja VIP (24h)' : '🛡️ Franja Free (72h)'}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       {/* PANTALLA DEDICADA / MODAL DE LA CURVA AMM */}

@@ -3,8 +3,10 @@ import type {
   PlantsPriceHistoryPoint,
   PlantsVestingSummary,
   PresalePackDefinition,
+  CashoutRequestItem,
 } from '../../services/plantsTokenService'
 
+export type { CashoutRequestItem }
 export type TokenTabType = 'summary' | 'presale' | 'vesting' | 'staking' | 'swap' | 'tokenomics' | 'guide'
 export type Timeframe = '1H' | '24H' | '7D' | 'ALL'
 
@@ -13,6 +15,7 @@ export interface TokenHubSharedProps {
   userGold: number
   userElo: number
   hasVipPass: boolean
+  userUsdtBalance?: number
   userProfile?: {
     id?: string
     username?: string
@@ -21,6 +24,7 @@ export interface TokenHubSharedProps {
     last_plants_cashout_at?: string | null
     elo_rating?: number
     gems_balance?: number
+    usdt_balance?: number
   } | null
   marketState: PlantsMarketState | null
   priceHistory: PlantsPriceHistoryPoint[]
@@ -43,6 +47,8 @@ export interface TokenHubSharedProps {
   onClaimDailyVesting: () => Promise<void>
   onSwapToGems: (amount: number) => Promise<void>
   onCashoutUsdt: (amount: number, wallet: string) => Promise<void>
+  onSwapPlantsForUsdt?: (amount: number) => Promise<boolean>
+  onRequestUsdtWithdrawal?: (amount: number, wallet: string) => Promise<boolean>
   onRefreshData: () => Promise<void>
   showNotification: (message: string, type?: 'success' | 'error' | 'info') => void
 }

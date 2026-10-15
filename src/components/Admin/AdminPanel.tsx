@@ -13,6 +13,7 @@ import {
   type AdminMissionSubmission,
 } from '../../services/sponsoredMissionService'
 import type { Database, CodeRoundPrizeTier } from '../../types/database.types'
+import { plantsTokenService, type CashoutRequestItem } from '../../services/plantsTokenService'
 import GoldIcon from '../Common/GoldIcon'
 import './AdminPanel.css'
 
@@ -55,7 +56,7 @@ interface AdminPanelProps {
 
 export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<
-    'tournaments' | 'seasons' | 'players' | 'rewards' | 'code' | 'referidos' | 'partidas' | 'clan_rewards' | 'tiktok'
+    'tournaments' | 'seasons' | 'players' | 'rewards' | 'code' | 'referidos' | 'partidas' | 'clan_rewards' | 'tiktok' | 'retiros'
   >('tournaments')
 
   /**
@@ -221,6 +222,75 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     subId: string
     status: string
   } | null>(null)
+
+  // ── Retiros USDT (Cashouts) ────────────────────────────────────────────────
+  const [cashoutRequests, setCashoutRequests] = useState<CashoutRequestItem[]>([])
+  const [isLoadingCashouts, setIsLoadingCashouts] = useState<boolean>(false)
+  const [cashoutFilter, setCashoutFilter] = useState<'all' | 'pending' | 'completed' | 'rejected'>('all')
+
+  const loadCashoutRequests = async () => {
+    setIsLoadingCashouts(true)
+    try {
+      const data = await plantsTokenService.getAdminCashoutRequests()
+      setCashoutRequests(data)
+    } catch (e: any) {
+      console.error('Error loading cashout requests', e)
+    } finally {
+      setIsLoadingCashouts(false)
+    }
+  }
+
+  const handleApproveCashout = async (request: CashoutRequestItem) => {
+    const tx = prompt(
+      `Aprobar retiro #${request.id.slice(0, 8)} de $${request.netUsdt.toFixed(2)} USDT para ${request.username} (${request.walletAddress}).\n\nIngresa el Hash de la transacción BSC (TxHash / BscScan):`
+    )
+    if (tx === null) return
+    const cleanTx = tx.trim()
+    if (!cleanTx || cleanTx.length < 10) {
+      alert('Debes ingresar un TxHash válido de BscScan para completar la solicitud.')
+      return
+    }
+
+    setIsLoadingCashouts(true)
+    try {
+      const res = await plantsTokenService.resolveAdminCashoutRequest(request.id, 'complete', cleanTx)
+      if (res.success) {
+        soundManager.playSound('victory', 0.8)
+        showNotice(`✅ Retiro #${request.id.slice(0, 8)} completado y registrado con TxHash.`)
+        await loadCashoutRequests()
+      } else {
+        alert('Error al completar retiro: ' + (res.error || 'Error desconocido'))
+      }
+    } catch (e: any) {
+      alert('Excepción al completar retiro: ' + e.message)
+    } finally {
+      setIsLoadingCashouts(false)
+    }
+  }
+
+  const handleRejectCashout = async (request: CashoutRequestItem) => {
+    const reason = prompt(
+      `Rechazar retiro #${request.id.slice(0, 8)} de $${request.netUsdt.toFixed(2)} USDT para ${request.username}.\n\nEl saldo de $${request.netUsdt.toFixed(2)} USDT será REEMBOLSADO automáticamente al balance del usuario.\n\nIngresa el motivo del rechazo:`
+    )
+    if (reason === null) return
+    const cleanReason = reason.trim() || 'Auditoría rechazada por el administrador'
+
+    setIsLoadingCashouts(true)
+    try {
+      const res = await plantsTokenService.resolveAdminCashoutRequest(request.id, 'reject', undefined, cleanReason)
+      if (res.success) {
+        soundManager.playSound('click', 0.8)
+        showNotice(`❌ Retiro #${request.id.slice(0, 8)} rechazado y saldo de $${request.netUsdt.toFixed(2)} USDT reembolsado a ${request.username}.`)
+        await loadCashoutRequests()
+      } else {
+        alert('Error al rechazar retiro: ' + (res.error || 'Error desconocido'))
+      }
+    } catch (e: any) {
+      alert('Excepción al rechazar retiro: ' + e.message)
+    } finally {
+      setIsLoadingCashouts(false)
+    }
+  }
 
   const loadMissionSubmissions = async () => {
     setIsLoadingMissions(true)
@@ -566,6 +636,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
       await loadCodeRounds()
       void loadMissionSubmissions()
+      void loadCashoutRequests()
     } catch (e) {
       console.error(e)
     } finally {
@@ -1049,6 +1120,17 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
             }}
           >
             🎬 TikTok Clips ({tiktokSubmissions.filter((s) => s.status === 'pending').length} pendientes)
+          </button>
+          <button
+            type="button"
+            className={`admin-tab-btn ${activeTab === 'retiros' ? 'admin-tab-btn--active' : ''}`}
+            onClick={() => {
+              setActiveTab('retiros')
+              void loadCashoutRequests()
+            }}
+            style={cashoutRequests.filter((r) => r.status === 'pending').length > 0 ? { border: '1.5px solid #10b981', color: '#6ee7b7' } : {}}
+          >
+            💸 Retiros USDT ({cashoutRequests.filter((r) => r.status === 'pending').length} pendientes)
           </button>
         </div>
 
@@ -3217,6 +3299,318 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                           </td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 10: SOLICITUDES DE RETIRO USDT */}
+        {activeTab === 'retiros' && (
+          <div className="admin-content-section">
+            <div className="admin-card">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#f8fafc', fontSize: '1.3rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>💸</span> Solicitudes de Retiro en USDT (BEP-20 / BNB Chain)
+                  </h3>
+                  <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '0.85rem' }}>
+                    Auditoría de fondos y validación de transferencias. Cada retiro completado se vincula a su TxHash; los rechazos reembolsan el 100% del saldo al perfil del jugador.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void loadCashoutRequests()}
+                  disabled={isLoadingCashouts}
+                  style={{
+                    background: '#0284c7',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  {isLoadingCashouts ? '🔄 Consultando...' : '🔄 Actualizar Lista'}
+                </button>
+              </div>
+
+              {/* KPIs de Resumen de Retiros */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '1.2rem' }}>
+                <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '8px', padding: '10px 14px' }}>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>TOTAL SOLICITUDES</span>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: '#f8fafc' }}>{cashoutRequests.length}</div>
+                </div>
+
+                <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.4)', borderRadius: '8px', padding: '10px 14px' }}>
+                  <span style={{ fontSize: '11px', color: '#fde047', fontWeight: 700 }}>⏳ PENDIENTES</span>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: '#facc15' }}>
+                    {cashoutRequests.filter((r) => r.status === 'pending').length}
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '8px', padding: '10px 14px' }}>
+                  <span style={{ fontSize: '11px', color: '#6ee7b7', fontWeight: 700 }}>✅ COMPLETADOS</span>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: '#34d399' }}>
+                    {cashoutRequests.filter((r) => r.status === 'completed').length}
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '8px', padding: '10px 14px' }}>
+                  <span style={{ fontSize: '11px', color: '#fca5a5', fontWeight: 700 }}>❌ RECHAZADOS</span>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: '#f87171' }}>
+                    {cashoutRequests.filter((r) => r.status === 'rejected').length}
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(6, 78, 59, 0.3)', border: '1px solid #10b981', borderRadius: '8px', padding: '10px 14px' }}>
+                  <span style={{ fontSize: '11px', color: '#a7f3d0', fontWeight: 700 }}>USDT EN ESPERA</span>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: '#10b981' }}>
+                    ${cashoutRequests
+                      .filter((r) => r.status === 'pending')
+                      .reduce((sum, r) => sum + r.netUsdt, 0)
+                      .toFixed(2)}{' '}
+                    USDT
+                  </div>
+                </div>
+              </div>
+
+              {/* Filtros de Estado */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                {(['all', 'pending', 'completed', 'rejected'] as const).map((filter) => {
+                  const label =
+                    filter === 'all'
+                      ? `Todos (${cashoutRequests.length})`
+                      : filter === 'pending'
+                      ? `⏳ Pendientes (${cashoutRequests.filter((r) => r.status === 'pending').length})`
+                      : filter === 'completed'
+                      ? `✅ Completados (${cashoutRequests.filter((r) => r.status === 'completed').length})`
+                      : `❌ Rechazados (${cashoutRequests.filter((r) => r.status === 'rejected').length})`
+
+                  const isActive = cashoutFilter === filter
+                  return (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => setCashoutFilter(filter)}
+                      style={{
+                        background: isActive ? '#059669' : 'rgba(15, 23, 42, 0.6)',
+                        color: isActive ? '#fff' : '#cbd5e1',
+                        border: isActive ? '1px solid #10b981' : '1px solid #334155',
+                        padding: '6px 14px',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        fontWeight: isActive ? 800 : 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Tabla de Solicitudes */}
+              {isLoadingCashouts ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                  <p>Consultando solicitudes de retiro en vivo...</p>
+                </div>
+              ) : cashoutRequests.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>📭</span>
+                  <p style={{ margin: 0, fontWeight: 700 }}>No hay solicitudes de retiro registradas todavía.</p>
+                  <small style={{ color: '#475569' }}>Los retiros solicitados por los jugadores en la pantalla de Swap aparecerán aquí.</small>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8' }}>
+                        <th style={{ padding: '10px 8px' }}>ID / FECHA</th>
+                        <th style={{ padding: '10px 8px' }}>JUGADOR</th>
+                        <th style={{ padding: '10px 8px' }}>MONTO (USDT)</th>
+                        <th style={{ padding: '10px 8px' }}>BILLETERA BEP-20</th>
+                        <th style={{ padding: '10px 8px' }}>FRANJA</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'center' }}>ESTADO</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'right' }}>ACCIONES</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cashoutRequests
+                        .filter((r) => (cashoutFilter === 'all' ? true : r.status === cashoutFilter))
+                        .map((req) => {
+                          const formattedDate = new Date(req.createdAt).toLocaleString('es-ES', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+
+                          return (
+                            <tr key={req.id} style={{ borderBottom: '1px solid rgba(51, 65, 85, 0.5)' }}>
+                              {/* ID / Fecha */}
+                              <td style={{ padding: '10px 8px' }}>
+                                <div style={{ fontFamily: 'monospace', fontWeight: 800, color: '#a7f3d0', fontSize: '11px' }}>
+                                  #WD-{req.id.slice(0, 8).toUpperCase()}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#64748b' }}>{formattedDate}</div>
+                              </td>
+
+                              {/* Jugador */}
+                              <td style={{ padding: '10px 8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#1e293b', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '14px' }}>🌱</span>
+                                  </div>
+                                  <div>
+                                    <strong style={{ color: '#f8fafc', display: 'block' }}>{req.username}</strong>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <span style={{ fontSize: '10px', color: '#fbbf24' }}>🏆 {req.eloRating}</span>
+                                      {req.userIsVip ? (
+                                        <span style={{ fontSize: '9px', background: 'rgba(234, 179, 8, 0.2)', border: '1px solid rgba(234, 179, 8, 0.6)', color: '#fde047', padding: '1px 4px', borderRadius: '3px', fontWeight: 800 }}>
+                                          👑 VIP
+                                        </span>
+                                      ) : (
+                                        <span style={{ fontSize: '9px', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.4)', color: '#7dd3fc', padding: '1px 4px', borderRadius: '3px', fontWeight: 700 }}>
+                                          FREE
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Monto */}
+                              <td style={{ padding: '10px 8px' }}>
+                                <strong style={{ color: '#34d399', fontSize: '14px', display: 'block' }}>
+                                  ${req.netUsdt.toFixed(2)} USDT
+                                </strong>
+                                <small style={{ color: '#94a3b8', fontSize: '10px' }}>
+                                  Comisión: ${req.feeUsdt.toFixed(2)}
+                                </small>
+                              </td>
+
+                              {/* Billetera BEP-20 */}
+                              <td style={{ padding: '10px 8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#cbd5e1' }} title={req.walletAddress}>
+                                    {req.walletAddress.slice(0, 8)}...{req.walletAddress.slice(-6)}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard?.writeText(req.walletAddress)
+                                      showNotice('Billetera copiada al portapapeles')
+                                    }}
+                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '11px', color: '#38bdf8' }}
+                                    title="Copiar billetera completa"
+                                  >
+                                    📋
+                                  </button>
+                                  <a
+                                    href={`https://bscscan.com/address/${req.walletAddress}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ color: '#38bdf8', fontSize: '11px', textDecoration: 'none' }}
+                                    title="Ver en BscScan"
+                                  >
+                                    ↗
+                                  </a>
+                                </div>
+                              </td>
+
+                              {/* Franja */}
+                              <td style={{ padding: '10px 8px' }}>
+                                <span style={{ color: req.userIsVip ? '#fde047' : '#7dd3fc', fontWeight: 700, fontSize: '11px' }}>
+                                  {req.userIsVip ? '👑 24 Horas' : '🛡️ 72 Horas'}
+                                </span>
+                              </td>
+
+                              {/* Estado */}
+                              <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                                {req.status === 'pending' && (
+                                  <span style={{ background: 'rgba(234, 179, 8, 0.2)', border: '1px solid rgba(234, 179, 8, 0.6)', color: '#fde047', padding: '3px 8px', borderRadius: '5px', fontWeight: 800, fontSize: '10px' }}>
+                                    ⏳ PENDIENTE
+                                  </span>
+                                )}
+                                {req.status === 'completed' && (
+                                  <span style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.6)', color: '#34d399', padding: '3px 8px', borderRadius: '5px', fontWeight: 800, fontSize: '10px' }}>
+                                    ✅ PAGADO
+                                  </span>
+                                )}
+                                {req.status === 'rejected' && (
+                                  <span style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.6)', color: '#fca5a5', padding: '3px 8px', borderRadius: '5px', fontWeight: 800, fontSize: '10px' }}>
+                                    ❌ RECHAZADO
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Acciones */}
+                              <td style={{ padding: '10px 8px', textAlign: 'right' }}>
+                                {req.status === 'pending' ? (
+                                  <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApproveCashout(req)}
+                                      style={{
+                                        background: '#10b981',
+                                        color: '#fff',
+                                        border: 'none',
+                                        padding: '5px 10px',
+                                        borderRadius: '5px',
+                                        fontWeight: 800,
+                                        fontSize: '11px',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      ✓ Aprobar (TxHash)
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRejectCashout(req)}
+                                      style={{
+                                        background: '#ef4444',
+                                        color: '#fff',
+                                        border: 'none',
+                                        padding: '5px 10px',
+                                        borderRadius: '5px',
+                                        fontWeight: 800,
+                                        fontSize: '11px',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      ✕ Rechazar & Reembolsar
+                                    </button>
+                                  </div>
+                                ) : req.status === 'completed' ? (
+                                  <div>
+                                    {req.txHash ? (
+                                      <a
+                                        href={`https://bscscan.com/tx/${req.txHash}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ color: '#38bdf8', fontSize: '11px', textDecoration: 'underline' }}
+                                      >
+                                        🔗 BscScan: {req.txHash.slice(0, 10)}... ↗
+                                      </a>
+                                    ) : (
+                                      <span style={{ color: '#64748b', fontSize: '11px' }}>Procesado</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div style={{ fontSize: '10px', color: '#f87171', fontStyle: 'italic' }}>
+                                    {req.rejectReason || 'Rechazado (Reembolsado)'}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
                     </tbody>
                   </table>
                 </div>

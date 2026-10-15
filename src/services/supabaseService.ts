@@ -175,6 +175,7 @@ export const SupabaseService = {
     plants_balance?: number
     plants_vesting_locked?: number
     last_plants_cashout_at?: string | null
+    usdt_balance?: number
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
@@ -194,7 +195,7 @@ export const SupabaseService = {
           const { data: userData } = await supabase.auth.getUser()
           if (userData?.user) {
             const { data: prof } = await (supabase.from as any)('profiles')
-              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, claimed_vip_levels, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels, plants_balance, plants_vesting_locked, last_plants_cashout_at')
+              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, claimed_vip_levels, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels, plants_balance, plants_vesting_locked, last_plants_cashout_at, usdt_balance')
               .eq('id', userData.user.id)
               .single()
             if (prof) {
@@ -217,6 +218,7 @@ export const SupabaseService = {
                 plants_balance: Number(prof.plants_balance ?? 0),
                 plants_vesting_locked: Number(prof.plants_vesting_locked ?? 0),
                 last_plants_cashout_at: prof.last_plants_cashout_at ?? null,
+                usdt_balance: Number(prof.usdt_balance ?? 0),
               }
             }
           }
@@ -235,6 +237,7 @@ export const SupabaseService = {
           plants_balance: Number(data.plants_balance ?? 0),
           plants_vesting_locked: Number(data.plants_vesting_locked ?? 0),
           last_plants_cashout_at: data.last_plants_cashout_at ?? null,
+          usdt_balance: Number(data.usdt_balance ?? 0),
         }
       }
       return data
