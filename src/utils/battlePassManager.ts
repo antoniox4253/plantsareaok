@@ -1,7 +1,6 @@
 import type { PlantId } from '../types/game'
 import type { PackId } from './packDropManager'
 import type { FarmingItemId } from './pvpRewardManager'
-import monedaImg from '../assets/ico/moneda.webp'
 
 export interface PassReward {
   type: 'pack' | 'copies' | 'plant' | 'badge' | 'gold' | 'item' | 'legendary_double'

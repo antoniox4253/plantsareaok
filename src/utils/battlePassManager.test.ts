@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { BATTLE_PASS_LEVELS } from './battlePassManager'
 
-describe('BATTLE PASS REWARDS AUDIT (MIGRACIÓN 47)', () => {
+describe('BATTLE PASS SEASON 2 (XP PROGRESSION & EXCLUSIVE REWARDS)', () => {
   it('contiene exactamente 20 niveles consecutivos del 1 al 20', () => {
     expect(BATTLE_PASS_LEVELS).toHaveLength(20)
     BATTLE_PASS_LEVELS.forEach((lvl, idx) => {
@@ -9,191 +9,65 @@ describe('BATTLE PASS REWARDS AUDIT (MIGRACIÓN 47)', () => {
     })
   })
 
-  it('los requisitos de ELO son estrictamente crecientes desde 1150 hasta 4000', () => {
-    expect(BATTLE_PASS_LEVELS[0].requiredElo).toBe(1150)
-    expect(BATTLE_PASS_LEVELS[19].requiredElo).toBe(4000)
+  it('los requisitos de XP son estrictamente crecientes desde 80 hasta 3300', () => {
+    expect(BATTLE_PASS_LEVELS[0].requiredXp).toBe(80)
+    expect(BATTLE_PASS_LEVELS[19].requiredXp).toBe(3300)
 
     for (let i = 1; i < BATTLE_PASS_LEVELS.length; i++) {
-      expect(BATTLE_PASS_LEVELS[i].requiredElo).toBeGreaterThan(
-        BATTLE_PASS_LEVELS[i - 1].requiredElo
+      expect(BATTLE_PASS_LEVELS[i].requiredXp).toBeGreaterThan(
+        BATTLE_PASS_LEVELS[i - 1].requiredXp
       )
     }
   })
 
-  it('FASE 3 — Recompensas del pase: Nivel 5 Oro, Nivel 8 Sobres, y copias 1x en 2, 3, 6, 7, 11, 12, 19', () => {
-    const lvl2 = BATTLE_PASS_LEVELS.find((l) => l.level === 2)!
-    expect(lvl2.reward).toEqual({
-      type: 'copies',
-      plantId: 'sunflower',
-      copiesCount: 1,
-      label: 'x1 Girasol',
-      icon: '/game-assets/greenfoot/transparentsunflower.webp',
-    })
-
-    const lvl3 = BATTLE_PASS_LEVELS.find((l) => l.level === 3)!
-    expect(lvl3.reward).toEqual({
-      type: 'copies',
-      plantId: 'bonkchoy',
-      copiesCount: 1,
-      label: 'x1 Bonk Choy',
-      icon: '/game-assets/greenfoot/bonkchoy1.webp',
-    })
-
-    const lvl5 = BATTLE_PASS_LEVELS.find((l) => l.level === 5)!
-    expect(lvl5.reward.type).toBe('gold')
-    expect(lvl5.reward.goldAmount).toBe(500)
-    expect(lvl5.reward.label).toBe('500 Monedas de Oro')
-
-    const lvl6 = BATTLE_PASS_LEVELS.find((l) => l.level === 6)!
-    expect(lvl6.reward).toEqual({
-      type: 'copies',
-      plantId: 'repeater',
-      copiesCount: 1,
-      label: 'x1 Repetidora',
-      icon: '/game-assets/greenfoot/transparentrepeater.webp',
-    })
-
-    const lvl7 = BATTLE_PASS_LEVELS.find((l) => l.level === 7)!
-    expect(lvl7.reward).toEqual({
-      type: 'copies',
-      plantId: 'melonpult',
-      copiesCount: 1,
-      label: 'x1 Melon-pult',
-      icon: '/game-assets/greenfoot/melonpacket1.webp',
-    })
-
+  it('rotaciones y exclusivas: Nivel 8 Repetidora/Pala/Oro y Nivel 9 Nuez Explosiva', () => {
     const lvl8 = BATTLE_PASS_LEVELS.find((l) => l.level === 8)!
-    expect(lvl8.reward).toEqual({
-      type: 'pack',
-      packId: 'basic',
-      packCount: 1,
-      label: '1x Sobre Básico',
-      icon: '/game-assets/greenfoot/seed_pack_common_whitebg.webp',
-    })
-
-    const lvl11 = BATTLE_PASS_LEVELS.find((l) => l.level === 11)!
-    expect(lvl11.reward).toEqual({
-      type: 'copies',
-      plantId: 'squash',
-      copiesCount: 1,
-      label: 'x1 Potato Mine',
-      icon: '/game-assets/greenfoot/potatopacket1.webp',
-    })
-
-    const lvl12 = BATTLE_PASS_LEVELS.find((l) => l.level === 12)!
-    expect(lvl12.reward).toEqual({
-      type: 'copies',
-      plantId: 'tallnut',
-      copiesCount: 1,
-      label: 'x1 Nuez Alta',
-      icon: '/game-assets/greenfoot/transparenttallnut.webp',
-    })
-
-    const lvl19 = BATTLE_PASS_LEVELS.find((l) => l.level === 19)!
-    expect(lvl19.reward).toEqual({
-      type: 'copies',
-      plantId: 'tallnut',
-      copiesCount: 1,
-      label: 'x1 Nuez Alta',
-      icon: '/game-assets/greenfoot/transparenttallnut.webp',
-    })
-  })
-
-  it('FASE 4 — Todos los sobres del pase son Básicos (0 sobres legendarios)', () => {
-    const legendaryPacks = BATTLE_PASS_LEVELS.filter(
-      (l) => l.reward.type === 'pack' && l.reward.packId === 'legendary'
-    )
-    expect(legendaryPacks).toHaveLength(0)
+    expect(lvl8.reward.plantId).toBe('repeater')
+    expect(lvl8.reward.copiesCount).toBe(2)
+    expect(lvl8.reward.itemId).toBe('shovel')
+    expect(lvl8.reward.goldAmount).toBe(300)
 
     const lvl9 = BATTLE_PASS_LEVELS.find((l) => l.level === 9)!
-    expect(lvl9.reward.type).toBe('pack')
-    expect(lvl9.reward.packId).toBe('basic')
-    expect(lvl9.reward.packCount).toBe(1)
-    expect(lvl9.reward.label).toBe('1x Sobre Básico')
+    expect(lvl9.reward.plantId).toBe('explodeonut')
+    expect(lvl9.reward.copiesCount).toBe(1)
+  })
 
-    const lvl10 = BATTLE_PASS_LEVELS.find((l) => l.level === 10)!
-    expect(lvl10.reward.type).toBe('pack')
-    expect(lvl10.reward.packId).toBe('basic')
-    expect(lvl10.reward.packCount).toBe(1)
-    expect(lvl10.reward.label).toBe('1x Sobre Básico')
-
-    const lvl13 = BATTLE_PASS_LEVELS.find((l) => l.level === 13)!
-    expect(lvl13.reward.type).toBe('pack')
-    expect(lvl13.reward.packId).toBe('basic')
-    expect(lvl13.reward.packCount).toBe(1)
-    expect(lvl13.reward.label).toBe('1x Sobre Básico')
+  it('rotaciones y exclusivas: Nivel 12 Pickled Pepper, Nivel 15 Sobre Básico y Nivel 19 Guisantralladora', () => {
+    const lvl12 = BATTLE_PASS_LEVELS.find((l) => l.level === 12)!
+    expect(lvl12.reward.plantId).toBe('pickledpepper')
+    expect(lvl12.reward.copiesCount).toBe(1)
 
     const lvl15 = BATTLE_PASS_LEVELS.find((l) => l.level === 15)!
     expect(lvl15.reward.type).toBe('pack')
     expect(lvl15.reward.packId).toBe('basic')
-    expect(lvl15.reward.packCount).toBe(1)
-    expect(lvl15.reward.label).toBe('1x Sobre Básico')
 
-    const lvl16 = BATTLE_PASS_LEVELS.find((l) => l.level === 16)!
-    expect(lvl16.reward.type).toBe('pack')
-    expect(lvl16.reward.packId).toBe('basic')
-    expect(lvl16.reward.packCount).toBe(1)
-    expect(lvl16.reward.label).toBe('1x Sobre Básico')
-
-    const lvl17 = BATTLE_PASS_LEVELS.find((l) => l.level === 17)!
-    expect(lvl17.reward.type).toBe('pack')
-    expect(lvl17.reward.packId).toBe('basic')
-    expect(lvl17.reward.packCount).toBe(2)
-    expect(lvl17.reward.label).toBe('2x Sobre Básico')
-
-    const lvl8 = BATTLE_PASS_LEVELS.find((l) => l.level === 8)!
-    expect(lvl8.reward.type).toBe('pack')
-    expect(lvl8.reward.packId).toBe('basic')
-    expect(lvl8.reward.packCount).toBe(1)
-    expect(lvl8.reward.label).toBe('1x Sobre Básico')
+    const lvl19 = BATTLE_PASS_LEVELS.find((l) => l.level === 19)!
+    expect(lvl19.reward.plantId).toBe('gatlingpea')
+    expect(lvl19.reward.copiesCount).toBe(1)
   })
 
-  it('FASE 5 — Cero legendarias en el Pase VIP y solo Tall-nut como épica', () => {
-    // 0 cartas legendarias (ni iceberglettuce ni threepeater)
-    const legendaryRewards = BATTLE_PASS_LEVELS.filter(
-      (l) => l.reward.plantId === 'iceberglettuce' || l.reward.plantId === 'threepeater'
-    )
-    expect(legendaryRewards).toHaveLength(0)
-
-    // Solo Tall-nut como épica (aloe no debe estar)
-    const aloeRewards = BATTLE_PASS_LEVELS.filter((l) => l.reward.plantId === 'aloe')
-    expect(aloeRewards).toHaveLength(0)
-
-    // Nivel 14 da cartas raras y Nivel 18 da x1 Jalapeño
-    const lvl14 = BATTLE_PASS_LEVELS.find((l) => l.level === 14)!
-    expect(lvl14.reward.label).toBe('x1 Girasol Doble')
-    expect(lvl14.reward.copiesCount).toBe(1)
-    expect(lvl14.reward.plantId).toBe('twinsunflower')
-
-    const lvl18 = BATTLE_PASS_LEVELS.find((l) => l.level === 18)!
-    expect(lvl18.reward.label).toBe('x1 Jalapeño')
-    expect(lvl18.reward.copiesCount).toBe(1)
-    expect(lvl18.reward.plantId).toBe('jalapeno')
-
-    // Nivel 20 otorga x1 Cinturón de Campeón (ítem equipable para Bonk Choy)
+  it('Nivel 20: Gran Premio Doble Supremo (Pack Legendario + Carta Legendaria + 1000 Oro)', () => {
     const lvl20 = BATTLE_PASS_LEVELS.find((l) => l.level === 20)!
-    expect(lvl20.reward.type).toBe('item')
-    expect(lvl20.reward.itemId).toBe('champion_belt')
-    expect(lvl20.reward.itemCount).toBe(1)
-    expect(lvl20.reward.label).toBe('x1 Cinturón de Campeón')
-    expect(lvl20.reward.icon).toBe('/game-assets/farming/champion_belt.png')
+    expect(lvl20.reward.type).toBe('legendary_double')
+    expect(lvl20.reward.packId).toBe('legendary')
+    expect(lvl20.reward.packCount).toBe(1)
+    expect(lvl20.reward.goldAmount).toBe(1000)
+    expect(lvl20.reward.secondaryLabel).toBe('Carta Legendaria Misteriosa')
   })
 
-  it('FASE 6 — Validación de condiciones de claim anti-duplicado', () => {
-    const userElo = 2000
+  it('validación de condiciones de claim basadas en XP anti-duplicado', () => {
+    const currentXp = 1000
     const hasVipPass = true
     const claimedVipLevels = [1, 2]
 
-    // Niveles desbloqueados y listos para reclamar
+    // Niveles con requiredXp <= 1000 son:
+    // lvl 1 (80), lvl 2 (200), lvl 3 (340), lvl 4 (500), lvl 5 (680), lvl 6 (880)
+    // Con 1 y 2 ya reclamados, claimable contiene [3, 4, 5, 6]
     const claimable = BATTLE_PASS_LEVELS.filter(
-      (l) => hasVipPass && userElo >= l.requiredElo && !claimedVipLevels.includes(l.level)
+      (l) => hasVipPass && currentXp >= l.requiredXp && !claimedVipLevels.includes(l.level)
     )
 
-    // Niveles con ELO <= 2000 son: 1 (1150), 2 (1300), 3 (1450), 4 (1600), 5 (1750), 6 (1900).
-    // Como 1 y 2 ya están reclamados, claimable debe tener niveles 3, 4, 5, 6.
     expect(claimable.map((l) => l.level)).toEqual([3, 4, 5, 6])
-
-    // Niveles ya reclamados no pueden volver a reclamarse
     expect(claimedVipLevels.includes(1)).toBe(true)
     expect(claimedVipLevels.includes(2)).toBe(true)
   })
