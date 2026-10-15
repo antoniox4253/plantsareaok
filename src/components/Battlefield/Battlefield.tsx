@@ -404,7 +404,25 @@ export default function Battlefield({
     isVip?: boolean
     reason?: string
     message?: string
+    scoreBreakdown?: {
+      baseScore: number
+      combatScore: number
+      econScore: number
+      deployScore: number
+      blitzScore: number
+      totalScore: number
+      enemyKills: number
+      sunsCollected: number
+      plantsPlaced: number
+      matchDurationSec: number
+      baseReward: number
+      pvpMult: number
+      eraFactor: number
+      isBot: boolean
+    }
   } | null>(null)
+
+  const [showPlantsScoringBreakdown, setShowPlantsScoringBreakdown] = useState<boolean>(false)
 
   const [isPresaleActive, setIsPresaleActive] = useState<boolean>(false)
 
@@ -3902,6 +3920,68 @@ export default function Battlefield({
                                 <span>{plantsRewardResult.dailyClaimsUsed} / {plantsRewardResult.dailyClaimsMax ?? 20} victorias hoy</span>
                               )}
                             </div>
+
+                            <button
+                              type="button"
+                              className="victory-plants-scoring-toggle-btn"
+                              onClick={() => setShowPlantsScoringBreakdown((p) => !p)}
+                              title="Toca para ver el cálculo detallado de tus puntos"
+                            >
+                              <span>{showPlantsScoringBreakdown ? '▲ Ocultar Desglose de Scoring' : '▼ Ver Desglose de Puntos (Scoring)'}</span>
+                            </button>
+
+                            {showPlantsScoringBreakdown && (() => {
+                              const sb = plantsRewardResult.scoreBreakdown ?? {
+                                baseScore: 40,
+                                combatScore: Math.min(25, (stats.enemyPlantsDefeated || 0) * 2.5),
+                                econScore: Math.min(20, (stats.sunsCollected || 0) * 0.04),
+                                deployScore: Math.min(15, (stats.plantsPlaced || 0) * 1.5),
+                                blitzScore: Math.round(tick * 0.033) <= 120 ? 5 : 0,
+                                totalScore: plantsRewardResult.score ?? 40,
+                                enemyKills: stats.enemyPlantsDefeated || 0,
+                                sunsCollected: stats.sunsCollected || 0,
+                                plantsPlaced: stats.plantsPlaced || 0,
+                                matchDurationSec: Math.round(tick * 0.033),
+                                baseReward: 2.0 + (((plantsRewardResult.score ?? 40) - 40) / 60) * 4.0,
+                                pvpMult: plantsRewardResult.isBotMatch ? 0.5 : (plantsRewardResult.bonusActive ? 1.25 : 1.0),
+                                eraFactor: 1.0,
+                                isBot: !!plantsRewardResult.isBotMatch,
+                              }
+
+                              return (
+                                <div className="victory-plants-scoring-breakdown">
+                                  <div className="victory-plants-scoring-item">
+                                    <span>🔹 Base de Combate:</span>
+                                    <span className="val">+{Number(sb.baseScore).toFixed(1)} / 40 pts</span>
+                                  </div>
+                                  <div className="victory-plants-scoring-item">
+                                    <span>⚔️ Bajas Enemigas ({sb.enemyKills}):</span>
+                                    <span className="val">+{Number(sb.combatScore).toFixed(1)} / 25 pts</span>
+                                  </div>
+                                  <div className="victory-plants-scoring-item">
+                                    <span>☀️ Cosecha de Soles ({sb.sunsCollected}):</span>
+                                    <span className="val">+{Number(sb.econScore).toFixed(1)} / 20 pts</span>
+                                  </div>
+                                  <div className="victory-plants-scoring-item">
+                                    <span>🌱 Plantas Puestas ({sb.plantsPlaced}):</span>
+                                    <span className="val">+{Number(sb.deployScore).toFixed(1)} / 15 pts</span>
+                                  </div>
+                                  {Number(sb.blitzScore) > 0 && (
+                                    <div className="victory-plants-scoring-item">
+                                      <span>⚡ Blitz Rápido (≤120s):</span>
+                                      <span className="val val--bonus">+{Number(sb.blitzScore).toFixed(1)} / 5 pts</span>
+                                    </div>
+                                  )}
+                                  <div className="victory-plants-scoring-item" style={{ borderTop: '1px solid rgba(16,185,129,0.3)', paddingTop: 4 }}>
+                                    <span style={{ fontWeight: 800, color: '#fff' }}>Total Rendimiento:</span>
+                                    <span className="val" style={{ color: '#6ee7b7' }}>{Number(sb.totalScore).toFixed(1)} / 100 pts</span>
+                                  </div>
+                                  <div className="victory-plants-scoring-formula">
+                                    🧮 <strong>Fórmula:</strong> Base ({sb.baseReward ? Number(sb.baseReward).toFixed(2) : '2.0'} PLANTS) × {sb.isBot ? '0.50 (Bot)' : '1.00 (Humano)'} {plantsRewardResult.bonusActive ? '× 1.25 (Bono PvP)' : ''} = <strong>+{plantsRewardResult.plantsAwarded.toFixed(2)} PLANTS</strong>
+                                  </div>
+                                </div>
+                              )
+                            })()}
                           </div>
                         </div>
                       ) : userElo >= 2001 ? (

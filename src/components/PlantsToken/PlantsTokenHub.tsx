@@ -22,6 +22,7 @@ import monedaImg from '../../assets/ico/moneda.webp'
 import ajustesIcon from '../../assets/ico/ajustes.webp'
 import { getPlayerAvatarUrl } from '../../utils/userManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
+import { BATTLE_PASS_LEVELS } from '../../utils/battlePassManager'
 import ProfileModal from '../ProfileModal/ProfileModal'
 import './PlantsTokenHub.css'
 
@@ -30,6 +31,7 @@ interface PlantsTokenHubProps {
   userTokens?: number // Gemas
   userGold?: number
   userElo?: number
+  userXp?: number // Battle Pass XP
   hasVipPass?: boolean
   playerEnergy?: number
   maxPlayerEnergy?: number
@@ -57,6 +59,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   userTokens = 0,
   userGold = 0,
   userElo = 1000,
+  userXp = 0,
   hasVipPass = false,
   playerEnergy = 20,
   maxPlayerEnergy = 20,
@@ -90,6 +93,9 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
 
   // Saldos y métricas del usuario
   const liquidPlants = Number(userProfile?.plants_balance ?? vestingSummary?.liquidBalance ?? 0)
+  const currentPassXp = userXp || Number((userProfile as any)?.battle_pass_xp ?? 0)
+  const highestLevelReached = BATTLE_PASS_LEVELS.filter((l) => currentPassXp >= l.requiredXp).length
+  const xpProgressPercent = Math.min(100, Math.round((currentPassXp / 3300) * 100))
   const lockedVestingPlants = Number(userProfile?.plants_vesting_locked ?? vestingSummary?.vestingLocked ?? 0)
   const totalPlants = liquidPlants + lockedVestingPlants
   const currentElo = Number(userProfile?.elo_rating ?? userElo ?? 1000)
@@ -412,20 +418,31 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             {/* 2. Pase de Batalla */}
             <div
               className={`token-topbar-pill token-topbar-pill--vip ${!hasVipPass ? 'token-topbar-pill--vip-locked' : ''}`}
-              title={hasVipPass ? 'Pase de Batalla VIP Activo' : 'Pase VIP (Bloqueado)'}
+              title={
+                hasVipPass
+                  ? `Pase de Batalla VIP Activo — Nivel ${highestLevelReached}/20 (${currentPassXp.toLocaleString()} / 3,300 XP)`
+                  : `Pase VIP — ${currentPassXp.toLocaleString()} XP acumulada (${highestLevelReached}/20 niveles alcanzados listos para cobrar)`
+              }
             >
-              <span className="token-topbar-vip-crown" role="img" aria-label={hasVipPass ? 'Corona' : 'Candado'}>
-                {hasVipPass ? '👑' : '🔒'}
+              <span className="token-topbar-vip-crown" role="img" aria-label={hasVipPass ? 'Corona' : 'Pase VIP'}>
+                {hasVipPass ? '👑' : '🎁'}
               </span>
               <div className="token-topbar-vip-info">
                 <div className="token-topbar-vip-title-row">
                   <span>PASE VIP</span>
-                  <span style={!hasVipPass ? { color: '#f87171' } : {}}>
-                    {hasVipPass ? 'NV 0/20' : '🔒 BLOQUEADO'}
-                  </span>
+                  {hasVipPass ? (
+                    <span>NV {highestLevelReached}/20</span>
+                  ) : (
+                    <span style={{ color: '#fcd34d' }}>
+                      {highestLevelReached > 0 ? `🎁 ${highestLevelReached} LISTOS` : `${currentPassXp} XP`}
+                    </span>
+                  )}
                 </div>
                 <div className="token-topbar-vip-bar-track">
-                  <div className="token-topbar-vip-bar-fill" style={{ width: '0%' }} />
+                  <div
+                    className="token-topbar-vip-bar-fill"
+                    style={{ width: `${Math.min(100, Math.max(currentPassXp > 0 ? 5 : 0, xpProgressPercent))}%` }}
+                  />
                 </div>
               </div>
             </div>

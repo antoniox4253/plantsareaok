@@ -813,8 +813,8 @@ export default function MainMenu({
         aria-label="pase vip"
         title={
           hasVipPass
-            ? `Pase VIP Activo — Nivel ${highestLevelReached}/20`
-            : `Pase VIP Temporada 2 — Toca para ver los 20 niveles y comprar`
+            ? `Pase VIP Activo — Nivel ${highestLevelReached}/20 (${currentPassXp.toLocaleString()} / 3,300 XP)`
+            : `Pase VIP — ${currentPassXp.toLocaleString()} XP acumulada (${highestLevelReached}/20 niveles alcanzados listos para cobrar al activar)`
         }
         onClick={() => {
           soundManager.playSound('click', 0.5)
@@ -834,14 +834,19 @@ export default function MainMenu({
               </span>
             ) : (
               <span className="topbar-vip-locked-tag">
-                {highestLevelReached > 0 ? `🎁 ${highestLevelReached} LISTOS` : '👑 ACTIVAR'}
+                {highestLevelReached > 0 ? `🎁 ${highestLevelReached} LISTOS` : `${currentPassXp} XP`}
               </span>
             )}
           </div>
           <div className="topbar-vip-bar-track">
             <div
               className="topbar-vip-bar-fill"
-              style={{ width: `${Math.min(100, (highestLevelReached / 20) * 100)}%` }}
+              style={{
+                width: `${Math.min(
+                  100,
+                  Math.max(currentPassXp > 0 ? 5 : 0, Math.round((currentPassXp / 3300) * 100))
+                )}%`,
+              }}
             />
           </div>
         </div>

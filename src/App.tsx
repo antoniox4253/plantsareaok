@@ -1975,6 +1975,7 @@ function App() {
             userTokens={userTokens}
             userGold={userGold}
             userElo={userElo}
+            userXp={battlePassXp}
             hasVipPass={hasVipPass}
             userProfile={profile}
             playerEnergy={playerEnergy}

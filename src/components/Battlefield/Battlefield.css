@@ -2678,6 +2678,74 @@ div[style*="fixed"][style*="bottom:1"] {
   color: #fde047;
 }
 
+.victory-plants-scoring-toggle-btn {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 6px;
+  color: #6ee7b7;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 4px;
+  transition: all 0.15s ease;
+}
+
+.victory-plants-scoring-toggle-btn:hover {
+  background: rgba(16, 185, 129, 0.3);
+  color: #fff;
+  border-color: #10b981;
+}
+
+.victory-plants-scoring-breakdown {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 9px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.victory-plants-scoring-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #cbd5e1;
+  padding: 2px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.victory-plants-scoring-item:last-child {
+  border-bottom: none;
+}
+
+.victory-plants-scoring-item .val {
+  font-weight: 800;
+  color: #34d399;
+}
+
+.victory-plants-scoring-item .val--bonus {
+  color: #fde047;
+}
+
+.victory-plants-scoring-formula {
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 8.5px;
+  color: #a7f3d0;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
 .victory-plants-reward-card__empty-text {
   display: flex;
   flex-direction: column;
