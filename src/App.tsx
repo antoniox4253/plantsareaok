@@ -222,6 +222,7 @@ function App() {
     hasVipPass,
     hasPurchasedStarterPack,
     claimedVipLevels,
+    battlePassXp,
     claimedArenaAdsLevels,
     setClaimedArenaAdsLevels,
     freePackSlots,
@@ -1742,16 +1743,20 @@ function App() {
             <div style={{ flex: 1, minHeight: 0, padding: '6px 0' }}>
               <BattlePass
                 userElo={userElo}
+                userXp={battlePassXp}
                 hasVipPass={hasVipPass}
                 claimedVipLevels={claimedVipLevels}
                 onBuyVipPass={handleBuyVipPassDirect}
                 onClaimReward={async (lvl) => {
                   const res = await claimPassReward(lvl.reward, lvl.level)
                   if (res?.success) {
+                    const isLvl20 = lvl.level === 20
                     setActiveAppAlert({
-                      title: '¡RECOMPENSA RECLAMADA!',
-                      message: `👑 ¡RECOMPENSA VIP DEL NIVEL ${lvl.level} RECLAMADA!\n${lvl.reward.label}\nSe ha añadido a tu inventario de Mi Jardín.`,
-                      icon: '🎉',
+                      title: isLvl20 ? '🌟 ¡GRAN PREMIO SUPREMO RECLAMADO! 🌟' : '¡RECOMPENSA RECLAMADA!',
+                      message: isLvl20
+                        ? `👑 ¡HAS COMPLETADO EL PASE DE LA TEMPORADA 2!\n\nSe han entregado en tu cuenta:\n📦 1x Sobre de Semillas VIP Legendario en tu inventario de sobres.\n🃏 1x Carta Legendaria Aleatoria Garantizada en tu colección de Mi Jardín.\n💰 +1,000 Monedas de Oro adicionales.`
+                        : `👑 ¡RECOMPENSA VIP DEL NIVEL ${lvl.level} RECLAMADA!\n${lvl.reward.label}\nSe ha añadido a tu inventario de Mi Jardín.`,
+                      icon: isLvl20 ? '🏆' : '🎉',
                     })
                   } else {
                     setActiveAppAlert({

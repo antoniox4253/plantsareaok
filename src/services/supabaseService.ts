@@ -176,6 +176,7 @@ export const SupabaseService = {
     plants_vesting_locked?: number
     last_plants_cashout_at?: string | null
     usdt_balance?: number
+    battle_pass_xp?: number
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
@@ -195,7 +196,7 @@ export const SupabaseService = {
           const { data: userData } = await supabase.auth.getUser()
           if (userData?.user) {
             const { data: prof } = await (supabase.from as any)('profiles')
-              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, claimed_vip_levels, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels, plants_balance, plants_vesting_locked, last_plants_cashout_at, usdt_balance')
+              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, claimed_vip_levels, battle_pass_xp, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels, plants_balance, plants_vesting_locked, last_plants_cashout_at, usdt_balance')
               .eq('id', userData.user.id)
               .single()
             if (prof) {
@@ -210,6 +211,7 @@ export const SupabaseService = {
                 elo_rating: Number(prof.elo_rating ?? 1000),
                 has_vip_pass: Boolean(prof.has_vip_pass),
                 claimed_vip_levels: Array.isArray(prof.claimed_vip_levels) ? prof.claimed_vip_levels : [],
+                battle_pass_xp: Number(prof.battle_pass_xp ?? 0),
                 claimed_arena_ads_levels: Array.isArray(prof.claimed_arena_ads_levels) ? prof.claimed_arena_ads_levels : [],
                 colosseum_current_streak: Number(prof.colosseum_current_streak ?? 0),
                 colosseum_max_streak: Number(prof.colosseum_max_streak ?? 0),
@@ -234,6 +236,7 @@ export const SupabaseService = {
           locked_gems_balance: locked,
           withdrawable_gems: Number(data.withdrawable_gems ?? Math.max(0, total - locked)),
           claimed_arena_ads_levels: Array.isArray(data.claimed_arena_ads_levels) ? data.claimed_arena_ads_levels : [],
+          battle_pass_xp: Number(data.battle_pass_xp ?? 0),
           plants_balance: Number(data.plants_balance ?? 0),
           plants_vesting_locked: Number(data.plants_vesting_locked ?? 0),
           last_plants_cashout_at: data.last_plants_cashout_at ?? null,

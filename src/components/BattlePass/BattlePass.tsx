@@ -5,7 +5,8 @@ import '../Shop/Shop.css'
 import './BattlePass.css'
 
 interface BattlePassProps {
-  userElo: number
+  userElo?: number
+  userXp?: number
   hasVipPass: boolean
   claimedVipLevels: number[]
   onBuyVipPass: () => void
@@ -14,37 +15,67 @@ interface BattlePassProps {
 }
 
 export default function BattlePass({
-  userElo,
+  userElo: _userElo = 1000,
+  userXp = 0,
   hasVipPass,
   claimedVipLevels,
-  onBuyVipPass: _onBuyVipPass,
+  onBuyVipPass,
   onClaimReward,
   onClaimAllRewards,
 }: BattlePassProps) {
-  // Determine highest reached level and next target
-  const highestLevelReached = BATTLE_PASS_LEVELS.filter((l) => userElo >= l.requiredElo).length
-  const nextLevel = BATTLE_PASS_LEVELS.find((l) => userElo < l.requiredElo)
+  const currentXp = userXp ?? 0
+  const totalMaxXp = 3300
 
-  // List of all levels currently ready to be claimed
+  // Determine highest reached level and next target based on XP
+  const highestLevelReached = BATTLE_PASS_LEVELS.filter((l) => currentXp >= l.requiredXp).length
+  const nextLevel = BATTLE_PASS_LEVELS.find((l) => currentXp < l.requiredXp)
+
+  // List of all levels currently ready to be claimed (only if user has VIP pass)
   const claimableLevels = useMemo(() => {
     return hasVipPass
       ? BATTLE_PASS_LEVELS.filter(
-          (l) => userElo >= l.requiredElo && !claimedVipLevels.includes(l.level)
+          (l) => currentXp >= l.requiredXp && !claimedVipLevels.includes(l.level)
         )
       : []
-  }, [hasVipPass, userElo, claimedVipLevels])
+  }, [hasVipPass, currentXp, claimedVipLevels])
 
-  // Default selected level: first ready level, or current level, or level 1
+  // Count of levels unlocked by XP but awaiting VIP purchase
+  const pendingVipUnlockCount = useMemo(() => {
+    if (hasVipPass) return 0
+    return BATTLE_PASS_LEVELS.filter((l) => currentXp >= l.requiredXp).length
+  }, [hasVipPass, currentXp])
+
+  // Default selected level: first ready level, or highest reached level, or level 1
   const [selectedLevelNum, setSelectedLevelNum] = useState<number>(() => {
     if (claimableLevels.length > 0) return claimableLevels[0].level
     if (highestLevelReached > 0) return Math.min(20, highestLevelReached)
     return 1
   })
 
+  // Level 20 Interactive States: Card Flip & Pack Pulse
+  const [isLvl20CardFlipped, setIsLvl20CardFlipped] = useState(false)
+  const [revealedLegendaryIdx, setRevealedLegendaryIdx] = useState(0)
+  const [packPulseActive, setPackPulseActive] = useState(false)
+
+  const legendaryShowcasePool = [
+    {
+      name: 'Threepeater (Tripitidora)',
+      icon: '/game-assets/greenfoot/threepeater1.webp',
+      badge: '👑 LEYENDA T2',
+      desc: 'Dispara guisantes en 3 carriles simultáneamente.',
+    },
+    {
+      name: 'Lechuga Helada (Iceberg)',
+      icon: '/game-assets/plants/iceberglettuce_hd.webp',
+      badge: '❄️ LEYENDA T2',
+      desc: 'Congela a todos los enemigos de la arena por 7 segundos.',
+    },
+  ]
+
   const selectedPassLvl =
     BATTLE_PASS_LEVELS.find((l) => l.level === selectedLevelNum) || BATTLE_PASS_LEVELS[0]
 
-  const isSelectedUnlocked = userElo >= selectedPassLvl.requiredElo
+  const isSelectedUnlocked = currentXp >= selectedPassLvl.requiredXp
   const isSelectedClaimed = claimedVipLevels.includes(selectedPassLvl.level)
   const isSelectedReady = hasVipPass && isSelectedUnlocked && !isSelectedClaimed
   const isSelectedNeedsVip = !hasVipPass && isSelectedUnlocked
@@ -59,93 +90,63 @@ export default function BattlePass({
     }
   }
 
+  const handleLvl20PackClick = () => {
+    soundManager.playSound('plantation', 1.0)
+    setPackPulseActive(true)
+    setTimeout(() => setPackPulseActive(false), 900)
+  }
+
+  const handleLvl20CardFlip = () => {
+    soundManager.playSound('plantation', 0.8)
+    setIsLvl20CardFlipped((prev) => !prev)
+    // Alternate between legendary plants on each flip
+    setRevealedLegendaryIdx((prev) => (prev + 1) % legendaryShowcasePool.length)
+  }
+
+  const xpProgressPercent = Math.min(100, Math.round((currentXp / totalMaxXp) * 100))
+
   return (
     <div className="battle-pass-container">
-      {!hasVipPass ? (
-        <div className="battle-pass-locked-screen">
-          <div className="shop-pass-hero-card">
-            <div className="shop-pass-hero-badge">⭐ TEMPORADA 2 EXCLUSIVA ⭐</div>
-
-            <div className="shop-pass-hero-header">
-              <span className="shop-pass-hero-crown">👑</span>
-              <h2 className="shop-pass-hero-title">PASE DE BATALLA VIP</h2>
-            </div>
-
-            <p className="shop-pass-hero-sub">
-              Desbloquea <strong>20 niveles de recompensas premium</strong>, nick dorado exclusivo, plantas y acceso total al Mercado.
-            </p>
-
-            <div className="shop-pass-perks-grid">
-              <div className="shop-pass-perk">
-                <span className="shop-pass-perk-icon">🎁</span>
-                <div className="shop-pass-perk-info">
-                  <strong className="shop-pass-perk-title">20 Niveles VIP</strong>
-                  <span className="shop-pass-perk-txt">Premios exclusivos</span>
-                </div>
-              </div>
-
-              <div className="shop-pass-perk">
-                <span className="shop-pass-perk-icon">🏷️</span>
-                <div className="shop-pass-perk-info">
-                  <strong className="shop-pass-perk-title">Mercado Libre</strong>
-                  <span className="shop-pass-perk-txt">Compra y venta</span>
-                </div>
-              </div>
-
-              <div className="shop-pass-perk">
-                <span className="shop-pass-perk-icon">🌟</span>
-                <div className="shop-pass-perk-info">
-                  <strong className="shop-pass-perk-title">Sobres PVP</strong>
-                  <span className="shop-pass-perk-txt">Apertura rápida</span>
-                </div>
-              </div>
-
-              <div className="shop-pass-perk">
-                <span className="shop-pass-perk-icon">👑</span>
-                <div className="shop-pass-perk-info">
-                  <strong className="shop-pass-perk-title">Nick Dorado VIP</strong>
-                  <span className="shop-pass-perk-txt">Insignia y brillo real</span>
-                </div>
-              </div>
-
-              <div className="shop-pass-perk">
-                <span className="shop-pass-perk-icon">⚡</span>
-                <div className="shop-pass-perk-info">
-                  <strong className="shop-pass-perk-title">25 Energías Diarias</strong>
-                  <span className="shop-pass-perk-txt">+5 partidas cada día</span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              className="shop-pass-hero-buy-btn"
-              disabled
-              style={{ opacity: 0.7, cursor: 'not-allowed', filter: 'grayscale(0.3)' }}
-            >
-              🔒 PASE VIP EN PREPARACIÓN (TEMPORADA 2)
-            </button>
+      {/* Top Banner Status with Season XP Progress */}
+      <div className="battle-pass-banner">
+        <div className="battle-pass-banner__info">
+          <div className="battle-pass-banner__season-badge">
+            <span>🔥 TEMPORADA 2: REBELIÓN BOTÁNICA</span>
           </div>
-        </div>
-      ) : (
-        <>
-          {/* Top Banner Status */}
-          <div className="battle-pass-banner">
-            <div className="battle-pass-banner__info">
-              <div className="battle-pass-banner__season-badge">
-                <span>🔥 TEMPORADA 2: REBELIÓN BOTÁNICA</span>
-              </div>
-              <h2 className="battle-pass-banner__title">
-                PASE DE TEMPORADA VIP — NIVEL {highestLevelReached}/20
-              </h2>
-              <p className="battle-pass-banner__desc">
-                {nextLevel
-                  ? `🏆 Tienes ${userElo} Copas. Alcanza ${nextLevel.requiredElo} Copas para desbloquear el Nivel ${nextLevel.level}.`
-                  : `🏆 ¡HAS ALCANZADO EL NIVEL MÁXIMO 20 (4,000+ COPAS)!`}
-              </p>
-            </div>
+          <h2 className="battle-pass-banner__title">
+            PASE DE TEMPORADA VIP — NIVEL {highestLevelReached}/20
+          </h2>
 
-            <div className="battle-pass-banner__actions">
+          <div className="battle-pass-banner__xp-container">
+            <div className="battle-pass-xp-bar-track">
+              <div
+                className="battle-pass-xp-bar-fill"
+                style={{ width: `${xpProgressPercent}%` }}
+              />
+            </div>
+            <span className="battle-pass-xp-label">
+              ⚡ {currentXp.toLocaleString()} / {totalMaxXp.toLocaleString()} XP ({xpProgressPercent}%)
+            </span>
+          </div>
+
+          <p className="battle-pass-banner__desc">
+            {nextLevel
+              ? `⚡ Tienes ${currentXp} XP. Alcanza ${nextLevel.requiredXp} XP (+${
+                  nextLevel.requiredXp - currentXp
+                } XP) para desbloquear el Nivel ${nextLevel.level}. (+25 XP por Victoria Ranked | +35 XP por Misión)`
+              : `👑 ¡HAS ALCANZADO EL NIVEL MÁXIMO 20 (3,300 XP)!`}
+          </p>
+
+          {!hasVipPass && pendingVipUnlockCount > 0 && (
+            <div className="battle-pass-banner__accumulated-tag">
+              🎁 ¡Tienes <strong>{pendingVipUnlockCount} niveles alcanzados</strong> listos para cobrar de golpe al activar el Pase VIP!
+            </div>
+          )}
+        </div>
+
+        <div className="battle-pass-banner__actions">
+          {hasVipPass ? (
+            <>
               {claimableLevels.length > 1 && (
                 <button
                   type="button"
@@ -155,35 +156,56 @@ export default function BattlePass({
                   ✨ RECLAMAR TODO ({claimableLevels.length})
                 </button>
               )}
-
               <div className="battle-pass-vip-badge">
                 <span className="battle-pass-vip-crown">👑</span>
                 <span>PASE VIP ACTIVADO ✓</span>
               </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="battle-pass-buy-btn"
+              onClick={onBuyVipPass}
+              title="Desbloquea todos los niveles acumulados y recompensas exclusivas"
+            >
+              👑 ACTIVAR PASE VIP (2,500 💎)
+            </button>
+          )}
+        </div>
+      </div>
 
-          {/* DUAL-PANEL SHOWCASE GAMING LAYOUT */}
-          <div className="battle-pass-showcase-layout">
+      {/* DUAL-PANEL SHOWCASE GAMING LAYOUT */}
+      <div className="battle-pass-showcase-layout">
         {/* LEFT PANEL: 20 LEVEL SELECTOR GRID */}
         <div className="pass-selector-panel">
           <div className="pass-selector-header">
-            <span className="pass-selector-title">🛣️ CAMINO DE RECOMPENSAS (20 NIVELES)</span>
-            <span className="pass-selector-sub">Toca un nivel para inspeccionar su premio</span>
+            <div className="pass-selector-header-top">
+              <span className="pass-selector-title">🛣️ CAMINO DE RECOMPENSAS (20 NIVELES)</span>
+              {!hasVipPass && (
+                <span className="pass-selector-vip-hint">🔒 VIP REQUERIDO PARA COBRAR</span>
+              )}
+            </div>
+            <span className="pass-selector-sub">
+              Toca un nivel para inspeccionar su premio. Gana +25 XP en Ranked PvP y +35 XP en Misiones.
+            </span>
           </div>
 
           <div className="pass-grid-selector">
             {BATTLE_PASS_LEVELS.map((passLvl) => {
-              const isUnlocked = userElo >= passLvl.requiredElo
+              const isUnlocked = currentXp >= passLvl.requiredXp
               const isClaimed = claimedVipLevels.includes(passLvl.level)
               const isReady = hasVipPass && isUnlocked && !isClaimed
+              const isNeedsVip = !hasVipPass && isUnlocked
               const isSelected = passLvl.level === selectedLevelNum
 
               let stateClass = 'pass-grid-node--locked'
               if (isClaimed) stateClass = 'pass-grid-node--claimed'
               else if (isReady) stateClass = 'pass-grid-node--ready'
+              else if (isNeedsVip) stateClass = 'pass-grid-node--needs-vip'
               else if (hasVipPass && isUnlocked) stateClass = 'pass-grid-node--unlocked'
               else stateClass = 'pass-grid-node--locked'
+
+              const isLvl20 = passLvl.level === 20
 
               return (
                 <button
@@ -191,34 +213,37 @@ export default function BattlePass({
                   type="button"
                   className={`pass-grid-node ${stateClass} ${
                     isSelected ? 'pass-grid-node--selected' : ''
-                  }`}
+                  } ${isLvl20 ? 'pass-grid-node--legendary-final' : ''}`}
                   onClick={() => {
                     soundManager.playSound('plantation', 0.3)
                     setSelectedLevelNum(passLvl.level)
                   }}
                 >
                   <div className="pass-grid-node__top">
-                    <span className="pass-grid-node__lvl">LVL {passLvl.level}</span>
+                    <span className="pass-grid-node__lvl">
+                      {isLvl20 ? '👑 LVL 20' : `LVL ${passLvl.level}`}
+                    </span>
                     <span className="pass-grid-node__status">
                       {isClaimed
                         ? '✅'
                         : isReady
                         ? '✨'
-                        : !hasVipPass
-                        ? '🔒'
-                        : !isUnlocked
-                        ? '🔒'
-                        : '👑'}
+                        : isNeedsVip
+                        ? '👑'
+                        : '🔒'}
                     </span>
                   </div>
 
-                  <img
-                    src={passLvl.reward.icon}
-                    alt={passLvl.reward.label}
-                    className="pass-grid-node__icon"
-                  />
+                  <div className="pass-grid-node__icon-wrap">
+                    <img
+                      src={passLvl.reward.icon}
+                      alt={passLvl.reward.label}
+                      className="pass-grid-node__icon"
+                    />
+                    {isLvl20 && <span className="pass-grid-node__double-badge">2x</span>}
+                  </div>
 
-                  <span className="pass-grid-node__elo">{passLvl.requiredElo} 🏆</span>
+                  <span className="pass-grid-node__elo">{passLvl.requiredXp} XP</span>
                 </button>
               )
             })}
@@ -229,26 +254,104 @@ export default function BattlePass({
         <div className="pass-pedestal-showcase">
           <div className="pass-pedestal-header">
             <span className="pass-pedestal-tier-badge">
-              🏆 NIVEL {selectedPassLvl.level} — {selectedPassLvl.requiredElo} COPAS
+              🏆 NIVEL {selectedPassLvl.level} — {selectedPassLvl.requiredXp} XP
             </span>
             <h3 className="pass-pedestal-title">{selectedPassLvl.reward.label}</h3>
-            <span className="pass-pedestal-subtitle">Recompensa Exclusiva del Pase de Temporada</span>
+            <span className="pass-pedestal-subtitle">
+              {selectedPassLvl.level === 20
+                ? '⭐ Gran Recompensa Doble Suprema de Temporada'
+                : 'Recompensa Exclusiva del Pase de Temporada'}
+            </span>
           </div>
 
-          {/* Glowing Pedestal & Floating 3D Reward */}
+          {/* Glowing Pedestal & Floating 3D Reward(s) */}
           <div className="pass-pedestal-stage">
             <div className="pass-pedestal-light-beams" />
             <div className="pass-pedestal-halo" />
 
-            <div className="pass-pedestal-floating-item">
-              <img
-                src={selectedPassLvl.reward.icon}
-                alt={selectedPassLvl.reward.label}
-                className={`pass-pedestal-img ${
-                  isSelectedReady ? 'pass-pedestal-img--ready' : isSelectedClaimed ? 'pass-pedestal-img--claimed' : ''
-                }`}
-              />
-            </div>
+            {selectedPassLvl.level === 20 ? (
+              /* LEVEL 20: DUAL REWARD SHOWCASE (LEGENDARY PACK + RANDOM 3D FLIP CARD) */
+              <div className="pass-lvl20-dual-showcase">
+                {/* 1. Pack Legendario de Tienda */}
+                <div
+                  className={`pass-lvl20-pack-card ${packPulseActive ? 'pass-lvl20-pack-card--active' : ''}`}
+                  onClick={handleLvl20PackClick}
+                  title="Haz clic para inspeccionar el Sobre Legendario"
+                >
+                  <div className="pass-lvl20-item-badge">① SOBRE LEGENDARIO</div>
+                  <img
+                    src={selectedPassLvl.reward.icon}
+                    alt="Sobre Legendario"
+                    className="pass-lvl20-pack-img"
+                  />
+                  <span className="pass-lvl20-item-name">Pack Legendario VIP</span>
+                  <span className="pass-lvl20-item-sub">Cartas Épicas & Legendarias</span>
+                </div>
+
+                {/* 2. Carta Legendaria Misteriosa con Flip 3D */}
+                <div
+                  className={`pass-3d-flip-card ${isLvl20CardFlipped ? 'pass-3d-flip-card--flipped' : ''}`}
+                  onClick={handleLvl20CardFlip}
+                  title="¡Haz clic en la carta para girarla y revelar la planta legendaria!"
+                >
+                  <div className="pass-3d-flip-inner">
+                    {/* Front: Misterio dorado */}
+                    <div className="pass-3d-flip-front">
+                      <div className="pass-lvl20-item-badge pass-lvl20-item-badge--mystery">
+                        ② CARTA MISTERIOSA
+                      </div>
+                      <div className="pass-mystery-card-glow" />
+                      <div className="pass-mystery-icon">❓</div>
+                      <span className="pass-mystery-title">Carta Legendaria</span>
+                      <span className="pass-mystery-hint">✨ Toca para girar</span>
+                    </div>
+
+                    {/* Back: Planta Legendaria Revelada */}
+                    <div className="pass-3d-flip-back">
+                      <div className="pass-lvl20-item-badge pass-lvl20-item-badge--legendary">
+                        {legendaryShowcasePool[revealedLegendaryIdx].badge}
+                      </div>
+                      <img
+                        src={legendaryShowcasePool[revealedLegendaryIdx].icon}
+                        alt="Legendaria"
+                        className="pass-legendary-revealed-img"
+                      />
+                      <span className="pass-legendary-revealed-name">
+                        {legendaryShowcasePool[revealedLegendaryIdx].name}
+                      </span>
+                      <span className="pass-legendary-revealed-desc">
+                        {legendaryShowcasePool[revealedLegendaryIdx].desc}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Extra Gold Badge */}
+                <div className="pass-lvl20-gold-badge">
+                  <span>🪙 +1,000 Oro Incluido</span>
+                </div>
+              </div>
+            ) : (
+              /* REGULAR LEVELS 1 TO 19 SHOWCASE */
+              <div className="pass-pedestal-floating-item">
+                <img
+                  src={selectedPassLvl.reward.icon}
+                  alt={selectedPassLvl.reward.label}
+                  className={`pass-pedestal-img ${
+                    isSelectedReady
+                      ? 'pass-pedestal-img--ready'
+                      : isSelectedClaimed
+                      ? 'pass-pedestal-img--claimed'
+                      : ''
+                  }`}
+                />
+                {selectedPassLvl.reward.goldAmount && (
+                  <div className="pass-pedestal-extra-gold">
+                    🪙 +{selectedPassLvl.reward.goldAmount} Oro
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 3D Pedestal Base */}
             <div className="pass-pedestal-base">
@@ -272,28 +375,27 @@ export default function BattlePass({
                   onClaimReward(selectedPassLvl)
                 }}
               >
-                ✨ RECLAMAR RECOMPENSA
+                {selectedPassLvl.level === 20
+                  ? '✨ RECLAMAR GRAN PREMIO DOBLE SUPREMO'
+                  : '✨ RECLAMAR RECOMPENSA'}
               </button>
             ) : isSelectedNeedsVip ? (
               <button
                 type="button"
                 className="pass-pedestal-vip-btn"
-                disabled
-                style={{ opacity: 0.7, cursor: 'not-allowed', filter: 'grayscale(0.3)' }}
-                title="El nuevo Pase VIP se encuentra en preparación para la Temporada 2"
+                onClick={onBuyVipPass}
+                title="¡Ya alcanzaste la XP requerida! Activa el Pase VIP para reclamar."
               >
-                🔒 PASE VIP EN PREPARACIÓN (TEMPORADA 2)
+                👑 ACTIVAR PASE VIP PARA COBRAR (2,500 💎)
               </button>
             ) : (
               <div className="pass-pedestal-status-btn pass-pedestal-status-btn--locked">
-                🔒 REQUIERE {selectedPassLvl.requiredElo} COPAS (TIENES {userElo})
+                🔒 REQUIERE {selectedPassLvl.requiredXp} XP (TIENES {currentXp} XP)
               </div>
             )}
           </div>
         </div>
       </div>
-        </>
-      )}
     </div>
   )
 }

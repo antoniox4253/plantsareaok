@@ -733,6 +733,7 @@ export function useInventory() {
    */
   const [hasVipPass, setHasVipPass] = useState<boolean>(false)
   const [hasPurchasedStarterPack, setHasPurchasedStarterPack] = useState<boolean>(false)
+  const [battlePassXp, setBattlePassXp] = useState<number>(0)
 
   const [claimedVipLevels, setClaimedVipLevels] = useState<number[]>(() => {
     const saved = localStorage.getItem('plant_arena_claimed_vip_pass')
@@ -1176,6 +1177,7 @@ export function useInventory() {
     if (profile.has_vip_pass !== undefined) setHasVipPass(Boolean(profile.has_vip_pass))
     if ((profile as any).has_purchased_starter_pack !== undefined) setHasPurchasedStarterPack(Boolean((profile as any).has_purchased_starter_pack))
     if (profile.claimed_vip_levels !== undefined) setClaimedVipLevels(profile.claimed_vip_levels || [])
+    if ((profile as any).battle_pass_xp !== undefined) setBattlePassXp(Number((profile as any).battle_pass_xp ?? 0))
     if ((profile as any).claimed_arena_ads_levels !== undefined) {
       setClaimedArenaAdsLevels(Array.isArray((profile as any).claimed_arena_ads_levels) ? (profile as any).claimed_arena_ads_levels : [])
     }
@@ -1229,6 +1231,9 @@ export function useInventory() {
       setHasPurchasedStarterPack(Boolean((b as any).has_purchased_starter_pack))
     }
     setClaimedVipLevels(b.claimed_vip_levels || [])
+    if ((b as any).battle_pass_xp !== undefined) {
+      setBattlePassXp(Number((b as any).battle_pass_xp ?? 0))
+    }
     if ((b as any).claimed_arena_ads_levels !== undefined) {
       setClaimedArenaAdsLevels(Array.isArray((b as any).claimed_arena_ads_levels) ? (b as any).claimed_arena_ads_levels : [])
     }
@@ -1913,6 +1918,8 @@ export function useInventory() {
     updateActiveDeck,
     hasVipPass,
     claimedVipLevels,
+    battlePassXp,
+    setBattlePassXp,
     claimedArenaAdsLevels,
     setClaimedArenaAdsLevels,
     freePackSlots,
