@@ -1136,6 +1136,14 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
 
     // ── LAS QUE CAMINAN ───────────────────────────────────────────────────────
     if (planta.isWalking) {
+      // En Modo Survivor, si una planta que camina del jugador (p1) llega al final de la pantalla rival,
+      // desaparece de inmediato para no quedarse ahí ni causar confusión visual
+      if (state.isSurvivorMode && lado.equipo === 'p1' && llegoALaBase(planta, lado)) {
+        planta.hp = 0
+        sonar('pea_hit', 0.6)
+        continue
+      }
+
       if (planta.plantId === 'garlic') {
         // El ajo salta y machaca.
         if (planta.isSmashing) {
@@ -1163,7 +1171,9 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 6.0)
             planta.x += effectiveSpeed * dt * lado.sentido
             if (llegoALaBase(planta, lado)) {
-              dañarBase(state, lado.objetivo, 150)
+              if (!state.isSurvivorMode || lado.equipo === 'p2') {
+                dañarBase(state, lado.objetivo, 150)
+              }
               sonar('pea_hit', 0.8)
               planta.hp = 0
             }
@@ -1216,7 +1226,9 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 5.5)
           planta.x += effectiveSpeed * dt * lado.sentido
           if (llegoALaBase(planta, lado)) {
-            dañarBase(state, lado.objetivo, 350)
+            if (!state.isSurvivorMode || lado.equipo === 'p2') {
+              dañarBase(state, lado.objetivo, 350)
+            }
             sonar('pea_hit', 1.0)
             planta.hp = 0
 
@@ -1276,7 +1288,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 3.5)
             planta.x += effectiveSpeed * dt * lado.sentido
             if (llegoALaBase(planta, lado)) {
-              if (state.isSurvivorMode) {
+              if (state.isSurvivorMode && lado.equipo === 'p2') {
                 planta.x = baseRivalX(lado)
                 planta.state = 'attacking'
                 if (planta.lastBaseAttackTime === undefined || state.tick - planta.lastBaseAttackTime >= msToTicks(config.attackSpeedMs || 1000)) {
@@ -1286,7 +1298,9 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
                   sonar('pea_hit', 0.6)
                 }
               } else {
-                dañarBase(state, lado.objetivo, 40)
+                if (!state.isSurvivorMode) {
+                  dañarBase(state, lado.objetivo, 40)
+                }
                 sonar('pea_hit', 0.6)
                 planta.hp = 0
               }
@@ -1341,7 +1355,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 4.5)
           planta.x += effectiveSpeed * dt * lado.sentido
           if (llegoALaBase(planta, lado)) {
-            if (state.isSurvivorMode) {
+            if (state.isSurvivorMode && lado.equipo === 'p2') {
               planta.x = baseRivalX(lado)
               planta.state = 'attacking'
               const baseDmg = planta.plantId === 'bonkchoy' ? (config.damage || 90) : (planta.plantId === 'guacodile' ? 60 : 40)
@@ -1352,8 +1366,10 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
                 sonar('pea_hit', 0.6)
               }
             } else {
-              const baseDmg = planta.plantId === 'guacodile' ? 60 : 40
-              dañarBase(state, lado.objetivo, baseDmg)
+              if (!state.isSurvivorMode) {
+                const baseDmg = planta.plantId === 'guacodile' ? 60 : 40
+                dañarBase(state, lado.objetivo, baseDmg)
+              }
               sonar('pea_hit', 0.6)
               planta.hp = 0
             }

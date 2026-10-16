@@ -336,4 +336,63 @@ describe('survivorWaveEngine', () => {
     expect(w3FirstSpawn.hpMultiplier).toBeGreaterThan(1.2)
     expect(w3FirstSpawn.damageMultiplier).toBeGreaterThan(1.15)
   })
+
+  it('removes player melee plants when they reach the rival end in survivor mode so they do not linger', () => {
+    const state = createBattleState(
+      12345,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      3,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true, // isSurvivorMode
+      1
+    )
+
+    // Add a player Bonk Choy marching right, near the rival base (x = 87.5)
+    state.plants.push({
+      id: 'p1-bonkchoy-test',
+      plantId: 'bonkchoy',
+      lane: 1,
+      x: 87.5,
+      hp: 600,
+      maxHp: 600,
+      lastActionTime: 0,
+      isWalking: true,
+      state: 'walking',
+    })
+
+    // Also add a player Toadstool marching right, near the rival base
+    state.plants.push({
+      id: 'p1-toadstool-test',
+      plantId: 'toadstool',
+      lane: 0,
+      x: 87.5,
+      hp: 500,
+      maxHp: 500,
+      lastActionTime: 0,
+      isWalking: true,
+      state: 'walking',
+    })
+
+    expect(state.plants.length).toBe(2)
+
+    // Advance 1 tick
+    stepTick(state, () => {})
+
+    // In survivor mode, rival has no tree; player's melee plants reach the right end and MUST disappear
+    expect(state.plants.find((p) => p.id === 'p1-bonkchoy-test')).toBeUndefined()
+    expect(state.plants.find((p) => p.id === 'p1-toadstool-test')).toBeUndefined()
+    expect(state.plants.length).toBe(0)
+  })
 })
+
