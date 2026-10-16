@@ -3911,6 +3911,7 @@ export default function Clan({
                   onArsenalUpdated={(newUnlocked) => {
                     setFortressData((prev) => (prev ? { ...prev, unlockedPlants: newUnlocked } : null))
                     if (onRefreshUserData) void onRefreshUserData()
+                    void fetchFortressData()
                   }}
                   onSunsHarvested={(_sunsGained, newBudget) => {
                     setFortressData((prev) => (prev ? {
@@ -5734,6 +5735,7 @@ export default function Clan({
           onArsenalUpdated={(newUnlocked) => {
             setFortressData((prev) => (prev ? { ...prev, unlockedPlants: newUnlocked } : null))
             if (onRefreshUserData) void onRefreshUserData()
+            void fetchFortressData()
           }}
         />
       )}

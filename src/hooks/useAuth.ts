@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { urlDeVuelta } from '../utils/direccionPublica'
 import { profileService } from '../services/profileService'
 import { UserManager } from '../utils/userManager'
+import { KeybindingsManager } from '../utils/keybindingsManager'
 import type { Database } from '../types/database.types'
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
@@ -215,6 +216,9 @@ export function useAuth() {
         }
       }
       setProfile(prof)
+      if (prof.keybindings) {
+        KeybindingsManager.syncFromRemote(prof.keybindings)
+      }
       setIsAdmin(Boolean(prof.is_admin))
       localStorage.removeItem(STORAGE_KEYS.LEGACY_ADMIN_SESSION)
     } else {
@@ -222,6 +226,9 @@ export function useAuth() {
       prof = await profileService.getProfile(userId)
       if (prof) {
         setProfile(prof)
+        if (prof.keybindings) {
+          KeybindingsManager.syncFromRemote(prof.keybindings)
+        }
         setIsAdmin(Boolean(prof.is_admin))
         localStorage.removeItem(STORAGE_KEYS.LEGACY_ADMIN_SESSION)
       }

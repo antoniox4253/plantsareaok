@@ -18,6 +18,7 @@ import GlobalChat from '../GlobalChat/GlobalChat'
 import AuctionModal from '../Auction/AuctionModal'
 import MisionesModal from '../Misiones/MisionesModal'
 import LotteryModal from '../Lottery/LotteryModal'
+import KeybindingsModal from '../KeybindingsModal/KeybindingsModal'
 import moneda from '../../assets/ico/moneda.webp'
 import gema from '../../assets/ico/gema.webp'
 import ranking from '../../assets/ico/Ranking.webp'
@@ -160,6 +161,7 @@ export default function MainMenu({
   const [showLotteryModal, setShowLotteryModal] = useState(false)
   const [lotteryInitialTab, setLotteryInitialTab] = useState<'wheel' | 'auction' | 'code'>('wheel')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isKeybindingsOpen, setIsKeybindingsOpen] = useState(false)
   const [newsModal, setNewsModal] = useState<{
     title: string
     message: string | React.ReactNode
@@ -1399,6 +1401,16 @@ export default function MainMenu({
             <button type="button" className="bosque-settings-menu__btn" onClick={toggleFullscreen}>
               ⛶ Pantalla Completa
             </button>
+            <button
+              type="button"
+              className="bosque-settings-menu__btn"
+              onClick={() => {
+                setIsSettingsOpen(false)
+                setIsKeybindingsOpen(true)
+              }}
+            >
+              🎮 Controles de Teclado
+            </button>
             {onOpenBetaInfo && (
               <button
                 type="button"
@@ -1779,6 +1791,12 @@ export default function MainMenu({
           initialTab={lotteryInitialTab}
         />
       )}
+
+      {/* Controles y Atajos de Teclado */}
+      <KeybindingsModal
+        isOpen={isKeybindingsOpen}
+        onClose={() => setIsKeybindingsOpen(false)}
+      />
     </div>
   )
 }

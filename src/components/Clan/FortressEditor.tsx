@@ -123,6 +123,15 @@ export default function FortressEditor({
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
+  // Copias locales para reflejar donaciones de cartas en tiempo real
+  const [localPlantCopies, setLocalPlantCopies] = useState<Record<string, number>>(() => (plantCopies ? { ...plantCopies } : {}))
+
+  useEffect(() => {
+    if (plantCopies) {
+      setLocalPlantCopies({ ...plantCopies })
+    }
+  }, [plantCopies])
+
   // Presupuesto reactivo en tiempo real
   const [sunsBudget, setSunsBudget] = useState<number>(defenseSunsBudget)
 
@@ -325,7 +334,8 @@ export default function FortressEditor({
     return layoutSuns + ambushSuns
   }, [layout, ambushes])
 
-  const sunsRemaining = sunsBudget - sunsSpent
+  const effectiveBudget = Math.max(sunsBudget, sunsSpent)
+  const sunsRemaining = Math.max(0, effectiveBudget - sunsSpent)
 
   // Grid defensivo: 7 columnas (0 a 6) en la mitad izquierda
   const defenseCols = [0, 1, 2, 3, 4, 5, 6]
@@ -499,8 +509,8 @@ export default function FortressEditor({
 
   // Donar carta al arsenal del clan
   const handleDonateToArsenal = async (plantId: PlantId) => {
-    const userCopies = plantCopies ? (plantCopies[plantId] || 0) : 1
-    if (plantCopies && userCopies <= 0) {
+    const userCopies = localPlantCopies ? (localPlantCopies[plantId] || 0) : 1
+    if (localPlantCopies && userCopies <= 0) {
       soundManager.playSound('click', 0.2)
       setSaveStatus({
         type: 'error',
@@ -525,10 +535,14 @@ export default function FortressEditor({
       const nextUnlocked = Array.from(new Set([...unlockedPlants, plantId]))
       setUnlockedPlants(nextUnlocked)
       setSelectedPlantId(plantId)
+      setLocalPlantCopies((prev) => ({
+        ...prev,
+        [plantId]: Math.max(0, (prev[plantId] || 0) - 1),
+      }))
       onArsenalUpdated?.(nextUnlocked)
       setSaveStatus({
         type: 'success',
-        message: `🎉 ¡Has donado 1 copia de ${PLANT_CONFIGS[plantId]?.name}! Ahora está desbloqueada permanentemente en el arsenal del clan.`,
+        message: `🎉 ¡Has donado 1 copia de ${PLANT_CONFIGS[plantId]?.name}! Ahora está desbloqueada permanentemente en el arsenal del clan (no consume soles defensivos hasta que decidas colocarla en el césped).`,
       })
     } catch (e: any) {
       setSaveStatus({
@@ -616,14 +630,14 @@ export default function FortressEditor({
                 <strong>{sunsRemaining} ☀️</strong>
               </span>
               <small>
-                {sunsSpent} / {sunsBudget} ☀️
+                {sunsSpent} / {effectiveBudget} ☀️
               </small>
             </div>
             <div className="fortress-sun-meter__track">
               <div
                 className="fortress-sun-meter__fill"
                 style={{
-                  width: `${Math.min(100, Math.max(0, (sunsSpent / sunsBudget) * 100))}%`,
+                  width: `${Math.min(100, Math.max(0, effectiveBudget > 0 ? (sunsSpent / effectiveBudget) * 100 : 0))}%`,
                   background:
                     sunsRemaining < 100
                       ? 'linear-gradient(90deg, #ef4444, #f97316)'
@@ -1210,7 +1224,7 @@ export default function FortressEditor({
             const isAmbushType = TACTICAL_AMBUSH_PLANTS.includes(pid)
             const isSelected = selectedPlantId === pid && !selectedTileToMove && !isShovelActive
             const canAfford = sunsRemaining >= cost
-            const copiesAvailable = plantCopies ? (plantCopies[pid] || 0) : 0
+            const copiesAvailable = localPlantCopies ? (localPlantCopies[pid] || 0) : 0
 
             return (
               <div
@@ -1218,7 +1232,7 @@ export default function FortressEditor({
                 className={`fortress-palette-card ${isSelected ? 'fortress-palette-card--selected' : ''} ${!isUnlocked ? 'fortress-palette-card--locked' : ''} ${isUnlocked && !canAfford ? 'fortress-palette-card--disabled' : ''}`}
                 onClick={() => {
                   if (!isUnlocked) {
-                    if (plantCopies && copiesAvailable <= 0) {
+                    if (localPlantCopies && copiesAvailable <= 0) {
                       soundManager.playSound('click', 0.2)
                       setSaveStatus({
                         type: 'error',

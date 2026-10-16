@@ -13,6 +13,12 @@ import {
 } from '../../utils/gameConstants'
 const sunIcon = '/game-assets/greenfoot/sun1.webp'
 const shovelIcon = '/game-assets/images/Interface/shovelIcon.webp'
+import {
+  KeybindingsManager,
+  formatKeyLabel,
+  isKeyMatch,
+  type KeybindingsConfig,
+} from '../../utils/keybindingsManager'
 import './PlantHand.css'
 
 function getSlotCardLevelData(
@@ -271,17 +277,43 @@ export default function PlantHand({
     [selectedCard, selectedSlotIndex, onSelectCard]
   )
 
-  // Atajos de teclado en PC (Teclas 1 a 6 para cartas visibles, Q o S para pala, Esc para cancelar)
+  const [keybindings, setKeybindings] = useState<KeybindingsConfig>(() =>
+    KeybindingsManager.getKeybindings()
+  )
+
+  useEffect(() => {
+    const handleKeybindingsUpdate = (e: any) => {
+      if (e?.detail) {
+        setKeybindings(e.detail)
+      } else {
+        setKeybindings(KeybindingsManager.getKeybindings())
+      }
+    }
+    window.addEventListener('keybindings_updated', handleKeybindingsUpdate)
+    return () => window.removeEventListener('keybindings_updated', handleKeybindingsUpdate)
+  }, [])
+
+  const getSlotKey = useCallback(
+    (vIdx: number): string => {
+      const slotProp = `slot${vIdx + 1}` as keyof KeybindingsConfig
+      return keybindings[slotProp] || String(vIdx + 1)
+    },
+    [keybindings]
+  )
+
+  // Atajos de teclado en PC (Mapeo dinámico y personalizable de teclas)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const targetTag = (e.target as HTMLElement)?.tagName
       if (targetTag === 'INPUT' || targetTag === 'TEXTAREA') return
 
-      if (e.key >= '1' && e.key <= '6') {
-        const num = parseInt(e.key, 10) - 1
-        if (num < visibleCards.length) {
-          const targetCard = visibleCards[num]
-          const realSlotIndex = safeStartIndex + num
+      // Cartas de plantas (slots visibles 0 a visibleCards.length - 1)
+      for (let vIdx = 0; vIdx < visibleCards.length; vIdx++) {
+        const boundKey = getSlotKey(vIdx)
+        if (isKeyMatch(e, boundKey)) {
+          e.preventDefault()
+          const targetCard = visibleCards[vIdx]
+          const realSlotIndex = safeStartIndex + vIdx
           const config = PLANT_CONFIGS[targetCard]
           if (config) {
             const slotCd =
@@ -294,11 +326,25 @@ export default function PlantHand({
             const isDis = !canAfford || isOnCooldown
             triggerSelect(targetCard, realSlotIndex, isDis)
           }
+          return
         }
-      } else if (e.key === 'q' || e.key === 'Q' || e.key === 's' || e.key === 'S') {
+      }
+
+      // Pala (Tecla configurada por el usuario o 'q' / 's' por compatibilidad)
+      if (
+        isKeyMatch(e, keybindings.shovel) ||
+        (!keybindings.shovel && (e.key === 'q' || e.key === 'Q' || e.key === 's' || e.key === 'S'))
+      ) {
+        e.preventDefault()
         triggerSelect('shovel')
-      } else if (e.key === 'Escape') {
+        return
+      }
+
+      // Cancelar o deseleccionar carta (Escape o tecla configurada)
+      if (isKeyMatch(e, keybindings.cancel || 'Escape')) {
+        e.preventDefault()
         onSelectCard(null, null)
+        return
       }
     }
 
@@ -314,6 +360,8 @@ export default function PlantHand({
     sunBank,
     triggerSelect,
     onSelectCard,
+    getSlotKey,
+    keybindings,
   ])
 
   return (
@@ -428,7 +476,7 @@ export default function PlantHand({
                 })()}
 
                 {/* PC Keyboard Hotkey Badge */}
-                <span className="plant-hand__hotkey-badge">{vIdx + 1}</span>
+                <span className="plant-hand__hotkey-badge">{formatKeyLabel(getSlotKey(vIdx))}</span>
 
                 {/* Sun Cost Badge in bottom-right corner of seed packet */}
                 <div className="plant-hand__cost-badge" title={`Coste: ${scaledConfig.cost} soles`}>
@@ -520,9 +568,9 @@ export default function PlantHand({
           }
           triggerSelect('shovel')
         }}
-        title="Pala (Tecla Q): Haz clic aquí o presiona Q y luego en cualquier planta del campo para quitarla"
+        title={`Pala (Tecla ${formatKeyLabel(keybindings.shovel)}): Haz clic aquí o presiona ${formatKeyLabel(keybindings.shovel)} y luego en cualquier planta del campo para quitarla`}
       >
-        <span className="plant-hand__hotkey-badge">Q</span>
+        <span className="plant-hand__hotkey-badge">{formatKeyLabel(keybindings.shovel)}</span>
         <img
           className="plant-hand__shovel-icon"
           src={shovelIcon}
