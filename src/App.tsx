@@ -1118,10 +1118,8 @@ function App() {
     const miNombre = profile?.username || UserManager.getProfile().name || 'Tú'
     const botStats = getBotStatsForLevel(run.level)
     setNombresEnPartida({ mio: miNombre, rival: botStats.botName })
-    setMazosDeLaSala({
-      mio: run.deck,
-      rival: botStats.botDeck,
-    })
+    // EN SURVIVOR ADS: El jugador usa SIEMPRE su propio mazo activo
+    setMazosDeLaSala(null)
     setEngineVersionSala('auth-v2')
     setScreen('battle')
   }

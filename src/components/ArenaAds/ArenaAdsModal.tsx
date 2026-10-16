@@ -39,6 +39,7 @@ interface ArenaAdsModalProps {
   onDeductGems?: (amount: number) => boolean
   onStartArenaAdsBattle: (run: ArenaAdsRun) => void
   onClaimLoot: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => void | Promise<void>
+  onRefreshBalances?: () => void | Promise<void>
 }
 
 export default function ArenaAdsModal({
@@ -51,6 +52,7 @@ export default function ArenaAdsModal({
   onDeductGems,
   onStartArenaAdsBattle,
   onClaimLoot,
+  onRefreshBalances,
 }: ArenaAdsModalProps) {
   const [activeRun, setActiveRun] = useState<ArenaAdsRun | null>(null)
   const [activeView, setActiveView] = useState<'lobby' | 'prep'>('lobby')
@@ -368,9 +370,12 @@ export default function ArenaAdsModal({
         return
       }
 
-      // 2. Descontar en el estado local de inventario
+      // 2. Descontar en el estado local de inventario y refrescar saldos
       if (onDeductGems) {
         onDeductGems(SURVIVOR_ADS_ENTRY_FEE_GEMS)
+      }
+      if (onRefreshBalances) {
+        void onRefreshBalances()
       }
 
       soundManager.playSound('victory', 0.6)

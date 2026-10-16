@@ -707,8 +707,7 @@ function baseRivalX(lado: Lado): number {
 
 /** Resta vida a la base del equipo indicado. */
 function dañarBase(state: GameState, equipo: 'p1' | 'p2', cuanto: number): void {
-  // En Survivor ADS las plantas melé enemigas causan el doble de daño (2x) al llegar al árbol madre del jugador
-  const danoFinal = state.isSurvivorMode && equipo === 'p1' ? cuanto * 2 : cuanto
+  const danoFinal = cuanto
   if (equipo === 'p1') {
     state.p1BaseHp = Math.max(0, state.p1BaseHp - danoFinal)
     if (state.isSurvivorMode && state.p1BaseHp <= 0 && state.status === 'playing') {

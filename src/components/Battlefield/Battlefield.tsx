@@ -741,9 +741,11 @@ export default function Battlefield({
   const allCatalogCards = useMemo(() => Object.keys(PLANT_CONFIGS) as PlantId[], [])
 
   const mazoMioParsed = useMemo<CartaDeMazo[] | null>(() => {
-    // En Survivor ADS y partidas PvP/PvE, el jugador usa su propio mazo activo
-    const fromRoom = leerMazo(mazosDeLaSala?.mio)
-    if (fromRoom && fromRoom.length > 0) return fromRoom
+    // En Survivor ADS (matchMode === 'arena_ads'), el jugador SIEMPRE usa su propio mazo activo
+    if (matchMode !== 'arena_ads') {
+      const fromRoom = leerMazo(mazosDeLaSala?.mio)
+      if (fromRoom && fromRoom.length > 0) return fromRoom
+    }
 
     // En modos sin sala previa (como clan_fortress), construir el mazo con instancias reales del jugador
     let deckCards: PlantId[] = []

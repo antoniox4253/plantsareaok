@@ -1668,6 +1668,7 @@ export default function MainMenu({
         onClaimLoot={(loot, multiplier, newlyClaimed) => {
           if (onClaimArenaAdsLoot) return onClaimArenaAdsLoot(loot, multiplier, newlyClaimed)
         }}
+        onRefreshBalances={onRewardsChanged}
       />
 
       {/* Coliseo */}

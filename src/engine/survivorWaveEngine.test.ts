@@ -46,14 +46,21 @@ describe('survivorWaveEngine', () => {
     expect(pool15).toContain('aloe')
   })
 
-  it('halves movement speeds for Guacodile and Toadstool', () => {
-    // Guacodile standard speed is 6.2 -> reduced to 3.1
-    expect(getCustomMoveSpeed('guacodile')).toBe(3.1)
-    // Toadstool standard speed is 3.5 -> reduced to 1.75
-    expect(getCustomMoveSpeed('toadstool')).toBe(1.75)
-    // Other plants return undefined (use base config)
-    expect(getCustomMoveSpeed('bonkchoy')).toBeUndefined()
-    expect(getCustomMoveSpeed('chomper')).toBeUndefined()
+  it('tunes movement speeds for all melee enemy plants to a manageable zombie pace', () => {
+    // Guacodile standard speed is 6.2 -> reduced to 2.2
+    expect(getCustomMoveSpeed('guacodile')).toBe(2.2)
+    // Toadstool standard speed is 3.5 -> reduced to 1.4
+    expect(getCustomMoveSpeed('toadstool')).toBe(1.4)
+    // Bonk Choy reduced to 2.4
+    expect(getCustomMoveSpeed('bonkchoy')).toBe(2.4)
+    // Cactus (chomper) reduced to 2.2
+    expect(getCustomMoveSpeed('chomper')).toBe(2.2)
+    // Squash (garlic) reduced to 2.8
+    expect(getCustomMoveSpeed('garlic')).toBe(2.8)
+    // Ghost pepper reduced to 2.2
+    expect(getCustomMoveSpeed('ghostpepper')).toBe(2.2)
+    // Explodeonut reduced to 2.5
+    expect(getCustomMoveSpeed('explodeonut')).toBe(2.5)
   })
 
   it('generates 3 waves per level (Suave, Difícil, Con Presión)', () => {
@@ -154,7 +161,7 @@ describe('survivorWaveEngine', () => {
     expect(config.waves[0].spawns[0].tick).toBeGreaterThanOrEqual(750)
   })
 
-  it('applies 2x damage against player mother tree when melee plants attack in survivor mode', () => {
+  it('applies normal (non-doubled) damage against player mother tree when melee plants attack in survivor mode', () => {
     const state = createBattleState(
       12345,
       false,
@@ -193,10 +200,10 @@ describe('survivorWaveEngine', () => {
     })
 
     const initialHp = state.p1BaseHp
-    // Cactus base damage is 40. In survivor mode it deals 2x (80 damage).
+    // Cactus base damage is 40. Normal damage (40 damage) is applied without 2x multiplier.
     state.enemyPlants[0].x = 10.5
     stepTick(state, () => {})
-    expect(state.p1BaseHp).toBe(initialHp - 80)
+    expect(state.p1BaseHp).toBe(initialHp - 40)
     // Cactus does NOT suicide; it remains alive attacking the base
     expect(state.enemyPlants[0].hp).toBe(100)
     expect(state.enemyPlants[0].state).toBe('attacking')
@@ -245,7 +252,7 @@ describe('survivorWaveEngine', () => {
       false,
       NIVEL_POR_DEFECTO,
       'auth-v2',
-      50, // Only 50 HP on tree
+      30, // Only 30 HP on tree
       1000,
       null,
       null,
@@ -271,7 +278,7 @@ describe('survivorWaveEngine', () => {
       state: 'walking',
     })
 
-    // Cactus deals 80 damage (40 * 2), reducing tree HP from 50 to 0
+    // Cactus deals 40 normal damage, reducing tree HP from 30 to 0
     stepTick(state, () => {})
     expect(state.p1BaseHp).toBe(0)
     expect(state.status).toBe('defeat')

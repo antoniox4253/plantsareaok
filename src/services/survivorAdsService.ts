@@ -57,6 +57,13 @@ export const survivorAdsService = {
         }
       }
 
+      if (data && data.success === false) {
+        return {
+          success: false,
+          error: data.error || 'Gemas insuficientes para entrar a Survivor ADS. Se requieren 50 💎 Gemas.',
+        }
+      }
+
       return {
         success: true,
         cost: data?.cost ?? 50,

@@ -661,6 +661,45 @@ export function buildArenaAdsDeck(
     return deck
   }
 
+  // Si no se especifica planta seleccionada, usar el mazo activo real del jugador guardado en localStorage
+  if (!chosenPlant && typeof localStorage !== 'undefined') {
+    try {
+      const rawDeck = localStorage.getItem('plant_arena_active_deck')
+      if (rawDeck) {
+        const parsed = JSON.parse(rawDeck)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const sIds = localStorage.getItem('plant_arena_active_deck_instances')
+          const sInst = localStorage.getItem('plant_arena_plant_instances')
+          const pIds: string[] = sIds ? JSON.parse(sIds) : []
+          const pInst: any[] = sInst ? JSON.parse(sInst) : []
+          const validPlants = parsed.filter((id: string) => id in PLANT_CONFIGS)
+          if (validPlants.length > 0) {
+            return validPlants.map((plantId: PlantId, idx: number) => {
+              let level = 0
+              let statRolls: any[] = []
+              let equippedItem: string | null = null
+              if (pIds[idx]) {
+                const f = pInst.find((i: any) => i.instanceId === pIds[idx])
+                if (f) {
+                  level = f.level ?? (f.statRolls?.length || 0)
+                  statRolls = f.statRolls || []
+                  equippedItem = f.equippedItem || null
+                }
+              }
+              return {
+                plantId,
+                slot: idx,
+                level,
+                statRolls,
+                equippedItem,
+              }
+            })
+          }
+        }
+      }
+    } catch {}
+  }
+
   const deck: CartaDeMazo[] = []
 
   // Girasol SIEMPRE en el primer slot (slot 0)

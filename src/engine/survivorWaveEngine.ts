@@ -63,18 +63,34 @@ export function getSurvivorPoolForLevel(level: number): PlantId[] {
 }
 
 /**
- * Velocidad de avance modificada para ciertas unidades especiales:
- * - Guacodilo: 50% de su velocidad base (3.1 en lugar de 6.2)
- * - Seta Sapo: 50% de su velocidad base (1.75 en lugar de 3.5)
+ * Velocidad de avance equilibrada para plantas enemigas en Survivor ADS:
+ * - Reduce la velocidad de desplazamiento a una cadencia de horda clásica tipo PvZ (~1.4 a 2.8 %/s),
+ *   otorgando al jugador margen táctico para sembrar economía (girasoles), plantar defensas y disparar.
+ * - Seta Sapo: 1.4 %/s (avance lento de emboscada)
+ * - Cactus: 2.2 %/s (dispara espinas mientras avanza a paso constante)
+ * - Chile Fantasma: 2.2 %/s (flotación espectral pausada)
+ * - Guacodilo: 2.2 %/s (reducido a la mitad de su velocidad rápida para control de oleada)
+ * - Bonk Choy: 2.4 %/s (avance pausado con puñetazos)
+ * - Nuez Explosiva: 2.5 %/s (rodamiento moderado)
+ * - Squash: 2.8 %/s (salto de aplastamiento)
  */
 export function getCustomMoveSpeed(plantId: PlantId): number | undefined {
-  if (plantId === 'guacodile') {
-    return 3.1
+  switch (plantId) {
+    case 'toadstool':
+      return 1.4
+    case 'chomper':
+    case 'ghostpepper':
+    case 'guacodile':
+      return 2.2
+    case 'bonkchoy':
+      return 2.4
+    case 'explodeonut':
+      return 2.5
+    case 'garlic':
+      return 2.8
+    default:
+      return 2.2
   }
-  if (plantId === 'toadstool') {
-    return 1.75
-  }
-  return undefined
 }
 
 /**
