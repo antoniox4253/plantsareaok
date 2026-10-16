@@ -136,4 +136,83 @@ export const survivorAdsService = {
       return { success: false, error: err.message }
     }
   },
+
+  /**
+   * Obtiene la tabla de clasificación de Survivor ADS ordenada por nivel alcanzado
+   */
+  async getLeaderboard(limit = 50): Promise<any[]> {
+    if (!isSupabaseConfigured()) {
+      return []
+    }
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_survivor_ads_leaderboard', {
+        p_limit: limit,
+      })
+      if (error) {
+        console.error('[survivorAdsService] get_survivor_ads_leaderboard error:', error)
+        return []
+      }
+      return (data as any[]) || []
+    } catch (err) {
+      console.error('[survivorAdsService] getLeaderboard exception:', err)
+      return []
+    }
+  },
+
+  /**
+   * Registra o actualiza el récord personal del usuario en Survivor ADS
+   */
+  async recordRun(params: {
+    level: number
+    playtimeSeconds?: number
+    spentGems?: boolean
+    gemsSpent?: number
+    revived?: boolean
+    reviveCount?: number
+    totalRewards?: {
+      gold?: number
+      gems?: number
+      items?: Partial<Record<string, number>>
+      tokenPlants?: number
+      basicPacks?: number
+      rareCards?: number
+    }
+    status?: 'completed' | 'active' | 'retired'
+  }): Promise<{ success: boolean; newBest?: boolean; error?: string }> {
+    if (!isSupabaseConfigured()) {
+      return { success: true }
+    }
+
+    try {
+      const { data, error } = await (supabase.rpc as any)('record_survivor_ads_run', {
+        p_level: params.level,
+        p_playtime_seconds: params.playtimeSeconds || 0,
+        p_spent_gems: params.spentGems ?? true,
+        p_gems_spent: params.gemsSpent ?? 50,
+        p_revived: params.revived ?? false,
+        p_revive_count: params.reviveCount || 0,
+        p_total_rewards: params.totalRewards || {
+          tokenPlants: params.level * 2,
+          basicPacks: Math.floor(params.level / 10),
+          rareCards: Math.floor(params.level / 25),
+        },
+        p_status: params.status || 'completed',
+      })
+
+      if (error) {
+        console.error('[survivorAdsService] record_survivor_ads_run error:', error)
+        return { success: false, error: error.message }
+      }
+
+      return {
+        success: Boolean(data?.success),
+        newBest: Boolean(data?.new_best),
+      }
+    } catch (err: any) {
+      console.error('[survivorAdsService] recordRun exception:', err)
+      return { success: false, error: err?.message || 'Error al registrar récord' }
+    }
+  },
 }
+

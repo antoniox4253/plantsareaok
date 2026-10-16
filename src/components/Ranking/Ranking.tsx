@@ -12,7 +12,6 @@ import { supabase } from '../../lib/supabaseClient'
 import { ClanManager, type ClanRankingEntry } from '../../utils/clanManager'
 import { arenaAdsService, type ArenaAdsLeaderboardEntry } from '../../services/arenaAdsService'
 import { FARMING_ITEM_DEFINITIONS } from '../../utils/pvpRewardManager'
-import GoldIcon from '../Common/GoldIcon'
 import './Ranking.css'
 
 import type { Database } from '../../types/database.types'
@@ -2070,7 +2069,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
           </div>
         )}
 
-        {/* TAB 5: ARENA ADS INFINITE DUNGEON LEADERBOARD */}
+        {/* TAB 5: SURVIVOR ADS LEADERBOARD */}
         {activeTab === 'arena_ads' && (
           <div className="ranking-tab-pane">
             <div className="leaderboard-container">
@@ -2139,7 +2138,9 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                         <div className="podium-v2-prize-box podium-v2-prize-box--gold">
                           <div className="podium-v2-gems-val">⚔️ NIVEL MÁXIMO {arenaAdsLeaderboard[0].levelReached}</div>
                           <div className="podium-v2-pack-val">
-                            🪙 {arenaAdsLeaderboard[0].totalRewards?.gold ?? 0} | 💎 {arenaAdsLeaderboard[0].totalRewards?.gems ?? 0}
+                            🌱 {arenaAdsLeaderboard[0].totalRewards?.tokenPlants ?? (arenaAdsLeaderboard[0].levelReached * 2)} PLANTS
+                            {(arenaAdsLeaderboard[0].totalRewards?.basicPacks ?? Math.floor(arenaAdsLeaderboard[0].levelReached / 10)) > 0 &&
+                              ` · 📦 ${arenaAdsLeaderboard[0].totalRewards?.basicPacks ?? Math.floor(arenaAdsLeaderboard[0].levelReached / 10)} Sobres`}
                           </div>
                         </div>
 
@@ -2149,13 +2150,13 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           </div>
                           <div className="podium-v2-divider" />
                           <div className="podium-v2-winrate">
-                            {arenaAdsLeaderboard[0].spentGems ? '💎 Entrada 2X' : '🪙 Entrada 1X'}
+                            💎 Entrada 50 Gemas
                           </div>
                         </div>
                       </div>
                     ) : (
                       <div className="podium-card-v2 podium-card-v2--placeholder">
-                        <span>Esperando Campeón de Mazmorra...</span>
+                        <span>Esperando Campeón Survivor...</span>
                       </div>
                     )}
 
@@ -2197,12 +2198,12 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           <div className="podium-v2-prize-box podium-v2-prize-box--silver">
                             <div className="podium-v2-gems-val podium-v2-gems-val--sub">⚔️ Nivel {arenaAdsLeaderboard[1].levelReached}</div>
                             <div className="podium-v2-pack-val podium-v2-pack-val--sub">
-                              🪙 {arenaAdsLeaderboard[1].totalRewards?.gold ?? 0} | 💎 {arenaAdsLeaderboard[1].totalRewards?.gems ?? 0}
+                              🌱 {arenaAdsLeaderboard[1].totalRewards?.tokenPlants ?? (arenaAdsLeaderboard[1].levelReached * 2)} PLANTS
                             </div>
                           </div>
                           <div className="podium-v2-sub-stats">
                             <span className="podium-v2-sub-cups">⏱️ {Math.floor((arenaAdsLeaderboard[1].playtimeSeconds || 0) / 60)}m</span>
-                            <span className="podium-v2-sub-wr">{arenaAdsLeaderboard[1].spentGems ? '💎 2X' : '🪙 1X'}</span>
+                            <span className="podium-v2-sub-wr">💎 50 Gemas</span>
                           </div>
                         </div>
                       ) : (
@@ -2247,12 +2248,12 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           <div className="podium-v2-prize-box podium-v2-prize-box--bronze">
                             <div className="podium-v2-gems-val podium-v2-gems-val--sub">⚔️ Nivel {arenaAdsLeaderboard[2].levelReached}</div>
                             <div className="podium-v2-pack-val podium-v2-pack-val--sub">
-                              🪙 {arenaAdsLeaderboard[2].totalRewards?.gold ?? 0} | 💎 {arenaAdsLeaderboard[2].totalRewards?.gems ?? 0}
+                              🌱 {arenaAdsLeaderboard[2].totalRewards?.tokenPlants ?? (arenaAdsLeaderboard[2].levelReached * 2)} PLANTS
                             </div>
                           </div>
                           <div className="podium-v2-sub-stats">
                             <span className="podium-v2-sub-cups">⏱️ {Math.floor((arenaAdsLeaderboard[2].playtimeSeconds || 0) / 60)}m</span>
-                            <span className="podium-v2-sub-wr">{arenaAdsLeaderboard[2].spentGems ? '💎 2X' : '🪙 1X'}</span>
+                            <span className="podium-v2-sub-wr">💎 50 Gemas</span>
                           </div>
                         </div>
                       ) : (
@@ -2297,15 +2298,18 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           <thead>
                             <tr>
                               <th style={{ width: '50px', textAlign: 'center' }}>#</th>
-                              <th>JUGADOR</th>
-                              <th style={{ width: '110px', textAlign: 'center' }}>NIVEL</th>
-                              <th style={{ width: '140px', textAlign: 'center' }}>BOTÍN TOTAL</th>
+                              <th>SUPERVIVIENTE</th>
+                              <th style={{ width: '120px', textAlign: 'center' }}>NIVEL MÁXIMO</th>
+                              <th style={{ width: '150px', textAlign: 'center' }}>BOTÍN PLANTS</th>
                               <th style={{ width: '90px', textAlign: 'center' }}>DETALLES</th>
                             </tr>
                           </thead>
                           <tbody>
                             {paginatedArenaAdsUsers.map((usr) => {
                               const isMe = isCurrentLeaderboardUser(usr.userId, userProfile?.id)
+                              const tokensWon = usr.totalRewards?.tokenPlants ?? (usr.levelReached * 2)
+                              const packsWon = usr.totalRewards?.basicPacks ?? Math.floor(usr.levelReached / 10)
+                              const raresWon = usr.totalRewards?.rareCards ?? Math.floor(usr.levelReached / 25)
                               return (
                                 <tr
                                   key={`${usr.rank}-${usr.userId}`}
@@ -2353,8 +2357,18 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                       ⚔️ Nivel {usr.levelReached}
                                     </span>
                                   </td>
-                                  <td style={{ textAlign: 'center', fontSize: '10.5px', color: '#e2e8f0', fontWeight: 700 }}>
-                                    🪙 {usr.totalRewards?.gold ?? 0} | 💎 {usr.totalRewards?.gems ?? 0}
+                                  <td style={{ textAlign: 'center', fontSize: '11px', color: '#4ade80', fontWeight: 800 }}>
+                                    🌱 {tokensWon} PLANTS
+                                    {packsWon > 0 && (
+                                      <span style={{ color: '#93c5fd', marginLeft: '4px', fontSize: '10px' }}>
+                                        · 📦 {packsWon}
+                                      </span>
+                                    )}
+                                    {raresWon > 0 && (
+                                      <span style={{ color: '#fef08a', marginLeft: '4px', fontSize: '10px' }}>
+                                        · 🌟 {raresWon}
+                                      </span>
+                                    )}
                                   </td>
                                   <td style={{ textAlign: 'center' }}>
                                     <button
@@ -2378,8 +2392,8 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                         <div className="leaderboard-empty-state" style={{ padding: '32px 16px' }}>
                           <span>
                             {arenaAdsSearch
-                              ? `🔎 No se encontraron expediciones con "${arenaAdsSearch}".`
-                              : '🏆 Los puestos #1, #2 y #3 se muestran en el Podio de honor. ¡Completa más niveles para clasificar aquí!'}
+                              ? `🔎 No se encontraron supervivientes con "${arenaAdsSearch}".`
+                              : '🏆 ¡Compite en Survivor ADS para clasificar en el ranking mundial!'}
                           </span>
                         </div>
                       )}
@@ -2502,43 +2516,33 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
               <div className="lb-modal-stats-grid">
                 {/* 1. Tiempo de Juego */}
                 <div className="lb-stat-card">
-                  <span className="lb-stat-label">⏱️ Tiempo de Juego</span>
+                  <span className="lb-stat-label">⏱️ Tiempo de Expedición</span>
                   <strong className="lb-stat-value lb-stat-value--gold">
                     {Math.floor(selectedArenaAdsUser.playtimeSeconds / 60)}m {selectedArenaAdsUser.playtimeSeconds % 60}s
                   </strong>
                 </div>
 
-                {/* 2. Entrada: ¿Gastó gemas? */}
+                {/* 2. Entrada */}
                 <div className="lb-stat-card">
-                  <span className="lb-stat-label">💎 Entrada Mazmorra</span>
-                  <strong className="lb-stat-value" style={{ color: selectedArenaAdsUser.spentGems ? '#38bdf8' : '#fef08a' }}>
-                    {selectedArenaAdsUser.spentGems ? '200 💎 (⚡ 2X Botín)' : '100 🪙 (1X Normal)'}
+                  <span className="lb-stat-label">💎 Entrada Survivor</span>
+                  <strong className="lb-stat-value" style={{ color: '#38bdf8' }}>
+                    50 💎 (1 Intento)
                   </strong>
                 </div>
 
-                {/* 3. Reanimación: ¿Revivió? */}
+                {/* 3. Reanimación */}
                 <div className="lb-stat-card">
-                  <span className="lb-stat-label">💖 Reanimación</span>
-                  <strong
-                    className="lb-stat-value"
-                    style={{
-                      color:
-                        selectedArenaAdsUser.revived || selectedArenaAdsUser.reviveCount > 0
-                          ? '#f43f5e'
-                          : '#22c55e',
-                    }}
-                  >
-                    {selectedArenaAdsUser.revived || selectedArenaAdsUser.reviveCount > 0
-                      ? `Revivió (${selectedArenaAdsUser.reviveCount || 1}x) • 150 💎`
-                      : '🛡️ No revivió'}
+                  <span className="lb-stat-label">🛡️ Supervivencia</span>
+                  <strong className="lb-stat-value" style={{ color: '#22c55e' }}>
+                    1 Solo Intento (Sin Reanimar)
                   </strong>
                 </div>
 
-                {/* 4. Total Gastado */}
+                {/* 4. Ratio de Recompensas */}
                 <div className="lb-stat-card">
-                  <span className="lb-stat-label">💎 Gemas Gastadas Total</span>
-                  <strong className="lb-stat-value lb-stat-value--sub">
-                    {selectedArenaAdsUser.gemsSpent || (selectedArenaAdsUser.spentGems ? 200 : 0)} 💎
+                  <span className="lb-stat-label">🌱 Recompensa Base</span>
+                  <strong className="lb-stat-value lb-stat-value--sub" style={{ color: '#4ade80' }}>
+                    +2 Token PLANTS / Nivel
                   </strong>
                 </div>
               </div>
@@ -2547,41 +2551,68 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
               <div className="lb-modal-plant-section">
                 <div className="lb-modal-section-title">🎁 BOTÍN TOTAL ACUMULADO</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
                     <div
                       style={{
-                        flex: '1 1 auto',
-                        background: 'rgba(234, 179, 8, 0.15)',
-                        border: '1.5px solid rgba(234, 179, 8, 0.4)',
+                        background: 'rgba(34, 197, 94, 0.15)',
+                        border: '1.5px solid rgba(34, 197, 94, 0.4)',
                         borderRadius: '8px',
                         padding: '8px 12px',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        color: '#fef08a',
+                        flexDirection: 'column',
+                        gap: '2px',
+                        color: '#4ade80',
                         fontWeight: 900,
                         fontSize: '13px',
                       }}
                     >
-                      <GoldIcon size={18} /> {selectedArenaAdsUser.totalRewards?.gold?.toLocaleString() ?? 0} Oro
+                      <span>🌱 Token PLANTS</span>
+                      <strong style={{ fontSize: '15px' }}>
+                        {(selectedArenaAdsUser.totalRewards?.tokenPlants ?? (selectedArenaAdsUser.levelReached * 2))} PLANTS
+                      </strong>
+                      <small style={{ fontSize: '9px', color: '#86efac', fontWeight: 600 }}>Minteo directo a billetera</small>
                     </div>
 
                     <div
                       style={{
-                        flex: '1 1 auto',
                         background: 'rgba(56, 189, 248, 0.15)',
                         border: '1.5px solid rgba(56, 189, 248, 0.4)',
                         borderRadius: '8px',
                         padding: '8px 12px',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
+                        flexDirection: 'column',
+                        gap: '2px',
                         color: '#bae6fd',
                         fontWeight: 900,
                         fontSize: '13px',
                       }}
                     >
-                      <span>💎</span> {selectedArenaAdsUser.totalRewards?.gems?.toLocaleString() ?? 0} Gemas
+                      <span>📦 Sobres Básicos</span>
+                      <strong style={{ fontSize: '15px' }}>
+                        {(selectedArenaAdsUser.totalRewards?.basicPacks ?? Math.floor(selectedArenaAdsUser.levelReached / 10))} Sobres
+                      </strong>
+                      <small style={{ fontSize: '9px', color: '#7dd3fc', fontWeight: 600 }}>1 cada 10 niveles superados</small>
+                    </div>
+
+                    <div
+                      style={{
+                        background: 'rgba(234, 179, 8, 0.15)',
+                        border: '1.5px solid rgba(234, 179, 8, 0.4)',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '2px',
+                        color: '#fef08a',
+                        fontWeight: 900,
+                        fontSize: '13px',
+                      }}
+                    >
+                      <span>🌟 Cartas Raras</span>
+                      <strong style={{ fontSize: '15px' }}>
+                        {(selectedArenaAdsUser.totalRewards?.rareCards ?? Math.floor(selectedArenaAdsUser.levelReached / 25))} Raras
+                      </strong>
+                      <small style={{ fontSize: '9px', color: '#fde047', fontWeight: 600 }}>1 cada 25 niveles (excluye Jalapeño)</small>
                     </div>
                   </div>
 

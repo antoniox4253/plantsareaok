@@ -150,7 +150,16 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   useEffect(() => {
     loadData()
     const interval = setInterval(loadData, 12000)
-    return () => clearInterval(interval)
+    const handleUpdate = () => {
+      void loadData()
+    }
+    window.addEventListener('plants_tokens_updated', handleUpdate)
+    window.addEventListener('refresh_user_balance', handleUpdate)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('plants_tokens_updated', handleUpdate)
+      window.removeEventListener('refresh_user_balance', handleUpdate)
+    }
   }, [loadData])
 
   // Temporizadores locales de cuenta regresiva

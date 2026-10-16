@@ -49,9 +49,12 @@ export interface ArenaAdsLeaderboardEntry {
   revived: boolean
   reviveCount: number
   totalRewards: {
-    gold: number
-    gems: number
+    gold?: number
+    gems?: number
     items?: Partial<Record<string, number>>
+    tokenPlants?: number
+    basicPacks?: number
+    rareCards?: number
   }
   updatedAt: string
 }
@@ -263,7 +266,14 @@ export const arenaAdsService = {
     gemsSpent?: number
     revived?: boolean
     reviveCount?: number
-    totalRewards?: { gold: number; gems: number; items?: Partial<Record<string, number>> }
+    totalRewards?: {
+      gold?: number
+      gems?: number
+      items?: Partial<Record<string, number>>
+      tokenPlants?: number
+      basicPacks?: number
+      rareCards?: number
+    }
     status?: 'completed' | 'active' | 'retired'
   }): Promise<{ success: boolean; newBest?: boolean; error?: string }> {
     if (!isSupabaseConfigured()) {

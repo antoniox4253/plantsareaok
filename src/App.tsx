@@ -1173,6 +1173,7 @@ function App() {
               },
             })
           )
+          window.dispatchEvent(new Event('refresh_user_balance'))
         }
       }
     } catch (e) {
@@ -1184,20 +1185,23 @@ function App() {
     if (arenaAdsRun) {
       const runStarted = arenaAdsRun.startedAt || arenaAdsRun.createdAt
       void arenaAdsService.recordRun({
-        level: arenaAdsRun.level,
+        level: levelsCleared > 0 ? levelsCleared : (arenaAdsRun.level || 1),
         playtimeSeconds: runStarted
           ? Math.max(1, Math.round((Date.now() - runStarted) / 1000))
           : 60,
-        spentGems: arenaAdsRun.paymentType === 'gems',
-        gemsSpent: (arenaAdsRun.paymentType === 'gems' ? 50 : 0) + ((arenaAdsRun.reviveCount || 0) * 150),
-        revived: (arenaAdsRun.reviveCount || 0) > 0,
-        reviveCount: arenaAdsRun.reviveCount || 0,
+        spentGems: true,
+        gemsSpent: 50,
+        revived: false,
+        reviveCount: 0,
         totalRewards: {
-          gold: finalGold,
-          gems: finalGems,
+          tokenPlants: levelsCleared * 2,
+          basicPacks: Math.floor(levelsCleared / 10),
+          rareCards: Math.floor(levelsCleared / 25),
+          gold: 0,
+          gems: 0,
           items: loot.items,
         },
-        status: 'retired',
+        status: arenaAdsRun.status === 'game_over' ? 'completed' : 'retired',
       }).catch((err) => console.warn('[App] Error al registrar run en claim:', err))
     }
     try {
