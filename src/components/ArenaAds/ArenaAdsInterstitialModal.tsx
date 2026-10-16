@@ -170,21 +170,21 @@ export default function ArenaAdsInterstitialModal({
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '6px' }}>
-            <button
-              type="button"
-              className="arena-ads-btn arena-ads-btn--cashout"
-              onClick={() => {
-                soundManager.playSound('click', 0.5)
-                onCashout()
-              }}
-            >
-              💰 RETIRARSE AHORA
-            </button>
-
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px' }}>
             <button
               type="button"
               className="arena-ads-btn arena-ads-btn--primary"
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                fontSize: '15px',
+                fontWeight: 900,
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                borderColor: '#34d399',
+                color: '#ffffff',
+                boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
+                cursor: 'pointer',
+              }}
               onClick={() => {
                 soundManager.playSound('click', 0.5)
                 onNextLevel()

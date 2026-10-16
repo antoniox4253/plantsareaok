@@ -1860,7 +1860,7 @@ export default function Battlefield({
             ArenaAdsManager.saveRun(updated)
             setCurrentArenaAdsRun(updated)
             setArenaAdsModalMode('victory')
-            setShowArenaAdsInterstitial(true)
+            // El cuadro de nivel superado se mostrará tras pulsar avanzar en la pantalla de resultado
 
             const runStarted = updated.startedAt || updated.createdAt
             const playtimeSeconds = runStarted
@@ -1896,7 +1896,7 @@ export default function Battlefield({
             ArenaAdsManager.saveRun(run)
             setCurrentArenaAdsRun(run)
             setArenaAdsModalMode('defeat')
-            setShowArenaAdsInterstitial(true)
+            // Se muestra directamente la pantalla de derrota con su botín ganado
 
             const runStarted = run.startedAt || run.createdAt
             const playtimeSeconds = runStarted
@@ -2217,12 +2217,12 @@ export default function Battlefield({
     }
 
     if (matchMode === 'arena_ads') {
-      soundManager.playBgm('menu')
       activateMonetagVignette()
       if (gameStatus === 'victory') {
         const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
         if (run) {
           if (run.level >= 50) {
+            soundManager.playBgm('menu')
             if (onArenaAdsRetreat) {
               onArenaAdsRetreat(
                 run.accumulatedRewards,
@@ -2231,18 +2231,30 @@ export default function Battlefield({
               )
               return
             }
-          } else if (onArenaAdsAdvance) {
-            const nextRun = ArenaAdsManager.advanceToNextLevel(run)
-            onArenaAdsAdvance(nextRun)
+          } else {
+            // El jugador ya vio el resultado de batalla y pulsa avanzar:
+            // Se abre el cuadro de Nivel Superado para proceder al siguiente nivel
+            setArenaAdsModalMode('victory')
+            setShowArenaAdsInterstitial(true)
             return
           }
         }
       }
-      ArenaAdsManager.clearRun()
-      setCurrentArenaAdsRun(null)
-      if (onBackToMenu) {
+
+      soundManager.playBgm('menu')
+      // Derrota en Survivor ADS: reclamar botín ganado y regresar a modos de juego
+      const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
+      if (run && onArenaAdsRetreat) {
+        onArenaAdsRetreat(
+          run.accumulatedRewards,
+          run.multiplier || 1,
+          run.newlyClaimedLevels
+        )
+      } else if (onBackToMenu) {
         onBackToMenu()
       }
+      ArenaAdsManager.clearRun()
+      setCurrentArenaAdsRun(null)
       return
     }
 
@@ -3788,7 +3800,7 @@ export default function Battlefield({
                             )}
                           </div>
                           <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
-                            🛡️ ¡3 oleadas resistidas! Avanza al siguiente nivel o retírate para cobrar.
+                            🛡️ ¡3 oleadas resistidas con éxito! Pulsa avanzar para desafiar el siguiente nivel.
                           </p>
                         </>
                       ) : (
@@ -4203,33 +4215,7 @@ export default function Battlefield({
                     ? '🔍 BUSCANDO FORTALEZA...'
                     : '🎮 SEGUIR JUGANDO'}
                 </button>
-                {matchMode === 'arena_ads' && gameStatus === 'victory' && (
-                  <button
-                    className="game-button"
-                    style={{
-                      background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
-                      color: '#ffffff',
-                      fontWeight: 900,
-                      border: '1px solid #34d399',
-                    }}
-                    type="button"
-                    onClick={() => {
-                      soundManager.playBgm('menu')
-                      if (currentArenaAdsRun && onArenaAdsRetreat) {
-                        onArenaAdsRetreat(
-                          currentArenaAdsRun.accumulatedRewards,
-                          currentArenaAdsRun.multiplier || 1,
-                          currentArenaAdsRun.newlyClaimedLevels
-                        )
-                      } else if (onBackToMenu) {
-                        onBackToMenu()
-                      }
-                    }}
-                  >
-                    💰 RETIRARSE ({(currentArenaAdsRun?.level || 1) * 2} Token PLANTS 🌱)
-                  </button>
-                )}
-                {onBackToMenu && matchMode !== 'tournament' && (
+                {onBackToMenu && matchMode !== 'tournament' && (matchMode !== 'arena_ads' || gameStatus !== 'victory') && (
                   <button
                     className="game-button game-button--secondary"
                     type="button"
