@@ -5,7 +5,7 @@ import {
   generateSurvivorLevel,
   spawnSurvivorEnemyEntity,
 } from './survivorWaveEngine'
-import { createBattleState, NIVEL_POR_DEFECTO } from './simulate'
+import { createBattleState, NIVEL_POR_DEFECTO, stepTick } from './simulate'
 
 describe('survivorWaveEngine', () => {
   it('correctly stages melee plant pools across levels', () => {
@@ -145,5 +145,57 @@ describe('survivorWaveEngine', () => {
     expect(entity.plantId).toBe('aloe')
     expect(entity.col).toBe(11) // Placed on enemy base line
     expect(entity.isWalking).toBe(false)
+  })
+
+  it('guarantees 25 seconds (750 ticks) grace period for sunflower planting before wave 1 attacks', () => {
+    const config = generateSurvivorLevel(1, 9999)
+    // 25s * 30 ticks/s = 750 ticks
+    expect(config.waves[0].startTick).toBe(750)
+    expect(config.waves[0].spawns[0].tick).toBeGreaterThanOrEqual(750)
+  })
+
+  it('applies 2x damage against player mother tree when melee plants attack in survivor mode', () => {
+    const state = createBattleState(
+      12345,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      3,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true, // isSurvivorMode
+      1
+    )
+
+    expect(state.isSurvivorMode).toBe(true)
+    expect(state.p1BaseHp).toBe(1000)
+
+    // Simulate an enemy melee plant reaching the base
+    // Spawn an enemy cactus at lane 0 near P1 base
+    state.enemyPlants.push({
+      id: 'enemy-cactus-test',
+      plantId: 'chomper',
+      lane: 0,
+      x: 10,
+      hp: 100,
+      maxHp: 100,
+      lastActionTime: 0,
+      isWalking: true,
+      state: 'walking',
+    })
+
+    const initialHp = state.p1BaseHp
+    // Cactus base damage is 40. In survivor mode it deals 2x (80 damage).
+    state.enemyPlants[0].x = 10.5
+    stepTick(state, () => {})
+    expect(state.p1BaseHp).toBe(initialHp - 80)
   })
 })

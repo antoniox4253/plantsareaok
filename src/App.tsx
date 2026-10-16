@@ -576,6 +576,7 @@ function App() {
   const [partidaAsincrona, setPartidaAsincrona] = useState<boolean>(false)
   const [reopenTournamentOnMenu, setReopenTournamentOnMenu] = useState<boolean>(false)
   const [reopenArenaAdsOnMenu, setReopenArenaAdsOnMenu] = useState<boolean>(false)
+  const [reopenModeSelectorOnMenu, setReopenModeSelectorOnMenu] = useState<boolean>(false)
 
   // Reaccionar a errores asíncronos de la cola (por ej. agotamiento de energías en backend)
   useEffect(() => {
@@ -1220,6 +1221,7 @@ function App() {
       setArenaAdsRun(null)
       ArenaAdsManager.clearRun()
       void refreshFromServer()
+      setReopenModeSelectorOnMenu(true)
       setScreen('menu')
     }
   }
@@ -1234,7 +1236,7 @@ function App() {
         ? Math.max(1, Math.round((Date.now() - runStarted) / 1000))
         : 60,
       spentGems: run.paymentType === 'gems',
-      gemsSpent: (run.paymentType === 'gems' ? 200 : 0) + ((run.reviveCount || 0) * 150),
+      gemsSpent: 50 + ((run.reviveCount || 0) * 150),
       revived: (run.reviveCount || 0) > 0,
       reviveCount: run.reviveCount || 0,
       totalRewards: {
@@ -1244,8 +1246,6 @@ function App() {
       },
       status: 'active',
     }).catch((err) => console.warn('[App] Error al registrar avance en backend:', err))
-    setReopenArenaAdsOnMenu(true)
-    setScreen('menu')
   }
 
   const handleStartStrategicPlaytest = (config: StrategicPlaytestConfig) => {
@@ -1565,6 +1565,8 @@ function App() {
             onResetReopenTournamentModal={() => setReopenTournamentOnMenu(false)}
             reopenArenaAdsModal={reopenArenaAdsOnMenu}
             onResetReopenArenaAdsModal={() => setReopenArenaAdsOnMenu(false)}
+            reopenModeSelector={reopenModeSelectorOnMenu}
+            onResetReopenModeSelector={() => setReopenModeSelectorOnMenu(false)}
             onRewardsChanged={refreshFromServer}
           />
         )}

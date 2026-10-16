@@ -875,7 +875,7 @@ export class ArenaAdsManager {
       id: `run_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       level: 1,
       seed: actualSeed,
-      status: 'prep',
+      status: 'battle',
       paymentType,
       multiplier,
       lives: 1,
@@ -1023,19 +1023,8 @@ export class ArenaAdsManager {
    */
   static advanceToNextLevel(run: ArenaAdsRun): ArenaAdsRun {
     run.level += 1
-    run.status = 'prep'
+    run.status = 'battle'
     run.chosenAdvantage = { type: 'none' }
-
-    const newBaseDeck = buildArenaAdsDeck()
-    run.baseDeck = newBaseDeck
-    run.deck = newBaseDeck
-    run.currentPrepChoice = generateLevelPrep(
-      run.level,
-      run.multiplier,
-      newBaseDeck,
-      run.accumulatedRewards.items,
-      run.alreadyClaimedLevels
-    )
 
     this.saveRun(run)
     return run

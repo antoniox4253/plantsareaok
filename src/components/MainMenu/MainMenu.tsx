@@ -12,7 +12,7 @@ import ProfileModal, { type ProfileTab } from '../ProfileModal/ProfileModal'
 import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
 import ColosseumModal from '../Colosseum/ColosseumModal'
 import ArenaAdsModal from '../ArenaAds/ArenaAdsModal'
-import { ArenaAdsManager, type ArenaAdsRun, type ArenaAdsLoot } from '../../utils/arenaAdsManager'
+import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import TournamentModal from '../Tournament/TournamentModal'
 import GlobalChat from '../GlobalChat/GlobalChat'
 import AuctionModal from '../Auction/AuctionModal'
@@ -90,6 +90,8 @@ interface MainMenuProps {
   onResetReopenTournamentModal?: () => void
   reopenArenaAdsModal?: boolean
   onResetReopenArenaAdsModal?: () => void
+  reopenModeSelector?: boolean
+  onResetReopenModeSelector?: () => void
   onRewardsChanged?: () => Promise<void> | void
 }
 
@@ -142,6 +144,8 @@ export default function MainMenu({
   onResetReopenTournamentModal,
   reopenArenaAdsModal,
   onResetReopenArenaAdsModal,
+  reopenModeSelector,
+  onResetReopenModeSelector,
   onRewardsChanged,
 }: MainMenuProps) {
   const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => UserManager.getProfile())
@@ -149,14 +153,7 @@ export default function MainMenu({
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>('profile')
   const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false)
   const [isColosseumModalOpen, setIsColosseumModalOpen] = useState(false)
-  const [isArenaAdsModalOpen, setIsArenaAdsModalOpen] = useState<boolean>(() => {
-    try {
-      const stored = ArenaAdsManager.getStoredRun()
-      return Boolean(stored && stored.status === 'prep')
-    } catch {
-      return false
-    }
-  })
+  const [isArenaAdsModalOpen, setIsArenaAdsModalOpen] = useState<boolean>(false)
   const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false)
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
   const [globalChatUnreadCount, setGlobalChatUnreadCount] = useState(0)
@@ -208,25 +205,14 @@ export default function MainMenu({
     }
   }, [reopenArenaAdsModal, onResetReopenArenaAdsModal])
 
-  // Si el usuario regresa a la pestaña, restaurar expedición activa
   useEffect(() => {
-    const handleTabResume = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        try {
-          const stored = ArenaAdsManager.getStoredRun()
-          if (stored && stored.status === 'prep') {
-            setIsArenaAdsModalOpen(true)
-          }
-        } catch {}
+    if (reopenModeSelector) {
+      setIsModeSelectorOpen(true)
+      if (onResetReopenModeSelector) {
+        onResetReopenModeSelector()
       }
     }
-    document.addEventListener('visibilitychange', handleTabResume)
-    window.addEventListener('focus', handleTabResume)
-    return () => {
-      document.removeEventListener('visibilitychange', handleTabResume)
-      window.removeEventListener('focus', handleTabResume)
-    }
-  }, [])
+  }, [reopenModeSelector, onResetReopenModeSelector])
 
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [ticker, setTicker] = useState<number>(0)

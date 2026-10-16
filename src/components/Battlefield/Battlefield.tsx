@@ -741,9 +741,7 @@ export default function Battlefield({
   const allCatalogCards = useMemo(() => Object.keys(PLANT_CONFIGS) as PlantId[], [])
 
   const mazoMioParsed = useMemo<CartaDeMazo[] | null>(() => {
-    if (matchMode === 'arena_ads' && currentArenaAdsRun?.deck && currentArenaAdsRun.deck.length > 0) {
-      return currentArenaAdsRun.deck
-    }
+    // En Survivor ADS y partidas PvP/PvE, el jugador usa su propio mazo activo
     const fromRoom = leerMazo(mazosDeLaSala?.mio)
     if (fromRoom && fromRoom.length > 0) return fromRoom
 
@@ -2339,140 +2337,162 @@ export default function Battlefield({
           otro son cosa de SU navegador y aquí no se conocen, así que el contador
           se quedaría clavado en 150 — un número inventado en pantalla. Mejor no
           mostrarlo que mostrar uno falso. */}
-      <BaseTower
-        team="p2"
-        hp={matchMode === 'arena_ads' ? Math.max(0, survivorEnemiesRemaining) : p2BaseHp}
-        maxHp={
-          matchMode === 'arena_ads'
-            ? Math.max(1, survivorEnemiesRemaining)
-            : matchMode === 'clan_fortress'
-            ? (currentFortressOpponent?.targetMaxBaseHp || (currentFortressOpponent as any)?.targetMaxHp || currentFortressOpponent?.targetBaseHp || 2000)
-            : INITIAL_BASE_HP + rivalTreeBonusHp
-        }
-        sunBank={matchMode === 'arena_ads' || roomId ? undefined : p2SunBank}
-        nombre={
-          matchMode === 'arena_ads'
-            ? `Horda Invasora (Nv.${currentArenaAdsRun?.level || 1})`
-            : matchMode === 'clan_fortress'
-            ? (currentFortressOpponent?.targetClanName || 'Fortaleza Rival')
-            : (nombres?.rival || tournamentOpponent?.name || (roomId ? 'Rival' : 'Bot Entrenador'))
-        }
-        level={matchMode === 'clan_fortress' ? fortressTargetTreeLevel : rivalTreeLevel}
-        skin={rivalTreeSkin}
-        sideBadge={
-          matchMode === 'arena_ads' ? (
-            <div
-              className="battlefield-colosseum-header-pill"
-              style={{
-                borderColor: '#10b981',
-                boxShadow: '0 0 15px rgba(16, 185, 129, 0.45)',
-                background: 'rgba(15, 23, 42, 0.94)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span className="battlefield-colosseum-icon">🧟</span>
-              <span>SURVIVOR ADS • NIVEL {currentArenaAdsRun?.level || 1}</span>
-              <span>•</span>
-              <span style={{ color: '#facc15', fontWeight: 800 }}>
-                {survivorWaveIndex === 1
-                  ? 'Oleada 1/3 (Suave)'
-                  : survivorWaveIndex === 2
-                    ? 'Oleada 2/3 (Difícil)'
-                    : 'Oleada 3/3 (¡Con Presión!)'}
-              </span>
-              <span>•</span>
-              <span style={{ color: '#38bdf8' }}>
-                Restantes: {survivorEnemiesRemaining}
-              </span>
-            </div>
-          ) : matchMode === 'clan_fortress' ? (
-            <div
-              className="battlefield-colosseum-header-pill"
-              style={{
-                borderColor: '#eab308',
-                boxShadow: '0 0 15px rgba(234, 179, 8, 0.4)',
-                background: 'rgba(15, 23, 42, 0.92)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span className="battlefield-colosseum-icon">{currentFortressOpponent?.targetBadge || '🏰'}</span>
-              <span>{currentFortressOpponent?.targetClanTag || '#FORT'}</span>
-              <span>•</span>
-              <span style={{ color: '#facc15', fontWeight: 'bold' }}>☀️ {p2SunBank} Def</span>
-              <span>•</span>
-              <span style={{ color: '#38bdf8' }}>💎 {Math.min(60, currentFortressOpponent?.targetVaultGems ?? 60)} en juego</span>
-            </div>
-          ) : matchMode === 'tournament' ? (
-            <div
-              className="battlefield-colosseum-header-pill"
-              style={{
-                borderColor: '#a855f7',
-                boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)',
-                background: 'rgba(15, 23, 42, 0.92)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span className="battlefield-colosseum-icon">🎪</span>
-              <span>TORNEO EN VIVO</span>
-            </div>
-          ) : matchMode === 'colosseum' ? (
-            <div className="battlefield-colosseum-header-pill" style={{ whiteSpace: 'nowrap' }}>
-              <span className="battlefield-colosseum-icon">🏛️</span>
-              <span>COLISEO</span>
-              <span>•</span>
-              <span style={{ color: '#38bdf8' }}>Sala: {colosseumConfig?.betGems || 0.5} 💎</span>
-              <span>•</span>
-              <span style={{ color: '#fbbf24' }}>Pozo: {((colosseumConfig?.betGems || 0.5) * 2).toFixed(1)} 💎</span>
-            </div>
-          ) : matchMode === 'friendly' ? (
-            <div
-              className="battlefield-colosseum-header-pill"
-              style={{
-                borderColor: '#34d399',
-                boxShadow: '0 0 15px rgba(52, 211, 153, 0.4)',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <span className="battlefield-colosseum-icon">🤝</span>
-              <span>DUELO AMISTOSO</span>
-              {friendlyBetGems !== undefined && friendlyBetGems > 0 ? (
-                <>
-                  <span>•</span>
-                  <span style={{ color: '#38bdf8' }}>{friendlyBetGems} 💎</span>
-                </>
-              ) : null}
-            </div>
-          ) : userElo >= 2001 ? (
-            <div
-              className="battlefield-colosseum-header-pill"
-              style={{
-                borderColor: !isAsyncMatch ? '#10b981' : '#38bdf8',
-                boxShadow: !isAsyncMatch
-                  ? '0 0 15px rgba(16, 185, 129, 0.45)'
-                  : '0 0 10px rgba(56, 189, 248, 0.3)',
-                background: 'rgba(15, 23, 42, 0.94)',
-                whiteSpace: 'nowrap',
-              }}
-              title={
-                !isAsyncMatch
-                  ? '¡Duelo contra humano real! Recompensa en Token PLANTS con +25% de Bonus activo'
-                  : 'Rival asíncrono: Recompensa estándar de Token PLANTS activa'
-              }
-            >
-              <span className="battlefield-colosseum-icon">{!isAsyncMatch ? '⚔️' : '🤖'}</span>
-              <span>{!isAsyncMatch ? 'PvP EN VIVO' : 'ASÍNCRONO'}</span>
-              <span>•</span>
-              <span style={{ color: '#34d399', fontWeight: 800 }}>🌱 PLANTS</span>
-              {!isAsyncMatch && pvpBonusState.isActive && (
-                <>
-                  <span>•</span>
-                  <span style={{ color: '#fde047', fontWeight: 900 }}>+25% BONUS</span>
-                </>
-              )}
-            </div>
-          ) : undefined
-        }
-      />
+      {/* HUD de Oleadas en Modo Survivor ADS (El oponente no tiene árbol, es una invasión por oleadas) */}
+      {matchMode === 'arena_ads' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '24px',
+            zIndex: 35,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            className="battlefield-colosseum-header-pill"
+            style={{
+              borderColor: '#10b981',
+              boxShadow: '0 0 16px rgba(16, 185, 129, 0.45)',
+              background: 'rgba(15, 23, 42, 0.94)',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#f8fafc',
+            }}
+          >
+            <span className="battlefield-colosseum-icon">🧟</span>
+            <span>SURVIVOR ADS • NV.{currentArenaAdsRun?.level || 1}</span>
+            <span>•</span>
+            <span style={{ color: '#facc15', fontWeight: 800 }}>
+              {survivorWaveIndex === 1
+                ? 'Oleada 1/3 (Suave)'
+                : survivorWaveIndex === 2
+                  ? 'Oleada 2/3 (Difícil)'
+                  : 'Oleada 3/3 (¡Con Presión!)'}
+            </span>
+            <span>•</span>
+            <span style={{ color: '#38bdf8' }}>
+              Restantes: {survivorEnemiesRemaining}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Base Tower Rival (Sólo en modos estándar; en Survivor ADS no hay árbol rival) */}
+      {matchMode !== 'arena_ads' && (
+        <BaseTower
+          team="p2"
+          hp={p2BaseHp}
+          maxHp={
+            matchMode === 'clan_fortress'
+              ? (currentFortressOpponent?.targetMaxBaseHp || (currentFortressOpponent as any)?.targetMaxHp || currentFortressOpponent?.targetBaseHp || 2000)
+              : INITIAL_BASE_HP + rivalTreeBonusHp
+          }
+          sunBank={roomId ? undefined : p2SunBank}
+          nombre={
+            matchMode === 'clan_fortress'
+              ? (currentFortressOpponent?.targetClanName || 'Fortaleza Rival')
+              : (nombres?.rival || tournamentOpponent?.name || (roomId ? 'Rival' : 'Bot Entrenador'))
+          }
+          level={matchMode === 'clan_fortress' ? fortressTargetTreeLevel : rivalTreeLevel}
+          skin={rivalTreeSkin}
+          sideBadge={
+            matchMode === 'clan_fortress' ? (
+              <div
+                className="battlefield-colosseum-header-pill"
+                style={{
+                  borderColor: '#eab308',
+                  boxShadow: '0 0 15px rgba(234, 179, 8, 0.4)',
+                  background: 'rgba(15, 23, 42, 0.92)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span className="battlefield-colosseum-icon">{currentFortressOpponent?.targetBadge || '🏰'}</span>
+                <span>{currentFortressOpponent?.targetClanTag || '#FORT'}</span>
+                <span>•</span>
+                <span style={{ color: '#facc15', fontWeight: 'bold' }}>☀️ {p2SunBank} Def</span>
+                <span>•</span>
+                <span style={{ color: '#38bdf8' }}>💎 {Math.min(60, currentFortressOpponent?.targetVaultGems ?? 60)} en juego</span>
+              </div>
+            ) : matchMode === 'tournament' ? (
+              <div
+                className="battlefield-colosseum-header-pill"
+                style={{
+                  borderColor: '#a855f7',
+                  boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)',
+                  background: 'rgba(15, 23, 42, 0.92)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span className="battlefield-colosseum-icon">🎪</span>
+                <span>TORNEO EN VIVO</span>
+              </div>
+            ) : matchMode === 'colosseum' ? (
+              <div className="battlefield-colosseum-header-pill" style={{ whiteSpace: 'nowrap' }}>
+                <span className="battlefield-colosseum-icon">🏛️</span>
+                <span>COLISEO</span>
+                <span>•</span>
+                <span style={{ color: '#38bdf8' }}>Sala: {colosseumConfig?.betGems || 0.5} 💎</span>
+                <span>•</span>
+                <span style={{ color: '#fbbf24' }}>Pozo: {((colosseumConfig?.betGems || 0.5) * 2).toFixed(1)} 💎</span>
+              </div>
+            ) : matchMode === 'friendly' ? (
+              <div
+                className="battlefield-colosseum-header-pill"
+                style={{
+                  borderColor: '#34d399',
+                  boxShadow: '0 0 15px rgba(52, 211, 153, 0.4)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span className="battlefield-colosseum-icon">🤝</span>
+                <span>DUELO AMISTOSO</span>
+                {friendlyBetGems !== undefined && friendlyBetGems > 0 ? (
+                  <>
+                    <span>•</span>
+                    <span style={{ color: '#38bdf8' }}>{friendlyBetGems} 💎</span>
+                  </>
+                ) : null}
+              </div>
+            ) : userElo >= 2001 ? (
+              <div
+                className="battlefield-colosseum-header-pill"
+                style={{
+                  borderColor: !isAsyncMatch ? '#10b981' : '#38bdf8',
+                  boxShadow: !isAsyncMatch
+                    ? '0 0 15px rgba(16, 185, 129, 0.45)'
+                    : '0 0 10px rgba(56, 189, 248, 0.3)',
+                  background: 'rgba(15, 23, 42, 0.94)',
+                  whiteSpace: 'nowrap',
+                }}
+                title={
+                  !isAsyncMatch
+                    ? '¡Duelo contra humano real! Recompensa en Token PLANTS con +25% de Bonus activo'
+                    : 'Rival asíncrono: Recompensa estándar de Token PLANTS activa'
+                }
+              >
+                <span className="battlefield-colosseum-icon">{!isAsyncMatch ? '⚔️' : '🤖'}</span>
+                <span>{!isAsyncMatch ? 'PvP EN VIVO' : 'ASÍNCRONO'}</span>
+                <span>•</span>
+                <span style={{ color: '#34d399', fontWeight: 800 }}>🌱 PLANTS</span>
+                {!isAsyncMatch && pvpBonusState.isActive && (
+                  <>
+                    <span>•</span>
+                    <span style={{ color: '#fde047', fontWeight: 900 }}>+25% BONUS</span>
+                  </>
+                )}
+              </div>
+            ) : undefined
+          }
+        />
+      )}
 
       {/* ── INSIGNIA FLOTANTE DE DUELO EN VIVO (ARENA 3+) ── */}
       {showLiveDuelBanner && (
@@ -4257,10 +4277,39 @@ export default function Battlefield({
               }
               return
             }
+            const nextRun = ArenaAdsManager.advanceToNextLevel(currentArenaAdsRun)
+            setCurrentArenaAdsRun(nextRun)
+            ArenaAdsManager.saveRun(nextRun)
             if (onArenaAdsAdvance) {
-              const nextRun = ArenaAdsManager.advanceToNextLevel(currentArenaAdsRun)
               onArenaAdsAdvance(nextRun)
             }
+            const nextSeed = Math.floor(Math.random() * 1000000)
+            const adsBotStats = getBotStatsForLevel(nextRun.level)
+            const rivalBonusHp = Math.max(0, adsBotStats.botBaseHp - 1000)
+            startGame(
+              nextSeed,
+              false,
+              undefined,
+              adsBotStats.botElo,
+              undefined,
+              { mio: mazoMioParsed, rival: adsBotStats.botDeck },
+              undefined,
+              undefined,
+              'auth-v2',
+              treeBonusHpRef.current,
+              rivalBonusHp,
+              treeSkinRef.current,
+              rivalTreeSkinRef.current,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              true,
+              nextRun.level
+            )
           }}
           onCashout={() => {
             activateMonetagVignette()

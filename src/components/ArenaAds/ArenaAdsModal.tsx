@@ -281,9 +281,7 @@ export default function ArenaAdsModal({
         const stored = ArenaAdsManager.getStoredRun()
         if (stored) {
           setActiveRun({ ...stored })
-          if (stored.status === 'prep') {
-            setActiveView('prep')
-          }
+          setActiveView('lobby')
           if (stored.chosenAdvantage?.type === 'reward') {
             setSelectedPlantOption(null)
           } else if (stored.chosenAdvantage?.type?.startsWith('plant')) {
@@ -311,11 +309,7 @@ export default function ArenaAdsModal({
     const stored = ArenaAdsManager.getStoredRun()
     if (stored) {
       setActiveRun(stored)
-      if (stored.status === 'prep') {
-        setActiveView('prep')
-      } else {
-        setActiveView('lobby')
-      }
+      setActiveView('lobby')
       if (stored.chosenAdvantage?.type === 'reward') {
         setSelectedPlantOption(null)
       } else if (stored.chosenAdvantage?.type?.startsWith('plant')) {
@@ -391,18 +385,20 @@ export default function ArenaAdsModal({
       }
       ArenaAdsManager.saveRun(newRun)
       setActiveRun(newRun)
-      setActiveView('prep')
       setSelectedPlantOption(null)
+      onStartArenaAdsBattle(newRun)
+      onClose()
     } finally {
       setIsProcessing(false)
     }
   }
 
-  // Continuar la run existente desde caché
+  // Continuar la run existente desde caché directamente al combate con el mazo propio
   const handleResumeRun = () => {
     if (!activeRun) return
     soundManager.playSound('click', 0.5)
-    setActiveView('prep')
+    onStartArenaAdsBattle(activeRun)
+    onClose()
   }
 
 

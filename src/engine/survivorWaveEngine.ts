@@ -106,11 +106,11 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
   const dmgMult = 1 + Math.max(0, level - 1) * 0.03
 
   // ── OLEADA 1: SUAVE ────────────────────────────────────────────────────────
-  // Comienza a los 8 segundos (tick 240) para dar tiempo a plantar un girasol/defensa básica.
+  // Comienza a los 25 segundos (tick 750) para dar tiempo a plantar girasoles y economía inicial.
   // Genera entre 2 y 4 plantas separadas por 4 a 6 segundos (120 a 180 ticks).
   const wave1Count = Math.min(4, 2 + Math.floor(level / 8))
   const wave1Spawns: SurvivorEnemySpawn[] = []
-  let w1Tick = 240 // 8s
+  let w1Tick = 750 // 25s de gracia inicial para plantar girasoles
 
   for (let i = 0; i < wave1Count; i++) {
     const plantId = pickPlant(allowedPlants)
@@ -130,16 +130,16 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
     waveNumber: 1,
     name: 'Oleada 1 (Suave)',
     subtitle: 'Suave',
-    startTick: 240,
+    startTick: 750,
     spawns: wave1Spawns,
   }
 
   // ── OLEADA 2: DIFÍCIL ──────────────────────────────────────────────────────
-  // Comienza a los 36 segundos (tick 1080) o cuando se limpien los enemigos previos.
+  // Comienza a los ~53 segundos (tick 1600) o cuando se limpien los enemigos previos.
   // Genera entre 4 y 7 plantas con mayor frecuencia (2.5s a 3.5s / 75 a 105 ticks).
   const wave2Count = Math.min(7, 4 + Math.floor(level / 5))
   const wave2Spawns: SurvivorEnemySpawn[] = []
-  let w2Tick = Math.max(w1Tick + 90, 1080) // Al menos 36s
+  let w2Tick = Math.max(w1Tick + 90, 1600)
 
   for (let i = 0; i < wave2Count; i++) {
     const plantId = pickPlant(allowedPlants)
@@ -159,16 +159,16 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
     waveNumber: 2,
     name: 'Oleada 2 (Difícil)',
     subtitle: 'Difícil',
-    startTick: Math.max(w1Tick + 90, 1080),
+    startTick: Math.max(w1Tick + 90, 1600),
     spawns: wave2Spawns,
   }
 
   // ── OLEADA 3: ¡CON PRESIÓN! (OLEADA FINAL) ─────────────────────────────────
-  // Comienza alrededor del segundo 68 (tick 2040).
+  // Comienza alrededor del segundo 83 (tick 2500).
   // Genera entre 6 y 12 plantas en oleadas densas rápidas (1.5s a 2.5s / 45 a 75 ticks).
   const wave3Count = Math.min(12, 6 + Math.floor(level / 3))
   const wave3Spawns: SurvivorEnemySpawn[] = []
-  let w3Tick = Math.max(w2Tick + 90, 2040)
+  let w3Tick = Math.max(w2Tick + 90, 2500)
   const wave3StartTick = w3Tick
 
   // A partir del nivel 15: se colocan Aloes curanderas en la retaguardia enemiga (col 11)

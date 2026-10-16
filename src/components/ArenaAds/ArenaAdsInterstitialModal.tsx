@@ -111,7 +111,7 @@ export default function ArenaAdsInterstitialModal({
           </div>
         </div>
 
-        {/* DECISIONES */}
+        {/* DECISIONES: Al morir solo existe la opción de reclamar y volver a modos de juego */}
         {isDefeat ? (
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '12px' }}>
             <button
@@ -119,20 +119,21 @@ export default function ArenaAdsInterstitialModal({
               className="arena-ads-btn"
               style={{
                 width: '100%',
-                padding: '12px 20px',
-                fontSize: '14px',
+                padding: '14px 20px',
+                fontSize: '15px',
                 fontWeight: 900,
                 background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 borderColor: '#34d399',
                 color: '#ffffff',
                 boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
+                cursor: 'pointer',
               }}
               onClick={() => {
                 soundManager.playSound('click', 0.5)
-                onCashout() // Reclamar botín ganado de la expedición
+                onCashout() // Reclamar botín ganado de la expedición y salir a modos de juego
               }}
             >
-              🏆 RECLAMAR BOTÍN Y SALIR AL LOBBY
+              🏆 RECLAMAR BOTÍN Y VOLVER A MODOS DE JUEGO
             </button>
           </div>
         ) : isMaxLevelReached ? (
