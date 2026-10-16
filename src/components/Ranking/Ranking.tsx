@@ -2468,12 +2468,18 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
         )}
       </div>
 
-      {/* MODAL: DETALLES DE EXPEDICIÓN ARENA ADS */}
+      {/* MODAL: DETALLES DE EXPEDICIÓN ARENA ADS / SURVIVOR ADS */}
       {selectedArenaAdsUser && (
         <div className="lb-modal-backdrop" onClick={() => setSelectedArenaAdsUser(null)}>
-          <div className="lb-inspect-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="lb-modal-header">
-              <h3 className="lb-modal-title">🎁 DETALLES DE EXPEDICIÓN • SURVIVOR ADS</h3>
+          <div className="lb-inspect-modal survivor-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lb-modal-header survivor-modal-header">
+              <div className="survivor-modal-header-info">
+                <span className="survivor-modal-header-icon">⚔️</span>
+                <div>
+                  <h3 className="lb-modal-title">DETALLES DE EXPEDICIÓN • SURVIVOR ADS</h3>
+                  <span className="survivor-modal-subtitle">Registro Oficial de Supervivencia y Recompensas</span>
+                </div>
+              </div>
               <button
                 type="button"
                 className="lb-modal-close"
@@ -2483,187 +2489,158 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
               </button>
             </div>
 
-            <div className="lb-modal-body">
-              {/* User Hero Bar */}
-              <div className="lb-modal-user-bar">
-                <div className="lb-modal-avatar-box">
-                  <img
-                    src={getPlayerAvatarUrl(selectedArenaAdsUser.avatar)}
-                    alt={selectedArenaAdsUser.username}
-                    className="lb-modal-avatar"
-                    onError={(e) => {
-                      e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.png'
-                    }}
-                  />
-                  <span className="lb-modal-rank-badge">#{selectedArenaAdsUser.rank}</span>
+            <div className="lb-modal-body survivor-detail-modal__body">
+              {/* COLUMNA IZQUIERDA: JUGADOR Y ESTADÍSTICAS */}
+              <div className="survivor-detail-modal__col survivor-detail-modal__col--left">
+                {/* User Hero Bar */}
+                <div className="lb-modal-user-bar survivor-modal-user-bar">
+                  <div className="lb-modal-avatar-box">
+                    <img
+                      src={getPlayerAvatarUrl(selectedArenaAdsUser.avatar)}
+                      alt={selectedArenaAdsUser.username}
+                      className="lb-modal-avatar"
+                      onError={(e) => {
+                        e.currentTarget.src = '/game-assets/greenfoot/peashooterpacket1.png'
+                      }}
+                    />
+                    <span className="lb-modal-rank-badge">#{selectedArenaAdsUser.rank}</span>
+                  </div>
+                  <div className="lb-modal-user-info">
+                    <h4 className="lb-modal-username">
+                      {selectedArenaAdsUser.username}
+                      {isCurrentLeaderboardUser(selectedArenaAdsUser.userId, userProfile?.id) && (
+                        <span className="user-self-badge">TÚ</span>
+                      )}
+                    </h4>
+                    <div className="lb-modal-badges">
+                      <span className="lb-modal-arena-tag survivor-level-badge">
+                        ⚔️ Nivel Máximo: {selectedArenaAdsUser.levelReached}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="lb-modal-user-info">
-                  <h4 className="lb-modal-username">
-                    {selectedArenaAdsUser.username}
-                    {isCurrentLeaderboardUser(selectedArenaAdsUser.userId, userProfile?.id) && (
-                      <span className="user-self-badge">TÚ</span>
-                    )}
-                  </h4>
-                  <div className="lb-modal-badges">
-                    <span className="lb-modal-arena-tag" style={{ background: '#7c3aed', color: '#fff' }}>
-                      ⚔️ Nivel Máximo: {selectedArenaAdsUser.levelReached}
-                    </span>
+
+                {/* Stats Grid */}
+                <div className="lb-modal-stats-grid survivor-modal-stats-grid">
+                  {/* 1. Tiempo de Juego */}
+                  <div className="lb-stat-card survivor-stat-card">
+                    <span className="lb-stat-label">⏱️ Tiempo de Expedición</span>
+                    <strong className="lb-stat-value lb-stat-value--gold">
+                      {Math.floor(selectedArenaAdsUser.playtimeSeconds / 60)}m {selectedArenaAdsUser.playtimeSeconds % 60}s
+                    </strong>
+                  </div>
+
+                  {/* 2. Entrada */}
+                  <div className="lb-stat-card survivor-stat-card">
+                    <span className="lb-stat-label">💎 Entrada Survivor</span>
+                    <strong className="lb-stat-value" style={{ color: '#38bdf8' }}>
+                      50 💎 (1 Intento)
+                    </strong>
+                  </div>
+
+                  {/* 3. Reanimación */}
+                  <div className="lb-stat-card survivor-stat-card">
+                    <span className="lb-stat-label">🛡️ Supervivencia</span>
+                    <strong className="lb-stat-value" style={{ color: '#22c55e' }}>
+                      1 Solo Intento
+                    </strong>
+                  </div>
+
+                  {/* 4. Ratio de Recompensas */}
+                  <div className="lb-stat-card survivor-stat-card">
+                    <span className="lb-stat-label">🌱 Recompensa Base</span>
+                    <strong className="lb-stat-value lb-stat-value--sub" style={{ color: '#4ade80' }}>
+                      +2 PLANTS / Nivel
+                    </strong>
                   </div>
                 </div>
               </div>
 
-              {/* Stats Grid */}
-              <div className="lb-modal-stats-grid">
-                {/* 1. Tiempo de Juego */}
-                <div className="lb-stat-card">
-                  <span className="lb-stat-label">⏱️ Tiempo de Expedición</span>
-                  <strong className="lb-stat-value lb-stat-value--gold">
-                    {Math.floor(selectedArenaAdsUser.playtimeSeconds / 60)}m {selectedArenaAdsUser.playtimeSeconds % 60}s
-                  </strong>
-                </div>
-
-                {/* 2. Entrada */}
-                <div className="lb-stat-card">
-                  <span className="lb-stat-label">💎 Entrada Survivor</span>
-                  <strong className="lb-stat-value" style={{ color: '#38bdf8' }}>
-                    50 💎 (1 Intento)
-                  </strong>
-                </div>
-
-                {/* 3. Reanimación */}
-                <div className="lb-stat-card">
-                  <span className="lb-stat-label">🛡️ Supervivencia</span>
-                  <strong className="lb-stat-value" style={{ color: '#22c55e' }}>
-                    1 Solo Intento (Sin Reanimar)
-                  </strong>
-                </div>
-
-                {/* 4. Ratio de Recompensas */}
-                <div className="lb-stat-card">
-                  <span className="lb-stat-label">🌱 Recompensa Base</span>
-                  <strong className="lb-stat-value lb-stat-value--sub" style={{ color: '#4ade80' }}>
-                    +2 Token PLANTS / Nivel
-                  </strong>
-                </div>
-              </div>
-
-              {/* Recompensa Total */}
-              <div className="lb-modal-plant-section">
-                <div className="lb-modal-section-title">🎁 BOTÍN TOTAL ACUMULADO</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
-                    <div
-                      style={{
-                        background: 'rgba(34, 197, 94, 0.15)',
-                        border: '1.5px solid rgba(34, 197, 94, 0.4)',
-                        borderRadius: '8px',
-                        padding: '8px 12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                        color: '#4ade80',
-                        fontWeight: 900,
-                        fontSize: '13px',
-                      }}
-                    >
-                      <span>🌱 Token PLANTS</span>
-                      <strong style={{ fontSize: '15px' }}>
+              {/* COLUMNA DERECHA: BOTÍN TOTAL ACUMULADO E ÍTEMS */}
+              <div className="survivor-detail-modal__col survivor-detail-modal__col--right">
+                <div className="lb-modal-plant-section survivor-modal-loot-section">
+                  <div className="lb-modal-section-title">🎁 BOTÍN TOTAL ACUMULADO</div>
+                  
+                  <div className="survivor-modal-loot-list">
+                    {/* Card 1: Token PLANTS */}
+                    <div className="survivor-loot-item survivor-loot-item--plants">
+                      <div className="survivor-loot-item__left">
+                        <span className="survivor-loot-item__icon">🌱</span>
+                        <div className="survivor-loot-item__text">
+                          <strong>Token PLANTS</strong>
+                          <small>Minteo directo a billetera</small>
+                        </div>
+                      </div>
+                      <strong className="survivor-loot-item__val survivor-loot-item__val--plants">
                         {(selectedArenaAdsUser.totalRewards?.tokenPlants ?? (selectedArenaAdsUser.levelReached * 2))} PLANTS
                       </strong>
-                      <small style={{ fontSize: '9px', color: '#86efac', fontWeight: 600 }}>Minteo directo a billetera</small>
                     </div>
 
-                    <div
-                      style={{
-                        background: 'rgba(56, 189, 248, 0.15)',
-                        border: '1.5px solid rgba(56, 189, 248, 0.4)',
-                        borderRadius: '8px',
-                        padding: '8px 12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                        color: '#bae6fd',
-                        fontWeight: 900,
-                        fontSize: '13px',
-                      }}
-                    >
-                      <span>📦 Sobres Básicos</span>
-                      <strong style={{ fontSize: '15px' }}>
+                    {/* Card 2: Sobres Básicos */}
+                    <div className="survivor-loot-item survivor-loot-item--packs">
+                      <div className="survivor-loot-item__left">
+                        <span className="survivor-loot-item__icon">📦</span>
+                        <div className="survivor-loot-item__text">
+                          <strong>Sobres Básicos</strong>
+                          <small>1 cada 10 niveles superados</small>
+                        </div>
+                      </div>
+                      <strong className="survivor-loot-item__val survivor-loot-item__val--packs">
                         {(selectedArenaAdsUser.totalRewards?.basicPacks ?? Math.floor(selectedArenaAdsUser.levelReached / 10))} Sobres
                       </strong>
-                      <small style={{ fontSize: '9px', color: '#7dd3fc', fontWeight: 600 }}>1 cada 10 niveles superados</small>
                     </div>
 
-                    <div
-                      style={{
-                        background: 'rgba(234, 179, 8, 0.15)',
-                        border: '1.5px solid rgba(234, 179, 8, 0.4)',
-                        borderRadius: '8px',
-                        padding: '8px 12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                        color: '#fef08a',
-                        fontWeight: 900,
-                        fontSize: '13px',
-                      }}
-                    >
-                      <span>🌟 Cartas Raras</span>
-                      <strong style={{ fontSize: '15px' }}>
+                    {/* Card 3: Cartas Raras */}
+                    <div className="survivor-loot-item survivor-loot-item--rare">
+                      <div className="survivor-loot-item__left">
+                        <span className="survivor-loot-item__icon">🌟</span>
+                        <div className="survivor-loot-item__text">
+                          <strong>Cartas Raras</strong>
+                          <small>1 cada 25 niveles (excl. Jalapeño)</small>
+                        </div>
+                      </div>
+                      <strong className="survivor-loot-item__val survivor-loot-item__val--rare">
                         {(selectedArenaAdsUser.totalRewards?.rareCards ?? Math.floor(selectedArenaAdsUser.levelReached / 25))} Raras
                       </strong>
-                      <small style={{ fontSize: '9px', color: '#fde047', fontWeight: 600 }}>1 cada 25 niveles (excluye Jalapeño)</small>
                     </div>
                   </div>
 
                   {/* Ítems Exclusivos Obtenidos */}
-                  {selectedArenaAdsUser.totalRewards?.items &&
-                  Object.keys(selectedArenaAdsUser.totalRewards.items).length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 800 }}>
-                        🎒 ÍTEMS EQUIPABLES CONSEGUIDOS:
-                      </span>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {Object.entries(selectedArenaAdsUser.totalRewards.items).map(([id, qty]) => {
-                          const def = FARMING_ITEM_DEFINITIONS[id as keyof typeof FARMING_ITEM_DEFINITIONS]
-                          return (
-                            <span
-                              key={id}
-                              style={{
-                                background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(161, 98, 7, 0.35) 100%)',
-                                border: '1px solid #facc15',
-                                borderRadius: '6px',
-                                padding: '3px 8px',
-                                fontSize: '11px',
-                                fontWeight: 800,
-                                color: '#fef08a',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                              }}
-                            >
-                              <span>{def?.fallback || '🎒'}</span>
-                              <span>
-                                {def?.label || id} {Number(qty) > 1 ? `x${qty}` : ''}
+                  <div className="survivor-modal-items-section">
+                    {selectedArenaAdsUser.totalRewards?.items &&
+                    Object.keys(selectedArenaAdsUser.totalRewards.items).length > 0 ? (
+                      <div className="survivor-modal-items-wrap">
+                        <span className="survivor-modal-items-title">
+                          🎒 ÍTEMS EQUIPABLES CONSEGUIDOS:
+                        </span>
+                        <div className="survivor-modal-items-pills">
+                          {Object.entries(selectedArenaAdsUser.totalRewards.items).map(([id, qty]) => {
+                            const def = FARMING_ITEM_DEFINITIONS[id as keyof typeof FARMING_ITEM_DEFINITIONS]
+                            return (
+                              <span key={id} className="survivor-item-badge">
+                                <span>{def?.fallback || '🎒'}</span>
+                                <span>
+                                  {def?.label || id} {Number(qty) > 1 ? `x${qty}` : ''}
+                                </span>
                               </span>
-                            </span>
-                          )
-                        })}
+                            )
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: '10px', color: '#64748b', fontStyle: 'italic', textAlign: 'center' }}>
-                      Sin ítems legendarios equipables en esta expedición
-                    </div>
-                  )}
+                    ) : (
+                      <div className="survivor-no-items-text">
+                        Sin ítems legendarios equipables en esta expedición
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="lb-modal-footer">
+            <div className="lb-modal-footer survivor-modal-footer">
               <button
                 type="button"
-                className="game-button lb-modal-btn"
+                className="game-button lb-modal-btn survivor-modal-btn--close"
                 onClick={() => setSelectedArenaAdsUser(null)}
               >
                 Cerrar

@@ -1645,6 +1645,277 @@
   font-size: 11px;
 }
 
+/* ==========================================================================
+   MODAL DE EXPEDICIÓN • SURVIVOR ADS (HORIZONTAL / LANDSCAPE LAYOUT)
+   ========================================================================== */
+.survivor-detail-modal {
+  max-width: 760px !important;
+  width: 95% !important;
+  max-height: min(540px, 92vh) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: 2px solid #a855f7 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(168, 85, 247, 0.4) !important;
+}
+
+.survivor-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: linear-gradient(90deg, rgba(30, 27, 75, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border-bottom: 1.5px solid rgba(168, 85, 247, 0.4);
+  flex-shrink: 0;
+}
+
+.survivor-modal-header-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.survivor-modal-header-icon {
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+}
+
+.survivor-modal-subtitle {
+  display: block;
+  font-size: 9.5px;
+  color: #c084fc;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-top: 1px;
+}
+
+.survivor-detail-modal__body {
+  display: grid !important;
+  grid-template-columns: 1fr 1.15fr !important;
+  gap: 14px !important;
+  padding: 14px 18px !important;
+  overflow-y: auto !important;
+  max-height: calc(min(540px, 92vh) - 95px) !important;
+  align-items: stretch !important;
+}
+
+.survivor-detail-modal__col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.survivor-detail-modal__col--left {
+  justify-content: flex-start;
+}
+
+.survivor-detail-modal__col--right {
+  height: 100%;
+}
+
+.survivor-modal-user-bar {
+  background: linear-gradient(135deg, rgba(46, 16, 101, 0.4) 0%, rgba(15, 23, 42, 0.75) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  padding: 8px 12px;
+}
+
+.survivor-level-badge {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  border: 1px solid rgba(192, 132, 252, 0.5) !important;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
+}
+
+.survivor-modal-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.survivor-stat-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 7px 10px;
+}
+
+.survivor-modal-loot-section {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(24, 24, 27, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid rgba(234, 179, 8, 0.35);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.survivor-modal-loot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.survivor-loot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: transform 0.15s ease;
+}
+
+.survivor-loot-item:hover {
+  transform: translateX(2px);
+}
+
+.survivor-loot-item--plants {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1.5px solid rgba(34, 197, 94, 0.4);
+}
+
+.survivor-loot-item--packs {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
+}
+
+.survivor-loot-item--rare {
+  background: rgba(234, 179, 8, 0.12);
+  border: 1.5px solid rgba(234, 179, 8, 0.4);
+}
+
+.survivor-loot-item__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.survivor-loot-item__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.survivor-loot-item__text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.survivor-loot-item__text strong {
+  font-size: 11.5px;
+  color: #f1f5f9;
+}
+
+.survivor-loot-item__text small {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.survivor-loot-item__val {
+  font-size: 13.5px;
+  font-weight: 900;
+}
+
+.survivor-loot-item__val--plants {
+  color: #4ade80;
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+}
+
+.survivor-loot-item__val--packs {
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.survivor-loot-item__val--rare {
+  color: #facc15;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+}
+
+.survivor-modal-items-section {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.survivor-modal-items-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.survivor-modal-items-title {
+  font-size: 9.5px;
+  color: #cbd5e1;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.survivor-modal-items-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.survivor-item-badge {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(161, 98, 7, 0.35) 100%);
+  border: 1px solid #facc15;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fef08a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.survivor-no-items-text {
+  font-size: 10px;
+  color: #64748b;
+  font-style: italic;
+  text-align: center;
+  padding: 3px 0;
+}
+
+.survivor-modal-footer {
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.9);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.survivor-modal-btn--close {
+  background: linear-gradient(180deg, #7c3aed 0%, #5b21b6 100%) !important;
+  border: 1px solid #a855f7 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.4) !important;
+  font-size: 11.5px !important;
+  padding: 6px 20px !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+  font-weight: 800 !important;
+}
+
+.survivor-modal-btn--close:hover {
+  background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%) !important;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.6) !important;
+}
+
+@media (max-width: 680px) {
+  .survivor-detail-modal {
+    max-width: 440px !important;
+  }
+  .survivor-detail-modal__body {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
 /* RESPONSIVE DESIGN (PC & MOBILE) */
 /* PRESERVAR DISTRIBUCIÓN DE PANTALLA GRANDE (2 COLUMNAS: PODIO IZQUIERDA + TABLA DERECHA) EN MÓVILES */
 @media (max-width: 600px) and (orientation: portrait) {
