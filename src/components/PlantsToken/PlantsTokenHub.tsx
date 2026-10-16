@@ -16,6 +16,7 @@ import { TokenStakingTab } from './tabs/TokenStakingTab'
 import { TokenSwapTab } from './tabs/TokenSwapTab'
 import { TokenomicsTab } from './tabs/TokenomicsTab'
 import { TokenGuideTab } from './tabs/TokenGuideTab'
+import { TokenMintingHistoryModal } from './modals/TokenMintingHistoryModal'
 import logoImg from '../../assets/images/logo.webp'
 import gemaImg from '../../assets/ico/gema.webp'
 import monedaImg from '../../assets/ico/moneda.webp'
@@ -80,6 +81,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   }, [initialTab])
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [isMintingModalOpen, setIsMintingModalOpen] = useState(false)
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [marketState, setMarketState] = useState<PlantsMarketState | null>(null)
   const [priceHistory, setPriceHistory] = useState<PlantsPriceHistoryPoint[]>([])
@@ -232,7 +234,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
       if (res.success) {
         soundManager.playSound('claim', 0.7)
         showNotification(
-          `¡Canje exitoso! Quemaste ${amount.toLocaleString()} PLANTS y recibiste +${res.data?.gemsCredited ?? 0} Gemas 💎 (+20% Bonus aplicado)`,
+          `¡Canje exitoso! Quemaste ${amount.toLocaleString()} PLANTS y recibiste +${Number(res.data?.gemsCredited ?? 0).toFixed(2)} Gemas 💎 (+20% Bonus aplicado)`,
           'success'
         )
         await loadData()
@@ -364,6 +366,10 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     onRequestUsdtWithdrawal: handleRequestUsdtWithdrawal,
     onRefreshData: loadData,
     showNotification,
+    onOpenMintingHistory: () => {
+      soundManager.playSound('click', 0.5)
+      setIsMintingModalOpen(true)
+    },
   }
 
   const claimableNow = vestingSummary?.claimablePlantsNow ?? 0
@@ -694,6 +700,14 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             setIsProfileModalOpen(false)
             setActiveTab('swap')
           }}
+        />
+
+        {/* =====================================================
+             MODAL DE HISTORIAL Y AUDITORÍA DE MINTEO Y QUEMAS
+             ===================================================== */}
+        <TokenMintingHistoryModal
+          isOpen={isMintingModalOpen}
+          onClose={() => setIsMintingModalOpen(false)}
         />
       </div>
     </div>

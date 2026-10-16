@@ -12,6 +12,7 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
   poolUsdt,
   totalBurned,
   onTabChange,
+  onOpenMintingHistory,
 }) => {
   const [isAmmModalOpen, setIsAmmModalOpen] = useState(false)
 
@@ -72,16 +73,27 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
         </article>
 
         {/* QUEMADOS */}
-        <article className="summary-kpi-card" data-section="kpi-burned">
+        <article
+          className="summary-kpi-card"
+          data-section="kpi-burned"
+          style={{ cursor: onOpenMintingHistory ? 'pointer' : 'default' }}
+          onClick={() => {
+            if (onOpenMintingHistory) onOpenMintingHistory()
+          }}
+          title="Ver registro y auditoría completa de minteos y quemas de tokens"
+        >
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--orange">
             <span className="summary-kpi-emoji">🔥</span>
           </div>
           <div className="summary-kpi-content">
-            <span className="summary-kpi-label">QUEMADOS</span>
+            <span className="summary-kpi-label">PLANTS QUEMADOS</span>
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-orange">{totalBurned.toLocaleString()} PLANTS</strong>
+              {onOpenMintingHistory && (
+                <span className="summary-kpi-tag summary-kpi-tag--orange">AUDITORÍA 📜</span>
+              )}
             </div>
-            <span className="summary-kpi-sub">Super Sink (+20% Gemas)</span>
+            <span className="summary-kpi-sub">Super Sink (+20% Gemas) · Clic para auditar</span>
           </div>
         </article>
 

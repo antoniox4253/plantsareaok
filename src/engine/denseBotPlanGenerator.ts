@@ -14,13 +14,13 @@ export interface DenseBotAction {
   tick: number
 }
 
-export function getPlantCost(plantId: string, statRolls?: string[]): number {
-  const conf = getScaledPlantConfig(plantId as PlantId, statRolls)
+export function getPlantCost(plantId: string, statRolls?: any): number {
+  const conf = getScaledPlantConfig(plantId as PlantId, statRolls ?? undefined)
   return conf?.cost ?? 100
 }
 
-export function getPlantCooldown(plantId: string, statRolls?: string[]): number {
-  const conf = getScaledPlantConfig(plantId as PlantId, statRolls)
+export function getPlantCooldown(plantId: string, statRolls?: any): number {
+  const conf = getScaledPlantConfig(plantId as PlantId, statRolls ?? undefined)
   return msToTicks(conf?.cooldownMs ?? 7500)
 }
 
@@ -69,8 +69,8 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
   const scheduleAction = (slot: number, lane: number, col: number, minDesiredTick: number): boolean => {
     if (slot < 0 || slot >= deck.length) return false
     const card = deck[slot]
-    const cost = getPlantCost(card.plantId, card.statRolls)
-    const cd = getPlantCooldown(card.plantId, card.statRolls)
+    const cost = getPlantCost(card.plantId, card.statRolls ?? undefined)
+    const cd = getPlantCooldown(card.plantId, card.statRolls ?? undefined)
     const cdAvailableTick = slotCooldowns[slot] || 0
 
     let candidateTick = Math.max(currentTick, minDesiredTick, cdAvailableTick)
@@ -115,7 +115,7 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
   if (sunSlot >= 0) scheduleAction(sunSlot, 0, 0, 680)
 
   // ── 2. BLINDAJE INICIAL DE LOS 3 CARRILES (25 - 90s) ──
-  const atkCost = getPlantCost(deck[primaryAtk]?.plantId, deck[primaryAtk]?.statRolls)
+  const atkCost = getPlantCost(deck[primaryAtk]?.plantId, deck[primaryAtk]?.statRolls ?? undefined)
   const minAtkTick = atkCost >= 300 ? 2850 : (atkCost >= 200 ? 2125 : 1395)
 
   // Carril 0 (superior): Atacante + Tanque
@@ -123,7 +123,7 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
   scheduleAction(primaryTank, 0, 3, minAtkTick + 360)
 
   // Carril 2 (inferior): Melee caminante + Atacante + Tanque
-  const meleeCost = primaryMelee >= 0 ? getPlantCost(deck[primaryMelee]?.plantId, deck[primaryMelee]?.statRolls) : 0
+  const meleeCost = primaryMelee >= 0 ? getPlantCost(deck[primaryMelee]?.plantId, deck[primaryMelee]?.statRolls ?? undefined) : 0
   const minMeleeTick = meleeCost >= 150 ? minAtkTick + 1460 : minAtkTick + 540
   if (primaryMelee >= 0) scheduleAction(primaryMelee, 2, 4, minMeleeTick)
   scheduleAction(secondaryAtk, 2, 1, minMeleeTick + 730)

@@ -51,4 +51,5 @@ export interface TokenHubSharedProps {
   onRequestUsdtWithdrawal?: (amount: number, wallet: string) => Promise<boolean>
   onRefreshData: () => Promise<void>
   showNotification: (message: string, type?: 'success' | 'error' | 'info') => void
+  onOpenMintingHistory?: () => void
 }

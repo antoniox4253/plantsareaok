@@ -28,6 +28,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   hasVipPass = false,
   userElo = 1000,
   isArena3Plus = false,
+  onOpenMintingHistory,
 }) => {
   const [swapMode, setSwapMode] = useState<'usdt' | 'gems' | 'withdraw'>('usdt')
   const [amountStr, setAmountStr] = useState<string>(liquidPlants > 0 ? String(Math.floor(liquidPlants)) : '1000')
@@ -90,8 +91,12 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   const effectiveFee = parsedAmount * 0.05
   const netPlants = Math.max(0, parsedAmount - effectiveFee)
   const estimatedUsdt = netPlants * spotPrice
-  // 1 Gema = 0.01 USDT ($10 = 1,000 gemas). Con +20% bono:
-  const estimatedGems = parsedAmount > 0 ? (parsedAmount * spotPrice * 1.20) / 0.01 : 0
+  // 1 Gema = 0.01 USDT ($10 = 1,000 gemas). Con +20% bono in-game:
+  const ratePlantsPerGem = useMemo(() => {
+    return spotPrice > 0 ? 0.01 / (spotPrice * 1.2) : 7.54
+  }, [spotPrice])
+  const estimatedGems = parsedAmount > 0 ? (parsedAmount * spotPrice * 1.2) / 0.01 : 0
+  const creditedGems = Number(estimatedGems.toFixed(2))
 
   const handleMaxPlantsClick = () => {
     soundManager.playSound('click', 0.4)
@@ -118,6 +123,13 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
     if (swapMode === 'gems') {
       if (parsedAmount <= 0) {
         showNotification('Ingresa una cantidad válida de PLANTS para canjear a Gemas.', 'error')
+        return
+      }
+      if (creditedGems < 0.01) {
+        showNotification(
+          'Monto insuficiente para recibir al menos 0.01 Gemas.',
+          'error'
+        )
         return
       }
       if (parsedAmount > liquidPlants) {
@@ -255,7 +267,14 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
         </article>
 
         {/* PLANTS QUEMADOS TOTAL */}
-        <article className="summary-kpi-card">
+        <article
+          className="summary-kpi-card"
+          style={{ cursor: onOpenMintingHistory ? 'pointer' : 'default' }}
+          onClick={() => {
+            if (onOpenMintingHistory) onOpenMintingHistory()
+          }}
+          title="Ver registro y auditoría en vivo de minteos y quemas de tokens"
+        >
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--orange">
             <span className="summary-kpi-emoji">🔥</span>
           </div>
@@ -263,8 +282,11 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
             <span className="summary-kpi-label">PLANTS QUEMADOS</span>
             <div className="summary-kpi-val-row">
               <strong className="summary-kpi-value text-orange">{totalBurned.toLocaleString()} PLANTS</strong>
+              {onOpenMintingHistory && (
+                <span className="summary-kpi-tag summary-kpi-tag--orange">AUDITORÍA 📜</span>
+              )}
             </div>
-            <span className="summary-kpi-sub">Super Sink (+20% Gemas) & Swaps</span>
+            <span className="summary-kpi-sub">Super Sink (+20% Gemas) · Clic para auditar</span>
           </div>
         </article>
 
@@ -490,11 +512,11 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
               {/* Receive Output Box */}
               <div className="swap-input-box">
                 <div className="swap-input-top">
-                  <span className="swap-input-label">Tú recibes (estimado)</span>
+                  <span className="swap-input-label">Tú recibes (exacto respaldado)</span>
                   <span className="swap-rate-note">
                     {swapMode === 'usdt'
                       ? `1 PLANTS = ${(spotPrice * 0.95).toFixed(6)} USDT (neto)`
-                      : `1 PLANTS = ${((spotPrice * 1.20) / 0.01).toFixed(3)} Gemas (+20%)`}
+                      : `~${ratePlantsPerGem.toFixed(2)} PLANTS = 1 💎 (+20% Bono)`}
                   </span>
                 </div>
                 <div className="swap-input-main">
@@ -508,17 +530,48 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                   <div className="swap-receive-val">
                     {swapMode === 'usdt'
                       ? `${estimatedUsdt.toFixed(4)} USDT`
-                      : `${Math.floor(estimatedGems).toLocaleString()} Gemas`}
+                      : `${creditedGems.toFixed(2)} Gemas`}
                   </div>
                 </div>
               </div>
 
               {swapMode === 'gems' ? (
                 <div className="swap-gems-benefit-box">
-                  <div className="gems-benefit-badge">💎 BONO EXCLUSIVO +20% EN GEMAS</div>
+                  <div className="gems-benefit-badge">💎 BONO EXCLUSIVO +20% EN GEMAS (SUPER SINK)</div>
                   <p className="gems-benefit-desc">
-                    Quema instantánea de PLANTS respaldando la liquidez · Recibes Gemas automáticas en tu perfil sin esperas ni comisiones.
+                    Quema directa de PLANTS por Gemas in-game con <strong>+20% de bono de respaldo</strong> sin redondeos (precisión exacta a 2 decimales).
+                    <br />
+                    Tasa actual: <strong>~{ratePlantsPerGem.toFixed(2)} PLANTS = 1.00 Gema</strong> (ej: 5 PLANTS = {(5 / ratePlantsPerGem).toFixed(2)} 💎, 10 PLANTS = {(10 / ratePlantsPerGem).toFixed(2)} 💎).
                   </p>
+                  {parsedAmount > 0 && creditedGems < 0.01 && (
+                    <div style={{ marginTop: '8px', padding: '6px 10px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '6px', fontSize: '11px', color: '#fca5a5' }}>
+                      ⚠️ <strong>Monto insuficiente:</strong> Ingresa una cantidad mayor para recibir al menos 0.01 Gemas.
+                    </div>
+                  )}
+                  {onOpenMintingHistory && (
+                    <button
+                      type="button"
+                      onClick={onOpenMintingHistory}
+                      style={{
+                        marginTop: '8px',
+                        background: 'rgba(234, 88, 12, 0.15)',
+                        border: '1px solid rgba(234, 88, 12, 0.4)',
+                        color: '#fb923c',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        width: '100%',
+                        fontWeight: 600,
+                      }}
+                    >
+                      📜 Ver Auditoría de Quemas y Minteo en Vivo ({totalBurned.toFixed(2)} PLANTS quemados)
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="swap-slippage-row">
@@ -546,7 +599,8 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
             className="swap-confirm-btn"
             disabled={
               isSubmitting ||
-              (swapMode !== 'withdraw' && parsedAmount <= 0) ||
+              (swapMode === 'gems' && (parsedAmount <= 0 || creditedGems < 0.01)) ||
+              (swapMode === 'usdt' && parsedAmount <= 0) ||
               (swapMode === 'withdraw' && (parsedWithdrawUsdt <= 0 || userUsdtBalance < 1 || (!isArena3Plus && userElo < 2001)))
             }
             onClick={handleSubmit}

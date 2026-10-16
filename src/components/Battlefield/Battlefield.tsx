@@ -422,8 +422,6 @@ export default function Battlefield({
     }
   } | null>(null)
 
-  const [showPlantsScoringBreakdown, setShowPlantsScoringBreakdown] = useState<boolean>(false)
-
   const [isPresaleActive, setIsPresaleActive] = useState<boolean>(false)
 
   const [pvpBonusState, setPvpBonusState] = useState<{
@@ -3893,95 +3891,38 @@ export default function Battlefield({
                             <span className="victory-plants-reward-card__unit">PLANTS</span>
                           </div>
 
-                          <div className="victory-plants-reward-card__score-details">
-                            <div className="victory-plants-reward-card__score-row">
-                              <span>Tipo de Rival:</span>
-                              <strong>
-                                {plantsRewardResult.isBotMatch ? '🤖 Bot (50% Recompensa)' : '⚔️ Jugador en Vivo (100%)'}
-                              </strong>
+                          {/* Grid de pills compactas (2 columnas) */}
+                          <div className="victory-plants-pills-grid">
+                            <div className="victory-plants-pill">
+                              <span className="victory-plants-pill__lbl">Rival:</span>
+                              <strong>{plantsRewardResult.isBotMatch ? '🤖 Bot (50%)' : '⚔️ Humano (100%)'}</strong>
                             </div>
-                            <div className="victory-plants-reward-card__score-row">
-                              <span>Score de Batalla:</span>
-                              <strong>{plantsRewardResult.score?.toFixed(0) ?? 0} / 100 pts</strong>
+                            <div className="victory-plants-pill">
+                              <span className="victory-plants-pill__lbl">Score:</span>
+                              <strong style={{ color: '#34d399' }}>{plantsRewardResult.score?.toFixed(0) ?? 0} / 100 pts</strong>
                             </div>
-                            {plantsRewardResult.bonusActive && (
-                              <div className="victory-plants-reward-card__score-row victory-plants-reward-card__score-row--bonus">
-                                <span>Bono PvP Jugador Real:</span>
-                                <strong>+25% (+{((plantsRewardResult.plantsAwarded * 0.25) / 1.25).toFixed(2)} PLANTS)</strong>
-                              </div>
-                            )}
-                            <div className="victory-plants-reward-card__score-row">
-                              <span>Tope Diario:</span>
+                            <div className="victory-plants-pill">
+                              <span className="victory-plants-pill__lbl">Tope:</span>
                               {plantsRewardResult.isVip || plantsRewardResult.dailyClaimsMax === null ? (
-                                <strong style={{ color: '#fbbf24', textShadow: '0 0 8px rgba(251,191,36,0.4)' }}>
-                                  👑 Ilimitado (Pase VIP)
-                                </strong>
+                                <strong style={{ color: '#fbbf24' }}>👑 VIP Ilimitado</strong>
                               ) : (
-                                <span>{plantsRewardResult.dailyClaimsUsed} / {plantsRewardResult.dailyClaimsMax ?? 20} victorias hoy</span>
+                                <span>{plantsRewardResult.dailyClaimsUsed}/{plantsRewardResult.dailyClaimsMax ?? 20} hoy</span>
                               )}
                             </div>
-
-                            <button
-                              type="button"
-                              className="victory-plants-scoring-toggle-btn"
-                              onClick={() => setShowPlantsScoringBreakdown((p) => !p)}
-                              title="Toca para ver el cálculo detallado de tus puntos"
-                            >
-                              <span>{showPlantsScoringBreakdown ? '▲ Ocultar Desglose de Scoring' : '▼ Ver Desglose de Puntos (Scoring)'}</span>
-                            </button>
-
-                            {showPlantsScoringBreakdown && (() => {
-                              const sb = plantsRewardResult.scoreBreakdown ?? {
-                                baseScore: 40,
-                                combatScore: Math.min(25, (stats.enemyPlantsDefeated || 0) * 2.5),
-                                econScore: Math.min(20, (stats.sunsCollected || 0) * 0.04),
-                                deployScore: Math.min(15, (stats.plantsPlaced || 0) * 1.5),
-                                blitzScore: Math.round(tick * 0.033) <= 120 ? 5 : 0,
-                                totalScore: plantsRewardResult.score ?? 40,
-                                enemyKills: stats.enemyPlantsDefeated || 0,
-                                sunsCollected: stats.sunsCollected || 0,
-                                plantsPlaced: stats.plantsPlaced || 0,
-                                matchDurationSec: Math.round(tick * 0.033),
-                                baseReward: 2.0 + (((plantsRewardResult.score ?? 40) - 40) / 60) * 4.0,
-                                pvpMult: plantsRewardResult.isBotMatch ? 0.5 : (plantsRewardResult.bonusActive ? 1.25 : 1.0),
-                                eraFactor: 1.0,
-                                isBot: !!plantsRewardResult.isBotMatch,
-                              }
-
-                              return (
-                                <div className="victory-plants-scoring-breakdown">
-                                  <div className="victory-plants-scoring-item">
-                                    <span>🔹 Base de Combate:</span>
-                                    <span className="val">+{Number(sb.baseScore).toFixed(1)} / 40 pts</span>
-                                  </div>
-                                  <div className="victory-plants-scoring-item">
-                                    <span>⚔️ Bajas Enemigas ({sb.enemyKills}):</span>
-                                    <span className="val">+{Number(sb.combatScore).toFixed(1)} / 25 pts</span>
-                                  </div>
-                                  <div className="victory-plants-scoring-item">
-                                    <span>☀️ Cosecha de Soles ({sb.sunsCollected}):</span>
-                                    <span className="val">+{Number(sb.econScore).toFixed(1)} / 20 pts</span>
-                                  </div>
-                                  <div className="victory-plants-scoring-item">
-                                    <span>🌱 Plantas Puestas ({sb.plantsPlaced}):</span>
-                                    <span className="val">+{Number(sb.deployScore).toFixed(1)} / 15 pts</span>
-                                  </div>
-                                  {Number(sb.blitzScore) > 0 && (
-                                    <div className="victory-plants-scoring-item">
-                                      <span>⚡ Blitz Rápido (≤120s):</span>
-                                      <span className="val val--bonus">+{Number(sb.blitzScore).toFixed(1)} / 5 pts</span>
-                                    </div>
-                                  )}
-                                  <div className="victory-plants-scoring-item" style={{ borderTop: '1px solid rgba(16,185,129,0.3)', paddingTop: 4 }}>
-                                    <span style={{ fontWeight: 800, color: '#fff' }}>Total Rendimiento:</span>
-                                    <span className="val" style={{ color: '#6ee7b7' }}>{Number(sb.totalScore).toFixed(1)} / 100 pts</span>
-                                  </div>
-                                  <div className="victory-plants-scoring-formula">
-                                    🧮 <strong>Fórmula:</strong> Base ({sb.baseReward ? Number(sb.baseReward).toFixed(2) : '2.0'} PLANTS) × {sb.isBot ? '0.50 (Bot)' : '1.00 (Humano)'} {plantsRewardResult.bonusActive ? '× 1.25 (Bono PvP)' : ''} = <strong>+{plantsRewardResult.plantsAwarded.toFixed(2)} PLANTS</strong>
-                                  </div>
-                                </div>
-                              )
-                            })()}
+                            {plantsRewardResult.bonusActive ? (
+                              <div className="victory-plants-pill victory-plants-pill--bonus">
+                                <span className="victory-plants-pill__lbl">Bono PvP:</span>
+                                <strong style={{ color: '#fde047' }}>+25% (+{((plantsRewardResult.plantsAwarded * 0.25) / 1.25).toFixed(2)})</strong>
+                              </div>
+                            ) : (
+                              <div className="victory-plants-pill">
+                                <span className="victory-plants-pill__lbl">Halving:</span>
+                                <strong style={{ color: '#6ee7b7' }}>Fase 1 (100%)</strong>
+                              </div>
+                            )}
+                          </div>
+                          <div className="victory-plants-side-hint">
+                            📊 Desglose de scoring y fórmula a la derecha 👉
                           </div>
                         </div>
                       ) : userElo >= 2001 ? (
@@ -4011,40 +3952,128 @@ export default function Battlefield({
                   </div>
                 )}
 
-                {/* COLUMNA DERECHA: ESTADÍSTICAS DEL COMBATE & BONUS VIP */}
+                {/* COLUMNA DERECHA: ESTADÍSTICAS DEL COMBATE & SCORING DE PLANTS */}
                 <div className="game-card__panel game-card__panel--stats">
                   <div className="game-card__panel-title">
-                    <span>📊</span> Estadísticas de Combate
+                    <span>📊</span> {plantsRewardResult && plantsRewardResult.plantsAwarded > 0 ? 'Rendimiento y Scoring' : 'Estadísticas de Combate'}
                   </div>
 
-                  <div className="game-card__stats-grid">
-                    <div className="game-card__stat-row">
-                      <span className="game-card__stat-label">
-                        <span>☀️</span> Soles Recolectados
-                      </span>
-                      <strong className="game-card__stat-value">{stats.sunsCollected}</strong>
-                    </div>
-                    <div className="game-card__stat-row">
-                      <span className="game-card__stat-label">
-                        <span>⚔️</span> Enemigos Derrotados
-                      </span>
-                      <strong className="game-card__stat-value">{stats.enemyPlantsDefeated}</strong>
-                    </div>
-                    <div className="game-card__stat-row">
-                      <span className="game-card__stat-label">
-                        <span>🌱</span> Plantas Sembradas
-                      </span>
-                      <strong className="game-card__stat-value">{stats.plantsPlaced}</strong>
-                    </div>
-                    {Boolean(stats.goldEarned && stats.goldEarned > 0) && (
-                      <div className="game-card__stat-row" style={{ background: 'rgba(250, 204, 21, 0.12)', border: '1px solid rgba(250, 204, 21, 0.35)', borderRadius: '6px', padding: '4px 8px' }}>
-                        <span className="game-card__stat-label" style={{ color: '#fef08a' }}>
-                          <img src="/game-assets/moneda.webp" alt="Oro" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} /> Oro de Margarita
-                        </span>
-                        <strong className="game-card__stat-value" style={{ color: '#facc15' }}>+{stats.goldEarned} 💰</strong>
+                  {plantsRewardResult && plantsRewardResult.plantsAwarded > 0 ? (() => {
+                    const sb = plantsRewardResult.scoreBreakdown ?? {
+                      baseScore: 40,
+                      combatScore: Math.min(25, (stats.enemyPlantsDefeated || 0) * 2.5),
+                      econScore: Math.min(20, (stats.sunsCollected || 0) * 0.04),
+                      deployScore: Math.min(15, (stats.plantsPlaced || 0) * 1.5),
+                      blitzScore: Math.round(tick * 0.033) <= 120 ? 5 : 0,
+                      totalScore: plantsRewardResult.score ?? 40,
+                      enemyKills: stats.enemyPlantsDefeated || 0,
+                      sunsCollected: stats.sunsCollected || 0,
+                      plantsPlaced: stats.plantsPlaced || 0,
+                      matchDurationSec: Math.round(tick * 0.033),
+                      baseReward: 2.0 + (((plantsRewardResult.score ?? 40) - 40) / 60) * 4.0,
+                      pvpMult: plantsRewardResult.isBotMatch ? 0.5 : (plantsRewardResult.bonusActive ? 1.25 : 1.0),
+                      eraFactor: 1.0,
+                      isBot: !!plantsRewardResult.isBotMatch,
+                    }
+
+                    return (
+                      <div className="game-card__stats-grid">
+                        <div className="game-card__stat-row">
+                          <span className="game-card__stat-label">
+                            <span>⚔️</span> Bajas Enemigas ({stats.enemyPlantsDefeated})
+                          </span>
+                          <div className="game-card__stat-val-group">
+                            <span className="game-card__stat-pts">+{Number(sb.combatScore).toFixed(1)} / 25 pts</span>
+                          </div>
+                        </div>
+
+                        <div className="game-card__stat-row">
+                          <span className="game-card__stat-label">
+                            <span>☀️</span> Soles Recolectados ({stats.sunsCollected})
+                          </span>
+                          <div className="game-card__stat-val-group">
+                            <span className="game-card__stat-pts">+{Number(sb.econScore).toFixed(1)} / 20 pts</span>
+                          </div>
+                        </div>
+
+                        <div className="game-card__stat-row">
+                          <span className="game-card__stat-label">
+                            <span>🌱</span> Plantas Sembradas ({stats.plantsPlaced})
+                          </span>
+                          <div className="game-card__stat-val-group">
+                            <span className="game-card__stat-pts">+{Number(sb.deployScore).toFixed(1)} / 15 pts</span>
+                          </div>
+                        </div>
+
+                        <div className="game-card__stat-row game-card__stat-row--base">
+                          <span className="game-card__stat-label">
+                            <span>🛡️</span> Base de Victoria
+                          </span>
+                          <div className="game-card__stat-val-group">
+                            <span className="game-card__stat-pts">+{Number(sb.baseScore).toFixed(1)} / 40 pts</span>
+                          </div>
+                        </div>
+
+                        {Number(sb.blitzScore) > 0 && (
+                          <div className="game-card__stat-row game-card__stat-row--blitz">
+                            <span className="game-card__stat-label">
+                              <span>⚡</span> Blitz Rápido (≤120s)
+                            </span>
+                            <div className="game-card__stat-val-group">
+                              <span className="game-card__stat-pts game-card__stat-pts--bonus">+{Number(sb.blitzScore).toFixed(1)} / 5 pts</span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="victory-plants-scoring-total-row">
+                          <span>🎯 Total Rendimiento:</span>
+                          <strong>{Number(sb.totalScore).toFixed(1)} / 100 pts</strong>
+                        </div>
+
+                        <div className="victory-plants-scoring-formula">
+                          🧮 <strong>Fórmula:</strong> Base ({sb.baseReward ? Number(sb.baseReward).toFixed(2) : '2.0'} PLANTS) × {sb.isBot ? '0.50 (Bot)' : '1.00 (Humano)'} {plantsRewardResult.bonusActive ? '× 1.25 (Bono PvP)' : ''} = <strong>+{plantsRewardResult.plantsAwarded.toFixed(2)} PLANTS</strong>
+                        </div>
+
+                        {Boolean(stats.goldEarned && stats.goldEarned > 0) && (
+                          <div className="game-card__stat-row" style={{ background: 'rgba(250, 204, 21, 0.12)', border: '1px solid rgba(250, 204, 21, 0.35)', borderRadius: '6px', padding: '4px 8px', marginTop: 4 }}>
+                            <span className="game-card__stat-label" style={{ color: '#fef08a' }}>
+                              <img src="/game-assets/moneda.webp" alt="Oro" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} /> Oro de Margarita
+                            </span>
+                            <strong className="game-card__stat-value" style={{ color: '#facc15' }}>+{stats.goldEarned} 💰</strong>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    )
+                  })() : (
+                    <div className="game-card__stats-grid">
+                      <div className="game-card__stat-row">
+                        <span className="game-card__stat-label">
+                          <span>☀️</span> Soles Recolectados
+                        </span>
+                        <strong className="game-card__stat-value">{stats.sunsCollected}</strong>
+                      </div>
+                      <div className="game-card__stat-row">
+                        <span className="game-card__stat-label">
+                          <span>⚔️</span> Enemigos Derrotados
+                        </span>
+                        <strong className="game-card__stat-value">{stats.enemyPlantsDefeated}</strong>
+                      </div>
+                      <div className="game-card__stat-row">
+                        <span className="game-card__stat-label">
+                          <span>🌱</span> Plantas Sembradas
+                        </span>
+                        <strong className="game-card__stat-value">{stats.plantsPlaced}</strong>
+                      </div>
+                      {Boolean(stats.goldEarned && stats.goldEarned > 0) && (
+                        <div className="game-card__stat-row" style={{ background: 'rgba(250, 204, 21, 0.12)', border: '1px solid rgba(250, 204, 21, 0.35)', borderRadius: '6px', padding: '4px 8px' }}>
+                          <span className="game-card__stat-label" style={{ color: '#fef08a' }}>
+                            <img src="/game-assets/moneda.webp" alt="Oro" style={{ width: 16, height: 16, verticalAlign: 'middle', marginRight: 4 }} /> Oro de Margarita
+                          </span>
+                          <strong className="game-card__stat-value" style={{ color: '#facc15' }}>+{stats.goldEarned} 💰</strong>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* VIP VICTORY GOLD BONUS BADGE */}
                   {esVictoriaFinal && !isEarlySurrender && Boolean((resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus) && ((resultadoServidor?.vipGoldBonus || battleSummaryResult?.vipGoldBonus) || 0) > 0) && (

@@ -44,7 +44,7 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
     // Type filter
     if (filter === 'pvp' && e.eventType !== 'pvp_reward') return false
     if (filter === 'presale' && e.eventType !== 'presale_pack') return false
-    if (filter === 'burns' && e.eventType !== 'swap_gems') return false
+    if (filter === 'burns' && e.eventType !== 'swap_gems' && e.eventType !== 'swap_usdt' && e.deltaPlants >= 0) return false
     if (filter === 'cashout' && e.eventType !== 'cashout') return false
 
     // Search filter
@@ -68,6 +68,8 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
         return <span className="event-badge event-badge--presale">🛒 COMPRA PREVENTA</span>
       case 'swap_gems':
         return <span className="event-badge event-badge--burn">🔥 SUPER SINK GEMAS</span>
+      case 'swap_usdt':
+        return <span className="event-badge event-badge--burn">🔥 QUEMA SWAP USDT</span>
       case 'cashout':
         return <span className="event-badge event-badge--cashout">💵 RETIRO USDT</span>
       case 'seed':
@@ -142,7 +144,7 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
               className={`token-modal-subtab ${filter === 'burns' ? 'active' : ''}`}
               onClick={() => setFilter('burns')}
             >
-              🔥 Quemas Super Sink ({events.filter((e) => e.eventType === 'swap_gems').length})
+              🔥 Quemas ({events.filter((e) => e.eventType === 'swap_gems' || e.eventType === 'swap_usdt' || e.deltaPlants < 0).length})
             </button>
             <button
               type="button"
@@ -223,12 +225,17 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
                         )}
                         {evt.eventType === 'swap_gems' && (
                           <small className="mint-meta-txt text-orange">
-                            +{evt.metadata?.gemsCredited ?? 0} Gemas acreditadas (+20% Bono)
+                            +{evt.metadata?.gemsCredited ?? 0} Gemas acreditadas (+20% Bono) · PLANTS quemados
+                          </small>
+                        )}
+                        {evt.eventType === 'swap_usdt' && (
+                          <small className="mint-meta-txt text-orange">
+                            Neto: ${evt.metadata?.netUsdt ?? 0} USDT acreditados · Fee 5% al Pool · PLANTS quemados
                           </small>
                         )}
                         {evt.eventType === 'cashout' && (
                           <small className="mint-meta-txt text-gold">
-                            Neto: ${evt.metadata?.netUsdt ?? 0} USDT · Quema 5%
+                            Neto: ${evt.metadata?.netUsdt ?? 0} USDT · Retiro externo BEP-20
                           </small>
                         )}
                       </div>
