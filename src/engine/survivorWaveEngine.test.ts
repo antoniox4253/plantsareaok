@@ -197,5 +197,112 @@ describe('survivorWaveEngine', () => {
     state.enemyPlants[0].x = 10.5
     stepTick(state, () => {})
     expect(state.p1BaseHp).toBe(initialHp - 80)
+    // Cactus does NOT suicide; it remains alive attacking the base
+    expect(state.enemyPlants[0].hp).toBe(100)
+    expect(state.enemyPlants[0].state).toBe('attacking')
+  })
+
+  it('guarantees 250 initial suns exclusively in survivor mode', () => {
+    // Survivor mode starts with 250 suns
+    const survivorState = createBattleState(
+      12345,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      3,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true, // isSurvivorMode
+      1
+    )
+    expect(survivorState.sunBank).toBe(250)
+
+    // Standard mode starts with 0 suns (INITIAL_SUN)
+    const standardState = createBattleState(
+      12345,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000
+    )
+    expect(standardState.sunBank).toBe(0)
+  })
+
+  it('strictly triggers defeat when mother tree falls and prevents false victory', () => {
+    const state = createBattleState(
+      12345,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      50, // Only 50 HP on tree
+      1000,
+      null,
+      null,
+      3,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      1
+    )
+
+    state.enemyPlants.push({
+      id: 'enemy-cactus-defeat',
+      plantId: 'chomper',
+      lane: 0,
+      x: 10.5,
+      hp: 100,
+      maxHp: 100,
+      lastActionTime: 0,
+      isWalking: true,
+      state: 'walking',
+    })
+
+    // Cactus deals 80 damage (40 * 2), reducing tree HP from 50 to 0
+    stepTick(state, () => {})
+    expect(state.p1BaseHp).toBe(0)
+    expect(state.status).toBe('defeat')
+  })
+
+  it('requires p1BaseHp > 0 and livingEnemies === 0 for victory', () => {
+    const state = createBattleState(
+      12345,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      3,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      1
+    )
+
+    state.survivorWavesCompleted = true
+    state.enemyPlants = [] // All enemies dead
+    state.p1BaseHp = 500 // Tree is alive
+
+    stepTick(state, () => {})
+    expect(state.status).toBe('victory')
   })
 })

@@ -10,6 +10,7 @@ interface ArenaAdsInterstitialModalProps {
   mode?: 'victory' | 'defeat'
   levelCleared: number
   accumulatedLoot?: ArenaAdsLoot
+  conservedSuns?: number
   onNextLevel: () => void
   onCashout: () => void
   onRevive?: () => void
@@ -22,6 +23,7 @@ export default function ArenaAdsInterstitialModal({
   mode = 'victory',
   levelCleared,
   accumulatedLoot: _accumulatedLoot,
+  conservedSuns = 250,
   onNextLevel,
   onCashout,
   onRevive: _onRevive,
@@ -52,7 +54,7 @@ export default function ArenaAdsInterstitialModal({
       })
     }, 1000)
 
-    return () => clearInterval(timer)
+  return () => clearInterval(timer)
   }, [isOpen, mode, levelCleared])
 
   if (!isOpen || typeof document === 'undefined') return null
@@ -69,7 +71,7 @@ export default function ArenaAdsInterstitialModal({
       <div className="arena-ads-interstitial-card" style={isDefeat ? { borderColor: '#ef4444', boxShadow: '0 0 30px rgba(239, 68, 68, 0.4)' } : isMaxLevelReached ? { borderColor: '#fbbf24', boxShadow: '0 0 35px rgba(245, 158, 11, 0.6)' } : undefined}>
         <h3 className="arena-ads-interstitial-title" style={isDefeat ? { color: '#ef4444' } : isMaxLevelReached ? { color: '#fbbf24' } : undefined}>
           {isDefeat
-            ? `💀 ¡HAS CAÍDO EN EL NIVEL ${levelCleared}!`
+            ? '💀 ¡FUISTE DERROTADO!'
             : isMaxLevelReached
             ? `🏆 ¡SUPERVIVENCIA CONQUISTADA! (NIVEL ${levelCleared})`
             : `🎉 ¡NIVEL ${levelCleared} SUPERADO!`}
@@ -79,10 +81,10 @@ export default function ArenaAdsInterstitialModal({
         <div className="arena-ads-interstitial-ad-shell">
           <span style={{ fontSize: '12px', color: isDefeat ? '#fca5a5' : isMaxLevelReached ? '#fbbf24' : '#86efac', textAlign: 'center', padding: '6px', fontWeight: 600 }}>
             {isDefeat
-              ? `🛡️ ¡Fin de la expedición! Superaste ${levelsSuccessfullyCleared} niveles. Solo tenías 1 intento, pero te llevas todo lo ganado a tu inventario y saldo de PLANTS.`
+              ? `🛡️ Fuiste derrotado por las oleadas en el Nivel ${levelCleared}. Superaste ${levelsSuccessfullyCleared} nivel${levelsSuccessfullyCleared === 1 ? '' : 'es'} con éxito. Solo tenías 1 intento: reclama tu botín ganado y vuelve a modos de juego.`
               : isMaxLevelReached
               ? '👑 ¡Felicidades, Gladiador! Has conquistado los 50 niveles de Survivor ADS. Reclama tu botín supremo ahora.'
-              : '🧟 ¡Las 3 oleadas fueron derrotadas con éxito! Tu botín de Token PLANTS sigue aumentando.'}
+              : '🧟 ¡Las 3 oleadas fueron resistidas con éxito! Tu botín de Token PLANTS sigue aumentando.'}
           </span>
         </div>
 
@@ -94,7 +96,7 @@ export default function ArenaAdsInterstitialModal({
               SURVIVOR ADS
             </span>
           </div>
-          <div className="arena-ads-loot-pills" style={{ justifyContent: 'center', gap: '8px' }}>
+          <div className="arena-ads-loot-pills" style={{ justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <div className="arena-ads-loot-pill" style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#34d399', fontWeight: 800 }}>
               <span>🌱</span> +{earnedTokens} Token PLANTS
             </div>
@@ -109,6 +111,13 @@ export default function ArenaAdsInterstitialModal({
               </div>
             )}
           </div>
+          {!isDefeat && !isMaxLevelReached && (
+            <div style={{ marginTop: '8px', textAlign: 'center' }}>
+              <span style={{ fontSize: '11px', color: '#facc15', fontWeight: 700, background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.4)', borderRadius: '6px', padding: '2px 8px' }}>
+                ☀️ Soles acumulados conservados para Nv.{levelCleared + 1}: <strong>{conservedSuns} Soles</strong>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* DECISIONES: Al morir solo existe la opción de reclamar y volver a modos de juego */}

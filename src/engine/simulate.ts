@@ -288,7 +288,7 @@ export function createBattleState(
     p2BaseHp: isSurvivorMode ? 99999 : (p2BaseHp ?? INITIAL_BASE_HP),
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
-    sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isFortressMode ? 200 : INITIAL_SUN),
+    sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isSurvivorMode ? 250 : (isFortressMode ? 200 : INITIAL_SUN)),
     p2SunBank: initialDefenseSuns !== undefined ? initialDefenseSuns : (isFortressMode ? 400 : INITIAL_SUN),
     plants: [],
     enemyPlants: [],
@@ -709,8 +709,14 @@ function baseRivalX(lado: Lado): number {
 function dañarBase(state: GameState, equipo: 'p1' | 'p2', cuanto: number): void {
   // En Survivor ADS las plantas melé enemigas causan el doble de daño (2x) al llegar al árbol madre del jugador
   const danoFinal = state.isSurvivorMode && equipo === 'p1' ? cuanto * 2 : cuanto
-  if (equipo === 'p1') state.p1BaseHp = Math.max(0, state.p1BaseHp - danoFinal)
-  else state.p2BaseHp = Math.max(0, state.p2BaseHp - danoFinal)
+  if (equipo === 'p1') {
+    state.p1BaseHp = Math.max(0, state.p1BaseHp - danoFinal)
+    if (state.isSurvivorMode && state.p1BaseHp <= 0 && state.status === 'playing') {
+      state.status = 'defeat'
+    }
+  } else {
+    state.p2BaseHp = Math.max(0, state.p2BaseHp - danoFinal)
+  }
 }
 
 /** Suma soles al banco del equipo indicado. */
@@ -1271,9 +1277,20 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 3.5)
             planta.x += effectiveSpeed * dt * lado.sentido
             if (llegoALaBase(planta, lado)) {
-              dañarBase(state, lado.objetivo, 40)
-              sonar('pea_hit', 0.6)
-              planta.hp = 0
+              if (state.isSurvivorMode) {
+                planta.x = baseRivalX(lado)
+                planta.state = 'attacking'
+                if (planta.lastBaseAttackTime === undefined || state.tick - planta.lastBaseAttackTime >= msToTicks(config.attackSpeedMs || 1000)) {
+                  planta.lastBaseAttackTime = state.tick
+                  planta.lastActionTime = state.tick
+                  dañarBase(state, lado.objetivo, config.damage || 60)
+                  sonar('pea_hit', 0.6)
+                }
+              } else {
+                dañarBase(state, lado.objetivo, 40)
+                sonar('pea_hit', 0.6)
+                planta.hp = 0
+              }
             }
           }
         }
@@ -1325,10 +1342,22 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 4.5)
           planta.x += effectiveSpeed * dt * lado.sentido
           if (llegoALaBase(planta, lado)) {
-            const baseDmg = planta.plantId === 'guacodile' ? 60 : 40
-            dañarBase(state, lado.objetivo, baseDmg)
-            sonar('pea_hit', 0.6)
-            planta.hp = 0
+            if (state.isSurvivorMode) {
+              planta.x = baseRivalX(lado)
+              planta.state = 'attacking'
+              const baseDmg = planta.plantId === 'bonkchoy' ? (config.damage || 90) : (planta.plantId === 'guacodile' ? 60 : 40)
+              if (planta.lastBaseAttackTime === undefined || state.tick - planta.lastBaseAttackTime >= msToTicks(config.attackSpeedMs || 600)) {
+                planta.lastBaseAttackTime = state.tick
+                planta.lastActionTime = state.tick
+                dañarBase(state, lado.objetivo, baseDmg)
+                sonar('pea_hit', 0.6)
+              }
+            } else {
+              const baseDmg = planta.plantId === 'guacodile' ? 60 : 40
+              dañarBase(state, lado.objetivo, baseDmg)
+              sonar('pea_hit', 0.6)
+              planta.hp = 0
+            }
           }
         }
       }
@@ -2263,7 +2292,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   // El desgaste es por segundo y se convierte a tics para que el daño sea idéntico
   // independientemente del tiempo que pase entre fotogramas.
   // ───────────────────────────────────────────────────────────────────────────
-  if (!state.isPracticeMode) {
+  if (!state.isPracticeMode && !state.isSurvivorMode) {
     if (state.tick === TIC_MUERTE_SUBITA) {
       state.waveBanner = '☠ MUERTE SÚBITA · las dos bases pierden vida'
       state.pending.push({ atTick: state.tick + msToTicks(4000), kind: 'clear_wave_banner' })
@@ -2302,7 +2331,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
         : 'victory',
       sonar
     )
-  } else if (!state.isPracticeMode && state.tick >= TIC_TOPE_DE_PARTIDA) {
+  } else if (!state.isPracticeMode && !state.isSurvivorMode && state.tick >= TIC_TOPE_DE_PARTIDA) {
     // Red de seguridad: aquí se acaba, pase lo que pase.
     terminar(state, decidirPorPuntos(state), sonar)
   }
@@ -2315,7 +2344,7 @@ export const TIC_TOPE_DE_PARTIDA = msToTicks(TOPE_DE_PARTIDA_MS)
 
 /** ¿Va ya la partida en muerte súbita? La interfaz lo usa para el cartel. */
 export function enMuerteSubita(state: GameState): boolean {
-  return !state.isPracticeMode && state.tick >= TIC_MUERTE_SUBITA
+  return !state.isPracticeMode && !state.isSurvivorMode && state.tick >= TIC_MUERTE_SUBITA
 }
 
 function terminar(state: GameState, resultado: 'victory' | 'defeat', sonar: SonarFn) {

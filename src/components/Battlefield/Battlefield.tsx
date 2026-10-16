@@ -1852,7 +1852,10 @@ export default function Battlefield({
           if (run) {
             setCombatAdsBlocked(false)
             activateMonetagVignette()
+            const remainingSuns = Math.max(250, sunBank)
             const updated = ArenaAdsManager.completeLevelVictory(run)
+            updated.conservedSuns = remainingSuns
+            ArenaAdsManager.saveRun(updated)
             setCurrentArenaAdsRun(updated)
             setArenaAdsModalMode('victory')
             setShowArenaAdsInterstitial(true)
@@ -2024,7 +2027,7 @@ export default function Battlefield({
             undefined,
             undefined,
             undefined,
-            undefined,
+            currentArenaAdsRun.conservedSuns ?? 250,
             undefined,
             undefined,
             undefined,
@@ -3789,10 +3792,10 @@ export default function Battlefield({
                       ) : (
                         <>
                           <div className="colosseum-payout-header colosseum-payout-header--defeat">
-                            <span>💀 FIN DE LA SUPERVIVENCIA</span>
+                            <span>💀 ¡FUISTE DERROTADO!</span>
                           </div>
                           <div className="colosseum-payout-streak" style={{ color: '#f87171' }}>
-                            Has caído en el Nivel {currentArenaAdsRun?.level || 1}.
+                            Fuiste derrotado por las oleadas en el Nivel {currentArenaAdsRun?.level || 1}.
                           </div>
                           <div className="colosseum-payout-loss" style={{ color: '#34d399', fontWeight: 800 }}>
                             🎉 ¡Te llevas {Math.max(0, (currentArenaAdsRun?.level || 1) - 1) * 2} Token PLANTS por los {Math.max(0, (currentArenaAdsRun?.level || 1) - 1)} niveles superados!
@@ -4261,6 +4264,7 @@ export default function Battlefield({
           mode={arenaAdsModalMode}
           levelCleared={currentArenaAdsRun.level}
           accumulatedLoot={currentArenaAdsRun.accumulatedRewards}
+          conservedSuns={currentArenaAdsRun.conservedSuns ?? Math.max(250, sunBank)}
           multiplier={currentArenaAdsRun.multiplier}
           isReviving={isRevivingArenaAds}
           onNextLevel={() => {
@@ -4277,7 +4281,8 @@ export default function Battlefield({
               }
               return
             }
-            const nextRun = ArenaAdsManager.advanceToNextLevel(currentArenaAdsRun)
+            const conservedSuns = Math.max(250, currentArenaAdsRun.conservedSuns ?? sunBank ?? 250)
+            const nextRun = ArenaAdsManager.advanceToNextLevel(currentArenaAdsRun, conservedSuns)
             setCurrentArenaAdsRun(nextRun)
             ArenaAdsManager.saveRun(nextRun)
             if (onArenaAdsAdvance) {
@@ -4303,7 +4308,7 @@ export default function Battlefield({
               undefined,
               undefined,
               undefined,
-              undefined,
+              nextRun.conservedSuns ?? 250,
               undefined,
               undefined,
               undefined,

@@ -343,8 +343,16 @@ export function processSurvivorWaves(
     }
   }
 
-  // 3. Verificación de Victoria: Las 3 oleadas se completaron Y no quedan enemigos vivos
-  if (state.survivorWavesCompleted && livingEnemies === 0 && state.status === 'playing') {
+  // Verificación de Derrota en Survivor: Si el árbol madre cae a 0 HP
+  if (state.p1BaseHp <= 0) {
+    if (state.status === 'playing') {
+      state.status = 'defeat'
+    }
+    return
+  }
+
+  // 3. Verificación de Victoria: Las 3 oleadas se completaron Y no quedan enemigos vivos Y el árbol madre sigue vivo
+  if (state.survivorWavesCompleted && livingEnemies === 0 && state.status === 'playing' && state.p1BaseHp > 0) {
     state.status = 'victory'
     sonar('level_select', 0.9)
   }

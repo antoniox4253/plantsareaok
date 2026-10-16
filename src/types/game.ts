@@ -89,6 +89,7 @@ export interface PlantEntity {
   isHealingFx?: boolean
   equippedItem?: string | null
   chewingUntilTick?: number
+  lastBaseAttackTime?: number
 }
 
 export type EnemyPlantType =

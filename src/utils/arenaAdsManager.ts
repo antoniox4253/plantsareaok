@@ -80,6 +80,7 @@ export interface ArenaAdsRun {
   startedAt?: number
   createdAt?: number
   reviveCount?: number
+  conservedSuns?: number
 }
 
 const ALL_NON_SUNFLOWER_PLANTS: PlantId[] = [
@@ -895,6 +896,7 @@ export class ArenaAdsManager {
       updatedAt: Date.now(),
       startedAt: Date.now(),
       reviveCount: 0,
+      conservedSuns: 250,
     }
 
     this.saveRun(run)
@@ -995,6 +997,11 @@ export class ArenaAdsManager {
       }
     }
 
+    // Survivor ADS Botín progresivo: 2 Token PLANTS por nivel, 1 Sobre Básico cada 10 niveles, 1 Carta Rara cada 25 niveles
+    run.accumulatedRewards.tokenPlants = run.level * 2
+    run.accumulatedRewards.basicPacks = Math.floor(run.level / 10)
+    run.accumulatedRewards.rareCards = Math.floor(run.level / 25)
+
     this.saveRun(run)
     return run
   }
@@ -1019,12 +1026,16 @@ export class ArenaAdsManager {
   }
 
   /**
-   * Avanza al siguiente nivel de la mazmorra (Nivel + 1) e inicializa la fase de preparación.
+   * Avanza al siguiente nivel de la mazmorra (Nivel + 1) e inicializa la fase de preparación,
+   * conservando los soles acumulados del nivel anterior (mínimo 250).
    */
-  static advanceToNextLevel(run: ArenaAdsRun): ArenaAdsRun {
+  static advanceToNextLevel(run: ArenaAdsRun, conservedSuns?: number): ArenaAdsRun {
     run.level += 1
     run.status = 'battle'
     run.chosenAdvantage = { type: 'none' }
+    if (conservedSuns !== undefined) {
+      run.conservedSuns = Math.max(250, conservedSuns)
+    }
 
     this.saveRun(run)
     return run
