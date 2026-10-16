@@ -147,4 +147,11 @@ describe('Commando Peashooter Skin & Bandana de Comando', () => {
     // Whereas normal 1400ms interval would fire 5000ms / 1400ms = ~3 shots
     expect(projectilesFiredInAura).toBeGreaterThanOrEqual(4)
   })
+
+  it('is strictly designated as exclusive to Season 1 Top 3 champions', () => {
+    const item = getEquippableItemDef('commando_bandana')
+    expect(item).toBeDefined()
+    expect(item?.id).toBe('commando_bandana')
+    expect(item?.targetPlantId).toBe('peashooter')
+  })
 })
