@@ -3,13 +3,13 @@ import { createPortal } from 'react-dom'
 import type { PlantId } from '../../types/game'
 import {
   ArenaAdsManager,
-  ARENA_ADS_ENTRY_FEE_GOLD,
-  ARENA_ADS_ENTRY_FEE_GEMS,
   type ArenaAdsRun,
   type ArenaAdsPlantOption,
   type ArenaAdsLoot,
 } from '../../utils/arenaAdsManager'
 import { arenaAdsService } from '../../services/arenaAdsService'
+import { survivorAdsService } from '../../services/survivorAdsService'
+import { SURVIVOR_ADS_ENTRY_FEE_GEMS } from '../../utils/survivorAdsManager'
 import { soundManager } from '../../utils/audioManager'
 import { isFullscreen, toggleFullscreen } from '../../utils/fullscreen'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
@@ -47,7 +47,7 @@ export default function ArenaAdsModal({
   userGold,
   userGems = 0,
   claimedLevels = [],
-  onDeductGold,
+  onDeductGold: _onDeductGold,
   onDeductGems,
   onStartArenaAdsBattle,
   onClaimLoot,
@@ -355,24 +355,18 @@ export default function ArenaAdsModal({
 
   if (!isOpen || typeof document === 'undefined') return null
 
-  // Iniciar nueva expedición (100 Oro -> 1x multiplicador, o 200 Gemas -> 2x multiplicador)
-  const handleStartNewRun = async (paymentType: 'gold' | 'gems' = 'gold') => {
-    if (paymentType === 'gold' && userGold < ARENA_ADS_ENTRY_FEE_GOLD) {
+  // Iniciar nueva expedición a Survivor ADS (50 Gemas 💎)
+  const handleStartNewRun = async (_paymentType: 'gold' | 'gems' = 'gems') => {
+    if (userGems < SURVIVOR_ADS_ENTRY_FEE_GEMS) {
       soundManager.playSound('click', 0.5)
-      alert(`Oro insuficiente. Necesitas al menos ${ARENA_ADS_ENTRY_FEE_GOLD} de Oro 🪙 para entrar a Arena ADS.`)
-      return
-    }
-
-    if (paymentType === 'gems' && userGems < ARENA_ADS_ENTRY_FEE_GEMS) {
-      soundManager.playSound('click', 0.5)
-      alert(`Gemas insuficientes. Necesitas al menos ${ARENA_ADS_ENTRY_FEE_GEMS} Gemas 💎 para la entrada potenciada con 2X de botín.`)
+      alert(`Gemas insuficientes. Necesitas al menos ${SURVIVOR_ADS_ENTRY_FEE_GEMS} Gemas 💎 para entrar a Survivor ADS.`)
       return
     }
 
     setIsProcessing(true)
     try {
-      // 1. Validación y deducción autoritativa en base de datos Supabase
-      const backendRes = await arenaAdsService.enterArenaAds(paymentType)
+      // 1. Validación y deducción autoritativa en base de datos Supabase (50 Gemas)
+      const backendRes = await survivorAdsService.enterSurvivorAds()
       if (!backendRes.success) {
         soundManager.playSound('click', 0.5)
         alert(backendRes.error || 'No se pudo procesar la entrada en el servidor.')
@@ -381,17 +375,21 @@ export default function ArenaAdsModal({
       }
 
       // 2. Descontar en el estado local de inventario
-      if (paymentType === 'gold') {
-        onDeductGold(ARENA_ADS_ENTRY_FEE_GOLD)
-      } else if (onDeductGems) {
-        onDeductGems(ARENA_ADS_ENTRY_FEE_GEMS)
+      if (onDeductGems) {
+        onDeductGems(SURVIVOR_ADS_ENTRY_FEE_GEMS)
       }
 
       soundManager.playSound('victory', 0.6)
       resetPopunderQuota()
-      const serverClaimed = backendRes.claimedArenaAdsLevels || []
-      const mergedClaimed = Array.from(new Set([...(claimedLevels || []), ...serverClaimed]))
-      const newRun = ArenaAdsManager.startNewRun(paymentType, Date.now(), mergedClaimed)
+      const newRun = ArenaAdsManager.startNewRun('gems', Date.now(), claimedLevels || [])
+      newRun.multiplier = 1
+      newRun.accumulatedRewards = {
+        ...newRun.accumulatedRewards,
+        tokenPlants: 0,
+        basicPacks: 0,
+        rareCards: 0,
+      }
+      ArenaAdsManager.saveRun(newRun)
       setActiveRun(newRun)
       setActiveView('prep')
       setSelectedPlantOption(null)
@@ -399,7 +397,6 @@ export default function ArenaAdsModal({
       setIsProcessing(false)
     }
   }
-  void handleStartNewRun
 
   // Continuar la run existente desde caché
   const handleResumeRun = () => {
@@ -528,10 +525,10 @@ export default function ArenaAdsModal({
         {/* HEADER COMPACTO CON BOTÓN DE CERRAR INDEPENDIENTE */}
         <div className="arena-ads-header">
           <div className="arena-ads-title-box">
-            <span className="arena-ads-icon">🏰</span>
+            <span className="arena-ads-icon">🧟</span>
             <div>
-              <h2 className="arena-ads-title">ARENA ADS</h2>
-              <p className="arena-ads-subtitle">Mazmorra Roguelike</p>
+              <h2 className="arena-ads-title">SURVIVOR ADS</h2>
+              <p className="arena-ads-subtitle">Supervivencia por Oleadas Melee (50 💎)</p>
             </div>
           </div>
 
@@ -618,33 +615,11 @@ export default function ArenaAdsModal({
         ) : activeView === 'lobby' ? (
           /* ── VISTA LOBBY / ENTRADA (OPTIMIZADA SIN SCROLL EN HORIZONTAL) ── */
           <div className="arena-ads-content arena-ads-lobby-layout">
-            {/* Banner de Evento Finalizado / Pausado */}
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.35) 100%)',
-              border: '1px solid rgba(239, 68, 68, 0.7)',
-              borderRadius: '10px',
-              padding: '10px 16px',
-              margin: '6px 0 10px',
-              textAlign: 'center',
-              color: '#fef2f2',
-              fontSize: '14px',
-              fontWeight: 700,
-              letterSpacing: '0.3px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}>
-              <span>🏁</span>
-              <span>La prueba ha finalizado, espera el siguiente evento.</span>
-            </div>
-
             {/* Banner Header Slim */}
             <div className="arena-ads-native-banner-box" style={{ minHeight: 'auto', padding: '3px 8px' }}>
               <div className="arena-ads-native-header" style={{ margin: 0 }}>
-                <span className="arena-ads-native-badge">📢 ARENA ADS PATROCINADA</span>
-                <span className="arena-ads-native-title">Juega gratis contra bots patrocinado por red oficial de anuncios</span>
+                <span className="arena-ads-native-badge" style={{ background: '#10b981', color: '#fff' }}>🧟 MODO DE JUEGO SUPERVIVENCIA</span>
+                <span className="arena-ads-native-title">Defiende tu base contra 3 oleadas melee por nivel y gana Token PLANTS</span>
               </div>
               <div id={ARENA_ADS_NATIVE_CONTAINER_ID} className="arena-ads-native-banner-slot" />
             </div>
@@ -663,24 +638,24 @@ export default function ArenaAdsModal({
                   </div>
 
                   <p className="arena-ads-run-desc">
-                    Tienes una expedición activa {activeRun.multiplier === 2 ? '⚡ con MULTIPLICADOR 2X' : ''}. Puedes continuar luchando o retirarte para reclamar tu botín acumulado.
+                    Tienes una expedición de Survivor ADS activa. Puedes continuar luchando o retirarte para reclamar tu botín acumulado asegurado.
                   </p>
 
                   {totalAccumulatedLoot && (
                     <div className="arena-ads-loot-pills">
-                      {totalAccumulatedLoot.gold > 0 && (
-                        <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
-                          <GoldIcon size={16} /> {totalAccumulatedLoot.gold} Oro
+                      <div className="arena-ads-loot-pill" style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#34d399', fontWeight: 800 }}>
+                        <span>🌱</span> {totalAccumulatedLoot.tokenPlants ?? Math.max(0, (activeRun.level - 1) * 2)} Token PLANTS
+                      </div>
+                      {Math.floor(Math.max(0, activeRun.level - 1) / 10) > 0 && (
+                        <div className="arena-ads-loot-pill" style={{ background: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', color: '#38bdf8', fontWeight: 800 }}>
+                          <span>📦</span> {Math.floor(Math.max(0, activeRun.level - 1) / 10)} Sobres Básicos
                         </div>
                       )}
-                      <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
-                        <span>💎</span> {totalAccumulatedLoot.gems} Gemas
-                      </div>
-                      {Object.entries(totalAccumulatedLoot.items).map(([id, qty]) => (
-                        <div key={id} className="arena-ads-loot-pill arena-ads-loot-pill--items">
-                          <span>🎒</span> {qty} {id}
+                      {Math.floor(Math.max(0, activeRun.level - 1) / 25) > 0 && (
+                        <div className="arena-ads-loot-pill" style={{ background: 'rgba(168, 85, 247, 0.2)', border: '1px solid #a855f7', color: '#c084fc', fontWeight: 800 }}>
+                          <span>🌟</span> {Math.floor(Math.max(0, activeRun.level - 1) / 25)} Cartas Raras
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>
@@ -688,20 +663,20 @@ export default function ArenaAdsModal({
                 /* Reglas e Instrucciones Compactas */
                 <div className="arena-ads-rules-card">
                   <h3 className="arena-ads-rules-title">
-                    <span>📜</span> Cómo Jugar la Mazmorra Infinita
+                    <span>📜</span> Reglas de Survivor ADS
                   </h3>
                   <div className="arena-ads-rules-grid">
                     <div className="arena-ads-rule-item">
-                      <strong>1. Entrada:</strong> 350 <GoldIcon size={14} /> (1x) o 200 💎 (⚡ 2x botín).
+                      <strong>1. Entrada:</strong> 50 Gemas 💎 (Solo 1 intento; al caer te llevas todo lo ganado).
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>2. Refuerzo Táctico:</strong> 3 Opciones (1 Gratis + 2 Fusiones con Patrocinador).
+                      <strong>2. Hordas Melee:</strong> 3 Oleadas continuas por nivel (Suave, Difícil, Con Presión).
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>3. 🌻 Girasol:</strong> Siempre garantizado en tu mazo.
+                      <strong>3. Token PLANTS:</strong> +2 Tokens asegurados por cada nivel superado.
                     </div>
                     <div className="arena-ads-rule-item">
-                      <strong>4. 👑 Botín de Combate:</strong> Recompensas fijas al ganar (Gemas, Recursos, Sobres y Skins).
+                      <strong>4. Hitos de Botín:</strong> +1 Sobre Básico cada 10 niveles y +1 Carta Rara cada 25 niveles.
                     </div>
                   </div>
                 </div>
@@ -1144,7 +1119,7 @@ export default function ArenaAdsModal({
                       onClick={handleCashout}
                       disabled={isProcessing}
                     >
-                      💰 RETIRARSE ({activeRun.accumulatedRewards.gems} 💎)
+                      💰 RETIRARSE ({activeRun.accumulatedRewards.tokenPlants ?? Math.max(0, (activeRun.level - 1) * 2)} 🌱)
                     </button>
                     {activeRun.level <= 50 && (
                       <button
@@ -1159,18 +1134,26 @@ export default function ArenaAdsModal({
                 ) : (
                   <button
                     type="button"
-                    className="arena-ads-btn arena-ads-btn--secondary"
-                    disabled
-                    style={{ opacity: 0.65, cursor: 'not-allowed', width: '100%' }}
+                    className="arena-ads-btn arena-ads-btn--primary"
+                    onClick={() => handleStartNewRun('gems')}
+                    disabled={isProcessing || userGems < SURVIVOR_ADS_ENTRY_FEE_GEMS}
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderColor: '#34d399',
+                      color: '#ffffff',
+                      fontWeight: 900,
+                      boxShadow: '0 0 20px rgba(16, 185, 129, 0.45)',
+                      width: '100%',
+                    }}
                   >
-                    🔒 EVENTO EN PAUSA (ESPERA EL SIGUIENTE EVENTO)
+                    {isProcessing ? '⏳ PROCESANDO...' : '🧟 ENTRAR A SURVIVOR ADS (50 💎)'}
                   </button>
                 )}
               </div>
             </>
           ) : (
             <>
-              {activeRun && (activeRun.level >= 2 || activeRun.accumulatedRewards.gems > 0 || Object.keys(activeRun.accumulatedRewards.items || {}).length > 0) ? (
+              {activeRun && (activeRun.level >= 2 || (activeRun.accumulatedRewards.tokenPlants && activeRun.accumulatedRewards.tokenPlants > 0) || activeRun.accumulatedRewards.gems > 0 || Object.keys(activeRun.accumulatedRewards.items || {}).length > 0) ? (
                 <button
                   type="button"
                   className="arena-ads-btn arena-ads-btn--cashout"
@@ -1178,7 +1161,7 @@ export default function ArenaAdsModal({
                   disabled={isProcessing}
                   title="Retírate ahora con todo lo que has acumulado"
                 >
-                  💰 RETIRARSE ({activeRun.accumulatedRewards.gems} 💎)
+                  💰 RETIRARSE ({activeRun.accumulatedRewards.tokenPlants ?? Math.max(0, (activeRun.level - 1) * 2)} 🌱)
                 </button>
               ) : (
                 <button

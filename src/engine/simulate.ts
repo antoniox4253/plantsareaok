@@ -46,6 +46,8 @@ import {
   type MenteDelBot,
   type NivelDelBot,
 } from './bot.ts'
+export { NIVEL_POR_DEFECTO } from './bot.ts'
+export type { NivelDelBot } from './bot.ts'
 import type {
   PlantEntity,
   ProjectileEntity,
@@ -55,6 +57,12 @@ import type {
   PlantId,
   PlantStatKey,
 } from '../types/game.ts'
+import {
+  generateSurvivorLevel,
+  processSurvivorWaves,
+  type SurvivorLevelConfig,
+  type SurvivorEnemySpawn,
+} from './survivorWaveEngine.ts'
 import {
   PLANT_CONFIGS,
   INITIAL_SUN,
@@ -237,8 +245,13 @@ export function createBattleState(
   initialAttackSuns?: number,
   allowedLanes?: number[],
   fortressRoster?: PlantId[],
-  initialDefenseSuns?: number
+  initialDefenseSuns?: number,
+  isSurvivorMode = false,
+  survivorLevel = 1
 ): GameState {
+  const survivorConfig = isSurvivorMode ? generateSurvivorLevel(survivorLevel, seed) : undefined
+  const survivorSpawnsQueue = survivorConfig ? [...survivorConfig.waves[0].spawns] : undefined
+
   return {
     tick: 0,
     rng: createRng(seed),
@@ -249,6 +262,11 @@ export function createBattleState(
     isFortressMode,
     allowedLanes,
     fortressRoster,
+    isSurvivorMode,
+    survivorConfig,
+    survivorSpawnsQueue,
+    survivorWaveIndex: isSurvivorMode ? 0 : undefined,
+    survivorWavesCompleted: false,
     // El cartel de la primera oleada se oculta a los 3 s (4 en práctica). Antes lo
     // hacía un setTimeout tras el arranque; ahora es un tic concreto.
     pending: [{ atTick: msToTicks(isPracticeMode ? 4000 : 3000), kind: 'clear_wave_banner' }],
@@ -267,7 +285,7 @@ export function createBattleState(
         },
     status: 'playing',
     p1BaseHp: p1BaseHp ?? INITIAL_BASE_HP,
-    p2BaseHp: p2BaseHp ?? INITIAL_BASE_HP,
+    p2BaseHp: isSurvivorMode ? 99999 : (p2BaseHp ?? INITIAL_BASE_HP),
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
     sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isFortressMode ? 200 : INITIAL_SUN),
@@ -281,7 +299,13 @@ export function createBattleState(
     cooldowns: enfriamientosACero(),
     slotCooldowns: {},
     wave: 1,
-    waveBanner: isPracticeMode ? 'Modo Práctica' : (isFortressMode ? null : '¡Ola 1 de Plantas Enemigas!'),
+    waveBanner: isPracticeMode
+      ? 'Modo Práctica'
+      : isSurvivorMode
+      ? '🧟 ¡OLEADA 1 (SUAVE)!'
+      : isFortressMode
+      ? null
+      : '¡Ola 1 de Plantas Enemigas!',
     stats: { sunsCollected: 0, enemyPlantsDefeated: 0, plantsPlaced: 0, score: 0 },
     ...(isPracticeMode ? { isPracticeMode: true } : {}),
     ...(isPvpMode ? { isPvpMode: true } : {}),
@@ -478,6 +502,12 @@ export interface GameState {
   bot?: MenteDelBot
   /** Los límites humanos del bot en esta partida. */
   nivelBot?: NivelDelBot
+  /** Modo de supervivencia contra oleadas de plantas melé (Survivor ADS). */
+  isSurvivorMode?: boolean
+  survivorConfig?: SurvivorLevelConfig
+  survivorSpawnsQueue?: SurvivorEnemySpawn[]
+  survivorWaveIndex?: number
+  survivorWavesCompleted?: boolean
 }
 
 /**
@@ -1123,7 +1153,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             sonar('pea_hit', 0.7)
           } else {
             planta.state = 'walking'
-            planta.x += (config.moveSpeed || 6.0) * dt * lado.sentido
+            const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 6.0)
+            planta.x += effectiveSpeed * dt * lado.sentido
             if (llegoALaBase(planta, lado)) {
               dañarBase(state, lado.objetivo, 150)
               sonar('pea_hit', 0.8)
@@ -1175,7 +1206,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           })
         } else {
           planta.state = 'walking'
-          planta.x += (config.moveSpeed || 5.5) * dt * lado.sentido
+          const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 5.5)
+          planta.x += effectiveSpeed * dt * lado.sentido
           if (llegoALaBase(planta, lado)) {
             dañarBase(state, lado.objetivo, 350)
             sonar('pea_hit', 1.0)
@@ -1234,7 +1266,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             planta.chewingUntilTick = state.tick + msToTicks(3500)
           } else {
             planta.state = 'walking'
-            planta.x += (config.moveSpeed || 3.5) * dt * lado.sentido
+            const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 3.5)
+            planta.x += effectiveSpeed * dt * lado.sentido
             if (llegoALaBase(planta, lado)) {
               dañarBase(state, lado.objetivo, 40)
               sonar('pea_hit', 0.6)
@@ -1287,7 +1320,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           }
         } else {
           planta.state = 'walking'
-          planta.x += (config.moveSpeed || 4.5) * dt * lado.sentido
+          const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 4.5)
+          planta.x += effectiveSpeed * dt * lado.sentido
           if (llegoALaBase(planta, lado)) {
             const baseDmg = planta.plantId === 'guacodile' ? 60 : 40
             dañarBase(state, lado.objetivo, baseDmg)
@@ -1839,20 +1873,26 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     }
   }
 
+  // ── MODO SURVIVOR ADS: OLEADAS DE PLANTAS MELÉ ──────────────────────────────
+  if (state.isSurvivorMode && state.survivorConfig) {
+    processSurvivorWaves(state, sonar)
+  }
+
   // ── GESTIÓN DE LA IA ENEMIGA ───────────────────────────────────────────────
   // En Asalto a Fortaleza de Clan, la IA defiende activamente el bastión,
   // cubriendo brechas y líneas vaciadas (anti-Jalapeño) con su economía solar.
+  // En Survivor ADS no hay bot de colocación: las hordas avanzan por oleadas.
   if (state.isFortressMode) {
     if (!state.isPracticeMode && !state.isPvpMode) {
       simularDefensaDeFortaleza(state, sonar)
     }
-  } else {
+  } else if (!state.isSurvivorMode) {
     // 1. PC AI SKY SUN RECOVERY (Synchronized with sky sun drop every 6.0s for 100% fair parity)
     // El bot no juega si hay un rival de verdad al otro lado: sus plantas llegan
     // por el registro de acciones. Sin esta guarda, en una partida contra otro
     // jugador seguirías peleando contra la máquina — que es exactamente el fallo
     // que apareció al probarlo con dos cuentas.
-    const juegaElBot = !state.isPracticeMode && !state.isPvpMode
+    const juegaElBot = !state.isPracticeMode && !state.isPvpMode && !state.isSurvivorMode
 
     const mente = state.bot ?? (state.bot = menteNueva())
     const nivel = state.nivelBot ?? NIVEL_POR_DEFECTO

@@ -494,7 +494,9 @@ export function useGameEngine() {
     initialAttackSuns?: number,
     isPreparationPhase?: boolean,
     clanFortressAmbushes?: ClanFortressAmbush[],
-    targetTreeLevel?: number
+    targetTreeLevel?: number,
+    isSurvivorMode?: boolean,
+    survivorLevel?: number
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
@@ -558,7 +560,9 @@ export function useGameEngine() {
               ? 400
               : 300
           : 350
-        : undefined
+        : undefined,
+      Boolean(isSurvivorMode),
+      survivorLevel || 1
     )
 
     // Helper para normalizar el carril defensivo al espacio de combate activo (0..effectiveLanes-1)
@@ -2239,6 +2243,11 @@ export function useGameEngine() {
     slotCooldowns: state.slotCooldowns,
     wave: state.wave,
     waveBanner: state.waveBanner,
+    isSurvivorMode: Boolean(state.isSurvivorMode),
+    survivorWaveIndex: state.survivorWaveIndex ?? 0,
+    survivorTotalWaves: 3,
+    survivorLevel: state.survivorConfig?.level ?? 1,
+    survivorEnemiesRemaining: (state.enemyPlants || []).filter((p) => p.hp > 0).length + ((state.survivorSpawnsQueue || []).length),
     stats: state.stats,
     startGame,
     startPracticeGame,

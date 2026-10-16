@@ -331,6 +331,10 @@ export default function Battlefield({
     sessionGeneration,
     updateInitialTreeBonusHp,
     setPreparationPhase,
+    isSurvivorMode: _isSurvivorModeEngine,
+    survivorWaveIndex,
+    survivorTotalWaves: _survivorTotalWaves,
+    survivorEnemiesRemaining,
   } = useGameEngine()
 
   const { user } = useAuth()
@@ -1879,6 +1883,13 @@ export default function Battlefield({
             setCombatAdsBlocked(false)
             activateMonetagVignette()
             run.status = 'game_over'
+            const levelsCleared = Math.max(0, run.level - 1)
+            run.accumulatedRewards = {
+              ...run.accumulatedRewards,
+              tokenPlants: levelsCleared * 2,
+              basicPacks: Math.floor(levelsCleared / 10),
+              rareCards: Math.floor(levelsCleared / 25),
+            }
             ArenaAdsManager.saveRun(run)
             setCurrentArenaAdsRun(run)
             setArenaAdsModalMode('defeat')
@@ -1892,7 +1903,7 @@ export default function Battlefield({
               level: run.level,
               playtimeSeconds,
               spentGems: run.paymentType === 'gems',
-              gemsSpent: (run.paymentType === 'gems' ? 200 : 0) + ((run.reviveCount || 0) * 150),
+              gemsSpent: (run.paymentType === 'gems' ? 50 : 0) + ((run.reviveCount || 0) * 150),
               revived: (run.reviveCount || 0) > 0,
               reviveCount: run.reviveCount || 0,
               totalRewards: {
@@ -2011,7 +2022,16 @@ export default function Battlefield({
             treeBonusHpRef.current,
             rivalBonusHp,
             treeSkinRef.current,
-            rivalTreeSkinRef.current
+            rivalTreeSkinRef.current,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            true,
+            currentArenaAdsRun.level
           )
         } else {
           startGame(
@@ -2321,22 +2341,51 @@ export default function Battlefield({
           mostrarlo que mostrar uno falso. */}
       <BaseTower
         team="p2"
-        hp={p2BaseHp}
+        hp={matchMode === 'arena_ads' ? Math.max(0, survivorEnemiesRemaining) : p2BaseHp}
         maxHp={
-          matchMode === 'clan_fortress'
+          matchMode === 'arena_ads'
+            ? Math.max(1, survivorEnemiesRemaining)
+            : matchMode === 'clan_fortress'
             ? (currentFortressOpponent?.targetMaxBaseHp || (currentFortressOpponent as any)?.targetMaxHp || currentFortressOpponent?.targetBaseHp || 2000)
             : INITIAL_BASE_HP + rivalTreeBonusHp
         }
-        sunBank={roomId ? undefined : p2SunBank}
+        sunBank={matchMode === 'arena_ads' || roomId ? undefined : p2SunBank}
         nombre={
-          matchMode === 'clan_fortress'
+          matchMode === 'arena_ads'
+            ? `Horda Invasora (Nv.${currentArenaAdsRun?.level || 1})`
+            : matchMode === 'clan_fortress'
             ? (currentFortressOpponent?.targetClanName || 'Fortaleza Rival')
             : (nombres?.rival || tournamentOpponent?.name || (roomId ? 'Rival' : 'Bot Entrenador'))
         }
         level={matchMode === 'clan_fortress' ? fortressTargetTreeLevel : rivalTreeLevel}
         skin={rivalTreeSkin}
         sideBadge={
-          matchMode === 'clan_fortress' ? (
+          matchMode === 'arena_ads' ? (
+            <div
+              className="battlefield-colosseum-header-pill"
+              style={{
+                borderColor: '#10b981',
+                boxShadow: '0 0 15px rgba(16, 185, 129, 0.45)',
+                background: 'rgba(15, 23, 42, 0.94)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span className="battlefield-colosseum-icon">🧟</span>
+              <span>SURVIVOR ADS • NIVEL {currentArenaAdsRun?.level || 1}</span>
+              <span>•</span>
+              <span style={{ color: '#facc15', fontWeight: 800 }}>
+                {survivorWaveIndex === 1
+                  ? 'Oleada 1/3 (Suave)'
+                  : survivorWaveIndex === 2
+                    ? 'Oleada 2/3 (Difícil)'
+                    : 'Oleada 3/3 (¡Con Presión!)'}
+              </span>
+              <span>•</span>
+              <span style={{ color: '#38bdf8' }}>
+                Restantes: {survivorEnemiesRemaining}
+              </span>
+            </div>
+          ) : matchMode === 'clan_fortress' ? (
             <div
               className="battlefield-colosseum-header-pill"
               style={{
@@ -3684,47 +3733,49 @@ export default function Battlefield({
                     </div>
                   </div>
                 ) : matchMode === 'arena_ads' ? (
-                  /* ARENA ADS MATCH REWARD CARD */
+                  /* SURVIVOR ADS MATCH REWARD CARD */
                   <div className="game-card__panel game-card__panel--arena-ads">
                     <div className="game-card__panel-title">
-                      <span>🏰</span> Resultado Arena ADS
+                      <span>🧟</span> Resultado Survivor ADS
                     </div>
-                    <div className="colosseum-battle-payout-box" style={{ borderColor: '#38bdf8', boxShadow: '0 0 20px rgba(56, 189, 248, 0.35)', margin: 0 }}>
+                    <div className="colosseum-battle-payout-box" style={{ borderColor: '#10b981', boxShadow: '0 0 20px rgba(16, 185, 129, 0.35)', margin: 0 }}>
                       {gameStatus === 'victory' ? (
                         <>
-                          <div className="colosseum-payout-header" style={{ color: '#38bdf8' }}>
+                          <div className="colosseum-payout-header" style={{ color: '#34d399' }}>
                             <span>🎉 ¡NIVEL {currentArenaAdsRun?.level || 1} SUPERADO!</span>
                           </div>
                           <div className="colosseum-payout-gems" style={{ color: '#facc15' }}>
                             💰 BOTÍN ACUMULADO ACTUAL:
                           </div>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '6px' }}>
-                            <span style={{ color: '#fef08a', fontWeight: 800, fontSize: '0.85rem' }}>
-                              🪙 {currentArenaAdsRun?.accumulatedRewards.gold || 0} Oro
+                            <span style={{ color: '#34d399', fontWeight: 800, fontSize: '0.85rem' }}>
+                              🌱 +{(currentArenaAdsRun?.level || 1) * 2} Token PLANTS
                             </span>
-                            <span style={{ color: '#bae6fd', fontWeight: 800, fontSize: '0.85rem' }}>
-                              💎 {currentArenaAdsRun?.accumulatedRewards.gems || 0} Gemas
-                            </span>
-                            {currentArenaAdsRun && Object.entries(currentArenaAdsRun.accumulatedRewards.items).map(([id, qty]) => (
-                              <span key={id} style={{ color: '#86efac', fontWeight: 800, fontSize: '0.85rem' }}>
-                                🎒 +{qty} {id}
+                            {Math.floor((currentArenaAdsRun?.level || 1) / 10) > 0 && (
+                              <span style={{ color: '#38bdf8', fontWeight: 800, fontSize: '0.85rem' }}>
+                                📦 +{Math.floor((currentArenaAdsRun?.level || 1) / 10)} Sobre Básico
                               </span>
-                            ))}
+                            )}
+                            {Math.floor((currentArenaAdsRun?.level || 1) / 25) > 0 && (
+                              <span style={{ color: '#c084fc', fontWeight: 800, fontSize: '0.85rem' }}>
+                                🌟 +{Math.floor((currentArenaAdsRun?.level || 1) / 25)} Carta Rara
+                              </span>
+                            )}
                           </div>
                           <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
-                            🛡️ Progreso guardado. Retírate ahora para cobrarlo o continúa arriesgando.
+                            🛡️ ¡3 oleadas resistidas! Avanza al siguiente nivel o retírate para cobrar.
                           </p>
                         </>
                       ) : (
                         <>
                           <div className="colosseum-payout-header colosseum-payout-header--defeat">
-                            <span>💀 DERROTA EN LA MAZMORRA</span>
+                            <span>💀 FIN DE LA SUPERVIVENCIA</span>
                           </div>
-                          <div className="colosseum-payout-loss">
-                            Perdiste todo el botín acumulado en esta expedición.
+                          <div className="colosseum-payout-streak" style={{ color: '#f87171' }}>
+                            Has caído en el Nivel {currentArenaAdsRun?.level || 1}.
                           </div>
-                          <div className="colosseum-payout-streak" style={{ color: '#ef4444' }}>
-                            ⚠️ Has caído en el Nivel {currentArenaAdsRun?.level || 1}.
+                          <div className="colosseum-payout-loss" style={{ color: '#34d399', fontWeight: 800 }}>
+                            🎉 ¡Te llevas {Math.max(0, (currentArenaAdsRun?.level || 1) - 1) * 2} Token PLANTS por los {Math.max(0, (currentArenaAdsRun?.level || 1) - 1)} niveles superados!
                           </div>
                         </>
                       )}
@@ -4122,7 +4173,7 @@ export default function Battlefield({
                   {matchMode === 'tournament'
                     ? '🏆 VOLVER AL TORNEO'
                     : matchMode === 'arena_ads'
-                    ? (gameStatus === 'victory' ? `⚔️ AVANZAR AL NIVEL ${(currentArenaAdsRun?.level || 1) + 1}` : '🔄 VOLVER AL LOBBY')
+                    ? (gameStatus === 'victory' ? `⚔️ AVANZAR AL NIVEL ${(currentArenaAdsRun?.level || 1) + 1}` : '🏆 RECLAMAR BOTÍN Y SALIR')
                     : isRerollingTarget
                     ? '🔍 BUSCANDO FORTALEZA...'
                     : '🎮 SEGUIR JUGANDO'}
@@ -4131,10 +4182,10 @@ export default function Battlefield({
                   <button
                     className="game-button"
                     style={{
-                      background: 'linear-gradient(180deg, #facc15 0%, #ca8a04 100%)',
-                      color: '#422006',
+                      background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
+                      color: '#ffffff',
                       fontWeight: 900,
-                      border: '1px solid #fde047',
+                      border: '1px solid #34d399',
                     }}
                     type="button"
                     onClick={() => {
@@ -4150,7 +4201,7 @@ export default function Battlefield({
                       }
                     }}
                   >
-                    💰 RETIRARSE ({currentArenaAdsRun?.accumulatedRewards.gold || 0} 🪙)
+                    💰 RETIRARSE ({(currentArenaAdsRun?.level || 1) * 2} Token PLANTS 🌱)
                   </button>
                 )}
                 {onBackToMenu && matchMode !== 'tournament' && (
@@ -4161,6 +4212,14 @@ export default function Battlefield({
                     onClick={() => {
                       soundManager.playBgm('menu')
                       if (matchMode === 'arena_ads' && gameStatus !== 'victory') {
+                        if (currentArenaAdsRun && onArenaAdsRetreat) {
+                          onArenaAdsRetreat(
+                            currentArenaAdsRun.accumulatedRewards,
+                            currentArenaAdsRun.multiplier || 1,
+                            currentArenaAdsRun.newlyClaimedLevels
+                          )
+                          return
+                        }
                         ArenaAdsManager.clearRun()
                         setCurrentArenaAdsRun(null)
                       }
@@ -4206,18 +4265,18 @@ export default function Battlefield({
           onCashout={() => {
             activateMonetagVignette()
             setShowArenaAdsInterstitial(false)
-            if (arenaAdsModalMode === 'defeat') {
-              ArenaAdsManager.clearRun()
-              setCurrentArenaAdsRun(null)
-              if (onBackToMenu) {
-                onBackToMenu()
-              }
-            } else if (onArenaAdsRetreat) {
+            if (onArenaAdsRetreat && currentArenaAdsRun) {
               onArenaAdsRetreat(
                 currentArenaAdsRun.accumulatedRewards,
                 currentArenaAdsRun.multiplier || 1,
                 currentArenaAdsRun.newlyClaimedLevels
               )
+            } else {
+              ArenaAdsManager.clearRun()
+              setCurrentArenaAdsRun(null)
+              if (onBackToMenu) {
+                onBackToMenu()
+              }
             }
           }}
           onRevive={async () => {

@@ -799,7 +799,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
             setActiveTab('arena_ads')
           }}
         >
-          ⚔️ ARENA ADS
+          🧟 SURVIVOR ADS
         </button>
       </div>
 
@@ -2076,7 +2076,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
             <div className="leaderboard-container">
               {isLoadingArenaAds ? (
                 <div className="leaderboard-loading-state">
-                  <span>⏳ Cargando clasificación de Arena ADS...</span>
+                  <span>⏳ Cargando clasificación de Survivor ADS...</span>
                 </div>
               ) : (
                 <div className="leaderboard-split-layout">
@@ -2270,7 +2270,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                       <input
                         type="text"
                         className="lb-search-input"
-                        placeholder="Buscar jugador en Arena ADS..."
+                        placeholder="Buscar jugador en Survivor ADS..."
                         value={arenaAdsSearch}
                         onChange={(e) => {
                           setArenaAdsSearch(e.target.value)
@@ -2459,7 +2459,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
         <div className="lb-modal-backdrop" onClick={() => setSelectedArenaAdsUser(null)}>
           <div className="lb-inspect-modal" onClick={(e) => e.stopPropagation()}>
             <div className="lb-modal-header">
-              <h3 className="lb-modal-title">🎁 DETALLES DE EXPEDICIÓN • ARENA ADS</h3>
+              <h3 className="lb-modal-title">🎁 DETALLES DE EXPEDICIÓN • SURVIVOR ADS</h3>
               <button
                 type="button"
                 className="lb-modal-close"

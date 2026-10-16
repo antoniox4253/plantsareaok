@@ -6902,6 +6902,12 @@ input.swap-value-slot:focus {
   border: 1px solid #facc15;
 }
 
+.event-badge--survivor {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid #10b981;
+}
+
 .event-badge--presale {
   background: rgba(168, 85, 247, 0.15);
   color: #c084fc;

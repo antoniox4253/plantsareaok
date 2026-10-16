@@ -51,6 +51,10 @@ export interface ArenaAdsLoot {
   gold: number
   gems: number
   items: Partial<Record<FarmingItemId | string, number>>
+  tokenPlants?: number
+  basicPacks?: number
+  rareCards?: number
+  rareCardIds?: string[]
 }
 
 export interface ArenaAdsRun {

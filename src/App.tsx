@@ -52,6 +52,7 @@ import { VIP_PASS_PRECIO_GEMAS } from './utils/gameConstants'
 import type { ArenaAdsRun, ArenaAdsLoot } from './utils/arenaAdsManager'
 import { ArenaAdsManager, getBotStatsForLevel } from './utils/arenaAdsManager'
 import { arenaAdsService } from './services/arenaAdsService'
+import { survivorAdsService } from './services/survivorAdsService'
 import { resetPopunderQuota } from './utils/arenaAdsNetwork'
 import {
   trackPageView,
@@ -1154,6 +1155,30 @@ function App() {
       }
     }
 
+    // Reclamar recompensas de Survivor ADS en backend Supabase (Token PLANTS, Sobres Básicos y Cartas Raras)
+    const run = arenaAdsRun || ArenaAdsManager.getStoredRun()
+    const levelsCleared = run
+      ? (run.status === 'game_over' ? Math.max(0, run.level - 1) : run.level)
+      : (loot.tokenPlants ? Math.floor(loot.tokenPlants / 2) : 0)
+
+    try {
+      if (levelsCleared > 0) {
+        const survivorRes = await survivorAdsService.claimLoot(levelsCleared, run?.id)
+        if (survivorRes.success) {
+          window.dispatchEvent(
+            new CustomEvent('plants_tokens_updated', {
+              detail: {
+                newBalance: survivorRes.newPlantsBalance,
+                awarded: survivorRes.tokensAwarded,
+              },
+            })
+          )
+        }
+      }
+    } catch (e) {
+      console.error('Error al reclamar botín de Survivor ADS en backend:', e)
+    }
+
     const levelsToClaim = newlyClaimedLevels || arenaAdsRun?.newlyClaimedLevels || []
 
     if (arenaAdsRun) {
@@ -1164,7 +1189,7 @@ function App() {
           ? Math.max(1, Math.round((Date.now() - runStarted) / 1000))
           : 60,
         spentGems: arenaAdsRun.paymentType === 'gems',
-        gemsSpent: (arenaAdsRun.paymentType === 'gems' ? 200 : 0) + ((arenaAdsRun.reviveCount || 0) * 150),
+        gemsSpent: (arenaAdsRun.paymentType === 'gems' ? 50 : 0) + ((arenaAdsRun.reviveCount || 0) * 150),
         revived: (arenaAdsRun.reviveCount || 0) > 0,
         reviveCount: arenaAdsRun.reviveCount || 0,
         totalRewards: {

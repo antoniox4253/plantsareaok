@@ -1135,4 +1135,47 @@ export const plantsTokenService = {
       },
     ]
   },
+
+  /**
+   * Recalcula el desglose auditable del suministro de Token PLANTS:
+   * Separa de dónde provienen los tokens minteados (PvP, Survivor ADS, Preventa)
+   * y calcula la deducción de la Bóveda de Recompensas (500,000 PLANTS asignados).
+   */
+  getMintingBreakdown(events: PlantsMintingEvent[]) {
+    let pvpTokens = 0
+    let survivorTokens = 0
+    let presaleTokens = 0
+    let burnTokens = 0
+    let otherTokens = 0
+
+    for (const evt of events) {
+      if (evt.eventType === 'pvp_reward') {
+        pvpTokens += Math.max(0, evt.deltaPlants)
+      } else if (evt.eventType === 'survivor_reward') {
+        survivorTokens += Math.max(0, evt.deltaPlants)
+      } else if (evt.eventType === 'presale_pack') {
+        presaleTokens += Math.max(0, evt.deltaPlants)
+      } else if (evt.deltaPlants < 0 || evt.eventType === 'swap_gems' || evt.eventType === 'swap_usdt') {
+        burnTokens += Math.abs(evt.deltaPlants)
+      } else if (evt.deltaPlants > 0) {
+        otherTokens += evt.deltaPlants
+      }
+    }
+
+    const totalCombatMinted = pvpTokens + survivorTokens
+    const REWARDS_VAULT_ALLOCATION = 500000
+    const rewardsVaultRemaining = Math.max(0, REWARDS_VAULT_ALLOCATION - totalCombatMinted)
+
+    return {
+      pvpTokens,
+      survivorTokens,
+      presaleTokens,
+      burnTokens,
+      otherTokens,
+      totalCombatMinted,
+      rewardsVaultRemaining,
+      rewardsVaultAllocation: REWARDS_VAULT_ALLOCATION,
+    }
+  },
 }
+

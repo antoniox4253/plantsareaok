@@ -232,7 +232,7 @@ export default function ModeSelectorModal({
                 </button>
               </div>
 
-              {/* 4. ARENA ADS - MAZMORRA INFINITA (REEMPLAZA EL COLISEO) */}
+              {/* 4. SURVIVOR ADS - MODO DE SUPERVIVENCIA POR OLEADAS (REEMPLAZA ARENA ADS) */}
               <div
                 className="mode-card mode-card--arena-ads"
                 onClick={() => {
@@ -248,26 +248,33 @@ export default function ModeSelectorModal({
                 <div
                   className="mode-card__badge"
                   style={{
-                    background: 'rgba(56, 189, 248, 0.2)',
-                    color: '#38bdf8',
-                    borderColor: 'rgba(56, 189, 248, 0.6)',
+                    background: 'rgba(34, 197, 94, 0.2)',
+                    color: '#4ade80',
+                    borderColor: 'rgba(34, 197, 94, 0.6)',
                   }}
                 >
-                  🏰 MAZMORRA INFINITA
+                  🧟 SUPERVIVENCIA ADS
                 </div>
-                <div className="mode-card__icon">🏰</div>
-                <h3 className="mode-card__name">Arena ADS</h3>
+                <div className="mode-card__icon">🧟</div>
+                <h3 className="mode-card__name">Survivor ADS</h3>
                 <p className="mode-card__desc">
-                  mazmorra infinita. juega contra bots y acumula recompensas asegurate cuando retirarte o perderas todo.
+                  ¡Oleadas de plantas melé enemigas al estilo PvZ! Defiende tu base contra 3 oleadas por nivel. 1 solo intento: si caes, te llevas todo lo ganado.
                 </p>
                 <div className="mode-card__perks">
-                  <span>🪙 Entrada: 100 de Oro</span>
-                  <span>🤖 Duelos contra Bots con Dificultad Progresiva</span>
-                  <span>💰 Botín Acumulado: Oro, Gemas e Ítems</span>
+                  <span>💎 Entrada: 50 Gemas (1 Intento)</span>
+                  <span>🪙 2 Token PLANTS por cada nivel superado</span>
+                  <span>📦 1 Sobre Básico cada 10 niveles</span>
+                  <span>🌟 1 Carta Rara aleatoria cada 25 niveles</span>
                 </div>
                 <button
                   type="button"
                   className="mode-card__action-btn mode-card__action-btn--arena-ads"
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    borderColor: '#34d399',
+                    color: '#ffffff',
+                    fontWeight: 900,
+                  }}
                   onClick={(e) => {
                     e.stopPropagation()
                     soundManager.playSound('click', 0.5)
@@ -279,7 +286,7 @@ export default function ModeSelectorModal({
                     }
                   }}
                 >
-                  🎮 PLAY
+                  🧟 JUGAR (50 💎)
                 </button>
               </div>
             </div>

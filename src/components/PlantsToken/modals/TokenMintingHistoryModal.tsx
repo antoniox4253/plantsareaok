@@ -8,7 +8,7 @@ interface TokenMintingHistoryModalProps {
   onClose: () => void
 }
 
-type FilterType = 'all' | 'pvp' | 'presale' | 'burns' | 'cashout'
+type FilterType = 'all' | 'pvp' | 'survivor' | 'presale' | 'burns' | 'cashout'
 
 export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> = ({ isOpen, onClose }) => {
   const [events, setEvents] = useState<PlantsMintingEvent[]>([])
@@ -43,6 +43,7 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
   const filteredEvents = events.filter((e) => {
     // Type filter
     if (filter === 'pvp' && e.eventType !== 'pvp_reward') return false
+    if (filter === 'survivor' && e.eventType !== 'survivor_reward') return false
     if (filter === 'presale' && e.eventType !== 'presale_pack') return false
     if (filter === 'burns' && e.eventType !== 'swap_gems' && e.eventType !== 'swap_usdt' && e.deltaPlants >= 0) return false
     if (filter === 'cashout' && e.eventType !== 'cashout') return false
@@ -54,7 +55,8 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
       const eventMatch = e.eventType.toLowerCase().includes(q)
       const roomMatch = e.metadata?.roomId?.toLowerCase().includes(q)
       const packMatch = e.metadata?.packId?.toLowerCase().includes(q)
-      if (!userMatch && !eventMatch && !roomMatch && !packMatch) return false
+      const modeMatch = e.metadata?.mode?.toLowerCase().includes(q)
+      if (!userMatch && !eventMatch && !roomMatch && !packMatch && !modeMatch) return false
     }
 
     return true
@@ -64,6 +66,8 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
     switch (type) {
       case 'pvp_reward':
         return <span className="event-badge event-badge--pvp">🏆 VICTORIA PVP</span>
+      case 'survivor_reward':
+        return <span className="event-badge event-badge--survivor">🧟 SURVIVOR ADS</span>
       case 'presale_pack':
         return <span className="event-badge event-badge--presale">🛒 COMPRA PREVENTA</span>
       case 'swap_gems':
@@ -131,6 +135,13 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
               onClick={() => setFilter('pvp')}
             >
               🏆 Partidas PvP ({events.filter((e) => e.eventType === 'pvp_reward').length})
+            </button>
+            <button
+              type="button"
+              className={`token-modal-subtab ${filter === 'survivor' ? 'active' : ''}`}
+              onClick={() => setFilter('survivor')}
+            >
+              🧟 Survivor ADS ({events.filter((e) => e.eventType === 'survivor_reward').length})
             </button>
             <button
               type="button"
@@ -216,6 +227,13 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
                         {evt.eventType === 'pvp_reward' && evt.metadata?.roomId && (
                           <small className="mint-meta-txt">
                             Sala: {String(evt.metadata.roomId).slice(0, 8)}... · Score: {evt.metadata.score ?? 100}
+                          </small>
+                        )}
+                        {evt.eventType === 'survivor_reward' && (
+                          <small className="mint-meta-txt text-gold font-bold">
+                            🧟 Survivor ADS: {evt.metadata?.levelsCleared ?? 0} Niveles Superados (+{evt.deltaPlants} PLANTS)
+                            {evt.metadata?.basicPacks ? ` · 📦 ${evt.metadata.basicPacks} Sobres` : ''}
+                            {evt.metadata?.rareCards ? ` · 🌟 ${evt.metadata.rareCards} Raras` : ''}
                           </small>
                         )}
                         {evt.eventType === 'presale_pack' && evt.metadata?.packId && (

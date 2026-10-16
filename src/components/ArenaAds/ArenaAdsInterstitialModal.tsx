@@ -3,14 +3,13 @@ import { createPortal } from 'react-dom'
 import type { ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { soundManager } from '../../utils/audioManager'
 import { activateMonetagVignette } from '../../utils/arenaAdsNetwork'
-import GoldIcon from '../Common/GoldIcon'
 import './ArenaAdsModal.css'
 
 interface ArenaAdsInterstitialModalProps {
   isOpen: boolean
   mode?: 'victory' | 'defeat'
   levelCleared: number
-  accumulatedLoot: ArenaAdsLoot
+  accumulatedLoot?: ArenaAdsLoot
   onNextLevel: () => void
   onCashout: () => void
   onRevive?: () => void
@@ -22,12 +21,12 @@ export default function ArenaAdsInterstitialModal({
   isOpen,
   mode = 'victory',
   levelCleared,
-  accumulatedLoot,
+  accumulatedLoot: _accumulatedLoot,
   onNextLevel,
   onCashout,
-  onRevive,
-  isReviving = false,
-  multiplier = 1,
+  onRevive: _onRevive,
+  isReviving: _isReviving = false,
+  multiplier: _multiplier = 1,
 }: ArenaAdsInterstitialModalProps) {
   const [countdown, setCountdown] = useState<number>(3)
 
@@ -60,6 +59,10 @@ export default function ArenaAdsInterstitialModal({
 
   const isDefeat = mode === 'defeat'
   const isMaxLevelReached = levelCleared >= 50
+  const levelsSuccessfullyCleared = isDefeat ? Math.max(0, levelCleared - 1) : levelCleared
+  const earnedTokens = levelsSuccessfullyCleared * 2
+  const earnedPacks = Math.floor(levelsSuccessfullyCleared / 10)
+  const earnedRareCards = Math.floor(levelsSuccessfullyCleared / 25)
 
   return createPortal(
     <div className="arena-ads-interstitial-backdrop">
@@ -68,83 +71,69 @@ export default function ArenaAdsInterstitialModal({
           {isDefeat
             ? `💀 ¡HAS CAÍDO EN EL NIVEL ${levelCleared}!`
             : isMaxLevelReached
-            ? `🏆 ¡MAZMORRA CONQUISTADA! (NIVEL ${levelCleared})`
+            ? `🏆 ¡SUPERVIVENCIA CONQUISTADA! (NIVEL ${levelCleared})`
             : `🎉 ¡NIVEL ${levelCleared} SUPERADO!`}
         </h3>
 
         {/* MENSAJE DE ESTADO ENTRE NIVELES */}
         <div className="arena-ads-interstitial-ad-shell">
-          <span style={{ fontSize: '11px', color: isDefeat ? '#f87171' : isMaxLevelReached ? '#fbbf24' : '#94a3b8', textAlign: 'center', padding: '6px' }}>
+          <span style={{ fontSize: '12px', color: isDefeat ? '#fca5a5' : isMaxLevelReached ? '#fbbf24' : '#86efac', textAlign: 'center', padding: '6px', fontWeight: 600 }}>
             {isDefeat
-              ? '⚠️ Si sales al lobby perderás el botín sin asegurar de esta expedición (podrás volver a desafiar la mazmorra pagando 350 🪙 Oro desde el Nivel 1). O revive de inmediato por 150 💎 Gemas.'
+              ? `🛡️ ¡Fin de la expedición! Superaste ${levelsSuccessfullyCleared} niveles. Solo tenías 1 intento, pero te llevas todo lo ganado a tu inventario y saldo de PLANTS.`
               : isMaxLevelReached
-              ? '👑 ¡Felicidades, Gladiador! Has conquistado los 50 niveles de la Arena Ads. Reclama tu botín legendario ahora.'
-              : '🛡️ Tu progreso y botín están 100% blindados en caché.'}
+              ? '👑 ¡Felicidades, Gladiador! Has conquistado los 50 niveles de Survivor ADS. Reclama tu botín supremo ahora.'
+              : '🧟 ¡Las 3 oleadas fueron derrotadas con éxito! Tu botín de Token PLANTS sigue aumentando.'}
           </span>
         </div>
 
         {/* BOTÍN ACUMULADO ACTUAL */}
-        <div style={{ background: 'rgba(15, 23, 42, 0.7)', borderRadius: '12px', padding: '10px' }}>
-          <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '6px', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>💰 BOTÍN TOTAL ACUMULADO HASTA AHORA:</span>
-            {multiplier === 2 && (
-              <span style={{ background: '#7c3aed', color: '#fff', padding: '1px 6px', borderRadius: '4px', fontSize: '10px' }}>
-                ⚡ 2X ACTIVO
-              </span>
-            )}
+        <div style={{ background: 'rgba(15, 23, 42, 0.85)', borderRadius: '12px', padding: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+          <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '8px', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>💰 BOTÍN TOTAL ACUMULADO ({levelsSuccessfullyCleared} NIVELES SUPERADOS):</span>
+            <span style={{ background: '#10b981', color: '#fff', padding: '1px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+              SURVIVOR ADS
+            </span>
           </div>
-          <div className="arena-ads-loot-pills" style={{ justifyContent: 'center' }}>
-            {accumulatedLoot.gold > 0 && (
-              <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
-                <GoldIcon size={16} /> {accumulatedLoot.gold} Oro
+          <div className="arena-ads-loot-pills" style={{ justifyContent: 'center', gap: '8px' }}>
+            <div className="arena-ads-loot-pill" style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#34d399', fontWeight: 800 }}>
+              <span>🌱</span> +{earnedTokens} Token PLANTS
+            </div>
+            {earnedPacks > 0 && (
+              <div className="arena-ads-loot-pill" style={{ background: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', color: '#38bdf8', fontWeight: 800 }}>
+                <span>📦</span> +{earnedPacks} Sobre{earnedPacks > 1 ? 's' : ''} Básico{earnedPacks > 1 ? 's' : ''}
               </div>
             )}
-            <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
-              <span>💎</span> {accumulatedLoot.gems} Gemas
-            </div>
-            {Object.entries(accumulatedLoot.items).map(([id, qty]) => (
-              <div key={id} className="arena-ads-loot-pill arena-ads-loot-pill--items">
-                <span>🎒</span> {qty} {id}
+            {earnedRareCards > 0 && (
+              <div className="arena-ads-loot-pill" style={{ background: 'rgba(168, 85, 247, 0.2)', border: '1px solid #a855f7', color: '#c084fc', fontWeight: 800 }}>
+                <span>🌟</span> +{earnedRareCards} Carta{earnedRareCards > 1 ? 's' : ''} Rara{earnedRareCards > 1 ? 's' : ''}
               </div>
-            ))}
+            )}
           </div>
         </div>
 
         {/* DECISIONES */}
         {isDefeat ? (
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '12px' }}>
             <button
               type="button"
-              className="arena-ads-btn arena-ads-btn--secondary"
-              style={{ background: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444', color: '#fca5a5' }}
+              className="arena-ads-btn"
+              style={{
+                width: '100%',
+                padding: '12px 20px',
+                fontSize: '14px',
+                fontWeight: 900,
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                borderColor: '#34d399',
+                color: '#ffffff',
+                boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
+              }}
               onClick={() => {
                 soundManager.playSound('click', 0.5)
-                onCashout() // Abandonar y perder botín de la sesión
+                onCashout() // Reclamar botín ganado de la expedición
               }}
             >
-              🚪 SALIR AL LOBBY
+              🏆 RECLAMAR BOTÍN Y SALIR AL LOBBY
             </button>
-
-            {onRevive && (
-              <button
-                type="button"
-                className="arena-ads-btn"
-                style={{
-                  background: 'linear-gradient(180deg, #ec4899 0%, #db2777 100%)',
-                  border: '2px solid #f472b6',
-                  color: '#ffffff',
-                  boxShadow: '0 0 15px rgba(236, 72, 153, 0.5)',
-                  fontWeight: 800,
-                }}
-                disabled={isReviving}
-                onClick={() => {
-                  soundManager.playSound('click', 0.5)
-                  onRevive()
-                }}
-              >
-                {isReviving ? '⏳ REVIVIENDO...' : '❤️ REVIVIR (150 💎 GEMAS)'}
-              </button>
-            )}
           </div>
         ) : isMaxLevelReached ? (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
