@@ -312,4 +312,28 @@ describe('survivorWaveEngine', () => {
     stepTick(state, () => {})
     expect(state.status).toBe('victory')
   })
+
+  it('ramps up pressure starting from Level 6 with higher spawn density and simultaneous incursions', () => {
+    const configLvl1 = generateSurvivorLevel(1, 12345)
+    const configLvl6 = generateSurvivorLevel(6, 12345)
+
+    // Level 6 has more spawns in Wave 1, Wave 2, and Wave 3 than Level 1
+    expect(configLvl6.waves[0].spawns.length).toBeGreaterThan(configLvl1.waves[0].spawns.length)
+    expect(configLvl6.waves[1].spawns.length).toBeGreaterThan(configLvl1.waves[1].spawns.length)
+    expect(configLvl6.waves[2].spawns.length).toBeGreaterThan(configLvl1.waves[2].spawns.length)
+
+    // Level 6 includes ghostpepper in its pool
+    expect(configLvl6.allowedPlants).toContain('ghostpepper')
+
+    // Level 6 Wave 3 features simultaneous multi-lane incursions (multiple spawns at the same tick)
+    const wave3Spawns = configLvl6.waves[2].spawns
+    const spawnTicks = wave3Spawns.map((s) => s.tick)
+    const hasSimultaneousSpawns = spawnTicks.some((tick, idx) => spawnTicks.indexOf(tick) !== idx)
+    expect(hasSimultaneousSpawns).toBe(true)
+
+    // Level 6 has higher HP and Damage multipliers due to level pressure bonus
+    const w3FirstSpawn = wave3Spawns[0]
+    expect(w3FirstSpawn.hpMultiplier).toBeGreaterThan(1.2)
+    expect(w3FirstSpawn.damageMultiplier).toBeGreaterThan(1.15)
+  })
 })

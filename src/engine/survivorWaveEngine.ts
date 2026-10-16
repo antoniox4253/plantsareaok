@@ -117,14 +117,19 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
     return pool[Math.min(idx, pool.length - 1)]
   }
 
-  // Multiplicadores leves de salud y daño que escalan gradualmente con el nivel
-  const hpMult = 1 + Math.max(0, level - 1) * 0.04
-  const dmgMult = 1 + Math.max(0, level - 1) * 0.03
+  // Multiplicadores de salud y daño que escalan gradualmente con el nivel
+  // A partir de Nivel 6 se introduce un multiplicador adicional de presión
+  const levelBonus = level >= 6 ? (level - 5) * 0.04 : 0
+  const hpMult = 1 + Math.max(0, level - 1) * 0.04 + levelBonus
+  const dmgMult = 1 + Math.max(0, level - 1) * 0.03 + levelBonus
 
   // ── OLEADA 1: SUAVE ────────────────────────────────────────────────────────
   // Comienza a los 25 segundos (tick 750) para dar tiempo a plantar girasoles y economía inicial.
-  // Genera entre 2 y 4 plantas separadas por 4 a 6 segundos (120 a 180 ticks).
-  const wave1Count = Math.min(4, 2 + Math.floor(level / 8))
+  // Niveles 1-5: 2 a 4 plantas espaciadas ampliamente.
+  // Niveles 6+: 3 a 6 plantas con cadencia más ágil.
+  const wave1Count = level >= 6
+    ? Math.min(6, 3 + Math.floor((level - 5) / 3))
+    : Math.min(4, 2 + Math.floor(level / 8))
   const wave1Spawns: SurvivorEnemySpawn[] = []
   let w1Tick = 750 // 25s de gracia inicial para plantar girasoles
 
@@ -139,7 +144,8 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
       hpMultiplier: hpMult,
       damageMultiplier: dmgMult,
     })
-    w1Tick += 120 + Math.floor(nextRng() * 60) // 4s a 6s
+    const w1Delay = level >= 6 ? (90 + Math.floor(nextRng() * 45)) : (120 + Math.floor(nextRng() * 60))
+    w1Tick += w1Delay
   }
 
   const wave1: SurvivorWave = {
@@ -151,9 +157,11 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
   }
 
   // ── OLEADA 2: DIFÍCIL ──────────────────────────────────────────────────────
-  // Comienza a los ~53 segundos (tick 1600) o cuando se limpien los enemigos previos.
-  // Genera entre 4 y 7 plantas con mayor frecuencia (2.5s a 3.5s / 75 a 105 ticks).
-  const wave2Count = Math.min(7, 4 + Math.floor(level / 5))
+  // Comienza tras limpiar la oleada previa o tick programado.
+  // Niveles 6+: mayor densidad de plantas y menor tiempo de espera entre ataques.
+  const wave2Count = level >= 6
+    ? Math.min(10, 6 + Math.floor((level - 5) / 2))
+    : Math.min(7, 4 + Math.floor(level / 5))
   const wave2Spawns: SurvivorEnemySpawn[] = []
   let w2Tick = Math.max(w1Tick + 90, 1600)
 
@@ -168,7 +176,8 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
       hpMultiplier: hpMult,
       damageMultiplier: dmgMult,
     })
-    w2Tick += 75 + Math.floor(nextRng() * 30) // 2.5s a 3.5s
+    const w2Delay = level >= 6 ? (55 + Math.floor(nextRng() * 25)) : (75 + Math.floor(nextRng() * 30))
+    w2Tick += w2Delay
   }
 
   const wave2: SurvivorWave = {
@@ -180,9 +189,12 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
   }
 
   // ── OLEADA 3: ¡CON PRESIÓN! (OLEADA FINAL) ─────────────────────────────────
-  // Comienza alrededor del segundo 83 (tick 2500).
-  // Genera entre 6 y 12 plantas en oleadas densas rápidas (1.5s a 2.5s / 45 a 75 ticks).
-  const wave3Count = Math.min(12, 6 + Math.floor(level / 3))
+  // Horda final de asalto masivo.
+  // A partir del Nivel 6: oleada densa, cadencia rápida (1s a 1.6s) e incursiones
+  // simultáneas en múltiples carriles para exigir defensas completas al jugador.
+  const wave3Count = level >= 6
+    ? Math.min(18, 9 + Math.floor((level - 5) * 0.8))
+    : Math.min(12, 6 + Math.floor(level / 3))
   const wave3Spawns: SurvivorEnemySpawn[] = []
   let w3Tick = Math.max(w2Tick + 90, 2500)
   const wave3StartTick = w3Tick
@@ -219,8 +231,24 @@ export function generateSurvivorLevel(level: number, seed: number): SurvivorLeve
       hpMultiplier: hpMult,
       damageMultiplier: dmgMult,
     })
-    // Enjambre rápido: cada 45 a 70 ticks (1.5s a 2.3s)
-    w3Tick += 45 + Math.floor(nextRng() * 25)
+
+    // Desde Nivel 6+: Cada 3 plantas en la oleada final se envía un atacante simultáneo en otro carril
+    if (level >= 6 && i > 0 && i % 3 === 0) {
+      const secondLane = (lane + 1 + Math.floor(nextRng() * (lanesCount - 1))) % lanesCount
+      const secondPlantId = pickPlant(allowedPlants)
+      wave3Spawns.push({
+        tick: w3Tick,
+        lane: secondLane,
+        plantId: secondPlantId,
+        moveSpeed: getCustomMoveSpeed(secondPlantId),
+        hpMultiplier: hpMult,
+        damageMultiplier: dmgMult,
+      })
+    }
+
+    // Enjambre rápido: cada 35 a 55 ticks (1.1s a 1.8s) en Nivel 6+, o 45 a 70 ticks antes
+    const w3Delay = level >= 6 ? (35 + Math.floor(nextRng() * 20)) : (45 + Math.floor(nextRng() * 25))
+    w3Tick += w3Delay
   }
 
   const wave3: SurvivorWave = {

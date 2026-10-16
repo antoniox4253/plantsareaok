@@ -49,7 +49,6 @@ import { trackGameOver, trackGameStart } from '../../utils/analytics'
 import GoldIcon from '../Common/GoldIcon'
 import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import { ArenaAdsManager, getBotStatsForLevel } from '../../utils/arenaAdsManager'
-import ArenaAdsInterstitialModal from '../ArenaAds/ArenaAdsInterstitialModal'
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { plantsTokenService } from '../../services/plantsTokenService'
 import { setCombatAdsBlocked, resetPopunderQuota, activateMonetagVignette } from '../../utils/arenaAdsNetwork'
@@ -282,7 +281,7 @@ export default function Battlefield({
   arenaAdsRun = null,
   onArenaAdsAdvance,
   onArenaAdsRetreat,
-  onArenaAdsRevive,
+  onArenaAdsRevive: _onArenaAdsRevive,
   treeLevels = null,
   treeSkins = null,
 }: BattlefieldProps) {
@@ -670,9 +669,6 @@ export default function Battlefield({
   const [raidPrepNotice, setRaidPrepNotice] = useState<string | null>(null)
   const hasClanFortressStartedRef = useRef<boolean>(false)
 
-  const [showArenaAdsInterstitial, setShowArenaAdsInterstitial] = useState<boolean>(false)
-  const [arenaAdsModalMode, setArenaAdsModalMode] = useState<'victory' | 'defeat'>('victory')
-  const [isRevivingArenaAds, setIsRevivingArenaAds] = useState<boolean>(false)
   const [currentArenaAdsRun, setCurrentArenaAdsRun] = useState<ArenaAdsRun | null>(
     () => arenaAdsRun || ArenaAdsManager.getStoredRun()
   )
@@ -1859,8 +1855,6 @@ export default function Battlefield({
             updated.conservedSuns = remainingSuns
             ArenaAdsManager.saveRun(updated)
             setCurrentArenaAdsRun(updated)
-            setArenaAdsModalMode('victory')
-            // El cuadro de nivel superado se mostrará tras pulsar avanzar en la pantalla de resultado
 
             const runStarted = updated.startedAt || updated.createdAt
             const playtimeSeconds = runStarted
@@ -1895,8 +1889,6 @@ export default function Battlefield({
             }
             ArenaAdsManager.saveRun(run)
             setCurrentArenaAdsRun(run)
-            setArenaAdsModalMode('defeat')
-            // Se muestra directamente la pantalla de derrota con su botín ganado
 
             const runStarted = run.startedAt || run.createdAt
             const playtimeSeconds = runStarted
@@ -2232,10 +2224,42 @@ export default function Battlefield({
               return
             }
           } else {
-            // El jugador ya vio el resultado de batalla y pulsa avanzar:
-            // Se abre el cuadro de Nivel Superado para proceder al siguiente nivel
-            setArenaAdsModalMode('victory')
-            setShowArenaAdsInterstitial(true)
+            // Avanzar DIRECTAMENTE al siguiente nivel sin ningún segundo modal
+            resetPopunderQuota()
+            const conservedSuns = Math.max(250, run.conservedSuns ?? sunBank ?? 250)
+            const nextRun = ArenaAdsManager.advanceToNextLevel(run, conservedSuns)
+            setCurrentArenaAdsRun(nextRun)
+            ArenaAdsManager.saveRun(nextRun)
+            if (onArenaAdsAdvance) {
+              onArenaAdsAdvance(nextRun)
+            }
+            const nextSeed = Math.floor(Math.random() * 1000000)
+            const adsBotStats = getBotStatsForLevel(nextRun.level)
+            const rivalBonusHp = Math.max(0, adsBotStats.botBaseHp - 1000)
+            startGame(
+              nextSeed,
+              false,
+              undefined,
+              adsBotStats.botElo,
+              undefined,
+              { mio: mazoMioParsed, rival: adsBotStats.botDeck },
+              undefined,
+              undefined,
+              'auth-v2',
+              treeBonusHpRef.current,
+              rivalBonusHp,
+              treeSkinRef.current,
+              rivalTreeSkinRef.current,
+              undefined,
+              undefined,
+              undefined,
+              nextRun.conservedSuns ?? 250,
+              undefined,
+              undefined,
+              undefined,
+              true,
+              nextRun.level
+            )
             return
           }
         }
@@ -4245,108 +4269,6 @@ export default function Battlefield({
           </div>
       )})()}
 
-      {/* ARENA ADS INTERSTITIAL POPUP (VICTORIA O REVIVIR TRAS DERROTA) */}
-      {matchMode === 'arena_ads' && showArenaAdsInterstitial && currentArenaAdsRun && (
-        <ArenaAdsInterstitialModal
-          isOpen={showArenaAdsInterstitial}
-          mode={arenaAdsModalMode}
-          levelCleared={currentArenaAdsRun.level}
-          accumulatedLoot={currentArenaAdsRun.accumulatedRewards}
-          conservedSuns={currentArenaAdsRun.conservedSuns ?? Math.max(250, sunBank)}
-          multiplier={currentArenaAdsRun.multiplier}
-          isReviving={isRevivingArenaAds}
-          onNextLevel={() => {
-            activateMonetagVignette()
-            setShowArenaAdsInterstitial(false)
-            resetPopunderQuota()
-            if (currentArenaAdsRun.level >= 50) {
-              if (onArenaAdsRetreat) {
-                onArenaAdsRetreat(
-                  currentArenaAdsRun.accumulatedRewards,
-                  currentArenaAdsRun.multiplier || 1,
-                  currentArenaAdsRun.newlyClaimedLevels
-                )
-              }
-              return
-            }
-            const conservedSuns = Math.max(250, currentArenaAdsRun.conservedSuns ?? sunBank ?? 250)
-            const nextRun = ArenaAdsManager.advanceToNextLevel(currentArenaAdsRun, conservedSuns)
-            setCurrentArenaAdsRun(nextRun)
-            ArenaAdsManager.saveRun(nextRun)
-            if (onArenaAdsAdvance) {
-              onArenaAdsAdvance(nextRun)
-            }
-            const nextSeed = Math.floor(Math.random() * 1000000)
-            const adsBotStats = getBotStatsForLevel(nextRun.level)
-            const rivalBonusHp = Math.max(0, adsBotStats.botBaseHp - 1000)
-            startGame(
-              nextSeed,
-              false,
-              undefined,
-              adsBotStats.botElo,
-              undefined,
-              { mio: mazoMioParsed, rival: adsBotStats.botDeck },
-              undefined,
-              undefined,
-              'auth-v2',
-              treeBonusHpRef.current,
-              rivalBonusHp,
-              treeSkinRef.current,
-              rivalTreeSkinRef.current,
-              undefined,
-              undefined,
-              undefined,
-              nextRun.conservedSuns ?? 250,
-              undefined,
-              undefined,
-              undefined,
-              true,
-              nextRun.level
-            )
-          }}
-          onCashout={() => {
-            activateMonetagVignette()
-            setShowArenaAdsInterstitial(false)
-            if (onArenaAdsRetreat && currentArenaAdsRun) {
-              onArenaAdsRetreat(
-                currentArenaAdsRun.accumulatedRewards,
-                currentArenaAdsRun.multiplier || 1,
-                currentArenaAdsRun.newlyClaimedLevels
-              )
-            } else {
-              ArenaAdsManager.clearRun()
-              setCurrentArenaAdsRun(null)
-              if (onBackToMenu) {
-                onBackToMenu()
-              }
-            }
-          }}
-          onRevive={async () => {
-            setIsRevivingArenaAds(true)
-            try {
-              const res = await arenaAdsService.reviveArenaAds()
-              if (!res.success) {
-                alert(res.error || 'No se pudo revivir. Verifica tu saldo de Gemas.')
-                return
-              }
-              if (onArenaAdsRevive) {
-                onArenaAdsRevive(res.cost || 150)
-              }
-              resetPopunderQuota()
-              const revivedRun = ArenaAdsManager.reviveRun(currentArenaAdsRun)
-              setCurrentArenaAdsRun(revivedRun)
-              setShowArenaAdsInterstitial(false)
-              if (onArenaAdsAdvance) {
-                onArenaAdsAdvance(revivedRun)
-              } else if (onBackToMenu) {
-                onBackToMenu()
-              }
-            } finally {
-              setIsRevivingArenaAds(false)
-            }
-          }}
-        />
-      )}
 
       {/* Strategic Playtest Post-Match Evaluation Modal */}
       {matchMode === 'strategic_test' && currentPlaytestLog && (
