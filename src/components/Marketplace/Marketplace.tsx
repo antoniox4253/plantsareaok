@@ -292,6 +292,7 @@ export default function Marketplace({
         'ironman_suit',
         'gold_24k',
         'samurai_armor',
+        'commando_bandana',
       ]
       order.forEach((fId) => {
         const qty = Number(farmingItems[fId] || 0)

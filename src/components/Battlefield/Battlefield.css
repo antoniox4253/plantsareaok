@@ -3035,6 +3035,83 @@ div[style*="fixed"][style*="bottom:1"] {
   pointer-events: none;
 }
 
+/* ==============================================================================
+   COMMANDO PEASHOOTER (Lanzaguisantes Comando) - AURA DE FURIA +35% VELOCIDAD
+   ============================================================================== */
+.plant-unit--commando-fury .plant-unit__sprite,
+.plant-unit--commando-fury .enemy-unit__sprite {
+  filter: drop-shadow(0 0 10px #ff4500) drop-shadow(0 0 22px #ffa500) brightness(1.22);
+  animation: commandoUnitSurge 0.35s ease-in-out infinite alternate;
+}
+
+.commando-fury-aura {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 78px;
+  height: 78px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 69, 0, 0.5) 0%, rgba(255, 140, 0, 0.3) 50%, rgba(255, 215, 0, 0) 80%);
+  box-shadow: 0 0 22px rgba(255, 69, 0, 0.7), inset 0 0 16px rgba(255, 215, 0, 0.6);
+  pointer-events: none;
+  z-index: 5;
+  animation: commandoFuryPulse 0.4s ease-in-out infinite alternate;
+}
+
+.commando-fury-badge {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: linear-gradient(135deg, #b91c1c 0%, #ea580c 50%, #d97706 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1.5px solid #fde047;
+  box-shadow: 0 0 14px rgba(234, 88, 12, 0.9), 0 2px 6px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 6px #ea580c;
+  z-index: 65;
+  animation: commandoBadgeFloat 0.5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes commandoFuryPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.92);
+    opacity: 0.75;
+    filter: brightness(1);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+    filter: brightness(1.4);
+  }
+}
+
+@keyframes commandoUnitSurge {
+  0% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes commandoBadgeFloat {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(0.97);
+  }
+  100% {
+    transform: translateX(-50%) translateY(-3px) scale(1.03);
+  }
+}
+
+
 
 
 

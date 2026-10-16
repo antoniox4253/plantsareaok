@@ -67,6 +67,7 @@ const DEMO_INVENTORY: FarmingInventory = {
   ironman_suit: 0,
   gold_24k: 0,
   samurai_armor: 0,
+  commando_bandana: 0,
 }
 
 const INVENTORY_ORDER: FarmingItemId[] = [

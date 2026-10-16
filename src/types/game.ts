@@ -90,6 +90,9 @@ export interface PlantEntity {
   equippedItem?: string | null
   chewingUntilTick?: number
   lastBaseAttackTime?: number
+  isCommandoAura?: boolean
+  commandoAuraEndTick?: number
+  nextCommandoAuraTick?: number
 }
 
 export type EnemyPlantType =

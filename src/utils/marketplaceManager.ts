@@ -38,6 +38,7 @@ export const FARMING_ITEM_MIN_PRICES: Record<FarmingItemId, number> = {
   ironman_suit: 10,
   gold_24k: 10,
   samurai_armor: 10,
+  commando_bandana: 10,
 }
 
 export function getFarmingItemMinPrice(_itemId: FarmingItemId): number {

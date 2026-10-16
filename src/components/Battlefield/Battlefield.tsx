@@ -3111,7 +3111,9 @@ export default function Battlefield({
                   ? 'plant-unit--toadstool plant-unit--toadstool-chewing'
                   : 'plant-unit--toadstool'
                 : ''
-            } ${plant.state === 'attacking' ? 'plant-unit--attacking' : ''}`}
+            } ${plant.state === 'attacking' ? 'plant-unit--attacking' : ''} ${
+              plant.isCommandoAura ? 'plant-unit--commando-fury' : ''
+            }`}
             style={{
               left: `${plant.x}%`,
               top: `${laneConfig.topPct + laneConfig.heightPct / 2}%`,
@@ -3245,6 +3247,12 @@ export default function Battlefield({
             {plant.plantId === 'toadstool' && plant.state === 'chewing' && (
               <div className="toadstool-chewing-badge">🍄 Digeriendo (+50 ☀️)...</div>
             )}
+            {plant.isCommandoAura && (
+              <>
+                <div className="commando-fury-aura" />
+                <div className="commando-fury-badge">🔥 ¡FURIA +35% VELOCIDAD!</div>
+              </>
+            )}
           </div>
         )
       })}
@@ -3347,7 +3355,9 @@ export default function Battlefield({
                 : ''
             } ${
               enemy.state === 'attacking' ? 'enemy-unit--attacking' : ''
-            } ${isFrozen ? 'enemy-unit--frozen' : ''}`}
+            } ${isFrozen ? 'enemy-unit--frozen' : ''} ${
+              enemy.isCommandoAura ? 'plant-unit--commando-fury' : ''
+            }`}
             style={{
               left: `${enemy.x}%`,
               top: `${laneConfig.topPct + laneConfig.heightPct / 2}%`,
@@ -3407,6 +3417,12 @@ export default function Battlefield({
             )}
             {enemy.plantId === 'toadstool' && enemy.state === 'chewing' && (
               <div className="toadstool-chewing-badge">🍄 Digeriendo...</div>
+            )}
+            {enemy.isCommandoAura && (
+              <>
+                <div className="commando-fury-aura" />
+                <div className="commando-fury-badge">🔥 ¡FURIA +35% VELOCIDAD!</div>
+              </>
             )}
           </div>
         )

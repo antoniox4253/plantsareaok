@@ -161,6 +161,11 @@ export function crearPlantaDelRival(
     lastActionTime: state.tick,
     spriteOverride: config.sprite !== PLANT_CONFIGS[plantId]?.sprite ? config.sprite : undefined,
     equippedItem: equippedItem ?? undefined,
+    isCommandoAura: false,
+    nextCommandoAuraTick:
+      plantId === 'peashooter' && equippedItem === 'commando_bandana'
+        ? state.tick + msToTicks(15000)
+        : undefined,
   }
   return entidad
 }
@@ -205,6 +210,11 @@ export function crearPlantaPropia(
     lastActionTime: state.tick,
     spriteOverride: config.sprite !== PLANT_CONFIGS[plantId]?.sprite ? config.sprite : undefined,
     equippedItem: equippedItem ?? undefined,
+    isCommandoAura: false,
+    nextCommandoAuraTick:
+      plantId === 'peashooter' && equippedItem === 'commando_bandana'
+        ? state.tick + msToTicks(15000)
+        : undefined,
   }
 }
 
@@ -766,6 +776,24 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
 
     const config = getScaledPlantConfig(planta.plantId, planta.statRolls ?? [], planta.equippedItem)
 
+    // ── GESTIÓN DE AURA COMMANDO (Lanzaguisantes Comando) ─────────────────────
+    if (planta.plantId === 'peashooter' && planta.equippedItem === 'commando_bandana') {
+      if (planta.nextCommandoAuraTick === undefined) {
+        planta.nextCommandoAuraTick = state.tick + msToTicks(15000)
+      }
+      if (!planta.isCommandoAura) {
+        if (state.tick >= planta.nextCommandoAuraTick) {
+          planta.isCommandoAura = true
+          planta.commandoAuraEndTick = state.tick + msToTicks(5000)
+          planta.nextCommandoAuraTick = planta.commandoAuraEndTick + msToTicks(15000)
+        }
+      } else {
+        if (planta.commandoAuraEndTick !== undefined && state.tick >= planta.commandoAuraEndTick) {
+          planta.isCommandoAura = false
+        }
+      }
+    }
+
     // ── CONGELADA ─────────────────────────────────────────────────────────────
     if (planta.frozenUntil !== undefined) {
       if (state.tick < planta.frozenUntil) {
@@ -942,7 +970,12 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
 
     // ── DISPARO A DISTANCIA ───────────────────────────────────────────────────
     if (config?.category === 'ranged') {
-      if (state.tick - planta.lastActionTime > msToTicks(config.attackSpeedMs || 1200)) {
+      let cadenciaMs = config.attackSpeedMs || 1200
+      if (planta.isCommandoAura) {
+        // Aumenta la velocidad de disparo un 35% más (reduce el intervalo entre disparos un 35%)
+        cadenciaMs = Math.round(cadenciaMs * 0.65)
+      }
+      if (state.tick - planta.lastActionTime > msToTicks(cadenciaMs)) {
         planta.lastActionTime = state.tick
 
         let tipo: ProjectileEntity['type'] = 'pea'

@@ -877,6 +877,22 @@ export const EQUIPPABLE_PLANT_ITEMS: Record<string, EquippablePlantItemDef> = {
       packetDisabled: '/game-assets/skins/squashsamurai.webp',
     }),
   },
+  commando_bandana: {
+    id: 'commando_bandana',
+    name: 'Bandana de Comando',
+    emoji: '🎖️',
+    targetPlantId: 'peashooter',
+    equippedPlantName: 'Lanzaguisantes Comando',
+    description: 'Bandana táctica para Lanzaguisantes. Cada 15s entra en Furia de Combate durante 5s aumentando un 35% su velocidad de disparo.',
+    statBonusText: 'Aura Furia (+35% Vel. Disparo c/15s)',
+    applyStats: (scaled) => ({
+      ...scaled,
+      sprite: '/game-assets/skins/peashooter_commando.webp',
+      icon: '/game-assets/skins/peashooter_commando.webp',
+      packetActive: '/game-assets/skins/peashooter_commando.webp',
+      packetDisabled: '/game-assets/skins/peashooter_commando.webp',
+    }),
+  },
 }
 
 export function getEquippableItemDef(itemId?: string | null): EquippablePlantItemDef | undefined {

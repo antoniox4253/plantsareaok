@@ -21,6 +21,7 @@ export type FarmingItemId =
   | 'ironman_suit'
   | 'gold_24k'
   | 'samurai_armor'
+  | 'commando_bandana'
 
 export interface FarmingInventory {
   water: number
@@ -43,6 +44,7 @@ export interface FarmingInventory {
   ironman_suit: number
   gold_24k: number
   samurai_armor: number
+  commando_bandana: number
 }
 
 export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
@@ -66,6 +68,7 @@ export const EMPTY_FARMING_INVENTORY: FarmingInventory = {
   ironman_suit: 0,
   gold_24k: 0,
   samurai_armor: 0,
+  commando_bandana: 0,
 }
 
 export const FARMING_ITEM_DEFINITIONS: Record<
@@ -191,6 +194,12 @@ export const FARMING_ITEM_DEFINITIONS: Record<
     description: 'Armadura y katana samurái para Squash. Reduce 1.5 segundos su tiempo de recarga.',
     icon: '/game-assets/farming/samurai_armor.webp',
     fallback: '⚔️',
+  },
+  commando_bandana: {
+    label: 'Bandana de Comando',
+    description: 'Bandana táctica exclusiva de Lanzaguisantes. Cada 15s entra en Furia de Combate durante 5s aumentando un 35% su velocidad de disparo.',
+    icon: '/game-assets/farming/commando_bandana.webp',
+    fallback: '🎖️',
   },
 }
 
