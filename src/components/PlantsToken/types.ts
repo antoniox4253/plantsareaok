@@ -52,4 +52,6 @@ export interface TokenHubSharedProps {
   onRefreshData: () => Promise<void>
   showNotification: (message: string, type?: 'success' | 'error' | 'info') => void
   onOpenMintingHistory?: () => void
+  onOpenBattlePass?: () => void
+  onBuyVipPass?: () => Promise<{ success: boolean; error?: string }> | void
 }

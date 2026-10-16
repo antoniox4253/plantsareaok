@@ -77,6 +77,7 @@ function App() {
     return 'packs'
   })
   const [plantsTokenInitialTab, setPlantsTokenInitialTab] = useState<'summary' | 'presale' | 'vesting' | 'swap' | 'tokenomics' | 'guide'>('summary')
+  const [passReturnScreen, setPassReturnScreen] = useState<'menu' | 'plants-token'>('menu')
 
 
   /**
@@ -1535,7 +1536,10 @@ function App() {
             onOpenJardin={handleOpenJardin}
             onOpenShop={handleOpenShop}
             onOpenRanking={handleOpenRanking}
-            onOpenBattlePass={() => setScreen('pass')}
+            onOpenBattlePass={() => {
+              setPassReturnScreen('menu')
+              setScreen('pass')
+            }}
             onOpenClan={() => setScreen('clan')}
             onOpenMarketplace={() => setScreen('market')}
             onOpenMisiones={() => setScreen('misiones')}
@@ -1797,9 +1801,12 @@ function App() {
               <button
                 type="button"
                 className="ranking-back-btn"
-                onClick={() => setScreen('menu')}
+                onClick={() => {
+                  setScreen(passReturnScreen)
+                  setPassReturnScreen('menu')
+                }}
               >
-                ⬅ VOLVER AL MENÚ
+                {passReturnScreen === 'plants-token' ? '⬅ VOLVER A TOKEN PLANTS' : '⬅ VOLVER AL MENÚ'}
               </button>
               <div className="ranking-header__center">
                 <h1 className="ranking-title">👑 PASE DE TEMPORADA VIP</h1>
@@ -2009,6 +2016,11 @@ function App() {
             isAdmin={isAdmin}
             onOpenAdmin={() => setIsAdminPanelOpen(true)}
             onOpenBetaInfo={() => setIsBetaPhaseModalOpen(true)}
+            onOpenBattlePass={() => {
+              setPassReturnScreen('plants-token')
+              setScreen('pass')
+            }}
+            onBuyVipPass={handleBuyVipPassDirect}
             onSignOut={async () => {
               await signOut()
               setScreen('landing')

@@ -25,6 +25,7 @@ import { getPlayerAvatarUrl } from '../../utils/userManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
 import { BATTLE_PASS_LEVELS } from '../../utils/battlePassManager'
 import ProfileModal from '../ProfileModal/ProfileModal'
+import KeybindingsModal from '../KeybindingsModal/KeybindingsModal'
 import './PlantsTokenHub.css'
 
 interface PlantsTokenHubProps {
@@ -52,6 +53,8 @@ interface PlantsTokenHubProps {
   isAdmin?: boolean
   onOpenAdmin?: () => void
   onOpenBetaInfo?: () => void
+  onOpenBattlePass?: () => void
+  onBuyVipPass?: () => Promise<{ success: boolean; error?: string }> | void
   onSignOut?: () => void
 }
 
@@ -70,6 +73,8 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   isAdmin = false,
   onOpenAdmin,
   onOpenBetaInfo,
+  onOpenBattlePass,
+  onBuyVipPass,
   onSignOut,
 }) => {
   const [activeTab, setActiveTab] = useState<TokenTabType>(initialTab)
@@ -80,6 +85,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     }
   }, [initialTab])
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isKeybindingsOpen, setIsKeybindingsOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isMintingModalOpen, setIsMintingModalOpen] = useState(false)
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
@@ -370,6 +376,8 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
       soundManager.playSound('click', 0.5)
       setIsMintingModalOpen(true)
     },
+    onOpenBattlePass,
+    onBuyVipPass,
   }
 
   const claimableNow = vestingSummary?.claimablePlantsNow ?? 0
@@ -421,14 +429,25 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
               <span className="token-topbar-player-name">{displayName}</span>
             </button>
 
-            {/* 2. Pase de Batalla */}
-            <div
+            {/* 2. Pase de Batalla / VIP */}
+            <button
+              type="button"
               className={`token-topbar-pill token-topbar-pill--vip ${!hasVipPass ? 'token-topbar-pill--vip-locked' : ''}`}
+              data-action="pase-vip"
+              aria-label="pase vip"
               title={
                 hasVipPass
-                  ? `Pase de Batalla VIP Activo — Nivel ${highestLevelReached}/20 (${currentPassXp.toLocaleString()} / 3,300 XP)`
-                  : `Pase VIP — ${currentPassXp.toLocaleString()} XP acumulada (${highestLevelReached}/20 niveles alcanzados listos para cobrar)`
+                  ? `Pase VIP Activo — Nivel ${highestLevelReached}/20 (${currentPassXp.toLocaleString()} / 3,300 XP). Clic para ver recompensas.`
+                  : `Pase VIP — ${currentPassXp.toLocaleString()} XP acumulada (${highestLevelReached}/20 niveles alcanzados listos para cobrar). Clic para ver y activar.`
               }
+              onClick={() => {
+                soundManager.playSound('click', 0.5)
+                if (onOpenBattlePass) {
+                  onOpenBattlePass()
+                } else if (onBuyVipPass) {
+                  void onBuyVipPass()
+                }
+              }}
             >
               <span className="token-topbar-vip-crown" role="img" aria-label={hasVipPass ? 'Corona' : 'Pase VIP'}>
                 {hasVipPass ? '👑' : '🎁'}
@@ -451,7 +470,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
                   />
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* 3. Energía */}
             <div className="token-topbar-pill token-topbar-pill--energy" title="Energía">
@@ -632,6 +651,16 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
                 className="bosque-settings-menu__btn"
                 onClick={() => {
                   setIsSettingsOpen(false)
+                  setIsKeybindingsOpen(true)
+                }}
+              >
+                🎮 Controles de Teclado
+              </button>
+              <button
+                type="button"
+                className="bosque-settings-menu__btn"
+                onClick={() => {
+                  setIsSettingsOpen(false)
                   setIsProfileModalOpen(true)
                 }}
               >
@@ -708,6 +737,12 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
         <TokenMintingHistoryModal
           isOpen={isMintingModalOpen}
           onClose={() => setIsMintingModalOpen(false)}
+        />
+
+        {/* Controles de Teclado */}
+        <KeybindingsModal
+          isOpen={isKeybindingsOpen}
+          onClose={() => setIsKeybindingsOpen(false)}
         />
       </div>
     </div>

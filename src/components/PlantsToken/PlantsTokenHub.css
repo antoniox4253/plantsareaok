@@ -137,8 +137,22 @@
 }
 
 .token-topbar-pill--vip {
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  color: inherit;
   padding: 0 8px;
   gap: 8px;
+}
+
+.token-topbar-pill--vip:hover {
+  border-color: #facc15 !important;
+  box-shadow: inset 0 0 10px rgba(250, 204, 21, 0.25), 0 0 14px rgba(250, 204, 21, 0.45) !important;
+  transform: scale(1.02);
+}
+
+.token-topbar-pill--vip:active {
+  transform: scale(0.98);
 }
 
 .token-topbar-pill--settings {

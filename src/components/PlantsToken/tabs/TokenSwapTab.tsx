@@ -29,6 +29,8 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   userElo = 1000,
   isArena3Plus = false,
   onOpenMintingHistory,
+  onOpenBattlePass,
+  onBuyVipPass,
 }) => {
   const [swapMode, setSwapMode] = useState<'usdt' | 'gems' | 'withdraw'>('usdt')
   const [amountStr, setAmountStr] = useState<string>(liquidPlants > 0 ? String(Math.floor(liquidPlants)) : '1000')
@@ -307,8 +309,14 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
 
         {/* FRANJA HORARIA DE RETIRO */}
         <article
-          className="summary-kpi-card"
-          title={hasVipPass ? 'Pase VIP activo: franja de revisión de 24 horas' : 'Cuenta Gratuita: franja estándar de 72 horas'}
+          className={`summary-kpi-card ${!hasVipPass && (onOpenBattlePass || onBuyVipPass) ? 'summary-kpi-card--clickable' : ''}`}
+          title={
+            hasVipPass
+              ? 'Pase VIP activo: franja de revisión prioritaria de 24 horas'
+              : 'Cuenta Gratuita: franja estándar de 72 horas (Clic para ver y activar Pase VIP)'
+          }
+          onClick={!hasVipPass ? (onOpenBattlePass || onBuyVipPass) : undefined}
+          style={!hasVipPass && (onOpenBattlePass || onBuyVipPass) ? { cursor: 'pointer' } : undefined}
         >
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--mint">
             <span className="summary-kpi-emoji">{hasVipPass ? '👑' : '🛡️'}</span>
@@ -395,9 +403,14 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
               </div>
 
               {/* Notice de Franja Horaria y Requisito Arena */}
-              <div className={`swap-tier-notice ${hasVipPass ? 'swap-tier-notice--vip' : 'swap-tier-notice--free'}`}>
+              <div
+                className={`swap-tier-notice ${hasVipPass ? 'swap-tier-notice--vip' : 'swap-tier-notice--free'}`}
+                style={!hasVipPass && (onOpenBattlePass || onBuyVipPass) ? { cursor: 'pointer' } : undefined}
+                onClick={!hasVipPass ? (onOpenBattlePass || onBuyVipPass) : undefined}
+                title={!hasVipPass ? 'Clic para ver y activar Pase VIP (Franja 24h prioritaria)' : undefined}
+              >
                 <span>{hasVipPass ? '👑 Cuenta VIP:' : '🛡️ Cuenta Free:'}</span>
-                <span>{hasVipPass ? 'Franja de retiro prioritaria (24 horas)' : 'Franja de retiro estándar (72 horas)'}</span>
+                <span>{hasVipPass ? 'Franja de retiro prioritaria (24 horas)' : 'Franja de retiro estándar (72 horas) — Activar VIP ➔'}</span>
               </div>
 
               {!isArena3Plus && userElo < 2001 ? (
