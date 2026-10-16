@@ -35,4 +35,32 @@ describe('Matchmaking _create_room Signature & Queue Status Hardening', () => {
     expect(sql128).toContain('v_room := public._create_room(p_mode, v_cand.user_id, v_fila.user_id, p_bet);')
     expect(sql128).toContain('v_room := public._create_room(p_mode, v_fila.user_id, v_cand.user_id, p_bet);')
   })
+
+  it('Verifica que la migración 329 corrige el INSERT de game_rooms (sin p1_elo/p2_elo, status playing, is_async_match false)', () => {
+    const m329Path = path.resolve(__dirname, '../../supabase/migrations/329-fix-create-room-human-matchmaking.sql')
+    expect(fs.existsSync(m329Path)).toBe(true)
+    const sql329 = fs.readFileSync(m329Path, 'utf8')
+
+    // 1. No debe insertar columnas inexistentes en la lista de columnas de game_rooms
+    const insertColsMatch = sql329.match(/INSERT\s+INTO\s+public\.game_rooms\s*\(([\s\S]*?)\)\s*VALUES/i)
+    expect(insertColsMatch).not.toBeNull()
+    const cols = insertColsMatch![1]
+    expect(cols).not.toMatch(/\bp1_elo\b/i)
+    expect(cols).not.toMatch(/\bp2_elo\b/i)
+
+    // 2. Status debe ser 'playing' (nunca 'waiting', para cumplir check constraint)
+    expect(sql329).toContain("'playing'")
+    expect(sql329).not.toMatch(/INSERT\s+INTO\s+public\.game_rooms[\s\S]*?'waiting'/i)
+
+    // 3. is_async_match debe ser explícitamente FALSE para salas humanas
+    expect(sql329).toContain('is_async_match')
+    expect(sql329).toContain('FALSE')
+
+    // 4. Debe incluir los árboles y skins
+    expect(sql329).toContain('p1_tree_level')
+    expect(sql329).toContain('p2_tree_level')
+    expect(sql329).toContain('p1_tree_skin')
+    expect(sql329).toContain('p2_tree_skin')
+  })
 })
+
