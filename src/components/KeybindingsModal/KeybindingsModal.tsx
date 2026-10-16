@@ -28,8 +28,8 @@ const ACTIONS: ActionMeta[] = [
   { key: 'slot4', label: 'Planta 4', icon: '🥊', category: 'cards' },
   { key: 'slot5', label: 'Planta 5', icon: '🌽', category: 'cards' },
   { key: 'slot6', label: 'Planta 6', icon: '🍈', category: 'cards' },
-  { key: 'shovel', label: 'Pala (Quitar Planta)', icon: '🪓', category: 'tools' },
-  { key: 'cancel', label: 'Cancelar / Deseleccionar', icon: '❌', category: 'tools' },
+  { key: 'shovel', label: 'Pala', icon: '🪓', category: 'tools' },
+  { key: 'cancel', label: 'Cancelar', icon: '❌', category: 'tools' },
 ]
 
 const RESERVED_KEYS = new Set([
@@ -171,12 +171,37 @@ export default function KeybindingsModal({ isOpen, onClose }: KeybindingsModalPr
   return (
     <div className="keybindings-modal-backdrop" onClick={onClose}>
       <div className="keybindings-modal-card" onClick={(e) => e.stopPropagation()}>
-        {/* Cabecera */}
-        <div className="keybindings-modal__header">
-          <div className="keybindings-modal__header-left">
-            <span className="keybindings-modal__header-icon">🎮</span>
-            <h3 className="keybindings-modal__title">CONTROLES DE COMBATE</h3>
+        {/* Cabecera compacta con Título y Presets en la misma barra superior */}
+        <div className="keybindings-modal__topbar">
+          <div className="keybindings-modal__title-box">
+            <span className="keybindings-modal__icon">🎮</span>
+            <div>
+              <h3 className="keybindings-modal__title">CONTROLES DE COMBATE</h3>
+              <span className="keybindings-modal__subtitle">
+                Haz clic en una ranura y presiona la nueva tecla
+              </span>
+            </div>
           </div>
+
+          {/* Presets Rápidos en la barra superior */}
+          <div className="keybindings-presets-row">
+            <span className="keybindings-presets-tag">⚡ PERFILES:</span>
+            {Object.values(KEYBINDINGS_PRESETS).map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`keybindings-preset-pill ${
+                  activePresetId === p.id ? 'keybindings-preset-pill--active' : ''
+                }`}
+                onClick={() => handleApplyPreset(p.id)}
+                title={p.description}
+              >
+                <span>{p.icon}</span>
+                <span>{p.name.split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+
           <button
             type="button"
             className="keybindings-modal__close-btn"
@@ -187,32 +212,6 @@ export default function KeybindingsModal({ isOpen, onClose }: KeybindingsModalPr
           </button>
         </div>
 
-        <p className="keybindings-modal__subtitle">
-          Personaliza los atajos de teclado para elegir plantas y herramientas en el combate.
-          Haz clic en cualquier botón y presiona la nueva tecla.
-        </p>
-
-        {/* Barra de Presets Rápidos */}
-        <div className="keybindings-presets-bar">
-          <span className="keybindings-presets-label">⚡ Perfiles Rápidos:</span>
-          <div className="keybindings-presets-list">
-            {Object.values(KEYBINDINGS_PRESETS).map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={`keybindings-preset-btn ${
-                  activePresetId === p.id ? 'keybindings-preset-btn--active' : ''
-                }`}
-                onClick={() => handleApplyPreset(p.id)}
-                title={p.description}
-              >
-                <span>{p.icon}</span>
-                <span>{p.name.split(' ')[0]}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Mensaje de conflicto o intercambio automático */}
         {conflictMsg && (
           <div className="keybindings-conflict-toast">
@@ -220,36 +219,46 @@ export default function KeybindingsModal({ isOpen, onClose }: KeybindingsModalPr
           </div>
         )}
 
-        {/* Sección: Cartas del Deck */}
-        <div className="keybindings-section">
-          <div className="keybindings-section__title">
-            <span>🌱</span>
-            <span>Cartas del Deck (Mano de Plantas)</span>
+        {/* 6 Ranuras de Plantas (Mazo horizontal en una sola fila, igual que en batalla) */}
+        <div className="keybindings-deck-section">
+          <div className="keybindings-deck-header">
+            <span className="keybindings-deck-title">🌱 RANURAS DE CARTAS EN MANO (DECK)</span>
+            <span className="keybindings-deck-hint">
+              Disposición horizontal de izquierda a derecha (como en batalla)
+            </span>
           </div>
-          <div className="keybindings-grid">
-            {cardActions.map((action) => {
+
+          <div className="keybindings-deck-slots-row">
+            {cardActions.map((action, idx) => {
               const isListening = listeningSlot === action.key
               const keyVal = bindings[action.key]
               return (
-                <div key={action.key} className="keybindings-slot-item">
-                  <div className="keybindings-slot-info">
-                    <span className="keybindings-slot-icon">{action.icon}</span>
-                    <span className="keybindings-slot-name">{action.label}</span>
+                <div
+                  key={action.key}
+                  className={`keybindings-deck-slot ${
+                    isListening ? 'keybindings-deck-slot--listening' : ''
+                  }`}
+                  onClick={() => {
+                    setConflictMsg(null)
+                    setListeningSlot(isListening ? null : action.key)
+                  }}
+                  title="Haz clic para reasignar esta tecla"
+                >
+                  <div className="keybindings-deck-slot__top">
+                    <span className="keybindings-deck-slot__badge">#{idx + 1}</span>
+                    <span className="keybindings-deck-slot__icon">{action.icon}</span>
                   </div>
+                  <span className="keybindings-deck-slot__name">{action.label}</span>
                   <button
                     type="button"
                     className={`keybindings-key-btn ${
                       isListening ? 'keybindings-key-btn--listening' : ''
                     }`}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       setConflictMsg(null)
                       setListeningSlot(isListening ? null : action.key)
                     }}
-                    title={
-                      isListening
-                        ? 'Presiona cualquier tecla para asignar...'
-                        : 'Haz clic para cambiar tecla'
-                    }
                   >
                     {isListening ? '...' : formatKeyLabel(keyVal)}
                   </button>
@@ -259,36 +268,37 @@ export default function KeybindingsModal({ isOpen, onClose }: KeybindingsModalPr
           </div>
         </div>
 
-        {/* Sección: Herramientas de Combate */}
-        <div className="keybindings-section">
-          <div className="keybindings-section__title">
-            <span>🛠️</span>
-            <span>Herramientas de Combate</span>
-          </div>
-          <div className="keybindings-grid">
+        {/* Barra Inferior: Herramientas a la izquierda y Botones de Guardar/Reset a la derecha */}
+        <div className="keybindings-bottom-bar">
+          <div className="keybindings-tools-group">
+            <span className="keybindings-tools-label">🛠️ HERRAMIENTAS:</span>
             {toolActions.map((action) => {
               const isListening = listeningSlot === action.key
               const keyVal = bindings[action.key]
               return (
-                <div key={action.key} className="keybindings-slot-item">
-                  <div className="keybindings-slot-info">
-                    <span className="keybindings-slot-icon">{action.icon}</span>
-                    <span className="keybindings-slot-name">{action.label}</span>
-                  </div>
+                <div
+                  key={action.key}
+                  className={`keybindings-tool-pill ${
+                    isListening ? 'keybindings-tool-pill--listening' : ''
+                  }`}
+                  onClick={() => {
+                    setConflictMsg(null)
+                    setListeningSlot(isListening ? null : action.key)
+                  }}
+                  title="Haz clic para reasignar"
+                >
+                  <span className="keybindings-tool-pill__icon">{action.icon}</span>
+                  <span className="keybindings-tool-pill__name">{action.label}</span>
                   <button
                     type="button"
-                    className={`keybindings-key-btn ${
+                    className={`keybindings-key-btn keybindings-key-btn--small ${
                       isListening ? 'keybindings-key-btn--listening' : ''
                     }`}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       setConflictMsg(null)
                       setListeningSlot(isListening ? null : action.key)
                     }}
-                    title={
-                      isListening
-                        ? 'Presiona cualquier tecla para asignar...'
-                        : 'Haz clic para cambiar tecla'
-                    }
                   >
                     {isListening ? '...' : formatKeyLabel(keyVal)}
                   </button>
@@ -296,26 +306,25 @@ export default function KeybindingsModal({ isOpen, onClose }: KeybindingsModalPr
               )
             })}
           </div>
-        </div>
 
-        {/* Pie de Acciones */}
-        <div className="keybindings-modal__footer">
-          <button
-            type="button"
-            className="keybindings-footer-btn keybindings-footer-btn--reset"
-            onClick={handleResetDefaults}
-          >
-            🔄 Restablecer
-          </button>
-          <button
-            type="button"
-            className={`keybindings-footer-btn keybindings-footer-btn--save ${
-              isSaved ? 'keybindings-footer-btn--saved' : ''
-            }`}
-            onClick={handleSave}
-          >
-            {isSaved ? '✅ ¡Guardado!' : '💾 Guardar Cambios'}
-          </button>
+          <div className="keybindings-actions-group">
+            <button
+              type="button"
+              className="keybindings-footer-btn keybindings-footer-btn--reset"
+              onClick={handleResetDefaults}
+            >
+              🔄 Restablecer
+            </button>
+            <button
+              type="button"
+              className={`keybindings-footer-btn keybindings-footer-btn--save ${
+                isSaved ? 'keybindings-footer-btn--saved' : ''
+              }`}
+              onClick={handleSave}
+            >
+              {isSaved ? '✅ ¡Guardado!' : '💾 Guardar Cambios'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

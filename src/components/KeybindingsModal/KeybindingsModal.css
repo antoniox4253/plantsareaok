@@ -1,6 +1,7 @@
 /* ══════════════════════════════════════════════════════════════════════════════
-   KEYBINDINGS MODAL - PLANT ARENA
-   Panel de configuración de atajos de teclado y controles de combate
+   KEYBINDINGS MODAL - PLANT ARENA (DISEÑO HORIZONTAL WIDESCREEN)
+   Optimizado para pantallas horizontales / landscape 16:9 y móvil apaisado
+   Todo el contenido entra en una sola vista sin necesidad de scroll
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .keybindings-modal-backdrop {
@@ -13,8 +14,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  animation: keybindingsFadeIn 0.22s ease-out;
+  padding: 10px 14px;
+  animation: keybindingsFadeIn 0.2s ease-out;
 }
 
 @keyframes keybindingsFadeIn {
@@ -28,29 +29,27 @@
 
 .keybindings-modal-card {
   position: relative;
-  width: 100%;
-  max-width: 540px;
-  max-height: calc(100vh - 32px);
+  width: 96%;
+  max-width: 860px;
+  max-height: calc(100vh - 16px);
   background: radial-gradient(circle at 50% 0%, #172554 0%, #090e17 100%);
   border: 2px solid #facc15;
-  border-radius: 20px;
-  padding: 22px 24px 20px;
+  border-radius: 18px;
+  padding: 12px 18px 10px;
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   box-shadow:
     0 0 35px rgba(250, 204, 21, 0.25),
     0 20px 50px rgba(0, 0, 0, 0.9);
-  animation: keybindingsCardPop 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  overflow-y: auto;
-  overflow-x: hidden;
+  animation: keybindingsCardPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-sizing: border-box;
 }
 
 @keyframes keybindingsCardPop {
   from {
-    transform: scale(0.92) translateY(12px);
+    transform: scale(0.94) translateY(8px);
     opacity: 0;
   }
   to {
@@ -59,282 +58,354 @@
   }
 }
 
-/* Header */
-.keybindings-modal__header {
+/* ── Topbar (Título + Presets Rápidos + Cerrar) ── */
+.keybindings-modal__topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(250, 204, 21, 0.2);
-  padding-bottom: 12px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(250, 204, 21, 0.25);
+  padding-bottom: 8px;
 }
 
-.keybindings-modal__header-left {
+.keybindings-modal__title-box {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.keybindings-modal__header-icon {
-  font-size: 1.8rem;
-  filter: drop-shadow(0 2px 6px rgba(250, 204, 21, 0.5));
+.keybindings-modal__icon {
+  font-size: 1.4rem;
+  filter: drop-shadow(0 2px 5px rgba(250, 204, 21, 0.5));
 }
 
 .keybindings-modal__title {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.05rem;
   font-weight: 900;
   color: #facc15;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  line-height: 1.15;
+}
+
+.keybindings-modal__subtitle {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  display: block;
+  line-height: 1.1;
+}
+
+/* Presets Rápidos en fila horizontal */
+.keybindings-presets-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 4px 8px;
+}
+
+.keybindings-presets-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #38bdf8;
   letter-spacing: 0.05em;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  margin-right: 2px;
+}
+
+.keybindings-preset-pill {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  padding: 4px 8px;
+  color: #e2e8f0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.keybindings-preset-pill:hover {
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.keybindings-preset-pill--active {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: #60a5fa;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.45);
 }
 
 .keybindings-modal__close-btn {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #94a3b8;
-  font-size: 1.2rem;
-  width: 34px;
-  height: 34px;
+  font-size: 1.05rem;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.18s ease;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .keybindings-modal__close-btn:hover {
-  background: rgba(239, 68, 68, 0.8);
+  background: rgba(239, 68, 68, 0.85);
   color: #ffffff;
   border-color: #ef4444;
-  transform: rotate(90deg) scale(1.08);
+  transform: rotate(90deg) scale(1.05);
 }
 
-.keybindings-modal__subtitle {
-  font-size: 0.86rem;
-  color: #94a3b8;
-  margin: -6px 0 0 0;
-  line-height: 1.4;
+/* ── Toast de Conflicto ── */
+.keybindings-conflict-toast {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 5px 10px;
+  color: #fca5a5;
+  font-size: 0.76rem;
+  font-weight: 600;
+  animation: keybindingsShake 0.25s ease;
 }
 
-/* Presets Bar */
-.keybindings-presets-bar {
+@keyframes keybindingsShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* ── Sección del Deck (6 ranuras horizontales) ── */
+.keybindings-deck-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 10px 12px;
+  gap: 5px;
 }
 
-.keybindings-presets-label {
-  font-size: 0.76rem;
+.keybindings-deck-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.keybindings-deck-title {
+  font-size: 0.74rem;
   font-weight: 800;
-  color: #38bdf8;
+  color: #facc15;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
-.keybindings-presets-list {
+.keybindings-deck-hint {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.keybindings-deck-slots-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 8px;
 }
 
-.keybindings-preset-btn {
-  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
+.keybindings-deck-slot {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
   padding: 8px 6px;
-  color: #e2e8f0;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.keybindings-preset-btn:hover {
-  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
-  border-color: #38bdf8;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
-}
-
-.keybindings-preset-btn--active {
-  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
-  border-color: #60a5fa;
-  color: #ffffff;
-  box-shadow: 0 0 14px rgba(37, 99, 235, 0.5);
-}
-
-/* Sections */
-.keybindings-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.keybindings-section__title {
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #facc15;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
 }
 
-.keybindings-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+.keybindings-deck-slot:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(250, 204, 21, 0.5);
+  transform: translateY(-2px);
 }
 
-@media (max-width: 480px) {
-  .keybindings-grid {
-    grid-template-columns: 1fr;
-  }
+.keybindings-deck-slot--listening {
+  border-color: #facc15 !important;
+  background: rgba(202, 138, 4, 0.25) !important;
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.4);
 }
 
-/* Slot Card Item */
-.keybindings-slot-item {
+.keybindings-deck-slot__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(15, 23, 42, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 12px;
-  padding: 8px 12px;
-  transition: all 0.16s ease;
+  width: 100%;
+  padding: 0 2px;
 }
 
-.keybindings-slot-item:hover {
-  background: rgba(30, 41, 59, 0.7);
-  border-color: rgba(250, 204, 21, 0.3);
+.keybindings-deck-slot__badge {
+  font-size: 0.64rem;
+  font-weight: 900;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border-radius: 4px;
+  padding: 1px 4px;
 }
 
-.keybindings-slot-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.keybindings-slot-icon {
+.keybindings-deck-slot__icon {
   font-size: 1.15rem;
 }
 
-.keybindings-slot-name {
-  font-size: 0.84rem;
+.keybindings-deck-slot__name {
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #e2e8f0;
+  color: #cbd5e1;
+  white-space: nowrap;
 }
 
-/* Key Button (Tactile 3D Keyboard Key) */
+/* ── Tecla física 3D ── */
 .keybindings-key-btn {
-  min-width: 62px;
-  height: 36px;
-  padding: 0 10px;
+  width: 100%;
+  max-width: 72px;
+  height: 32px;
+  padding: 0 4px;
   background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
-  border: 2px solid #64748b;
-  border-bottom: 4px solid #0f172a;
-  border-radius: 8px;
+  border: 1.5px solid #64748b;
+  border-bottom: 3px solid #0f172a;
+  border-radius: 7px;
   color: #f8fafc;
   font-family: monospace, ui-monospace, sans-serif;
   font-size: 0.95rem;
   font-weight: 900;
-  letter-spacing: 0.04em;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
   transition: all 0.12s ease;
-  user-select: none;
 }
 
 .keybindings-key-btn:hover {
   background: linear-gradient(180deg, #475569 0%, #334155 100%);
   border-color: #facc15;
-  transform: translateY(-1px);
 }
 
 .keybindings-key-btn:active {
-  transform: translateY(2px);
-  border-bottom-width: 2px;
+  transform: translateY(1.5px);
+  border-bottom-width: 1.5px;
 }
 
-/* Listening Mode (Pulsing Glow) */
+.keybindings-key-btn--small {
+  min-width: 52px;
+  height: 28px;
+  font-size: 0.84rem;
+}
+
 .keybindings-key-btn--listening {
   background: linear-gradient(180deg, #ca8a04 0%, #854d0e 100%) !important;
   border-color: #facc15 !important;
   color: #ffffff !important;
-  border-bottom: 4px solid #713f12 !important;
-  animation: keyListeningPulse 1s infinite alternate;
-  font-size: 0.76rem !important;
-  min-width: 90px;
+  border-bottom: 3px solid #713f12 !important;
+  animation: keyListeningPulse 0.9s infinite alternate;
+  font-size: 0.75rem !important;
 }
 
 @keyframes keyListeningPulse {
   0% {
-    box-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
-    transform: scale(0.98);
+    box-shadow: 0 0 6px rgba(250, 204, 21, 0.5);
+    transform: scale(0.97);
   }
   100% {
-    box-shadow: 0 0 20px rgba(250, 204, 21, 0.9);
-    transform: scale(1.02);
+    box-shadow: 0 0 16px rgba(250, 204, 21, 0.95);
+    transform: scale(1.03);
   }
 }
 
-/* Conflict Toast */
-.keybindings-conflict-toast {
-  background: rgba(239, 68, 68, 0.18);
-  border: 1px solid #ef4444;
-  border-radius: 10px;
-  padding: 8px 12px;
-  color: #fca5a5;
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  animation: keybindingsShake 0.3s ease;
-}
-
-@keyframes keybindingsShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
-}
-
-/* Footer Actions */
-.keybindings-modal__footer {
+/* ── Barra Inferior (Herramientas + Acciones Guardar/Reset) ── */
+.keybindings-bottom-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 14px;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+  margin-top: 2px;
 }
 
-.keybindings-footer-btn {
-  border-radius: 12px;
-  padding: 10px 18px;
-  font-size: 0.88rem;
+.keybindings-tools-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keybindings-tools-label {
+  font-size: 0.68rem;
   font-weight: 800;
-  cursor: pointer;
-  transition: all 0.18s ease;
+  color: #facc15;
+  letter-spacing: 0.05em;
+  margin-right: 2px;
+}
+
+.keybindings-tool-pill {
   display: flex;
   align-items: center;
   gap: 6px;
-  letter-spacing: 0.03em;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  padding: 3px 8px 3px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.keybindings-tool-pill:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(250, 204, 21, 0.4);
+}
+
+.keybindings-tool-pill--listening {
+  border-color: #facc15 !important;
+  background: rgba(202, 138, 4, 0.25) !important;
+}
+
+.keybindings-tool-pill__icon {
+  font-size: 1rem;
+}
+
+.keybindings-tool-pill__name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* Botones de Acción (Reset / Guardar) */
+.keybindings-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keybindings-footer-btn {
+  border-radius: 9px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.02em;
 }
 
 .keybindings-footer-btn--reset {
@@ -351,23 +422,38 @@
 .keybindings-footer-btn--save {
   background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
   border: 1px solid #4ade80;
-  border-bottom: 3px solid #14532d;
+  border-bottom: 2.5px solid #14532d;
   color: #ffffff;
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+  box-shadow: 0 3px 10px rgba(34, 197, 94, 0.35);
 }
 
 .keybindings-footer-btn--save:hover {
   background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.5);
 }
 
 .keybindings-footer-btn--save:active {
-  transform: translateY(2px);
+  transform: translateY(1.5px);
   border-bottom-width: 1px;
 }
 
 .keybindings-footer-btn--saved {
   background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
   border-color: #60a5fa !important;
+}
+
+/* Pantallas horizontales muy pequeñas */
+@media (max-height: 480px) {
+  .keybindings-modal-card {
+    padding: 8px 14px 6px;
+    gap: 6px;
+  }
+  .keybindings-deck-slot {
+    padding: 5px 4px;
+    gap: 3px;
+  }
+  .keybindings-key-btn {
+    height: 28px;
+    font-size: 0.88rem;
+  }
 }
