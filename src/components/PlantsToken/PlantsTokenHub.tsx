@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { soundManager } from '../../utils/audioManager'
+import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import {
   plantsTokenService,
   type PlantsMarketState,
@@ -152,15 +153,49 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     const interval = setInterval(loadData, 12000)
     const handleUpdate = () => {
       void loadData()
+      onRefreshProfile?.()
     }
     window.addEventListener('plants_tokens_updated', handleUpdate)
     window.addEventListener('refresh_user_balance', handleUpdate)
+
+    // Canal Realtime para sincronización instantánea de curva AMM, transacciones y precios
+    let ammChannel: ReturnType<typeof supabase.channel> | null = null
+    if (isSupabaseConfigured()) {
+      ammChannel = supabase
+        .channel('plants-token-hub-live-feed')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'plants_amm_state' },
+          () => {
+            void loadData()
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'plants_price_history' },
+          () => {
+            void loadData()
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'plants_cashout_requests' },
+          () => {
+            void loadData()
+          }
+        )
+        .subscribe()
+    }
+
     return () => {
       clearInterval(interval)
       window.removeEventListener('plants_tokens_updated', handleUpdate)
       window.removeEventListener('refresh_user_balance', handleUpdate)
+      if (ammChannel) {
+        supabase.removeChannel(ammChannel)
+      }
     }
-  }, [loadData])
+  }, [loadData, onRefreshProfile])
 
   // Temporizadores locales de cuenta regresiva
   useEffect(() => {

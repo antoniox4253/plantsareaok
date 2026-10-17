@@ -1,5 +1,15 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
 
+/**
+ * Dispara eventos de sincronización en tiempo real para actualizar balances y módulos de tokens
+ */
+function notifyFinancialSync() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+    window.dispatchEvent(new CustomEvent('plants_tokens_updated'))
+  }
+}
+
 export interface PlantsMarketState {
   spotPrice: number
   usdtPool: number
@@ -460,7 +470,7 @@ export const plantsTokenService = {
         return { success: false, error: error.message }
       }
 
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return { success: true, data }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error al procesar compra del pack' }
@@ -486,7 +496,7 @@ export const plantsTokenService = {
         return { success: false, error: error.message }
       }
 
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return { success: true, data }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error al canjear PLANTS por Gemas' }
@@ -512,7 +522,7 @@ export const plantsTokenService = {
         return { success: false, error: error.message }
       }
 
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return { success: true, data }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error al canjear PLANTS por USDT' }
@@ -540,7 +550,7 @@ export const plantsTokenService = {
         return { success: false, error: error.message }
       }
 
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return { success: true, data }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error al procesar la solicitud de retiro de USDT' }
@@ -674,7 +684,7 @@ export const plantsTokenService = {
         return { success: false, error: error.message }
       }
 
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return { success: true, data }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error al procesar el retiro en USDT' }
@@ -710,7 +720,7 @@ export const plantsTokenService = {
         return { success: false, error: error.message }
       }
 
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return { success: true, data }
     } catch (e: any) {
       return { success: false, error: e?.message || 'Error al reclamar PLANTS de combate' }
@@ -801,7 +811,7 @@ export const plantsTokenService = {
         return { success: false, error: d?.error || 'No fue posible reclamar tokens en este momento' }
       }
 
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return {
         success: true,
         unlockedPlants: Number(d.unlockedPlants ?? 0),
@@ -880,7 +890,7 @@ export const plantsTokenService = {
       if (!d?.success) {
         return { success: false, error: d?.error || 'No fue posible iniciar el staking' }
       }
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return {
         success: true,
         positionId: String(d.positionId),
@@ -964,7 +974,7 @@ export const plantsTokenService = {
       if (!d?.success) {
         return { success: false, error: d?.error || 'No fue posible reclamar recompensas' }
       }
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return {
         success: true,
         claimedGems: Number(d.claimedGems ?? 0),
@@ -1002,7 +1012,7 @@ export const plantsTokenService = {
       if (!d?.success) {
         return { success: false, error: d?.error || 'No fue posible retirar el staking' }
       }
-      window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+      notifyFinancialSync()
       return {
         success: true,
         unlockedPlants: Number(d.unlockedPlants ?? 0),

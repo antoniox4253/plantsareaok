@@ -91,8 +91,12 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   }, [withdrawUsdtStr])
 
   const effectiveFee = parsedAmount * 0.05
-  const netPlants = Math.max(0, parsedAmount - effectiveFee)
-  const estimatedUsdt = netPlants * spotPrice
+  // Cálculo canónico AMM idéntico al contrato SQL (K = R * V)
+  const virtualPlants = marketState?.virtualPlants || (spotPrice > 0 ? poolUsdt / spotPrice : 425600.9166)
+  const grossUsdtAmm = (poolUsdt > 0 && virtualPlants > 0 && parsedAmount > 0)
+    ? (poolUsdt * parsedAmount) / (virtualPlants + parsedAmount)
+    : 0
+  const estimatedUsdt = grossUsdtAmm * 0.95
   // 1 Gema = 0.01 USDT ($10 = 1,000 gemas). Con +20% bono in-game:
   const ratePlantsPerGem = useMemo(() => {
     return spotPrice > 0 ? 0.01 / (spotPrice * 1.2) : 7.54
