@@ -19,6 +19,7 @@ import {
   FIELD_WIDTH_PCT,
   TOTAL_COLUMNS,
   P1_COLUMNS,
+  SURVIVOR_P1_COLUMNS,
   INITIAL_BASE_HP,
   getScaledPlantConfig,
   isPlantMatchingTarget,
@@ -2846,7 +2847,7 @@ export default function Battlefield({
               )}
 
               {Array.from({ length: TOTAL_COLUMNS }).map((_, col) => {
-                const isP1Side = col < P1_COLUMNS
+                const isP1Side = col < (matchMode === 'arena_ads' ? SURVIVOR_P1_COLUMNS : P1_COLUMNS)
                 const isCellSelected = Boolean(selectedCard && (isP1Side || selectedCard === 'pickledpepper') && !isLaneLocked)
                 const isPlantCard = selectedCard && selectedCard !== 'shovel'
                 const selectedCardConfig = isPlantCard

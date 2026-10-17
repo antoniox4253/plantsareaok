@@ -418,5 +418,21 @@ describe('survivorWaveEngine', () => {
     expect(w3FirstSpawn.hpMultiplier).toBeGreaterThan(1.7)
     expect(w3FirstSpawn.damageMultiplier).toBeGreaterThan(1.6)
   })
+
+  it('validates 9 P1 columns and 5 P2 columns for Survivor ADS while preserving 7/7 for ranked/standard', async () => {
+    const { TOTAL_COLUMNS, P1_COLUMNS, P2_COLUMNS, SURVIVOR_P1_COLUMNS, SURVIVOR_P2_COLUMNS } = await import(
+      '../utils/gameConstants'
+    )
+
+    // Standard / Ranked isolation
+    expect(P1_COLUMNS).toBe(7)
+    expect(P2_COLUMNS).toBe(7)
+    expect(P1_COLUMNS + P2_COLUMNS).toBe(TOTAL_COLUMNS)
+
+    // Survivor ADS dimensions
+    expect(SURVIVOR_P1_COLUMNS).toBe(9)
+    expect(SURVIVOR_P2_COLUMNS).toBe(5)
+    expect(SURVIVOR_P1_COLUMNS + SURVIVOR_P2_COLUMNS).toBe(TOTAL_COLUMNS)
+  })
 })
 

@@ -516,6 +516,8 @@ export const FIELD_WIDTH_PCT = BASE_RIGHT_START_X - BASE_LEFT_END_X
 export const TOTAL_COLUMNS = 14
 export const P1_COLUMNS = 7
 export const P2_COLUMNS = 7
+export const SURVIVOR_P1_COLUMNS = 9
+export const SURVIVOR_P2_COLUMNS = 5
 export const DECK_SIZE = 6
 export const MAX_DECK_SLOTS = 6
 
