@@ -9,9 +9,9 @@ describe('BATTLE PASS SEASON 2 (XP PROGRESSION & EXCLUSIVE REWARDS)', () => {
     })
   })
 
-  it('los requisitos de XP son estrictamente crecientes desde 80 hasta 3300', () => {
-    expect(BATTLE_PASS_LEVELS[0].requiredXp).toBe(80)
-    expect(BATTLE_PASS_LEVELS[19].requiredXp).toBe(3300)
+  it('los requisitos de XP son estrictamente crecientes desde 200 hasta 8000', () => {
+    expect(BATTLE_PASS_LEVELS[0].requiredXp).toBe(200)
+    expect(BATTLE_PASS_LEVELS[19].requiredXp).toBe(8000)
 
     for (let i = 1; i < BATTLE_PASS_LEVELS.length; i++) {
       expect(BATTLE_PASS_LEVELS[i].requiredXp).toBeGreaterThan(
@@ -61,13 +61,13 @@ describe('BATTLE PASS SEASON 2 (XP PROGRESSION & EXCLUSIVE REWARDS)', () => {
     const claimedVipLevels = [1, 2]
 
     // Niveles con requiredXp <= 1000 son:
-    // lvl 1 (80), lvl 2 (200), lvl 3 (340), lvl 4 (500), lvl 5 (680), lvl 6 (880)
-    // Con 1 y 2 ya reclamados, claimable contiene [3, 4, 5, 6]
+    // lvl 1 (200), lvl 2 (500), lvl 3 (850)
+    // Con 1 y 2 ya reclamados, claimable contiene [3]
     const claimable = BATTLE_PASS_LEVELS.filter(
       (l) => hasVipPass && currentXp >= l.requiredXp && !claimedVipLevels.includes(l.level)
     )
 
-    expect(claimable.map((l) => l.level)).toEqual([3, 4, 5, 6])
+    expect(claimable.map((l) => l.level)).toEqual([3])
     expect(claimedVipLevels.includes(1)).toBe(true)
     expect(claimedVipLevels.includes(2)).toBe(true)
   })

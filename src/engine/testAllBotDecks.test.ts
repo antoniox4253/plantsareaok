@@ -29,8 +29,9 @@ describe('Certify All Bot Decks in Database with Dense Plans', () => {
       expect(sqlVal.rows[0].val.ok).toBe(true)
 
       // Test simulation
+      const humanDeck = HUMAN_ARCHETYPES.HUMAN_BALANCED.deck
       const humanTimeline = generarTimelineHumanaAdversarial(HUMAN_ARCHETYPES.HUMAN_BALANCED, 9999 + i)
-      const sim = simulateAsyncMatch(9999 + i, deck, deck, humanTimeline, plan, 6000)
+      const sim = simulateAsyncMatch(9999 + i, humanDeck, deck, humanTimeline, plan, 6000)
       expect(sim.ok).toBe(true)
       expect(sim.telemetria.intentionsDropped).toBe(0)
     }

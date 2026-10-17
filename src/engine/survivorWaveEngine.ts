@@ -1,7 +1,7 @@
-import type { PlantId, PlantEntity } from '../types/game'
-import { getScaledPlantConfig, PLANT_CONFIGS, BASE_RIGHT_START_X } from '../utils/gameConstants'
-import { entityId } from './rng'
-import type { GameState, SonarFn } from './simulate'
+import type { PlantId, PlantEntity } from '../types/game.ts'
+import { getScaledPlantConfig, PLANT_CONFIGS, BASE_RIGHT_START_X } from '../utils/gameConstants.ts'
+import { entityId } from './rng.ts'
+import type { GameState, SonarFn } from './simulate.ts'
 
 export interface SurvivorEnemySpawn {
   tick: number

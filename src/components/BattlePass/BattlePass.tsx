@@ -24,10 +24,14 @@ export default function BattlePass({
   onClaimAllRewards,
 }: BattlePassProps) {
   const currentXp = userXp ?? 0
-  const totalMaxXp = 3300
+  const totalMaxXp = BATTLE_PASS_LEVELS[BATTLE_PASS_LEVELS.length - 1]?.requiredXp ?? 8000
 
-  // Determine highest reached level and next target based on XP
-  const highestLevelReached = BATTLE_PASS_LEVELS.filter((l) => currentXp >= l.requiredXp).length
+  // Determine highest reached level and next target based on XP and claimed levels
+  const highestClaimed = claimedVipLevels.length > 0 ? Math.max(...claimedVipLevels) : 0
+  const highestLevelReached = Math.max(
+    highestClaimed,
+    BATTLE_PASS_LEVELS.filter((l) => currentXp >= l.requiredXp).length
+  )
   const nextLevel = BATTLE_PASS_LEVELS.find((l) => currentXp < l.requiredXp)
 
   // List of all levels currently ready to be claimed (only if user has VIP pass)

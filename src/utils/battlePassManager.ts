@@ -29,7 +29,7 @@ export interface PassLevel {
 export const BATTLE_PASS_LEVELS: PassLevel[] = [
   {
     level: 1,
-    requiredXp: 80,
+    requiredXp: 200,
     requiredElo: 1000,
     arenaName: 'Jardín Clásico',
     reward: {
@@ -43,7 +43,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 2,
-    requiredXp: 200,
+    requiredXp: 500,
     requiredElo: 1000,
     arenaName: 'Jardín Clásico',
     reward: {
@@ -56,7 +56,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 3,
-    requiredXp: 340,
+    requiredXp: 850,
     requiredElo: 1000,
     arenaName: 'Jardín Clásico',
     reward: {
@@ -70,7 +70,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 4,
-    requiredXp: 500,
+    requiredXp: 1250,
     requiredElo: 1000,
     arenaName: 'Jardín Clásico (Límite)',
     reward: {
@@ -83,7 +83,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 5,
-    requiredXp: 680,
+    requiredXp: 1700,
     requiredElo: 1000,
     arenaName: 'Desierto Nocturno',
     reward: {
@@ -96,7 +96,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 6,
-    requiredXp: 880,
+    requiredXp: 2200,
     requiredElo: 1000,
     arenaName: 'Desierto Nocturno',
     reward: {
@@ -109,7 +109,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 7,
-    requiredXp: 1100,
+    requiredXp: 2750,
     requiredElo: 1000,
     arenaName: 'Rascacielos Cyberpunk',
     reward: {
@@ -122,7 +122,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 8,
-    requiredXp: 1340,
+    requiredXp: 3300,
     requiredElo: 1000,
     arenaName: 'Rascacielos Cyberpunk',
     reward: {
@@ -138,7 +138,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 9,
-    requiredXp: 1600,
+    requiredXp: 3900,
     requiredElo: 1000,
     arenaName: 'Rascacielos Cyberpunk',
     reward: {
@@ -151,7 +151,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 10,
-    requiredXp: 1880,
+    requiredXp: 4500,
     requiredElo: 1000,
     arenaName: 'Rascacielos Cyberpunk',
     reward: {
@@ -164,7 +164,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 11,
-    requiredXp: 2120,
+    requiredXp: 5000,
     requiredElo: 1000,
     arenaName: 'Rascacielos Cyberpunk',
     reward: {
@@ -177,7 +177,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 12,
-    requiredXp: 2340,
+    requiredXp: 5500,
     requiredElo: 1000,
     arenaName: 'Rascacielos Cyberpunk',
     reward: {
@@ -190,7 +190,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 13,
-    requiredXp: 2540,
+    requiredXp: 6000,
     requiredElo: 1000,
     arenaName: 'Rascacielos Cyberpunk',
     reward: {
@@ -203,7 +203,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 14,
-    requiredXp: 2720,
+    requiredXp: 6450,
     requiredElo: 1000,
     arenaName: 'Coliseo Galáctico',
     reward: {
@@ -217,7 +217,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 15,
-    requiredXp: 2880,
+    requiredXp: 6850,
     requiredElo: 1000,
     arenaName: 'Coliseo Galáctico',
     reward: {
@@ -230,7 +230,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 16,
-    requiredXp: 3020,
+    requiredXp: 7200,
     requiredElo: 1000,
     arenaName: 'Coliseo Galáctico',
     reward: {
@@ -244,7 +244,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 17,
-    requiredXp: 3140,
+    requiredXp: 7500,
     requiredElo: 1000,
     arenaName: 'Coliseo Galáctico',
     reward: {
@@ -258,7 +258,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 18,
-    requiredXp: 3220,
+    requiredXp: 7750,
     requiredElo: 1000,
     arenaName: 'Coliseo Galáctico',
     reward: {
@@ -272,7 +272,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 19,
-    requiredXp: 3270,
+    requiredXp: 7900,
     requiredElo: 1000,
     arenaName: 'Olimpo de Leyendas',
     reward: {
@@ -285,7 +285,7 @@ export const BATTLE_PASS_LEVELS: PassLevel[] = [
   },
   {
     level: 20,
-    requiredXp: 3300,
+    requiredXp: 8000,
     requiredElo: 1000,
     arenaName: 'Olimpo de Leyendas (MÁX)',
     reward: {

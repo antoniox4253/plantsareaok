@@ -509,7 +509,11 @@ export default function MainMenu({
   }, [])
 
   const currentPassXp = userXp ?? 0
-  const highestLevelReached = BATTLE_PASS_LEVELS.filter((l) => currentPassXp >= l.requiredXp).length
+  const highestClaimed = claimedVipLevels.length > 0 ? Math.max(...claimedVipLevels) : 0
+  const highestLevelReached = Math.max(
+    highestClaimed,
+    BATTLE_PASS_LEVELS.filter((l) => currentPassXp >= l.requiredXp).length
+  )
   const claimableCount = hasVipPass
     ? BATTLE_PASS_LEVELS.filter(
         (l) => currentPassXp >= l.requiredXp && !claimedVipLevels.includes(l.level)

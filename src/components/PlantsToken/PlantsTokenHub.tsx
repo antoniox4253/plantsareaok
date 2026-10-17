@@ -103,8 +103,9 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   // Saldos y métricas del usuario
   const liquidPlants = Number(userProfile?.plants_balance ?? vestingSummary?.liquidBalance ?? 0)
   const currentPassXp = userXp || Number((userProfile as any)?.battle_pass_xp ?? 0)
+  const totalMaxPassXp = BATTLE_PASS_LEVELS[BATTLE_PASS_LEVELS.length - 1]?.requiredXp ?? 8000
   const highestLevelReached = BATTLE_PASS_LEVELS.filter((l) => currentPassXp >= l.requiredXp).length
-  const xpProgressPercent = Math.min(100, Math.round((currentPassXp / 3300) * 100))
+  const xpProgressPercent = Math.min(100, Math.round((currentPassXp / totalMaxPassXp) * 100))
   const lockedVestingPlants = Number(userProfile?.plants_vesting_locked ?? vestingSummary?.vestingLocked ?? 0)
   const totalPlants = liquidPlants + lockedVestingPlants
   const currentElo = Number(userProfile?.elo_rating ?? userElo ?? 1000)

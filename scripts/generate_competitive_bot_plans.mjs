@@ -119,9 +119,10 @@ export function buildDeterministicArenaPlan(deck, options = {}) {
   const heavyRanged = getCard('melonpult') || getCard('threepeater')
   const primaryAttacker = getCard('threepeater') || getCard('repeater') || getCard('peashooter') || getCard('bonkchoy')
   const secondaryAttacker = getCard('melonpult') || getCard('bonkchoy') || getCard('repeater') || getCard('chomper') || getCard('peashooter')
-  const meleeAttacker = getCard('bonkchoy') || getCard('chomper') || getCard('garlic')
-  const earlyAttacker = getCard('peashooter') || getCard('repeater') || meleeAttacker || primaryAttacker
-  const emergencyCard = getCard('squash') || getCard('jalapeno') || getCard('garlic') || getCard('iceberglettuce')
+  const meleeAttacker = getCard('bonkchoy') || getCard('chomper')
+  const earlyAttacker = getCard('peashooter') || getCard('repeater') || primaryAttacker
+  const emergencyCard = getCard('squash') || getCard('jalapeno') || getCard('iceberglettuce')
+  const diversionCard = getCard('garlic')
 
   const laneNextCol = {
     0: { sunflower: 0, attacker: 1, tank: 4 },
@@ -227,20 +228,25 @@ export function buildDeterministicArenaPlan(deck, options = {}) {
       else if (sunflowersPlaced === 0 && canAffordAndReady(sunflowerCard, t) && isCellFree(1, 0)) {
         queueAndExecute(sunflowerCard, 1, 0, t)
       }
-      // C. Sunflower #2 at ~22s (tick 667)
-      else if (sunflowersPlaced === 1 && t >= 667 && canAffordAndReady(sunflowerCard, t) && isCellFree(0, 0)) {
-        queueAndExecute(sunflowerCard, 0, 0, t)
-      }
-      // D. Sunflower #3 at ~36s (tick 1100)
-      else if (sunflowersPlaced === 2 && t >= 1100 && canAffordAndReady(sunflowerCard, t) && (options.maxSunflowers || 3) >= 3 && isCellFree(2, 0)) {
-        queueAndExecute(sunflowerCard, 2, 0, t)
-      }
-      // E. Early Frontline Tank / Defense at ~45s (tick 1360)
-      else if (sunflowersPlaced >= 3 && t >= 1360 && t < 1550 && canAffordAndReady(tankCard, t) && isCellFree(1, 4)) {
+      // C. Early Frontline Tank (Wall-nut) at ~22s (tick 667)
+      else if (t >= 667 && t <= 750 && tankCard && canAffordAndReady(tankCard, t) && isCellFree(1, 4)) {
         queueAndExecute(tankCard, 1, 4, t)
       }
-      // F. Regular Combat Cadence (t >= 800, check every 15 ticks ~0.5s)
-      else if (t >= 800 && (t % 15 === 0)) {
+      // D. Sunflower #2 at ~28s (tick 850)
+      else if (sunflowersPlaced === 1 && t >= 850 && canAffordAndReady(sunflowerCard, t) && isCellFree(0, 0)) {
+        queueAndExecute(sunflowerCard, 0, 0, t)
+      }
+      // E. Early Walking Melee (Bonk Choy / Chomper) at ~52s (tick 1575)
+      else if (t >= 1500 && t <= 1650 && meleeAttacker && canAffordAndReady(meleeAttacker, t)) {
+        queueAndExecute(meleeAttacker, targetLanes[laneIdx % 3], 3, t)
+        laneIdx++
+      }
+      // F. Sunflower #3 at ~60s (tick 1820)
+      else if (sunflowersPlaced === 2 && t >= 1820 && canAffordAndReady(sunflowerCard, t) && (options.maxSunflowers || 3) >= 3 && isCellFree(2, 0)) {
+        queueAndExecute(sunflowerCard, 2, 0, t)
+      }
+      // G. Regular Combat Cadence (t >= 750, check every 15 ticks ~0.5s)
+      else if (t >= 750 && (t % 15 === 0)) {
         function tryDeploy(card, type = 'attacker') {
           if (!card || !canAffordAndReady(card, t)) return false
           const config = PLANT_CONFIGS[card.plantId]
@@ -266,26 +272,67 @@ export function buildDeterministicArenaPlan(deck, options = {}) {
           return false
         }
 
-        // Only spend sun on tanks if we already have attackers placed, or if sun is high
-        const attackersPlaced = plan.filter(p => !['sunflower', 'twinsunflower', 'wallnut', 'tallnut'].includes(p.plantId)).length
-        const allowTank = attackersPlaced >= 2 || controller.sunBank >= 200
+        const rangedAttackersPlaced = plan.filter(p => ['peashooter', 'repeater', 'threepeater', 'melonpult'].includes(p.plantId)).length
+        const attackersPlaced = plan.filter(p => !['sunflower', 'twinsunflower', 'wallnut', 'tallnut', 'garlic'].includes(p.plantId)).length
+        const tanksPlaced = plan.filter(p => ['wallnut', 'tallnut'].includes(p.plantId)).length
+        const diversionsPlaced = plan.filter(p => p.plantId === 'garlic').length
+        const meleesPlaced = meleeAttacker ? plan.filter(p => p.plantId === meleeAttacker.plantId).length : 0
 
-        // Priority order:
-        // 1. Heavy Ranged (Melonpult / Threepeater) if sun >= 300
+        const meleeCost = meleeAttacker ? (PLANT_CONFIGS[meleeAttacker.plantId]?.cost || 150) : 0
+        const primaryCost = primaryAttacker ? (PLANT_CONFIGS[primaryAttacker.plantId]?.cost || 100) : 100
+
+        // If bot has a walking melee attacker and hasn't placed one yet, reserve sun for it
+        const isSavingForMelee = meleeAttacker && meleesPlaced < 1 && sunflowersPlaced >= 2 && controller.sunBank < meleeCost && t < 2000
+
+        // If primary attacker is heavy (e.g. Repeater >= 200) and we have no ranged attackers yet, reserve sun for it
+        const isSavingForPrimary = primaryCost >= 150 && rangedAttackersPlaced < 1 && controller.sunBank < primaryCost && t < 3000
+
+        const isSaving = isSavingForMelee || isSavingForPrimary
+
+        // Tank allowance: max 3 tanks total (1 per lane), only when not saving
+        const allowTank = !isSaving && tanksPlaced < 3 && (attackersPlaced >= 1 || controller.sunBank >= 150)
+
+        // Diversion allowance (Garlic): max 2 total, only when not saving and at least 1 attacker is already out
+        const allowDiversion = !isSaving && diversionsPlaced < 2 && attackersPlaced >= 1
+
         let deployed = false
+        // 1. Heavy Artillery (Melonpult / Threepeater) if sun >= 300
         if (heavyRanged && controller.sunBank >= (PLANT_CONFIGS[heavyRanged.plantId]?.cost || 300)) {
           deployed = tryDeploy(heavyRanged, 'attacker')
         }
-        // 2. Primary attacker
-        if (!deployed) deployed = tryDeploy(primaryAttacker, 'attacker')
-        // 3. Secondary attacker
-        if (!deployed) deployed = tryDeploy(secondaryAttacker, 'attacker')
-        // 4. Melee / walking attacker
-        if (!deployed) deployed = tryDeploy(meleeAttacker, 'attacker')
-        // 5. Frontline Tank (only if attackers established)
-        if (!deployed && allowTank) deployed = tryDeploy(tankCard, 'tank')
-        // 6. Emergency / instant / spell
-        if (!deployed) deployed = tryDeploy(emergencyCard, 'attacker')
+        // 2. If we have melee out and need ranged, deploy primary attacker first
+        if (!deployed && primaryAttacker && (attackersPlaced === 0 || attackersPlaced <= meleesPlaced)) {
+          deployed = tryDeploy(primaryAttacker, 'attacker')
+        }
+        // 3. Walking melee attacker (Bonk Choy / Chomper) - pressure player!
+        const canDeployMelee = meleeAttacker && (
+          meleesPlaced === 0 ||
+          (meleesPlaced < 3 && rangedAttackersPlaced >= 1) ||
+          controller.sunBank >= (meleeCost + primaryCost)
+        )
+        if (!deployed && canDeployMelee) {
+          deployed = tryDeploy(meleeAttacker, 'attacker')
+        }
+        // 4. Primary or early attacker
+        if (!deployed && !isSavingForMelee) {
+          deployed = tryDeploy(primaryAttacker || earlyAttacker, 'attacker')
+        }
+        // 5. Secondary attacker (only if different from meleeAttacker)
+        if (!deployed && secondaryAttacker && secondaryAttacker.plantId !== meleeAttacker?.plantId && !isSavingForMelee) {
+          deployed = tryDeploy(secondaryAttacker, 'attacker')
+        }
+        // 5. Frontline Tank
+        if (!deployed && allowTank) {
+          deployed = tryDeploy(tankCard, 'tank')
+        }
+        // 6. Emergency / instant / spell (Squash, Jalapeno, Iceberg)
+        if (!deployed && emergencyCard) {
+          deployed = tryDeploy(emergencyCard, 'attacker')
+        }
+        // 7. Diversion (Garlic)
+        if (!deployed && allowDiversion && diversionCard) {
+          deployed = tryDeploy(diversionCard, 'attacker')
+        }
       }
     }
 
