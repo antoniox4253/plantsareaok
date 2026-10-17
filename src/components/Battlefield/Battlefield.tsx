@@ -3064,7 +3064,10 @@ export default function Battlefield({
       </div>
 
       {/* Center Dividing Line */}
-      <div className="front-line" />
+      <div
+        className={`front-line ${isArenaAds ? 'front-line--arena-ads' : ''}`}
+        style={isArenaAds ? { left: `${BASE_LEFT_END_X + SURVIVOR_P1_COLUMNS * (FIELD_WIDTH_PCT / TOTAL_COLUMNS)}%` } : undefined}
+      />
 
       {/* Player 1 Plants */}
       {plants.map((plant) => {

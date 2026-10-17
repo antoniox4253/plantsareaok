@@ -404,6 +404,11 @@
   pointer-events: none;
 }
 
+.battlefield--arena-ads .front-line,
+.front-line--arena-ads {
+  left: 60%;
+}
+
 /* Base Entity Layout */
 .entity {
   position: absolute;
