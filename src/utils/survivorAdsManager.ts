@@ -67,7 +67,7 @@ export interface SurvivorAdsRun {
   }
   updatedAt: number
   startedAt: number
-  createdAt: number
+  runCreatedAt: number
 }
 
 const ALL_NON_SUNFLOWER_PLANTS: PlantId[] = [
@@ -200,7 +200,7 @@ export class SurvivorAdsManager {
       currentPrepChoice: null,
       updatedAt: Date.now(),
       startedAt: Date.now(),
-      createdAt: Date.now(),
+      runCreatedAt: Date.now(),
     }
     run.currentPrepChoice = this.generatePrepChoices(run)
     this.saveRun(run)
