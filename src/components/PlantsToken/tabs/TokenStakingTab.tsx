@@ -367,8 +367,14 @@ export const TokenStakingTab: React.FC<TokenHubSharedProps> = ({
             disabled={!canSubmit}
           >
             {isSubmitting
-              ? 'PROCESANDO...'
-              : `🚀 CULTIVAR ${parsedAmount > 0 ? parsedAmount.toLocaleString() : '0'} PLANTS POR ${selectedDuration} DÍAS`}
+              ? '⏳ INICIANDO CULTIVO...'
+              : !parsedAmount || parsedAmount <= 0
+              ? '⚠️ INGRESA UN MONTO'
+              : parsedAmount < preview.minAmount
+              ? `⚠️ MÍNIMO ${preview.minAmount.toLocaleString()} PLANTS`
+              : parsedAmount > liquidPlants
+              ? `❌ SALDO INSUFICIENTE`
+              : `🌱 CULTIVAR ${parsedAmount.toLocaleString()} PLANTS (${selectedDuration} DÍAS)`}
           </button>
         </div>
 

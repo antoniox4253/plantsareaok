@@ -7,6 +7,12 @@ export interface ClanMember {
   elo: number
   donatedCount: number
   joinedAt: string
+  treeWaterContributed?: number
+  treeFertilizerContributed?: number
+  treeGemsContributed?: number
+  totalGemsDonated?: number
+  totalGoldDonated?: number
+  weeklyCrowns?: number
   consecutiveRoundsMissed?: number // Rondas seguidas sin participar en guerra (mínimo 2 para poder expulsar por inactividad)
   roundsParticipated?: number // Rondas participadas en la temporada (>= 2 protege contra expulsión hasta fin de temporada)
   walkoverLosses?: number // Derrotas por W.O. por no presentarse (>= 1 permite expulsar)

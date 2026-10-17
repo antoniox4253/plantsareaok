@@ -267,136 +267,146 @@ export const StakingModal: React.FC<StakingModalProps> = ({
               <span>Elige el plazo y la cantidad</span>
             </div>
 
-            {/* Selector de Plazos / Bloques */}
-            <div className="staking-modal-duration-grid">
-              <button
-                type="button"
-                className={`staking-modal-duration-btn ${selectedDuration === 30 ? 'active' : ''}`}
-                onClick={() => {
-                  soundManager.playSound('click', 0.4)
-                  setSelectedDuration(30)
-                }}
-              >
-                <div className="duration-btn-top">
-                  <span className="duration-btn-title">🌱 30 DÍAS</span>
-                  <span className="duration-btn-min">Mín. 500</span>
-                </div>
-                <span className="duration-btn-reward">🎁 1x Sobre Básico</span>
-              </button>
+            <div className="staking-modal-form-scrollable">
+              {/* Selector de Plazos / Bloques */}
+              <div className="staking-modal-duration-grid">
+                <button
+                  type="button"
+                  className={`staking-modal-duration-btn ${selectedDuration === 30 ? 'active' : ''}`}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setSelectedDuration(30)
+                  }}
+                >
+                  <div className="duration-btn-top">
+                    <span className="duration-btn-title">🌱 30 DÍAS</span>
+                    <span className="duration-btn-min">Mín. 500</span>
+                  </div>
+                  <span className="duration-btn-reward">🎁 1x Sobre Básico</span>
+                </button>
 
-              <button
-                type="button"
-                className={`staking-modal-duration-btn ${selectedDuration === 60 ? 'active' : ''}`}
-                onClick={() => {
-                  soundManager.playSound('click', 0.4)
-                  setSelectedDuration(60)
-                }}
-              >
-                <div className="duration-btn-top">
-                  <span className="duration-btn-title">🌿 60 DÍAS</span>
-                  <span className="duration-btn-min">Mín. 5,000</span>
-                </div>
-                <span className="duration-btn-reward">🎁 3x Sobres Básicos</span>
-              </button>
+                <button
+                  type="button"
+                  className={`staking-modal-duration-btn ${selectedDuration === 60 ? 'active' : ''}`}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setSelectedDuration(60)
+                  }}
+                >
+                  <div className="duration-btn-top">
+                    <span className="duration-btn-title">🌿 60 DÍAS</span>
+                    <span className="duration-btn-min">Mín. 5,000</span>
+                  </div>
+                  <span className="duration-btn-reward">🎁 3x Sobres Básicos</span>
+                </button>
 
-              <button
-                type="button"
-                className={`staking-modal-duration-btn ${selectedDuration === 90 ? 'active' : ''}`}
-                onClick={() => {
-                  soundManager.playSound('click', 0.4)
-                  setSelectedDuration(90)
-                }}
-              >
-                <div className="duration-btn-top">
-                  <span className="duration-btn-title">👑 90 DÍAS</span>
-                  <span className="duration-btn-min">Mín. 25,000</span>
+                <button
+                  type="button"
+                  className={`staking-modal-duration-btn ${selectedDuration === 90 ? 'active' : ''}`}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setSelectedDuration(90)
+                  }}
+                >
+                  <div className="duration-btn-top">
+                    <span className="duration-btn-title">👑 90 DÍAS</span>
+                    <span className="duration-btn-min">Mín. 25,000</span>
+                  </div>
+                  <span className="duration-btn-reward">👑 Sobres + Skin Oro 24K</span>
+                </button>
+              </div>
+
+              {/* Input de Monto */}
+              <div className="staking-modal-input-group">
+                <div className="staking-modal-input-lbl-row">
+                  <label>PLANTS a cultivar:</label>
+                  <span className="staking-modal-balance-hint">
+                    Disponible: <strong>{liquidPlants.toLocaleString()}</strong>
+                  </span>
                 </div>
-                <span className="duration-btn-reward">👑 Sobres + Skin Oro 24K</span>
-              </button>
+
+                <div className="staking-modal-input-wrap">
+                  <input
+                    type="number"
+                    min={preview.minAmount}
+                    step="100"
+                    value={amountStr}
+                    onChange={(e) => setAmountStr(e.target.value)}
+                    placeholder={`Mínimo ${preview.minAmount}`}
+                    className="staking-modal-amount-input"
+                  />
+                  <span className="staking-modal-input-suffix">PLANTS</span>
+                </div>
+
+                {/* Botones rápidos */}
+                <div className="staking-modal-quick-row">
+                  <button type="button" onClick={handleSetMin} className="staking-modal-quick-btn">
+                    MÍN ({preview.minAmount.toLocaleString()})
+                  </button>
+                  <button type="button" onClick={() => handleSetPercent(25)} className="staking-modal-quick-btn">
+                    25%
+                  </button>
+                  <button type="button" onClick={() => handleSetPercent(50)} className="staking-modal-quick-btn">
+                    50%
+                  </button>
+                  <button type="button" onClick={handleSetMax} className="staking-modal-quick-btn">
+                    MÁX ({Math.floor(liquidPlants).toLocaleString()})
+                  </button>
+                </div>
+
+                {/* Advertencias */}
+                {parsedAmount > 0 && parsedAmount < preview.minAmount && (
+                  <div className="staking-modal-alert warning">
+                    ⚠️ El mínimo para {selectedDuration} días es de <strong>{preview.minAmount.toLocaleString()} PLANTS</strong>.
+                  </div>
+                )}
+                {parsedAmount > liquidPlants && (
+                  <div className="staking-modal-alert error">
+                    ❌ Saldo líquido insuficiente ({liquidPlants.toLocaleString()} disponibles).
+                  </div>
+                )}
+              </div>
+
+              {/* Rendimiento estimado */}
+              <div className="staking-modal-yield-preview">
+                <div className="yield-row-compact">
+                  <div className="yield-col">
+                    <span className="yield-lbl">💎 Gemas/día:</span>
+                    <strong className="text-cyan">+{preview.dailyGemRate.toFixed(4)}</strong>
+                  </div>
+                  <div className="yield-col">
+                    <span className="yield-lbl">🪙 Oro/día:</span>
+                    <strong className="text-gold">+{preview.dailyGoldRate.toFixed(2)}</strong>
+                  </div>
+                </div>
+                <div className="yield-line highlight">
+                  <span>Total Cosecha al Vencer:</span>
+                  <strong className="text-green">
+                    ~{preview.totalEstimatedGems} 💎 / ~{preview.totalEstimatedGold} 🪙
+                  </strong>
+                </div>
+                <div className="yield-bonus-tag">
+                  <span>🎁 BONUS FINAL: {preview.bonusDesc}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Input de Monto */}
-            <div className="staking-modal-input-group">
-              <div className="staking-modal-input-lbl-row">
-                <label>PLANTS a cultivar:</label>
-                <span className="staking-modal-balance-hint">
-                  Disponible: <strong>{liquidPlants.toLocaleString()}</strong>
-                </span>
-              </div>
-
-              <div className="staking-modal-input-wrap">
-                <input
-                  type="number"
-                  min={preview.minAmount}
-                  step="100"
-                  value={amountStr}
-                  onChange={(e) => setAmountStr(e.target.value)}
-                  placeholder={`Mínimo ${preview.minAmount}`}
-                  className="staking-modal-amount-input"
-                />
-                <span className="staking-modal-input-suffix">PLANTS</span>
-              </div>
-
-              {/* Botones rápidos */}
-              <div className="staking-modal-quick-row">
-                <button type="button" onClick={handleSetMin} className="staking-modal-quick-btn">
-                  MÍN ({preview.minAmount.toLocaleString()})
-                </button>
-                <button type="button" onClick={() => handleSetPercent(25)} className="staking-modal-quick-btn">
-                  25%
-                </button>
-                <button type="button" onClick={() => handleSetPercent(50)} className="staking-modal-quick-btn">
-                  50%
-                </button>
-                <button type="button" onClick={handleSetMax} className="staking-modal-quick-btn">
-                  MÁX ({Math.floor(liquidPlants).toLocaleString()})
-                </button>
-              </div>
-
-              {/* Advertencias */}
-              {parsedAmount > 0 && parsedAmount < preview.minAmount && (
-                <div className="staking-modal-alert warning">
-                  ⚠️ El mínimo para {selectedDuration} días es de <strong>{preview.minAmount.toLocaleString()} PLANTS</strong>.
-                </div>
-              )}
-              {parsedAmount > liquidPlants && (
-                <div className="staking-modal-alert error">
-                  ❌ Saldo líquido insuficiente ({liquidPlants.toLocaleString()} disponibles).
-                </div>
-              )}
-            </div>
-
-            {/* Rendimiento estimado */}
-            <div className="staking-modal-yield-preview">
-              <div className="yield-line">
-                <span>💎 Gemas Diarias</span>
-                <strong className="text-cyan">+{preview.dailyGemRate.toFixed(4)} / día</strong>
-              </div>
-              <div className="yield-line">
-                <span>🪙 Oro Diario</span>
-                <strong className="text-gold">+{preview.dailyGoldRate.toFixed(2)} / día</strong>
-              </div>
-              <div className="yield-line highlight">
-                <span>Total Cosecha al Vencer</span>
-                <strong className="text-green">
-                  ~{preview.totalEstimatedGems} 💎 / ~{preview.totalEstimatedGold} 🪙
-                </strong>
-              </div>
-              <div className="yield-bonus-tag">
-                <span>🎁 BONUS FINAL: {preview.bonusDesc}</span>
-              </div>
-            </div>
-
-            {/* Botón de Submit */}
+            {/* Botón de Submit - Pinned, siempre visible en pantalla horizontal */}
             <button
               type="button"
-              className="staking-modal-submit-btn"
+              className={`staking-modal-submit-btn ${!canSubmit ? 'staking-modal-submit-btn--disabled' : ''}`}
               onClick={handleStartStaking}
               disabled={!canSubmit}
             >
               {isSubmitting
-                ? 'PROCESANDO...'
-                : `🚀 CULTIVAR ${parsedAmount > 0 ? parsedAmount.toLocaleString() : '0'} PLANTS POR ${selectedDuration} DÍAS`}
+                ? '⏳ INICIANDO CULTIVO...'
+                : !parsedAmount || parsedAmount <= 0
+                ? '⚠️ INGRESA UN MONTO'
+                : parsedAmount < preview.minAmount
+                ? `⚠️ MÍNIMO ${preview.minAmount.toLocaleString()} PLANTS`
+                : parsedAmount > liquidPlants
+                ? `❌ SALDO INSUFICIENTE`
+                : `🌱 CULTIVAR ${parsedAmount.toLocaleString()} PLANTS (${selectedDuration} DÍAS)`}
             </button>
           </div>
 

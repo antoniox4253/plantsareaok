@@ -334,5 +334,34 @@ describe('ClanManager & Gem Valuations', () => {
       expect(statusInvalid.label).toBe('Desconectado')
     })
   })
+
+  describe('ClanMember Contribution Attributes', () => {
+    it('supports Mother Tree, Vault and War contribution tracking fields', () => {
+      const member: ClanMember = {
+        id: 'member-123',
+        name: 'GuerreroLeal',
+        role: 'Veterano',
+        elo: 1650,
+        donatedCount: 15,
+        joinedAt: new Date().toISOString(),
+        treeWaterContributed: 45,
+        treeFertilizerContributed: 30,
+        treeGemsContributed: 200,
+        totalGemsDonated: 500,
+        totalGoldDonated: 25000,
+        weeklyCrowns: 42,
+        roundsParticipated: 4,
+        consecutiveRoundsMissed: 0,
+        walkoverLosses: 0,
+      }
+
+      expect(member.treeWaterContributed).toBe(45)
+      expect(member.treeFertilizerContributed).toBe(30)
+      expect(member.treeGemsContributed).toBe(200)
+      expect(member.totalGemsDonated).toBe(500)
+      expect(member.totalGoldDonated).toBe(25000)
+      expect(member.weeklyCrowns).toBe(42)
+    })
+  })
 })
 

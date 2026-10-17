@@ -8353,5 +8353,268 @@
   }
 }
 
+/* ==============================================================================
+   FICHA DE COMPROMISO & CONTRIBUCIÓN DEL JUGADOR EN EL CLAN
+   ============================================================================== */
+
+.clan-member-name-cell--clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.clan-member-name-cell--clickable:hover strong {
+  color: #facc15 !important;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
+}
+
+.clan-inspect-icon {
+  font-size: 11px;
+  margin-left: 4px;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.clan-member-name-cell--clickable:hover .clan-inspect-icon {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.clan-profile-action-btn {
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #e0f2fe;
+  background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+  border: 1px solid #38bdf8;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.clan-profile-action-btn:hover {
+  background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(56, 189, 248, 0.4);
+}
+
+.clan-member-profile-modal {
+  max-width: 580px;
+  width: 95%;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  border: 1.5px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(56, 189, 248, 0.2);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.clan-profile-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.clan-profile-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clan-profile-avatar-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+  border: 2px solid #facc15;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.clan-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clan-profile-name-row h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.3px;
+}
+
+.clan-profile-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+.clan-profile-activity-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.clan-commitment-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.clan-commitment-banner--high {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+}
+
+.clan-commitment-banner--high strong {
+  color: #fca5a5;
+  font-size: 11.5px;
+}
+
+.clan-commitment-banner--med {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+}
+
+.clan-commitment-banner--med strong {
+  color: #6ee7b7;
+  font-size: 11.5px;
+}
+
+.clan-commitment-banner--low {
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.15);
+}
+
+.clan-commitment-banner--low strong {
+  color: #fde047;
+  font-size: 11.5px;
+}
+
+.clan-commitment-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.clan-commitment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clan-commitment-info small {
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.clan-profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.clan-profile-stat-box {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.clan-profile-stat-box__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+  padding-bottom: 5px;
+  margin-bottom: 6px;
+}
+
+.clan-profile-stat-box__header span {
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #f1f5f9;
+  letter-spacing: 0.5px;
+}
+
+.clan-profile-stat-box__header small {
+  font-size: 9px;
+  color: #64748b;
+}
+
+.clan-profile-stat-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clan-profile-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.clan-profile-stat-item__label {
+  color: #94a3b8;
+}
+
+.clan-profile-modal-actions {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.clan-profile-modal-action-btn {
+  padding: 7px 14px;
+  font-size: 11px;
+}
+
+@media (max-width: 580px) {
+  .clan-profile-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .clan-profile-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 

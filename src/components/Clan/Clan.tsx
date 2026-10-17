@@ -133,6 +133,9 @@ export default function Clan({
   const [selectedMemberForRole, setSelectedMemberForRole] = useState<ClanMember | null>(null)
   const [selectedRoleToAssign, setSelectedRoleToAssign] = useState<'leader' | 'coleader' | 'elder' | 'member'>('member')
 
+  // Member Commitment & Contribution Profile Modal
+  const [selectedMemberForProfile, setSelectedMemberForProfile] = useState<ClanMember | null>(null)
+
   // Mini Sub-tabs state
   const [donationSubTab, setDonationSubTab] = useState<'seeds' | 'deposits'>('seeds')
   const [vaultRankingFilter, setVaultRankingFilter] = useState<'gems' | 'gold'>('gems')
@@ -2835,12 +2838,20 @@ export default function Clan({
                   return (
                     <tr key={member.id} className={isMe ? 'clan-row--me' : ''}>
                       <td>{idx + 1}</td>
-                      <td className="clan-member-name-cell">
+                      <td
+                        className="clan-member-name-cell clan-member-name-cell--clickable"
+                        onClick={() => {
+                          soundManager.playSound('click', 0.4)
+                          setSelectedMemberForProfile(member)
+                        }}
+                        title="Haz clic para ver la ficha detallada de contribución y compromiso del jugador"
+                      >
                         <strong className={isMe && hasVipPass ? 'vip-gold-text' : ''}>
                           {isMe && hasVipPass && '👑 '}
                           {member.name}
                         </strong>
                         {isMe && <span className="clan-me-tag">TÚ</span>}
+                        <span className="clan-inspect-icon" title="Ver ficha de contribución">📊</span>
                       </td>
                       <td>
                         <span className={`clan-role-badge clan-role--${member.role.toLowerCase()}`}>
@@ -2917,6 +2928,17 @@ export default function Clan({
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            className="clan-profile-action-btn"
+                            onClick={() => {
+                              soundManager.playSound('click', 0.4)
+                              setSelectedMemberForProfile(member)
+                            }}
+                            title="Ver ficha completa de contribución y compromiso del jugador"
+                          >
+                            📊 FICHA
+                          </button>
                           {member.role === 'Líder' && canClaimLeadership && (
                             <button
                               type="button"
@@ -2938,7 +2960,7 @@ export default function Clan({
                               👑 ROL
                             </button>
                           )}
-                          {!isMe && member.role !== 'Líder' && canKickMembers ? (
+                          {!isMe && member.role !== 'Líder' && canKickMembers && (
                             <button
                               type="button"
                               className={`clan-kick-action-btn ${
@@ -2955,9 +2977,7 @@ export default function Clan({
                             >
                               {validation.canKick ? '👢 EXPULSAR' : '🛡️ DETALLES'}
                             </button>
-                          ) : !(!isMe && (isLeader || (myRole === 'Colíder' && member.role !== 'Líder' && member.role !== 'Colíder'))) ? (
-                            <span className="clan-member-na-dash">—</span>
-                          ) : null}
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -5956,6 +5976,255 @@ export default function Clan({
               >
                 {isSubmittingRole ? 'GUARDANDO...' : '👑 CONFIRMAR NUEVO ROL'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FICHA DE COMPROMISO Y CONTRIBUCIÓN DEL JUGADOR */}
+      {selectedMemberForProfile && (
+        <div className="clan-modal-backdrop" onClick={() => setSelectedMemberForProfile(null)}>
+          <div className="clan-modal-box clan-member-profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="clan-modal-header-row">
+              <div className="clan-modal-header-title">
+                <span className="clan-modal-header-icon">
+                  {selectedMemberForProfile.role === 'Líder' ? '👑' : selectedMemberForProfile.role === 'Colíder' ? '⚔️' : selectedMemberForProfile.role === 'Veterano' ? '🎖️' : '🛡️'}
+                </span>
+                <div>
+                  <h3>FICHA DE COMPROMISO & CONTRIBUCIÓN</h3>
+                  <p>Auditoría de actividad comunal, ofrendas y lealtad al clan</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="clan-modal-close-btn"
+                onClick={() => setSelectedMemberForProfile(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Hero Card del Miembro */}
+            <div className="clan-profile-hero">
+              <div className="clan-profile-hero-left">
+                <div className="clan-profile-avatar-circle">
+                  {selectedMemberForProfile.role === 'Líder' ? '👑' : selectedMemberForProfile.role === 'Colíder' ? '⚔️' : selectedMemberForProfile.role === 'Veterano' ? '🎖️' : '🌱'}
+                </div>
+                <div>
+                  <div className="clan-profile-name-row">
+                    <h4>{selectedMemberForProfile.name}</h4>
+                    <span className={`clan-role-badge clan-role--${selectedMemberForProfile.role.toLowerCase()}`}>
+                      {selectedMemberForProfile.role}
+                    </span>
+                  </div>
+                  <div className="clan-profile-meta-row">
+                    <span>🏆 {selectedMemberForProfile.elo} Copas ELO</span>
+                    <span>•</span>
+                    <span>📅 Unido: {selectedMemberForProfile.joinedAt ? new Date(selectedMemberForProfile.joinedAt).toLocaleDateString() : 'Veterano'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Estatus de Actividad */}
+              <div className="clan-profile-hero-right">
+                {(() => {
+                  const isMe = selectedMemberForProfile.name?.trim().toLowerCase() === playerName?.trim().toLowerCase()
+                  const isOnlineRealtime = onlineMemberIds.has(selectedMemberForProfile.id) || Boolean(selectedMemberForProfile.isOnline)
+                  const status = formatMemberActivityStatus(selectedMemberForProfile.lastActiveAt, isOnlineRealtime, isMe)
+                  return (
+                    <div className="clan-profile-activity-pill">
+                      <span className={status.dotClass} />
+                      <span>{status.label}</span>
+                    </div>
+                  )
+                })()}
+              </div>
+            </div>
+
+            {/* Badge de Nivel de Compromiso */}
+            {(() => {
+              const totalGems = (selectedMemberForProfile.treeGemsContributed || 0) + (selectedMemberForProfile.totalGemsDonated || 0)
+              const totalWaterFert = (selectedMemberForProfile.treeWaterContributed || 0) + (selectedMemberForProfile.treeFertilizerContributed || 0)
+              const totalGold = selectedMemberForProfile.totalGoldDonated || 0
+              const totalCards = selectedMemberForProfile.donatedCount || 0
+              const rounds = selectedMemberForProfile.roundsParticipated || 0
+
+              const isHigh = totalGems >= 100 || totalWaterFert >= 50 || totalGold >= 10000 || rounds >= 3
+              const isMed = totalGems > 0 || totalWaterFert > 0 || totalGold > 0 || totalCards >= 3 || rounds >= 1
+
+              return (
+                <div className={`clan-commitment-banner ${isHigh ? 'clan-commitment-banner--high' : isMed ? 'clan-commitment-banner--med' : 'clan-commitment-banner--low'}`}>
+                  <span className="clan-commitment-icon">{isHigh ? '🔥' : isMed ? '🌿' : '⚠️'}</span>
+                  <div className="clan-commitment-info">
+                    <strong>
+                      {isHigh ? 'NIVEL DE COMPROMISO: PILAR DEL CLAN (MUY ACTIVO)' : isMed ? 'NIVEL DE COMPROMISO: COLABORADOR ACTIVO' : 'NIVEL DE COMPROMISO: BAJA PARTICIPACIÓN'}
+                    </strong>
+                    <small>
+                      {isHigh
+                        ? 'Este guerrero demuestra gran dedicación aportando recursos y participando en los asedios.'
+                        : isMed
+                        ? 'Participa de forma regular en el crecimiento del clan y sus actividades.'
+                        : 'Registra aportes mínimos en el Árbol Madre y en el Tesoro del Clan.'}
+                    </small>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Grid de 4 Bloques de Contribución */}
+            <div className="clan-profile-stats-grid">
+              {/* BLOQUE 1: Árbol Madre */}
+              <div className="clan-profile-stat-box">
+                <div className="clan-profile-stat-box__header">
+                  <span>🌳 ÁRBOL MADRE</span>
+                  <small>Ofrendas Botánicas</small>
+                </div>
+                <div className="clan-profile-stat-rows">
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">💧 Agua Aportada</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#38bdf8' }}>
+                      {(selectedMemberForProfile.treeWaterContributed || 0).toLocaleString()} 💧
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">🧪 Fertilizante</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#4ade80' }}>
+                      {(selectedMemberForProfile.treeFertilizerContributed || 0).toLocaleString()} 🧪
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">💎 Gemas Consagradas</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#60a5fa' }}>
+                      {Number(selectedMemberForProfile.treeGemsContributed || 0).toFixed(0)} 💎
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOQUE 2: Tesoro del Clan */}
+              <div className="clan-profile-stat-box">
+                <div className="clan-profile-stat-box__header">
+                  <span>💰 TESORO DEL CLAN</span>
+                  <small>Depósitos a la Bóveda</small>
+                </div>
+                <div className="clan-profile-stat-rows">
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">💎 Gemas Donadas</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#38bdf8' }}>
+                      {Number(selectedMemberForProfile.totalGemsDonated || 0).toFixed(0)} 💎
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">🪙 Oro Donado</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#fbbf24' }}>
+                      {(selectedMemberForProfile.totalGoldDonated || 0).toLocaleString()} <GoldIcon size={12} />
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOQUE 3: Compañerismo y Donaciones */}
+              <div className="clan-profile-stat-box">
+                <div className="clan-profile-stat-box__header">
+                  <span>🤝 COMUNIDAD</span>
+                  <small>Apoyo entre miembros</small>
+                </div>
+                <div className="clan-profile-stat-rows">
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">🎁 Cartas Donadas</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#e879f9' }}>
+                      {selectedMemberForProfile.donatedCount || 0} cartas
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">👑 Coronas Semanales</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#facc15' }}>
+                      {selectedMemberForProfile.weeklyCrowns || 0} 👑
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOQUE 4: Guerra y Disciplina */}
+              <div className="clan-profile-stat-box">
+                <div className="clan-profile-stat-box__header">
+                  <span>⚔️ ASISTENCIA DE GUERRA</span>
+                  <small>Asedio y Disciplina</small>
+                </div>
+                <div className="clan-profile-stat-rows">
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">🛡️ Rondas Jugadas</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#34d399' }}>
+                      {selectedMemberForProfile.roundsParticipated || 0} Rondas
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">⚠️ Faltas Seguidas</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: (selectedMemberForProfile.consecutiveRoundsMissed || 0) >= 2 ? '#f87171' : '#94a3b8' }}>
+                      {selectedMemberForProfile.consecutiveRoundsMissed || 0}
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">🚨 Derrotas W.O.</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: (selectedMemberForProfile.walkoverLosses || 0) > 0 ? '#ef4444' : '#94a3b8' }}>
+                      {selectedMemberForProfile.walkoverLosses || 0}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer y Acciones de Gestión para Líder / Colíder */}
+            <div className="clan-modal-actions clan-profile-modal-actions">
+              {(() => {
+                const isMe = selectedMemberForProfile.name?.trim().toLowerCase() === playerName?.trim().toLowerCase()
+                const canManageRoles = !isMe && (isLeader || (myRole === 'Colíder' && selectedMemberForProfile.role !== 'Líder' && selectedMemberForProfile.role !== 'Colíder'))
+                const canKick = !isMe && selectedMemberForProfile.role !== 'Líder' && (isLeader || myRole === 'Colíder')
+                const validation = userClan ? ClanManager.validateKickMember(userClan, selectedMemberForProfile) : null
+
+                return (
+                  <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {canManageRoles && (
+                        <button
+                          type="button"
+                          className="clan-role-action-btn clan-profile-modal-action-btn"
+                          onClick={() => {
+                            const target = selectedMemberForProfile
+                            setSelectedMemberForProfile(null)
+                            handleOpenRoleModal(target)
+                          }}
+                        >
+                          👑 ASIGNAR ROL
+                        </button>
+                      )}
+                      {canKick && validation && (
+                        <button
+                          type="button"
+                          className={`clan-kick-action-btn clan-profile-modal-action-btn ${
+                            validation.canKick ? 'clan-kick-action-btn--eligible' : 'clan-kick-action-btn--protected'
+                          }`}
+                          onClick={() => {
+                            const target = selectedMemberForProfile
+                            setSelectedMemberForProfile(null)
+                            handleOpenKickDialog(target)
+                          }}
+                        >
+                          {validation.canKick ? '👢 EXPULSAR MIEMBRO' : '🛡️ VER BLINDAJE'}
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="clan-cancel-btn"
+                      style={{ marginLeft: 'auto' }}
+                      onClick={() => setSelectedMemberForProfile(null)}
+                    >
+                      CERRAR
+                    </button>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div>

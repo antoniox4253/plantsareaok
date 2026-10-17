@@ -7386,11 +7386,32 @@ input.swap-value-slot:focus {
   background: linear-gradient(180deg, rgba(8, 28, 33, 0.96), rgba(5, 18, 22, 0.98));
   border: 1.5px solid rgba(20, 137, 109, 0.5);
   border-radius: 10px;
-  padding: 9px 11px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  position: relative;
+}
+
+.staking-modal-form-scrollable {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 2px;
+}
+
+.staking-modal-form-scrollable::-webkit-scrollbar {
+  width: 4px;
+}
+
+.staking-modal-form-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(32, 219, 164, 0.35);
+  border-radius: 4px;
 }
 
 .staking-modal-card-header {
@@ -7558,26 +7579,45 @@ input.swap-value-slot:focus {
 }
 
 .staking-modal-yield-preview {
-  background: rgba(2, 6, 23, 0.6);
+  background: rgba(2, 6, 23, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 7px;
-  padding: 5px 8px;
+  padding: 4px 7px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   font-size: 8.5px;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   flex-shrink: 0;
+}
+
+.yield-row-compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.yield-col {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8px;
+}
+
+.yield-lbl {
+  color: #94a3b8;
+  font-weight: 700;
 }
 
 .yield-line {
   display: flex;
   justify-content: space-between;
   color: #94a3b8;
+  font-size: 8.5px;
 }
 
 .yield-line.highlight {
-  padding-top: 3px;
+  padding-top: 2px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: #fff;
   font-weight: 800;
@@ -7587,31 +7627,45 @@ input.swap-value-slot:focus {
   font-size: 7.5px;
   color: #fbbf24;
   font-weight: 800;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .staking-modal-submit-btn {
   width: 100%;
-  background: linear-gradient(180deg, #10b981, #047857);
-  border: 1px solid #34d399;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+  border: 1.5px solid #34d399;
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 950;
-  padding: 7px;
-  border-radius: 6px;
+  letter-spacing: 0.3px;
+  padding: 8px 10px;
+  border-radius: 7px;
   cursor: pointer;
-  margin-top: auto;
+  margin-top: 5px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  z-index: 2;
 }
 
 .staking-modal-submit-btn:hover:not(:disabled) {
   filter: brightness(1.15);
-  box-shadow: 0 0 12px rgba(32, 219, 164, 0.5);
+  box-shadow: 0 0 16px rgba(32, 219, 164, 0.6);
+  transform: translateY(-1px);
 }
 
-.staking-modal-submit-btn:disabled {
-  opacity: 0.5;
+.staking-modal-submit-btn:disabled,
+.staking-modal-submit-btn--disabled {
+  opacity: 0.65;
   cursor: not-allowed;
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #a7f3d0;
+  box-shadow: none;
 }
 
 .staking-modal-positions-list {
@@ -7790,6 +7844,78 @@ input.swap-value-slot:focus {
   border: 1px solid rgba(16, 185, 129, 0.3);
   padding: 4px 8px;
   border-radius: 5px;
+}
+
+/* Responsive adjustments for mobile landscape and compact screens */
+@media (max-height: 520px) {
+  .staking-modal {
+    height: 98vh;
+    max-height: 98vh;
+  }
+  .token-modal-header {
+    padding: 5px 12px;
+  }
+  .token-modal-subtitle {
+    display: none;
+  }
+  .staking-modal-kpis {
+    padding: 3px 12px;
+    gap: 6px;
+  }
+  .staking-modal-kpi-card {
+    padding: 2px 6px;
+  }
+  .staking-modal-kpi-sub {
+    display: none;
+  }
+  .staking-modal-kpi-val {
+    font-size: 12px;
+  }
+  .staking-modal-body-grid {
+    padding: 4px 12px 6px 12px;
+    gap: 8px;
+  }
+  .staking-modal-form-card,
+  .staking-modal-positions-card {
+    padding: 5px 8px;
+  }
+  .staking-modal-card-header {
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+  }
+  .staking-modal-duration-grid {
+    gap: 4px;
+    margin-bottom: 3px;
+  }
+  .staking-modal-duration-btn {
+    padding: 3px 5px;
+  }
+  .duration-btn-title {
+    font-size: 8.5px;
+  }
+  .duration-btn-reward {
+    font-size: 7px;
+  }
+  .staking-modal-input-group {
+    margin-bottom: 3px;
+    gap: 2px;
+  }
+  .staking-modal-input-wrap {
+    padding: 2px 6px;
+  }
+  .staking-modal-quick-btn {
+    padding: 1.5px 0;
+    font-size: 7px;
+  }
+  .staking-modal-yield-preview {
+    padding: 3px 6px;
+    margin-bottom: 2px;
+  }
+  .staking-modal-submit-btn {
+    padding: 6px 8px;
+    font-size: 10px;
+    margin-top: 4px;
+  }
 }
 
 /* =========================================================================
