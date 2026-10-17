@@ -394,5 +394,29 @@ describe('survivorWaveEngine', () => {
     expect(state.plants.find((p) => p.id === 'p1-toadstool-test')).toBeUndefined()
     expect(state.plants.length).toBe(0)
   })
+
+  it('increases enemy plant quantity and difficulty significantly starting from Level 12', () => {
+    const configLvl6 = generateSurvivorLevel(6, 12345)
+    const configLvl12 = generateSurvivorLevel(12, 12345)
+
+    // Level 12 has significantly more plants in all 3 waves than Level 6
+    expect(configLvl12.waves[0].spawns.length).toBeGreaterThan(configLvl6.waves[0].spawns.length)
+    expect(configLvl12.waves[1].spawns.length).toBeGreaterThan(configLvl6.waves[1].spawns.length)
+    expect(configLvl12.waves[2].spawns.length).toBeGreaterThan(configLvl6.waves[2].spawns.length)
+
+    // Wave 2 at Level 12 now contains simultaneous spawns
+    const wave2SpawnTicks = configLvl12.waves[1].spawns.map((s) => s.tick)
+    const hasW2Simultaneous = wave2SpawnTicks.some((tick, idx) => wave2SpawnTicks.indexOf(tick) !== idx)
+    expect(hasW2Simultaneous).toBe(true)
+
+    // Total plant count in Level 12 is over 45+ plants (vs ~30 in Level 6)
+    const totalPlantsLvl12 = configLvl12.waves[0].spawns.length + configLvl12.waves[1].spawns.length + configLvl12.waves[2].spawns.length
+    expect(totalPlantsLvl12).toBeGreaterThanOrEqual(45)
+
+    // Health and damage multipliers are substantially higher
+    const w3FirstSpawn = configLvl12.waves[2].spawns[0]
+    expect(w3FirstSpawn.hpMultiplier).toBeGreaterThan(1.7)
+    expect(w3FirstSpawn.damageMultiplier).toBeGreaterThan(1.6)
+  })
 })
 
