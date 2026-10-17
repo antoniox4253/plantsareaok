@@ -211,9 +211,9 @@ describe('PLANTS Token & AMM Ecosystem Tests', () => {
 
       const validPreview = plantsTokenService.calculateStakingPreview(25000, 90)
       expect(validPreview.isValidAmount).toBe(true)
-      expect(validPreview.dailyGemRate).toBe(30) // 25000 * 0.0012 = 30 Gemas/día
+      expect(validPreview.dailyGemRate).toBe(15) // 25000 * 0.0006 = 15 Gemas/día
       expect(validPreview.dailyGoldRate).toBe(175) // 25000 * 0.0070 = 175 Oro/día
-      expect(validPreview.totalEstimatedGems).toBe(2700)
+      expect(validPreview.totalEstimatedGems).toBe(1350)
       expect(validPreview.totalEstimatedGold).toBe(15750)
       expect(validPreview.bonusDesc).toContain('3 Sobres Épicos + 1 Sobre Legendario + Skin/Item Oro 24K')
     })

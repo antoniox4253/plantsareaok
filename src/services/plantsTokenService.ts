@@ -836,7 +836,7 @@ export const plantsTokenService = {
         : '3 Sobres Básicos garantizados'
     } else {
       minAmount = 25000
-      dailyGemRate = Number((amount * 0.0012).toFixed(4))
+      dailyGemRate = Number((amount * 0.0006).toFixed(4))
       dailyGoldRate = Number((amount * 0.0070).toFixed(4))
       bonusDesc = '3 Sobres Épicos + 1 Sobre Legendario + Skin/Item Oro 24K'
     }
