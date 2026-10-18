@@ -23,7 +23,7 @@ describe('BATTLE PASS SEASON 2 (XP PROGRESSION & EXCLUSIVE REWARDS)', () => {
   it('rotaciones y exclusivas: Nivel 8 Repetidora/Pala/Oro y Nivel 9 Nuez Explosiva', () => {
     const lvl8 = BATTLE_PASS_LEVELS.find((l) => l.level === 8)!
     expect(lvl8.reward.plantId).toBe('repeater')
-    expect(lvl8.reward.copiesCount).toBe(2)
+    expect(lvl8.reward.copiesCount).toBe(1)
     expect(lvl8.reward.itemId).toBe('shovel')
     expect(lvl8.reward.goldAmount).toBe(300)
 

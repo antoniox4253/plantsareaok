@@ -456,10 +456,10 @@
 .pixel-vippass-featured {
   position: absolute;
   z-index: 8;
-  top: calc(460 / 941 * 100%);
+  top: calc(410 / 941 * 100%);
   left: calc(1088 / 1672 * 100%);
   width: calc(548 / 1672 * 100%);
-  height: calc(454 / 941 * 100%);
+  height: calc(504 / 941 * 100%);
   background: linear-gradient(155deg, rgba(38, 13, 52, 0.98) 0%, rgba(18, 7, 28, 0.98) 100%);
   border: 2px solid #c084fc;
   border-radius: 18px;
