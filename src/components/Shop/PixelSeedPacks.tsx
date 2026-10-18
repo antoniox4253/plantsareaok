@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
-import type { PackId } from '../../utils/packDropManager'
+import type { PackId, InventoryPack } from '../../utils/packDropManager'
 import PixelHeaderBadges from './PixelHeaderBadges'
 import './PixelSeedPacks.css'
 
