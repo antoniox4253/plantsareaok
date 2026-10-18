@@ -42,6 +42,9 @@ export default function BattlefieldEmotesOverlay({
   const channelRef = useRef<any>(null)
   const recentDedupeRef = useRef<Set<string>>(new Set())
   const lastEmoteIdRef = useRef<number>(0)
+  const mySentLocalRef = useRef<Set<number>>(new Set())
+  const mySentDbIdsRef = useRef<Set<number>>(new Set())
+  const lastRivalEmoteTimeRef = useRef<{ [emoteId: string]: number }>({})
 
   // Sincronizar catálogo desbloqueado
   useEffect(() => {
@@ -100,27 +103,26 @@ export default function BattlefieldEmotesOverlay({
       return
     }
 
-    const mySide = soyP1 ? 'p1' : 'p2'
-
     const handleIncomingEmote = (
       emoteId: string,
-      senderSide?: string,
       senderUserId?: string,
-      id?: number
+      id?: number,
+      ts?: number
     ) => {
-      // Ignorar emotes enviados por nosotros mismos
+      // Ignorar emotes enviados por nosotros mismos (por ID de usuario, timestamp local o ID de DB)
       if (senderUserId && currentUserId && senderUserId === currentUserId) return
-      if (senderSide && senderSide === mySide) return
+      if (ts && mySentLocalRef.current.has(ts)) return
+      if (id && mySentDbIdsRef.current.has(id)) return
 
       if (typeof id === 'number' && id > lastEmoteIdRef.current) {
         lastEmoteIdRef.current = id
       }
 
-      // Deduplicación para no mostrar dos veces si llegan broadcast, postgres_changes y polling
-      const dedupeKey = id ? `${emoteId}_id_${id}` : `${emoteId}_ts_${Math.floor(Date.now() / 2000)}`
-      if (recentDedupeRef.current.has(dedupeKey)) return
-      recentDedupeRef.current.add(dedupeKey)
-      setTimeout(() => recentDedupeRef.current.delete(dedupeKey), 3000)
+      // Deduplicación temporal por emote (2.2s) para no disparar dos veces si coinciden broadcast y postgres_changes
+      const now = Date.now()
+      const lastTrigger = lastRivalEmoteTimeRef.current[emoteId] || 0
+      if (now - lastTrigger < 2200) return
+      lastRivalEmoteTimeRef.current[emoteId] = now
 
       // Mostrar en el lado derecho (rival)
       triggerEmoteDisplay('right', emoteId)
@@ -134,7 +136,7 @@ export default function BattlefieldEmotesOverlay({
     // Escuchar WebSocket Broadcast de ultra-baja latencia
     canal.on('broadcast', { event: 'battle_emote' }, ({ payload }) => {
       if (payload && payload.emoteId) {
-        handleIncomingEmote(payload.emoteId, payload.senderSide, payload.senderUserId, payload.id)
+        handleIncomingEmote(payload.emoteId, payload.senderUserId, payload.id, payload.ts)
       }
     })
 
@@ -150,7 +152,7 @@ export default function BattlefieldEmotesOverlay({
       (payload: any) => {
         const row = payload.new
         if (row && row.emote_id) {
-          handleIncomingEmote(row.emote_id, row.sender_side, row.user_id, Number(row.id))
+          handleIncomingEmote(row.emote_id, row.user_id, Number(row.id))
         }
       }
     )
@@ -172,7 +174,7 @@ export default function BattlefieldEmotesOverlay({
 
         if (!error && data && data.length > 0) {
           for (const row of data) {
-            handleIncomingEmote(row.emote_id, row.sender_side, row.user_id, Number(row.id))
+            handleIncomingEmote(row.emote_id, row.user_id, Number(row.id))
           }
         }
       } catch {
@@ -218,6 +220,7 @@ export default function BattlefieldEmotesOverlay({
     triggerEmoteDisplay('left', emoteId)
 
     const nowTs = Date.now()
+    mySentLocalRef.current.add(nowTs)
     const mySide = soyP1 ? 'p1' : 'p2'
 
     // 2. Si hay sala (partidas PvP: Friendly, Ranked, Coliseo, Torneos)
@@ -252,7 +255,9 @@ export default function BattlefieldEmotesOverlay({
             p_sender_side: mySide,
           })
           if (data && data.id) {
-            lastEmoteIdRef.current = Math.max(lastEmoteIdRef.current, Number(data.id))
+            const numId = Number(data.id)
+            mySentDbIdsRef.current.add(numId)
+            lastEmoteIdRef.current = Math.max(lastEmoteIdRef.current, numId)
           }
         } catch (err: any) {
           console.warn('[Emotes] Error enviando emote a base de datos:', err)

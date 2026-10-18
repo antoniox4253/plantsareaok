@@ -172,11 +172,11 @@
   max-width: 100%;
 }
 
-/* 3. Burbujas de Emotes en el Campo de Batalla (Visibles por ambos jugadores) */
+/* 3. Burbujas de Emotes en el Campo de Batalla (Visibles por ambos jugadores con máxima prioridad visual) */
 .bf-bubble-anchor {
   position: absolute;
-  top: 80px;
-  z-index: 140;
+  top: clamp(60px, 11vh, 100px);
+  z-index: 600;
   pointer-events: none;
   width: 220px;
   display: flex;
@@ -185,11 +185,11 @@
 }
 
 .bf-bubble-anchor--left {
-  left: 28px;
+  left: clamp(16px, 3.5vw, 42px);
 }
 
 .bf-bubble-anchor--right {
-  right: 28px;
+  right: clamp(16px, 3.5vw, 42px);
 }
 
 .bf-emote-bubble {
@@ -197,7 +197,7 @@
   min-width: 110px;
   aspect-ratio: 1/1;
   object-fit: contain;
-  filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 14px rgba(250, 204, 21, 0.45));
   opacity: 0;
   transform: translateY(18px) scale(0.8);
   transition: transform 0.22s ease, opacity 0.22s ease;
