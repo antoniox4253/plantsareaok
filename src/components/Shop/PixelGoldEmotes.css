@@ -67,11 +67,11 @@
 
 
 
-/* Modals */
+/* Modals y Niveles de Apilamiento (Z-Index Tiers) */
 .pixel-gold-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(3, 8, 16, 0.82);
+  background: rgba(3, 8, 16, 0.85);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -79,6 +79,96 @@
   z-index: 1000;
   animation: fadeIn 0.18s ease-out;
 }
+
+/* El modal de detalle del emote se muestra SIEMPRE DELANTE del catálogo */
+.pixel-gold-modal-backdrop--detail {
+  z-index: 1250 !important;
+}
+
+.pixel-gold-modal-backdrop--alert {
+  z-index: 1400 !important;
+}
+
+/* Badges RPG para sobreponer y actualizar textos de las tarjetas de Oro ("chancar") */
+.pixel-gold-card-overlay {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  z-index: 12;
+  box-sizing: border-box;
+}
+
+.pixel-gold-card-overlay--title {
+  pointer-events: none;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #38bdf8;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  font-weight: 900;
+  font-size: clamp(12px, 1.2vw, 17px);
+  letter-spacing: 0.8px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+  padding: 0 8px;
+  text-align: center;
+}
+
+.pixel-gold-card-overlay--title-popular {
+  border-color: #f59e0b;
+  color: #fef08a;
+  background: linear-gradient(180deg, #2a1805 0%, #170d02 100%);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.pixel-gold-card-overlay--title-best {
+  border-color: #a855f7;
+  color: #e9d5ff;
+  background: linear-gradient(180deg, #240e38 0%, #120520 100%);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 12px rgba(168, 85, 247, 0.3);
+}
+
+.pixel-gold-card-overlay--amount {
+  pointer-events: none;
+  background: linear-gradient(180deg, #1a2233 0%, #0b111d 100%);
+  border: 2px solid #eab308;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85), inset 0 0 14px rgba(234, 179, 8, 0.25);
+  color: #facc15;
+  font-weight: 900;
+  font-size: clamp(15px, 1.6vw, 24px);
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+  gap: 6px;
+}
+
+.pixel-gold-card-overlay--btn {
+  cursor: pointer;
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  border: 2px solid #7dd3fc;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45), inset 0 0 12px rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: clamp(14px, 1.4vw, 20px);
+  letter-spacing: 0.6px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  gap: 6px;
+  transition: transform 0.12s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pixel-gold-card-overlay--btn:hover {
+  transform: scale(1.03);
+  filter: brightness(1.15);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.6), inset 0 0 16px rgba(255, 255, 255, 0.35);
+  border-color: #fef08a;
+}
+
+.pixel-gold-card-overlay--btn:active {
+  transform: scale(0.97);
+}
+
 
 @keyframes fadeIn {
   from { opacity: 0; }

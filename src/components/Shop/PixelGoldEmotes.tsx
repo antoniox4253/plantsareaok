@@ -12,11 +12,11 @@ import './PixelGoldEmotes.css'
 const BASE_WIDTH = 1672
 const BASE_HEIGHT = 941
 
-// Coordenadas fijas extraídas del hotspots.json de Oro & Emotes
-const GOLD_COORDS = { x: 897, y: 33, w: 214, h: 55 }
-const GEMS_COORDS = { x: 1122, y: 33, w: 216, h: 55 }
-const ENERGY_COORDS = { x: 1348, y: 33, w: 178, h: 55 }
-const SOUND_COORDS = { x: 1541, y: 31, w: 57, h: 58 }
+// Coordenadas fijas ajustadas para tapar completamente las insignias del header
+const GOLD_COORDS = { x: 882, y: 31, w: 226, h: 58 }
+const GEMS_COORDS = { x: 1108, y: 31, w: 226, h: 58 }
+const ENERGY_COORDS = { x: 1332, y: 31, w: 194, h: 58 }
+const SOUND_COORDS = { x: 1538, y: 31, w: 57, h: 58 }
 
 export interface PixelGoldEmotesProps {
   onBackToHome: () => void
@@ -48,6 +48,18 @@ export default function PixelGoldEmotes({
   const [debugHotspots] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [unlockedIds, setUnlockedIds] = useState<string[]>(() => getUnlockedEmoteIds())
+
+  // Balances locales reactivos para actualización instantánea en tiempo real
+  const [localGold, setLocalGold] = useState<number>(userGold)
+  const [localGems, setLocalGems] = useState<number>(userTokens)
+
+  useEffect(() => {
+    setLocalGold(userGold)
+  }, [userGold])
+
+  useEffect(() => {
+    setLocalGems(userTokens)
+  }, [userTokens])
 
   // Modal de Emote individual (para probar / comprar)
   const [selectedEmote, setSelectedEmote] = useState<EmoteItem | null>(null)
@@ -93,23 +105,23 @@ export default function PixelGoldEmotes({
     })
   }
 
-  // Compra de emote con Oro o Gemas (el jugador elige la moneda)
+  // Compra de emote con Oro o Gemas (actualización instantánea en tiempo real)
   const handleBuyEmote = async (emote: EmoteItem, currency: 'gold' | 'gems' = 'gold') => {
     if (isPurchasingEmote) return
 
-    if (currency === 'gold' && userGold < emote.priceGold) {
+    if (currency === 'gold' && localGold < emote.priceGold) {
       setAlertModal({
         title: 'ORO INSUFICIENTE',
-        message: `⚠️ Necesitas ${emote.priceGold.toLocaleString()} Monedas de Oro para desbloquear "${emote.label}".\nTienes actualmente ${userGold.toLocaleString()} de Oro. Puedes pagar con 100 Gemas o adquirir paquetes de oro.`,
+        message: `⚠️ Necesitas ${emote.priceGold.toLocaleString()} Monedas de Oro para desbloquear "${emote.label}".\nTienes actualmente ${localGold.toLocaleString()} de Oro. Puedes pagar con 100 Gemas o adquirir paquetes de oro.`,
         icon: '🪙',
       })
       return
     }
 
-    if (currency === 'gems' && userTokens < emote.priceGems) {
+    if (currency === 'gems' && localGems < emote.priceGems) {
       setAlertModal({
         title: 'GEMAS INSUFICIENTES',
-        message: `⚠️ Necesitas ${emote.priceGems.toLocaleString()} 💎 Gemas para desbloquear "${emote.label}".\nTienes actualmente ${userTokens.toLocaleString()} Gemas.`,
+        message: `⚠️ Necesitas ${emote.priceGems.toLocaleString()} 💎 Gemas para desbloquear "${emote.label}".\nTienes actualmente ${localGems.toLocaleString()} Gemas.`,
         icon: '💎',
       })
       return
@@ -117,13 +129,27 @@ export default function PixelGoldEmotes({
 
     setIsPurchasingEmote(true)
     try {
-      const res = await purchaseEmote(emote.id, currency, userGold, userTokens)
+      const res = await purchaseEmote(emote.id, currency, localGold, localGems)
       if (res.success) {
         soundManager.playSound('points', 0.9)
-        setUnlockedIds(getUnlockedEmoteIds())
+
+        // Actualización inmediata del saldo local (0ms delay)
+        if (typeof res.newGold === 'number') setLocalGold(res.newGold)
+        else if (currency === 'gold') setLocalGold((g) => Math.max(0, g - emote.priceGold))
+
+        if (typeof res.newGems === 'number') setLocalGems(res.newGems)
+        else if (currency === 'gems') setLocalGems((g) => Math.max(0, g - emote.priceGems))
+
+        const nextUnlocked = res.unlockedEmotes || getUnlockedEmoteIds()
+        setUnlockedIds(nextUnlocked)
+
         const currencyLabel = currency === 'gold' ? `${emote.priceGold.toLocaleString()} Oro` : `${emote.priceGems} Gemas`
         setToastMessage(`🎉 ¡Emote "${emote.label}" desbloqueado! (-${currencyLabel})`)
+
+        // Notificar a la aplicación y servidor
         onRefreshBalance?.()
+        window.dispatchEvent(new CustomEvent('plant_arena_emotes_updated', { detail: nextUnlocked }))
+        window.dispatchEvent(new Event('plant_arena_profile_updated'))
       } else {
         setAlertModal({
           title: 'ERROR EN COMPRA',
@@ -136,14 +162,14 @@ export default function PixelGoldEmotes({
     }
   }
 
-  // Compra de paquete de Oro con Gemas
+  // Compra de paquete de Oro con Gemas (actualización inmediata)
   const handleExecuteGoldPurchase = async () => {
     if (!confirmGoldPkg || isPurchasingGold) return
-    if (userTokens < confirmGoldPkg.priceGems) {
+    if (localGems < confirmGoldPkg.priceGems) {
       setConfirmGoldPkg(null)
       setAlertModal({
         title: 'GEMAS INSUFICIENTES',
-        message: `💎 Necesitas ${confirmGoldPkg.priceGems.toLocaleString()} Gemas para este paquete.\nTienes actualmente ${userTokens.toLocaleString()} Gemas.`,
+        message: `💎 Necesitas ${confirmGoldPkg.priceGems.toLocaleString()} Gemas para este paquete.\nTienes actualmente ${localGems.toLocaleString()} Gemas.`,
         icon: '⚠️',
       })
       return
@@ -155,9 +181,12 @@ export default function PixelGoldEmotes({
       if (res && res.success) {
         soundManager.playSound('points', 0.9)
         const added = res.goldAdded ?? confirmGoldPkg.gold
+        setLocalGold((prev) => prev + added)
+        setLocalGems((prev) => Math.max(0, prev - confirmGoldPkg.priceGems))
         setConfirmGoldPkg(null)
         setToastMessage(`💰 ¡+${added.toLocaleString()} Monedas de Oro añadidas a tu cuenta!`)
         onRefreshBalance?.()
+        window.dispatchEvent(new Event('plant_arena_profile_updated'))
       } else {
         setConfirmGoldPkg(null)
         setAlertModal({
@@ -179,7 +208,6 @@ export default function PixelGoldEmotes({
     height: `${(box.h / BASE_HEIGHT) * 100}%`,
   })
 
-
   return (
     <div className="pixel-gold-container">
       <div className="pixel-gold-stage">
@@ -193,10 +221,10 @@ export default function PixelGoldEmotes({
           />
         </picture>
 
-        {/* Header Badges Reutilizable (Oro, Gemas, Energía, Sonido) */}
+        {/* Header Badges (Oro, Gemas, Energía, Sonido) con posiciones ajustadas a la izquierda */}
         <PixelHeaderBadges
-          userGold={userGold}
-          userTokens={userTokens}
+          userGold={localGold}
+          userTokens={localGems}
           playerEnergy={playerEnergy}
           maxPlayerEnergy={maxPlayerEnergy}
           userElo={userElo}
@@ -302,27 +330,26 @@ export default function PixelGoldEmotes({
           aria-label="Ver Cuentas Streaming"
         />
 
-        {/* PAQUETES DE ORO */}
-        {/* Paquete Básico (500 Oro / 100 Gemas) */}
+        {/* =========================================================================
+            BADGES RPG QUE SOBREPONEN Y ACTUALIZAN LOS TEXTOS HARDCODEADOS ("CHANCAR")
+            ========================================================================= */}
+        {/* Paquete 1: Básico (500 Oro / 100 Gemas) */}
+        <div
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--title"
+          style={calcStyle({ x: 125, y: 366, w: 378, h: 46 })}
+        >
+          PAQUETE BÁSICO
+        </div>
+        <div
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
+          style={calcStyle({ x: 145, y: 556, w: 338, h: 56 })}
+        >
+          <span>🪙</span>
+          <span>500 ORO</span>
+        </div>
         <button
           type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 73, y: 353, w: 482, h: 365 })}
-          onClick={() => {
-            soundManager.playSound('plantation', 0.7)
-            setConfirmGoldPkg({
-              id: 'gold_100',
-              title: 'Paquete Básico de Oro',
-              gold: 500,
-              priceGems: 100,
-            })
-          }}
-          title="Paquete Básico: 500 Monedas de Oro por 100 Gemas"
-          aria-label="Paquete Básico: 500 Monedas de Oro por 100 Gemas"
-        />
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--btn"
           style={calcStyle({ x: 133, y: 628, w: 359, h: 74 })}
           onClick={() => {
             soundManager.playSound('plantation', 0.7)
@@ -335,28 +362,28 @@ export default function PixelGoldEmotes({
           }}
           title="Comprar Paquete Básico por 100 Gemas"
           aria-label="Comprar Paquete Básico por 100 Gemas"
-        />
+        >
+          <span>💎</span>
+          <span>100 GEMAS</span>
+        </button>
 
-        {/* Paquete Popular (1,250 Oro / 200 Gemas • +25% Extra) */}
+        {/* Paquete 2: Popular (1,250 Oro / 200 Gemas • +25% Extra) */}
+        <div
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--title pixel-gold-card-overlay--title-popular"
+          style={calcStyle({ x: 640, y: 366, w: 388, h: 46 })}
+        >
+          ⭐ POPULAR (+25% EXTRA) ⭐
+        </div>
+        <div
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
+          style={calcStyle({ x: 660, y: 556, w: 345, h: 56 })}
+        >
+          <span>🪙</span>
+          <span>1,250 ORO</span>
+        </div>
         <button
           type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 590, y: 352, w: 487, h: 367 })}
-          onClick={() => {
-            soundManager.playSound('plantation', 0.7)
-            setConfirmGoldPkg({
-              id: 'gold_250',
-              title: 'Paquete Popular de Oro (+25% Extra)',
-              gold: 1250,
-              priceGems: 200,
-            })
-          }}
-          title="Paquete Popular: 1,250 Monedas de Oro por 200 Gemas (+25% Extra)"
-          aria-label="Paquete Popular: 1,250 Monedas de Oro por 200 Gemas (+25% Extra)"
-        />
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--btn"
           style={calcStyle({ x: 646, y: 628, w: 368, h: 74 })}
           onClick={() => {
             soundManager.playSound('plantation', 0.7)
@@ -369,28 +396,28 @@ export default function PixelGoldEmotes({
           }}
           title="Comprar Paquete Popular por 200 Gemas"
           aria-label="Comprar Paquete Popular por 200 Gemas"
-        />
+        >
+          <span>💎</span>
+          <span>200 GEMAS</span>
+        </button>
 
-        {/* Paquete Mejor Valor (3,500 Oro / 500 Gemas • +40% Extra) */}
+        {/* Paquete 3: Mejor Valor (3,500 Oro / 500 Gemas • +40% Extra) */}
+        <div
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--title pixel-gold-card-overlay--title-best"
+          style={calcStyle({ x: 1125, y: 366, w: 385, h: 46 })}
+        >
+          👑 MEJOR VALOR (+40% EXTRA) 👑
+        </div>
+        <div
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
+          style={calcStyle({ x: 1145, y: 556, w: 345, h: 56 })}
+        >
+          <span>🪙</span>
+          <span>3,500 ORO</span>
+        </div>
         <button
           type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 1078, y: 352, w: 468, h: 368 })}
-          onClick={() => {
-            soundManager.playSound('plantation', 0.7)
-            setConfirmGoldPkg({
-              id: 'gold_700',
-              title: 'Bóveda Real de Monedas (Mejor Valor • +40% Extra)',
-              gold: 3500,
-              priceGems: 500,
-            })
-          }}
-          title="Paquete Mejor Valor: 3,500 Monedas de Oro por 500 Gemas"
-          aria-label="Paquete Mejor Valor: 3,500 Monedas de Oro por 500 Gemas"
-        />
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
+          className="pixel-gold-card-overlay pixel-gold-card-overlay--btn"
           style={calcStyle({ x: 1137, y: 628, w: 365, h: 74 })}
           onClick={() => {
             soundManager.playSound('plantation', 0.7)
@@ -403,7 +430,10 @@ export default function PixelGoldEmotes({
           }}
           title="Comprar Paquete Mejor Valor por 500 Gemas"
           aria-label="Comprar Paquete Mejor Valor por 500 Gemas"
-        />
+        >
+          <span>💎</span>
+          <span>500 GEMAS</span>
+        </button>
 
         {/* SECCIÓN EMOTES EXCLUSIVOS */}
         {/* Botón "VER EMOTES" (Abre catálogo completo) */}
@@ -431,113 +461,13 @@ export default function PixelGoldEmotes({
           title="Ver Colección Completa de Emotes"
           aria-label="Ver Colección Completa de Emotes"
         />
-
       </div>
 
-      {/* MODAL: DETALLES Y PRUEBA DE EMOTE */}
-      {selectedEmote && (
-        <div className="pixel-gold-modal-backdrop" onClick={() => setSelectedEmote(null)}>
-          <div className="pixel-gold-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="pixel-gold-modal-close"
-              onClick={() => setSelectedEmote(null)}
-            >
-              ✕
-            </button>
+      {/* =========================================================================
+          MODALES APILADOS CON Z-INDEX CORRECTO (Catálogo debajo, Detalle encima)
+          ========================================================================= */}
 
-            <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 900, color: '#facc15' }}>
-              EMOTE: {selectedEmote.label}
-            </h2>
-            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#94a3b8' }}>
-              {selectedEmote.description}
-            </p>
-
-            {/* Escenario de Animación Live Preview */}
-            <div className="pixel-gold-preview-bubble-stage">
-              {isPreviewAnimating && (
-                <>
-                  <img
-                    src={selectedEmote.webpSrc || selectedEmote.imageSrc}
-                    alt={selectedEmote.label}
-                    className="pixel-gold-bubble-img"
-                  />
-                  {/* Chispas doradas */}
-                  {[...Array(8)].map((_, i) => {
-                    const angle = (Math.PI * 2 / 8) * i
-                    const dist = 32 + Math.random() * 24
-                    return (
-                      <div
-                        key={i}
-                        className="pixel-gold-spark"
-                        style={{
-                          left: `calc(50% + ${Math.cos(angle) * dist}px)`,
-                          top: `calc(50% + ${Math.sin(angle) * dist}px)`,
-                          ['--dx' as any]: `${Math.cos(angle) * 16}px`,
-                          ['--dy' as any]: `${Math.sin(angle) * 16}px`,
-                        }}
-                      />
-                    )
-                  })}
-                </>
-              )}
-            </div>
-
-            <div className="pixel-gold-modal-actions">
-              <button
-                type="button"
-                className="pixel-gold-btn pixel-gold-btn--test"
-                onClick={handleTestEmote}
-              >
-                ✨ PROBAR ANIMACIÓN
-              </button>
-
-              {unlockedIds.includes(selectedEmote.id) ? (
-                <div className="pixel-gold-btn pixel-gold-btn--owned">
-                  ✅ DESBLOQUEADO (EN COMBATE)
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: 10, width: '100%', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    className="pixel-gold-btn pixel-gold-btn--buy"
-                    style={{
-                      flex: 1,
-                      minWidth: 160,
-                      background: 'linear-gradient(180deg, #eab308 0%, #ca8a04 100%)',
-                      border: '2px solid #fef08a',
-                      color: '#000',
-                      fontWeight: 900,
-                    }}
-                    disabled={isPurchasingEmote}
-                    onClick={() => handleBuyEmote(selectedEmote, 'gold')}
-                  >
-                    {isPurchasingEmote ? '⏳ PROCESANDO...' : `🪙 COMPRAR (${selectedEmote.priceGold.toLocaleString()} ORO)`}
-                  </button>
-                  <button
-                    type="button"
-                    className="pixel-gold-btn pixel-gold-btn--buy"
-                    style={{
-                      flex: 1,
-                      minWidth: 160,
-                      background: 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)',
-                      border: '2px solid #38bdf8',
-                      color: '#fff',
-                      fontWeight: 900,
-                    }}
-                    disabled={isPurchasingEmote}
-                    onClick={() => handleBuyEmote(selectedEmote, 'gems')}
-                  >
-                    {isPurchasingEmote ? '⏳ PROCESANDO...' : `💎 COMPRAR (${selectedEmote.priceGems.toLocaleString()} GEMAS)`}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: CATÁLOGO COMPLETO DE EMOTES ("VER EMOTES") */}
+      {/* 1. MODAL: CATÁLOGO COMPLETO DE EMOTES ("VER EMOTES") */}
       {showCatalogModal && (
         <div className="pixel-gold-modal-backdrop" onClick={() => setShowCatalogModal(false)}>
           <div
@@ -593,7 +523,114 @@ export default function PixelGoldEmotes({
         </div>
       )}
 
-      {/* MODAL: CONFIRMACIÓN DE COMPRA DE ORO */}
+      {/* 2. MODAL: DETALLES Y PRUEBA DE EMOTE (SIEMPRE DELANTE DEL CATÁLOGO) */}
+      {selectedEmote && (
+        <div
+          className="pixel-gold-modal-backdrop pixel-gold-modal-backdrop--detail"
+          onClick={() => setSelectedEmote(null)}
+        >
+          <div className="pixel-gold-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="pixel-gold-modal-close"
+              onClick={() => setSelectedEmote(null)}
+            >
+              ✕
+            </button>
+
+            <h2 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 900, color: '#facc15' }}>
+              EMOTE: {selectedEmote.label}
+            </h2>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#cbd5e1' }}>
+              {selectedEmote.description}
+            </p>
+
+            {/* Escenario de prueba animada del Emote */}
+            <div className="pixel-gold-preview-bubble-stage">
+              <img
+                src={selectedEmote.webpSrc || selectedEmote.imageSrc}
+                alt={selectedEmote.label}
+                className={`pixel-gold-bubble-img ${isPreviewAnimating ? 'pop' : ''}`}
+                key={isPreviewAnimating ? Date.now() : undefined}
+              />
+              {/* Chispas flotantes RPG */}
+              {isPreviewAnimating &&
+                [...Array(6)].map((_, i) => {
+                  const angle = (Math.PI * 2 / 6) * i
+                  const dist = 48 + Math.random() * 20
+                  return (
+                    <div
+                      key={i}
+                      className="pixel-gold-spark"
+                      style={{
+                        left: `calc(50% + ${Math.cos(angle) * dist}px)`,
+                        top: `calc(50% + ${Math.sin(angle) * dist}px)`,
+                        ['--dx' as any]: `${Math.cos(angle) * 22}px`,
+                        ['--dy' as any]: `${Math.sin(angle) * 22}px`,
+                      }}
+                    />
+                  )
+                })}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
+              <button
+                type="button"
+                className="pixel-gold-btn pixel-gold-btn--test"
+                onClick={handleTestEmote}
+              >
+                ▶️ PROBAR REACCIÓN EN VIVO
+              </button>
+
+              {unlockedIds.includes(selectedEmote.id) ? (
+                <div
+                  className="pixel-gold-btn pixel-gold-btn--owned"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  ✅ YA DESBLOQUEADO
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 10, width: '100%', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="pixel-gold-btn pixel-gold-btn--buy"
+                    style={{
+                      flex: 1,
+                      minWidth: 160,
+                      background: 'linear-gradient(180deg, #eab308 0%, #ca8a04 100%)',
+                      border: '2px solid #fef08a',
+                      color: '#000',
+                      fontWeight: 900,
+                    }}
+                    disabled={isPurchasingEmote}
+                    onClick={() => handleBuyEmote(selectedEmote, 'gold')}
+                  >
+                    {isPurchasingEmote ? '⏳ PROCESANDO...' : `🪙 COMPRAR (${selectedEmote.priceGold.toLocaleString()} ORO)`}
+                  </button>
+                  <button
+                    type="button"
+                    className="pixel-gold-btn pixel-gold-btn--buy"
+                    style={{
+                      flex: 1,
+                      minWidth: 160,
+                      background: 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)',
+                      border: '2px solid #38bdf8',
+                      color: '#fff',
+                      fontWeight: 900,
+                    }}
+                    disabled={isPurchasingEmote}
+                    onClick={() => handleBuyEmote(selectedEmote, 'gems')}
+                  >
+                    {isPurchasingEmote ? '⏳ PROCESANDO...' : `💎 COMPRAR (${selectedEmote.priceGems.toLocaleString()} GEMAS)`}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. MODAL: CONFIRMACIÓN DE COMPRA DE ORO */}
       {confirmGoldPkg && (
         <div className="pixel-gold-modal-backdrop" onClick={() => setConfirmGoldPkg(null)}>
           <div className="pixel-gold-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -636,9 +673,12 @@ export default function PixelGoldEmotes({
         </div>
       )}
 
-      {/* MODAL: ALERTA THEMED */}
+      {/* 4. MODAL: ALERTA THEMED (Z-INDEX MÁXIMO) */}
       {alertModal && (
-        <div className="pixel-gold-modal-backdrop" onClick={() => setAlertModal(null)}>
+        <div
+          className="pixel-gold-modal-backdrop pixel-gold-modal-backdrop--alert"
+          onClick={() => setAlertModal(null)}
+        >
           <div className="pixel-gold-modal-card" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
@@ -648,10 +688,10 @@ export default function PixelGoldEmotes({
               ✕
             </button>
             <div style={{ fontSize: 48, margin: '8px 0' }}>{alertModal.icon}</div>
-            <h3 style={{ margin: '0 0 10px', fontSize: 20, fontWeight: 900, color: '#f87171' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 20, color: '#ef4444', fontWeight: 900 }}>
               {alertModal.title}
             </h3>
-            <p style={{ margin: '0 0 18px', fontSize: 14, color: '#cbd5e1', whiteSpace: 'pre-line' }}>
+            <p style={{ whiteSpace: 'pre-line', fontSize: 14, color: '#cbd5e1', margin: '0 0 16px' }}>
               {alertModal.message}
             </p>
             <button
@@ -665,29 +705,8 @@ export default function PixelGoldEmotes({
         </div>
       )}
 
-      {/* TOAST FEEDBACK */}
-      {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'linear-gradient(180deg, #0f172a 0%, #020617 100%)',
-            border: '2px solid #22c55e',
-            color: '#fff',
-            padding: '12px 24px',
-            borderRadius: 16,
-            fontWeight: 800,
-            fontSize: 14,
-            boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
-            zIndex: 2000,
-            animation: 'fadeIn 0.2s ease-out',
-          }}
-        >
-          {toastMessage}
-        </div>
-      )}
+      {/* Toast Notificación rápida */}
+      {toastMessage && <div className="pixel-gold-toast">{toastMessage}</div>}
     </div>
   )
 }

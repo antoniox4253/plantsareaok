@@ -796,6 +796,7 @@ export default function Shop({
           playerEnergy={playerEnergy}
           maxPlayerEnergy={maxPlayerEnergy}
           userElo={userElo}
+          onRefreshBalance={onServerChange}
         />
         {renderSharedModals()}
       </div>
