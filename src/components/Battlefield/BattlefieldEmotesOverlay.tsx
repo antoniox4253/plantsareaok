@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import {
@@ -15,13 +15,19 @@ export interface BattlefieldEmotesOverlayProps {
   soyP1?: boolean
   matchMode?: string
   opponentName?: string
+  opponentId?: string | null
+  isAsyncMatch?: boolean
+  currentUserId?: string | null
 }
 
 export default function BattlefieldEmotesOverlay({
   roomId = null,
   soyP1 = true,
   matchMode: _matchMode,
-  opponentName: _opponentName,
+  opponentName,
+  opponentId = null,
+  isAsyncMatch = false,
+  currentUserId = null,
 }: BattlefieldEmotesOverlayProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [cooldown, setCooldown] = useState<number>(0)
@@ -34,6 +40,10 @@ export default function BattlefieldEmotesOverlay({
   const leftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const channelRef = useRef<any>(null)
+  const recentDedupeRef = useRef<Set<string>>(new Set())
+
+  // ¿Es una partida multijugador con rival humano real en vivo?
+  const isRealHumanMatch = Boolean(roomId && !isAsyncMatch && opponentId)
 
   // Sincronizar catálogo desbloqueado
   useEffect(() => {
@@ -54,7 +64,7 @@ export default function BattlefieldEmotesOverlay({
   }, [cooldown])
 
   // Despliegue visual de un emote en uno de los lados
-  const triggerEmoteDisplay = (side: 'left' | 'right', emoteId: string) => {
+  const triggerEmoteDisplay = useCallback((side: 'left' | 'right', emoteId: string) => {
     const emote = getEmoteById(emoteId)
     if (!emote) return
 
@@ -83,25 +93,60 @@ export default function BattlefieldEmotesOverlay({
         }, 240)
       }, 2900)
     }
-  }
+  }, [])
 
-  // Conexión Realtime Multiplayer para sincronizar emotes
+  // Conexión Realtime Dual (WebSocket Broadcast + PostgreSQL postgres_changes) para partidas humanas
   useEffect(() => {
-    if (!roomId || !isSupabaseConfigured()) return
+    if (!isRealHumanMatch || !roomId || !isSupabaseConfigured()) {
+      return
+    }
+
+    const mySide = soyP1 ? 'p1' : 'p2'
+
+    const handleIncomingEmote = (emoteId: string, senderSide?: string, senderUserId?: string, uniqueId?: string | number) => {
+      // Ignorar emotes enviados por nosotros mismos
+      if (senderUserId && currentUserId && senderUserId === currentUserId) return
+      if (senderSide && senderSide === mySide) return
+
+      // Deduplicación para no mostrar dos veces si llegan broadcast y postgres_changes
+      const dedupeKey = uniqueId ? `${emoteId}_${uniqueId}` : `${emoteId}_${Date.now().toString().slice(0, -3)}`
+      if (recentDedupeRef.current.has(dedupeKey)) return
+      recentDedupeRef.current.add(dedupeKey)
+      setTimeout(() => recentDedupeRef.current.delete(dedupeKey), 3000)
+
+      // Mostrar en el lado derecho (rival)
+      triggerEmoteDisplay('right', emoteId)
+    }
 
     const canal = supabase.channel(`match_emotes_${roomId}`, {
       config: { broadcast: { self: false } },
     })
 
-    canal
-      .on('broadcast', { event: 'battle_emote' }, ({ payload }) => {
-        if (payload && payload.emoteId) {
-          // El rival envió un emote -> se muestra en el lado derecho
-          triggerEmoteDisplay('right', payload.emoteId)
-        }
-      })
-      .subscribe()
+    // 1. Escuchar WebSocket Broadcast de ultra-baja latencia
+    canal.on('broadcast', { event: 'battle_emote' }, ({ payload }) => {
+      if (payload && payload.emoteId) {
+        handleIncomingEmote(payload.emoteId, payload.senderSide, payload.senderUserId, payload.ts)
+      }
+    })
 
+    // 2. Escuchar PostgreSQL Realtime changes para garantía 100% libre de pérdidas
+    canal.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'match_emotes',
+        filter: `room_id=eq.${roomId}`,
+      },
+      (payload: any) => {
+        const row = payload.new
+        if (row && row.emote_id) {
+          handleIncomingEmote(row.emote_id, row.sender_side, row.user_id, row.id)
+        }
+      }
+    )
+
+    canal.subscribe()
     channelRef.current = canal
 
     return () => {
@@ -110,21 +155,23 @@ export default function BattlefieldEmotesOverlay({
       }
       channelRef.current = null
     }
-  }, [roomId])
+  }, [isRealHumanMatch, roomId, soyP1, currentUserId, triggerEmoteDisplay])
 
-  // Comportamiento de Bot / IA en partidas locales, de práctica o Survivor
+  // Comportamiento de Bot / IA en partidas solitarias, Survivor, Prácticas o Asíncronas
   useEffect(() => {
-    if (roomId) return // Es partida humana con sala
+    if (isRealHumanMatch) return
 
-    // Saludo ocasional del bot a los 3.5 segundos de iniciar la batalla
+    // Saludo ocasional del bot al inicio de la batalla (3.5s)
     const introTimer = setTimeout(() => {
-      if (Math.random() < 0.45) {
-        triggerEmoteDisplay('right', 'hola')
+      if (Math.random() < 0.55) {
+        const intros = ['hola', 'gg', 'que_rico', 'wow']
+        const chosen = intros[Math.floor(Math.random() * intros.length)]
+        triggerEmoteDisplay('right', chosen)
       }
-    }, 3500)
+    }, 3200)
 
     return () => clearTimeout(introTimer)
-  }, [roomId])
+  }, [isRealHumanMatch, triggerEmoteDisplay])
 
   // Usar emote por parte del jugador local
   const handleSelectEmote = (emoteId: string) => {
@@ -134,35 +181,62 @@ export default function BattlefieldEmotesOverlay({
     // 1. Mostrar localmente en el lado izquierdo
     triggerEmoteDisplay('left', emoteId)
 
-    // 2. Transmitir por WebSocket en partidas multijugador
-    if (channelRef.current) {
-      channelRef.current.send({
-        type: 'broadcast',
-        event: 'battle_emote',
-        payload: {
-          emoteId,
-          senderSide: soyP1 ? 'p1' : 'p2',
-        },
-      })
-    } else {
-      // 3. Respuesta inteligente del bot si estamos en PvE / solitario
-      if (Math.random() < 0.45) {
-        setTimeout(() => {
-          const botResponses: Record<string, string[]> = {
-            hola: ['hola', 'gg'],
-            gg: ['gg', 'que_rico', 'jaja'],
-            grr: ['jaja', 'que_rico', 'piedad'],
-            piedad: ['jaja', 'gg'],
-            jaja: ['grr', 'jaja', 'wow'],
-          }
-          const possible = botResponses[emoteId] || ['gg', 'hola', 'que_rico', 'wow']
-          const chosen = possible[Math.floor(Math.random() * possible.length)]
-          triggerEmoteDisplay('right', chosen)
-        }, 1400 + Math.random() * 800)
+    // 2. En partidas multijugador con rival real
+    if (isRealHumanMatch && roomId) {
+      const nowTs = Date.now()
+      const dedupeKey = `${emoteId}_${nowTs}`
+      recentDedupeRef.current.add(dedupeKey)
+
+      // A) Transmitir por WebSocket Broadcast inmediato
+      if (channelRef.current) {
+        try {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'battle_emote',
+            payload: {
+              emoteId,
+              senderSide: soyP1 ? 'p1' : 'p2',
+              senderUserId: currentUserId,
+              ts: nowTs,
+            },
+          })
+        } catch {
+          // Ignorar fallback a DB
+        }
       }
+
+      // B) Persistir en PostgreSQL vía RPC autoritativa (dispara postgres_changes para el rival)
+      if (isSupabaseConfigured()) {
+        void (supabase.rpc as any)('send_match_emote', {
+          p_room_id: roomId,
+          p_emote_id: emoteId,
+          p_sender_side: soyP1 ? 'p1' : 'p2',
+        }).catch((err: any) => {
+          console.warn('[Emotes] Error enviando emote a base de datos:', err)
+        })
+      }
+    } else {
+      // 3. Respuesta inteligente del bot en PvE / Asíncrono / Prácticas / Survivor
+      setTimeout(() => {
+        const botResponses: Record<string, string[]> = {
+          hola: ['hola', 'gg'],
+          gg: ['gg', 'que_rico', 'jaja'],
+          grr: ['jaja', 'que_rico', 'piedad', 'wow'],
+          piedad: ['jaja', 'gg', 'que_rico'],
+          jaja: ['grr', 'jaja', 'wow'],
+          que_rico: ['grr', 'que_rico', 'wow'],
+          unete_clan: ['que_rico', 'hola'],
+          papi_dagger: ['wow', 'grr', 'jaja'],
+          wow: ['wow', 'que_rico', 'papi_dagger'],
+          triste: ['piedad', 'jaja', 'gg'],
+        }
+        const possible = botResponses[emoteId] || ['gg', 'hola', 'que_rico', 'wow']
+        const chosen = possible[Math.floor(Math.random() * possible.length)]
+        triggerEmoteDisplay('right', chosen)
+      }, 1000 + Math.random() * 800)
     }
 
-    // Cooldown anti-spam de 2.5s y cerrar cajón
+    // Cooldown anti-spam de 3s y cerrar cajón
     setCooldown(3)
     setIsOpen(false)
   }
@@ -257,6 +331,9 @@ export default function BattlefieldEmotesOverlay({
       {/* 4. Burbuja de Emote del Rival (Lado Derecho) */}
       {activeRight && (
         <div className="bf-bubble-anchor bf-bubble-anchor--right">
+          {opponentName && (
+            <div className="bf-emote-sender-tag">{opponentName}</div>
+          )}
           <img
             src={activeRight.emote.webpSrc || activeRight.emote.imageSrc}
             alt={activeRight.emote.label}

@@ -7,6 +7,7 @@ export interface EmoteItem {
   imageSrc: string
   webpSrc: string
   priceGold: number
+  priceGems: number
   rarity: 'common' | 'rare' | 'epic' | 'legendary'
   isDefault?: boolean
 }
@@ -21,6 +22,7 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     imageSrc: '/game-assets/emotes/hola.png',
     webpSrc: '/game-assets/emotes/hola.webp',
     priceGold: 0,
+    priceGems: 0,
     rarity: 'common',
     isDefault: true,
   },
@@ -31,6 +33,7 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     imageSrc: '/game-assets/emotes/gg.png',
     webpSrc: '/game-assets/emotes/gg.webp',
     priceGold: 0,
+    priceGems: 0,
     rarity: 'common',
     isDefault: true,
   },
@@ -41,6 +44,7 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     imageSrc: '/game-assets/emotes/jaja.png',
     webpSrc: '/game-assets/emotes/jaja.webp',
     priceGold: 0,
+    priceGems: 0,
     rarity: 'common',
     isDefault: true,
   },
@@ -50,7 +54,8 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     description: '¡Furia picante! Un ají rojo que echa chispas por la derrota.',
     imageSrc: '/game-assets/emotes/grr.png',
     webpSrc: '/game-assets/emotes/grr.webp',
-    priceGold: 300,
+    priceGold: 1200,
+    priceGems: 100,
     rarity: 'rare',
   },
   {
@@ -59,7 +64,8 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     description: '¡Súplica cómica de cactus para que perdonen tu torre!',
     imageSrc: '/game-assets/emotes/piedad.png',
     webpSrc: '/game-assets/emotes/piedad.webp',
-    priceGold: 250,
+    priceGold: 1200,
+    priceGems: 100,
     rarity: 'common',
   },
   {
@@ -68,7 +74,8 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     description: '¡Pulgar arriba y satisfacción absoluta de la Nuez!',
     imageSrc: '/game-assets/emotes/que_rico.png',
     webpSrc: '/game-assets/emotes/que_rico.webp',
-    priceGold: 250,
+    priceGold: 1200,
+    priceGems: 100,
     rarity: 'common',
   },
   {
@@ -77,7 +84,8 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     description: '¡Llamado de hermandad! Invita a tus rivales a tu clan.',
     imageSrc: '/game-assets/emotes/unete_clan.png',
     webpSrc: '/game-assets/emotes/unete_clan.webp',
-    priceGold: 350,
+    priceGold: 1200,
+    priceGems: 100,
     rarity: 'rare',
   },
   {
@@ -86,7 +94,8 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     description: '¡Nivel legendario! Gafas oscuras y swagger de campeón absoluto.',
     imageSrc: '/game-assets/emotes/papi_dagger.png',
     webpSrc: '/game-assets/emotes/papi_dagger.webp',
-    priceGold: 500,
+    priceGold: 1200,
+    priceGems: 100,
     rarity: 'legendary',
   },
   {
@@ -95,7 +104,8 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     description: '¡Asombro total con reflejos de cristal ante una jugada maestra!',
     imageSrc: '/game-assets/emotes/wow.png',
     webpSrc: '/game-assets/emotes/wow.webp',
-    priceGold: 400,
+    priceGold: 1200,
+    priceGems: 100,
     rarity: 'epic',
   },
   {
@@ -104,7 +114,8 @@ export const EMOTES_CATALOG: EmoteItem[] = [
     description: '¡Lágrimas dramáticas y pucheros tras una mala racha!',
     imageSrc: '/game-assets/emotes/triste.png',
     webpSrc: '/game-assets/emotes/triste.webp',
-    priceGold: 250,
+    priceGold: 1200,
+    priceGems: 100,
     rarity: 'common',
   },
 ]
@@ -182,16 +193,19 @@ export function getEmoteById(emoteId: string): EmoteItem | undefined {
 }
 
 /**
- * Ejecuta la compra de un emote con Monedas de Oro.
+ * Ejecuta la compra de un emote eligiendo entre Oro o Gemas.
  * Conecta con la RPC en Supabase y actualiza balances y almacenamiento local.
  */
-export async function purchaseEmoteWithGold(
+export async function purchaseEmote(
   emoteId: string,
-  currentGold: number
+  currency: 'gold' | 'gems' = 'gold',
+  currentGold: number = 0,
+  currentGems: number = 0
 ): Promise<{
   success: boolean
   error?: string
   newGold?: number
+  newGems?: number
   unlockedEmotes?: string[]
 }> {
   const emote = getEmoteById(emoteId)
@@ -200,13 +214,25 @@ export async function purchaseEmoteWithGold(
   }
 
   if (isEmoteUnlocked(emoteId)) {
-    return { success: true, newGold: currentGold, unlockedEmotes: getUnlockedEmoteIds() }
+    return {
+      success: true,
+      newGold: currentGold,
+      newGems: currentGems,
+      unlockedEmotes: getUnlockedEmoteIds(),
+    }
   }
 
-  if (currentGold < emote.priceGold) {
+  if (currency === 'gold' && currentGold < emote.priceGold) {
     return {
       success: false,
       error: `Oro insuficiente. Necesitas ${emote.priceGold.toLocaleString()} Monedas de Oro para este emote.`,
+    }
+  }
+
+  if (currency === 'gems' && currentGems < emote.priceGems) {
+    return {
+      success: false,
+      error: `Gemas insuficientes. Necesitas ${emote.priceGems.toLocaleString()} 💎 Gemas para este emote.`,
     }
   }
 
@@ -215,6 +241,7 @@ export async function purchaseEmoteWithGold(
     try {
       const { data, error } = await (supabase.rpc as any)('purchase_emote', {
         p_emote_id: emoteId,
+        p_currency: currency,
       })
 
       if (error) {
@@ -232,11 +259,18 @@ export async function purchaseEmoteWithGold(
           ? res.gold_balance
           : typeof res.gold_balance === 'string'
           ? parseInt(res.gold_balance, 10)
-          : currentGold - emote.priceGold
+          : (currency === 'gold' ? currentGold - emote.priceGold : currentGold)
+
+        const finalGems = typeof res.gems_balance === 'number'
+          ? res.gems_balance
+          : typeof res.gems_balance === 'string'
+          ? parseFloat(res.gems_balance)
+          : (currency === 'gems' ? currentGems - emote.priceGems : currentGems)
 
         return {
           success: true,
           newGold: finalGold,
+          newGems: finalGems,
           unlockedEmotes: nextUnlocked,
         }
       } else {
@@ -249,10 +283,33 @@ export async function purchaseEmoteWithGold(
 
   // Fallback local cuando offline o anon
   const updatedUnlocked = unlockEmoteLocal(emoteId)
-  const remainingGold = Math.max(0, currentGold - emote.priceGold)
+  const remainingGold = currency === 'gold' ? Math.max(0, currentGold - emote.priceGold) : currentGold
+  const remainingGems = currency === 'gems' ? Math.max(0, currentGems - emote.priceGems) : currentGems
   return {
     success: true,
     newGold: remainingGold,
+    newGems: remainingGems,
     unlockedEmotes: updatedUnlocked,
+  }
+}
+
+/**
+ * Helper de compatibilidad para compra con Oro.
+ */
+export async function purchaseEmoteWithGold(
+  emoteId: string,
+  currentGold: number
+): Promise<{
+  success: boolean
+  error?: string
+  newGold?: number
+  unlockedEmotes?: string[]
+}> {
+  const res = await purchaseEmote(emoteId, 'gold', currentGold, 0)
+  return {
+    success: res.success,
+    error: res.error,
+    newGold: res.newGold,
+    unlockedEmotes: res.unlockedEmotes,
   }
 }

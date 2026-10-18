@@ -4380,6 +4380,9 @@ export default function Battlefield({
         soyP1={soyP1}
         matchMode={matchMode}
         opponentName={nombres?.rival}
+        opponentId={opponentId}
+        isAsyncMatch={isAsyncMatch}
+        currentUserId={currentUserId}
       />
 
       {/* Plant Hand */}

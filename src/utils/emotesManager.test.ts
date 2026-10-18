@@ -52,6 +52,7 @@ describe('emotesManager', () => {
       expect(item.imageSrc).toMatch(/\.png$/)
       expect(item.webpSrc).toMatch(/\.webp$/)
       expect(typeof item.priceGold).toBe('number')
+      expect(typeof item.priceGems).toBe('number')
     })
   })
 
@@ -60,13 +61,17 @@ describe('emotesManager', () => {
       expect(isEmoteUnlocked(id)).toBe(true)
       const def = getEmoteById(id)
       expect(def?.priceGold).toBe(0)
+      expect(def?.priceGems).toBe(0)
     })
   })
 
-  it('los emotes premium deben requerir compra y estar inicialmente bloqueados si no son default', () => {
+  it('los emotes premium deben requerir compra y costar 1200 de oro o 100 gemas', () => {
     expect(isEmoteUnlocked('grr')).toBe(false)
     expect(isEmoteUnlocked('papi_dagger')).toBe(false)
     expect(isEmoteUnlocked('wow')).toBe(false)
+    const grr = getEmoteById('grr')
+    expect(grr?.priceGold).toBe(1200)
+    expect(grr?.priceGems).toBe(100)
   })
 
   it('permite desbloquear localmente un emote y persistirlo en storage', () => {
@@ -78,17 +83,17 @@ describe('emotesManager', () => {
   })
 
   it('rechaza la compra si el jugador no tiene suficiente oro', async () => {
-    const res = await purchaseEmoteWithGold('papi_dagger', 100) // Cuesta 500
+    const res = await purchaseEmoteWithGold('papi_dagger', 1000) // Cuesta 1200
     expect(res.success).toBe(false)
     expect(res.error).toMatch(/Oro insuficiente/)
     expect(isEmoteUnlocked('papi_dagger')).toBe(false)
   })
 
   it('completa la compra si tiene saldo suficiente y actualiza el saldo de oro', async () => {
-    const initialGold = 1000
-    const res = await purchaseEmoteWithGold('grr', initialGold) // Cuesta 300
+    const initialGold = 2000
+    const res = await purchaseEmoteWithGold('grr', initialGold) // Cuesta 1200
     expect(res.success).toBe(true)
-    expect(res.newGold).toBe(700)
+    expect(res.newGold).toBe(800)
     expect(isEmoteUnlocked('grr')).toBe(true)
     expect(res.unlockedEmotes).toContain('grr')
   })
