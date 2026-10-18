@@ -454,6 +454,10 @@ export default function Shop({
         onBack={onBack}
         onOpenStreaming={onOpenStreaming}
         onToggleClassic={() => setViewMode('classic')}
+        onSelectTab={(tab) => {
+          setActiveTab(tab)
+          setViewMode('classic')
+        }}
         userGold={userGold}
         userTokens={userTokens}
         playerEnergy={playerEnergy}

@@ -69,6 +69,7 @@ export default function StreamingHub({
   const [queryError, setQueryError] = useState<string | null>(null)
   const [queryResult, setQueryResult] = useState<StreamingQueryResult | null>(null)
   const [isCopied, setIsCopied] = useState<boolean>(false)
+  const [toastNotification, setToastNotification] = useState<string | null>(null)
 
   const serverDropdownRef = useRef<HTMLDivElement>(null)
   const platformDropdownRef = useRef<HTMLDivElement>(null)
@@ -94,7 +95,48 @@ export default function StreamingHub({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Productos filtrados
+  // Auto dismiss toast notification
+  useEffect(() => {
+    if (!toastNotification) return
+    const timer = setTimeout(() => {
+      setToastNotification(null)
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [toastNotification])
+
+  // Manejar clic en Yape ("Muy pronto" para todos los productos)
+  const handleYapeClick = () => {
+    soundManager.playSound('click', 0.5)
+    setToastNotification('📱 Pagos con Yape: ¡Muy pronto disponible!')
+  }
+
+  // Manejar clic en botón de Gemas
+  const handleBuyWithGems = (product: StreamingProduct) => {
+    soundManager.playSound('click', 0.5)
+    const cost = product.gemCost || 300
+    if (!isLoggedIn) {
+      if (onOpenAuth) {
+        onOpenAuth()
+      } else {
+        setToastNotification('⚠️ Conecta tu cuenta de Plants Arena para canjear membresías con Gemas.')
+      }
+      return
+    }
+
+    const currentGems = userProfile?.gems_balance ?? 0
+    if (currentGems < cost) {
+      setToastNotification(
+        `💎 Saldo insuficiente: Tienes ${currentGems.toLocaleString()} Gemas y se requieren ${cost} Gemas. ¡Recarga en la Tienda Oficial!`
+      )
+      return
+    }
+
+    soundManager.playSound('victory', 0.6)
+    setToastNotification(
+      `🎉 ¡Solicitud recibida para ${product.name}! Tus datos de acceso serán sincronizados y habilitados para tu usuario.`
+    )
+    setModalProduct(null)
+  }
   const filteredProducts = useMemo(() => {
     const q = catalogSearch.toLowerCase().trim()
     return products.filter((item) => {
@@ -196,6 +238,22 @@ export default function StreamingHub({
       </div>
 
       <div className="streaming-hub__content-wrapper">
+        {/* Toast Notification Banner */}
+        {toastNotification && (
+          <div className="streaming-toast animate-fade-in">
+            <div className="streaming-toast__box">
+              <span className="streaming-toast__text">{toastNotification}</span>
+              <button
+                type="button"
+                className="streaming-toast__close"
+                onClick={() => setToastNotification(null)}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Navigation & User Session Header */}
         <header className="streaming-hub__header">
           {/* Brand */}
@@ -280,7 +338,7 @@ export default function StreamingHub({
             }}
           >
             <span>🛒 Catálogo de Cuentas</span>
-            <span className="streaming-hub__tab-badge">14+ SERVICIOS</span>
+            <span className="streaming-hub__tab-badge">12+ SERVICIOS</span>
           </button>
 
           <button
@@ -317,8 +375,8 @@ export default function StreamingHub({
                 <span className="streaming-hero__title-gradient">Códigos al Instante</span>
               </h1>
               <p className="streaming-hero__desc">
-                Disfruta de Netflix, Disney+, Prime Video, Max, Crunchyroll, ChatGPT Plus y más con
-                perfiles privados o cuentas completas garantizadas. Si ya posees una cuenta con nosotros,
+                Disfruta de Disney+, Prime Video, Max, Crunchyroll, ChatGPT Plus, Gemini Pro y más con
+                perfiles privados o cuentas garantizadas en Gemas o soles. Si ya posees una cuenta con nosotros,
                 utiliza el BOT para consultar tus códigos de acceso.
               </p>
               <div className="streaming-hero__actions">
@@ -417,7 +475,7 @@ export default function StreamingHub({
                           alt={item.name}
                           className="streaming-card__icon"
                           onError={(e) => {
-                            ;(e.target as HTMLImageElement).src = '/images/helpers/netflix.webp'
+                            ;(e.target as HTMLImageElement).src = '/images/helpers/disney.webp'
                           }}
                         />
                       </div>
@@ -586,7 +644,7 @@ export default function StreamingHub({
                             alt={selectedPlatform.label}
                             className="bot-dropdown__icon"
                             onError={(e) => {
-                              ;(e.target as HTMLImageElement).src = '/images/helpers/netflix.webp'
+                              ;(e.target as HTMLImageElement).src = '/images/helpers/disney.webp'
                             }}
                           />
                           <span>{selectedPlatform.label}</span>
@@ -623,7 +681,7 @@ export default function StreamingHub({
                                   alt={plat.label}
                                   className="bot-dropdown__icon"
                                   onError={(e) => {
-                                    ;(e.target as HTMLImageElement).src = '/images/helpers/netflix.webp'
+                                    ;(e.target as HTMLImageElement).src = '/images/helpers/disney.webp'
                                   }}
                                 />
                                 <span>{plat.label}</span>
@@ -889,18 +947,43 @@ export default function StreamingHub({
               </div>
 
               <div className="streaming-modal__actions">
-                <a
-                  href={`https://wa.me/51999999999?text=${encodeURIComponent(
-                    `Hola Plants Arena! Deseo adquirir una cuenta o suscripción de ${modalProduct.name} (${
-                      isLoggedIn && userProfile?.username ? `Usuario: ${userProfile.username}` : ''
-                    }).`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="streaming-modal__buy-btn"
-                >
-                  <span>Pedir vía WhatsApp (Entrega Inmediata)</span>
-                </a>
+                <div className="streaming-modal__buy-options">
+                  {/* Botón 1: Valor en Gemas */}
+                  <button
+                    type="button"
+                    className="streaming-modal__gem-btn"
+                    onClick={() => handleBuyWithGems(modalProduct)}
+                  >
+                    <div className="streaming-modal__gem-btn-inner">
+                      <span className="streaming-modal__gem-icon">💎</span>
+                      <span className="streaming-modal__gem-val">
+                        {modalProduct.gemCost || 300} Gemas
+                      </span>
+                    </div>
+                    <span className="streaming-modal__gem-sub">
+                      {isLoggedIn && userProfile?.gems_balance !== undefined
+                        ? `(Tienes ${userProfile.gems_balance.toLocaleString()} 💎)`
+                        : 'Canje con Gemas'}
+                    </span>
+                  </button>
+
+                  {/* Botón 2: Yape */}
+                  <button
+                    type="button"
+                    className="streaming-modal__yape-btn"
+                    onClick={handleYapeClick}
+                    title="Pagar con Yape (Muy pronto)"
+                  >
+                    <div className="streaming-modal__yape-content">
+                      <img
+                        src="/game-assets/shop/yape.png"
+                        alt="Yape"
+                        className="streaming-modal__yape-img"
+                      />
+                      <span className="streaming-modal__yape-tag">MUY PRONTO</span>
+                    </div>
+                  </button>
+                </div>
 
                 <button
                   type="button"

@@ -1505,10 +1505,6 @@ function App() {
           userProfile={profile}
           onOpenAuth={() => setIsAuthModalOpen(true)}
           onSignOut={signOut}
-          onOpenStreaming={() => {
-            setStreamingInitialTab('catalog')
-            setScreen('streaming')
-          }}
         />
         <AuthModal
           isOpen={isAuthModalOpen}

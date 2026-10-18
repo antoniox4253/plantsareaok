@@ -26,7 +26,6 @@ interface LandingPageProps {
   } | null
   onOpenAuth?: () => void
   onSignOut?: () => void
-  onOpenStreaming?: () => void
 }
 
 interface PlantCardData {
@@ -353,7 +352,6 @@ export default function LandingPage({
   userProfile,
   onOpenAuth,
   onSignOut,
-  onOpenStreaming,
 }: LandingPageProps) {
   const [lang, setLang] = useState<'es' | 'en'>('es')
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({})
@@ -430,19 +428,6 @@ export default function LandingPage({
           <a href="#arenas" className="landing-navbar__link">
             {lang === 'es' ? 'Arenas' : 'Arenas'}
           </a>
-          {onOpenStreaming && (
-            <a
-              href="/streaming"
-              className="landing-navbar__link"
-              style={{ color: '#4ade80', fontWeight: 800 }}
-              onClick={(e) => {
-                e.preventDefault()
-                onOpenStreaming()
-              }}
-            >
-              🎬 {lang === 'es' ? 'Streaming VIP' : 'VIP Streaming'}
-            </a>
-          )}
         </nav>
         <div className="landing-navbar__actions">
           <button

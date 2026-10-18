@@ -91,10 +91,13 @@ describe('Streaming Integration & Code Verifier Tests', () => {
 
   describe('2. Catálogo y Parámetros del Sistema', () => {
     it('contiene las plataformas oficiales con imágenes locales', () => {
-      expect(STREAMING_PLATFORMS.length).toBeGreaterThanOrEqual(14)
-      const netflix = STREAMING_PLATFORMS.find((p) => p.value === 'netflix')
-      expect(netflix).toBeDefined()
-      expect(netflix?.image).toContain('/images/helpers/netflix.webp')
+      expect(STREAMING_PLATFORMS.length).toBeGreaterThanOrEqual(10)
+      const disney = STREAMING_PLATFORMS.find((p) => p.value === 'disney')
+      expect(disney).toBeDefined()
+      expect(disney?.image).toContain('/images/helpers/disney.webp')
+      const gemini = STREAMING_PLATFORMS.find((p) => p.value === 'gemini')
+      expect(gemini).toBeDefined()
+      expect(gemini?.image).toContain('/images/helpers/gemini.webp')
     })
 
     it('contiene Servidor 1 y Servidor 2 configurados', () => {
@@ -108,7 +111,7 @@ describe('Streaming Integration & Code Verifier Tests', () => {
       for (const prod of DEFAULT_STREAMING_PRODUCTS) {
         expect(prod.id).toBeDefined()
         expect(prod.name).toBeDefined()
-        expect(prod.price).toMatch(/^S\/\s\d+(\.\d{2})?/)
+        expect(prod.price).toMatch(/\d+\s*Gemas/)
         expect(prod.plans.length).toBeGreaterThanOrEqual(1)
         expect(prod.description.length).toBeGreaterThan(10)
       }

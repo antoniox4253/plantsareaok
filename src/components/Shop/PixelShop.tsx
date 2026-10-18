@@ -43,6 +43,7 @@ export interface PixelShopProps {
   onBack: () => void
   onOpenStreaming?: () => void
   onToggleClassic?: () => void
+  onSelectTab?: (tab: 'packs' | 'pass' | 'gold' | 'energy' | 'market') => void
   userGold?: number
   userTokens?: number
   playerEnergy?: number
@@ -52,6 +53,7 @@ export default function PixelShop({
   onBack,
   onOpenStreaming,
   onToggleClassic,
+  onSelectTab,
   userGold,
   userTokens,
   playerEnergy,
@@ -91,28 +93,62 @@ export default function PixelShop({
       return
     }
 
-    if (h.id === 'counter_oro') {
-      setToastMessage(`💰 Oro disponible: ${(userGold ?? 50000).toLocaleString()} monedas`)
+    if (h.id === 'cta_ver_sobres' || h.id === 'tab_sobres' || h.id === 'card_sobres') {
+      if (onSelectTab) {
+        onSelectTab('packs')
+      } else {
+        setToastMessage('🎒 Sobres de Semillas')
+      }
+      return
+    }
+
+    if (h.id === 'tab_vip' || h.id === 'card_vip') {
+      if (onSelectTab) {
+        onSelectTab('pass')
+      } else {
+        setToastMessage('⭐ Pase VIP')
+      }
+      return
+    }
+
+    if (h.id === 'tab_oro' || h.id === 'card_oro' || h.id === 'counter_oro') {
+      if (onSelectTab) {
+        onSelectTab('gold')
+      } else {
+        setToastMessage(`💰 Oro disponible: ${(userGold ?? 50000).toLocaleString()} monedas`)
+      }
+      return
+    }
+
+    if (h.id === 'tab_energias' || h.id === 'card_energias' || h.id === 'counter_energia') {
+      if (onSelectTab) {
+        onSelectTab('energy')
+      } else {
+        setToastMessage(`⚡ Energía actual: ${playerEnergy ?? 20} / 20`)
+      }
+      return
+    }
+
+    if (h.id === 'tab_comercio' || h.id === 'card_comercio') {
+      if (onSelectTab) {
+        onSelectTab('market')
+      } else {
+        setToastMessage('🤝 Comercio P2P')
+      }
       return
     }
 
     if (h.id === 'counter_gemas') {
-      setToastMessage(`💎 Gemas disponibles: ${(userTokens ?? 100).toLocaleString()}`)
+      if (onSelectTab) {
+        onSelectTab('gold')
+      } else {
+        setToastMessage(`💎 Gemas disponibles: ${(userTokens ?? 100).toLocaleString()}`)
+      }
       return
     }
 
-    if (h.id === 'counter_energia') {
-      setToastMessage(`⚡ Energía actual: ${playerEnergy ?? 20} / 20`)
-      return
-    }
-
-    if (h.id === 'cta_ver_sobres' || h.id === 'tab_sobres' || h.id === 'card_sobres') {
-      setToastMessage('🎒 Sobres de Semillas (Pantalla Principal)')
-      return
-    }
-
-    // Mensaje para tabs y cards mientras se crean las siguientes pantallas
-    setToastMessage(`🎨 ${h.label} · Pantalla en desarrollo`)
+    // Fallback descriptivo para personajes y secciones de arte
+    setToastMessage(`✨ ${h.label}`)
   }
 
   return (
