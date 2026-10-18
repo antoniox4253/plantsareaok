@@ -55,6 +55,7 @@ export interface Database {
           returning_bonus_available?: boolean
           returning_bonus_used_at?: string | null
           keybindings?: any | null
+          unlocked_emotes?: string[] | null
           created_at: string
           updated_at: string
         }
@@ -95,6 +96,7 @@ export interface Database {
           returning_bonus_available?: boolean
           returning_bonus_used_at?: string | null
           keybindings?: any | null
+          unlocked_emotes?: string[] | null
           created_at?: string
           updated_at?: string
         }
@@ -129,6 +131,7 @@ export interface Database {
           is_ip_exempt?: boolean
           exemption_reason?: string | null
           keybindings?: any | null
+          unlocked_emotes?: string[] | null
           created_at?: string
           updated_at?: string
         }

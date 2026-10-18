@@ -4,6 +4,7 @@ import { urlDeVuelta } from '../utils/direccionPublica'
 import { profileService } from '../services/profileService'
 import { UserManager } from '../utils/userManager'
 import { KeybindingsManager } from '../utils/keybindingsManager'
+import { syncUnlockedEmotesFromProfile } from '../utils/emotesManager'
 import type { Database } from '../types/database.types'
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
@@ -219,6 +220,9 @@ export function useAuth() {
       if (prof.keybindings) {
         KeybindingsManager.syncFromRemote(prof.keybindings)
       }
+      if (prof.unlocked_emotes && Array.isArray(prof.unlocked_emotes)) {
+        syncUnlockedEmotesFromProfile(prof.unlocked_emotes)
+      }
       setIsAdmin(Boolean(prof.is_admin))
       localStorage.removeItem(STORAGE_KEYS.LEGACY_ADMIN_SESSION)
     } else {
@@ -228,6 +232,9 @@ export function useAuth() {
         setProfile(prof)
         if (prof.keybindings) {
           KeybindingsManager.syncFromRemote(prof.keybindings)
+        }
+        if (prof.unlocked_emotes && Array.isArray(prof.unlocked_emotes)) {
+          syncUnlockedEmotesFromProfile(prof.unlocked_emotes)
         }
         setIsAdmin(Boolean(prof.is_admin))
         localStorage.removeItem(STORAGE_KEYS.LEGACY_ADMIN_SESSION)
