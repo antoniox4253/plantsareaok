@@ -848,7 +848,7 @@ export const SupabaseService = {
    * batalla: un canal abierto sigue consumiendo conexión de Realtime, y son
    * limitadas.
    */
-  subscribeToMatchActions(
+   subscribeToMatchActions(
     roomId: string,
     alRecibir: (accion: {
       id: number
@@ -870,7 +870,18 @@ export const SupabaseService = {
      * planta: que no se esté enviando, que el canal esté caído, o que estéis en
      * salas distintas. Sin esto hay que adivinar.
      */
-    alCambiarEstado?: (estado: string) => void
+    alCambiarEstado?: (estado: string) => void,
+    alRecibirEmote?: (emote: {
+      id?: number
+      user_id?: string
+      userId?: string
+      emote_id?: string
+      emoteId?: string
+      sender_side?: string
+      senderSide?: string
+      ts?: number
+      sessionId?: string
+    }) => void
   ): () => void {
     if (!isSupabaseConfigured()) return () => {}
     const canal = supabase
@@ -885,10 +896,125 @@ export const SupabaseService = {
         },
         (payload: any) => alRecibir(payload.new)
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'match_emotes',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload: any) => {
+          if (payload?.new && alRecibirEmote) {
+            alRecibirEmote({
+              id: payload.new.id ? Number(payload.new.id) : undefined,
+              user_id: payload.new.user_id,
+              userId: payload.new.user_id,
+              emote_id: payload.new.emote_id,
+              emoteId: payload.new.emote_id,
+              sender_side: payload.new.sender_side,
+              senderSide: payload.new.sender_side,
+            })
+          }
+        }
+      )
+      .on('broadcast', { event: 'battle_emote' }, ({ payload }) => {
+        if (payload && alRecibirEmote) {
+          alRecibirEmote({
+            id: payload.id ? Number(payload.id) : undefined,
+            user_id: payload.user_id || payload.senderUserId || payload.userId,
+            userId: payload.user_id || payload.senderUserId || payload.userId,
+            emote_id: payload.emote_id || payload.emoteId,
+            emoteId: payload.emote_id || payload.emoteId,
+            sender_side: payload.sender_side || payload.senderSide,
+            senderSide: payload.sender_side || payload.senderSide,
+            ts: payload.ts,
+            sessionId: payload.sessionId,
+          })
+        }
+      })
       .subscribe((estado: string) => alCambiarEstado?.(estado))
 
     return () => {
       void supabase.removeChannel(canal)
+    }
+  },
+
+  /**
+   * Envía un emote tanto por Broadcast WebSocket en el canal de combate como
+   * persistiendo en PostgreSQL vía RPC send_match_emote.
+   */
+  async sendMatchEmote(
+    roomId: string,
+    emoteId: string,
+    currentUserId: string | null,
+    senderSide: 'p1' | 'p2',
+    sessionId?: string
+  ): Promise<number | null> {
+    if (!isSupabaseConfigured() || !roomId) return null
+
+    // 1. Broadcast instantáneo WebSocket (~15ms)
+    try {
+      const canal = supabase.channel(`match_${roomId}`)
+      void canal.send({
+        type: 'broadcast',
+        event: 'battle_emote',
+        payload: {
+          emote_id: emoteId,
+          emoteId,
+          user_id: currentUserId,
+          senderUserId: currentUserId,
+          sender_side: senderSide,
+          senderSide,
+          sessionId,
+          ts: Date.now(),
+        },
+      })
+    } catch (e) {
+      console.warn('[battleService] Error en broadcast emote:', e)
+    }
+
+    // 2. Persistencia autoritativa en BD para respaldo 100% garantizado
+    try {
+      const { data, error } = await (supabase.rpc as any)('send_match_emote', {
+        p_room_id: roomId,
+        p_emote_id: emoteId,
+        p_sender_side: senderSide,
+      })
+      if (!error && data && data.id) {
+        return Number(data.id)
+      }
+    } catch (e) {
+      console.warn('[battleService] Error guardando emote en DB:', e)
+    }
+    return null
+  },
+
+  /**
+   * Consulta incremental de emotes de la partida posteriores a desdeId
+   */
+  async matchEmotesSince(
+    roomId: string,
+    desdeId: number
+  ): Promise<Array<{
+    id: number
+    userId: string
+    senderSide: string
+    emoteId: string
+    createdAt: string
+  }>> {
+    if (!isSupabaseConfigured() || !roomId) return []
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_match_emotes_since', {
+        p_room_id: roomId,
+        p_since_id: desdeId,
+      })
+      if (!error && Array.isArray(data)) {
+        return data
+      }
+      return []
+    } catch {
+      return []
     }
   },
 
@@ -6214,5 +6340,6 @@ export interface GlobalTransactionItem {
 }
 
 export const supabaseService = SupabaseService
+export const battleService = SupabaseService
 
 

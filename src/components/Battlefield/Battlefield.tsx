@@ -341,6 +341,13 @@ export default function Battlefield({
   const { user } = useAuth()
   const currentUserId = user?.id ?? null
 
+  const [incomingRivalEmote, setIncomingRivalEmote] = useState<{
+    id?: number
+    emoteId: string
+    ts: number
+  } | null>(null)
+  const ultimoEmoteIdRef = useRef<number>(0)
+
   const [treeLevel, setTreeLevel] = useState<number>(() => {
     if (typeof treeLevels?.mio === 'number') {
       return treeLevels.mio
@@ -1248,9 +1255,28 @@ export default function Battlefield({
       })
     }
 
-    const dejarDeEscuchar = battleService.subscribeToMatchActions(roomId, aplicar, (estado) => {
-      setDiag((d) => ({ ...d, canal: estado }))
-    })
+    const dejarDeEscuchar = battleService.subscribeToMatchActions(
+      roomId,
+      aplicar,
+      (estado) => {
+        setDiag((d) => ({ ...d, canal: estado }))
+      },
+      (emote) => {
+        // Ignorar mis propios emotes
+        if (emote.user_id && currentUserId && emote.user_id === currentUserId) return
+        const emoteId = emote.emote_id || emote.emoteId
+        if (!emoteId) return
+        if (typeof emote.id === 'number') {
+          if (emote.id <= ultimoEmoteIdRef.current) return
+          ultimoEmoteIdRef.current = emote.id
+        }
+        setIncomingRivalEmote({
+          id: emote.id,
+          emoteId,
+          ts: Date.now(),
+        })
+      }
+    )
 
     const capturedGeneration = sessionGenerationRef.current
     const capturedRoomId = roomId
@@ -1305,6 +1331,23 @@ export default function Battlefield({
           })
         }
       }
+
+      // Red de seguridad autoritativa para emotes del rival
+      try {
+        const nuevosEmotes = await battleService.matchEmotesSince(capturedRoomId, ultimoEmoteIdRef.current)
+        if (capturedGeneration !== sessionGenerationRef.current || capturedRoomId !== roomIdRef.current) return
+        if (nuevosEmotes.length > 0) {
+          for (const ne of nuevosEmotes) {
+            if (ne.id > ultimoEmoteIdRef.current) ultimoEmoteIdRef.current = ne.id
+            if (ne.userId && currentUserId && ne.userId === currentUserId) continue
+            setIncomingRivalEmote({
+              id: ne.id,
+              emoteId: ne.emoteId,
+              ts: Date.now(),
+            })
+          }
+        }
+      } catch {}
     }
     void recuperar()
     programarRecuperar()
@@ -4383,6 +4426,7 @@ export default function Battlefield({
         opponentId={opponentId}
         isAsyncMatch={isAsyncMatch}
         currentUserId={currentUserId}
+        incomingRivalEmote={incomingRivalEmote}
       />
 
       {/* Plant Hand */}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
+import { battleService } from '../../services/supabaseService'
 import {
   EMOTES_CATALOG,
   getUnlockedEmoteIds,
@@ -19,6 +20,7 @@ export interface BattlefieldEmotesOverlayProps {
   opponentId?: string | null
   isAsyncMatch?: boolean
   currentUserId?: string | null
+  incomingRivalEmote?: { id?: number; emoteId: string; ts?: number } | null
 }
 
 export default function BattlefieldEmotesOverlay({
@@ -29,6 +31,7 @@ export default function BattlefieldEmotesOverlay({
   opponentId: _opponentId = null,
   isAsyncMatch = false,
   currentUserId = null,
+  incomingRivalEmote = null,
 }: BattlefieldEmotesOverlayProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [cooldown, setCooldown] = useState<number>(0)
@@ -41,11 +44,12 @@ export default function BattlefieldEmotesOverlay({
   const leftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const channelRef = useRef<any>(null)
-  const recentDedupeRef = useRef<Set<string>>(new Set())
   const lastEmoteIdRef = useRef<number>(0)
   const mySentLocalRef = useRef<Set<number>>(new Set())
   const mySentDbIdsRef = useRef<Set<number>>(new Set())
+  const processedEmoteIdsRef = useRef<Set<number>>(new Set())
   const lastRivalEmoteTimeRef = useRef<{ [emoteId: string]: number }>({})
+  const tabSessionIdRef = useRef<string>(Math.random().toString(36).slice(2) + Date.now().toString(36))
 
   // Sincronizar catálogo desbloqueado por eventos locales
   useEffect(() => {
@@ -133,6 +137,56 @@ export default function BattlefieldEmotesOverlay({
     soyP1Ref.current = soyP1
   }, [soyP1])
 
+  // Procesador universal de emotes entrantes del rival
+  const handleIncomingEmote = useCallback((
+    emoteId: string,
+    senderUserId?: string,
+    id?: number,
+    ts?: number,
+    sessionId?: string
+  ) => {
+    if (!emoteId) return
+
+    // 1. Ignorar emotes enviados por esta misma pestaña o sesión local
+    if (sessionId && sessionId === tabSessionIdRef.current) return
+    if (id && mySentDbIdsRef.current.has(id)) return
+    if (ts && mySentLocalRef.current.has(ts)) return
+
+    // 2. Si el sender coincide con el usuario autenticado local, ignorar (es propio)
+    if (senderUserId && currentUserIdRef.current && senderUserId === currentUserIdRef.current) {
+      return
+    }
+
+    // 3. Deduplicación por ID de base de datos
+    if (typeof id === 'number') {
+      if (processedEmoteIdsRef.current.has(id)) return
+      processedEmoteIdsRef.current.add(id)
+      if (id > lastEmoteIdRef.current) {
+        lastEmoteIdRef.current = id
+      }
+    }
+
+    // 4. Deduplicación temporal rápida (1.2s) para no duplicar si broadcast y DB coinciden
+    const now = Date.now()
+    const lastTrigger = lastRivalEmoteTimeRef.current[emoteId] || 0
+    if (now - lastTrigger < 1200) return
+    lastRivalEmoteTimeRef.current[emoteId] = now
+
+    // 5. ¡¡DESPLEGAR EN EL LADO DERECHO (DEL RIVAL)!!
+    triggerEmoteDisplay('right', emoteId)
+  }, [triggerEmoteDisplay])
+
+  // Reactividad inmediata ante emotes entregados por el canal unificado de la partida (Battlefield)
+  useEffect(() => {
+    if (!incomingRivalEmote || !incomingRivalEmote.emoteId) return
+    handleIncomingEmote(
+      incomingRivalEmote.emoteId,
+      undefined,
+      incomingRivalEmote.id,
+      incomingRivalEmote.ts
+    )
+  }, [incomingRivalEmote, handleIncomingEmote])
+
   // Conexión Realtime Dual + Polling Autoritativo RPC
   // Garantiza que los dos combatientes vean sus emotes en tiempo real en cualquier circunstancia
   useEffect(() => {
@@ -140,67 +194,18 @@ export default function BattlefieldEmotesOverlay({
       return
     }
 
-    const mySide = soyP1Ref.current ? 'p1' : 'p2'
-
-    const handleIncomingEmote = (
-      emoteId: string,
-      senderSide?: string,
-      senderUserId?: string,
-      id?: number,
-      ts?: number,
-      createdAt?: string
-    ) => {
-      // 1. Ignorar emotes enviados por esta misma sesión/tab
-      if (id && mySentDbIdsRef.current.has(id)) return
-      if (ts && mySentLocalRef.current.has(ts)) return
-
-      // 2. Si viene marcado con senderSide, comparar con nuestro lado
-      if (senderSide && senderSide === mySide) {
-        return
-      }
-
-      // 3. Si no hay senderSide pero coincide con nuestro userId y no hay senderSide rival
-      if (!senderSide && senderUserId && currentUserIdRef.current && senderUserId === currentUserIdRef.current) {
-        return
-      }
-
-      // 4. Ignorar emotes antiguos de más de 8 segundos (evitar spam de partidas pasadas al montar)
-      if (createdAt) {
-        const age = Date.now() - new Date(createdAt).getTime()
-        if (age > 8000) {
-          if (typeof id === 'number' && id > lastEmoteIdRef.current) {
-            lastEmoteIdRef.current = id
-          }
-          return
-        }
-      }
-
-      if (typeof id === 'number' && id > lastEmoteIdRef.current) {
-        lastEmoteIdRef.current = id
-      }
-
-      // 5. Deduplicación temporal por emote (1.6s) para no duplicar si coinciden broadcast y DB
-      const now = Date.now()
-      const lastTrigger = lastRivalEmoteTimeRef.current[emoteId] || 0
-      if (now - lastTrigger < 1600) return
-      lastRivalEmoteTimeRef.current[emoteId] = now
-
-      // Mostrar en el lado derecho (rival)
-      triggerEmoteDisplay('right', emoteId)
-    }
-
     // Canal dedicado de emotes (match_emotes_${roomId}) con broadcast y postgres_changes
     const emoteCanal = supabase.channel(`match_emotes_${roomId}`, {
       config: { broadcast: { self: false } },
     })
     emoteCanal.on('broadcast', { event: 'battle_emote' }, ({ payload }) => {
-      if (payload && payload.emoteId) {
+      if (payload && (payload.emoteId || payload.emote_id)) {
         handleIncomingEmote(
-          payload.emoteId,
-          payload.senderSide,
-          payload.senderUserId,
-          payload.id,
-          payload.ts
+          payload.emoteId || payload.emote_id,
+          payload.senderUserId || payload.user_id,
+          payload.id ? Number(payload.id) : undefined,
+          payload.ts,
+          payload.sessionId
         )
       }
     })
@@ -217,11 +222,10 @@ export default function BattlefieldEmotesOverlay({
         if (row && row.emote_id) {
           handleIncomingEmote(
             row.emote_id,
-            row.sender_side,
             row.user_id,
             Number(row.id),
             undefined,
-            row.created_at
+            undefined
           )
         }
       }
@@ -234,20 +238,15 @@ export default function BattlefieldEmotesOverlay({
     const recuperarEmotes = async () => {
       if (cancelado || !isSupabaseConfigured() || !roomId) return
       try {
-        const { data, error } = await (supabase.rpc as any)('get_match_emotes_since', {
-          p_room_id: roomId,
-          p_since_id: lastEmoteIdRef.current,
-        })
-
-        if (!error && Array.isArray(data) && data.length > 0) {
+        const data = await battleService.matchEmotesSince(roomId, lastEmoteIdRef.current)
+        if (Array.isArray(data) && data.length > 0) {
           for (const row of data) {
             handleIncomingEmote(
-              row.emoteId || row.emote_id,
-              row.senderSide || row.sender_side,
-              row.userId || row.user_id,
+              row.emoteId || (row as any).emote_id,
+              row.userId || (row as any).user_id,
               Number(row.id),
               undefined,
-              row.createdAt || row.created_at
+              undefined
             )
           }
         }
@@ -267,7 +266,7 @@ export default function BattlefieldEmotesOverlay({
       }
       channelRef.current = null
     }
-  }, [roomId, triggerEmoteDisplay])
+  }, [roomId, handleIncomingEmote])
 
   // Comportamiento de Bot / IA en partidas solitarias, Survivor o Asíncronas
   useEffect(() => {
@@ -299,43 +298,37 @@ export default function BattlefieldEmotesOverlay({
 
     // 2. Si hay sala (partidas PvP: Friendly, Ranked, Coliseo, Torneos)
     if (roomId) {
-      const dedupeKey = `${emoteId}_${nowTs}`
-      recentDedupeRef.current.add(dedupeKey)
-
-      const broadcastPayload = {
+      // A) Transmisión directa y persistencia en PostgreSQL vía battleService
+      void battleService.sendMatchEmote(
+        roomId,
         emoteId,
-        senderSide: mySide,
-        senderUserId: currentUserId,
-        ts: nowTs,
-      }
+        currentUserId,
+        mySide,
+        tabSessionIdRef.current
+      ).then((newDbId: number | null) => {
+        if (newDbId) {
+          mySentDbIdsRef.current.add(newDbId)
+          lastEmoteIdRef.current = Math.max(lastEmoteIdRef.current, newDbId)
+        }
+      })
 
-      // Transmitir en canal dedicado de emotes (match_emotes_${roomId})
+      // B) Broadcast complementario por canal secundario dedicado de emotes
       if (channelRef.current) {
         try {
           void channelRef.current.send({
             type: 'broadcast',
             event: 'battle_emote',
-            payload: broadcastPayload,
+            payload: {
+              emoteId,
+              emote_id: emoteId,
+              senderSide: mySide,
+              senderUserId: currentUserId,
+              user_id: currentUserId,
+              sessionId: tabSessionIdRef.current,
+              ts: nowTs,
+            },
           })
         } catch {}
-      }
-
-      // C) Persistir en PostgreSQL vía RPC autoritativa (garantía 100% como las plantas)
-      if (isSupabaseConfigured()) {
-        try {
-          const { data } = await (supabase.rpc as any)('send_match_emote', {
-            p_room_id: roomId,
-            p_emote_id: emoteId,
-            p_sender_side: mySide,
-          })
-          if (data && data.id) {
-            const numId = Number(data.id)
-            mySentDbIdsRef.current.add(numId)
-            lastEmoteIdRef.current = Math.max(lastEmoteIdRef.current, numId)
-          }
-        } catch (err: any) {
-          console.warn('[Emotes] Error enviando emote a base de datos:', err)
-        }
       }
     }
 
