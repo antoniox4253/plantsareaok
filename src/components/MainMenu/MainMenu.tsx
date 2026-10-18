@@ -73,6 +73,7 @@ interface MainMenuProps {
   onOpenMisiones?: () => void
   onOpenLoteria?: () => void
   onOpenPlantsToken?: (tab?: 'summary' | 'presale' | 'vesting' | 'swap' | 'tokenomics' | 'guide') => void
+  onOpenStreaming?: () => void
   onOpenLanding?: () => void
   onOpenAdmin?: () => void
   onOpenStrategicPlaytest?: () => void
@@ -130,6 +131,7 @@ export default function MainMenu({
   onOpenMisiones,
   onOpenLoteria,
   onOpenPlantsToken,
+  onOpenStreaming,
   onOpenLanding,
   onOpenAdmin,
   onOpenStrategicPlaytest,
@@ -623,7 +625,7 @@ export default function MainMenu({
   useEffect(() => {
     if (isReturningUser) return
     const timer = setInterval(() => {
-      setBannerSlide((prev) => (prev + 1) % 4)
+      setBannerSlide((prev) => (prev + 1) % 5)
     }, 10000)
     return () => clearInterval(timer)
   }, [isReturningUser])
@@ -929,6 +931,8 @@ export default function MainMenu({
             ? 'Canal Oficial de Telegram: Únete para noticias y torneos'
             : bannerSlide === 3
             ? 'Token PLANTS: Preventa Fundadores activa'
+            : bannerSlide === 4
+            ? 'Streaming VIP & BOT: Cuentas Premium y Códigos al instante'
             : `${onlineUsersCount} Jugadores en línea jugando en la Arena`
         }
         title={
@@ -940,6 +944,8 @@ export default function MainMenu({
             ? 'Comunidad Oficial de Telegram - Clic para unirte'
             : bannerSlide === 3
             ? 'Token PLANTS · Preventa Génesis y Respaldo USDT (Clic para entrar)'
+            : bannerSlide === 4
+            ? 'Streaming VIP & BOT · Cuentas Premium y Verificador de Códigos al instante (Clic para entrar)'
             : 'Jugadores en línea - Clic para entrar a la Arena'
         }
         onClick={() => {
@@ -953,6 +959,8 @@ export default function MainMenu({
             window.open('https://t.me/+HY1gbZZKmAE5ZDcx', '_blank')
           } else if (bannerSlide === 3) {
             onOpenPlantsToken?.()
+          } else if (bannerSlide === 4) {
+            onOpenStreaming?.()
           } else {
             handlePlayClick()
           }
@@ -966,6 +974,7 @@ export default function MainMenu({
             } else if (bannerSlide === 0) onOpenRanking?.()
             else if (bannerSlide === 1) window.open('https://t.me/+HY1gbZZKmAE5ZDcx', '_blank')
             else if (bannerSlide === 3) onOpenPlantsToken?.()
+            else if (bannerSlide === 4) onOpenStreaming?.()
             else handlePlayClick()
           }
         }}
@@ -1109,9 +1118,54 @@ export default function MainMenu({
               </div>
             )}
 
+            {/* SLIDE 4: STREAMING VIP & BOT DE CÓDIGOS */}
+            {bannerSlide === 4 && (
+              <div className="bosque-banner-slide bosque-banner-slide--clean">
+                <div
+                  className="bosque-clean-banner__icon-wrap"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.4), rgba(15, 23, 42, 0.9))',
+                    border: '1px solid rgba(74, 222, 128, 0.7)',
+                  }}
+                >
+                  <span className="bosque-clean-banner__icon">🎬</span>
+                </div>
+                <div className="bosque-clean-banner__content">
+                  <div className="bosque-clean-banner__header-row">
+                    <span
+                      className="bosque-clean-banner__badge"
+                      style={{
+                        background: 'rgba(34, 197, 94, 0.25)',
+                        color: '#4ade80',
+                        border: '1px solid rgba(34, 197, 94, 0.5)',
+                      }}
+                    >
+                      🍿 TIENDA VIP &amp; BOT
+                    </span>
+                    <span
+                      className="bosque-clean-banner__live-tag"
+                      style={{
+                        background: 'rgba(99, 102, 241, 0.25)',
+                        color: '#a5b4fc',
+                        border: '1px solid rgba(99, 102, 241, 0.5)',
+                      }}
+                    >
+                      ENTREGA 24/7
+                    </span>
+                  </div>
+                  <span className="bosque-clean-banner__title" style={{ color: '#ffffff' }}>
+                    STREAMING VIP · NETFLIX, DISNEY, MAX &amp; MÁS
+                  </span>
+                  <span className="bosque-clean-banner__subtitle">
+                    Cuentas premium garantizadas y BOT de verificación de códigos al instante. ¡Clic para entrar!
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* INDICADORES DE CARRUSEL (PUNTOS NAVEGABLES) */}
             <div className="bosque-banner-dots">
-              {[0, 1, 2, 3].map((idx) => (
+              {[0, 1, 2, 3, 4].map((idx) => (
                 <button
                   key={idx}
                   type="button"
@@ -1425,6 +1479,20 @@ export default function MainMenu({
                 }}
               >
                 🧪 Info Temporada {seasonStatus.seasonNumber}
+              </button>
+            )}
+            {onOpenStreaming && (
+              <button
+                type="button"
+                className="bosque-settings-menu__btn"
+                style={{ color: '#4ade80' }}
+                onClick={() => {
+                  soundManager.playSound('click', 0.5)
+                  setIsSettingsOpen(false)
+                  onOpenStreaming()
+                }}
+              >
+                🎬 Streaming VIP &amp; Códigos
               </button>
             )}
             {isAdmin && onOpenAdmin && (

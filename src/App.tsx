@@ -62,6 +62,7 @@ import {
   getShopTabFromPath,
 } from './utils/analytics'
 import { CookieBanner } from './components/CookieBanner/CookieBanner'
+import StreamingHub from './components/Streaming/StreamingHub'
 
 function App() {
   const [screen, setScreen] = useState<GameScreen>(() => {
@@ -78,6 +79,23 @@ function App() {
   })
   const [plantsTokenInitialTab, setPlantsTokenInitialTab] = useState<'summary' | 'presale' | 'vesting' | 'swap' | 'tokenomics' | 'guide'>('summary')
   const [passReturnScreen, setPassReturnScreen] = useState<'menu' | 'plants-token'>('menu')
+  const [streamingInitialTab, setStreamingInitialTab] = useState<'catalog' | 'bot'>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase()
+      const search = window.location.search.toLowerCase()
+      if (path.includes('/code') || search.includes('bot') || search.includes('type=')) {
+        return 'bot'
+      }
+    }
+    return 'catalog'
+  })
+  const [streamingInitialPlatform, setStreamingInitialPlatform] = useState<string | undefined>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      return params.get('type') || undefined
+    }
+    return undefined
+  })
 
 
   /**
@@ -167,6 +185,16 @@ function App() {
       const nextScreen = getScreenFromPath(window.location.pathname, window.location.hash)
       if (nextScreen === 'shop') {
         setShopInitialTab(getShopTabFromPath(window.location.pathname))
+      }
+      if (nextScreen === 'streaming') {
+        const path = window.location.pathname.toLowerCase()
+        const search = window.location.search.toLowerCase()
+        if (path.includes('/code') || search.includes('bot') || search.includes('type=')) {
+          setStreamingInitialTab('bot')
+        }
+        const params = new URLSearchParams(window.location.search)
+        const type = params.get('type')
+        if (type) setStreamingInitialPlatform(type)
       }
       setScreen(nextScreen)
     }
@@ -1477,6 +1505,10 @@ function App() {
           userProfile={profile}
           onOpenAuth={() => setIsAuthModalOpen(true)}
           onSignOut={signOut}
+          onOpenStreaming={() => {
+            setStreamingInitialTab('catalog')
+            setScreen('streaming')
+          }}
         />
         <AuthModal
           isOpen={isAuthModalOpen}
@@ -1488,6 +1520,46 @@ function App() {
           onSignInEmail={signInWithEmail}
           onSetUserPassword={setUserPassword}
           onSuccessRedirect={handleGoToGame}
+        />
+        <AdminPanel
+          isOpen={isAdminPanelOpen}
+          onClose={() => setIsAdminPanelOpen(false)}
+        />
+        <CookieBanner screen={screen} />
+      </>
+    )
+  }
+
+  if (screen === 'streaming') {
+    return (
+      <>
+        {/* Ventana emergente / banner de actualización */}
+        <UpdateModal
+          isOpen={hayVersionNueva}
+          isBattle={false}
+          countdownSeconds={segundosParaRecarga}
+          onReload={recargarVersion}
+        />
+
+        <StreamingHub
+          userProfile={profile}
+          userEmail={user?.email}
+          isLoggedIn={Boolean(user)}
+          initialTab={streamingInitialTab}
+          initialPlatform={streamingInitialPlatform}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onBack={() => setScreen('menu')}
+        />
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          userEmail={user?.email}
+          initialUsername={profile?.username || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0]}
+          needsPasswordSetup={needsPasswordSetup}
+          onSignInGoogle={signInWithGoogle}
+          onSignInEmail={signInWithEmail}
+          onSetUserPassword={setUserPassword}
+          onSuccessRedirect={() => setScreen('streaming')}
         />
         <AdminPanel
           isOpen={isAdminPanelOpen}
@@ -1549,6 +1621,10 @@ function App() {
             onOpenMisiones={() => setScreen('misiones')}
             onOpenLoteria={() => setScreen('loteria')}
             onOpenPlantsToken={handleOpenPlantsToken}
+            onOpenStreaming={() => {
+              setStreamingInitialTab('catalog')
+              setScreen('streaming')
+            }}
             onOpenLanding={handleGoToLanding}
             onOpenAdmin={() => setIsAdminPanelOpen(true)}
             onOpenBetaInfo={() => setIsBetaPhaseModalOpen(true)}
@@ -1747,6 +1823,10 @@ function App() {
             onBuyGold={buyGoldPackage}
             onAddGold={addGold}
             onOpenJardin={handleOpenJardin}
+            onOpenStreaming={() => {
+              setStreamingInitialTab('catalog')
+              setScreen('streaming')
+            }}
             onOpenPackImmediately={handleTriggerPackOpenByInstanceId}
             onOpenMultiplePacks={handleOpenMultiplePacks}
             onBuyVipPass={handleBuyVipPassDirect}

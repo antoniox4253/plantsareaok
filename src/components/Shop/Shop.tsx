@@ -169,6 +169,7 @@ export interface ShopProps {
   activeDeck?: PlantId[]
   activeDeckInstances?: string[]
   onBack: () => void
+  onOpenStreaming?: () => void
   onBuyPack: (packId: PackId, qty?: number) => Promise<{ success: boolean; packs?: InventoryPack[]; goldAdded?: number; error?: string }>
   onBuyGold?: (packageId: string) => Promise<{ success: boolean; goldAdded?: number; error?: string }>
   onBuyEnergyPack?: (packId: string) => Promise<{ success: boolean; energyAdded?: number; spentGems?: number; spentGold?: number; error?: string }>
@@ -207,6 +208,7 @@ export default function Shop({
   activeDeck = [],
   activeDeckInstances = [],
   onBack,
+  onOpenStreaming,
   onBuyPack,
   onBuyGold,
   onBuyEnergyPack,
@@ -553,6 +555,25 @@ export default function Shop({
         >
           🏷️ COMERCIO
         </button>
+
+        {onOpenStreaming && (
+          <button
+            type="button"
+            className="shop-nav-tab"
+            style={{
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(99, 102, 241, 0.2) 100%)',
+              borderColor: '#22c55e',
+              color: '#86efac',
+              fontWeight: 800,
+            }}
+            onClick={() => {
+              soundManager.playSound('click', 0.5)
+              onOpenStreaming()
+            }}
+          >
+            🎬 STREAMING VIP
+          </button>
+        )}
       </div>
 
       {/* ZERO SCROLL MAIN CONTENT SLIDER VIEW */}

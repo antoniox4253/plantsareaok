@@ -44,6 +44,7 @@ export type GameScreen =
   | 'misiones'
   | 'loteria'
   | 'plants-token'
+  | 'streaming'
 
 export const SCREEN_ROUTES: Record<GameScreen, { path: string; title: string }> = {
   landing: { path: '/', title: 'Plant Arena - Estrategia y Batallas Tácticas' },
@@ -60,6 +61,7 @@ export const SCREEN_ROUTES: Record<GameScreen, { path: string; title: string }> 
   misiones: { path: '/play/quests', title: 'Plant Arena - Misiones y Recompensas' },
   loteria: { path: '/play/lottery', title: 'Plant Arena - Ruleta de la Suerte y Lotería' },
   'plants-token': { path: '/play/token', title: 'Plant Arena - Token PLANTS y Economía AMM' },
+  streaming: { path: '/play/streaming', title: 'Plant Arena - Streaming VIP & Bot de Códigos' },
   partidas: { path: '/play/history', title: 'Plant Arena - Historial de Partidas' },
   repeticion: { path: '/play/replay', title: 'Plant Arena - Repetición' },
 }
@@ -69,7 +71,20 @@ export function getScreenFromPath(pathname: string, hash: string): GameScreen {
   const h = hash.toLowerCase()
 
   if (path.startsWith('/r/')) return 'repeticion'
+  if (
+    path === '/stream' ||
+    path === '/streaming' ||
+    path === '/code' ||
+    path.startsWith('/stream') ||
+    path.startsWith('/code') ||
+    h.includes('stream') ||
+    h.includes('code')
+  ) {
+    return 'streaming'
+  }
+
   if (path.startsWith('/play') || h.includes('play')) {
+    if (path.includes('/stream') || path.includes('/code')) return 'streaming'
     if (path.includes('/token') || path.includes('/plants')) return 'plants-token'
     if (path.includes('/quests') || path.includes('/misiones')) return 'misiones'
     if (path.includes('/lottery') || path.includes('/loteria') || path.includes('/ruleta')) return 'loteria'
