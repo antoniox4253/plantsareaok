@@ -89,11 +89,12 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   const [isKeybindingsOpen, setIsKeybindingsOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isMintingModalOpen, setIsMintingModalOpen] = useState(false)
+  const [mintingInitialFilter, setMintingInitialFilter] = useState<'all' | 'pvp' | 'survivor' | 'presale' | 'burns' | 'cashout'>('all')
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [marketState, setMarketState] = useState<PlantsMarketState | null>(null)
   const [priceHistory, setPriceHistory] = useState<PlantsPriceHistoryPoint[]>([])
   const [vestingSummary, setVestingSummary] = useState<PlantsVestingSummary | null>(null)
-  const [presaleCountdownSeconds, setPresaleCountdownSeconds] = useState<number>(5 * 86400)
+  const [presaleCountdownSeconds, setPresaleCountdownSeconds] = useState<number>(0)
   const [vestingUnlockSeconds, setVestingUnlockSeconds] = useState<number>(0)
   const [, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -417,8 +418,9 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     onRequestUsdtWithdrawal: handleRequestUsdtWithdrawal,
     onRefreshData: loadData,
     showNotification,
-    onOpenMintingHistory: () => {
+    onOpenMintingHistory: (filter: any = 'all') => {
       soundManager.playSound('click', 0.5)
+      setMintingInitialFilter(filter)
       setIsMintingModalOpen(true)
     },
     onOpenBattlePass,
@@ -573,21 +575,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
         </header>
 
         {/* =====================================================
-             BANNER EN ALTA DEFINICIÓN (SÓLO EN RESUMEN, SIN OVERLAYS)
-             ===================================================== */}
-        {activeTab === 'summary' && (
-          <div className="token-summary-hd-banner">
-            <img
-              src={TOKEN_ASSETS.summaryHeroBanner || '/game-assets/token/hero_summary.webp'}
-              alt="Token Plants"
-              className="token-summary-hd-banner__img"
-            />
-          </div>
-        )}
-
-        {/* =====================================================
-             SUB-NAVEGACIÓN GAMING DE PESTAÑAS (NO MUY GRANDES)
-             Debajo del banner en Resumen, o debajo del header en las demás
+             SUB-NAVEGACIÓN GAMING DE PESTAÑAS (FIJA, ESTABLE EN TODAS LAS PESTAÑAS)
              ===================================================== */}
         <nav className="token-nav-bar">
           <button
@@ -645,6 +633,19 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             <span>GUÍA</span>
           </button>
         </nav>
+
+        {/* =====================================================
+             BANNER EN ALTA DEFINICIÓN (SÓLO EN RESUMEN, SIN OVERLAYS)
+             ===================================================== */}
+        {activeTab === 'summary' && (
+          <div className="token-summary-hd-banner">
+            <img
+              src={TOKEN_ASSETS.summaryHeroBanner || '/game-assets/token/hero_summary.webp'}
+              alt="Token Plants"
+              className="token-summary-hd-banner__img"
+            />
+          </div>
+        )}
 
         {/* =====================================================
              ÁREA DE CONTENIDO DE PESTAÑA (COMPACTA, SIN SCROLL)
@@ -782,6 +783,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
         <TokenMintingHistoryModal
           isOpen={isMintingModalOpen}
           onClose={() => setIsMintingModalOpen(false)}
+          initialFilter={mintingInitialFilter}
         />
 
         {/* Controles de Teclado */}

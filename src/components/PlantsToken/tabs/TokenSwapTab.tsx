@@ -277,7 +277,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
           className="summary-kpi-card"
           style={{ cursor: onOpenMintingHistory ? 'pointer' : 'default' }}
           onClick={() => {
-            if (onOpenMintingHistory) onOpenMintingHistory()
+            if (onOpenMintingHistory) onOpenMintingHistory('burns')
           }}
           title="Ver registro y auditoría en vivo de minteos y quemas de tokens"
         >
@@ -287,12 +287,12 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
           <div className="summary-kpi-content">
             <span className="summary-kpi-label">PLANTS QUEMADOS</span>
             <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-orange">{totalBurned.toLocaleString()} PLANTS</strong>
+              <strong className="summary-kpi-value text-orange">{totalBurned.toFixed(2)} PLANTS</strong>
               {onOpenMintingHistory && (
                 <span className="summary-kpi-tag summary-kpi-tag--orange">AUDITORÍA 📜</span>
               )}
             </div>
-            <span className="summary-kpi-sub">Super Sink (+20% Gemas) · Clic para auditar</span>
+            <span className="summary-kpi-sub">{totalBurned.toFixed(4)} quemados · Clic para auditar</span>
           </div>
         </article>
 
@@ -568,7 +568,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                   {onOpenMintingHistory && (
                     <button
                       type="button"
-                      onClick={onOpenMintingHistory}
+                      onClick={() => onOpenMintingHistory('burns')}
                       style={{
                         marginTop: '8px',
                         background: 'rgba(234, 88, 12, 0.15)',

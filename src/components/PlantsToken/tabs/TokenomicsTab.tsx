@@ -18,6 +18,7 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<'holders' | 'minting'>('holders')
   const [isHoldersModalOpen, setIsHoldersModalOpen] = useState(false)
   const [isMintingModalOpen, setIsMintingModalOpen] = useState(false)
+  const [mintingFilter, setMintingFilter] = useState<'all' | 'pvp' | 'survivor' | 'presale' | 'burns' | 'cashout'>('all')
 
   // Datos reales desde la base de datos
   const [holdersData, setHoldersData] = useState<PlantsTopHoldersData | null>(null)
@@ -26,29 +27,38 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
   useEffect(() => {
     let isMounted = true
 
-    Promise.all([plantsTokenService.getTopHolders(10), plantsTokenService.getMintingHistory(10)])
-      .then(([holders, events]) => {
-        if (isMounted) {
-          if (holders) setHoldersData(holders)
-          if (events) setMintingEvents(events)
-        }
-      })
-      .catch((err) => {
-        console.warn('Error loading tokenomics real data:', err)
-      })
+    const loadRealData = () => {
+      Promise.all([plantsTokenService.getTopHolders(10), plantsTokenService.getMintingHistory(10)])
+        .then(([holders, eventsRes]) => {
+          if (isMounted) {
+            if (holders) setHoldersData(holders)
+            if (eventsRes) {
+              const list = Array.isArray(eventsRes) ? eventsRes : (eventsRes as any)?.events ?? []
+              setMintingEvents(list)
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn('Error loading tokenomics real data:', err)
+        })
+    }
 
+    loadRealData()
+    window.addEventListener('plants_tokens_updated', loadRealData)
     return () => {
       isMounted = false
+      window.removeEventListener('plants_tokens_updated', loadRealData)
     }
-  }, [])
+  }, [marketState])
 
   const handleOpenHolders = () => {
     soundManager.playSound('click', 0.5)
     setIsHoldersModalOpen(true)
   }
 
-  const handleOpenMinting = () => {
+  const handleOpenMinting = (filter: 'all' | 'pvp' | 'survivor' | 'presale' | 'burns' | 'cashout' = 'all') => {
     soundManager.playSound('click', 0.5)
+    setMintingFilter(filter)
     setIsMintingModalOpen(true)
   }
 
@@ -105,16 +115,22 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
         </article>
 
         {/* PLANTS QUEMADOS */}
-        <article className="summary-kpi-card">
+        <article
+          className="summary-kpi-card"
+          style={{ cursor: 'pointer' }}
+          onClick={() => handleOpenMinting('burns')}
+          title="Ver registro y auditoría completa de quemas de tokens"
+        >
           <div className="summary-kpi-icon-wrap summary-kpi-icon-wrap--orange">
             <span className="summary-kpi-emoji">🔥</span>
           </div>
           <div className="summary-kpi-content">
             <span className="summary-kpi-label">PLANTS QUEMADOS</span>
             <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-orange">{totalBurned.toLocaleString()} PLANTS</strong>
+              <strong className="summary-kpi-value text-orange">{totalBurned.toFixed(2)} PLANTS</strong>
+              <span className="summary-kpi-tag summary-kpi-tag--orange">AUDITORÍA 📜</span>
             </div>
-            <span className="summary-kpi-sub">Super Sink (+20% Gemas)</span>
+            <span className="summary-kpi-sub">{totalBurned.toFixed(4)} quemados · Clic para auditar</span>
           </div>
         </article>
 
@@ -399,7 +415,7 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
                 <button
                   type="button"
                   className="tokenomics-open-modal-btn tokenomics-open-modal-btn--mint"
-                  onClick={handleOpenMinting}
+                  onClick={() => handleOpenMinting('all')}
                 >
                   📜 ABRIR AUDITORÍA COMPLETA DE MINTEO Y QUEMAS ➔
                 </button>
@@ -470,6 +486,7 @@ export const TokenomicsTab: React.FC<TokenHubSharedProps> = ({
       <TokenMintingHistoryModal
         isOpen={isMintingModalOpen}
         onClose={() => setIsMintingModalOpen(false)}
+        initialFilter={mintingFilter}
       />
     </div>
   )

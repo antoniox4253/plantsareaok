@@ -51,7 +51,7 @@ export interface TokenHubSharedProps {
   onRequestUsdtWithdrawal?: (amount: number, wallet: string) => Promise<boolean>
   onRefreshData: () => Promise<void>
   showNotification: (message: string, type?: 'success' | 'error' | 'info') => void
-  onOpenMintingHistory?: () => void
+  onOpenMintingHistory?: (initialFilter?: 'all' | 'pvp' | 'survivor' | 'presale' | 'burns' | 'cashout') => void
   onOpenBattlePass?: () => void
   onBuyVipPass?: () => Promise<{ success: boolean; error?: string }> | void
 }

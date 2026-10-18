@@ -53,7 +53,9 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               <strong className="summary-kpi-value text-green">${spotPrice.toFixed(6)} USDT</strong>
               <span className="summary-kpi-tag summary-kpi-tag--green">LIVE AMM</span>
             </div>
-            <span className="summary-kpi-sub">5,000 PLANTS = $1.00 USDT</span>
+            <span className="summary-kpi-sub">
+              {spotPrice > 0 ? `${Math.round(1 / spotPrice).toLocaleString()} PLANTS = $1.00 USDT` : '5,000 PLANTS = $1.00 USDT'}
+            </span>
           </div>
         </article>
 
@@ -78,7 +80,7 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
           data-section="kpi-burned"
           style={{ cursor: onOpenMintingHistory ? 'pointer' : 'default' }}
           onClick={() => {
-            if (onOpenMintingHistory) onOpenMintingHistory()
+            if (onOpenMintingHistory) onOpenMintingHistory('burns')
           }}
           title="Ver registro y auditoría completa de minteos y quemas de tokens"
         >
@@ -88,12 +90,12 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
           <div className="summary-kpi-content">
             <span className="summary-kpi-label">PLANTS QUEMADOS</span>
             <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-orange">{totalBurned.toLocaleString()} PLANTS</strong>
+              <strong className="summary-kpi-value text-orange">{totalBurned.toFixed(2)} PLANTS</strong>
               {onOpenMintingHistory && (
                 <span className="summary-kpi-tag summary-kpi-tag--orange">AUDITORÍA 📜</span>
               )}
             </div>
-            <span className="summary-kpi-sub">Super Sink (+20% Gemas) · Clic para auditar</span>
+            <span className="summary-kpi-sub">{totalBurned.toFixed(4)} quemados · Clic para auditar</span>
           </div>
         </article>
 
@@ -163,7 +165,11 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               </div>
             </div>
             <div className="summary-countdown-progress-lbl">
-              <span>Meta: 20 Packs (130K PLANTS) · {packsSold} Vendidos ({packsRemaining} Libres)</span>
+              <span>
+                {packsRemaining <= 0
+                  ? 'Meta: 20 Packs (130K PLANTS) · 20/20 Vendidos (AGOTADO)'
+                  : `Meta: 20 Packs (130K PLANTS) · ${packsSold} Vendidos (${packsRemaining} Libres)`}
+              </span>
               <strong className="text-mint">{pctSold}% COMPLETADO</strong>
             </div>
           </div>
@@ -176,7 +182,9 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               <span className="summary-panel-icon">🎁</span>
               <div>
                 <h4 className="summary-panel-title">PACKS DE PREVENTA EXCLUSIVOS</h4>
-                <span className="summary-panel-subtitle">Adquiere tokens con vesting lineal de 45 días</span>
+                <span className="summary-panel-subtitle">
+                  {packsRemaining <= 0 ? 'Packs de fundadores 100% agotados · Vesting 45d activo' : 'Adquiere tokens con vesting lineal de 45 días'}
+                </span>
               </div>
             </div>
             <button
@@ -184,7 +192,7 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               className="summary-see-all-btn"
               onClick={() => onTabChange('presale')}
             >
-              <span>IR A PREVENTA</span>
+              <span>{packsRemaining <= 0 ? 'VER PREVENTA' : 'IR A PREVENTA'}</span>
               <span className="see-all-arrow">➔</span>
             </button>
           </div>
@@ -196,7 +204,9 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               onClick={() => onTabChange('presale')}
             >
               <div className="summary-pack-card-top">
-                <span className="pack-tier-badge pack-tier-badge--pionero">🌱 BÁSICO</span>
+                <span className="pack-tier-badge pack-tier-badge--pionero">
+                  {packsRemaining <= 0 ? '🚫 AGOTADO' : '🌱 BÁSICO'}
+                </span>
                 <strong className="pack-price-tag text-cyan">$10 USDT</strong>
               </div>
               <div className="summary-pack-img-wrap">
@@ -219,7 +229,9 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               onClick={() => onTabChange('presale')}
             >
               <div className="summary-pack-card-top">
-                <span className="pack-tier-badge pack-tier-badge--campeon">🌿 POPULAR</span>
+                <span className="pack-tier-badge pack-tier-badge--campeon">
+                  {packsRemaining <= 0 ? '🚫 AGOTADO' : '🌿 POPULAR'}
+                </span>
                 <strong className="pack-price-tag text-purple">$25 USDT</strong>
               </div>
               <div className="summary-pack-img-wrap">
@@ -242,7 +254,9 @@ export const TokenSummaryTab: React.FC<TokenHubSharedProps> = ({
               onClick={() => onTabChange('presale')}
             >
               <div className="summary-pack-card-top">
-                <span className="pack-tier-badge pack-tier-badge--leyenda">👑 VIP MÁXIMO</span>
+                <span className="pack-tier-badge pack-tier-badge--leyenda">
+                  {packsRemaining <= 0 ? '🚫 AGOTADO' : '👑 VIP MÁXIMO'}
+                </span>
                 <strong className="pack-price-tag text-gold">$50 USDT</strong>
               </div>
               <div className="summary-pack-img-wrap">

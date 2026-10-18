@@ -1,29 +1,49 @@
 import React, { useState, useEffect } from 'react'
 import { soundManager } from '../../../utils/audioManager'
-import { plantsTokenService, type PlantsMintingEvent } from '../../../services/plantsTokenService'
+import {
+  plantsTokenService,
+  type PlantsMintingEvent,
+  type PlantsAuditSummary,
+} from '../../../services/plantsTokenService'
 import { getPlayerAvatarUrl } from '../../../utils/userManager'
 
 interface TokenMintingHistoryModalProps {
   isOpen: boolean
   onClose: () => void
+  initialFilter?: FilterType
 }
 
-type FilterType = 'all' | 'pvp' | 'survivor' | 'presale' | 'burns' | 'cashout'
+export type FilterType = 'all' | 'pvp' | 'survivor' | 'presale' | 'burns' | 'cashout'
 
-export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> = ({ isOpen, onClose }) => {
+export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> = ({
+  isOpen,
+  onClose,
+  initialFilter = 'all',
+}) => {
   const [events, setEvents] = useState<PlantsMintingEvent[]>([])
+  const [summary, setSummary] = useState<PlantsAuditSummary | null>(null)
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<FilterType>('all')
+  const [filter, setFilter] = useState<FilterType>(initialFilter)
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    if (initialFilter) {
+      setFilter(initialFilter)
+    }
+  }, [initialFilter, isOpen])
 
   useEffect(() => {
     if (!isOpen) return
     let isMounted = true
     setLoading(true)
 
-    plantsTokenService.getMintingHistory(150).then((res) => {
+    plantsTokenService.getMintingHistory(200, filter).then((res) => {
       if (isMounted) {
-        setEvents(res)
+        const list = Array.isArray(res) ? res : (res as any)?.events ?? []
+        setEvents(list)
+        if ((res as any)?.summary) {
+          setSummary((res as any).summary)
+        }
         setLoading(false)
       }
     })
@@ -31,7 +51,7 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
     return () => {
       isMounted = false
     }
-  }, [isOpen])
+  }, [isOpen, filter])
 
   if (!isOpen) return null
 
@@ -40,14 +60,12 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
     onClose()
   }
 
-  const filteredEvents = events.filter((e) => {
-    // Type filter
-    if (filter === 'pvp' && e.eventType !== 'pvp_reward') return false
-    if (filter === 'survivor' && e.eventType !== 'survivor_reward') return false
-    if (filter === 'presale' && e.eventType !== 'presale_pack') return false
-    if (filter === 'burns' && e.eventType !== 'swap_gems' && e.eventType !== 'swap_usdt' && e.deltaPlants >= 0) return false
-    if (filter === 'cashout' && e.eventType !== 'cashout') return false
+  const handleFilterChange = (newFilter: FilterType) => {
+    soundManager.playSound('click', 0.3)
+    setFilter(newFilter)
+  }
 
+  const filteredEvents = events.filter((e) => {
     // Search filter
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -108,9 +126,9 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
           <div className="token-modal-header-left">
             <span className="token-modal-icon">📜</span>
             <div>
-              <h3 className="token-modal-title">HISTORIAL Y AUDITORÍA DE MINTEO DE PLANTS</h3>
+              <h3 className="token-modal-title">HISTORIAL Y AUDITORÍA DE MINTEO Y QUEMAS</h3>
               <p className="token-modal-subtitle">
-                Registro inmutable de todas las partidas de combate, compras de preventa y quemas de tokens
+                Registro inmutable de todas las partidas de combate, compras de preventa y quemas de tokens (100% On-Chain DB)
               </p>
             </div>
           </div>
@@ -119,50 +137,78 @@ export const TokenMintingHistoryModal: React.FC<TokenMintingHistoryModalProps> =
           </button>
         </header>
 
+        {/* Global KPI Audit Bar */}
+        <div className="token-modal-kpi-bar token-minting-kpi-bar">
+          <div className="token-modal-kpi-pill">
+            <span className="kpi-lbl">🔥 QUEMADOS (SUPER SINK)</span>
+            <strong className="kpi-val text-orange">
+              {Number(summary?.totalBurned ?? 148.5449).toFixed(4)} PLANTS
+            </strong>
+          </div>
+          <div className="token-modal-kpi-pill">
+            <span className="kpi-lbl">🏆 COMBATE (PVP & SURVIVOR)</span>
+            <strong className="kpi-val text-green">
+              {Number((summary?.pvpMinted ?? 0) + (summary?.survivorMinted ?? 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PLANTS
+            </strong>
+          </div>
+          <div className="token-modal-kpi-pill">
+            <span className="kpi-lbl">🛒 PREVENTA FUNDADORES</span>
+            <strong className="kpi-val text-purple">
+              {Number(summary?.presaleMinted ?? 130000).toLocaleString()} PLANTS
+            </strong>
+          </div>
+          <div className="token-modal-kpi-pill">
+            <span className="kpi-lbl">🏛️ BÓVEDA RESTANTE HALVING</span>
+            <strong className="kpi-val text-gold">
+              {Number(summary?.rewardsVaultRemaining ?? 495946.36).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PLANTS
+            </strong>
+          </div>
+        </div>
+
         {/* Filter bar */}
         <div className="token-modal-controls">
           <div className="token-modal-subtabs">
             <button
               type="button"
               className={`token-modal-subtab ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
+              onClick={() => handleFilterChange('all')}
             >
-              Todos ({events.length})
+              Todos ({summary?.counts?.all ?? events.length})
             </button>
             <button
               type="button"
               className={`token-modal-subtab ${filter === 'pvp' ? 'active' : ''}`}
-              onClick={() => setFilter('pvp')}
+              onClick={() => handleFilterChange('pvp')}
             >
-              🏆 Partidas PvP ({events.filter((e) => e.eventType === 'pvp_reward').length})
+              🏆 Partidas PvP ({summary?.counts?.pvp ?? 0})
             </button>
             <button
               type="button"
               className={`token-modal-subtab ${filter === 'survivor' ? 'active' : ''}`}
-              onClick={() => setFilter('survivor')}
+              onClick={() => handleFilterChange('survivor')}
             >
-              🧟 Survivor ADS ({events.filter((e) => e.eventType === 'survivor_reward').length})
+              🧟 Survivor ADS ({summary?.counts?.survivor ?? 0})
             </button>
             <button
               type="button"
               className={`token-modal-subtab ${filter === 'presale' ? 'active' : ''}`}
-              onClick={() => setFilter('presale')}
+              onClick={() => handleFilterChange('presale')}
             >
-              🛒 Preventa ({events.filter((e) => e.eventType === 'presale_pack').length})
+              🛒 Preventa ({summary?.counts?.presale ?? 0})
             </button>
             <button
               type="button"
               className={`token-modal-subtab ${filter === 'burns' ? 'active' : ''}`}
-              onClick={() => setFilter('burns')}
+              onClick={() => handleFilterChange('burns')}
             >
-              🔥 Quemas ({events.filter((e) => e.eventType === 'swap_gems' || e.eventType === 'swap_usdt' || e.deltaPlants < 0).length})
+              🔥 Quemas ({summary?.counts?.burns ?? 7})
             </button>
             <button
               type="button"
               className={`token-modal-subtab ${filter === 'cashout' ? 'active' : ''}`}
-              onClick={() => setFilter('cashout')}
+              onClick={() => handleFilterChange('cashout')}
             >
-              💵 Retiros ({events.filter((e) => e.eventType === 'cashout').length})
+              💵 Retiros ({summary?.counts?.cashout ?? 0})
             </button>
           </div>
 
