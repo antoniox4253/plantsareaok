@@ -1,0 +1,328 @@
+/* PixelSeedPacks.css - Plant Arena Tienda Sobres de Semillas Pixel Perfect */
+
+.pixel-seedpacks-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pixel-seedpacks-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1672 / 941;
+  overflow: hidden;
+}
+
+.pixel-seedpacks-base-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Hotspots transparentes interactivos */
+.pixel-seedpacks-hotspot {
+  position: absolute;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+  z-index: 5;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pixel-seedpacks-hotspot:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pixel-seedpacks-hotspot:active {
+  transform: scale(0.98);
+}
+
+/* Modo Debug para ver hotspots */
+.pixel-seedpacks-hotspot--debug {
+  background: rgba(45, 212, 255, 0.14) !important;
+  box-shadow: inset 0 0 0 2px rgba(102, 190, 255, 0.6) !important;
+}
+
+.pixel-seedpacks-hotspot--debug:hover {
+  background: rgba(162, 255, 0, 0.22) !important;
+  box-shadow: inset 0 0 0 2px rgba(174, 255, 0, 0.9) !important;
+}
+
+/* Tooltip / Toast de feedback en click */
+.pixel-seedpacks-toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(52, 211, 153, 0.6);
+  color: #f1f5f9;
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  z-index: 50;
+  pointer-events: none;
+  animation: pixelSeedPacksToastFade 0.25s ease forwards;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+@keyframes pixelSeedPacksToastFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Barra de control para desarrollador / pruebas */
+.pixel-seedpacks-dev-bar {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pixel-seedpacks-dev-btn {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  color: #94a3b8;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pixel-seedpacks-dev-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  color: #ffffff;
+  border-color: #34d399;
+}
+
+.pixel-seedpacks-dev-btn--active {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+  border-color: #10b981;
+}
+
+/* ==========================================================================
+   MODAL DE PROBABILIDADES INTEGRADO
+   ========================================================================== */
+.pixel-seedpacks-odds-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.pixel-seedpacks-odds-card {
+  background: linear-gradient(180deg, #0d281e 0%, #06150f 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 24px;
+  padding: 24px;
+  max-width: 540px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(254, 240, 138, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.pixel-seedpacks-odds-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(4, 15, 10, 0.8);
+  border: 1px solid #10b981;
+  color: #fef08a;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 800;
+  transition: all 0.2s ease;
+}
+
+.pixel-seedpacks-odds-close:hover {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.pixel-seedpacks-odds-head {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.pixel-seedpacks-odds-badge {
+  font-size: 0.68rem;
+  font-weight: 900;
+  color: #fef08a;
+  background: rgba(245, 158, 11, 0.25);
+  border: 1px solid #f59e0b;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.pixel-seedpacks-odds-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 4px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.pixel-seedpacks-odds-sub {
+  font-size: 0.78rem;
+  color: #a7f3d0;
+  margin: 0;
+}
+
+.pixel-seedpacks-odds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.pixel-seedpacks-odds-item {
+  background: rgba(4, 15, 10, 0.85);
+  border: 1.5px solid rgba(16, 185, 129, 0.35);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.pixel-seedpacks-odds-item--legendary {
+  border-color: #fbbf24;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(4, 15, 10, 0.9) 100%);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.15);
+}
+
+.pixel-seedpacks-odds-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.pixel-seedpacks-odds-item-name {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.pixel-seedpacks-odds-item-price {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.pixel-seedpacks-odds-rates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rate-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+.rate-badge--comun {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: #4ade80;
+  color: #86efac;
+}
+
+.rate-badge--poco-comun {
+  background: rgba(34, 211, 238, 0.18);
+  border-color: #22d3ee;
+  color: #67e8f9;
+}
+
+.rate-badge--rara {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: #a855f7;
+  color: #c084fc;
+}
+
+.rate-badge--epica {
+  background: rgba(244, 63, 94, 0.18);
+  border-color: #f43f5e;
+  color: #fda4af;
+}
+
+.rate-badge--legendaria {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #fbbf24;
+  color: #fef08a;
+}
+
+.pixel-seedpacks-odds-exclusive {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #fef08a;
+  margin-top: 8px;
+}
+
+.pixel-seedpacks-odds-btn-close {
+  width: 100%;
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  color: #ffffff;
+  border: 1.5px solid #86efac;
+  border-bottom: 4px solid #14532d;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.pixel-seedpacks-odds-btn-close:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}

@@ -21,6 +21,7 @@ import { navigateAndTrack, trackEvent } from '../../utils/analytics'
 import BattlePass from '../BattlePass/BattlePass'
 import type { PassReward } from '../../utils/battlePassManager'
 import PixelShop from './PixelShop'
+import PixelSeedPacks from './PixelSeedPacks'
 import './Shop.css'
 
 const commonSeedImg = '/game-assets/greenfoot/seed_pack_common_whitebg.webp'
@@ -226,7 +227,7 @@ export default function Shop({
   onReceivePlant,
   onServerChange,
 }: ShopProps) {
-  const [viewMode, setViewMode] = useState<'pixel' | 'classic'>('pixel')
+  const [viewMode, setViewMode] = useState<'pixel_home' | 'pixel_packs' | 'classic'>('pixel_home')
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [activeTab, setActiveTab] = useState<'packs' | 'pass' | 'gold' | 'energy' | 'market'>(initialTab)
 
@@ -448,20 +449,238 @@ export default function Shop({
     }
   }
 
-  if (viewMode === 'pixel') {
+  const renderSharedModals = () => (
+    <>
+      {/* Opened Pack / Purchase Confirmation Modal */}
+      {purchasedPacksList.length > 0 && (
+        <div className="shop-result-modal">
+          <div className="shop-result-card">
+            <h3>🎉 ¡COMPRA EXITOSA!</h3>
+            <p style={{ color: '#e2e8f0', fontSize: '13px', marginBottom: '16px' }}>
+              Has adquirido <strong>{purchasedPacksList.length} {purchasedPacksList.length === 1 ? 'Sobre de Semillas' : 'Sobres de Semillas'} ({purchasedPacksList[0].name})</strong>.<br />
+              {purchasedGoldBonus > 0 && (
+                <span style={{ color: '#fbbf24', fontWeight: 'bold', display: 'block', margin: '8px 0', fontSize: '14px' }}>
+                  💰 ¡+{purchasedGoldBonus.toLocaleString('en-US')} Monedas de Oro acreditadas a tu cuenta!
+                </span>
+              )}
+              Se han guardado en tu inventario de <strong>"Mi Jardín"</strong>.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                className="shop-result-btn"
+                style={{ background: 'linear-gradient(180deg, #eab308 0%, #ca8a04 100%)', borderColor: '#fef08a', color: '#1a1000' }}
+                type="button"
+                onClick={() => {
+                  const instIds = purchasedPacksList.map((p) => p.instanceId)
+                  setPurchasedPacksList([])
+                  setPurchasedGoldBonus(0)
+                  if (instIds.length === 1) {
+                    onOpenPackImmediately(instIds[0])
+                  } else if (onOpenMultiplePacks) {
+                    onOpenMultiplePacks(instIds)
+                  }
+                }}
+              >
+                ✨ ABRIR {purchasedPacksList.length === 1 ? 'ESTE SOBRE AHORA MISMO' : `ESTOS ${purchasedPacksList.length} SOBRES AHORA MISMO`}
+              </button>
+
+              <button
+                className="shop-result-btn"
+                type="button"
+                onClick={() => {
+                  setPurchasedPacksList([])
+                  setPurchasedGoldBonus(0)
+                  onOpenJardin()
+                }}
+              >
+                🪴 IR A MI JARDÍN (VER INVENTARIO)
+              </button>
+
+              <button
+                className="shop-result-btn"
+                style={{ background: 'linear-gradient(180deg, #475569 0%, #1e293b 100%)', borderColor: '#94a3b8' }}
+                type="button"
+                onClick={() => {
+                  setPurchasedPacksList([])
+                  setPurchasedGoldBonus(0)
+                }}
+              >
+                🛒 SEGUIR COMPRANDO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IN-GAME THEMED MODAL ALERT */}
+      {themedAlert && (
+        <div className="main-menu-dialog-backdrop" onClick={() => setThemedAlert(null)}>
+          <div className="main-menu-dialog-card" onClick={(e) => e.stopPropagation()}>
+            <div className="main-menu-dialog-header">
+              <div className="main-menu-dialog-icon">{themedAlert.icon}</div>
+              <h3 className="main-menu-dialog-title">{themedAlert.title}</h3>
+              <button
+                type="button"
+                className="main-menu-dialog-close"
+                onClick={() => setThemedAlert(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <p className="main-menu-dialog-msg">{themedAlert.message}</p>
+            <div className="main-menu-dialog-actions">
+              <button
+                type="button"
+                className="main-menu-dialog-btn"
+                onClick={() => setThemedAlert(null)}
+              >
+                ENTENDIDO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PACK DETAILS MODAL (CLICK ON PACK IMAGE) */}
+      {selectedPackDetails && (
+        <div
+          className="main-menu-dialog-backdrop"
+          onClick={() => setSelectedPackDetails(null)}
+        >
+          <div
+            className="shop-pack-details-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="shop-pack-details-close"
+              onClick={() => setSelectedPackDetails(null)}
+            >
+              ✖
+            </button>
+
+            <div className="shop-pack-details-header">
+              <img
+                src={
+                  selectedPackDetails === 'starter' || selectedPackDetails === 'basic'
+                    ? commonSeedImg
+                    : selectedPackDetails === 'epic'
+                    ? epicSeedImg
+                    : legendarySeedImg
+                }
+                alt="Sobre de semillas"
+                className="shop-pack-details-img"
+              />
+              <div className="shop-pack-details-meta">
+                <h3 className="shop-pack-details-title">
+                  {selectedPackDetails === 'starter'
+                    ? 'Pack Starter (Oferta Especial)'
+                    : selectedPackDetails === 'basic'
+                    ? 'Sobre de Semillas Básico'
+                    : selectedPackDetails === 'epic'
+                    ? 'Sobre de Semillas Místico'
+                    : 'Sobre de Semillas Legendario'}
+                </h3>
+                <span className="shop-pack-details-gems-val">
+                  💎 {packPrice(selectedPackDetails).toLocaleString('en-US')} Gemas
+                </span>
+              </div>
+            </div>
+
+            <p className="shop-pack-details-desc">
+              {selectedPackDetails === 'starter' && (
+                <>Contiene 5 cartas al abrir + 500 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta. Solo se puede comprar una vez por jugador.</>
+              )}
+              {selectedPackDetails === 'basic' && (
+                <>Contiene 3 cartas al abrir + 300 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
+              )}
+              {selectedPackDetails === 'epic' && (
+                <>Contiene 3 cartas al abrir + 1,000 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
+              )}
+              {selectedPackDetails === 'legendary' && (
+                <>Contiene 4 cartas al abrir + 2,500 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
+              )}
+            </p>
+
+            <div className="shop-pack-details-odds">
+              <strong>🎯 PROBABILIDADES:</strong>
+              <p>
+                {selectedPackDetails === 'starter'
+                  ? '100% Girasol | 100% Lanzaguisantes | 100% Wall-nut | 100% Poco Común (Aleatoria) | 100% Rara (Aleatoria, sin Jalapeño ni Nuez Explosiva)'
+                  : selectedPackDetails === 'basic'
+                  ? '70% Común | 26.7% Poco Común | 3.3% Rara (10% Rara en carta 3)'
+                  : selectedPackDetails === 'epic'
+                  ? '26.7% Común | 53.3% Poco Común | 16.7% Rara | 2.7% Épica | 0.7% Legendaria (8% Épica, 2% Legendaria en carta 3)'
+                  : 'Solamente Épica y Legendaria: 85% Épica | 15% Legendaria (10% Jackpot slot garantizado)'}
+              </p>
+            </div>
+
+            <div className="shop-pack-details-actions">
+              <button
+                type="button"
+                className="shop-pack-btn"
+                disabled={isPurchasingPack}
+                onClick={() => {
+                  const target = selectedPackDetails
+                  setSelectedPackDetails(null)
+                  handleBuyPacksBatch(target)
+                }}
+              >
+                {isPurchasingPack
+                  ? '⏳ PROCESANDO...'
+                  : `🛒 COMPRAR (${getQty(selectedPackDetails)}) — ${(packPrice(selectedPackDetails) * getQty(selectedPackDetails)).toLocaleString('en-US')} 💎 Gemas`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+
+  if (viewMode === 'pixel_home') {
     return (
-      <PixelShop
-        onBack={onBack}
-        onOpenStreaming={onOpenStreaming}
-        onToggleClassic={() => setViewMode('classic')}
-        onSelectTab={(tab) => {
-          setActiveTab(tab)
-          setViewMode('classic')
-        }}
-        userGold={userGold}
-        userTokens={userTokens}
-        playerEnergy={playerEnergy}
-      />
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <PixelShop
+          onBack={onBack}
+          onOpenStreaming={onOpenStreaming}
+          onToggleClassic={() => setViewMode('classic')}
+          onSelectTab={(tab) => {
+            if (tab === 'packs') {
+              setViewMode('pixel_packs')
+            } else {
+              setActiveTab(tab)
+              setViewMode('classic')
+            }
+          }}
+          userGold={userGold}
+          userTokens={userTokens}
+          playerEnergy={playerEnergy}
+        />
+        {renderSharedModals()}
+      </div>
+    )
+  }
+
+  if (viewMode === 'pixel_packs') {
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <PixelSeedPacks
+          onBackToHome={() => setViewMode('pixel_home')}
+          onOpenStreaming={onOpenStreaming}
+          onToggleClassic={() => setViewMode('classic')}
+          onSelectTab={(tab) => {
+            setActiveTab(tab)
+            setViewMode('classic')
+          }}
+          onBuyPack={(packId) => handleBuyPacksBatch(packId)}
+          userGold={userGold}
+          userTokens={userTokens}
+          playerEnergy={playerEnergy}
+          isPurchasing={isPurchasingPack}
+        />
+        {renderSharedModals()}
+      </div>
     )
   }
 
@@ -477,10 +696,10 @@ export default function Shop({
             className="shop-back-btn"
             type="button"
             style={{ borderColor: '#34d399', color: '#6ee7b7' }}
-            onClick={() => setViewMode('pixel')}
+            onClick={() => setViewMode(activeTab === 'packs' ? 'pixel_packs' : 'pixel_home')}
             title="Ver nueva tienda Pixel-Perfect"
           >
-            🎨 Tienda Pixel-Perfect
+            🎨 Tienda
           </button>
         </div>
         <div className="shop-header__center">
@@ -1144,190 +1363,7 @@ export default function Shop({
           </div>
         )}
 
-        {/* Opened Pack / Purchase Confirmation Modal */}
-        {purchasedPacksList.length > 0 && (
-          <div className="shop-result-modal">
-            <div className="shop-result-card">
-              <h3>🎉 ¡COMPRA EXITOSA!</h3>
-              <p style={{ color: '#e2e8f0', fontSize: '13px', marginBottom: '16px' }}>
-                Has adquirido <strong>{purchasedPacksList.length} {purchasedPacksList.length === 1 ? 'Sobre de Semillas' : 'Sobres de Semillas'} ({purchasedPacksList[0].name})</strong>.<br />
-                {purchasedGoldBonus > 0 && (
-                  <span style={{ color: '#fbbf24', fontWeight: 'bold', display: 'block', margin: '8px 0', fontSize: '14px' }}>
-                    💰 ¡+{purchasedGoldBonus.toLocaleString('en-US')} Monedas de Oro acreditadas a tu cuenta!
-                  </span>
-                )}
-                Se han guardado en tu inventario de <strong>"Mi Jardín"</strong>.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button
-                  className="shop-result-btn"
-                  style={{ background: 'linear-gradient(180deg, #eab308 0%, #ca8a04 100%)', borderColor: '#fef08a', color: '#1a1000' }}
-                  type="button"
-                  onClick={() => {
-                    const instIds = purchasedPacksList.map((p) => p.instanceId)
-                    setPurchasedPacksList([])
-                    setPurchasedGoldBonus(0)
-                    if (instIds.length === 1) {
-                      onOpenPackImmediately(instIds[0])
-                    } else if (onOpenMultiplePacks) {
-                      onOpenMultiplePacks(instIds)
-                    }
-                  }}
-                >
-                  ✨ ABRIR {purchasedPacksList.length === 1 ? 'ESTE SOBRE AHORA MISMO' : `ESTOS ${purchasedPacksList.length} SOBRES AHORA MISMO`}
-                </button>
-
-                <button
-                  className="shop-result-btn"
-                  type="button"
-                  onClick={() => {
-                    setPurchasedPacksList([])
-                    setPurchasedGoldBonus(0)
-                    onOpenJardin()
-                  }}
-                >
-                  🪴 IR A MI JARDÍN (VER INVENTARIO)
-                </button>
-
-                <button
-                  className="shop-result-btn"
-                  style={{ background: 'linear-gradient(180deg, #475569 0%, #1e293b 100%)', borderColor: '#94a3b8' }}
-                  type="button"
-                  onClick={() => {
-                    setPurchasedPacksList([])
-                    setPurchasedGoldBonus(0)
-                  }}
-                >
-                  🛒 SEGUIR COMPRANDO
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* IN-GAME THEMED MODAL ALERT */}
-        {themedAlert && (
-          <div className="main-menu-dialog-backdrop" onClick={() => setThemedAlert(null)}>
-            <div className="main-menu-dialog-card" onClick={(e) => e.stopPropagation()}>
-              <div className="main-menu-dialog-header">
-                <div className="main-menu-dialog-icon">{themedAlert.icon}</div>
-                <h3 className="main-menu-dialog-title">{themedAlert.title}</h3>
-                <button
-                  type="button"
-                  className="main-menu-dialog-close"
-                  onClick={() => setThemedAlert(null)}
-                >
-                  ✕
-                </button>
-              </div>
-              <p className="main-menu-dialog-msg">{themedAlert.message}</p>
-              <div className="main-menu-dialog-actions">
-                <button
-                  type="button"
-                  className="main-menu-dialog-btn"
-                  onClick={() => setThemedAlert(null)}
-                >
-                  ENTENDIDO
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PACK DETAILS MODAL (CLICK ON PACK IMAGE) */}
-        {selectedPackDetails && (
-          <div
-            className="main-menu-dialog-backdrop"
-            onClick={() => setSelectedPackDetails(null)}
-          >
-            <div
-              className="shop-pack-details-card"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                className="shop-pack-details-close"
-                onClick={() => setSelectedPackDetails(null)}
-              >
-                ✖
-              </button>
-
-              <div className="shop-pack-details-header">
-                <img
-                  src={
-                    selectedPackDetails === 'starter' || selectedPackDetails === 'basic'
-                      ? commonSeedImg
-                      : selectedPackDetails === 'epic'
-                      ? epicSeedImg
-                      : legendarySeedImg
-                  }
-                  alt="Sobre de semillas"
-                  className="shop-pack-details-img"
-                />
-                <div className="shop-pack-details-meta">
-                  <h3 className="shop-pack-details-title">
-                    {selectedPackDetails === 'starter'
-                      ? 'Pack Starter (Oferta Especial)'
-                      : selectedPackDetails === 'basic'
-                      ? 'Sobre de Semillas Básico'
-                      : selectedPackDetails === 'epic'
-                      ? 'Sobre de Semillas Místico'
-                      : 'Sobre de Semillas Legendario'}
-                  </h3>
-                  <span className="shop-pack-details-gems-val">
-                    💎 {packPrice(selectedPackDetails).toLocaleString('en-US')} Gemas
-                  </span>
-                </div>
-              </div>
-
-              <p className="shop-pack-details-desc">
-                {selectedPackDetails === 'starter' && (
-                  <>Contiene 5 cartas al abrir + 500 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta. Solo se puede comprar una vez por jugador.</>
-                )}
-                {selectedPackDetails === 'basic' && (
-                  <>Contiene 3 cartas al abrir + 300 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
-                )}
-                {selectedPackDetails === 'epic' && (
-                  <>Contiene 3 cartas al abrir + 1,000 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
-                )}
-                {selectedPackDetails === 'legendary' && (
-                  <>Contiene 4 cartas al abrir + 2,500 <GoldIcon size={14} /> Monedas de Oro de regalo directo a tu cuenta.</>
-                )}
-              </p>
-
-              <div className="shop-pack-details-odds">
-                <strong>🎯 PROBABILIDADES:</strong>
-                <p>
-                  {selectedPackDetails === 'starter'
-                    ? '100% Girasol | 100% Lanzaguisantes | 100% Wall-nut | 100% Poco Común (Aleatoria) | 100% Rara (Aleatoria, sin Jalapeño ni Nuez Explosiva)'
-                    : selectedPackDetails === 'basic'
-                    ? '70% Común | 26.7% Poco Común | 3.3% Rara (10% Rara en carta 3)'
-                    : selectedPackDetails === 'epic'
-                    ? '26.7% Común | 53.3% Poco Común | 16.7% Rara | 2.7% Épica | 0.7% Legendaria (8% Épica, 2% Legendaria en carta 3)'
-                    : '42.5% Poco Común | 40% Rara | 15% Épica | 2.5% Legendaria (10% Legendaria en Jackpot slot)'}
-                </p>
-              </div>
-
-              <div className="shop-pack-details-actions">
-                <button
-                  type="button"
-                  className="shop-pack-btn"
-                  disabled={isPurchasingPack}
-                  onClick={() => {
-                    const target = selectedPackDetails
-                    setSelectedPackDetails(null)
-                    handleBuyPacksBatch(target)
-                  }}
-                >
-                  {isPurchasingPack
-                    ? '⏳ PROCESANDO...'
-                    : `🛒 COMPRAR (${getQty(selectedPackDetails)}) — ${(packPrice(selectedPackDetails) * getQty(selectedPackDetails)).toLocaleString('en-US')} 💎 Gemas`}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {renderSharedModals()}
       </div>
     </div>
   )
