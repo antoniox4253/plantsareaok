@@ -23,6 +23,7 @@ import type { PassReward } from '../../utils/battlePassManager'
 import PixelShop from './PixelShop'
 import PixelSeedPacks from './PixelSeedPacks'
 import PixelVipPass from './PixelVipPass'
+import PixelGoldEmotes from './PixelGoldEmotes'
 import './Shop.css'
 
 const commonSeedImg = '/game-assets/greenfoot/seed_pack_common_whitebg.webp'
@@ -228,7 +229,7 @@ export default function Shop({
   onReceivePlant,
   onServerChange,
 }: ShopProps) {
-  const [viewMode, setViewMode] = useState<'pixel_home' | 'pixel_packs' | 'pixel_pass' | 'classic'>('pixel_home')
+  const [viewMode, setViewMode] = useState<'pixel_home' | 'pixel_packs' | 'pixel_pass' | 'pixel_gold' | 'classic'>('pixel_home')
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [activeTab, setActiveTab] = useState<'packs' | 'pass' | 'gold' | 'energy' | 'market'>(initialTab)
 
@@ -239,6 +240,8 @@ export default function Shop({
         setViewMode('pixel_pass')
       } else if (initialTab === 'packs') {
         setViewMode('pixel_packs')
+      } else if (initialTab === 'gold') {
+        setViewMode('pixel_gold')
       }
     }
   }, [initialTab])
@@ -662,6 +665,8 @@ export default function Shop({
               setViewMode('pixel_packs')
             } else if (tab === 'pass') {
               setViewMode('pixel_pass')
+            } else if (tab === 'gold') {
+              setViewMode('pixel_gold')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -688,6 +693,8 @@ export default function Shop({
           onSelectTab={(tab) => {
             if (tab === 'pass') {
               setViewMode('pixel_pass')
+            } else if (tab === 'gold') {
+              setViewMode('pixel_gold')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -722,6 +729,8 @@ export default function Shop({
               setViewMode('pixel_packs')
             } else if (tab === 'pass') {
               setViewMode('pixel_pass')
+            } else if (tab === 'gold') {
+              setViewMode('pixel_gold')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -748,6 +757,45 @@ export default function Shop({
                 }
               : undefined
           }
+        />
+        {renderSharedModals()}
+      </div>
+    )
+  }
+
+  if (viewMode === 'pixel_gold') {
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <PixelGoldEmotes
+          onBackToHome={() => setViewMode('pixel_home')}
+          onOpenStreaming={onOpenStreaming}
+          onToggleClassic={() => {
+            setActiveTab('gold')
+            setViewMode('classic')
+          }}
+          onSelectTab={(tab) => {
+            if (tab === 'packs') {
+              setViewMode('pixel_packs')
+            } else if (tab === 'pass') {
+              setViewMode('pixel_pass')
+            } else if (tab === 'gold') {
+              setViewMode('pixel_gold')
+            } else {
+              setActiveTab(tab)
+              setViewMode('classic')
+            }
+          }}
+          onBuyGoldPackage={async (pkgId) => {
+            if (onBuyGold) {
+              return await onBuyGold(pkgId)
+            }
+            return { success: false, error: 'Compra no disponible' }
+          }}
+          userGold={userGold}
+          userTokens={userTokens}
+          playerEnergy={playerEnergy}
+          maxPlayerEnergy={maxPlayerEnergy}
+          userElo={userElo}
         />
         {renderSharedModals()}
       </div>

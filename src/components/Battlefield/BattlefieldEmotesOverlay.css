@@ -1,0 +1,245 @@
+/* BattlefieldEmotesOverlay.css - Emotes en combate para ambos jugadores */
+
+/* 1. Botón lanzador en el lado izquierdo */
+.bf-emote-trigger-btn {
+  position: absolute;
+  left: 14px;
+  top: 48%;
+  transform: translateY(-50%);
+  z-index: 130;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%);
+  border: 2px solid #38bdf8;
+  color: #fff;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.4);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.bf-emote-trigger-btn:hover {
+  transform: translateY(-50%) scale(1.1);
+  border-color: #facc15;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(250, 204, 21, 0.5);
+}
+
+.bf-emote-trigger-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.bf-emote-trigger-btn--cooldown {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.bf-emote-cooldown-text {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 900;
+  color: #facc15;
+  bottom: -4px;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid #facc15;
+}
+
+/* 2. Cajón de emotes deslizante desde la izquierda */
+.bf-emotes-drawer {
+  position: absolute;
+  left: 70px;
+  top: 48%;
+  transform: translateY(-50%);
+  z-index: 135;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(10, 16, 28, 0.98) 100%);
+  border: 2px solid #38bdf8;
+  border-radius: 20px;
+  padding: 12px 14px;
+  width: min(320px, 80vw);
+  max-height: 70vh;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideInLeft 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(10px);
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translate(-20px, -50%) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translate(0, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.bf-emotes-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 8px;
+}
+
+.bf-emotes-drawer__title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bf-emotes-drawer__close {
+  background: rgba(255, 255, 255, 0.1);
+  border: 0;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 800;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+
+.bf-emotes-drawer__close:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+.bf-emotes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 52vh;
+  padding: 4px 2px;
+}
+
+.bf-emote-btn {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 6px 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bf-emote-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  border-color: #facc15;
+  box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+}
+
+.bf-emote-btn:active {
+  transform: scale(0.96);
+}
+
+.bf-emote-btn__img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.bf-emote-btn__label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f8fafc;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* 3. Burbujas de Emotes en el Campo de Batalla (Visibles por ambos jugadores) */
+.bf-bubble-anchor {
+  position: absolute;
+  top: 80px;
+  z-index: 140;
+  pointer-events: none;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bf-bubble-anchor--left {
+  left: 28px;
+}
+
+.bf-bubble-anchor--right {
+  right: 28px;
+}
+
+.bf-emote-bubble {
+  width: min(180px, 20vw);
+  min-width: 110px;
+  aspect-ratio: 1/1;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.55));
+  opacity: 0;
+  transform: translateY(18px) scale(0.8);
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.bf-emote-bubble.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: bfPop 0.28s ease, bfBob 1.6s ease-in-out infinite 0.28s;
+}
+
+.bf-emote-bubble.hide {
+  opacity: 0;
+  transform: translateY(10px) scale(0.85);
+}
+
+@keyframes bfPop {
+  0% { transform: translateY(18px) scale(0.72); opacity: 0; }
+  60% { transform: translateY(-4px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes bfBob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.02); }
+}
+
+/* Chispas doradas */
+.bf-emote-spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 236, 133, 0.95);
+  filter: blur(0.2px);
+  opacity: 0;
+  pointer-events: none;
+  animation: bfSparkBurst 800ms ease-out forwards;
+}
+
+@keyframes bfSparkBurst {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.3); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.6); }
+}

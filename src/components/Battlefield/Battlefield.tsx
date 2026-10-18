@@ -35,6 +35,7 @@ const needleImg = '/game-assets/greenfoot/needle1.png'
 const kernelImg = '/game-assets/plants/projectile_kernel.webp'
 const butterImg = '/game-assets/plants/projectile_butter.webp'
 import PlantHand from './PlantHand'
+import BattlefieldEmotesOverlay from './BattlefieldEmotesOverlay'
 import RelojDePartida from '../RelojDePartida/RelojDePartida'
 import { SOL_SE_RECOGE_SOLO_MS } from '../../engine/balance'
 import { MARGEN_DE_RED_TICS } from '../../engine/pvp'
@@ -4372,6 +4373,14 @@ export default function Battlefield({
           </div>
         </div>
       )}
+
+      {/* Emotes de Combate (Lanzador lateral izquierdo, cajón de emotes y burbujas sincronizadas) */}
+      <BattlefieldEmotesOverlay
+        roomId={roomId}
+        soyP1={soyP1}
+        matchMode={matchMode}
+        opponentName={nombres?.rival}
+      />
 
       {/* Plant Hand */}
       <PlantHand
