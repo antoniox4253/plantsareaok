@@ -12,11 +12,11 @@ import './PixelGoldEmotes.css'
 const BASE_WIDTH = 1672
 const BASE_HEIGHT = 941
 
-// Coordenadas fijas: oro intacto, gemas y energía desplazadas a la derecha
+// Coordenadas fijas: oro intacto, gemas desplazadas un poquito, energía el doble a la derecha, sonido ajustado
 const GOLD_COORDS = { x: 830, y: 31, w: 242, h: 58 }
-const GEMS_COORDS = { x: 1070, y: 31, w: 242, h: 58 }
-const ENERGY_COORDS = { x: 1306, y: 31, w: 210, h: 58 }
-const SOUND_COORDS = { x: 1535, y: 31, w: 58, h: 58 }
+const GEMS_COORDS = { x: 1086, y: 31, w: 242, h: 58 }
+const ENERGY_COORDS = { x: 1338, y: 31, w: 210, h: 58 }
+const SOUND_COORDS = { x: 1572, y: 31, w: 58, h: 58 }
 
 export interface PixelGoldEmotesProps {
   onBackToHome: () => void
@@ -336,13 +336,13 @@ export default function PixelGoldEmotes({
         {/* Paquete 1: Básico (500 Oro / 100 Gemas) */}
         <div
           className="pixel-gold-card-overlay pixel-gold-card-overlay--title"
-          style={calcStyle({ x: 120, y: 342, w: 388, h: 54 })}
+          style={calcStyle({ x: 135, y: 342, w: 370, h: 54 })}
         >
           PAQUETE BÁSICO
         </div>
         <div
           className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
-          style={calcStyle({ x: 144, y: 494, w: 340, h: 56 })}
+          style={calcStyle({ x: 160, y: 506, w: 340, h: 58 })}
         >
           <span>🪙</span>
           <span>500 ORO</span>
@@ -350,7 +350,7 @@ export default function PixelGoldEmotes({
         <button
           type="button"
           className="pixel-gold-card-overlay pixel-gold-card-overlay--btn"
-          style={calcStyle({ x: 144, y: 570, w: 340, h: 68 })}
+          style={calcStyle({ x: 160, y: 570, w: 340, h: 68 })}
           onClick={() => {
             soundManager.playSound('plantation', 0.7)
             setConfirmGoldPkg({
@@ -372,11 +372,11 @@ export default function PixelGoldEmotes({
           className="pixel-gold-card-overlay pixel-gold-card-overlay--title pixel-gold-card-overlay--title-popular"
           style={calcStyle({ x: 635, y: 342, w: 398, h: 54 })}
         >
-          ⭐ POPULAR (+25% EXTRA) ⭐
+          POPULAR (+25% EXTRA)
         </div>
         <div
           className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
-          style={calcStyle({ x: 663, y: 494, w: 340, h: 56 })}
+          style={calcStyle({ x: 663, y: 506, w: 340, h: 58 })}
         >
           <span>🪙</span>
           <span>1,250 ORO</span>
@@ -406,11 +406,11 @@ export default function PixelGoldEmotes({
           className="pixel-gold-card-overlay pixel-gold-card-overlay--title pixel-gold-card-overlay--title-best"
           style={calcStyle({ x: 1120, y: 342, w: 395, h: 54 })}
         >
-          👑 MEJOR VALOR (+40% EXTRA) 👑
+          MEJOR VALOR (+40% EXTRA)
         </div>
         <div
           className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
-          style={calcStyle({ x: 1142, y: 494, w: 340, h: 56 })}
+          style={calcStyle({ x: 1158, y: 506, w: 340, h: 58 })}
         >
           <span>🪙</span>
           <span>3,500 ORO</span>
@@ -418,7 +418,7 @@ export default function PixelGoldEmotes({
         <button
           type="button"
           className="pixel-gold-card-overlay pixel-gold-card-overlay--btn"
-          style={calcStyle({ x: 1142, y: 570, w: 340, h: 68 })}
+          style={calcStyle({ x: 1158, y: 570, w: 340, h: 68 })}
           onClick={() => {
             soundManager.playSound('plantation', 0.7)
             setConfirmGoldPkg({

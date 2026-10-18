@@ -41,7 +41,6 @@ export default function BattlefieldEmotesOverlay({
   const leftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const channelRef = useRef<any>(null)
-  const mainChannelRef = useRef<any>(null)
   const recentDedupeRef = useRef<Set<string>>(new Set())
   const lastEmoteIdRef = useRef<number>(0)
   const mySentLocalRef = useRef<Set<number>>(new Set())
@@ -190,45 +189,7 @@ export default function BattlefieldEmotesOverlay({
       triggerEmoteDisplay('right', emoteId)
     }
 
-    // A) Canal 1: Canal primario de la sala (match_${roomId}), ya activo y probado para plantas
-    const mainCanal = supabase.channel(`match_${roomId}`)
-    mainCanal.on('broadcast', { event: 'battle_emote' }, ({ payload }) => {
-      if (payload && payload.emoteId) {
-        handleIncomingEmote(
-          payload.emoteId,
-          payload.senderSide,
-          payload.senderUserId,
-          payload.id,
-          payload.ts
-        )
-      }
-    })
-    mainCanal.on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'match_emotes',
-        filter: `room_id=eq.${roomId}`,
-      },
-      (payload: any) => {
-        const row = payload.new
-        if (row && row.emote_id) {
-          handleIncomingEmote(
-            row.emote_id,
-            row.sender_side,
-            row.user_id,
-            Number(row.id),
-            undefined,
-            row.created_at
-          )
-        }
-      }
-    )
-    mainCanal.subscribe()
-    mainChannelRef.current = mainCanal
-
-    // B) Canal 2: Canal dedicado de emotes (match_emotes_${roomId}) con broadcast configurado
+    // Canal dedicado de emotes (match_emotes_${roomId}) con broadcast y postgres_changes
     const emoteCanal = supabase.channel(`match_emotes_${roomId}`, {
       config: { broadcast: { self: false } },
     })
@@ -268,7 +229,7 @@ export default function BattlefieldEmotesOverlay({
     emoteCanal.subscribe()
     channelRef.current = emoteCanal
 
-    // C) Red de seguridad autoritativa por RPC: Polling periódico cada 800ms
+    // Red de seguridad autoritativa por RPC: Polling periódico cada 800ms
     let cancelado = false
     const recuperarEmotes = async () => {
       if (cancelado || !isSupabaseConfigured() || !roomId) return
@@ -301,14 +262,10 @@ export default function BattlefieldEmotesOverlay({
     return () => {
       cancelado = true
       clearInterval(pollInterval)
-      if (mainCanal) {
-        void supabase.removeChannel(mainCanal)
-      }
       if (emoteCanal) {
         void supabase.removeChannel(emoteCanal)
       }
       channelRef.current = null
-      mainChannelRef.current = null
     }
   }, [roomId, triggerEmoteDisplay])
 
@@ -352,18 +309,7 @@ export default function BattlefieldEmotesOverlay({
         ts: nowTs,
       }
 
-      // A) Transmitir en canal primario (match_${roomId})
-      if (mainChannelRef.current) {
-        try {
-          void mainChannelRef.current.send({
-            type: 'broadcast',
-            event: 'battle_emote',
-            payload: broadcastPayload,
-          })
-        } catch {}
-      }
-
-      // B) Transmitir en canal dedicado (match_emotes_${roomId})
+      // Transmitir en canal dedicado de emotes (match_emotes_${roomId})
       if (channelRef.current) {
         try {
           void channelRef.current.send({

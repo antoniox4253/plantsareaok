@@ -120,6 +120,8 @@
   color: #fef08a;
   background: linear-gradient(180deg, #2a1805 0%, #170d02 100%);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 12px rgba(245, 158, 11, 0.3);
+  font-size: clamp(10px, 0.95vw, 13.5px);
+  letter-spacing: 0.5px;
 }
 
 .pixel-gold-card-overlay--title-best {
@@ -127,6 +129,8 @@
   color: #e9d5ff;
   background: linear-gradient(180deg, #240e38 0%, #120520 100%);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 0 12px rgba(168, 85, 247, 0.3);
+  font-size: clamp(10px, 0.95vw, 13.5px);
+  letter-spacing: 0.5px;
 }
 
 .pixel-gold-card-overlay--amount {
