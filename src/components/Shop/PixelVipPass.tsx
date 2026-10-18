@@ -63,6 +63,11 @@ export default function PixelVipPass({
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const currentXp = userXp ?? 0
+  const highestClaimed = claimedVipLevels.length > 0 ? Math.max(...claimedVipLevels) : 0
+  const reachedLevelsCount = BATTLE_PASS_LEVELS.filter((l) => currentXp >= l.requiredXp).length
+  const userCurrentLevel = Math.max(highestClaimed, reachedLevelsCount)
+  const maxXp = BATTLE_PASS_LEVELS[BATTLE_PASS_LEVELS.length - 1]?.requiredXp ?? 8000
+  const xpPercentage = Math.min(100, Math.max(0, (currentXp / maxXp) * 100))
 
   // Niveles listos para cobrar
   const claimableLevels = useMemo(() => {
@@ -73,11 +78,10 @@ export default function PixelVipPass({
       : []
   }, [hasVipPass, currentXp, claimedVipLevels])
 
-  // Nivel seleccionado por defecto: el primer listo para cobrar, o nivel 1
+  // Nivel seleccionado por defecto: el primer listo para cobrar, o nivel alcanzado, o nivel 1
   const [selectedLevelNum, setSelectedLevelNum] = useState<number>(() => {
     if (claimableLevels.length > 0) return claimableLevels[0].level
-    const reached = BATTLE_PASS_LEVELS.filter((l) => currentXp >= l.requiredXp).length
-    if (reached > 0) return Math.min(20, reached)
+    if (userCurrentLevel > 0) return Math.min(20, userCurrentLevel)
     return 1
   })
 
@@ -145,19 +149,19 @@ export default function PixelVipPass({
 
     if (h.id === 'tab_oro_emotes' || h.id === 'counter_oro') {
       if (onSelectTab) onSelectTab('gold')
-      else setToastMessage(`💰 Oro: ${(userGold ?? 50000).toLocaleString()}`)
+      else setToastMessage(`💰 Oro: ${userGold.toLocaleString()}`)
       return
     }
 
     if (h.id === 'counter_gemas') {
       if (onSelectTab) onSelectTab('gold')
-      else setToastMessage(`💎 Gemas: ${(userTokens ?? 100).toLocaleString()}`)
+      else setToastMessage(`💎 Gemas: ${userTokens.toLocaleString()}`)
       return
     }
 
     if (h.id === 'tab_energias' || h.id === 'counter_energia') {
       if (onSelectTab) onSelectTab('energy')
-      else setToastMessage(`⚡ Energía: ${playerEnergy ?? 20} / 20`)
+      else setToastMessage(`⚡ Energía: ${playerEnergy} / ${maxPlayerEnergy}`)
       return
     }
 
@@ -220,6 +224,31 @@ export default function PixelVipPass({
         }}
         onToast={(msg) => setToastMessage(msg)}
       />
+
+      {/* Insignia Dinámica de Nivel del Usuario (Cubre 'NIVEL 0' pintado en el fondo) */}
+      <div
+        className="pixel-vippass-live-lvl-badge"
+        title={`Tu Nivel Actual de Temporada: Nivel ${userCurrentLevel}`}
+      >
+        <span className="pixel-vippass-live-lvl-badge__label">NIVEL</span>
+        <span className="pixel-vippass-live-lvl-badge__value">{userCurrentLevel}</span>
+      </div>
+
+      {/* Barra y Texto Dinámico de Experiencia (Cubre '75 / 8,000 XP (1%)' pintado en el fondo) */}
+      <div
+        className="pixel-vippass-live-xp-card"
+        title={`Progreso: ${currentXp.toLocaleString('es-ES')} de ${maxXp.toLocaleString('es-ES')} XP (${Math.round(xpPercentage)}%)`}
+      >
+        <div className="pixel-vippass-live-xp-text">
+          {currentXp.toLocaleString('es-ES')} / {maxXp.toLocaleString('es-ES')} XP ({Math.round(xpPercentage)}%)
+        </div>
+        <div className="pixel-vippass-live-xp-track">
+          <div
+            className="pixel-vippass-live-xp-bar"
+            style={{ width: `${Math.max(3, xpPercentage)}%` }}
+          />
+        </div>
+      </div>
 
       {/* Hotspots de Navegación y Cabecera */}
       {VIP_HOTSPOTS.map((h) => (
@@ -335,13 +364,34 @@ export default function PixelVipPass({
         </div>
       </div>
 
-      {/* PANEL DE RECOMPENSA DESTACADA (FEATURED) */}
+      {/* PANEL DE RECOMPENSA DESTACADA (Cubre 'Beneficios VIP' para lucir prominente y completo) */}
       <div className="pixel-vippass-featured">
-        <div className="pixel-vippass-featured__title">
-          👑 RECOMPENSA DESTACADA · NIVEL {selectedPassLvl.level}
+        <div className="pixel-vippass-featured__head">
+          <div className="pixel-vippass-featured__title">
+            👑 RECOMPENSA DESTACADA · NIVEL {selectedPassLvl.level}
+          </div>
+          <span
+            className={`pixel-vippass-tag ${
+              isSelectedClaimed
+                ? 'pixel-vippass-tag--claimed'
+                : isSelectedClaimable
+                ? 'pixel-vippass-tag--claimable'
+                : isSelectedPendingVip
+                ? 'pixel-vippass-tag--vip'
+                : 'pixel-vippass-tag--locked'
+            }`}
+          >
+            {isSelectedClaimed
+              ? '✅ RECLAMADO'
+              : isSelectedClaimable
+              ? '⭐ LISTO PARA RECLAMAR'
+              : isSelectedPendingVip
+              ? '👑 REQUIERE PASE VIP'
+              : '🔒 BLOQUEADO'}
+          </span>
         </div>
 
-        <div className="pixel-vippass-featured__row">
+        <div className="pixel-vippass-featured__card">
           <div className="pixel-vippass-featured__big-icon">
             <img
               src={selectedPassLvl.reward.icon}
@@ -361,27 +411,7 @@ export default function PixelVipPass({
             )}
           </div>
 
-          <div className="pixel-vippass-featured__details">
-            <span
-              className={`pixel-vippass-tag ${
-                isSelectedClaimed
-                  ? 'pixel-vippass-tag--claimed'
-                  : isSelectedClaimable
-                  ? 'pixel-vippass-tag--claimable'
-                  : isSelectedPendingVip
-                  ? 'pixel-vippass-tag--vip'
-                  : 'pixel-vippass-tag--locked'
-              }`}
-            >
-              {isSelectedClaimed
-                ? '✅ RECLAMADO'
-                : isSelectedClaimable
-                ? '⭐ LISTO PARA RECLAMAR'
-                : isSelectedPendingVip
-                ? '👑 REQUIERE PASE VIP'
-                : '🔒 BLOQUEADO'}
-            </span>
-
+          <div className="pixel-vippass-featured__meta">
             <div className="pixel-vippass-item-name" title={selectedPassLvl.reward.label}>
               {selectedPassLvl.reward.label}
             </div>
@@ -389,7 +419,7 @@ export default function PixelVipPass({
             <div className="pixel-vippass-req">
               Requiere {selectedPassLvl.requiredXp.toLocaleString('es-ES')} XP
               {isSelectedUnlocked
-                ? ' · ¡XP Alcanzada!'
+                ? ' · ¡Meta Alcanzada! ⭐'
                 : ` · Faltan ${(selectedPassLvl.requiredXp - currentXp).toLocaleString('es-ES')} XP`}
             </div>
 
@@ -419,6 +449,29 @@ export default function PixelVipPass({
                 👑 ACTIVAR PASE VIP (2,500 💎)
               </button>
             )}
+
+            {isSelectedClaimed && (
+              <div className="pixel-vippass-status-badge pixel-vippass-status-badge--claimed">
+                ✓ Recompensa reclamada en tu inventario
+              </div>
+            )}
+
+            {!isSelectedUnlocked && (
+              <div className="pixel-vippass-status-badge pixel-vippass-status-badge--locked">
+                🔒 Nivel {selectedPassLvl.level} bloqueado (Sube de XP en batalla)
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Resumen de Beneficios VIP */}
+        <div className="pixel-vippass-perks-banner">
+          <div className="pixel-vippass-perks-title">⭐ VENTAJAS ACTIVAS DEL PASE VIP:</div>
+          <div className="pixel-vippass-perks-chips">
+            <span>+25% XP</span>
+            <span>+5⚡ Diarias</span>
+            <span>Premios Exclusivos</span>
+            <span>Comercio P2P</span>
           </div>
         </div>
       </div>

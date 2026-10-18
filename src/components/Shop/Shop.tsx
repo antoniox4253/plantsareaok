@@ -308,8 +308,11 @@ export default function Shop({
     setBuyQuantities((prev) => ({ ...prev, [packId]: clamped }))
   }
 
-  const handleBuyPacksBatch = async (packId: PackId) => {
-    if (isPurchasingPack) return
+  const handleBuyPacksBatch = async (
+    packId: PackId,
+    skipSuccessModal = false
+  ): Promise<{ success: boolean; packs?: InventoryPack[]; goldAdded?: number; error?: string }> => {
+    if (isPurchasingPack) return { success: false, error: 'Compra en curso' }
     const qty = getQty(packId)
     const totalCost = packPrice(packId) * qty
 
@@ -322,7 +325,7 @@ export default function Shop({
         message: `⚠️ Gemas insuficientes (${userTokens} Gemas 💎 disponibles).\nSe requieren ${totalCost} Gemas 💎 para comprar ${qty} ${qty === 1 ? 'sobre' : 'sobres'}.`,
         icon: '⚠️',
       })
-      return
+      return { success: false, error: 'Gemas insuficientes' }
     }
 
     setIsPurchasingPack(true)
@@ -337,13 +340,15 @@ export default function Shop({
           message: res.error || 'El servidor rechazó la compra.',
           icon: '⚠️',
         })
-        return
+        return res
       }
 
       const bought = res.packs || []
       if (bought.length > 0) {
         soundManager.playSound('plantation', 0.8)
-        setPurchasedPacksList(bought)
+        if (!skipSuccessModal) {
+          setPurchasedPacksList(bought)
+        }
         const goldRewardCalculated = res.goldAdded ?? (PACK_DEFINITIONS[packId].goldReward * qty)
         setPurchasedGoldBonus(goldRewardCalculated)
         trackEvent('purchase_pack', {
@@ -354,6 +359,7 @@ export default function Shop({
           currency: 'GEMS',
         })
       }
+      return res
     } finally {
       setIsPurchasingPack(false)
     }
@@ -687,7 +693,8 @@ export default function Shop({
               setViewMode('classic')
             }
           }}
-          onBuyPack={(packId) => handleBuyPacksBatch(packId)}
+          onBuyPack={(packId) => handleBuyPacksBatch(packId, true)}
+          onOpenPackImmediately={onOpenPackImmediately}
           userGold={userGold}
           userTokens={userTokens}
           playerEnergy={playerEnergy}
