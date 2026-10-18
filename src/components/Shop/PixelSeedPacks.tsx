@@ -58,7 +58,7 @@ export interface PixelSeedPacksProps {
 export default function PixelSeedPacks({
   onBackToHome,
   onOpenStreaming,
-  onToggleClassic,
+  onToggleClassic: _onToggleClassic,
   onSelectTab,
   onBuyPack,
   onOpenPackImmediately,
@@ -70,7 +70,7 @@ export default function PixelSeedPacks({
   userElo = 1000,
   isPurchasing = false,
 }: PixelSeedPacksProps) {
-  const [debugHotspots, setDebugHotspots] = useState<boolean>(false)
+  const [debugHotspots] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showOddsModal, setShowOddsModal] = useState<boolean>(false)
   const [localPurchasing, setLocalPurchasing] = useState<boolean>(false)
@@ -284,35 +284,7 @@ export default function PixelSeedPacks({
 
   return (
     <div className="pixel-seedpacks-root">
-      {/* Barra de utilidades para desarrollador / pruebas */}
-      <div className="pixel-seedpacks-dev-bar">
-        <button
-          type="button"
-          className="pixel-seedpacks-dev-btn"
-          onClick={onBackToHome}
-          title="Volver a la vista principal de la tienda"
-        >
-          ← Tienda Home
-        </button>
-        <button
-          type="button"
-          className={`pixel-seedpacks-dev-btn ${debugHotspots ? 'pixel-seedpacks-dev-btn--active' : ''}`}
-          onClick={() => setDebugHotspots(!debugHotspots)}
-          title="Ver contorno de todas las zonas interactivas"
-        >
-          {debugHotspots ? 'Ocultar Zonas' : 'Ver Zonas'}
-        </button>
-        {onToggleClassic && (
-          <button
-            type="button"
-            className="pixel-seedpacks-dev-btn"
-            onClick={onToggleClassic}
-            title="Cambiar a la tienda funcional clásica"
-          >
-            Tienda Clásica
-          </button>
-        )}
-      </div>
+
 
       {/* Escenario Pixel-Perfect */}
       <div className="pixel-seedpacks-stage">

@@ -45,7 +45,7 @@ export interface PixelVipPassProps {
 export default function PixelVipPass({
   onBackToHome,
   onOpenStreaming,
-  onToggleClassic,
+  onToggleClassic: _onToggleClassic,
   onSelectTab,
   userGold = 0,
   userTokens = 0,
@@ -59,7 +59,7 @@ export default function PixelVipPass({
   onClaimReward,
   onClaimAllRewards,
 }: PixelVipPassProps) {
-  const [debugHotspots, setDebugHotspots] = useState<boolean>(false)
+  const [debugHotspots] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const currentXp = userXp ?? 0
@@ -176,27 +176,7 @@ export default function PixelVipPass({
 
   return (
     <div className="pixel-vippass-root">
-      {/* Barra de utilidades para desarrollador / pruebas */}
-      <div className="pixel-vippass-dev-bar">
-        <button
-          type="button"
-          className={`pixel-vippass-dev-btn ${debugHotspots ? 'pixel-vippass-dev-btn--active' : ''}`}
-          onClick={() => setDebugHotspots(!debugHotspots)}
-          title="Ver o inspeccionar áreas interactivas del diseño"
-        >
-          {debugHotspots ? 'Ocultar Zonas' : '🎯 Zonas'}
-        </button>
-        {onToggleClassic && (
-          <button
-            type="button"
-            className="pixel-vippass-dev-btn"
-            onClick={onToggleClassic}
-            title="Alternar a vista clásica"
-          >
-            Modo Clásico
-          </button>
-        )}
-      </div>
+
 
       {/* Arte de fondo pixel-perfect */}
       <picture>

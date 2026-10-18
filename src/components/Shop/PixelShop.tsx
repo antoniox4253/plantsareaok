@@ -51,7 +51,7 @@ export interface PixelShopProps {
 export default function PixelShop({
   onBack,
   onOpenStreaming,
-  onToggleClassic,
+  onToggleClassic: _onToggleClassic,
   onSelectTab,
   userGold = 0,
   userTokens = 0,
@@ -59,7 +59,7 @@ export default function PixelShop({
   maxPlayerEnergy = 20,
   userElo = 1000,
 }: PixelShopProps) {
-  const [debugHotspots, setDebugHotspots] = useState<boolean>(false)
+  const [debugHotspots] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function PixelShop({
       if (onSelectTab) {
         onSelectTab('energy')
       } else {
-        setToastMessage(`⚡ Energía actual: ${playerEnergy ?? 20} / 20`)
+        setToastMessage(`⚡ Energía actual: ${playerEnergy ?? 20} / ${maxPlayerEnergy ?? 20}`)
       }
       return
     }
@@ -154,27 +154,7 @@ export default function PixelShop({
 
   return (
     <div className="pixel-shop-root">
-      {/* Barra de utilidades para desarrollador / pruebas */}
-      <div className="pixel-shop-dev-bar">
-        <button
-          type="button"
-          className={`pixel-shop-dev-btn ${debugHotspots ? 'pixel-shop-dev-btn--active' : ''}`}
-          onClick={() => setDebugHotspots(!debugHotspots)}
-          title="Ver contorno de todas las zonas interactivas"
-        >
-          {debugHotspots ? 'Ocultar Zonas' : 'Ver Zonas'}
-        </button>
-        {onToggleClassic && (
-          <button
-            type="button"
-            className="pixel-shop-dev-btn"
-            onClick={onToggleClassic}
-            title="Cambiar a la tienda funcional clásica"
-          >
-            Tienda Clásica
-          </button>
-        )}
-      </div>
+
 
       {/* Escenario Pixel-Perfect */}
       <div className="pixel-shop-stage">

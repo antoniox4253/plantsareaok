@@ -44,7 +44,7 @@ export interface PixelGoldEmotesProps {
 export default function PixelGoldEmotes({
   onBackToHome,
   onOpenStreaming,
-  onToggleClassic,
+  onToggleClassic: _onToggleClassic,
   onSelectTab,
   onBuyGoldPackage,
   userGold = 0,
@@ -54,7 +54,7 @@ export default function PixelGoldEmotes({
   userElo = 1000,
   onRefreshBalance,
 }: PixelGoldEmotesProps) {
-  const [debugHotspots, setDebugHotspots] = useState<boolean>(false)
+  const [debugHotspots] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [carouselOffset, setCarouselOffset] = useState<number>(0)
   const [unlockedIds, setUnlockedIds] = useState<string[]>(() => getUnlockedEmoteIds())
@@ -484,50 +484,6 @@ export default function PixelGoldEmotes({
           aria-label="Ver siguientes emotes"
         />
 
-        {/* Botones auxiliares inferiores */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 8,
-            right: 12,
-            display: 'flex',
-            gap: 6,
-            zIndex: 30,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setDebugHotspots(!debugHotspots)}
-            style={{
-              background: debugHotspots ? 'rgba(56, 189, 248, 0.4)' : 'rgba(0,0,0,0.5)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              color: debugHotspots ? '#38bdf8' : '#94a3b8',
-              borderRadius: 6,
-              fontSize: 10,
-              padding: '2px 8px',
-              cursor: 'pointer',
-            }}
-          >
-            {debugHotspots ? 'Ocultar Zonas' : 'Ver Zonas'}
-          </button>
-          {onToggleClassic && (
-            <button
-              type="button"
-              onClick={onToggleClassic}
-              style={{
-                background: 'rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: '#94a3b8',
-                borderRadius: 6,
-                fontSize: 10,
-                padding: '2px 8px',
-                cursor: 'pointer',
-              }}
-            >
-              Vista Clásica
-            </button>
-          )}
-        </div>
       </div>
 
       {/* MODAL: DETALLES Y PRUEBA DE EMOTE */}

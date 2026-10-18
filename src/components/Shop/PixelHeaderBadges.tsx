@@ -31,14 +31,14 @@ export default function PixelHeaderBadges({
   userTokens = 0,
   playerEnergy = 20,
   maxPlayerEnergy = 20,
-  userElo = 1000,
+  userElo: _userElo = 1000,
   goldCoords,
   gemsCoords,
   energyCoords,
   soundCoords,
   baseWidth = 1672,
   baseHeight = 941,
-  onSelectTab,
+  onSelectTab: _onSelectTab,
   onToast,
 }: PixelHeaderBadgesProps) {
   const [isMuted, setIsMuted] = useState<boolean>(() => soundManager.isMuted())
@@ -67,39 +67,7 @@ export default function PixelHeaderBadges({
     }
   }
 
-  const handleGoldClick = () => {
-    soundManager.playSound('click', 0.4)
-    if (onSelectTab) {
-      onSelectTab('gold')
-    } else if (onToast) {
-      onToast(`💰 Monedas de Oro: ${userGold.toLocaleString()} ORO`)
-    }
-  }
-
-  const handleGemsClick = () => {
-    soundManager.playSound('click', 0.4)
-    if (onSelectTab) {
-      onSelectTab('gold')
-    } else if (onToast) {
-      onToast(`💎 Gemas disponibles: ${userTokens.toLocaleString()}`)
-    }
-  }
-
-  const handleEnergyClick = () => {
-    soundManager.playSound('click', 0.4)
-    if (onSelectTab) {
-      onSelectTab('energy')
-    } else if (onToast) {
-      onToast(
-        userElo <= 1602
-          ? '⚡ Energía ilimitada en rango novato (≤ 1602 copas)'
-          : `⚡ Energía: ${playerEnergy} / ${maxPlayerEnergy}`
-      )
-    }
-  }
-
-  const isNovato = userElo <= 1602
-  const energyDisplay = isNovato ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`
+  const energyDisplay = `${playerEnergy}/${maxPlayerEnergy}`
 
   return (
     <>
@@ -107,8 +75,7 @@ export default function PixelHeaderBadges({
       <div
         className="pixel-header-badge pixel-header-badge--gold"
         style={calcStyle(goldCoords)}
-        onClick={handleGoldClick}
-        title="Monedas de Oro disponibles (Clic para ver Bóveda)"
+        title="Monedas de Oro disponibles"
       >
         <img src={monedaImg} alt="Oro" className="pixel-header-badge__gold-icon" />
         <span className="pixel-header-badge__val pixel-header-badge__val--gold">
@@ -121,8 +88,7 @@ export default function PixelHeaderBadges({
       <div
         className="pixel-header-badge pixel-header-badge--gems"
         style={calcStyle(gemsCoords)}
-        onClick={handleGemsClick}
-        title="Gemas disponibles (Clic para ver Tienda de Gemas)"
+        title="Gemas disponibles"
       >
         <span className="pixel-header-badge__gem-icon">💎</span>
         <span className="pixel-header-badge__val pixel-header-badge__val--gems">
@@ -135,19 +101,14 @@ export default function PixelHeaderBadges({
       <div
         className="pixel-header-badge pixel-header-badge--energy"
         style={calcStyle(energyCoords)}
-        onClick={handleEnergyClick}
-        title={
-          isNovato
-            ? '⚡ Energía ilimitada en rango novato (≤ 1602 copas)'
-            : `⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy} (Clic para Recargar)`
-        }
+        title={`⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy}`}
       >
         <span className="pixel-header-badge__energy-icon">⚡</span>
         <span className="pixel-header-badge__val pixel-header-badge__val--energy">
           {energyDisplay}
         </span>
         <span className="pixel-header-badge__lbl pixel-header-badge__lbl--energy">
-          {isNovato ? 'Novato' : 'Energía'}
+          Energía
         </span>
       </div>
 

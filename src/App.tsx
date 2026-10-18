@@ -319,6 +319,9 @@ function App() {
       if (profile.elo_rating !== undefined && profile.elo_rating !== null) {
         setUserElo(profile.elo_rating)
       }
+      if (profile.energy_current !== undefined && profile.energy_current !== null) {
+        setPlayerEnergy(Number(profile.energy_current))
+      }
       // Cargar inventario y saldo autoritativos del servidor. Hasta ahora el
       // estado salía de localStorage, así que el jugador veía su propio
       // navegador en lugar de su cuenta: se perdía el progreso al cambiar de

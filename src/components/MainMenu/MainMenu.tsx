@@ -41,6 +41,8 @@ interface MainMenuProps {
     is_returning_churn?: boolean
     returning_bonus_available?: boolean
     has_purchased_starter_pack?: boolean
+    energy_current?: number
+    has_vip_pass?: boolean
   } | null
   userElo?: number
   userXp?: number
@@ -847,59 +849,44 @@ export default function MainMenu({
       </button>
 
       {/* 3. Energías (Sincronizado con Supabase / profiles.energy_current) */}
-      <button
-        type="button"
-        className="topbar-pill topbar-pill--energy"
+      <div
+        className="topbar-pill topbar-pill--energy topbar-pill--static"
         data-action="energia"
         aria-label="energia"
-        title={`Energía Diaria (${playerEnergy}/${maxPlayerEnergy}⚡) - Clic para recargar o ver paquetes`}
-        onClick={() => {
-          soundManager.playSound('click', 0.4)
-          onOpenShop?.('energy')
-        }}
+        title={`Energía Diaria (${typeof playerEnergy === 'number' ? playerEnergy : (userProfile?.energy_current ?? 20)}/${(hasVipPass || userProfile?.has_vip_pass) ? 25 : maxPlayerEnergy}⚡)`}
       >
         <span className="topbar-energy-icon">⚡</span>
         <span className="topbar-stat-val topbar-stat-val--energy">
-          {playerEnergy}/{maxPlayerEnergy}
+          {typeof playerEnergy === 'number' ? playerEnergy : (userProfile?.energy_current ?? 20)}/
+          {(hasVipPass || userProfile?.has_vip_pass) ? 25 : maxPlayerEnergy}
         </span>
-      </button>
+      </div>
 
       {/* 4. Oro */}
-      <button
-        type="button"
-        className="topbar-pill topbar-pill--gold"
+      <div
+        className="topbar-pill topbar-pill--gold topbar-pill--static"
         data-action="oro"
         aria-label="oro"
-        title="Monedas de Oro (Clic para comprar)"
-        onClick={() => {
-          soundManager.playSound('click', 0.4)
-          onOpenShop?.('gold')
-        }}
+        title="Monedas de Oro"
       >
         <img src={moneda} alt="Oro" className="topbar-stat-icon" />
         <span className="topbar-stat-val topbar-stat-val--gold">
           {userGold.toLocaleString()}
         </span>
-      </button>
+      </div>
 
       {/* 5. Gemas */}
-      <button
-        type="button"
-        className="topbar-pill topbar-pill--gems"
+      <div
+        className="topbar-pill topbar-pill--gems topbar-pill--static"
         data-action="gemas"
         aria-label="gemas"
-        title="Gemas (Clic para Depositar / Retirar USDT BEP20)"
-        onClick={() => {
-          soundManager.playSound('click', 0.5)
-          setProfileInitialTab('deposit')
-          setIsProfileModalOpen(true)
-        }}
+        title="Gemas"
       >
         <img src={gema} alt="Gemas" className="topbar-stat-icon" />
         <span className="topbar-stat-val topbar-stat-val--gems">
           {userTokens.toLocaleString()}
         </span>
-      </button>
+      </div>
 
       {/* 6. Ajustes */}
       <button

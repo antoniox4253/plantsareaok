@@ -841,20 +841,12 @@ export default function Shop({
           </div>
           <div
             className="shop-energy-badge"
-            title={
-              userElo <= 1602
-                ? '⚡ Energía ilimitada en rango novato (≤ 1602 copas)'
-                : `⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy}`
-            }
-            onClick={() => {
-              soundManager.playSound('click', 0.5)
-              setActiveTab('energy')
-            }}
-            style={{ cursor: 'pointer' }}
+            title={`⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy}`}
+            style={{ cursor: 'default' }}
           >
             <span className="shop-energy-badge-icon">⚡</span>
             <span className="shop-energy-badge-amount">
-              {userElo <= 1602 ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`}
+              {playerEnergy}/{maxPlayerEnergy}
             </span>
           </div>
           <button

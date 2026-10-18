@@ -13,21 +13,21 @@
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(26, 38, 57, 0.98) 0%, rgba(11, 20, 34, 0.99) 100%);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75), inset 0 0 10px rgba(0, 0, 0, 0.8);
-  cursor: pointer;
+  cursor: default !important;
+  pointer-events: none !important;
   z-index: 15;
-  transition: transform 0.14s ease, filter 0.15s ease, box-shadow 0.2s ease;
   user-select: none;
   overflow: hidden;
   box-sizing: border-box;
 }
 
 .pixel-header-badge:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.15);
+  transform: none;
+  filter: none;
 }
 
 .pixel-header-badge:active {
-  transform: translateY(0) scale(0.98);
+  transform: none;
 }
 
 /* 💰 Insignia de Oro */
