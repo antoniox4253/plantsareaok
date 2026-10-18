@@ -194,7 +194,7 @@ export default function Shop({
   initialTab = 'packs',
   userTokens,
   userElo,
-  userGold = 50000,
+  userGold = 0,
   userXp = 0,
   hasVipPass = false,
   claimedVipLevels = [],
@@ -664,6 +664,8 @@ export default function Shop({
           userGold={userGold}
           userTokens={userTokens}
           playerEnergy={playerEnergy}
+          maxPlayerEnergy={maxPlayerEnergy}
+          userElo={userElo}
         />
         {renderSharedModals()}
       </div>
@@ -689,6 +691,8 @@ export default function Shop({
           userGold={userGold}
           userTokens={userTokens}
           playerEnergy={playerEnergy}
+          maxPlayerEnergy={maxPlayerEnergy}
+          userElo={userElo}
           isPurchasing={isPurchasingPack}
         />
         {renderSharedModals()}
@@ -719,6 +723,8 @@ export default function Shop({
           userGold={userGold}
           userTokens={userTokens}
           playerEnergy={playerEnergy}
+          maxPlayerEnergy={maxPlayerEnergy}
+          userElo={userElo}
           userXp={userXp}
           hasVipPass={Boolean(hasVipPass)}
           claimedVipLevels={claimedVipLevels}

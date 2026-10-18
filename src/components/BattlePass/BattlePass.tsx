@@ -44,6 +44,8 @@ export default function BattlePass({
           userGold={userGold}
           userTokens={userTokens}
           playerEnergy={playerEnergy}
+          maxPlayerEnergy={hasVipPass ? 25 : 20}
+          userElo={_userElo}
           hasVipPass={hasVipPass}
           claimedVipLevels={claimedVipLevels}
           onBuyVipPass={onBuyVipPass}

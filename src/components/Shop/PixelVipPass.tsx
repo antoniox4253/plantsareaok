@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import { BATTLE_PASS_LEVELS, type PassLevel } from '../../utils/battlePassManager'
+import PixelHeaderBadges from './PixelHeaderBadges'
 import './PixelVipPass.css'
 
 export interface PixelVipPassHotspot {
@@ -21,10 +22,6 @@ const VIP_HOTSPOTS: PixelVipPassHotspot[] = [
   { id: 'tab_energias', label: 'Energías', x: 982, y: 99, w: 197, h: 55, type: 'tab' },
   { id: 'tab_comercio', label: 'Comercio P2P', x: 1200, y: 98, w: 208, h: 56, type: 'tab' },
   { id: 'tab_stream', label: 'Cuentas Stream VIP', x: 1420, y: 98, w: 190, h: 56, type: 'tab' },
-  { id: 'counter_oro', label: 'Contador Oro', x: 892, y: 22, w: 186, h: 65, type: 'counter' },
-  { id: 'counter_gemas', label: 'Contador Gemas', x: 1094, y: 22, w: 208, h: 65, type: 'counter' },
-  { id: 'counter_energia', label: 'Contador Energía', x: 1328, y: 21, w: 188, h: 65, type: 'counter' },
-  { id: 'sound', label: 'Sonido', x: 1570, y: 16, w: 75, h: 75, type: 'button' },
 ]
 
 export interface PixelVipPassProps {
@@ -35,6 +32,8 @@ export interface PixelVipPassProps {
   userGold?: number
   userTokens?: number
   playerEnergy?: number
+  maxPlayerEnergy?: number
+  userElo?: number
   userXp?: number
   hasVipPass: boolean
   claimedVipLevels: number[]
@@ -48,9 +47,11 @@ export default function PixelVipPass({
   onOpenStreaming,
   onToggleClassic,
   onSelectTab,
-  userGold,
-  userTokens,
-  playerEnergy,
+  userGold = 0,
+  userTokens = 0,
+  playerEnergy = 20,
+  maxPlayerEnergy = 20,
+  userElo = 1000,
   userXp = 0,
   hasVipPass,
   claimedVipLevels = [],
@@ -202,6 +203,23 @@ export default function PixelVipPass({
           className="pixel-vippass-art"
         />
       </picture>
+
+      {/* Badges interactivos en vivo: Oro, Gemas, Energía y Sonido */}
+      <PixelHeaderBadges
+        userGold={userGold}
+        userTokens={userTokens}
+        playerEnergy={playerEnergy}
+        maxPlayerEnergy={maxPlayerEnergy}
+        userElo={userElo}
+        goldCoords={{ x: 892, y: 22, w: 186, h: 65 }}
+        gemsCoords={{ x: 1094, y: 22, w: 208, h: 65 }}
+        energyCoords={{ x: 1328, y: 21, w: 188, h: 65 }}
+        soundCoords={{ x: 1570, y: 16, w: 75, h: 75 }}
+        onSelectTab={(tab) => {
+          if (onSelectTab) onSelectTab(tab)
+        }}
+        onToast={(msg) => setToastMessage(msg)}
+      />
 
       {/* Hotspots de Navegación y Cabecera */}
       {VIP_HOTSPOTS.map((h) => (

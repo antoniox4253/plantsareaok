@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
+import PixelHeaderBadges from './PixelHeaderBadges'
 import './PixelShop.css'
 
 interface Hotspot {
@@ -17,10 +18,6 @@ const BASE_HEIGHT = 941
 
 const HOTSPOTS: Hotspot[] = [
   { id: 'menu', label: 'Menú', x: 32, y: 33, w: 247, h: 88, type: 'button' },
-  { id: 'counter_oro', label: 'Contador Oro', x: 830, y: 32, w: 286, h: 80, type: 'counter' },
-  { id: 'counter_gemas', label: 'Contador Gemas', x: 1110, y: 32, w: 264, h: 80, type: 'counter' },
-  { id: 'counter_energia', label: 'Contador Energía', x: 1368, y: 32, w: 216, h: 80, type: 'counter' },
-  { id: 'sound', label: 'Sonido', x: 1586, y: 31, w: 66, h: 80, type: 'button' },
   { id: 'tab_sobres', label: 'Tab Sobres de Semillas', x: 62, y: 127, w: 331, h: 76, type: 'tab' },
   { id: 'tab_vip', label: 'Tab Pase VIP', x: 401, y: 127, w: 209, h: 76, type: 'tab' },
   { id: 'tab_oro', label: 'Tab Oro & Emotes', x: 614, y: 127, w: 249, h: 76, type: 'tab' },
@@ -47,6 +44,8 @@ export interface PixelShopProps {
   userGold?: number
   userTokens?: number
   playerEnergy?: number
+  maxPlayerEnergy?: number
+  userElo?: number
 }
 
 export default function PixelShop({
@@ -54,9 +53,11 @@ export default function PixelShop({
   onOpenStreaming,
   onToggleClassic,
   onSelectTab,
-  userGold,
-  userTokens,
-  playerEnergy,
+  userGold = 0,
+  userTokens = 0,
+  playerEnergy = 20,
+  maxPlayerEnergy = 20,
+  userElo = 1000,
 }: PixelShopProps) {
   const [debugHotspots, setDebugHotspots] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -186,6 +187,23 @@ export default function PixelShop({
             className="pixel-shop-base-img"
           />
         </picture>
+
+        {/* Badges interactivos en vivo: Oro, Gemas, Energía y Sonido */}
+        <PixelHeaderBadges
+          userGold={userGold}
+          userTokens={userTokens}
+          playerEnergy={playerEnergy}
+          maxPlayerEnergy={maxPlayerEnergy}
+          userElo={userElo}
+          goldCoords={{ x: 830, y: 32, w: 286, h: 80 }}
+          gemsCoords={{ x: 1110, y: 32, w: 264, h: 80 }}
+          energyCoords={{ x: 1368, y: 32, w: 216, h: 80 }}
+          soundCoords={{ x: 1586, y: 31, w: 66, h: 80 }}
+          onSelectTab={(tab) => {
+            if (onSelectTab) onSelectTab(tab)
+          }}
+          onToast={(msg) => setToastMessage(msg)}
+        />
 
         {/* Hotspots interactivos mapeados */}
         {HOTSPOTS.map((h) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import type { PackId } from '../../utils/packDropManager'
+import PixelHeaderBadges from './PixelHeaderBadges'
 import './PixelSeedPacks.css'
 
 export interface Hotspot {
@@ -19,10 +20,6 @@ const BASE_HEIGHT = 941
 const SEEDPACK_HOTSPOTS: Hotspot[] = [
   { id: 'menu', label: 'Menú', x: 18, y: 16, w: 210, h: 72, type: 'button' },
   { id: 'title_shop', label: 'Título Tienda', x: 347, y: 14, w: 407, h: 72, type: 'label' },
-  { id: 'counter_oro', label: 'Contador Oro', x: 858, y: 17, w: 254, h: 72, type: 'counter' },
-  { id: 'counter_gemas', label: 'Contador Gemas', x: 1110, y: 17, w: 252, h: 72, type: 'counter' },
-  { id: 'counter_energia', label: 'Contador Energía', x: 1363, y: 17, w: 215, h: 72, type: 'counter' },
-  { id: 'sound', label: 'Sonido', x: 1590, y: 16, w: 63, h: 73, type: 'button' },
   { id: 'tab_sobres', label: 'Tab Sobres de Semillas', x: 67, y: 108, w: 303, h: 74, type: 'tab' },
   { id: 'tab_vip', label: 'Tab Pase VIP', x: 379, y: 108, w: 199, h: 74, type: 'tab' },
   { id: 'tab_oro_emotes', label: 'Tab Oro & Emotes', x: 587, y: 108, w: 260, h: 74, type: 'tab' },
@@ -52,6 +49,8 @@ export interface PixelSeedPacksProps {
   userGold?: number
   userTokens?: number
   playerEnergy?: number
+  maxPlayerEnergy?: number
+  userElo?: number
   isPurchasing?: boolean
 }
 
@@ -62,9 +61,11 @@ export default function PixelSeedPacks({
   onSelectTab,
   onBuyPack,
   onOpenProbabilities,
-  userGold,
-  userTokens,
-  playerEnergy,
+  userGold = 0,
+  userTokens = 0,
+  playerEnergy = 20,
+  maxPlayerEnergy = 20,
+  userElo = 1000,
   isPurchasing = false,
 }: PixelSeedPacksProps) {
   const [debugHotspots, setDebugHotspots] = useState<boolean>(false)
@@ -237,6 +238,23 @@ export default function PixelSeedPacks({
             className="pixel-seedpacks-base-img"
           />
         </picture>
+
+        {/* Badges interactivos en vivo: Oro, Gemas, Energía y Sonido */}
+        <PixelHeaderBadges
+          userGold={userGold}
+          userTokens={userTokens}
+          playerEnergy={playerEnergy}
+          maxPlayerEnergy={maxPlayerEnergy}
+          userElo={userElo}
+          goldCoords={{ x: 858, y: 17, w: 254, h: 72 }}
+          gemsCoords={{ x: 1110, y: 17, w: 252, h: 72 }}
+          energyCoords={{ x: 1363, y: 17, w: 215, h: 72 }}
+          soundCoords={{ x: 1590, y: 16, w: 63, h: 73 }}
+          onSelectTab={(tab) => {
+            if (onSelectTab) onSelectTab(tab)
+          }}
+          onToast={(msg) => setToastMessage(msg)}
+        />
 
         {/* Hotspots interactivos */}
         {SEEDPACK_HOTSPOTS.map((h) => {
