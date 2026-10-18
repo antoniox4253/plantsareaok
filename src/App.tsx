@@ -1911,6 +1911,13 @@ function App() {
                 userXp={battlePassXp}
                 hasVipPass={hasVipPass}
                 claimedVipLevels={claimedVipLevels}
+                userGold={userGold}
+                userTokens={userTokens}
+                playerEnergy={playerEnergy}
+                onBackToMenu={() => {
+                  setScreen(passReturnScreen)
+                  setPassReturnScreen('menu')
+                }}
                 onBuyVipPass={handleBuyVipPassDirect}
                 onClaimReward={async (lvl) => {
                   const res = await claimPassReward(lvl.reward, lvl.level)

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import { BATTLE_PASS_LEVELS, type PassLevel } from '../../utils/battlePassManager'
+import PixelVipPass from '../Shop/PixelVipPass'
 import '../Shop/Shop.css'
 import './BattlePass.css'
 
@@ -12,6 +13,10 @@ interface BattlePassProps {
   onBuyVipPass: () => void
   onClaimReward: (level: PassLevel) => void
   onClaimAllRewards?: (levels: PassLevel[]) => void
+  onBackToMenu?: () => void
+  userGold?: number
+  userTokens?: number
+  playerEnergy?: number
 }
 
 export default function BattlePass({
@@ -22,7 +27,32 @@ export default function BattlePass({
   onBuyVipPass,
   onClaimReward,
   onClaimAllRewards,
+  onBackToMenu,
+  userGold,
+  userTokens,
+  playerEnergy,
 }: BattlePassProps) {
+  const [useClassic, setUseClassic] = useState(false)
+
+  if (!useClassic) {
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <PixelVipPass
+          onBackToHome={onBackToMenu || (() => {})}
+          onToggleClassic={() => setUseClassic(true)}
+          userXp={userXp}
+          userGold={userGold}
+          userTokens={userTokens}
+          playerEnergy={playerEnergy}
+          hasVipPass={hasVipPass}
+          claimedVipLevels={claimedVipLevels}
+          onBuyVipPass={onBuyVipPass}
+          onClaimReward={onClaimReward}
+          onClaimAllRewards={onClaimAllRewards}
+        />
+      </div>
+    )
+  }
   const currentXp = userXp ?? 0
   const totalMaxXp = BATTLE_PASS_LEVELS[BATTLE_PASS_LEVELS.length - 1]?.requiredXp ?? 8000
 

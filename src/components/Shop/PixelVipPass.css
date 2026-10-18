@@ -1,0 +1,560 @@
+/* ==========================================================================
+   PLANT ARENA - PASE VIP 20 NIVELES (PIXEL-PERFECT INTERFACE)
+   Aspect Ratio: 1672 / 941 (100% responsivo y adaptativo)
+   ========================================================================== */
+
+.pixel-vippass-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 1672px;
+  max-height: 941px;
+  aspect-ratio: 1672 / 941;
+  margin: 0 auto;
+  overflow: hidden;
+  user-select: none;
+  background-color: #080d1a;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #ffffff;
+}
+
+/* Imagen de arte maestro */
+.pixel-vippass-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Barra de utilidades / dev */
+.pixel-vippass-dev-bar {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: rgba(10, 15, 29, 0.85);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.pixel-vippass-dev-btn {
+  background: rgba(30, 41, 59, 0.85);
+  color: #93c5fd;
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pixel-vippass-dev-btn:hover {
+  background: rgba(59, 130, 246, 0.4);
+  color: #ffffff;
+  border-color: #60a5fa;
+}
+
+.pixel-vippass-dev-btn--active {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #93c5fd;
+}
+
+/* Hotspots transparentes e interactivos */
+.pixel-vippass-hotspot {
+  position: absolute;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  z-index: 10;
+  padding: 0;
+  margin: 0;
+  transition: transform 0.12s ease, filter 0.15s ease;
+}
+
+.pixel-vippass-hotspot:hover {
+  filter: brightness(1.15);
+}
+
+.pixel-vippass-hotspot:active {
+  transform: scale(0.98);
+}
+
+.pixel-vippass-hotspot--debug {
+  outline: 2px dashed #00eaff !important;
+  background: rgba(0, 234, 255, 0.18) !important;
+  border-radius: 8px;
+}
+
+/* Botón Comprar Pase VIP en el fondo */
+.pixel-vippass-buy-hotspot {
+  position: absolute;
+  left: calc(1184 / 1672 * 100%);
+  top: calc(323 / 941 * 100%);
+  width: calc(386 / 1672 * 100%);
+  height: calc(71 / 941 * 100%);
+  z-index: 12;
+  cursor: pointer;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pixel-vippass-buy-hotspot:hover {
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Overlay de Pase VIP ya activo */
+.pixel-vippass-active-badge {
+  position: absolute;
+  left: calc(1184 / 1672 * 100%);
+  top: calc(323 / 941 * 100%);
+  width: calc(386 / 1672 * 100%);
+  height: calc(71 / 941 * 100%);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(22, 101, 52, 0.95) 0%, rgba(5, 46, 22, 0.95) 100%);
+  border: 2px solid #4ade80;
+  border-radius: 14px;
+  box-shadow: 0 0 25px rgba(74, 222, 128, 0.45), inset 0 0 15px rgba(255, 255, 255, 0.2);
+  color: #f0fdf4;
+  font-weight: 900;
+  font-size: clamp(12px, 1.35vw, 17px);
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  gap: 8px;
+  pointer-events: auto;
+  cursor: default;
+}
+
+/* ==========================================================================
+   PANEL DE RECOMPENSAS (20 NIVELES)
+   ========================================================================== */
+.pixel-vippass-reward-panel {
+  position: absolute;
+  z-index: 8;
+  left: calc(35 / 1672 * 100%);
+  top: calc(510 / 941 * 100%);
+  width: calc(1047 / 1672 * 100%);
+  height: calc(398 / 941 * 100%);
+  background: linear-gradient(155deg, rgba(11, 27, 49, 0.97) 5%, rgba(12, 24, 41, 0.98) 100%);
+  border: 2px solid #dcaa2b;
+  border-radius: 16px;
+  box-shadow: inset 0 0 50px rgba(0, 61, 76, 0.55), 0 10px 25px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Encabezado del panel de recompensas */
+.pixel-vippass-r-heading {
+  height: 56px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(220, 170, 43, 0.35);
+  background: rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+}
+
+.pixel-vippass-r-title {
+  font-size: clamp(14px, 1.4vw, 20px);
+  color: #ffd85b;
+  margin: 0;
+  text-shadow: 1px 2px 3px #000000;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.pixel-vippass-r-sub {
+  font-size: clamp(10px, 0.85vw, 12px);
+  color: #78fae5;
+  display: block;
+  margin-top: 2px;
+}
+
+.pixel-vippass-r-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pixel-vippass-xp-badge {
+  font-size: clamp(11px, 0.95vw, 13px);
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.15);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  white-space: nowrap;
+}
+
+.pixel-vippass-claim-all-btn {
+  background: linear-gradient(180deg, #eab308 0%, #ca8a04 100%);
+  color: #1a1000;
+  border: 1px solid #fef08a;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: clamp(10px, 0.85vw, 12px);
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(234, 179, 8, 0.4);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.pixel-vippass-claim-all-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(234, 179, 8, 0.6);
+  filter: brightness(1.1);
+}
+
+/* Contenedor desplazable de las 20 cartas */
+.pixel-vippass-rewards-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 14px 16px;
+  scrollbar-color: #45bd91 #0f2530;
+  scrollbar-width: thin;
+}
+
+.pixel-vippass-rewards-scroll::-webkit-scrollbar {
+  width: 7px;
+}
+.pixel-vippass-rewards-scroll::-webkit-scrollbar-track {
+  background: #0f2530;
+  border-radius: 4px;
+}
+.pixel-vippass-rewards-scroll::-webkit-scrollbar-thumb {
+  background: #45bd91;
+  border-radius: 4px;
+}
+
+/* Cuadrícula de 4 columnas */
+.pixel-vippass-reward-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+/* Tarjeta individual de nivel */
+.pixel-vippass-card {
+  height: 108px;
+  position: relative;
+  border-radius: 12px;
+  border: 1px solid #32465a;
+  background: linear-gradient(180deg, #152438 0%, #0a1628 100%);
+  color: #e3e9f0;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: inset 0 0 22px rgba(17, 26, 44, 0.8);
+  font: inherit;
+  padding: 6px 6px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+}
+
+.pixel-vippass-card:hover {
+  border-color: #a99130;
+  background: linear-gradient(180deg, #20334e 0%, #112036 100%);
+  transform: translateY(-2px);
+}
+
+.pixel-vippass-card--selected {
+  border-color: #ffcb28 !important;
+  box-shadow: 0 0 14px rgba(255, 208, 50, 0.55), inset 0 0 20px rgba(139, 106, 16, 0.35) !important;
+  background: linear-gradient(180deg, #243b5a 0%, #13243c 100%) !important;
+}
+
+.pixel-vippass-card--claimable {
+  border-color: #4ade80 !important;
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.45), inset 0 0 15px rgba(34, 197, 94, 0.25) !important;
+  animation: pixelVipPulse 1.8s infinite ease-in-out;
+}
+
+.pixel-vippass-card--claimed {
+  opacity: 0.82;
+  border-color: #22c55e;
+}
+
+.pixel-vippass-card--locked {
+  opacity: 0.72;
+}
+
+.pixel-vippass-card__top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.pixel-vippass-card__lvl {
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffc62b;
+}
+
+.pixel-vippass-card__status {
+  font-size: 12px;
+}
+
+/* Miniatura del asset original del juego */
+.pixel-vippass-card__thumb-wrap {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.pixel-vippass-card__thumb {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.85));
+  transition: transform 0.15s ease;
+}
+
+.pixel-vippass-card:hover .pixel-vippass-card__thumb {
+  transform: scale(1.1);
+}
+
+.pixel-vippass-card__xp {
+  font-size: 11px;
+  color: #a0b4c6;
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   PANEL DE RECOMPENSA DESTACADA (FEATURED)
+   ========================================================================== */
+.pixel-vippass-featured {
+  position: absolute;
+  z-index: 8;
+  top: calc(717 / 941 * 100%);
+  left: calc(1124 / 1672 * 100%);
+  width: calc(488 / 1672 * 100%);
+  height: calc(199 / 941 * 100%);
+  background: linear-gradient(140deg, #260d34 0%, #160d29 72%);
+  border: 2px solid #ac3bea;
+  border-radius: 16px;
+  box-shadow: inset 0 0 35px rgba(78, 24, 88, 0.85), 0 8px 25px rgba(0, 0, 0, 0.7);
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.pixel-vippass-featured__title {
+  font-weight: 900;
+  color: #ffca47;
+  font-size: clamp(12px, 1.1vw, 16px);
+  margin-bottom: 6px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.pixel-vippass-featured__row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex: 1;
+}
+
+.pixel-vippass-featured__big-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 14px;
+  background: radial-gradient(circle, #65288a 0%, #100d24 100%);
+  border: 1px solid #a95cdd;
+  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.15), 0 4px 10px rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.pixel-vippass-featured__img {
+  max-width: 82%;
+  max-height: 82%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.9));
+}
+
+.pixel-vippass-featured__secondary-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #ffd700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pixel-vippass-featured__secondary-badge img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+
+.pixel-vippass-featured__details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pixel-vippass-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 850;
+  align-self: flex-start;
+  margin-bottom: 4px;
+}
+
+.pixel-vippass-tag--vip {
+  background: #7121bf;
+  border: 1px solid #e489ff;
+  color: #ffffff;
+}
+
+.pixel-vippass-tag--claimable {
+  background: #166534;
+  border: 1px solid #4ade80;
+  color: #f0fdf4;
+}
+
+.pixel-vippass-tag--claimed {
+  background: #1e293b;
+  border: 1px solid #64748b;
+  color: #94a3b8;
+}
+
+.pixel-vippass-tag--locked {
+  background: #3f1e1e;
+  border: 1px solid #f87171;
+  color: #fecaca;
+}
+
+.pixel-vippass-item-name {
+  font-size: clamp(13px, 1.3vw, 18px);
+  font-weight: 900;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.pixel-vippass-req {
+  color: #b9cde0;
+  font-size: clamp(10px, 0.9vw, 12px);
+  margin-top: 3px;
+}
+
+/* Botones de acción dentro del panel destacado */
+.pixel-vippass-action-btn {
+  margin-top: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: clamp(11px, 0.9vw, 13px);
+  font-weight: 900;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.15s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
+.pixel-vippass-action-btn--claim {
+  background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
+  color: #ffffff;
+  border: 1px solid #86efac;
+}
+
+.pixel-vippass-action-btn--claim:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.pixel-vippass-action-btn--buy {
+  background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+  color: #ffffff;
+  border: 1px solid #fde68a;
+}
+
+.pixel-vippass-action-btn--buy:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* Toast flotante informativo */
+.pixel-vippass-toast {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: rgba(15, 23, 42, 0.94);
+  color: #f8fafc;
+  border: 1.5px solid #38bdf8;
+  border-radius: 999px;
+  padding: 8px 22px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(56, 189, 248, 0.35);
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+  animation: pixelVipToastIn 0.25s ease-out;
+}
+
+@keyframes pixelVipToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 15px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes pixelVipPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.4), inset 0 0 10px rgba(34, 197, 94, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(74, 222, 128, 0.8), inset 0 0 18px rgba(34, 197, 94, 0.4);
+  }
+}

@@ -22,6 +22,7 @@ import BattlePass from '../BattlePass/BattlePass'
 import type { PassReward } from '../../utils/battlePassManager'
 import PixelShop from './PixelShop'
 import PixelSeedPacks from './PixelSeedPacks'
+import PixelVipPass from './PixelVipPass'
 import './Shop.css'
 
 const commonSeedImg = '/game-assets/greenfoot/seed_pack_common_whitebg.webp'
@@ -227,13 +228,18 @@ export default function Shop({
   onReceivePlant,
   onServerChange,
 }: ShopProps) {
-  const [viewMode, setViewMode] = useState<'pixel_home' | 'pixel_packs' | 'classic'>('pixel_home')
+  const [viewMode, setViewMode] = useState<'pixel_home' | 'pixel_packs' | 'pixel_pass' | 'classic'>('pixel_home')
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [activeTab, setActiveTab] = useState<'packs' | 'pass' | 'gold' | 'energy' | 'market'>(initialTab)
 
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab)
+      if (initialTab === 'pass') {
+        setViewMode('pixel_pass')
+      } else if (initialTab === 'packs') {
+        setViewMode('pixel_packs')
+      }
     }
   }, [initialTab])
 
@@ -648,6 +654,8 @@ export default function Shop({
           onSelectTab={(tab) => {
             if (tab === 'packs') {
               setViewMode('pixel_packs')
+            } else if (tab === 'pass') {
+              setViewMode('pixel_pass')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -670,14 +678,63 @@ export default function Shop({
           onOpenStreaming={onOpenStreaming}
           onToggleClassic={() => setViewMode('classic')}
           onSelectTab={(tab) => {
-            setActiveTab(tab)
-            setViewMode('classic')
+            if (tab === 'pass') {
+              setViewMode('pixel_pass')
+            } else {
+              setActiveTab(tab)
+              setViewMode('classic')
+            }
           }}
           onBuyPack={(packId) => handleBuyPacksBatch(packId)}
           userGold={userGold}
           userTokens={userTokens}
           playerEnergy={playerEnergy}
           isPurchasing={isPurchasingPack}
+        />
+        {renderSharedModals()}
+      </div>
+    )
+  }
+
+  if (viewMode === 'pixel_pass') {
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <PixelVipPass
+          onBackToHome={() => setViewMode('pixel_home')}
+          onOpenStreaming={onOpenStreaming}
+          onToggleClassic={() => {
+            setActiveTab('pass')
+            setViewMode('classic')
+          }}
+          onSelectTab={(tab) => {
+            if (tab === 'packs') {
+              setViewMode('pixel_packs')
+            } else if (tab === 'pass') {
+              setViewMode('pixel_pass')
+            } else {
+              setActiveTab(tab)
+              setViewMode('classic')
+            }
+          }}
+          userGold={userGold}
+          userTokens={userTokens}
+          playerEnergy={playerEnergy}
+          userXp={userXp}
+          hasVipPass={Boolean(hasVipPass)}
+          claimedVipLevels={claimedVipLevels}
+          onBuyVipPass={handleBuyVipFromShop}
+          onClaimReward={(lvl) => {
+            if (onClaimPassReward) {
+              void onClaimPassReward(lvl.reward, lvl.level)
+            }
+          }}
+          onClaimAllRewards={
+            onClaimAllPassRewards
+              ? () => {
+                  void onClaimAllPassRewards()
+                }
+              : undefined
+          }
         />
         {renderSharedModals()}
       </div>
@@ -696,7 +753,11 @@ export default function Shop({
             className="shop-back-btn"
             type="button"
             style={{ borderColor: '#34d399', color: '#6ee7b7' }}
-            onClick={() => setViewMode(activeTab === 'packs' ? 'pixel_packs' : 'pixel_home')}
+            onClick={() => {
+              if (activeTab === 'pass') setViewMode('pixel_pass')
+              else if (activeTab === 'packs') setViewMode('pixel_packs')
+              else setViewMode('pixel_home')
+            }}
             title="Ver nueva tienda Pixel-Perfect"
           >
             🎨 Tienda
