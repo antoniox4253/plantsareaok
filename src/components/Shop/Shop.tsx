@@ -20,6 +20,7 @@ import type { FarmingInventory } from '../../utils/pvpRewardManager'
 import { navigateAndTrack, trackEvent } from '../../utils/analytics'
 import BattlePass from '../BattlePass/BattlePass'
 import type { PassReward } from '../../utils/battlePassManager'
+import PixelShop from './PixelShop'
 import './Shop.css'
 
 const commonSeedImg = '/game-assets/greenfoot/seed_pack_common_whitebg.webp'
@@ -225,6 +226,7 @@ export default function Shop({
   onReceivePlant,
   onServerChange,
 }: ShopProps) {
+  const [viewMode, setViewMode] = useState<'pixel' | 'classic'>('pixel')
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [activeTab, setActiveTab] = useState<'packs' | 'pass' | 'gold' | 'energy' | 'market'>(initialTab)
 
@@ -446,13 +448,37 @@ export default function Shop({
     }
   }
 
+  if (viewMode === 'pixel') {
+    return (
+      <PixelShop
+        onBack={onBack}
+        onOpenStreaming={onOpenStreaming}
+        onToggleClassic={() => setViewMode('classic')}
+        userGold={userGold}
+        userTokens={userTokens}
+        playerEnergy={playerEnergy}
+      />
+    )
+  }
+
   return (
     <div className="shop-screen" style={{ backgroundImage: `url(${background})` }}>
       {/* Top Header */}
       <div className="shop-header">
-        <button className="shop-back-btn" type="button" onClick={onBack}>
-          ⬅️ MENÚ
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button className="shop-back-btn" type="button" onClick={onBack}>
+            ⬅️ MENÚ
+          </button>
+          <button
+            className="shop-back-btn"
+            type="button"
+            style={{ borderColor: '#34d399', color: '#6ee7b7' }}
+            onClick={() => setViewMode('pixel')}
+            title="Ver nueva tienda Pixel-Perfect"
+          >
+            🎨 Tienda Pixel-Perfect
+          </button>
+        </div>
         <div className="shop-header__center">
           <h1 className="shop-title">🛒 TIENDA</h1>
         </div>

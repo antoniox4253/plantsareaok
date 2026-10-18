@@ -70,7 +70,6 @@ export default defineConfig({
                 end: () => res.end(),
               }
               try {
-                // @ts-expect-error dynamic JS import without declaration
                 const mod = await import('./api/consultar.js')
                 await mod.default(req, adaptedRes)
               } catch (err: any) {
@@ -96,7 +95,6 @@ export default defineConfig({
               end: () => res.end(),
             }
             try {
-              // @ts-expect-error dynamic JS import without declaration
               const mod = await import('./api/store/products.js')
               await mod.default(req, adaptedRes)
             } catch (err: any) {
