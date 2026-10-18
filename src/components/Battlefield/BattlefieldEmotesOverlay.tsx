@@ -96,8 +96,13 @@ export default function BattlefieldEmotesOverlay({
     }
   }, [])
 
-  // Conexión Realtime Triple (WebSocket Broadcast + postgres_changes + Polling de Red de Seguridad)
-  // Idéntico al sistema de sincronización de plantas en Battlefield.tsx
+  const currentUserIdRef = useRef<string | null>(currentUserId)
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId
+  }, [currentUserId])
+
+  // Conexión Realtime Triple (WebSocket Broadcast + postgres_changes + Polling autoritativo RPC)
+  // Idéntico a la arquitectura de sincronización de plantas en Battlefield.tsx
   useEffect(() => {
     if (!roomId || !isSupabaseConfigured()) {
       return
@@ -110,7 +115,7 @@ export default function BattlefieldEmotesOverlay({
       ts?: number
     ) => {
       // Ignorar emotes enviados por nosotros mismos (por ID de usuario, timestamp local o ID de DB)
-      if (senderUserId && currentUserId && senderUserId === currentUserId) return
+      if (senderUserId && currentUserIdRef.current && senderUserId === currentUserIdRef.current) return
       if (ts && mySentLocalRef.current.has(ts)) return
       if (id && mySentDbIdsRef.current.has(id)) return
 
@@ -160,21 +165,19 @@ export default function BattlefieldEmotesOverlay({
     canal.subscribe()
     channelRef.current = canal
 
-    // 2. Red de seguridad: Polling periódico cada 1.5s para atrapar cualquier emote rezagado
+    // 2. Red de seguridad autoritativa por RPC: Polling periódico cada 1.0s idéntico a match_actions_since_v2
     let cancelado = false
     const recuperarEmotes = async () => {
-      if (cancelado || !isSupabaseConfigured()) return
+      if (cancelado || !isSupabaseConfigured() || !roomId) return
       try {
-        const { data, error } = await (supabase as any)
-          .from('match_emotes')
-          .select('id, user_id, sender_side, emote_id, created_at')
-          .eq('room_id', roomId)
-          .gt('id', lastEmoteIdRef.current)
-          .order('id', { ascending: true })
+        const { data, error } = await (supabase.rpc as any)('get_match_emotes_since', {
+          p_room_id: roomId,
+          p_since_id: lastEmoteIdRef.current,
+        })
 
-        if (!error && data && data.length > 0) {
+        if (!error && Array.isArray(data) && data.length > 0) {
           for (const row of data) {
-            handleIncomingEmote(row.emote_id, row.user_id, Number(row.id))
+            handleIncomingEmote(row.emoteId, row.userId, Number(row.id))
           }
         }
       } catch {
@@ -182,7 +185,7 @@ export default function BattlefieldEmotesOverlay({
       }
     }
 
-    const pollInterval = setInterval(recuperarEmotes, 1500)
+    const pollInterval = setInterval(recuperarEmotes, 1000)
     void recuperarEmotes()
 
     return () => {
@@ -193,7 +196,7 @@ export default function BattlefieldEmotesOverlay({
       }
       channelRef.current = null
     }
-  }, [roomId, soyP1, currentUserId, triggerEmoteDisplay])
+  }, [roomId, triggerEmoteDisplay])
 
   // Comportamiento de Bot / IA en partidas solitarias, Survivor o Asíncronas
   useEffect(() => {

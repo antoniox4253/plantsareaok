@@ -342,7 +342,7 @@ export default function PixelGoldEmotes({
         </div>
         <div
           className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
-          style={calcStyle({ x: 125, y: 468, w: 378, h: 78 })}
+          style={calcStyle({ x: 144, y: 472, w: 340, h: 56 })}
         >
           <span>🪙</span>
           <span>500 ORO</span>
@@ -350,7 +350,7 @@ export default function PixelGoldEmotes({
         <button
           type="button"
           className="pixel-gold-card-overlay pixel-gold-card-overlay--btn"
-          style={calcStyle({ x: 120, y: 558, w: 388, h: 96 })}
+          style={calcStyle({ x: 144, y: 588, w: 340, h: 68 })}
           onClick={() => {
             soundManager.playSound('plantation', 0.7)
             setConfirmGoldPkg({
@@ -376,7 +376,7 @@ export default function PixelGoldEmotes({
         </div>
         <div
           className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
-          style={calcStyle({ x: 640, y: 468, w: 385, h: 78 })}
+          style={calcStyle({ x: 663, y: 472, w: 340, h: 56 })}
         >
           <span>🪙</span>
           <span>1,250 ORO</span>
@@ -384,7 +384,7 @@ export default function PixelGoldEmotes({
         <button
           type="button"
           className="pixel-gold-card-overlay pixel-gold-card-overlay--btn"
-          style={calcStyle({ x: 635, y: 558, w: 395, h: 96 })}
+          style={calcStyle({ x: 663, y: 588, w: 340, h: 68 })}
           onClick={() => {
             soundManager.playSound('plantation', 0.7)
             setConfirmGoldPkg({
@@ -410,7 +410,7 @@ export default function PixelGoldEmotes({
         </div>
         <div
           className="pixel-gold-card-overlay pixel-gold-card-overlay--amount"
-          style={calcStyle({ x: 1125, y: 468, w: 385, h: 78 })}
+          style={calcStyle({ x: 1142, y: 472, w: 340, h: 56 })}
         >
           <span>🪙</span>
           <span>3,500 ORO</span>
@@ -418,7 +418,7 @@ export default function PixelGoldEmotes({
         <button
           type="button"
           className="pixel-gold-card-overlay pixel-gold-card-overlay--btn"
-          style={calcStyle({ x: 1120, y: 558, w: 395, h: 96 })}
+          style={calcStyle({ x: 1142, y: 588, w: 340, h: 68 })}
           onClick={() => {
             soundManager.playSound('plantation', 0.7)
             setConfirmGoldPkg({
