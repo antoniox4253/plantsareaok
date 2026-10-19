@@ -650,7 +650,7 @@ export function aplicarPickledPepper(
   const config = getScaledPlantConfig('pickledpepper', statRolls)
   const damageRolls = statRolls.filter((r) => r === 'damage').length
   const extraPorNivel = Math.max(0, (level ?? 0) - damageRolls) * 150
-  const dano = (config.damage ?? 1000) + extraPorNivel
+  const dano = (config.damage ?? 800) + extraPorNivel
 
   const effectiveCol = col ?? 2
   const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
@@ -660,7 +660,9 @@ export function aplicarPickledPepper(
   const objetivoLado = lado.equipo === 'p1' ? LADO_P2 : LADO_P1
   for (const victima of propias(state, objetivoLado)) {
     if (victima.hp <= 0) continue
-    if (Math.abs(victima.x - colX) <= 6.0) {
+    const mismaColumna = victima.col !== undefined && victima.col === colEspejada
+    const enRangoX = Math.abs(victima.x - colX) <= 6.0
+    if (mismaColumna || enRangoX) {
       victima.hp -= dano
       if (victima.hp <= 0 && lado.equipo === 'p1') {
         state.stats.enemyPlantsDefeated += 1
@@ -1412,7 +1414,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
     } else {
       // ── LAS ESTÁTICAS CUERPO A CUERPO ──────────────────────────────────────
       // Sólo las que no son a distancia: un lanzaguisantes ya disparó arriba.
-      if (config?.category !== 'ranged') {
+      // Jalapeño y Chile en Escabeche son efectos visuales de detonación inmediata y no atacan cuerpo a cuerpo.
+      if (config?.category !== 'ranged' && planta.plantId !== 'jalapeno' && planta.plantId !== 'pickledpepper') {
         const pegada = susPlantas.find(
           (a) => a.lane === planta.lane && estaDelante(planta, a, 3.0, lado.sentido) && a.hp > 0
         )

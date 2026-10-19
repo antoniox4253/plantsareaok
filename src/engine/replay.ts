@@ -26,6 +26,7 @@ import type { PlantId, PlantStatKey } from '../types/game.ts'
 import {
   PLANT_CONFIGS,
   P1_COLUMNS,
+  TOTAL_COLUMNS,
   getScaledPlantConfig,
 } from '../utils/gameConstants.ts'
 
@@ -410,7 +411,8 @@ function validarCoordenadas(j: JugadaGrabada): string | null {
   if (!Number.isInteger(j.lane) || (j.lane as number) < 0 || (j.lane as number) > 2) {
     return 'lane_invalido'
   }
-  if (!Number.isInteger(j.col) || (j.col as number) < 0 || (j.col as number) >= P1_COLUMNS) {
+  const maxCol = j.kind === 'plant' && j.plantId === 'pickledpepper' ? TOTAL_COLUMNS : P1_COLUMNS
+  if (!Number.isInteger(j.col) || (j.col as number) < 0 || (j.col as number) >= maxCol) {
     return 'col_fuera_de_tu_mitad'
   }
   return null
@@ -526,7 +528,7 @@ function validarYAplicarIntencion(
   }
 
   const camina = config?.category === 'melee' || !!config?.moveSpeed || carta.plantId === 'chomper'
-  if (!camina) {
+  if (!camina && carta.plantId !== 'pickledpepper' && carta.plantId !== 'jalapeno') {
     const ocupada = propia.plants.some(
       (p) => p.lane === j.lane && p.col === j.col && !p.isWalking
     )

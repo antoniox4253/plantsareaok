@@ -319,12 +319,12 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
     cooldownMs: 45000,
     maxHp: 1,
     category: 'defensive',
-    damage: 1000,
+    damage: 800,
     icon: '/game-assets/plants/pickledpepper.webp',
     packetActive: '/game-assets/plants/pickledpepper.webp',
     packetDisabled: '/game-assets/plants/pickledpepper.webp',
     sprite: '/game-assets/plants/pickledpepper.webp',
-    description: 'Planta de 1 solo uso que detona una columna vertical entera, destruyendo a los enemigos en todos los carriles de esa columna.',
+    description: 'Planta de 1 solo uso que detona una columna vertical entera causando 800 de daño a los enemigos en todos los carriles de esa columna.',
   },
   snowpea: {
     id: 'snowpea',
@@ -646,7 +646,7 @@ export function getScaledPlantConfig(
   } else if (plantId === 'jalapeno' || plantId === 'pickledpepper') {
     scaled = {
       ...base,
-      damage: (base.damage ?? 1000) + levelOrRolls * 150,
+      damage: (base.damage ?? (plantId === 'pickledpepper' ? 800 : 1000)) + levelOrRolls * 150,
     }
   } else if (plantId === 'iceberglettuce') {
     scaled = base

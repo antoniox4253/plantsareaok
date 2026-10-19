@@ -97,6 +97,7 @@
   padding-top: 14px;
   box-sizing: border-box;
   z-index: 10;
+  pointer-events: none;
 }
 
 .base--p1 {
@@ -199,6 +200,7 @@
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 12px rgba(82, 224, 97, 0.5));
   transform-origin: bottom center;
   animation: motherTreePulse 4.0s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
 .base__mothertree-img--skin {

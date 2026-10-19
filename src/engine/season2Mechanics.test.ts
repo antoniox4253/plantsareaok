@@ -102,6 +102,65 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
       }
     })
 
+    it('detona y destruye enemigos en la última columna del tablero (col 13 / columna 14 humana)', () => {
+      const estado = createBattleState(25, false, true)
+      // La última columna antes de la base rival es el índice 13 (columna 14 humana).
+      // En la vista local de P2, corresponde a SU columna 0 (TOTAL_COLUMNS - 1 - 13 = 0).
+      const colP1Objetivo = 13
+      const colP2Local = TOTAL_COLUMNS - 1 - colP1Objetivo // 0
+
+      for (let l = 0; l < 3; l++) {
+        estado.enemyPlants.push(crearPlantaDelRival(estado, 'peashooter' as PlantId, l, colP2Local))
+      }
+      // Y un enemigo en otra columna distante (ej. col 5 de P1)
+      estado.enemyPlants.push(crearPlantaDelRival(estado, 'peashooter' as PlantId, 1, TOTAL_COLUMNS - 1 - 5))
+
+      // Plantar pickledpepper en la última columna (col 13)
+      estado.pending.push({
+        atTick: 1,
+        kind: 'own_plant',
+        plantId: 'pickledpepper',
+        lane: 1,
+        col: colP1Objetivo,
+      })
+
+      correr(estado, 5)
+
+      // Los 3 enemigos de la última columna en los 3 carriles deben estar eliminados
+      const enemigosEnUltimaCol = estado.enemyPlants.filter((p) => p.hp > 0 && p.col === 13)
+      expect(enemigosEnUltimaCol).toHaveLength(0)
+
+      // El enemigo en la columna 5 distante sobrevive
+      const sobrevivientes = estado.enemyPlants.filter((p) => p.hp > 0)
+      expect(sobrevivientes).toHaveLength(1)
+      expect(sobrevivientes[0].col).toBe(5)
+    })
+
+    it('inflige exactamente 800 de daño base al detonar', () => {
+      const estado = createBattleState(26, false, true)
+      const colP1Objetivo = 13
+      const colP2Local = TOTAL_COLUMNS - 1 - colP1Objetivo
+
+      // Enemigo con 1000 HP
+      const nuez = crearPlantaDelRival(estado, 'wallnut' as PlantId, 1, colP2Local)
+      nuez.hp = 1000
+      nuez.maxHp = 1000
+      estado.enemyPlants.push(nuez)
+
+      estado.pending.push({
+        atTick: 1,
+        kind: 'own_plant',
+        plantId: 'pickledpepper',
+        lane: 1,
+        col: colP1Objetivo,
+      })
+
+      correr(estado, 1)
+
+      // 1000 - 800 = 200 HP restantes
+      expect(nuez.hp).toBe(200)
+    })
+
     it('se ejecuta correctamente en la línea temporal autoritativa runAsyncTimeline en casillas enemigas', () => {
       const p1Deck = [
         { slot: 0, plantId: 'pickledpepper', level: 1, statRolls: [] },

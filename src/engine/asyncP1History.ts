@@ -643,7 +643,8 @@ export function validarIntencionAsyncRankedEstricta(
 
   let col: number | undefined = undefined
   if (a.col !== undefined && a.col !== null) {
-    if (typeof a.col !== 'number' || !Number.isInteger(a.col) || a.col < 0 || a.col >= P2_COLUMNS) {
+    const maxColP2 = plantId === 'pickledpepper' ? TOTAL_COLUMNS : P2_COLUMNS
+    if (typeof a.col !== 'number' || !Number.isInteger(a.col) || a.col < 0 || a.col >= maxColP2) {
       return { ok: false, reason: 'INVALID_PLANT_DATA', seq, issuedTick, details: `col P2 inválida: ${String(a.col)}` }
     }
     col = a.col

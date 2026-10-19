@@ -82,7 +82,7 @@ const LORE_MAP: Record<string, string> = {
   ghostpepper: 'Chile Fantasma flota silenciosamente sobre las líneas enemigas, atormentando a todos los que osan cruzarse en su camino con daño espectral persistente antes de estallar.',
   guacodile: 'Guacodilo patrulla a gran velocidad. Mitad aguacate, mitad reptil feroz, se abalanza sobre las defensas contrarias desgarrando con poderosas dentelladas.',
   marigold: 'Margarita alegra la arena con su aura de prosperidad económica. Otorga monedas de 1 a 2 de Oro con imagen de moneda periódicamente cada 15 segundos durante el combate para enriquecer al jugador.',
-  pickledpepper: 'Chile en Escabeche es una fuerza geológica de 1 solo uso. Al tocar tierra, desencadena una explosión vertical que barre por completo la columna en todos los carriles.',
+  pickledpepper: 'Chile en Escabeche es una fuerza geológica de 1 solo uso. Al tocar tierra, desencadena una explosión vertical de 800 de daño que arrasa por completo la columna en todos los carriles.',
   snowpea: 'Hielaguisantes canaliza vientos árticos en cada disparo. Sus guisantes congelados entumecen a los enemigos, reduciendo drásticamente su velocidad de movimiento y ataque.',
   toadstool: 'Seta Sapo (150 soles, 500 HP) acecha pacientemente antes de desplegar su lengua voraz a distancia, devorando a los invasores y transformando su energía en +50 soles durante la digestión.',
   torchwood: 'Tronco de Fuego es el bastión del fuego. Colocado frente a tus lanzadores, convierte cada guisante que lo atraviesa en un ardiente proyectil ígneo con daño duplicado y salpicadura.',
