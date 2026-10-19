@@ -1458,16 +1458,6 @@ export default function Marketplace({
         </button>
         <button
           type="button"
-          className={`market-tab-btn ${activeTab === 'browse' ? 'market-tab-btn--active' : ''}`}
-          onClick={() => {
-            soundManager.playSound('click', 0.5)
-            setActiveTab('browse')
-          }}
-        >
-          🛒 COMERCIO ({listings.length})
-        </button>
-        <button
-          type="button"
           className={`market-tab-btn market-tab-btn--my-sales ${activeTab === 'my_sales' ? 'market-tab-btn--active' : ''}`}
           onClick={() => {
             soundManager.playSound('click', 0.5)

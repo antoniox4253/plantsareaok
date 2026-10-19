@@ -1844,6 +1844,24 @@ export const SupabaseService = {
   },
 
   /**
+   * Conteo instantáneo de ofertas activas del marketplace por categoría.
+   */
+  async getMarketplaceCategoryCounts(): Promise<{ plants: number; farming: number; gold: number } | null> {
+    if (!isSupabaseConfigured()) return null
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_marketplace_category_counts')
+      if (error) {
+        logError('getMarketplaceCategoryCounts', error)
+        return null
+      }
+      return data as { plants: number; farming: number; gold: number }
+    } catch (e) {
+      logError('getMarketplaceCategoryCounts', e)
+      return null
+    }
+  },
+
+  /**
    * Consulta autoritativa de las publicaciones del usuario (Mis Ventas):
    * activas en custodia e historial de ventas/cancelaciones con comprador y netos.
    */

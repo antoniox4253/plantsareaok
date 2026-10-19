@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import type { PlantCardInstance, PlantId, PlantStatKey } from '../../types/game'
 import type { FarmingInventory } from '../../utils/pvpRewardManager'
+import { marketplaceService } from '../../services/marketplaceService'
 import Marketplace from '../Marketplace/Marketplace'
 import PixelHeaderBadges from './PixelHeaderBadges'
 import PixelShopTabs from './PixelShopTabs'
@@ -32,13 +33,10 @@ const COMERCIO_HOTSPOTS: Hotspot[] = [
   { id: 'toolbar_vender', label: 'Pestaña Vender', type: 'button', x: 1100, y: 241, w: 191, h: 84 },
   { id: 'toolbar_transacciones', label: 'Pestaña Transacciones', type: 'button', x: 1293, y: 241, w: 268, h: 84 },
   { id: 'card_plantas', label: 'Categoría Cartas de Plantas', type: 'card', x: 91, y: 359, w: 469, h: 504 },
-  { id: 'badge_plantas_ofertas', label: '21 ofertas', type: 'badge', x: 430, y: 388, w: 120, h: 86 },
   { id: 'btn_explorar_plantas', label: 'Explorar Plantas', type: 'buy', x: 109, y: 770, w: 414, h: 74 },
   { id: 'card_recursos', label: 'Categoría Recursos de Cultivo', type: 'card', x: 598, y: 360, w: 473, h: 504 },
-  { id: 'badge_recursos_ofertas', label: '32 ofertas', type: 'badge', x: 940, y: 387, w: 119, h: 87 },
   { id: 'btn_explorar_recursos', label: 'Explorar Recursos', type: 'buy', x: 639, y: 770, w: 394, h: 74 },
   { id: 'card_oro', label: 'Categoría Comercio de Oro', type: 'card', x: 1097, y: 359, w: 463, h: 503 },
-  { id: 'badge_oro_ofertas', label: '27 ofertas', type: 'badge', x: 1452, y: 385, w: 114, h: 87 },
   { id: 'btn_comerciar_oro', label: 'Comerciar Oro', type: 'buy', x: 1153, y: 770, w: 382, h: 74 },
 ]
 
@@ -95,6 +93,28 @@ export default function PixelComercio({
 }: PixelComercioProps) {
   const [debugHotspots, setDebugHotspots] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  // Conteos reales de ofertas activas del marketplace por categoría
+  const [categoryCounts, setCategoryCounts] = useState<{
+    plants: number
+    farming: number
+    gold: number
+  } | null>(null)
+
+  const fetchCategoryCounts = async () => {
+    try {
+      const counts = await marketplaceService.getMarketplaceCategoryCounts()
+      if (counts) {
+        setCategoryCounts(counts)
+      }
+    } catch (e) {
+      console.warn('Error cargando conteos del mercado:', e)
+    }
+  }
+
+  useEffect(() => {
+    void fetchCategoryCounts()
+  }, [])
 
   // Estado para abrir la vista interactiva completa del Mercado P2P
   const [marketOpenMode, setMarketOpenMode] = useState<{
@@ -178,7 +198,7 @@ export default function PixelComercio({
 
     // Toolbar / Sub-pestañas internas
     if (h.id === 'toolbar_compralibre_btn') {
-      setMarketOpenMode({ tab: 'browse', category: null })
+      // Pestaña Compra Libre: Ya estamos en esta pantalla, no redireccionar a nada
       return
     }
 
@@ -225,7 +245,10 @@ export default function PixelComercio({
           <button
             type="button"
             className="pixel-comercio-nav-back-btn"
-            onClick={() => setMarketOpenMode(null)}
+            onClick={() => {
+              setMarketOpenMode(null)
+              void fetchCategoryCounts()
+            }}
           >
             ⬅️ Volver a Categorías P2P
           </button>
@@ -266,6 +289,11 @@ export default function PixelComercio({
       </div>
     )
   }
+
+  // Conteos calculados (reales de base de datos)
+  const plantsCount = categoryCounts ? categoryCounts.plants : 116
+  const farmingCount = categoryCounts ? categoryCounts.farming : 160
+  const goldCount = categoryCounts ? categoryCounts.gold : 19
 
   return (
     <div className="pixel-comercio-container">
@@ -324,6 +352,52 @@ export default function PixelComercio({
             aria-label={h.label}
           />
         ))}
+
+        {/* Badges de Conteo de Ofertas Reales sobre las 3 tarjetas */}
+        <button
+          type="button"
+          className="pixel-comercio-dynamic-badge pixel-comercio-dynamic-badge--plants"
+          style={calcStyle({ x: 436, y: 390, w: 130, h: 68 })}
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            setMarketOpenMode({ tab: 'browse', category: 'plants' })
+          }}
+          title={`Cartas de Plantas: ${plantsCount} ${plantsCount === 1 ? 'oferta' : 'ofertas'}`}
+          aria-label={`Cartas de Plantas: ${plantsCount} ${plantsCount === 1 ? 'oferta' : 'ofertas'}`}
+        >
+          <span className="pixel-comercio-badge-num">{plantsCount}</span>
+          <span className="pixel-comercio-badge-text">{plantsCount === 1 ? 'oferta' : 'ofertas'}</span>
+        </button>
+
+        <button
+          type="button"
+          className="pixel-comercio-dynamic-badge pixel-comercio-dynamic-badge--farming"
+          style={calcStyle({ x: 946, y: 390, w: 130, h: 68 })}
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            setMarketOpenMode({ tab: 'browse', category: 'farming' })
+          }}
+          title={`Recursos de Cultivo: ${farmingCount} ${farmingCount === 1 ? 'oferta' : 'ofertas'}`}
+          aria-label={`Recursos de Cultivo: ${farmingCount} ${farmingCount === 1 ? 'oferta' : 'ofertas'}`}
+        >
+          <span className="pixel-comercio-badge-num">{farmingCount}</span>
+          <span className="pixel-comercio-badge-text">{farmingCount === 1 ? 'oferta' : 'ofertas'}</span>
+        </button>
+
+        <button
+          type="button"
+          className="pixel-comercio-dynamic-badge pixel-comercio-dynamic-badge--gold"
+          style={calcStyle({ x: 1472, y: 390, w: 132, h: 68 })}
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            setMarketOpenMode({ tab: 'browse', category: 'gold' })
+          }}
+          title={`Comercio de Oro: ${goldCount} ${goldCount === 1 ? 'oferta' : 'ofertas'}`}
+          aria-label={`Comercio de Oro: ${goldCount} ${goldCount === 1 ? 'oferta' : 'ofertas'}`}
+        >
+          <span className="pixel-comercio-badge-num">{goldCount}</span>
+          <span className="pixel-comercio-badge-text">{goldCount === 1 ? 'oferta' : 'ofertas'}</span>
+        </button>
 
         {/* Toast flotante */}
         {toastMessage && (
