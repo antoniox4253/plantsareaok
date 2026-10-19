@@ -327,6 +327,7 @@ export default function PixelEnergy({
     }
   }
 
+  const isUnlimitedEnergy = (userElo ?? 1000) <= 1600
   const isEnergyFull = localEnergy >= maxPlayerEnergy
   const energyRatio = Math.min(1, Math.max(0, localEnergy / (maxPlayerEnergy || 20)))
 
@@ -390,7 +391,11 @@ export default function PixelEnergy({
         <div
           className="pixel-energy-live-status-card"
           style={calcStyle({ x: 1300, y: 249, w: 281, h: 133 })}
-          title={`Energía actual: ${localEnergy}/${maxPlayerEnergy}⚡`}
+          title={
+            isUnlimitedEnergy
+              ? '⚡ Modo Novato (≤ 1,600 Copas): Tienes energía infinita para jugar partidas en Ranked. El límite de 20⚡ (o 25⚡ VIP) rige a partir de 1,601+ Copas.'
+              : `Energía actual: ${localEnergy}/${maxPlayerEnergy}⚡`
+          }
         >
           <div className="pixel-energy-live-status-inner">
             <div className="pixel-energy-live-status-icon-box">
@@ -400,11 +405,24 @@ export default function PixelEnergy({
             <div className="pixel-energy-live-status-info">
               <span className="pixel-energy-live-status-label">Tu energía actual:</span>
               <div className="pixel-energy-live-status-numbers">
-                <span className="pixel-energy-live-status-val">{localEnergy}</span>
-                <span className="pixel-energy-live-status-max">/{maxPlayerEnergy}</span>
+                {isUnlimitedEnergy ? (
+                  <>
+                    <span className="pixel-energy-live-status-val" style={{ fontSize: 'clamp(20px, 2.2vw, 32px)' }}>∞</span>
+                    <span className="pixel-energy-live-status-max"> (ILIMITADA)</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="pixel-energy-live-status-val">{localEnergy}</span>
+                    <span className="pixel-energy-live-status-max">/{maxPlayerEnergy}</span>
+                  </>
+                )}
               </div>
               <div className="pixel-energy-live-status-badge">
-                {isEnergyFull ? (
+                {isUnlimitedEnergy ? (
+                  <span className="pixel-energy-status-tag pixel-energy-status-tag--full" style={{ background: 'rgba(56, 189, 248, 0.25)', borderColor: '#38bdf8', color: '#e0f2fe' }}>
+                    ✨ ARENA 1 (≤ 1600)
+                  </span>
+                ) : isEnergyFull ? (
                   <span className="pixel-energy-status-tag pixel-energy-status-tag--full">⚡ AL MÁXIMO</span>
                 ) : (
                   <span className="pixel-energy-status-tag pixel-energy-status-tag--ready">🔄 DISPONIBLE</span>
@@ -415,8 +433,8 @@ export default function PixelEnergy({
           {/* Barra de progreso de energía */}
           <div className="pixel-energy-live-progress-track">
             <div
-              className={`pixel-energy-live-progress-bar ${isEnergyFull ? 'pixel-energy-live-progress-bar--full' : ''}`}
-              style={{ width: `${energyRatio * 100}%` }}
+              className={`pixel-energy-live-progress-bar ${isEnergyFull || isUnlimitedEnergy ? 'pixel-energy-live-progress-bar--full' : ''}`}
+              style={{ width: isUnlimitedEnergy ? '100%' : `${energyRatio * 100}%` }}
             />
           </div>
         </div>

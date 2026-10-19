@@ -32,7 +32,7 @@ export default function PixelHeaderBadges({
   userTokens = 0,
   playerEnergy = 20,
   maxPlayerEnergy = 20,
-  userElo: _userElo = 1000,
+  userElo = 1000,
   goldCoords,
   gemsCoords,
   energyCoords,
@@ -69,7 +69,11 @@ export default function PixelHeaderBadges({
     }
   }
 
-  const energyDisplay = `${playerEnergy}/${maxPlayerEnergy}`
+  const isUnlimitedEnergy = (userElo ?? 1000) <= 1600
+  const energyDisplay = isUnlimitedEnergy ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`
+  const energyTitle = isUnlimitedEnergy
+    ? '⚡ Energía Ilimitada: En Arena Novato (≤ 1,600 Copas) no se consume energía en Ranked. El límite de 20⚡ (o 25⚡ VIP) rige a partir de 1,601+ Copas.'
+    : `⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy}`
 
   return (
     <>
@@ -103,7 +107,7 @@ export default function PixelHeaderBadges({
       <div
         className="pixel-header-badge pixel-header-badge--energy"
         style={calcStyle(energyCoords)}
-        title={`⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy}`}
+        title={energyTitle}
       >
         <span className="pixel-header-badge__energy-icon">⚡</span>
         <span className="pixel-header-badge__val pixel-header-badge__val--energy">
@@ -115,7 +119,7 @@ export default function PixelHeaderBadges({
           </span>
         ) : (
           <span className="pixel-header-badge__lbl pixel-header-badge__lbl--energy">
-            Energía
+            {isUnlimitedEnergy ? 'Ilimitada' : 'Energía'}
           </span>
         )}
       </div>
