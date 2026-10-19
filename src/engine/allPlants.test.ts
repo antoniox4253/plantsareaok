@@ -81,7 +81,11 @@ describe('allPlants.test.ts - Catálogo completo de las 25 plantas y escalado', 
         if (base.damage !== undefined && base.damage > 0) {
           const scaledDmg = getScaledPlantConfig(plantId, ['damage'])
           expect(scaledDmg.damage).toBeDefined()
-          expect(scaledDmg.damage!).toBe(Math.round(base.damage * 1.15))
+          if (plantId === 'jalapeno' || plantId === 'pickledpepper') {
+            expect(scaledDmg.damage!).toBe(base.damage + 150)
+          } else {
+            expect(scaledDmg.damage!).toBe(Math.round(base.damage * 1.15))
+          }
           expect(scaledDmg.damage!).toBeGreaterThan(base.damage)
         }
 
