@@ -113,29 +113,9 @@ export default function StreamingHub({
   // Manejar clic en botón de Gemas
   const handleBuyWithGems = (product: StreamingProduct) => {
     soundManager.playSound('click', 0.5)
-    const cost = product.gemCost || 300
-    if (!isLoggedIn) {
-      if (onOpenAuth) {
-        onOpenAuth()
-      } else {
-        setToastNotification('⚠️ Conecta tu cuenta de Plants Arena para canjear membresías con Gemas.')
-      }
-      return
-    }
-
-    const currentGems = userProfile?.gems_balance ?? 0
-    if (currentGems < cost) {
-      setToastNotification(
-        `💎 Saldo insuficiente: Tienes ${currentGems.toLocaleString()} Gemas y se requieren ${cost} Gemas. ¡Recarga en la Tienda Oficial!`
-      )
-      return
-    }
-
-    soundManager.playSound('victory', 0.6)
     setToastNotification(
-      `🎉 ¡Solicitud recibida para ${product.name}! Tus datos de acceso serán sincronizados y habilitados para tu usuario.`
+      `💎 Canje con Gemas (${product.name}): ¡Muy pronto disponible! Estamos preparando la entrega automatizada para que recibas tus accesos sin demoras.`
     )
-    setModalProduct(null)
   }
   const filteredProducts = useMemo(() => {
     const q = catalogSearch.toLowerCase().trim()
@@ -953,12 +933,14 @@ export default function StreamingHub({
                     type="button"
                     className="streaming-modal__gem-btn"
                     onClick={() => handleBuyWithGems(modalProduct)}
+                    title="Canjear con Gemas (Muy pronto)"
                   >
                     <div className="streaming-modal__gem-btn-inner">
                       <span className="streaming-modal__gem-icon">💎</span>
                       <span className="streaming-modal__gem-val">
                         {modalProduct.gemCost || 300} Gemas
                       </span>
+                      <span className="streaming-modal__gem-tag">MUY PRONTO</span>
                     </div>
                     <span className="streaming-modal__gem-sub">
                       {isLoggedIn && userProfile?.gems_balance !== undefined
