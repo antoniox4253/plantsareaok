@@ -656,13 +656,25 @@ export function aplicarPickledPepper(
   const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
   const colEspejada = lado.equipo === 'p1' ? effectiveCol : TOTAL_COLUMNS - 1 - effectiveCol
   const colX = BASE_LEFT_END_X + colEspejada * colWidth + colWidth / 2
+  const colMinX = BASE_LEFT_END_X + colEspejada * colWidth
+  const colMaxX = colMinX + colWidth
 
   const objetivoLado = lado.equipo === 'p1' ? LADO_P2 : LADO_P1
   for (const victima of propias(state, objetivoLado)) {
     if (victima.hp <= 0) continue
-    const mismaColumna = victima.col !== undefined && victima.col === colEspejada
-    const enRangoX = Math.abs(victima.x - colX) <= 6.0
-    if (mismaColumna || enRangoX) {
+
+    // Solo dañar a las plantas que se encuentren estrictamente en la columna seleccionada
+    let enColumna = false
+    if (!victima.isWalking && victima.col !== undefined) {
+      // Planta estática con casilla fija: sólo se afecta si su columna coincide exactamente
+      enColumna = victima.col === colEspejada
+    } else {
+      // Unidad caminante o sin casilla fija: se afecta únicamente si su posición X actual
+      // cae dentro de los límites estrictos de dicha columna (margen 0.01 por precisión flotante)
+      enColumna = victima.x >= (colMinX - 0.01) && victima.x <= (colMaxX + 0.01)
+    }
+
+    if (enColumna) {
       victima.hp -= dano
       if (victima.hp <= 0 && lado.equipo === 'p1') {
         state.stats.enemyPlantsDefeated += 1

@@ -254,6 +254,40 @@ describe('RIVAL ESTRATÉGICO V1.2.1 — CERTIFICACIÓN REAL PROGRAMÁTICA', () =
       expect(defenseLane2!.utility).toBeGreaterThan(150)
     })
 
+    it('6b. Replantación Vital de Girasoles: si el bot se queda sin girasoles (0 en campo), prioriza volver a plantar de inmediato', () => {
+      const state = createBattleState(1234, false, true)
+      const profile = obtenerPerfilEstrategico('balanced')
+      state.tick = msToTicks(50000) // Partida avanzada a los 50s
+
+      // El bot tiene un muro en el carril 1 pero 0 girasoles vivos en todo el campo
+      state.enemyPlants.push({
+        id: 'p2-wall-1',
+        plantId: 'wallnut',
+        lane: 1,
+        col: 8,
+        x: 65,
+        hp: 1200,
+        maxHp: 1200,
+        attackSpeedMs: 0,
+        moveSpeed: 0,
+        isWalking: false,
+        state: 'idle',
+        lastActionTime: 0,
+      })
+
+      const perception = percibirTablero(state, 100, profile)
+      expect(perception.totalOwnProducers).toBe(0)
+      expect(perception.mode).toBe('ECONOMY')
+
+      const candidates = generarAccionesCandidatas(MAZO_ESTANDAR, {}, perception, state, profile)
+      const replantAction = candidates.find((c) => c.plantId === 'sunflower')
+
+      expect(replantAction).toBeDefined()
+      // Utilidad masiva por encima de 150 debido a la prioridad crítica de replantación
+      expect(replantAction!.utility).toBeGreaterThan(150)
+      expect(replantAction!.reason).toContain('Replantación crítica')
+    })
+
     it('7. Presión Multilínea: distribuye el ataque en múltiples carriles ante tablero abierto', () => {
       const res = runAsyncTimeline({
         seed: 334455,

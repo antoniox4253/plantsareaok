@@ -10,7 +10,7 @@ export const DENSE_ARCHETYPE_DECKS: Record<number, CartaDeMazo[]> = {
     { slot: 1, level: 3, plantId: 'repeater', statRolls: ['damage'] },
     { slot: 2, level: 3, plantId: 'tallnut', statRolls: ['hp'] },
     { slot: 3, level: 3, plantId: 'bonkchoy', statRolls: ['attackSpeed'] },
-    { slot: 4, level: 3, plantId: 'squash', statRolls: ['cooldown'] },
+    { slot: 4, level: 3, plantId: 'garlic', statRolls: ['cooldown'] },
     { slot: 5, level: 3, plantId: 'jalapeno', statRolls: ['damage'] },
   ],
   1: [
@@ -40,7 +40,7 @@ export const DENSE_ARCHETYPE_DECKS: Record<number, CartaDeMazo[]> = {
   4: [
     { slot: 0, level: 3, plantId: 'sunflower', statRolls: ['hp'] },
     { slot: 1, level: 4, plantId: 'bonkchoy', statRolls: ['damage', 'attackSpeed'] },
-    { slot: 2, level: 4, plantId: 'squash', statRolls: ['damage', 'attackSpeed'] },
+    { slot: 2, level: 4, plantId: 'kernelpult', statRolls: ['damage', 'attackSpeed'] },
     { slot: 3, level: 4, plantId: 'peashooter', statRolls: ['damage', 'attackSpeed'] },
     { slot: 4, level: 3, plantId: 'wallnut', statRolls: ['hp'] },
     { slot: 5, level: 3, plantId: 'jalapeno', statRolls: ['hp'] },

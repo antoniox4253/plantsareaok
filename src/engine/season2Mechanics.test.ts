@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createBattleState, stepTick, crearPlantaDelRival, type GameState } from './simulate'
-import { TOTAL_COLUMNS, getScaledPlantConfig, getEligibleStatsForPlant } from '../utils/gameConstants'
-import type { PlantId } from '../types/game'
+import { TOTAL_COLUMNS, FIELD_WIDTH_PCT, BASE_LEFT_END_X, getScaledPlantConfig, getEligibleStatsForPlant } from '../utils/gameConstants'
+import type { PlantId, PlantEntity } from '../types/game'
 import { validarAccionP1RankedEstricta } from './asyncP1History'
 import { runAsyncTimeline } from './asyncOpponent'
 
@@ -100,6 +100,79 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
       for (const llama of llamas) {
         expect(llama.spriteOverride).toContain('jalapeno_flame_fx')
       }
+    })
+
+    it('no daña a plantas en columnas adyacentes (columna elegida col 9 no afecta col 8 ni col 10)', () => {
+      const estado = createBattleState(21, false, true)
+      const colObjetivo = 9
+
+      // Enemigos en columna 9 (objetivo)
+      estado.enemyPlants.push(crearPlantaDelRival(estado, 'peashooter' as PlantId, 0, TOTAL_COLUMNS - 1 - colObjetivo))
+      estado.enemyPlants.push(crearPlantaDelRival(estado, 'peashooter' as PlantId, 1, TOTAL_COLUMNS - 1 - colObjetivo))
+
+      // Enemigo adyacente a la izquierda (columna 8)
+      const enemigoCol8 = crearPlantaDelRival(estado, 'peashooter' as PlantId, 0, TOTAL_COLUMNS - 1 - (colObjetivo - 1))
+      estado.enemyPlants.push(enemigoCol8)
+
+      // Enemigo adyacente a la derecha (columna 10)
+      const enemigoCol10 = crearPlantaDelRival(estado, 'peashooter' as PlantId, 1, TOTAL_COLUMNS - 1 - (colObjetivo + 1))
+      estado.enemyPlants.push(enemigoCol10)
+
+      // Enemigo caminante adyacente en columna 8
+      const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
+      const xCol8 = BASE_LEFT_END_X + 8 * colWidth + colWidth / 2
+      const bonkChoyCol8: PlantEntity = {
+        id: 'bonk-col8',
+        plantId: 'bonkchoy',
+        lane: 2,
+        x: xCol8,
+        hp: 600,
+        maxHp: 600,
+        damage: 65,
+        isWalking: true,
+        state: 'walking',
+        lastActionTime: 0,
+      }
+      estado.enemyPlants.push(bonkChoyCol8)
+
+      // Enemigo caminante DENTRO de la columna 9 objetivo
+      const xCol9 = BASE_LEFT_END_X + 9 * colWidth + colWidth / 2
+      const bonkChoyCol9: PlantEntity = {
+        id: 'bonk-col9',
+        plantId: 'bonkchoy',
+        lane: 2,
+        x: xCol9,
+        hp: 600,
+        maxHp: 600,
+        damage: 65,
+        isWalking: true,
+        state: 'walking',
+        lastActionTime: 0,
+      }
+      estado.enemyPlants.push(bonkChoyCol9)
+
+      // Plantar pickledpepper estrictamente en col 9
+      estado.pending.push({
+        atTick: 1,
+        kind: 'own_plant',
+        plantId: 'pickledpepper',
+        lane: 1,
+        col: colObjetivo,
+      })
+
+      correr(estado, 5)
+
+      // Los enemigos estáticos en col 9 deben haber sido eliminados
+      const sobrevivientesCol9 = estado.enemyPlants.filter((p) => p.col === colObjetivo && p.hp > 0)
+      expect(sobrevivientesCol9).toHaveLength(0)
+
+      // El enemigo caminante en col 9 debe haber sido eliminado (800 de daño > 600 HP)
+      expect(bonkChoyCol9.hp).toBeLessThanOrEqual(0)
+
+      // Los enemigos en las columnas adyacentes 8 y 10 deben sobrevivir con su vida intacta
+      expect(enemigoCol8.hp).toBe(enemigoCol8.maxHp)
+      expect(enemigoCol10.hp).toBe(enemigoCol10.maxHp)
+      expect(bonkChoyCol8.hp).toBe(bonkChoyCol8.maxHp)
     })
 
     it('detona y destruye enemigos en la última columna del tablero (col 13 / columna 14 humana)', () => {

@@ -195,7 +195,7 @@ export const PLANT_TACTICAL_PROFILES: Record<PlantId, PlantTacticalProfile> = {
     isHealer: false,
     isTrap: true,
     preferredCols: [2, 4],
-    baseWeight: 1.05,
+    baseWeight: 0.0, // DESACTIVADO: No sirve y gasta recursos
   },
   jalapeno: {
     id: 'jalapeno',
@@ -265,7 +265,7 @@ export const PLANT_TACTICAL_PROFILES: Record<PlantId, PlantTacticalProfile> = {
     isHealer: false,
     isTrap: false,
     preferredCols: [0, 0],
-    baseWeight: 1.1,
+    baseWeight: 1.15,
   },
   garlic: {
     id: 'garlic', // Squash aplastador
@@ -279,7 +279,7 @@ export const PLANT_TACTICAL_PROFILES: Record<PlantId, PlantTacticalProfile> = {
     isHealer: false,
     isTrap: false,
     preferredCols: [0, 0],
-    baseWeight: 1.15,
+    baseWeight: 1.45, // SPAM DE SQUASH: alta prioridad ofensiva
   },
   kernelpult: {
     id: 'kernelpult',
@@ -293,7 +293,7 @@ export const PLANT_TACTICAL_PROFILES: Record<PlantId, PlantTacticalProfile> = {
     isHealer: false,
     isTrap: false,
     preferredCols: [1, 3],
-    baseWeight: 1.05,
+    baseWeight: 1.25, // Lanzamaíz: ataca con mantequilla paralizante
   },
   explodeonut: {
     id: 'explodeonut',
@@ -573,42 +573,42 @@ export const STRATEGIC_PROFILES: Record<StrategicStyle, StrategicProfile> = {
     style: 'balanced',
     aggression: 0.75, // +25% mayor agresividad
     defense: 0.55,
-    economy: 0.72,    // +20% economía temprana
+    economy: 0.75,    // +25% economía temprana consistente
     opportunism: 0.75,
     reactionMs: 580,
-    baseReserveSun: 35, // -30% umbral de reserva para evitar acumular ociosamente
+    baseReserveSun: 35, // Umbral de reserva óptimo
     irregularity: 0.38,
     badPlayMargin: 0.15, // 0.15 para ELO 1000
-    targetProducers: 2,
-    maxProducers: 3,
+    targetProducers: 3,
+    maxProducers: 5,
     basePersonality: 'AGGRESSIVE', // Personalidad BALANCED_AGGRESSIVE
   },
   aggressive: {
     style: 'aggressive',
     aggression: 0.95,
     defense: 0.30,
-    economy: 0.30,
+    economy: 0.50,
     opportunism: 0.85,
     reactionMs: 500,
     baseReserveSun: 25,
     irregularity: 0.35,
     badPlayMargin: 0.05,
-    targetProducers: 1,
-    maxProducers: 2,
+    targetProducers: 3,
+    maxProducers: 4,
     basePersonality: 'AGGRESSIVE',
   },
   defensive: {
     style: 'defensive',
     aggression: 0.25,
     defense: 0.95,
-    economy: 0.70,
+    economy: 0.75,
     opportunism: 0.30,
     reactionMs: 600,
     baseReserveSun: 75,
     irregularity: 0.4,
     badPlayMargin: 0.05,
-    targetProducers: 3,
-    maxProducers: 4,
+    targetProducers: 4,
+    maxProducers: 5,
     basePersonality: 'CAUTIOUS',
   },
   economic: {
@@ -629,14 +629,14 @@ export const STRATEGIC_PROFILES: Record<StrategicStyle, StrategicProfile> = {
     style: 'opportunistic',
     aggression: 0.80,
     defense: 0.40,
-    economy: 0.45,
+    economy: 0.60,
     opportunism: 0.98,
     reactionMs: 550,
     baseReserveSun: 35,
     irregularity: 0.4,
     badPlayMargin: 0.06,
-    targetProducers: 2,
-    maxProducers: 3,
+    targetProducers: 3,
+    maxProducers: 5,
     basePersonality: 'AGGRESSIVE',
   },
 }
@@ -1410,9 +1410,12 @@ export function percibirTablero(
     mode = 'EMERGENCY_DEFEND'
   } else if (maxThreat >= 50) {
     mode = 'DEFEND'
+  } else if (totalOwnProducers === 0 && maxThreat < 50) {
+    // Recuperación económica de emergencia: si el bot se quedó sin girasoles, replantar es vital
+    mode = 'ECONOMY'
   } else if (enemyHpRatio <= 0.45 || (maxOpportunity >= 60 && totalOwnProducers >= 1 && maxThreat < 40)) {
     mode = 'PRESSURE'
-  } else if (totalOwnProducers < profile.targetProducers && maxThreat < 35 && state.tick < msToTicks(75000)) {
+  } else if (totalOwnProducers < profile.targetProducers && maxThreat < 40) {
     mode = 'ECONOMY'
   } else if (maxOpportunity >= 40 && maxThreat < 40) {
     mode = 'ATTACK'
@@ -1473,7 +1476,8 @@ export function calcularReservaSoles(
     perception.mode === 'EMERGENCY_DEFEND' ||
     personalityState === 'AGGRESSIVE' ||
     personalityState === 'DESPERATE' ||
-    perception.isStalemate
+    perception.isStalemate ||
+    perception.totalOwnProducers === 0 // Si no tiene girasoles, soltar reservas para replantar de inmediato
   ) {
     return 0 // Agresión total, desesperación o supervivencia: cero reserva retenida
   }
@@ -1630,6 +1634,11 @@ export function generarAccionesCandidatas(
       continue
     }
 
+    // Deshabilitar completamente la Papa Mina ('squash') para los bots
+    if (plantId === 'squash') {
+      continue
+    }
+
     const tactical = getTacticalProfile(plantId)
 
     // Evaluar en cada uno de los 3 carriles
@@ -1780,6 +1789,15 @@ export function calcularUtilidadPlanta(params: {
     tick = perception.tick,
   } = params
 
+  // ── DESHABILITACIÓN ROTUNDA DE POTATO MINE ('squash') ──────────────────────
+  if (plantId === 'squash') {
+    return {
+      total: 0,
+      breakdown: { defense: 0, attack: 0, economy: 0, synergy: 0, costRiskPenalty: 999, overinvestmentPenalty: 0 },
+      reason: 'Potato Mine deshabilitada para bots',
+    }
+  }
+
   let defenseScore = 0
   let attackScore = 0
   let economyScore = 0
@@ -1804,17 +1822,23 @@ export function calcularUtilidadPlanta(params: {
         defenseScore = (35 + laneEval.threatScore * 0.6) * profile.defense
         if (laneEval.threatScore > 10) defenseScore += 20
       }
-    } else if (tactical.isTrap) {
-      // Papa mina
-      defenseScore = (30 + laneEval.threatScore * 0.6) * profile.defense
+    } else if (plantId === 'explodeonut') {
+      // Nuez explosiva: tanque y contraataque reactivo
+      defenseScore = (45 + laneEval.threatScore * 0.9) * profile.defense
+      if (laneEval.threatScore > 20) defenseScore += 30
+      if (laneEval.ownAttackersCount > 0 && laneEval.ownDefendersCount === 0) defenseScore += 25
     } else if (tactical.isHealer) {
       // Aloe
       defenseScore = (15 + (laneEval.threatScore > 15 ? 25 : 0)) * profile.defense
     } else if (tactical.isTank) {
-      // Nuez / Nuez alta
-      defenseScore = (35 + laneEval.threatScore * 0.85) * profile.defense
-      if (laneEval.ownDefendersCount === 0 && laneEval.threatScore > 20) {
-        defenseScore += 30 // Bono urgente por ser primer muro
+      // Nuez / Nuez alta: protección sólida para la retaguardia
+      defenseScore = (38 + laneEval.threatScore * 0.85) * profile.defense
+      if (laneEval.ownDefendersCount === 0 && laneEval.threatScore > 15) {
+        defenseScore += 35 // Bono urgente por ser primer muro
+      }
+      // Sinergia defensiva para proteger a lanzaguisantes y lanzamaíz
+      if (laneEval.ownAttackersCount > 0 && laneEval.ownDefendersCount === 0) {
+        defenseScore += 30
       }
     }
 
@@ -1846,6 +1870,30 @@ export function calcularUtilidadPlanta(params: {
     else if (plantId === 'repeater') baseAtk = 58
 
     attackScore = (baseAtk * 1.25 + laneEval.attackOpportunityScore * 0.85 + (100 - laneEval.threatScore) * 0.25) * profile.aggression
+
+    // SPAM DE SQUASH (id: garlic, coste 75 soles, daño 600)
+    if (plantId === 'garlic') {
+      let squashBonus = 35
+      if (perception.totalOwnProducers >= 2) squashBonus += 30
+      if (perception.sunBank >= 75) squashBonus += 25
+      if (laneEval.enemyAttackersCount > 0 || laneEval.isVulnerable) squashBonus += 20
+      attackScore += squashBonus * (0.8 + profile.aggression * 0.4)
+    }
+
+    // DÚO A DISTANCIA MIXTO: Lanzaguisantes y Lanzamaíz (y Hielaguisantes)
+    if (plantId === 'peashooter' || plantId === 'kernelpult' || plantId === 'snowpea') {
+      let rangedBonus = 25
+      if (laneEval.ownDefendersCount > 0) rangedBonus += 25 // Sinergia detrás de muros
+      if (laneEval.ownAttackersCount === 0) rangedBonus += 20 // Primer atacante del carril
+      if (plantId === 'kernelpult') rangedBonus += 20 // Lanzamaíz: mantequilla ralentizante
+      if (plantId === 'snowpea') rangedBonus += 22 // Hielaguisantes: freno de avance y enfriamiento
+      attackScore += rangedBonus * (0.8 + profile.aggression * 0.3)
+    }
+
+    // Refuerzo táctico para unidades avanzadas (Chile Fantasma)
+    if (plantId === 'ghostpepper') {
+      attackScore += (35 + (laneEval.isVulnerable ? 25 : 10)) * profile.aggression
+    }
 
     // Bono si es Threepeater en carril central
     if (plantId === 'threepeater' && lane === 1) {
@@ -1905,39 +1953,70 @@ export function calcularUtilidadPlanta(params: {
     }
   }
 
-  // ── 3. ECONOMÍA (GIRASOLES / PRODUCTORES) ──────────────────────────────────
+  // ── 3. ECONOMÍA (GIRASOLES / PRODUCTORES: 3 A 5 SIEMPRE Y REPLANTACIÓN VITAL) ─
   if (tactical.isProducer) {
-    const deficitProducers = profile.targetProducers - perception.totalOwnProducers
+    const totalProducers = perception.totalOwnProducers
+    const deficitProducers = profile.targetProducers - totalProducers
+
+    // CASO CRÍTICO: El bot se quedó sin girasoles (0) o con solo 1
+    // Es la base del ecosistema para poder generar sol, atacar y defenderse
+    const isStarved = totalProducers === 0
+    const isCritical = totalProducers < 2
 
     if (deficitProducers > 0) {
-      economyScore = (deficitProducers * 42 + 30) * profile.economy
-    } else if (perception.totalOwnProducers < profile.maxProducers) {
-      economyScore = 15 * profile.economy
+      let ecoBase = deficitProducers * 45 + 35
+      if (isStarved) {
+        ecoBase += 85 // Prioridad máxima de emergencia para volver a plantar
+      } else if (isCritical) {
+        ecoBase += 50 // Prioridad alta para recuperar economía
+      }
+      economyScore = ecoBase * Math.max(0.8, profile.economy)
+    } else if (totalProducers < profile.maxProducers) {
+      economyScore = 20 * profile.economy
     } else {
-      economyScore = -25 // Superó límite de productores
+      economyScore = -35 // Superó límite de productores
     }
 
-    // En emergencia, gran amenaza, remate final o DESPERATE, plantar girasoles pierde prioridad
-    if (
-      perception.mode === 'EMERGENCY_DEFEND' ||
-      perception.maxThreat >= 65 ||
-      perception.enemyBaseHp <= 300 ||
-      personality === 'DESPERATE'
-    ) {
-      economyScore -= 75
-    } else if (personality === 'AGGRESSIVE' && perception.totalOwnProducers >= profile.targetProducers) {
-      economyScore -= 30
-    } else if (laneEval.threatScore >= 45) {
-      economyScore -= 30
+    // Inteligencia posicional de replantación: preferir carril seguro y con defensas
+    if (laneEval.ownDefendersCount > 0) {
+      economyScore += 20 // Replantar detrás de un muro existente
+    }
+    if (laneEval.threatScore <= 15) {
+      economyScore += 25 // Carril pacífico y protegido
+    } else if (laneEval.threatScore >= 60) {
+      economyScore -= 35 // Evitar replantar en un carril que está bajo fuego directo
     }
 
-    // En apertura (< 3.5s): si el arquetipo es TEMPO_LANE o EARLY_RUSH, despriorizar girasol inicial para retener sol y abrir con ofensiva/tempo
+    // Si el bot YA TIENE al menos 1-2 productores vivos y hay peligro extremo,
+    // se posterga el siguiente girasol. Si tiene 0 productores, ¡replantar es vital!
+    if (totalProducers >= 1) {
+      if (
+        perception.mode === 'EMERGENCY_DEFEND' ||
+        perception.maxThreat >= 75 ||
+        perception.enemyBaseHp <= 250 ||
+        personality === 'DESPERATE'
+      ) {
+        economyScore -= 65
+      } else if (personality === 'AGGRESSIVE' && totalProducers >= profile.targetProducers) {
+        economyScore -= 30
+      } else if (laneEval.threatScore >= 50) {
+        economyScore -= 25
+      }
+    } else {
+      // Tiene 0 girasoles: no silenciar la replantación de emergencia
+      // Solo evitar el carril que tenga la amenaza directa
+      if (laneEval.threatScore >= 75) {
+        economyScore -= 40
+      }
+    }
+
+    // En apertura (< 3.5s): si el arquetipo es TEMPO_LANE o EARLY_RUSH, despriorizar girasol inicial
     if (tick < msToTicks(3500) && openingArchetype && openingArchetype !== 'ECO_FIRST') {
       economyScore -= 65
     }
 
-    // Con más de 70 segundos de partida, dejar de producir girasoles
-    if (perception.tick > msToTicks(70000)) {
+    // Con más de 70 segundos de partida, dejar de producir girasoles SOLO si ya se tienen >= 3
+    if (perception.tick > msToTicks(70000) && totalProducers >= 3) {
       economyScore -= 45
     }
   }
@@ -2013,7 +2092,9 @@ export function calcularUtilidadPlanta(params: {
   } else if (attackScore > economyScore) {
     reason = `Ataque en carril ${lane} (oportunidad ${laneEval.attackOpportunityScore})`
   } else if (economyScore > 0) {
-    reason = `Desarrollo económico (productores: ${perception.totalOwnProducers}/${profile.targetProducers})`
+    reason = perception.totalOwnProducers === 0
+      ? `Replantación crítica de girasol en carril ${lane} (0 productores en campo)`
+      : `Desarrollo económico (productores: ${perception.totalOwnProducers}/${profile.targetProducers})`
   } else {
     reason = `Jugada táctica en carril ${lane}`
   }
