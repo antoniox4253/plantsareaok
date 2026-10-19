@@ -1,0 +1,143 @@
+/* ==========================================================================
+   PLANT ARENA - BARRA DE PESTAÑAS UNIFICADA PIXEL SHOP (PIXELSHOPTABS)
+   Menú idéntico para: Sobres, Pase VIP, Oro & Emotes, Energías, Comercio, Stream
+   ========================================================================== */
+
+/* Respaldo que oculta pestañas previas del arte base */
+.pixel-shop-tabs-backdrop {
+  position: absolute;
+  background: linear-gradient(180deg, rgba(8, 15, 30, 0.96) 0%, rgba(4, 8, 18, 0.98) 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.8),
+    inset 0 0 16px rgba(0, 0, 0, 0.7);
+  z-index: 12;
+  pointer-events: none;
+}
+
+/* Capa de botones */
+.pixel-shop-tabs-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 13;
+}
+
+/* Botón individual de pestaña */
+.pixel-shop-tab-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(4px, 0.4vw, 8px);
+  padding: 0 clamp(8px, 0.8vw, 16px);
+  border-radius: 16px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: clamp(10px, 0.9vw, 14.5px);
+  font-weight: 800;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: auto;
+  cursor: pointer;
+  outline: none;
+  transition:
+    transform 0.12s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Estado inactivo por defecto: Píldora Azul Marino RPG */
+  background: linear-gradient(180deg, rgba(22, 36, 62, 0.96) 0%, rgba(12, 21, 38, 0.98) 100%);
+  border: 1.5px solid rgba(59, 130, 246, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 3px 8px rgba(0, 0, 0, 0.5);
+  color: #cbd5e1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+.pixel-shop-tab-btn:hover {
+  background: linear-gradient(180deg, rgba(34, 55, 96, 0.98) 0%, rgba(18, 30, 54, 0.99) 100%);
+  border-color: #60a5fa;
+  color: #ffffff;
+  box-shadow:
+    0 0 14px rgba(59, 130, 246, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.pixel-shop-tab-btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* Icono dentro del botón */
+.pixel-shop-tab-btn__icon {
+  font-size: clamp(13px, 1.15vw, 19px);
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.8));
+  flex-shrink: 0;
+}
+
+/* Texto dentro del botón */
+.pixel-shop-tab-btn__text {
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Pestaña Stream (VIP Púrpura especial) */
+.pixel-shop-tab-btn--stream {
+  background: linear-gradient(180deg, rgba(36, 20, 60, 0.96) 0%, rgba(18, 10, 32, 0.98) 100%);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #e9d5ff;
+}
+
+.pixel-shop-tab-btn--stream:hover {
+  background: linear-gradient(180deg, rgba(56, 30, 94, 0.98) 0%, rgba(30, 15, 52, 0.99) 100%);
+  border-color: #c084fc;
+  box-shadow:
+    0 0 16px rgba(192, 132, 252, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   ESTADO ACTIVO (Pestaña Seleccionada: Dorado Ámbar Destacado)
+   ========================================================================== */
+.pixel-shop-tab-btn--active {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 50%, #92400e 100%) !important;
+  border: 2px solid #fef08a !important;
+  box-shadow:
+    0 0 18px rgba(245, 158, 11, 0.75),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  cursor: default !important;
+  transform: none !important;
+}
+
+.pixel-shop-tab-btn--active .pixel-shop-tab-btn__icon {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+}
+
+.pixel-shop-tab-btn--active .pixel-shop-tab-btn__text {
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.9),
+    0 0 10px rgba(245, 158, 11, 0.8);
+}
+
+/* Efecto de resplandor interno en la activa */
+.pixel-shop-tab-btn__glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  pointer-events: none;
+}

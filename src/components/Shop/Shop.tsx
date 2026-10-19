@@ -701,7 +701,9 @@ export default function Shop({
           onOpenStreaming={onOpenStreaming}
           onToggleClassic={() => setViewMode('classic')}
           onSelectTab={(tab) => {
-            if (tab === 'pass') {
+            if (tab === 'packs') {
+              setViewMode('pixel_packs')
+            } else if (tab === 'pass') {
               setViewMode('pixel_pass')
             } else if (tab === 'gold') {
               setViewMode('pixel_gold')

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import type { PackId, InventoryPack } from '../../utils/packDropManager'
 import PixelHeaderBadges from './PixelHeaderBadges'
+import PixelShopTabs from './PixelShopTabs'
 import './PixelSeedPacks.css'
 
 export interface Hotspot {
@@ -20,12 +21,6 @@ const BASE_HEIGHT = 941
 const SEEDPACK_HOTSPOTS: Hotspot[] = [
   { id: 'menu', label: 'Menú', x: 18, y: 16, w: 210, h: 72, type: 'button' },
   { id: 'title_shop', label: 'Título Tienda', x: 347, y: 14, w: 407, h: 72, type: 'label' },
-  { id: 'tab_sobres', label: 'Tab Sobres de Semillas', x: 67, y: 108, w: 303, h: 74, type: 'tab' },
-  { id: 'tab_vip', label: 'Tab Pase VIP', x: 379, y: 108, w: 199, h: 74, type: 'tab' },
-  { id: 'tab_oro_emotes', label: 'Tab Oro & Emotes', x: 587, y: 108, w: 260, h: 74, type: 'tab' },
-  { id: 'tab_energias', label: 'Tab Energías', x: 855, y: 108, w: 231, h: 74, type: 'tab' },
-  { id: 'tab_comercio', label: 'Tab Comercio', x: 1095, y: 108, w: 220, h: 74, type: 'tab' },
-  { id: 'tab_stream', label: 'Tab Cuentas Stream', x: 1322, y: 108, w: 271, h: 74, type: 'tab' },
   { id: 'hero_title', label: 'Título Sobres de Semillas', x: 553, y: 190, w: 627, h: 112, type: 'section' },
   { id: 'button_probabilidades', label: 'Botón Ver Probabilidades', x: 1251, y: 219, w: 301, h: 85, type: 'cta' },
   { id: 'pack_basic', label: 'Ver Probabilidades Sobre Básico', x: 80, y: 220, w: 465, h: 470, type: 'card' },
@@ -43,7 +38,7 @@ export interface PixelSeedPacksProps {
   onBackToHome: () => void
   onOpenStreaming?: () => void
   onToggleClassic?: () => void
-  onSelectTab?: (tab: 'pass' | 'gold' | 'energy' | 'market') => void
+  onSelectTab?: (tab: 'packs' | 'pass' | 'gold' | 'energy' | 'market') => void
   onBuyPack: (packId: PackId) => Promise<{ success: boolean; packs?: InventoryPack[]; goldAdded?: number; error?: string }>
   onOpenPackImmediately?: (packInstanceId: string) => void
   onOpenProbabilities?: (packId?: PackId) => void
@@ -313,6 +308,16 @@ export default function PixelSeedPacks({
             if (onSelectTab) onSelectTab(tab)
           }}
           onToast={(msg) => setToastMessage(msg)}
+        />
+
+        {/* Barra de Navegación de 6 Pestañas Unificada */}
+        <PixelShopTabs
+          activeTab="packs"
+          onSelectTab={onSelectTab}
+          onOpenStreaming={onOpenStreaming}
+          onToast={(msg) => setToastMessage(msg)}
+          baseWidth={BASE_WIDTH}
+          baseHeight={BASE_HEIGHT}
         />
 
         {/* Hotspots interactivos */}

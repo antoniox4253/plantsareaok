@@ -51,7 +51,7 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
   let currentSun = 0
   let nextSkySunTick = 121
   const skyInterval = 182 // ~6s at 33ms/tick
-  const sunflowerProductionTicks: number[] = []
+  const sunflowerTrackers: { tick: number; yield: number }[] = []
   let currentTick = 300
 
   const advanceToTick = (targetTick: number) => {
@@ -59,10 +59,10 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
       currentSun += 25
       nextSkySunTick += skyInterval
     }
-    for (let i = 0; i < sunflowerProductionTicks.length; i++) {
-      while (sunflowerProductionTicks[i] <= targetTick) {
-        currentSun += 25
-        sunflowerProductionTicks[i] += 455 // 15s standard cycle
+    for (let i = 0; i < sunflowerTrackers.length; i++) {
+      while (sunflowerTrackers[i].tick <= targetTick) {
+        currentSun += sunflowerTrackers[i].yield
+        sunflowerTrackers[i].tick += 455 // 15s standard cycle
       }
     }
   }
@@ -82,8 +82,8 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
 
     while (currentSun < cost && candidateTick <= 5850) {
       let nextSunArrival = nextSkySunTick
-      for (const sfTick of sunflowerProductionTicks) {
-        if (sfTick < nextSunArrival) nextSunArrival = sfTick
+      for (const sf of sunflowerTrackers) {
+        if (sf.tick < nextSunArrival) nextSunArrival = sf.tick
       }
       candidateTick = nextSunArrival
       advanceToTick(candidateTick)
@@ -95,8 +95,15 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
     slotCooldowns[slot] = candidateTick + cd
     currentTick = candidateTick + 6 // minimum physical separation
 
-    if ((card.plantId === 'sunflower' || card.plantId === 'twinsunflower') && sunflowerProductionTicks.length < 1) {
-      sunflowerProductionTicks.push(candidateTick + 6 + 455)
+    if (card.plantId === 'sunflower' || card.plantId === 'twinsunflower') {
+      const sunYield = card.plantId === 'twinsunflower' ? 50 : 25
+      // Rastreamos hasta 4 productores de sol para una economía abundante y segura
+      if (sunflowerTrackers.length < 4) {
+        sunflowerTrackers.push({
+          tick: candidateTick + 6 + 455,
+          yield: sunYield,
+        })
+      }
     }
 
     plan.push({
@@ -112,40 +119,46 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
     return true
   }
 
-  // ── 1. APERTURA ECONÓMICA DE GIRASOLES (0 - 25s) ──
+  // ── 1. APERTURA ECONÓMICA DE 3 GIRASOLES BASE (0 - 18s) ──
+  // Establece de inmediato un girasol en la retaguardia (Col 0) de cada uno de los 3 carriles
   // Sunflower 1 (Lane 1, Col 0 - Central)
   if (sunSlot >= 0) scheduleAction(sunSlot, 1, 0, 309)
   // Sunflower 2 (Lane 0, Col 0 - Superior)
   if (sunSlot >= 0) scheduleAction(sunSlot, 0, 0, 680)
+  // Sunflower 3 (Lane 2, Col 0 - Inferior)
+  if (sunSlot >= 0) scheduleAction(sunSlot, 2, 0, 1050)
 
-  // ── 2. BLINDAJE INICIAL DE LOS 3 CARRILES: ATACANTE MIXTO + WALLNUT (25 - 90s) ──
+  // ── 2. PRIMERA LÍNEA DEFENSIVA Y EXPANSIÓN A 4 GIRASOLES (18 - 45s) ──
   const atkCost = getPlantCost(deck[primaryAtk]?.plantId, deck[primaryAtk]?.statRolls ?? undefined)
-  const minAtkTick = atkCost >= 300 ? 2850 : (atkCost >= 200 ? 2125 : 1395)
+  const minAtkTick = atkCost >= 300 ? 2850 : (atkCost >= 200 ? 2150 : 1550)
 
-  // Carril 0 (superior): Atacante + Wall-nut
+  // Carril 0 (superior): Primer Atacante
   scheduleAction(primaryAtk, 0, 1, minAtkTick)
+  // Carril 0: Muro/Tanque temprano para frenar caminantes
   scheduleAction(primaryTank, 0, 3, minAtkTick + 360)
 
-  // Carril 2 (inferior): Melee caminante / Squash + Atacante Mixto + Wall-nut
+  // Carril 1: Cuarto Girasol (Centro Columna 1) para potenciar la economía a gran escala
+  if (sunSlot >= 0) scheduleAction(sunSlot, 1, 1, minAtkTick + 720)
+
+  // Carril 2 (inferior): Melee caminante / Choque
   const meleeCost = primaryMelee >= 0 ? getPlantCost(deck[primaryMelee]?.plantId, deck[primaryMelee]?.statRolls ?? undefined) : 0
-  const minMeleeTick = meleeCost >= 150 ? minAtkTick + 1460 : minAtkTick + 540
+  const minMeleeTick = meleeCost >= 150 ? minAtkTick + 1500 : minAtkTick + 700
   if (primaryMelee >= 0) scheduleAction(primaryMelee, 2, 4, minMeleeTick)
-  scheduleAction(secondaryAtk, 2, 1, minMeleeTick + 730)
+
+  // Carril 2: Atacante Mixto + Tanque
+  scheduleAction(secondaryAtk, 2, 2, minMeleeTick + 730)
   scheduleAction(secondaryTank, 2, 3, minMeleeTick + 1100)
 
-  // Carril 1 (central): Atacante Mixto + Wall-nut
-  scheduleAction(primaryAtk, 1, 1, minMeleeTick + 1470)
+  // Carril 1 (central): Atacante Mixto + Tanque central
+  scheduleAction(primaryAtk, 1, 2, minMeleeTick + 1470)
   scheduleAction(primaryTank, 1, 3, minMeleeTick + 1840)
 
-  // ── 3. SPAM DE SQUASH, OLEADAS OFENSIVAS MULTICARRIL Y REFUERZOS (60 - 180s) ──
+  // ── 3. SPAM DE SQUASH, OLEADAS OFENSIVAS MULTICARRIL Y REFUERZOS (45 - 180s) ──
   for (let wave = 0; wave < 6; wave++) {
     const lane = wave % 3
-    // Expansión económica progresiva a 3-5 girasoles
+    // Expansión económica al 5to girasol
     if (sunSlot >= 0 && wave === 0) {
-      scheduleAction(sunSlot, 2, 0, currentTick + 45) // Sunflower 3
-    }
-    if (sunSlot >= 0 && wave === 1) {
-      scheduleAction(sunSlot, 1, 1, currentTick + 45) // Sunflower 4
+      scheduleAction(sunSlot, 2, 1, currentTick + 45) // Sunflower 5
     }
     // Spam activo de Melee / Squash ('garlic' / 'ghostpepper' / 'bonkchoy')
     if (primaryMelee >= 0 && wave % 2 === 0) {
@@ -159,9 +172,14 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
       const sp = wave % 4 === 1 ? primarySpell : secondarySpell
       scheduleAction(sp, lane, 5, currentTick + 45)
     }
-    // Refuerzo de Atacantes Mixtos y Muros
-    scheduleAction(wave % 2 === 0 ? primaryAtk : secondaryAtk, lane, 2, currentTick + 45)
-    scheduleAction(wave % 2 === 0 ? primaryTank : secondaryTank, (lane + 2) % 3, 3, currentTick + 45)
+    // Refuerzo de Atacante en Carril 0 (el único con columna 2 libre, ya que los carriles 1 y 2 tienen los girasoles 4 y 5 en col 1)
+    if (lane === 0 && wave === 0) {
+      scheduleAction(secondaryAtk, 0, 2, currentTick + 45)
+    }
+    // Refuerzo de Tanque (1 por carril en las primeras 3 oleadas para no sobreescribir muros vivos)
+    if (wave < 3) {
+      scheduleAction(wave % 2 === 0 ? primaryTank : secondaryTank, (lane + 2) % 3, 3, currentTick + 45)
+    }
   }
 
   return plan.sort((a, b) => a.issuedTick - b.issuedTick)

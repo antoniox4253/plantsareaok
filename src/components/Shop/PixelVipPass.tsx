@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import { BATTLE_PASS_LEVELS, type PassLevel } from '../../utils/battlePassManager'
 import PixelHeaderBadges from './PixelHeaderBadges'
+import PixelShopTabs from './PixelShopTabs'
 import './PixelVipPass.css'
 
 export interface PixelVipPassHotspot {
@@ -16,12 +17,6 @@ export interface PixelVipPassHotspot {
 
 const VIP_HOTSPOTS: PixelVipPassHotspot[] = [
   { id: 'menu', label: 'Menú', x: 60, y: 24, w: 156, h: 62, type: 'button' },
-  { id: 'tab_sobres', label: 'Sobres de Semillas', x: 244, y: 100, w: 280, h: 54, type: 'tab' },
-  { id: 'tab_vip', label: 'Pase VIP', x: 541, y: 99, w: 185, h: 55, type: 'tab' },
-  { id: 'tab_oro_emotes', label: 'Oro & Emotes', x: 746, y: 100, w: 219, h: 54, type: 'tab' },
-  { id: 'tab_energias', label: 'Energías', x: 982, y: 99, w: 197, h: 55, type: 'tab' },
-  { id: 'tab_comercio', label: 'Comercio P2P', x: 1200, y: 98, w: 208, h: 56, type: 'tab' },
-  { id: 'tab_stream', label: 'Cuentas Stream VIP', x: 1420, y: 98, w: 190, h: 56, type: 'tab' },
 ]
 
 export interface PixelVipPassProps {
@@ -203,6 +198,16 @@ export default function PixelVipPass({
           if (onSelectTab) onSelectTab(tab)
         }}
         onToast={(msg) => setToastMessage(msg)}
+      />
+
+      {/* Barra de Navegación de 6 Pestañas Unificada */}
+      <PixelShopTabs
+        activeTab="pass"
+        onSelectTab={onSelectTab}
+        onOpenStreaming={onOpenStreaming}
+        onToast={(msg) => setToastMessage(msg)}
+        baseWidth={1672}
+        baseHeight={941}
       />
 
       {/* Insignia Dinámica de Nivel del Usuario (Cubre 'NIVEL 0' pintado en el fondo) */}

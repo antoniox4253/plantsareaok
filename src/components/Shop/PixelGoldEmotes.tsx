@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import PixelHeaderBadges from './PixelHeaderBadges'
+import PixelShopTabs from './PixelShopTabs'
 import {
   EMOTES_CATALOG,
   getUnlockedEmoteIds,
@@ -253,81 +254,14 @@ export default function PixelGoldEmotes({
           aria-label="Volver a la Tienda Principal"
         />
 
-        {/* TABS DE NAVEGACIÓN */}
-        {/* Tab Sobres de Semillas */}
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 87, y: 116, w: 325, h: 63 })}
-          onClick={() => {
-            soundManager.playSound('plantation', 0.6)
-            onSelectTab?.('packs')
-          }}
-          title="Ir a Sobres de Semillas"
-          aria-label="Ir a Sobres de Semillas"
-        />
-
-        {/* Tab Pase VIP */}
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 432, y: 116, w: 164, h: 63 })}
-          onClick={() => {
-            soundManager.playSound('plantation', 0.6)
-            onSelectTab?.('pass')
-          }}
-          title="Ir a Pase VIP"
-          aria-label="Ir a Pase VIP"
-        />
-
-        {/* Tab Oro & Emotes (Actual) */}
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 614, y: 116, w: 250, h: 63 })}
-          onClick={() => soundManager.playSound('plantation', 0.4)}
-          title="Pestaña Actual: Oro & Emotes"
-          aria-label="Pestaña Actual: Oro & Emotes"
-        />
-
-        {/* Tab Energías */}
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 888, y: 116, w: 189, h: 63 })}
-          onClick={() => {
-            soundManager.playSound('plantation', 0.6)
-            onSelectTab?.('energy')
-          }}
-          title="Ir a Energías"
-          aria-label="Ir a Energías"
-        />
-
-        {/* Tab Comercio */}
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 1093, y: 116, w: 196, h: 63 })}
-          onClick={() => {
-            soundManager.playSound('plantation', 0.6)
-            onSelectTab?.('market')
-          }}
-          title="Ir a Comercio"
-          aria-label="Ir a Comercio"
-        />
-
-        {/* Tab Cuentas Stream */}
-        <button
-          type="button"
-          className={`pixel-gold-hotspot ${debugHotspots ? 'debug' : ''}`}
-          style={calcStyle({ x: 1307, y: 116, w: 285, h: 63 })}
-          onClick={() => {
-            soundManager.playSound('plantation', 0.6)
-            if (onOpenStreaming) onOpenStreaming()
-            else onSelectTab?.('market')
-          }}
-          title="Ver Cuentas Streaming"
-          aria-label="Ver Cuentas Streaming"
+        {/* Barra de Navegación de 6 Pestañas Unificada */}
+        <PixelShopTabs
+          activeTab="gold"
+          onSelectTab={onSelectTab}
+          onOpenStreaming={onOpenStreaming}
+          onToast={(msg) => setToastMessage(msg)}
+          baseWidth={BASE_WIDTH}
+          baseHeight={BASE_HEIGHT}
         />
 
         {/* =========================================================================

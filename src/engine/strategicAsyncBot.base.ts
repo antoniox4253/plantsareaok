@@ -579,7 +579,7 @@ export const STRATEGIC_PROFILES: Record<StrategicStyle, StrategicProfile> = {
     baseReserveSun: 35, // Umbral de reserva óptimo
     irregularity: 0.38,
     badPlayMargin: 0.15, // 0.15 para ELO 1000
-    targetProducers: 3,
+    targetProducers: 4,
     maxProducers: 5,
     basePersonality: 'AGGRESSIVE', // Personalidad BALANCED_AGGRESSIVE
   },
@@ -621,7 +621,7 @@ export const STRATEGIC_PROFILES: Record<StrategicStyle, StrategicProfile> = {
     baseReserveSun: 50,
     irregularity: 0.45,
     badPlayMargin: 0.08,
-    targetProducers: 4,
+    targetProducers: 5,
     maxProducers: 6,
     basePersonality: 'BALANCED',
   },
@@ -1958,10 +1958,11 @@ export function calcularUtilidadPlanta(params: {
     const totalProducers = perception.totalOwnProducers
     const deficitProducers = profile.targetProducers - totalProducers
 
-    // CASO CRÍTICO: El bot se quedó sin girasoles (0) o con solo 1
+    // CASO CRÍTICO: El bot se quedó sin girasoles (0) o con solo 1 o 2
     // Es la base del ecosistema para poder generar sol, atacar y defenderse
     const isStarved = totalProducers === 0
     const isCritical = totalProducers < 2
+    const isBelowBase = totalProducers < 3
 
     if (deficitProducers > 0) {
       let ecoBase = deficitProducers * 45 + 35
@@ -1969,6 +1970,8 @@ export function calcularUtilidadPlanta(params: {
         ecoBase += 85 // Prioridad máxima de emergencia para volver a plantar
       } else if (isCritical) {
         ecoBase += 50 // Prioridad alta para recuperar economía
+      } else if (isBelowBase) {
+        ecoBase += 35 // Impulso continuo para asegurar siempre al menos 3 girasoles
       }
       economyScore = ecoBase * Math.max(0.8, profile.economy)
     } else if (totalProducers < profile.maxProducers) {

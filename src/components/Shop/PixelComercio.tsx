@@ -4,6 +4,7 @@ import type { PlantCardInstance, PlantId, PlantStatKey } from '../../types/game'
 import type { FarmingInventory } from '../../utils/pvpRewardManager'
 import Marketplace from '../Marketplace/Marketplace'
 import PixelHeaderBadges from './PixelHeaderBadges'
+import PixelShopTabs from './PixelShopTabs'
 import './PixelComercio.css'
 
 export interface Hotspot {
@@ -25,12 +26,6 @@ const COMERCIO_HOTSPOTS: Hotspot[] = [
   { id: 'counter_gemas', label: 'Contador Gemas', type: 'counter', x: 1120, y: 31, w: 220, h: 57 },
   { id: 'counter_energia', label: 'Contador Energía', type: 'counter', x: 1365, y: 31, w: 180, h: 57 },
   { id: 'sound', label: 'Sonido', type: 'button', x: 1572, y: 31, w: 60, h: 58 },
-  { id: 'tab_sobres', label: 'Tab Sobres de Semillas', type: 'tab', x: 52, y: 117, w: 289, h: 63 },
-  { id: 'tab_vip', label: 'Tab Pase VIP', type: 'tab', x: 348, y: 117, w: 209, h: 63 },
-  { id: 'tab_oro_emotes', label: 'Tab Oro & Emotes', type: 'tab', x: 564, y: 117, w: 262, h: 63 },
-  { id: 'tab_energias', label: 'Tab Energías', type: 'tab', x: 834, y: 117, w: 211, h: 63 },
-  { id: 'tab_comercio', label: 'Tab Comercio', type: 'tab', x: 1058, y: 117, w: 235, h: 63 },
-  { id: 'tab_stream', label: 'Tab Cuentas Stream', type: 'tab', x: 1305, y: 117, w: 286, h: 63 },
   { id: 'hero_mercado', label: 'Encabezado Mercado P2P', type: 'section', x: 77, y: 195, w: 486, h: 129 },
   { id: 'toolbar_compralibre_btn', label: 'Pestaña Compra Libre', type: 'button', x: 645, y: 242, w: 211, h: 82 },
   { id: 'toolbar_misventas', label: 'Pestaña Mis Ventas', type: 'button', x: 899, y: 241, w: 201, h: 84 },
@@ -301,6 +296,16 @@ export default function PixelComercio({
           baseWidth={BASE_WIDTH}
           baseHeight={BASE_HEIGHT}
           onToast={(msg) => setToastMessage(msg)}
+        />
+
+        {/* Barra de Navegación de 6 Pestañas Unificada */}
+        <PixelShopTabs
+          activeTab="market"
+          onSelectTab={onSelectTab}
+          onOpenStreaming={onOpenStreaming}
+          onToast={(msg) => setToastMessage(msg)}
+          baseWidth={BASE_WIDTH}
+          baseHeight={BASE_HEIGHT}
         />
 
         {/* Hotspots interactivos mapeados */}

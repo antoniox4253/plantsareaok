@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import PixelHeaderBadges from './PixelHeaderBadges'
+import PixelShopTabs from './PixelShopTabs'
 import './PixelEnergy.css'
 
 export interface Hotspot {
@@ -18,18 +19,12 @@ const BASE_HEIGHT = 941
 
 const ENERGY_HOTSPOTS: Hotspot[] = [
   { id: 'menu', label: 'Menú', type: 'button', x: 31, y: 31, w: 132, h: 63 },
-  { id: 'counter_oro', label: 'Contador Oro', type: 'counter', x: 915, y: 31, w: 180, h: 58 },
+  { id: 'counter_oro', label: 'Contador Oro', type: 'counter', x: 870, y: 31, w: 235, h: 58 },
   { id: 'counter_gemas', label: 'Contador Gemas', type: 'counter', x: 1120, y: 31, w: 220, h: 58 },
   { id: 'counter_energia', label: 'Contador Energía', type: 'counter', x: 1365, y: 31, w: 180, h: 58 },
   { id: 'sound', label: 'Sonido', type: 'button', x: 1572, y: 31, w: 60, h: 58 },
-  { id: 'tab_sobres', label: 'Tab Sobres de Semillas', type: 'tab', x: 50, y: 113, w: 292, h: 65 },
-  { id: 'tab_vip', label: 'Tab Pase VIP', type: 'tab', x: 350, y: 113, w: 211, h: 65 },
-  { id: 'tab_oro_emotes', label: 'Tab Oro & Emotes', type: 'tab', x: 569, y: 113, w: 250, h: 65 },
-  { id: 'tab_energias', label: 'Tab Energías', type: 'tab', x: 829, y: 113, w: 250, h: 65 },
-  { id: 'tab_comercio', label: 'Tab Comercio', type: 'tab', x: 1091, y: 113, w: 213, h: 65 },
-  { id: 'tab_stream', label: 'Tab Cuentas Stream', type: 'tab', x: 1314, y: 113, w: 283, h: 65 },
   { id: 'hero_title', label: 'Encabezado Recarga tus Energías', type: 'section', x: 473, y: 210, w: 724, h: 171 },
-  { id: 'energy_status', label: 'Tu energía actual', type: 'status', x: 1270, y: 249, w: 281, h: 133 },
+  { id: 'energy_status', label: 'Tu energía actual', type: 'status', x: 1300, y: 249, w: 281, h: 133 },
   { id: 'lightning_left', label: 'Rayo decorativo izquierdo', type: 'decor', x: 447, y: 234, w: 127, h: 142 },
   { id: 'lightning_right', label: 'Rayo decorativo derecho', type: 'decor', x: 1073, y: 233, w: 126, h: 141 },
   { id: 'pack_5', label: 'Pack 5 energías', type: 'card', x: 189, y: 409, w: 397, h: 443 },
@@ -356,7 +351,7 @@ export default function PixelEnergy({
           playerEnergy={localEnergy}
           maxPlayerEnergy={maxPlayerEnergy}
           userElo={userElo}
-          goldCoords={{ x: 915, y: 31, w: 180, h: 58 }}
+          goldCoords={{ x: 870, y: 31, w: 235, h: 58 }}
           gemsCoords={{ x: 1120, y: 31, w: 220, h: 58 }}
           energyCoords={{ x: 1365, y: 31, w: 180, h: 58 }}
           soundCoords={{ x: 1572, y: 31, w: 60, h: 58 }}
@@ -364,6 +359,16 @@ export default function PixelEnergy({
           baseWidth={BASE_WIDTH}
           baseHeight={BASE_HEIGHT}
           onToast={(msg) => setToastMessage(msg)}
+        />
+
+        {/* Barra de Navegación de 6 Pestañas Unificada */}
+        <PixelShopTabs
+          activeTab="energy"
+          onSelectTab={onSelectTab}
+          onOpenStreaming={onOpenStreaming}
+          onToast={(msg) => setToastMessage(msg)}
+          baseWidth={BASE_WIDTH}
+          baseHeight={BASE_HEIGHT}
         />
 
         {/* Hotspots interactivos */}
@@ -384,7 +389,7 @@ export default function PixelEnergy({
         {/* OVERLAY DINÁMICO: Tarjeta de Energía Actual (cubre y actualiza 20/20 estático con datos reales en vivo) */}
         <div
           className="pixel-energy-live-status-card"
-          style={calcStyle({ x: 1270, y: 249, w: 281, h: 133 })}
+          style={calcStyle({ x: 1300, y: 249, w: 281, h: 133 })}
           title={`Energía actual: ${localEnergy}/${maxPlayerEnergy}⚡`}
         >
           <div className="pixel-energy-live-status-inner">
@@ -402,7 +407,7 @@ export default function PixelEnergy({
                 {isEnergyFull ? (
                   <span className="pixel-energy-status-tag pixel-energy-status-tag--full">⚡ AL MÁXIMO</span>
                 ) : (
-                  <span className="pixel-energy-status-tag pixel-energy-status-tag--ready">🔄 RECARGA DISPONIBLE</span>
+                  <span className="pixel-energy-status-tag pixel-energy-status-tag--ready">🔄 DISPONIBLE</span>
                 )}
               </div>
             </div>
