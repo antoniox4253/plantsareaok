@@ -126,6 +126,11 @@
   color: #4ade80;
 }
 
+.pixel-header-badge__lbl--energy-emote {
+  font-size: clamp(12px, 1.1vw, 16px);
+  filter: drop-shadow(0 0 6px #38bdf8);
+}
+
 /* 🔊 / 🔇 Botón de Sonido Interactivo */
 .pixel-header-sound-btn {
   position: absolute;

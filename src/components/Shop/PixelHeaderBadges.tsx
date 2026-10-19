@@ -24,6 +24,7 @@ export interface PixelHeaderBadgesProps {
   baseHeight?: number
   onSelectTab?: (tab: 'gold' | 'energy') => void
   onToast?: (message: string) => void
+  energyLabel?: string
 }
 
 export default function PixelHeaderBadges({
@@ -40,6 +41,7 @@ export default function PixelHeaderBadges({
   baseHeight = 941,
   onSelectTab: _onSelectTab,
   onToast,
+  energyLabel,
 }: PixelHeaderBadgesProps) {
   const [isMuted, setIsMuted] = useState<boolean>(() => soundManager.isMuted())
 
@@ -107,9 +109,15 @@ export default function PixelHeaderBadges({
         <span className="pixel-header-badge__val pixel-header-badge__val--energy">
           {energyDisplay}
         </span>
-        <span className="pixel-header-badge__lbl pixel-header-badge__lbl--energy">
-          Energía
-        </span>
+        {energyLabel !== undefined ? (
+          <span className="pixel-header-badge__lbl pixel-header-badge__lbl--energy pixel-header-badge__lbl--energy-emote">
+            {energyLabel}
+          </span>
+        ) : (
+          <span className="pixel-header-badge__lbl pixel-header-badge__lbl--energy">
+            Energía
+          </span>
+        )}
       </div>
 
       {/* 🔊 / 🔇 Botón de Sonido en vivo */}

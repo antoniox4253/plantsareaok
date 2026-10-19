@@ -18,10 +18,10 @@ const BASE_HEIGHT = 941
 
 const ENERGY_HOTSPOTS: Hotspot[] = [
   { id: 'menu', label: 'Menú', type: 'button', x: 31, y: 31, w: 132, h: 63 },
-  { id: 'counter_oro', label: 'Contador Oro', type: 'counter', x: 891, y: 31, w: 197, h: 58 },
-  { id: 'counter_gemas', label: 'Contador Gemas', type: 'counter', x: 1086, y: 31, w: 244, h: 58 },
-  { id: 'counter_energia', label: 'Contador Energía', type: 'counter', x: 1335, y: 31, w: 176, h: 58 },
-  { id: 'sound', label: 'Sonido', type: 'button', x: 1529, y: 31, w: 57, h: 58 },
+  { id: 'counter_oro', label: 'Contador Oro', type: 'counter', x: 915, y: 31, w: 180, h: 58 },
+  { id: 'counter_gemas', label: 'Contador Gemas', type: 'counter', x: 1120, y: 31, w: 220, h: 58 },
+  { id: 'counter_energia', label: 'Contador Energía', type: 'counter', x: 1365, y: 31, w: 180, h: 58 },
+  { id: 'sound', label: 'Sonido', type: 'button', x: 1572, y: 31, w: 60, h: 58 },
   { id: 'tab_sobres', label: 'Tab Sobres de Semillas', type: 'tab', x: 50, y: 113, w: 292, h: 65 },
   { id: 'tab_vip', label: 'Tab Pase VIP', type: 'tab', x: 350, y: 113, w: 211, h: 65 },
   { id: 'tab_oro_emotes', label: 'Tab Oro & Emotes', type: 'tab', x: 569, y: 113, w: 250, h: 65 },
@@ -356,10 +356,11 @@ export default function PixelEnergy({
           playerEnergy={localEnergy}
           maxPlayerEnergy={maxPlayerEnergy}
           userElo={userElo}
-          goldCoords={{ x: 891, y: 31, w: 197, h: 58 }}
-          gemsCoords={{ x: 1086, y: 31, w: 244, h: 58 }}
-          energyCoords={{ x: 1335, y: 31, w: 176, h: 58 }}
-          soundCoords={{ x: 1529, y: 31, w: 57, h: 58 }}
+          goldCoords={{ x: 915, y: 31, w: 180, h: 58 }}
+          gemsCoords={{ x: 1120, y: 31, w: 220, h: 58 }}
+          energyCoords={{ x: 1365, y: 31, w: 180, h: 58 }}
+          soundCoords={{ x: 1572, y: 31, w: 60, h: 58 }}
+          energyLabel="⚡"
           baseWidth={BASE_WIDTH}
           baseHeight={BASE_HEIGHT}
           onToast={(msg) => setToastMessage(msg)}

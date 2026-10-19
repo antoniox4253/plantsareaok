@@ -25,6 +25,7 @@ import PixelSeedPacks from './PixelSeedPacks'
 import PixelVipPass from './PixelVipPass'
 import PixelGoldEmotes from './PixelGoldEmotes'
 import PixelEnergy from './PixelEnergy'
+import PixelComercio from './PixelComercio'
 import './Shop.css'
 
 const commonSeedImg = '/game-assets/greenfoot/seed_pack_common_whitebg.webp'
@@ -230,7 +231,7 @@ export default function Shop({
   onReceivePlant,
   onServerChange,
 }: ShopProps) {
-  const [viewMode, setViewMode] = useState<'pixel_home' | 'pixel_packs' | 'pixel_pass' | 'pixel_gold' | 'pixel_energy' | 'classic'>('pixel_home')
+  const [viewMode, setViewMode] = useState<'pixel_home' | 'pixel_packs' | 'pixel_pass' | 'pixel_gold' | 'pixel_energy' | 'pixel_market' | 'classic'>('pixel_home')
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [activeTab, setActiveTab] = useState<'packs' | 'pass' | 'gold' | 'energy' | 'market'>(initialTab)
 
@@ -245,6 +246,8 @@ export default function Shop({
         setViewMode('pixel_gold')
       } else if (initialTab === 'energy') {
         setViewMode('pixel_energy')
+      } else if (initialTab === 'market') {
+        setViewMode('pixel_market')
       }
     }
   }, [initialTab])
@@ -672,6 +675,8 @@ export default function Shop({
               setViewMode('pixel_gold')
             } else if (tab === 'energy') {
               setViewMode('pixel_energy')
+            } else if (tab === 'market') {
+              setViewMode('pixel_market')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -702,6 +707,8 @@ export default function Shop({
               setViewMode('pixel_gold')
             } else if (tab === 'energy') {
               setViewMode('pixel_energy')
+            } else if (tab === 'market') {
+              setViewMode('pixel_market')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -740,6 +747,8 @@ export default function Shop({
               setViewMode('pixel_gold')
             } else if (tab === 'energy') {
               setViewMode('pixel_energy')
+            } else if (tab === 'market') {
+              setViewMode('pixel_market')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -791,6 +800,8 @@ export default function Shop({
               setViewMode('pixel_gold')
             } else if (tab === 'energy') {
               setViewMode('pixel_energy')
+            } else if (tab === 'market') {
+              setViewMode('pixel_market')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -833,6 +844,8 @@ export default function Shop({
               setViewMode('pixel_gold')
             } else if (tab === 'energy') {
               setViewMode('pixel_energy')
+            } else if (tab === 'market') {
+              setViewMode('pixel_market')
             } else {
               setActiveTab(tab)
               setViewMode('classic')
@@ -849,6 +862,57 @@ export default function Shop({
           playerEnergy={playerEnergy}
           maxPlayerEnergy={maxPlayerEnergy}
           userElo={userElo}
+          onRefreshBalance={onServerChange}
+        />
+        {renderSharedModals()}
+      </div>
+    )
+  }
+
+  if (viewMode === 'pixel_market') {
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <PixelComercio
+          onBackToHome={() => setViewMode('pixel_home')}
+          onOpenStreaming={onOpenStreaming}
+          onToggleClassic={() => {
+            setActiveTab('market')
+            setViewMode('classic')
+          }}
+          onSelectTab={(tab: 'packs' | 'pass' | 'gold' | 'energy' | 'market') => {
+            if (tab === 'packs') {
+              setViewMode('pixel_packs')
+            } else if (tab === 'pass') {
+              setViewMode('pixel_pass')
+            } else if (tab === 'gold') {
+              setViewMode('pixel_gold')
+            } else if (tab === 'energy') {
+              setViewMode('pixel_energy')
+            } else if (tab === 'market') {
+              setViewMode('pixel_market')
+            } else {
+              setActiveTab(tab)
+              setViewMode('classic')
+            }
+          }}
+          userGold={userGold}
+          userTokens={userTokens}
+          playerEnergy={playerEnergy}
+          maxPlayerEnergy={maxPlayerEnergy}
+          userElo={userElo}
+          hasVipPass={Boolean(hasVipPass)}
+          farmingItems={farmingItems}
+          plantCopies={plantCopies}
+          plantLevels={plantLevels}
+          plantStatRolls={plantStatRolls}
+          plantInstances={plantInstances}
+          unlockedPlants={unlockedPlants}
+          activeDeck={activeDeck}
+          activeDeckInstances={activeDeckInstances}
+          onDeductTokens={onDeductTokens}
+          onDonatePlant={onDonatePlant}
+          onReceivePlant={onReceivePlant}
+          onBuyVipPass={handleBuyVipFromShop}
           onRefreshBalance={onServerChange}
         />
         {renderSharedModals()}
@@ -873,6 +937,7 @@ export default function Shop({
               else if (activeTab === 'packs') setViewMode('pixel_packs')
               else if (activeTab === 'gold') setViewMode('pixel_gold')
               else if (activeTab === 'energy') setViewMode('pixel_energy')
+              else if (activeTab === 'market') setViewMode('pixel_market')
               else setViewMode('pixel_home')
             }}
             title="Ver nueva tienda Pixel-Perfect"

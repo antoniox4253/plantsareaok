@@ -70,6 +70,8 @@ interface MarketplaceProps {
   onServerChange?: () => void
   onBuyVipPass: () => Promise<{ success: boolean; error?: string }>
   onBackToMenu: () => void
+  initialTab?: 'browse' | 'sell' | 'my_sales' | 'transactions'
+  initialCategory?: 'plants' | 'farming' | 'gold' | null
 }
 
 /**
@@ -165,9 +167,23 @@ export default function Marketplace({
   onServerChange,
   onBuyVipPass,
   onBackToMenu,
+  initialTab = 'browse',
+  initialCategory = null,
 }: MarketplaceProps) {
-  const [activeTab, setActiveTab] = useState<'browse' | 'sell' | 'my_sales' | 'transactions'>('browse')
-  const [selectedCategory, setSelectedCategory] = useState<'plants' | 'farming' | 'gold' | null>(null)
+  const [activeTab, setActiveTab] = useState<'browse' | 'sell' | 'my_sales' | 'transactions'>(initialTab)
+  const [selectedCategory, setSelectedCategory] = useState<'plants' | 'farming' | 'gold' | null>(initialCategory)
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab)
+    }
+  }, [initialTab])
+
+  useEffect(() => {
+    if (initialCategory !== undefined) {
+      setSelectedCategory(initialCategory)
+    }
+  }, [initialCategory])
   const [sellCategory, setSellCategory] = useState<'plants' | 'farming' | 'gold'>('plants')
   const [goldSellQty, setGoldSellQty] = useState<number>(1000)
   const [goldSellPriceGems, setGoldSellPriceGems] = useState<number>(10)
