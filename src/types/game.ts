@@ -41,6 +41,7 @@ export interface PlantConfig {
   damage?: number
   attackSpeedMs?: number
   moveSpeed?: number // For walking melee plants (% field width per sec)
+  productionBonus?: number // For economic producer plants (+gold per cycle)
   description: string
 }
 
@@ -49,7 +50,7 @@ export interface PlantConfig {
  * gameConstants porque PlantEntity la necesita, y gameConstants ya importa de
  * este fichero: al revés habría un ciclo.
  */
-export type PlantStatKey = 'hp' | 'damage' | 'attackSpeed' | 'moveSpeed' | 'cooldown' | 'duration'
+export type PlantStatKey = 'hp' | 'damage' | 'attackSpeed' | 'moveSpeed' | 'cooldown' | 'duration' | 'production'
 
 export interface PlantEntity {
   id: string

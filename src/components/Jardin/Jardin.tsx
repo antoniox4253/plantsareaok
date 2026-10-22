@@ -137,7 +137,7 @@ export const PLANT_ELIGIBLE_STATS_LABELS: Record<string, string[]> = {
   gatlingpea: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
   ghostpepper: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '🏃 Vel. Movimiento +15%'],
   guacodile: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '🏃 Vel. Movimiento +15%'],
-  marigold: ['❤️ Salud +15%', '⏱️ Recarga -15%'],
+  marigold: ['❤️ Salud +15%', '⏱️ Recarga -15%', '🪙 Producción +1 Oro'],
   pickledpepper: ['⚔️ Daño +150', '⏱️ Recarga -15%'],
   snowpea: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '⚡ Vel. Ataque +15%'],
   toadstool: ['❤️ Salud +15%', '⏱️ Recarga -15%', '⚔️ Daño +15%', '🏃 Vel. Movimiento +15%'],

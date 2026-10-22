@@ -473,21 +473,24 @@ describe('Mecánicas especiales Temporada 2 (Explode-o-nut, Pickled Pepper, Toad
       expect(conDmg.damage).toBe(126)
     })
 
-    it('Margarita (marigold) escala vida o recarga de forma independiente', () => {
+    it('Margarita (marigold) escala vida, recarga o producción de forma independiente', () => {
       const base = getScaledPlantConfig('marigold', [])
-      expect(base.cost).toBe(50)
+      expect(base.cost).toBe(150)
       expect(base.maxHp).toBe(300)
       expect(base.cooldownMs).toBe(6000)
 
       const conCd = getScaledPlantConfig('marigold', ['cooldown'])
       expect(conCd.cooldownMs).toBe(5100)
       expect(conCd.maxHp).toBe(300)
+
+      const conProd = getScaledPlantConfig('marigold', ['production'])
+      expect(conProd.productionBonus).toBe(1)
     })
 
     it('getEligibleStatsForPlant retorna los atributos autoritativos exactos para cada planta de Temporada 2', () => {
       expect(getEligibleStatsForPlant('explodeonut' as PlantId)).toEqual(['hp', 'cooldown', 'damage', 'moveSpeed'])
       expect(getEligibleStatsForPlant('toadstool' as PlantId)).toEqual(['hp', 'cooldown', 'damage', 'moveSpeed'])
-      expect(getEligibleStatsForPlant('marigold' as PlantId)).toEqual(['hp', 'cooldown'])
+      expect(getEligibleStatsForPlant('marigold' as PlantId)).toEqual(['hp', 'cooldown', 'production'])
       expect(getEligibleStatsForPlant('pickledpepper' as PlantId)).toEqual(['damage', 'cooldown'])
       expect(getEligibleStatsForPlant('torchwood' as PlantId)).toEqual(['hp', 'cooldown'])
       expect(getEligibleStatsForPlant('gatlingpea' as PlantId)).toEqual(['hp', 'cooldown', 'damage', 'attackSpeed'])

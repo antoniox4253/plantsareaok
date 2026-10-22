@@ -70,6 +70,7 @@ export const ESTADISTICAS_VALIDAS = new Set<PlantStatKey>([
   'moveSpeed',
   'cooldown',
   'duration',
+  'production',
 ])
 
 export function esPlantId(x: string | null | undefined): x is PlantId {

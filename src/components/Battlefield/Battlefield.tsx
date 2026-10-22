@@ -1542,8 +1542,18 @@ export default function Battlefield({
     if (totalGold > 0) {
       void supabaseService.creditMarigoldGold(totalGold).then((res) => {
         if (res && res.success) {
+          if (res.goldCredited !== undefined) {
+            stats.goldEarned = res.goldCredited
+          }
           if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+            window.dispatchEvent(
+              new CustomEvent('refresh_user_balance', {
+                detail: {
+                  newGoldBalance: res.newGoldBalance,
+                  goldCredited: res.goldCredited,
+                },
+              })
+            )
           }
         }
       }).catch((err) => {
@@ -1551,6 +1561,14 @@ export default function Battlefield({
       })
     }
   }, [suns, stats])
+
+  // Resetea las banderas de liquidación cada vez que comienza o recomienza una batalla
+  useEffect(() => {
+    if (gameStatus === 'playing') {
+      hasHandledEndRef.current = false
+      hasCreditedMarigoldGoldRef.current = false
+    }
+  }, [gameStatus])
 
   useEffect(() => {
     if (hasHandledEndRef.current) return
@@ -2321,6 +2339,8 @@ export default function Battlefield({
             const nextSeed = Math.floor(Math.random() * 1000000)
             const adsBotStats = getBotStatsForLevel(nextRun.level)
             const rivalBonusHp = Math.max(0, adsBotStats.botBaseHp - 1000)
+            hasHandledEndRef.current = false
+            hasCreditedMarigoldGoldRef.current = false
             startGame(
               nextSeed,
               false,
@@ -2389,6 +2409,8 @@ export default function Battlefield({
 
     // Sólo entrenamiento/local puede reiniciar en el sitio.
     trackGameStart({ matchMode })
+    hasHandledEndRef.current = false
+    hasCreditedMarigoldGoldRef.current = false
     startGame(
       Math.floor(Math.random() * 1000000),
       false,

@@ -39,6 +39,7 @@ const ESTADISTICAS_VALIDAS = new Set<PlantStatKey>([
   'moveSpeed',
   'cooldown',
   'duration',
+  'production',
 ])
 
 export function resolverEngineVersion(versionRaw: unknown): EngineVersion {

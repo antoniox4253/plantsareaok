@@ -887,15 +887,23 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
     }
 
     // ── MARGARITA (MARIGOLD) ──────────────────────────────────────────────────
-    // Genera oro (1 o 2 oros aleatorios) cada 15 segundos.
+    // Genera oro (1 o 2 oros aleatorios) cada 15 segundos + bonus de producción.
     if (planta.plantId === 'marigold') {
       const cada = 15000
 
       if (state.tick - planta.lastActionTime > msToTicks(cada)) {
         planta.lastActionTime = state.tick
 
-        // 1 o 2 oros aleatorios
-        const oroDrop = 1 + Math.floor(nextFloat(state.rng) * 2)
+        // Bonus de producción por tiradas de 'production' (+1 Oro por cada tirada)
+        let bonusProduccion = 0
+        if (planta.statRolls && planta.statRolls.length > 0) {
+          bonusProduccion = planta.statRolls.filter((s) => s === 'production').length
+        } else if (planta.level && planta.level > 1) {
+          bonusProduccion = planta.level - 1
+        }
+
+        // 1 o 2 oros aleatorios base + bonus de producción
+        const oroDrop = 1 + Math.floor(nextFloat(state.rng) * 2) + bonusProduccion
         const contador = state.entityCounter++
         const variacionX = nextFloat(state.rng)
 

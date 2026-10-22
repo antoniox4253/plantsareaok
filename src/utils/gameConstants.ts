@@ -302,7 +302,7 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
   marigold: {
     id: 'marigold',
     name: 'Margarita',
-    cost: 50,
+    cost: 150,
     cooldownMs: 6000,
     maxHp: 300,
     category: 'producer',
@@ -310,7 +310,7 @@ export const PLANT_CONFIGS: Record<PlantId, PlantConfig> = {
     packetActive: '/game-assets/plants/marigold.webp',
     packetDisabled: '/game-assets/plants/marigold.webp',
     sprite: '/game-assets/plants/marigold.webp',
-    description: 'Planta económica de soporte. Otorga monedas de 1 a 2 de Oro con imagen de moneda periódicamente cada 15 segundos durante el combate.',
+    description: 'Planta económica de soporte. Otorga monedas de 1 a 2 de Oro periódicamente cada 15 segundos (+1 Oro adicional por cada mejora de producción).',
   },
   pickledpepper: {
     id: 'pickledpepper',
@@ -503,7 +503,7 @@ export const FORTRESS_SUN_COSTS: Record<PlantId, number> = {
   gatlingpea: 275,
   ghostpepper: 75,
   guacodile: 125,
-  marigold: 50,
+  marigold: 150,
   pickledpepper: 125,
   snowpea: 150,
   toadstool: 150,
@@ -529,6 +529,7 @@ export const STAT_LABELS: Record<PlantStatKey, { label: string; icon: string; su
   moveSpeed: { label: 'Velocidad de Movimiento', icon: '👟', suffix: '+15% Movimiento', color: '#60a5fa' },
   cooldown: { label: 'Recarga de Carta', icon: '⏳', suffix: '-15% Recarga', color: '#c084fc' },
   duration: { label: 'Duración de Efecto', icon: '❄️', suffix: '+2s Duración', color: '#38bdf8' },
+  production: { label: 'Producción de Oro', icon: '🪙', suffix: '+1 Oro', color: '#facc15' },
 }
 
 export function getEligibleStatsForPlant(plantId: PlantId): PlantStatKey[] {
@@ -541,8 +542,11 @@ export function getEligibleStatsForPlant(plantId: PlantId): PlantStatKey[] {
   if (plantId === 'kernelpult') {
     return ['hp', 'cooldown', 'damage', 'attackSpeed', 'duration']
   }
-  if (plantId === 'torchwood' || plantId === 'marigold') {
+  if (plantId === 'torchwood') {
     return ['hp', 'cooldown']
+  }
+  if (plantId === 'marigold') {
+    return ['hp', 'cooldown', 'production']
   }
   if (plantId === 'explodeonut' || plantId === 'ghostpepper' || plantId === 'guacodile' || plantId === 'toadstool') {
     return ['hp', 'cooldown', 'damage', 'moveSpeed']
@@ -669,6 +673,7 @@ export function getScaledPlantConfig(
       let moveSpeedMultiplier = 1
       let cooldownMultiplier = 1
       let extraDamage = 0
+      let productionBonus = 0
 
       levelOrRolls.forEach((stat) => {
         // Jalapeño, Pickled Pepper e Iceberg Lettuce son de 1 solo uso y no escalan vida
@@ -685,6 +690,7 @@ export function getScaledPlantConfig(
         if (stat === 'attackSpeed') attackSpeedMultiplier *= 0.85 // 15% faster delay
         if (stat === 'moveSpeed') moveSpeedMultiplier += 0.15
         if (stat === 'cooldown') cooldownMultiplier *= 0.85 // 15% faster cooldown
+        if (stat === 'production') productionBonus += 1 // +1 oro por ciclo
       })
 
       const finalDamage =
@@ -705,6 +711,7 @@ export function getScaledPlantConfig(
             ? Number((base.moveSpeed * moveSpeedMultiplier).toFixed(2))
             : undefined,
         cooldownMs: Math.round(base.cooldownMs * cooldownMultiplier),
+        productionBonus: productionBonus > 0 ? productionBonus : undefined,
       }
     }
   } else if (levelOrRolls <= 0) {
@@ -716,6 +723,13 @@ export function getScaledPlantConfig(
     }
   } else if (plantId === 'iceberglettuce') {
     scaled = base
+  } else if (plantId === 'marigold') {
+    const scale = 1 + levelOrRolls * 0.15
+    scaled = {
+      ...base,
+      maxHp: Math.round(base.maxHp * scale),
+      productionBonus: levelOrRolls > 1 ? levelOrRolls - 1 : undefined,
+    }
   } else {
     const scale = 1 + levelOrRolls * 0.15
     scaled = {

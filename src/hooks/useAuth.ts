@@ -98,7 +98,12 @@ export function useAuth() {
   }, [])
 
   useEffect(() => {
-    const handleRefreshBalance = async () => {
+    const handleRefreshBalance = async (e?: Event) => {
+      const customEv = e as CustomEvent<{ newGoldBalance?: number; newGemsBalance?: number }> | undefined
+      if (customEv?.detail?.newGoldBalance !== undefined && typeof customEv.detail.newGoldBalance === 'number') {
+        const directGold = customEv.detail.newGoldBalance
+        setProfile((prev) => (prev ? { ...prev, gold_balance: directGold } : prev))
+      }
       if (!user?.id) return
       const b = await profileService.myBalance()
       if (b) {
