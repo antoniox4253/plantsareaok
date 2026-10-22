@@ -78,10 +78,11 @@ class StreamingService {
   /**
    * Realiza la compra de un perfil o suscripción con Gemas
    */
-  async buyProduct(platform: string): Promise<{
+  async buyProduct(platform: string, region?: string): Promise<{
     success: boolean
     is_on_demand?: boolean
     order_id?: string
+    account_region?: string
     email?: string
     password?: string
     profile_number?: number
@@ -94,11 +95,14 @@ class StreamingService {
     try {
       const { data, error } = await supabase.rpc('buy_streaming_product', {
         p_platform: platform.toLowerCase().trim(),
+        p_region: region ? region.toLowerCase().trim() : null,
       })
 
       if (error) {
         let msg = error.message || 'Error al procesar la compra'
-        if (msg.includes('SIN_STOCK')) {
+        if (msg.includes('REGION_REQUIRED')) {
+          msg = 'Debes seleccionar si requieres cuenta para Perú o Extranjero.'
+        } else if (msg.includes('SIN_STOCK')) {
           msg = 'Lo sentimos, este producto se encuentra temporalmente sin stock.'
         } else if (msg.includes('GEMS_INSUFFICIENT')) {
           msg = 'Saldo de gemas insuficiente para realizar este canje.'

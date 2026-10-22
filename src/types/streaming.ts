@@ -56,13 +56,16 @@ export interface StreamingQueryResult {
     email: string
     raw?: unknown
   }
-}export interface StreamingOrder {
+}
+
+export interface StreamingOrder {
   id: string
   platform: string
   product_name: string
   gem_cost: number
   is_on_demand: boolean
   order_status: 'pending' | 'delivered' | 'cancelled'
+  account_region?: 'peru' | 'extranjero' | string | null
   email?: string | null
   password?: string | null
   profile_number?: number | null
@@ -84,6 +87,7 @@ export interface AdminStreamingOverview {
     gem_cost: number
     is_on_demand: boolean
     order_status: string
+    account_region?: 'peru' | 'extranjero' | string | null
     created_at: string
   }>
   stock_summary: Record<string, number>

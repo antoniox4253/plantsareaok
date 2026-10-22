@@ -2012,3 +2012,92 @@
   align-items: center;
   font-size: 0.85rem;
 }
+
+/* ========================================================================== */
+/* SELECTOR DE REGIÓN PARA NETFLIX (PERÚ / EXTRANJERO) */
+/* ========================================================================== */
+.streaming-modal__region-selector {
+  margin: 16px 0 20px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.streaming-modal__region-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.streaming-modal__region-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.streaming-modal__region-btn {
+  background: rgba(30, 41, 59, 0.85);
+  border: 2px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+.streaming-modal__region-btn:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.streaming-modal__region-btn--selected {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+}
+
+.streaming-modal__region-flag {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.streaming-modal__region-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.streaming-modal__region-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.streaming-modal__region-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.streaming-modal__region-check {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #38bdf8;
+}
+
+@media (max-width: 520px) {
+  .streaming-modal__region-options {
+    grid-template-columns: 1fr;
+  }
+}

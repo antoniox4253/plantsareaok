@@ -78,9 +78,11 @@ export default function StreamingHub({
   const [stockMap, setStockMap] = useState<Record<string, number>>({})
   const [myOrders, setMyOrders] = useState<StreamingOrder[]>([])
   const [isPurchasing, setIsPurchasing] = useState<boolean>(false)
+  const [selectedRegion, setSelectedRegion] = useState<'peru' | 'extranjero' | ''>('')
   const [purchaseSuccessData, setPurchaseSuccessData] = useState<{
     isOnDemand: boolean
     productName: string
+    accountRegion?: string
     email?: string
     password?: string
     profileNumber?: number
@@ -210,6 +212,13 @@ export default function StreamingHub({
       return
     }
 
+    // Validación OBLIGATORIA de región para Netflix
+    if (product.id === 'netflix' && (!selectedRegion || (selectedRegion !== 'peru' && selectedRegion !== 'extranjero'))) {
+      setToastNotification('⚠️ Obligatorio: Selecciona si requieres cuenta para Perú o Extranjero.')
+      soundManager.playSound('defeat', 0.4)
+      return
+    }
+
     const cost = product.gemCost || 300
     if ((userProfile?.gems_balance ?? 0) < cost) {
       setToastNotification(
@@ -220,7 +229,7 @@ export default function StreamingHub({
 
     setIsPurchasing(true)
     try {
-      const res = await streamingService.buyProduct(product.id)
+      const res = await streamingService.buyProduct(product.id, product.id === 'netflix' ? selectedRegion : undefined)
       if (!res.success) {
         setToastNotification(`❌ ${res.error || 'Error al procesar el canje'}`)
         soundManager.playSound('defeat', 0.4)
@@ -230,6 +239,7 @@ export default function StreamingHub({
         setPurchaseSuccessData({
           isOnDemand: Boolean(res.is_on_demand),
           productName: product.name,
+          accountRegion: res.account_region || (product.id === 'netflix' ? selectedRegion : undefined),
           email: res.email,
           password: res.password,
           profileNumber: res.profile_number,
@@ -237,6 +247,7 @@ export default function StreamingHub({
           botCode: res.bot_code,
           message: res.message || 'Canje completado con éxito.',
         })
+        setSelectedRegion('')
         if (userProfile && res.new_gems_balance !== undefined) {
           userProfile.gems_balance = res.new_gems_balance
         }
@@ -778,6 +789,7 @@ export default function StreamingHub({
                           onClick={() => {
                             if (isOutOfStock) return
                             soundManager.playSound('click', 0.5)
+                            setSelectedRegion('')
                             setModalProduct(item)
                           }}
                         >
@@ -1244,6 +1256,11 @@ export default function StreamingHub({
                             <h4 className="streaming-sub-card__name">{ord.product_name}</h4>
                             <span className="streaming-sub-card__profile-tag">
                               {ord.profile_number ? `Perfil Asignado: #${ord.profile_number}` : 'A Pedido'}
+                              {ord.account_region && (
+                                <span style={{ marginLeft: 6, fontWeight: 700, color: ord.account_region === 'peru' ? '#f87171' : '#38bdf8' }}>
+                                  · {ord.account_region === 'peru' ? '🇵🇪 Perú' : '🌎 Extranjero'}
+                                </span>
+                              )}
                             </span>
                           </div>
                         </div>
@@ -1543,13 +1560,29 @@ export default function StreamingHub({
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <div>
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                           <span style={{ fontWeight: 800, color: '#f8fafc', fontSize: '1rem' }}>
                             {ord.product_name}
                           </span>
-                          <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginLeft: 8 }}>
+                          <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
                             Pedido por @{ord.username || 'Usuario'}
                           </span>
+                          {ord.account_region && (
+                            <span
+                              style={{
+                                padding: '3px 10px',
+                                borderRadius: 6,
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                background: ord.account_region === 'peru' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(56, 189, 248, 0.25)',
+                                color: ord.account_region === 'peru' ? '#fca5a5' : '#7dd3fc',
+                                border: ord.account_region === 'peru' ? '1px solid #ef4444' : '1px solid #38bdf8',
+                                letterSpacing: '0.03em',
+                              }}
+                            >
+                              {ord.account_region === 'peru' ? '🇵🇪 CUENTA PERÚ' : '🌎 CUENTA EXTRANJERO'}
+                            </span>
+                          )}
                         </div>
                         <span style={{ color: '#fde047', fontWeight: 700, fontSize: '0.75rem' }}>
                           Hace {Math.max(1, Math.round((Date.now() - new Date(ord.created_at).getTime()) / 60000))} min
@@ -1727,12 +1760,21 @@ export default function StreamingHub({
         {/* MODAL DE COMPRA / DETALLES DE PLANES */}
         {/* ================================================================= */}
         {modalProduct && (
-          <div className="streaming-modal-backdrop" onClick={() => setModalProduct(null)}>
+          <div
+            className="streaming-modal-backdrop"
+            onClick={() => {
+              setModalProduct(null)
+              setSelectedRegion('')
+            }}
+          >
             <div className="streaming-modal" onClick={(e) => e.stopPropagation()}>
               <button
                 type="button"
                 className="streaming-modal__close"
-                onClick={() => setModalProduct(null)}
+                onClick={() => {
+                  setModalProduct(null)
+                  setSelectedRegion('')
+                }}
               >
                 ✕
               </button>
@@ -1759,6 +1801,62 @@ export default function StreamingHub({
                   </div>
                 ))}
               </div>
+
+              {/* Selector obligatorio de Región solo para Netflix 4K */}
+              {modalProduct.id === 'netflix' && (
+                <div className="streaming-modal__region-selector">
+                  <div className="streaming-modal__region-label">
+                    <span>📍 ¿Para qué país requieres la cuenta?</span>
+                    <span style={{ color: '#f87171', fontWeight: 800, fontSize: '0.75rem' }}>
+                      * OBLIGATORIO
+                    </span>
+                  </div>
+                  <p style={{ color: '#94a3b8', fontSize: '0.78rem', margin: '0 0 6px' }}>
+                    Selecciona tu ubicación para entregarte un perfil compatible con tu red local sin bloqueos de hogar:
+                  </p>
+                  <div className="streaming-modal__region-options">
+                    <button
+                      type="button"
+                      className={`streaming-modal__region-btn ${
+                        selectedRegion === 'peru' ? 'streaming-modal__region-btn--selected' : ''
+                      }`}
+                      onClick={() => {
+                        soundManager.playSound('click', 0.4)
+                        setSelectedRegion('peru')
+                      }}
+                    >
+                      <span className="streaming-modal__region-flag">🇵🇪</span>
+                      <div className="streaming-modal__region-info">
+                        <span className="streaming-modal__region-name">Perú</span>
+                        <span className="streaming-modal__region-sub">Cuenta Peruana (IP Perú)</span>
+                      </div>
+                      {selectedRegion === 'peru' && (
+                        <span className="streaming-modal__region-check">✓</span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`streaming-modal__region-btn ${
+                        selectedRegion === 'extranjero' ? 'streaming-modal__region-btn--selected' : ''
+                      }`}
+                      onClick={() => {
+                        soundManager.playSound('click', 0.4)
+                        setSelectedRegion('extranjero')
+                      }}
+                    >
+                      <span className="streaming-modal__region-flag">🌎</span>
+                      <div className="streaming-modal__region-info">
+                        <span className="streaming-modal__region-name">Extranjero</span>
+                        <span className="streaming-modal__region-sub">Resto del Mundo / Internacional</span>
+                      </div>
+                      {selectedRegion === 'extranjero' && (
+                        <span className="streaming-modal__region-check">✓</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="streaming-modal__actions">
                 <div className="streaming-modal__buy-options">
@@ -1851,6 +1949,29 @@ export default function StreamingHub({
               <p className="streaming-success-modal__desc">
                 {purchaseSuccessData.message}
               </p>
+
+              {purchaseSuccessData.isOnDemand && purchaseSuccessData.accountRegion && (
+                <div
+                  style={{
+                    background: 'rgba(56, 189, 248, 0.1)',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    borderRadius: 10,
+                    padding: '10px 14px',
+                    marginBottom: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ fontSize: '1.2rem' }}>
+                    {purchaseSuccessData.accountRegion === 'peru' ? '🇵🇪' : '🌎'}
+                  </span>
+                  <span style={{ color: '#e0f2fe', fontWeight: 700, fontSize: '0.88rem' }}>
+                    Tipo de Cuenta: {purchaseSuccessData.accountRegion === 'peru' ? 'Perú (Cuenta Peruana)' : 'Extranjero (Internacional)'}
+                  </span>
+                </div>
+              )}
 
               {!purchaseSuccessData.isOnDemand && purchaseSuccessData.email && (
                 <div className="streaming-success-modal__creds">
