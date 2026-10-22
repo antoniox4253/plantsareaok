@@ -2107,10 +2107,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                       <div className="survivor-rewards-banner__badge">
                         <span className="survivor-rewards-banner__icon">🏆</span>
                         <div className="survivor-rewards-banner__titles">
-                          <h3 className="survivor-rewards-banner__title">RECOMPENSAS DE TEMPORADA SURVIVOR ADS</h3>
-                          <span className="survivor-rewards-banner__subtitle">
-                            Los mejores clasificados reciben Plantas Doradas exclusivas directas a su colección
-                          </span>
+                          <h3 className="survivor-rewards-banner__title">RECOMPENSAS SURVIVOR ADS</h3>
                         </div>
                       </div>
                       <div className="survivor-rewards-cards">
@@ -2121,19 +2118,12 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             <strong className="survivor-reward-tier__name">2 Gold Plants</strong>
                           </div>
                         </div>
-                        <div className="survivor-reward-tier survivor-reward-tier--top45">
-                          <span className="survivor-reward-tier__pos">TOP 4 - 5</span>
-                          <div className="survivor-reward-tier__prize">
-                            <span className="survivor-reward-tier__icon">✨</span>
-                            <strong className="survivor-reward-tier__name">1 Gold Plant (Aleatoria)</strong>
-                          </div>
-                        </div>
                       </div>
                     </div>
                     <div className="survivor-rewards-banner__timer">
-                      <span className="survivor-timer-label">⏳ ENTREGA DE PREMIOS EN:</span>
+                      <span className="survivor-timer-label">⏳ Entrega:</span>
                       <strong className="survivor-timer-value">{survivorRewardCountdown || '5d 00h 00m 00s'}</strong>
-                      <small className="survivor-timer-sub">Temporada de 5 días · Cierre 00:00 UTC</small>
+                      <small className="survivor-timer-sub">· 00:00 UTC</small>
                     </div>
                   </div>
 
@@ -2428,10 +2418,6 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                     {usr.rank <= 3 ? (
                                       <span className="survivor-table-reward survivor-table-reward--gold" title="Premio Top 1-3: 2 Gold Plants">
                                         🌟 2 Gold Plants
-                                      </span>
-                                    ) : usr.rank <= 5 ? (
-                                      <span className="survivor-table-reward survivor-table-reward--silver" title="Premio Top 4-5: 1 Gold Plant (Aleatoria)">
-                                        ✨ 1 Gold Plant
                                       </span>
                                     ) : (
                                       <span className="survivor-table-reward survivor-table-reward--none">—</span>

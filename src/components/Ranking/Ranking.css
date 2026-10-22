@@ -3748,18 +3748,18 @@
   background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
 }
 
-/* ── SURVIVOR ADS SEASON REWARDS & TIMER BANNER ── */
+/* ── SURVIVOR ADS SEASON REWARDS & TIMER BANNER (FINITO / COMPACTO) ── */
 .survivor-rewards-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
   background: linear-gradient(135deg, rgba(24, 20, 50, 0.95) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(30, 27, 75, 0.95) 100%);
-  border: 1.5px solid rgba(251, 191, 36, 0.4);
-  border-radius: 14px;
-  padding: 10px 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 8px;
+  padding: 4px 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -3779,142 +3779,123 @@
 .survivor-rewards-banner__left {
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .survivor-rewards-banner__badge {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .survivor-rewards-banner__icon {
-  font-size: 26px;
-  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.6));
+  font-size: 18px;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.5));
 }
 
 .survivor-rewards-banner__title {
   margin: 0;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   background: linear-gradient(90deg, #fef08a 0%, #fbbf24 50%, #f59e0b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .survivor-rewards-banner__subtitle {
-  font-size: 10px;
-  color: #94a3b8;
-  font-weight: 600;
+  display: none;
 }
 
 .survivor-rewards-cards {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .survivor-reward-tier {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 12px;
-  border-radius: 8px;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 6px;
   border: 1px solid;
-  transition: transform 0.15s ease;
-}
-
-.survivor-reward-tier:hover {
-  transform: translateY(-1px);
 }
 
 .survivor-reward-tier--top13 {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(180, 83, 9, 0.35) 100%);
   border-color: rgba(251, 191, 36, 0.6);
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
-}
-
-.survivor-reward-tier--top45 {
-  background: linear-gradient(135deg, rgba(147, 51, 234, 0.22) 0%, rgba(109, 40, 217, 0.35) 100%);
-  border-color: rgba(192, 132, 252, 0.6);
-  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.25);
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.2);
 }
 
 .survivor-reward-tier__pos {
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 900;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.survivor-reward-tier--top13 .survivor-reward-tier__pos {
+  letter-spacing: 0.4px;
   background: #f59e0b;
   color: #1e1b4b;
-}
-
-.survivor-reward-tier--top45 .survivor-reward-tier__pos {
-  background: #a855f7;
-  color: #fff;
+  white-space: nowrap;
 }
 
 .survivor-reward-tier__prize {
   display: flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .survivor-reward-tier__icon {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .survivor-reward-tier__name {
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 900;
   color: #fef08a;
   letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
-.survivor-reward-tier--top45 .survivor-reward-tier__name {
-  color: #f3e8ff;
-}
-
+/* ── CONTADOR FINITO (SLIM / LOW-PROFILE) ── */
 .survivor-rewards-banner__timer {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  background: rgba(10, 15, 30, 0.7);
-  padding: 5px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  min-width: 165px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  background: rgba(10, 15, 30, 0.75);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: auto;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .survivor-timer-label {
-  font-size: 8.5px;
+  font-size: 9px;
   color: #94a3b8;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
 }
 
 .survivor-timer-value {
-  font-size: 14px;
+  font-size: 11.5px;
   font-weight: 900;
   color: #38bdf8;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  text-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
 }
 
 .survivor-timer-sub {
-  font-size: 8.5px;
+  font-size: 8px;
   color: #64748b;
   font-weight: 700;
 }
@@ -3959,12 +3940,13 @@
 
 @media (max-width: 768px) {
   .survivor-rewards-banner {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 5px 10px;
   }
   .survivor-rewards-banner__timer {
-    align-items: flex-start;
-    width: 100%;
+    font-size: 10px;
+    padding: 2px 6px;
   }
 }
 
