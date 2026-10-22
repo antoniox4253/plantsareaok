@@ -2419,6 +2419,10 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                       <span className="survivor-table-reward survivor-table-reward--gold" title="Premio Top 1-3: 2 Gold Plants">
                                         🌟 2 Gold Plants
                                       </span>
+                                    ) : usr.rank <= 5 ? (
+                                      <span className="survivor-table-reward survivor-table-reward--silver" title="Premio Top 4-5: 1 Gold Plant (Aleatoria)">
+                                        ✨ 1 Gold Plant
+                                      </span>
                                     ) : (
                                       <span className="survivor-table-reward survivor-table-reward--none">—</span>
                                     )}
