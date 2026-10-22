@@ -414,6 +414,8 @@ export default function Battlefield({
     dailyClaimsUsed?: number
     dailyClaimsMax?: number | null
     isVip?: boolean
+    goldenCardsCount?: number
+    goldenBonusPct?: number
     reason?: string
     message?: string
     scoreBreakdown?: {
@@ -785,6 +787,7 @@ export default function Battlefield({
         let level = 0
         let statRolls: string[] = []
         let equippedItem: string | null = null
+        let isGolden = false
 
         // 1. Coincidencia por ID de instancia exacto en el slot
         if (pIds[idx]) {
@@ -793,11 +796,12 @@ export default function Battlefield({
             level = f.level ?? (f.statRolls?.length || 0)
             statRolls = f.statRolls || []
             equippedItem = f.equippedItem || null
+            isGolden = Boolean(f.isGolden)
           }
         }
 
         // 2. Coincidencia de respaldo por plantId
-        if (statRolls.length === 0 && !equippedItem) {
+        if (statRolls.length === 0 && !equippedItem && !isGolden) {
           const copies = pInst.filter((i) => isPlantMatchingTarget(i.plantId, plantId))
           if (copies.length > 0) {
             copies.sort((a, b) => {
@@ -812,6 +816,7 @@ export default function Battlefield({
             level = copies[0].level ?? (copies[0].statRolls?.length || 0)
             statRolls = copies[0].statRolls || []
             equippedItem = copies[0].equippedItem || null
+            isGolden = Boolean(copies[0].isGolden)
           }
         }
 
@@ -821,6 +826,7 @@ export default function Battlefield({
           level,
           statRolls,
           equippedItem,
+          isGolden,
         }
       })
     } catch {
@@ -830,6 +836,7 @@ export default function Battlefield({
         level: 0,
         statRolls: [],
         equippedItem: null,
+        isGolden: false,
       }))
     }
   }, [mazosDeLaSala?.mio, matchMode, tournamentDeck, activeDeck, allCatalogCards, currentArenaAdsRun])
@@ -1517,6 +1524,33 @@ export default function Battlefield({
   }, [roomId, gameStatus])
 
   const hasHandledEndRef = useRef<boolean>(false)
+  const hasCreditedMarigoldGoldRef = useRef<boolean>(false)
+
+  const liquidarOroDeMargarita = useCallback(() => {
+    if (hasCreditedMarigoldGoldRef.current) return
+    hasCreditedMarigoldGoldRef.current = true
+
+    // Auto-recolectar monedas de oro que aún sigan en el césped para no perderlas
+    const uncollectedGold = suns
+      .filter((s) => s.type === 'gold')
+      .reduce((sum, s) => sum + s.value, 0)
+    const totalGold = (stats.goldEarned ?? 0) + uncollectedGold
+    if (uncollectedGold > 0) {
+      stats.goldEarned = totalGold
+    }
+
+    if (totalGold > 0) {
+      void supabaseService.creditMarigoldGold(totalGold).then((res) => {
+        if (res && res.success) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+          }
+        }
+      }).catch((err) => {
+        console.warn('[Battlefield] Error al acreditar oro de Marigold:', err)
+      })
+    }
+  }, [suns, stats])
 
   useEffect(() => {
     if (hasHandledEndRef.current) return
@@ -1535,11 +1569,7 @@ export default function Battlefield({
       })
 
       // ── ACREDITAR ORO DE MARGARITA (MARIGOLD) EN EL BACKEND ────────────────
-      if (stats.goldEarned && stats.goldEarned > 0) {
-        void supabaseService.creditMarigoldGold(stats.goldEarned).catch((err) => {
-          console.warn('[Battlefield] Error al acreditar oro de Marigold:', err)
-        })
-      }
+      liquidarOroDeMargarita()
 
       // ── PARTIDA REAL: LO LIQUIDA EL SERVIDOR ───────────────────────────────
       //
@@ -2133,6 +2163,9 @@ export default function Battlefield({
   const handleConfirmSurrender = () => {
     soundManager.stopBgm()
 
+    // Acreditar el oro acumulado y las monedas aún en el césped antes de abandonar la partida
+    liquidarOroDeMargarita()
+
     setShowSurrenderModal(false)
     hasHandledEndRef.current = true
     surrenderGame()
@@ -2184,6 +2217,7 @@ export default function Battlefield({
     soundManager.stopBgm()
 
     hasHandledEndRef.current = false
+    hasCreditedMarigoldGoldRef.current = false
     setResultadoServidor(null)
     setBattleSummaryResult(null)
     setColosseumResult(null)
@@ -2898,11 +2932,12 @@ export default function Battlefield({
                   ? (mazoMioParsed && mazoMioParsed.length > 0
                       ? (() => {
                           const m = mejorasDeLaCartaEnSlot(mazoMioParsed, selectedCard, selectedSlotIndex)
-                          return getScaledPlantConfig(selectedCard, m.statRolls, m.equippedItem)
+                          return getScaledPlantConfig(selectedCard, m.statRolls, m.equippedItem, m.isGolden)
                         })()
                       : (() => {
                           let r: PlantStatKey[] = []
                           let eq: string | null = null
+                          let isG = false
                           try {
                             const sIds = localStorage.getItem('plant_arena_active_deck_instances')
                             const sInst = localStorage.getItem('plant_arena_plant_instances')
@@ -2913,9 +2948,10 @@ export default function Battlefield({
                               if (f) {
                                 r = f.statRolls || []
                                 eq = f.equippedItem || null
+                                isG = Boolean(f.isGolden)
                               }
                             }
-                            if (r.length === 0 && !eq) {
+                            if (r.length === 0 && !eq && !isG) {
                               const copies = pInst.filter((i) => isPlantMatchingTarget(i.plantId, selectedCard))
                               if (copies.length > 0) {
                                 copies.sort((a, b) => {
@@ -2929,10 +2965,11 @@ export default function Battlefield({
                                 })
                                 r = copies[0].statRolls || []
                                 eq = copies[0].equippedItem || null
+                                isG = Boolean(copies[0].isGolden)
                               }
                             }
                           } catch {}
-                          return getScaledPlantConfig(selectedCard, r, eq)
+                          return getScaledPlantConfig(selectedCard, r, eq, isG)
                         })())
                   : null
                 const isWalkingPlantCard = Boolean(
@@ -3115,7 +3152,7 @@ export default function Battlefield({
 
       {/* Player 1 Plants */}
       {plants.map((plant) => {
-        const config = getScaledPlantConfig(plant.plantId, plant.statRolls ?? [], plant.equippedItem)
+        const config = getScaledPlantConfig(plant.plantId, plant.statRolls ?? [], plant.equippedItem, plant.isGolden)
         const safePlantLane = Math.min(Math.max(0, plant.lane), activeLanesConfig.length - 1)
         const laneConfig = activeLanesConfig[safePlantLane] || activeLanesConfig[0]
         const hpPct = (plant.hp / plant.maxHp) * 100
@@ -3239,15 +3276,32 @@ export default function Battlefield({
                   }
                   return (
                     <>
-                      {/* Subtle Base Ground Aura for Leveled Plants */}
-                      {plantLevel > 0 && (
+                      {/* Subtle Base Ground Aura for Leveled or Golden Plants */}
+                      {(plantLevel > 0 || plant.isGolden) && (
                         <div
                           className={`plant-base-halo ${
-                            plantLevel >= 3
+                            plant.isGolden || plantLevel >= 3
                               ? 'plant-base-halo--gold'
                               : 'plant-base-halo--emerald'
                           }`}
                         />
+                      )}
+                      {/* Golden Plant Field Shimmer Badge */}
+                      {plant.isGolden && (
+                        <div
+                          className="plant-unit__level-badge plant-unit__level-badge--gold"
+                          title="✨ Carta Dorada (+10% PLANTS)"
+                          style={{
+                            left: plantLevel > 0 ? 'auto' : '50%',
+                            right: plantLevel > 0 ? '-4px' : 'auto',
+                            transform: plantLevel > 0 ? 'none' : 'translateX(-50%)',
+                            background: 'linear-gradient(135deg, #f59e0b, #eab308)',
+                            color: '#451a03',
+                            boxShadow: '0 0 8px rgba(234, 179, 8, 0.8)',
+                          }}
+                        >
+                          ✨
+                        </div>
                       )}
                       {/* Field Plant Level Badge */}
                       {plantLevel > 0 && (
@@ -3313,7 +3367,7 @@ export default function Battlefield({
 
       {/* Plantas Propias en fase de Brote / Siembra (Feedback visual instantáneo a 0ms) */}
       {pendingOwnPlants.map((pp, idx) => {
-        const config = getScaledPlantConfig(pp.plantId, pp.statRolls ?? [], pp.equippedItem)
+        const config = getScaledPlantConfig(pp.plantId, pp.statRolls ?? [], pp.equippedItem, pp.isGolden)
         const safePendingLane = Math.min(Math.max(0, pp.lane), activeLanesConfig.length - 1)
         const laneConfig = activeLanesConfig[safePendingLane] || activeLanesConfig[0]
         if (!laneConfig || !config) return null
@@ -3376,7 +3430,7 @@ export default function Battlefield({
         //
         // Ya no hay catálogo enemigo: las plantas de los dos lados son la misma
         // cosa y salen del mismo sitio. El bot también planta cartas de verdad.
-        const config = getScaledPlantConfig(enemy.plantId, enemy.statRolls ?? [], enemy.equippedItem)
+        const config = getScaledPlantConfig(enemy.plantId, enemy.statRolls ?? [], enemy.equippedItem, enemy.isGolden)
         const safeEnemyLane = Math.min(Math.max(0, enemy.lane), activeLanesConfig.length - 1)
         const laneConfig = activeLanesConfig[safeEnemyLane] || activeLanesConfig[0]
         const hpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100)
@@ -4102,6 +4156,12 @@ export default function Battlefield({
                                 <strong style={{ color: '#6ee7b7' }}>Fase 1 (100%)</strong>
                               </div>
                             )}
+                            {(plantsRewardResult.goldenCardsCount ?? 0) > 0 && (
+                              <div className="victory-plants-pill victory-plants-pill--golden" style={{ background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(245, 158, 11, 0.25))', border: '1px solid #eab308' }}>
+                                <span className="victory-plants-pill__lbl">✨ Doradas:</span>
+                                <strong style={{ color: '#fef08a' }}>{plantsRewardResult.goldenCardsCount} (+{plantsRewardResult.goldenBonusPct ?? (plantsRewardResult.goldenCardsCount! * 10)}%)</strong>
+                              </div>
+                            )}
                           </div>
                           <div className="victory-plants-side-hint">
                             📊 Desglose de scoring y fórmula a la derecha 👉
@@ -4213,7 +4273,7 @@ export default function Battlefield({
                         </div>
 
                         <div className="victory-plants-scoring-formula">
-                          🧮 <strong>Fórmula:</strong> Base ({sb.baseReward ? Number(sb.baseReward).toFixed(2) : '2.0'} PLANTS) × {sb.isBot ? '0.50 (Bot)' : '1.00 (Humano)'} {plantsRewardResult.bonusActive ? '× 1.25 (Bono PvP)' : ''} = <strong>+{plantsRewardResult.plantsAwarded.toFixed(2)} PLANTS</strong>
+                          🧮 <strong>Fórmula:</strong> Base ({sb.baseReward ? Number(sb.baseReward).toFixed(2) : '2.0'} PLANTS) × {sb.isBot ? '0.50 (Bot)' : '1.00 (Humano)'} {plantsRewardResult.bonusActive ? '× 1.25 (Bono PvP)' : ''} {(plantsRewardResult.goldenCardsCount ?? 0) > 0 ? `× ${(1 + (plantsRewardResult.goldenBonusPct ?? (plantsRewardResult.goldenCardsCount! * 10)) / 100).toFixed(2)} (✨ ${plantsRewardResult.goldenCardsCount} Doradas)` : ''} = <strong>+{plantsRewardResult.plantsAwarded.toFixed(2)} PLANTS</strong>
                         </div>
 
                         {Boolean(stats.goldEarned && stats.goldEarned > 0) && (

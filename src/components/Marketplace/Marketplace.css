@@ -2977,5 +2977,35 @@
   line-height: 1.35;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ESTILOS DE CARTAS DORADAS (GOLD FOIL) EN MARKETPLACE
+   ═══════════════════════════════════════════════════════════════════════════ */
+.market-item-card--golden {
+  border-color: #f59e0b !important;
+  background: linear-gradient(135deg, rgba(69, 26, 3, 0.95) 0%, rgba(25, 12, 2, 0.95) 100%) !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.2) !important;
+}
+
+.market-item-card--golden:hover {
+  border-color: #fef08a !important;
+  box-shadow: 0 0 20px rgba(254, 240, 138, 0.7), inset 0 0 14px rgba(254, 240, 138, 0.35) !important;
+}
+
+.market-item-golden-badge {
+  font-size: 8px;
+  font-weight: 900;
+  color: #451a03;
+  background: linear-gradient(135deg, #fef08a, #f59e0b);
+  border: 1px solid #fef08a;
+  padding: 1.5px 5px;
+  border-radius: 5px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+
 
 

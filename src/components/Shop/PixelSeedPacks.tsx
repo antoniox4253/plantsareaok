@@ -48,6 +48,7 @@ export interface PixelSeedPacksProps {
   maxPlayerEnergy?: number
   userElo?: number
   isPurchasing?: boolean
+  goldenPityCounter?: number
 }
 
 export default function PixelSeedPacks({
@@ -64,11 +65,15 @@ export default function PixelSeedPacks({
   maxPlayerEnergy = 20,
   userElo = 1000,
   isPurchasing = false,
+  goldenPityCounter = 0,
 }: PixelSeedPacksProps) {
   const [debugHotspots] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showOddsModal, setShowOddsModal] = useState<boolean>(false)
   const [localPurchasing, setLocalPurchasing] = useState<boolean>(false)
+
+  const pityProgress = Math.min(100, Math.max(0, goldenPityCounter % 100))
+  const pityRemaining = 100 - pityProgress
 
   const [confirmModal, setConfirmModal] = useState<{
     packId: PackId
@@ -320,6 +325,26 @@ export default function PixelSeedPacks({
           baseHeight={BASE_HEIGHT}
         />
 
+        {/* Banner de Pity de Cartas Doradas */}
+        <div
+          className="pixel-seedpacks-pity-banner"
+          title={`Pity: ${pityProgress}/100 cartas abiertas para Carta Dorada garantizada. Haz clic para ver detalles.`}
+          onClick={() => setShowOddsModal(true)}
+        >
+          <div className="pixel-seedpacks-pity-banner__badge">
+            ✨ PITY DORADAS
+          </div>
+          <div className="pixel-seedpacks-pity-banner__track">
+            <div
+              className="pixel-seedpacks-pity-banner__fill"
+              style={{ width: `${pityProgress}%` }}
+            />
+          </div>
+          <div className="pixel-seedpacks-pity-banner__text">
+            Garantizada en <strong>{pityRemaining}</strong> {pityRemaining === 1 ? 'carta' : 'cartas'} ({pityProgress}/100)
+          </div>
+        </div>
+
         {/* Hotspots interactivos */}
         {SEEDPACK_HOTSPOTS.map((h) => {
           const leftPct = (h.x / BASE_WIDTH) * 100
@@ -430,6 +455,27 @@ export default function PixelSeedPacks({
                   </div>
                   <span className="pixel-seedpacks-odds-exclusive">
                     ✨ El sobre legendario contiene ÚNICAMENTE cartas Épicas y Legendarias.
+                  </span>
+                </div>
+
+                {/* Cartas Doradas (Gold Foil) & Pity */}
+                <div className="pixel-seedpacks-odds-item pixel-seedpacks-odds-item--golden">
+                  <div className="pixel-seedpacks-odds-item-head">
+                    <span className="pixel-seedpacks-odds-item-name" style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      ✨ Cartas Doradas (Gold Foil)
+                    </span>
+                    <span className="pixel-seedpacks-odds-item-price" style={{ color: '#fef08a' }}>
+                      +10% Token PLANTS c/u en Arena 3+
+                    </span>
+                  </div>
+                  <div className="pixel-seedpacks-odds-rates">
+                    <span className="rate-badge rate-badge--golden-basic">Básico: 1.0%</span>
+                    <span className="rate-badge rate-badge--golden-epic">Místico: 2.5%</span>
+                    <span className="rate-badge rate-badge--golden-leg">Legendario: 5.0%</span>
+                    <span className="rate-badge rate-badge--golden-pity">🛡️ Pity: Garantizada cada 100 cartas</span>
+                  </div>
+                  <span className="pixel-seedpacks-odds-exclusive" style={{ color: '#fde68a' }}>
+                    🌟 Las cartas doradas son cartas físicas jugables con sprite exclusivo y otorgan hasta +60% de bonus en $PLANTS por victoria. El contador de pity se reinicia al obtener cualquier carta dorada.
                   </span>
                 </div>
               </div>

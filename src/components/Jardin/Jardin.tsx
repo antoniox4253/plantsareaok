@@ -709,6 +709,7 @@ export default function Jardin({
       germinationsCount: number
       equippedItem?: string | null
       isListed?: boolean
+      isGolden?: boolean
     }[] = []
 
     ALL_PLANTS.forEach((plantId) => {
@@ -725,6 +726,7 @@ export default function Jardin({
           germinationsCount: 0,
           equippedItem: null,
           isListed: false,
+          isGolden: false,
         })
         return
       }
@@ -742,6 +744,7 @@ export default function Jardin({
             germinationsCount: inst.germinationsCount ?? 0,
             equippedItem: inst.equippedItem || null,
             isListed: Boolean(inst.isListed),
+            isGolden: Boolean(inst.isGolden),
           })
         })
       } else {
@@ -1407,7 +1410,7 @@ export default function Jardin({
               const card = displayedCards.find((c) => c.instanceId === instanceId)
               const config = card ? PLANT_CONFIGS[card.plantId] : null
               const isSelected = selectedSlotIndex === slotIdx
-              const scaledSlotConfig = card ? getScaledPlantConfig(card.plantId, card.statRolls ?? [], card.equippedItem) : null
+              const scaledSlotConfig = card ? getScaledPlantConfig(card.plantId, card.statRolls ?? [], card.equippedItem, card.isGolden) : null
               const slotImgSrc = scaledSlotConfig?.icon || scaledSlotConfig?.sprite || config?.icon
 
               return (
@@ -1416,7 +1419,7 @@ export default function Jardin({
                   type="button"
                   className={`jardin-slot ${config ? 'jardin-slot--filled' : 'jardin-slot--empty'} ${
                     isSelected ? 'jardin-slot--active' : ''
-                  }`}
+                  } ${card?.isGolden ? 'jardin-slot--golden' : ''}`}
                   onClick={() => {
                     soundManager.playSound('plantation', 0.4)
                     setSelectedSlotIndex(isSelected ? null : slotIdx)
@@ -1495,13 +1498,15 @@ export default function Jardin({
               const groupedBuffs = groupRolls(statRolls)
               const isMaxLevel = level >= maxLvl
               const hasCopies = copies >= FUSION_COPIES_REQ
-              const scaledCardConfig = getScaledPlantConfig(plantId, statRolls, equippedItem)
+              const scaledCardConfig = getScaledPlantConfig(plantId, statRolls, equippedItem, card.isGolden)
               const cardImgSrc = scaledCardConfig.icon || scaledCardConfig.sprite || config.icon
 
               const instancesOfThisPlant = plantInstances.filter((i) => i.plantId === plantId)
               const instanceIndex = instancesOfThisPlant.findIndex((i) => i.instanceId === instanceId)
               const instanceNum = instanceIndex !== -1 ? instanceIndex + 1 : 1
-              const displayName = instancesOfThisPlant.length > 1 ? `${config.name} #${instanceNum}` : config.name
+              const displayName = card.isGolden
+                ? `✨ ${config.name}${instancesOfThisPlant.length > 1 ? ` #${instanceNum}` : ''}`
+                : (instancesOfThisPlant.length > 1 ? `${config.name} #${instanceNum}` : config.name)
 
               const currentSprouts = card.germinationsCount ?? 0
               const canSproutThisCard = currentSprouts < 2
@@ -1530,7 +1535,7 @@ export default function Jardin({
                       : inDeck
                       ? 'jardin-card--indeck'
                       : 'jardin-card--unlocked'
-                  }`}
+                  } ${card.isGolden ? 'jardin-card--golden' : ''}`}
                   onClick={() => handleToggleCardInstance(card)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -1554,6 +1559,11 @@ export default function Jardin({
                       <span>{config.cost}</span>
                     </div>
                     <div className="jardin-card__header-right">
+                      {card.isGolden && (
+                        <span className="jardin-card-badge--golden" title="Carta Dorada exclusiva: +10% Recompensa Token PLANTS por victoria">
+                          ✨ DORADA (+10%)
+                        </span>
+                      )}
                       {card.isListed && (
                         <span className="jardin-card-badge--market" title="En venta en Comercio P2P. Retírala desde Mis Ventas si deseas usarla.">
                           🏷️ EN VENTA

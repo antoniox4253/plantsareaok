@@ -16,6 +16,7 @@ export interface PackDropResult {
   rarityLabel: 'COMÚN' | 'POCO COMÚN' | 'RARA' | 'ÉPICA' | 'LEGENDARIA'
   rarityColor: string
   isNew: boolean
+  isGolden?: boolean
 }
 
 export interface PackDefinition {

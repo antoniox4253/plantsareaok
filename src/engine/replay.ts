@@ -140,6 +140,7 @@ interface CartaResuelta {
   level: number
   statRolls: PlantStatKey[]
   equippedItem?: string | null
+  isGolden?: boolean | null
 }
 
 function esPlantId(x: string | null | undefined): x is PlantId {
@@ -176,6 +177,7 @@ function resolverCarta(
         statRolls: [],
         level: 0,
         equippedItem: null,
+        isGolden: null,
       },
     }
   }
@@ -210,6 +212,7 @@ function resolverCarta(
           statRolls: [],
           level: 0,
           equippedItem: null,
+          isGolden: null,
         },
       }
     }
@@ -227,6 +230,7 @@ function resolverCarta(
       statRolls,
       level,
       equippedItem: encontrada.equippedItem || null,
+      isGolden: encontrada.isGolden || null,
     },
   }
 }
@@ -266,6 +270,7 @@ function encolarPlanta(
       statRolls: carta.statRolls,
       level: carta.level,
       equippedItem: carta.equippedItem || undefined,
+      isGolden: carta.isGolden || undefined,
     })
   } else {
     estado.pending.push({
@@ -277,6 +282,7 @@ function encolarPlanta(
       statRolls: carta.statRolls,
       level: carta.level,
       equippedItem: carta.equippedItem || undefined,
+      isGolden: carta.isGolden || undefined,
     })
   }
 }
@@ -506,7 +512,7 @@ function validarYAplicarIntencion(
     return
   }
   const carta = resuelta.carta
-  const config = getScaledPlantConfig(carta.plantId, carta.statRolls, carta.equippedItem)
+  const config = getScaledPlantConfig(carta.plantId, carta.statRolls, carta.equippedItem, carta.isGolden)
   if (!config) {
     registrarIlegal(ilegales, j, 'config_de_carta_inexistente')
     return

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { PackDropResult } from '../../utils/packDropManager'
-import { PLANT_CONFIGS } from '../../utils/gameConstants'
+import { PLANT_CONFIGS, GOLDEN_PLANT_ASSETS } from '../../utils/gameConstants'
 import { soundManager } from '../../utils/audioManager'
 import './PackOpeningModal.css'
 
@@ -69,17 +69,37 @@ export default function PackOpeningModal({
             const cfg = PLANT_CONFIGS[drop.plantId]
             if (!cfg) return null
 
+            const isGolden = Boolean(drop.isGolden)
+            const goldenAsset = isGolden ? GOLDEN_PLANT_ASSETS[drop.plantId] : null
+            const displayImg = goldenAsset?.sprite || cfg.icon
+            const displayName = isGolden ? `${cfg.name} (Dorada)` : cfg.name
+
             return (
-              <div key={idx} className="pack-reveal-multi-item">
+              <div key={idx} className={`pack-reveal-multi-item ${isGolden ? 'pack-reveal-multi-item--golden' : ''}`}>
                 <span
                   className="pack-reveal-multi-rarity"
-                  style={{ color: drop.rarityColor, borderColor: drop.rarityColor }}
+                  style={{
+                    color: isGolden ? '#fef08a' : drop.rarityColor,
+                    borderColor: isGolden ? '#f59e0b' : drop.rarityColor,
+                    background: isGolden ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.4), rgba(217, 119, 6, 0.5))' : undefined,
+                  }}
                 >
-                  {drop.rarityLabel}
+                  {isGolden ? '✨ DORADA' : drop.rarityLabel}
                 </span>
-                <img src={cfg.icon} alt={cfg.name} className="pack-reveal-multi-img" />
-                <span className="pack-reveal-multi-name">{cfg.name}</span>
-                {drop.isNew ? (
+                <img
+                  src={displayImg}
+                  alt={displayName}
+                  className={`pack-reveal-multi-img ${isGolden ? 'pack-reveal-multi-img--golden' : ''}`}
+                />
+                <span
+                  className="pack-reveal-multi-name"
+                  style={isGolden ? { color: '#fef08a', textShadow: '0 0 8px rgba(254, 240, 138, 0.7)' } : undefined}
+                >
+                  {displayName}
+                </span>
+                {isGolden ? (
+                  <span className="pack-reveal-multi-new pack-reveal-multi-new--golden">👑 +10% PLANTS</span>
+                ) : drop.isNew ? (
                   <span className="pack-reveal-multi-new">✨ ¡NUEVA!</span>
                 ) : (
                   <span className="pack-reveal-multi-dup">✓ OBTENIDA</span>

@@ -42,6 +42,7 @@ export interface CartaDeMazo {
   level?: number | null
   statRolls?: string[] | null
   equippedItem?: string | null
+  isGolden?: boolean | null
 }
 
 /** Las mejoras con las que hay que plantar una carta. */
@@ -49,6 +50,7 @@ export interface MejorasDeCarta {
   statRolls: PlantStatKey[]
   level: number
   equippedItem?: string | null
+  isGolden?: boolean | null
 }
 
 const SIN_MEJORAS: MejorasDeCarta = { statRolls: [], level: 0 }
@@ -88,6 +90,9 @@ export function leerMazo(bruto: unknown): CartaDeMazo[] | null {
     }
     if (typeof carta.equippedItem === 'string') {
       cartaObj.equippedItem = carta.equippedItem
+    }
+    if (typeof carta.isGolden === 'boolean') {
+      cartaObj.isGolden = carta.isGolden
     }
     cartas.push(cartaObj)
   }
@@ -129,6 +134,9 @@ export function mejorasDeLaCartaEnSlot(
   const mejoras: MejorasDeCarta = { statRolls, level }
   if (carta.equippedItem) {
     mejoras.equippedItem = carta.equippedItem
+  }
+  if (carta.isGolden) {
+    mejoras.isGolden = carta.isGolden
   }
   return mejoras
 }

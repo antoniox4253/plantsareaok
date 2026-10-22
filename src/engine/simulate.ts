@@ -119,9 +119,10 @@ export function crearPlantaDelRival(
   col: number | undefined,
   statRolls: PlantStatKey[] = [],
   level = 0,
-  equippedItem?: string | null
+  equippedItem?: string | null,
+  isGolden?: boolean | null
 ): PlantEntity {
-  const config = getScaledPlantConfig(plantId, statRolls, equippedItem)
+  const config = getScaledPlantConfig(plantId, statRolls, equippedItem, isGolden)
   const camina = config?.category === 'melee' || !!config?.moveSpeed || plantId === 'chomper'
 
   // ── LA COLUMNA SE ESPEJA ───────────────────────────────────────────────────
@@ -161,6 +162,7 @@ export function crearPlantaDelRival(
     lastActionTime: state.tick,
     spriteOverride: config.sprite !== PLANT_CONFIGS[plantId]?.sprite ? config.sprite : undefined,
     equippedItem: equippedItem ?? undefined,
+    isGolden: isGolden ?? undefined,
     isCommandoAura: false,
     nextCommandoAuraTick:
       plantId === 'peashooter' && equippedItem === 'commando_bandana'
@@ -184,9 +186,10 @@ export function crearPlantaPropia(
   col: number | undefined,
   statRolls: PlantStatKey[] = [],
   level = 0,
-  equippedItem?: string | null
+  equippedItem?: string | null,
+  isGolden?: boolean | null
 ): PlantEntity {
-  const config = getScaledPlantConfig(plantId, statRolls, equippedItem)
+  const config = getScaledPlantConfig(plantId, statRolls, equippedItem, isGolden)
   const camina = config?.category === 'melee' || !!config?.moveSpeed || plantId === 'chomper'
   const colWidth = FIELD_WIDTH_PCT / TOTAL_COLUMNS
 
@@ -210,6 +213,7 @@ export function crearPlantaPropia(
     lastActionTime: state.tick,
     spriteOverride: config.sprite !== PLANT_CONFIGS[plantId]?.sprite ? config.sprite : undefined,
     equippedItem: equippedItem ?? undefined,
+    isGolden: isGolden ?? undefined,
     isCommandoAura: false,
     nextCommandoAuraTick:
       plantId === 'peashooter' && equippedItem === 'commando_bandana'
@@ -316,7 +320,7 @@ export function createBattleState(
       : isFortressMode
       ? null
       : '¡Ola 1 de Plantas Enemigas!',
-    stats: { sunsCollected: 0, enemyPlantsDefeated: 0, plantsPlaced: 0, score: 0 },
+    stats: { sunsCollected: 0, enemyPlantsDefeated: 0, plantsPlaced: 0, score: 0, goldEarned: 0 },
     ...(isPracticeMode ? { isPracticeMode: true } : {}),
     ...(isPvpMode ? { isPvpMode: true } : {}),
     bot: menteNueva(),
@@ -379,6 +383,7 @@ export type PendingAction =
       statRolls?: PlantStatKey[]
       level?: number
       equippedItem?: string | null
+      isGolden?: boolean | null
     }
   /**
    * Una planta MÍA que llega del registro, no de un clic.
@@ -418,6 +423,7 @@ export type PendingAction =
       statRolls?: PlantStatKey[]
       level?: number
       equippedItem?: string | null
+      isGolden?: boolean | null
     }
 
 export interface GameState {
@@ -788,7 +794,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
       continue
     }
 
-    const config = getScaledPlantConfig(planta.plantId, planta.statRolls ?? [], planta.equippedItem)
+    const config = getScaledPlantConfig(planta.plantId, planta.statRolls ?? [], planta.equippedItem, planta.isGolden)
 
     // ── GESTIÓN DE AURA COMMANDO (Lanzaguisantes Comando) ─────────────────────
     if (planta.plantId === 'peashooter' && planta.equippedItem === 'commando_bandana') {
@@ -1895,7 +1901,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
                 accion.col,
                 accion.statRolls ?? [],
                 accion.level ?? 0,
-                accion.equippedItem
+                accion.equippedItem,
+                accion.isGolden
               )
             )
           }
@@ -1948,7 +1955,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
                 accion.col,
                 accion.statRolls ?? [],
                 accion.level ?? 0,
-                accion.equippedItem
+                accion.equippedItem,
+                accion.isGolden
               )
             )
           }

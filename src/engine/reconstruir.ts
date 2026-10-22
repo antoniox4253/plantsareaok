@@ -63,6 +63,7 @@ export interface AccionRegistrada {
   statRolls?: PlantStatKey[]
   level?: number
   equippedItem?: string | null
+  isGolden?: boolean | null
 }
 
 /**
@@ -171,6 +172,7 @@ function sembrar(
       statRolls: a.statRolls,
       level: a.level,
       equippedItem: a.equippedItem,
+      isGolden: a.isGolden,
     }
     estado.pending.push(
       a.mia ? { ...comun, kind: 'own_plant' } : { ...comun, kind: 'rival_plant' }
@@ -209,6 +211,7 @@ export function conservarLoLocal(nuevo: GameState, viejo: GameState): GameState 
     plantsPlaced: viejo.stats.plantsPlaced,
     enemyPlantsDefeated: nuevo.stats.enemyPlantsDefeated,
     score: viejo.stats.sunsCollected * 50 + nuevo.stats.enemyPlantsDefeated * 100,
+    goldEarned: Math.max(viejo.stats.goldEarned ?? 0, nuevo.stats.goldEarned ?? 0),
   }
   // Conservamos únicamente los soles de la simulación canónica (nuevo) que NO hayan sido
   // recogidos previamente en la sesión local (es decir, los que aún siguen en viejo.suns).

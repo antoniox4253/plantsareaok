@@ -18,7 +18,7 @@ import {
 } from '../../services/marketplaceService'
 import { isSupabaseConfigured } from '../../lib/supabaseClient'
 import type { PlantId, PlantCardInstance } from '../../types/game'
-import { PLANT_CONFIGS, STAT_LABELS, VIP_PASS_PRECIO_GEMAS, type PlantStatKey } from '../../utils/gameConstants'
+import { PLANT_CONFIGS, STAT_LABELS, VIP_PASS_PRECIO_GEMAS, GOLDEN_PLANT_ASSETS, getScaledPlantConfig, type PlantStatKey } from '../../utils/gameConstants'
 import { evaluateMarketplaceAccess, calculateMarketplaceSplit } from '../../utils/marketplaceAccess'
 import monedaImg from '../../assets/ico/moneda.webp'
 import GoldIcon from '../Common/GoldIcon'
@@ -93,6 +93,7 @@ interface OfertaDelMercado {
   vendedor: string | null
   esMia: boolean
   desde: string
+  isGolden?: boolean
 }
 
 function getSproutTooltip(count: number): string {
@@ -133,6 +134,7 @@ export type SellableMarketItem =
       name: string
       icon: string
       germinationsCount?: number
+      isGolden?: boolean
     }
   | {
       kind: 'farming'
@@ -255,7 +257,9 @@ export default function Marketplace({
           deckPlantIdsSeen.add(inst.plantId)
         }
 
+        const isGolden = Boolean(inst.isGolden)
         const pConfig = PLANT_CONFIGS[inst.plantId]
+        const scaledConfig = getScaledPlantConfig(inst.plantId, inst.statRolls || [], inst.equippedItem, isGolden)
         items.push({
           kind: 'plant',
           id: inst.instanceId,
@@ -269,9 +273,10 @@ export default function Marketplace({
           minPrice: rInfo.minPrice,
           rarityColor: rInfo.color,
           inDeck,
-          name: pConfig?.name || inst.plantId,
-          icon: pConfig?.packetActive || pConfig?.icon || '',
+          name: isGolden ? `✨ ${pConfig?.name || inst.plantId} (Dorada)` : (pConfig?.name || inst.plantId),
+          icon: scaledConfig.packetActive || scaledConfig.icon || pConfig?.packetActive || pConfig?.icon || '',
           germinationsCount: inst.germinationsCount ?? 0,
+          isGolden,
         })
       })
     } else {
@@ -1179,22 +1184,27 @@ export default function Marketplace({
       ? { rarity: 'FARMING', minPrice: 10, color: '#4ade80' }
       : { rarity: 'ORO P2P', minPrice: 1, color: '#facc15' }
 
+    const isMineGolden = !isGold && !isFarming && Boolean((item as any).isGolden)
+    const goldenAsset = isMineGolden && item.plantId ? GOLDEN_PLANT_ASSETS[item.plantId as PlantId] : null
+
     const itemName = isGold
       ? `${(item.quantity || 1).toLocaleString('en-US')} ORO`
       : isFarming
       ? (farmingDef?.label || item.itemId || 'Recurso')
+      : isMineGolden
+      ? `✨ ${plantDef?.name || item.plantId} (Dorada)`
       : (plantDef?.name || item.plantId || 'Carta de Planta')
 
     const itemIcon = isGold
       ? monedaImg
       : isFarming
       ? farmingDef?.icon
-      : (plantDef?.packetActive || plantDef?.icon)
+      : (goldenAsset?.sprite || plantDef?.packetActive || plantDef?.icon)
 
     const split = calculateMarketplaceSplit(item.precio, comisionPct)
 
     return (
-      <div key={item.id} className="market-my-card market-my-card--active">
+      <div key={item.id} className={`market-my-card market-my-card--active ${isMineGolden ? 'market-item-card--golden' : ''}`}>
         <div className="market-item-card__header">
           {isGold ? (
             <span className="market-item-level-tag market-item-level-tag--gold" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -1206,6 +1216,11 @@ export default function Marketplace({
             </span>
           ) : (
             <div className="market-item-tags-row">
+              {isMineGolden && (
+                <span className="market-item-golden-badge" title="Carta Dorada (+10% Token PLANTS por partida)">
+                  ✨ DORADA
+                </span>
+              )}
               <span className="market-item-level-tag" title={getFusionTooltip(item.nivel)}>
                 ⭐{item.nivel}
               </span>
@@ -1445,16 +1460,25 @@ export default function Marketplace({
 
   const renderPlantOfferCard = (item: OfertaDelMercado) => {
     const isMine = item.esMia
+    const isGolden = Boolean(item.isGolden)
     const plantDef = item.plantId ? PLANT_CONFIGS[item.plantId as PlantId] : undefined
-    const itemIcon = plantDef?.packetActive || plantDef?.icon
+    const goldenAsset = isGolden && item.plantId ? GOLDEN_PLANT_ASSETS[item.plantId as PlantId] : null
+    const itemIcon = goldenAsset?.sprite || plantDef?.packetActive || plantDef?.icon
     const rInfo = item.plantId ? getPlantRarityAndMinPrice(item.plantId as PlantId) : { rarity: 'COMÚN' as PlantRarity, minPrice: 100, color: '#94a3b8' }
-    const itemName = plantDef?.name || item.plantId || 'Carta de Planta'
+    const itemName = isGolden
+      ? `✨ ${plantDef?.name || item.plantId} (Dorada)`
+      : (plantDef?.name || item.plantId || 'Carta de Planta')
 
     return (
-      <div key={item.id} className="market-item-card">
+      <div key={item.id} className={`market-item-card ${isGolden ? 'market-item-card--golden' : ''}`}>
         {/* Card Header */}
         <div className="market-item-card__header">
           <div className="market-item-tags-row">
+            {isGolden && (
+              <span className="market-item-golden-badge" title="Carta Dorada (+10% Token PLANTS por partida)">
+                ✨ DORADA
+              </span>
+            )}
             <span
               className="market-item-level-tag"
               title={getFusionTooltip(item.nivel)}

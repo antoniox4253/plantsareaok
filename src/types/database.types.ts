@@ -56,6 +56,7 @@ export interface Database {
           returning_bonus_used_at?: string | null
           keybindings?: any | null
           unlocked_emotes?: string[] | null
+          golden_pity_counter?: number
           created_at: string
           updated_at: string
         }
@@ -97,6 +98,7 @@ export interface Database {
           returning_bonus_used_at?: string | null
           keybindings?: any | null
           unlocked_emotes?: string[] | null
+          golden_pity_counter?: number
           created_at?: string
           updated_at?: string
         }
@@ -132,6 +134,7 @@ export interface Database {
           exemption_reason?: string | null
           keybindings?: any | null
           unlocked_emotes?: string[] | null
+          golden_pity_counter?: number
           created_at?: string
           updated_at?: string
         }

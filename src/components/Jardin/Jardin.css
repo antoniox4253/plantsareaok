@@ -1722,3 +1722,40 @@
   50% { transform: scale(1.03); opacity: 1; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ESTILOS DE CARTAS DORADAS (GOLD FOIL) EN JARDÍN
+   ═══════════════════════════════════════════════════════════════════════════ */
+.jardin-card--golden {
+  border-color: #f59e0b !important;
+  background: linear-gradient(180deg, rgba(69, 26, 3, 0.92) 0%, rgba(30, 15, 2, 0.95) 100%) !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.2) !important;
+}
+
+.jardin-card--golden:hover {
+  transform: translateY(-3px) scale(1.03);
+  border-color: #fef08a !important;
+  box-shadow: 0 0 20px rgba(254, 240, 138, 0.7), inset 0 0 14px rgba(254, 240, 138, 0.35) !important;
+}
+
+.jardin-slot--golden {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5) !important;
+  background: linear-gradient(180deg, rgba(69, 26, 3, 0.85) 0%, rgba(30, 15, 2, 0.9) 100%) !important;
+}
+
+.jardin-card-badge--golden {
+  font-size: 8px;
+  font-weight: 900;
+  color: #451a03;
+  background: linear-gradient(135deg, #fef08a, #f59e0b);
+  border: 1px solid #fef08a;
+  padding: 1px 5px;
+  border-radius: 6px;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+

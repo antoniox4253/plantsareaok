@@ -29,6 +29,7 @@ function getSlotCardLevelData(
   let level = 0
   let rolls: PlantStatKey[] = []
   let equippedItem: string | null = null
+  let isGolden = false
   let resolvedFromDeck = false
 
   if (deckCards && deckCards.length > 0) {
@@ -37,6 +38,7 @@ function getSlotCardLevelData(
       rolls = (deckCards[slotIndex].statRolls as PlantStatKey[]) || []
       level = Math.max(rawLvl, rolls.length)
       equippedItem = deckCards[slotIndex].equippedItem || null
+      isGolden = Boolean(deckCards[slotIndex].isGolden)
       resolvedFromDeck = true
     } else {
       const found = deckCards.find((c) => isPlantMatchingTarget(c.plantId, plantId))
@@ -45,6 +47,7 @@ function getSlotCardLevelData(
         rolls = (found.statRolls as PlantStatKey[]) || []
         level = Math.max(rawLvl, rolls.length)
         equippedItem = found.equippedItem || null
+        isGolden = Boolean(found.isGolden)
         resolvedFromDeck = true
       }
     }
@@ -71,6 +74,7 @@ function getSlotCardLevelData(
           level = found.level || 0
           rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
           equippedItem = found.equippedItem || null
+          isGolden = Boolean(found.isGolden)
         }
       }
 
@@ -90,11 +94,13 @@ function getSlotCardLevelData(
           if (level === 0) level = best.level || 0
           if (rolls.length === 0) rolls = best.statRolls || []
           if (!equippedItem) equippedItem = best.equippedItem || null
+          if (!isGolden) isGolden = Boolean(best.isGolden)
         }
       } else if (!equippedItem) {
         const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, plantId) && i.equippedItem)
         if (found) {
           equippedItem = found.equippedItem || null
+          if (!isGolden) isGolden = Boolean(found.isGolden)
         }
       }
 
@@ -118,13 +124,14 @@ function getSlotCardLevelData(
     } catch {}
   } else {
     // If card was resolved from authoritative room deck, check if an equippedItem was stored locally as fallback
-    if (!equippedItem) {
+    if (!equippedItem || !isGolden) {
       try {
         const savedInstances = localStorage.getItem('plant_arena_plant_instances')
         const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
-        const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, plantId) && i.equippedItem)
+        const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, plantId) && (i.equippedItem || i.isGolden))
         if (found) {
-          equippedItem = found.equippedItem || null
+          if (!equippedItem) equippedItem = found.equippedItem || null
+          if (!isGolden) isGolden = Boolean(found.isGolden)
         }
       } catch {}
     }
@@ -157,7 +164,7 @@ function getSlotCardLevelData(
     return { stat, count, label, color: meta.color || '#fbbf24' }
   })
 
-  return { level, rolls, equippedItem, grouped }
+  return { level, rolls, equippedItem, isGolden, grouped }
 }
 
 interface PlantHandProps {
@@ -403,7 +410,7 @@ export default function PlantHand({
             if (!config) return null
 
             const cardData = getSlotCardLevelData(realSlotIndex, cardId, deckCards)
-            const scaledConfig = getScaledPlantConfig(cardId, cardData.rolls, cardData.equippedItem)
+            const scaledConfig = getScaledPlantConfig(cardId, cardData.rolls, cardData.equippedItem, cardData.isGolden)
             const isSelected =
               selectedCard === cardId &&
               (selectedSlotIndex === undefined ||
@@ -436,7 +443,7 @@ export default function PlantHand({
                   isSelected ? 'plant-hand__card--selected' : ''
                 } ${isDisabled ? 'plant-hand__card--disabled' : ''} ${
                   deniedSlot === realSlotIndex ? 'plant-hand__card--denied' : ''
-                }`}
+                } ${cardData.isGolden ? 'plant-hand__card--golden' : ''}`}
                 onPointerDown={(e) => {
                   if (e.button !== 0) return
                   pointerHandledRef.current = true
@@ -458,6 +465,16 @@ export default function PlantHand({
                     title={`Nivel ${cardData.level}`}
                   >
                     ⭐{cardData.level}
+                  </div>
+                )}
+
+                {/* Golden Card Badge (Splinterlands Play-to-Earn) */}
+                {cardData.isGolden && (
+                  <div
+                    className="plant-hand__golden-badge"
+                    title="✨ Carta Dorada: +10% Recompensa de Tokens PLANTS en Combate"
+                  >
+                    ✨
                   </div>
                 )}
 
@@ -485,7 +502,7 @@ export default function PlantHand({
                 </div>
 
                 {/* Card Seed Packet */}
-                <div className={`plant-hand__packet-wrap ${cardData.equippedItem ? 'plant-hand__packet-wrap--equipped' : ''}`}>
+                <div className={`plant-hand__packet-wrap ${cardData.equippedItem ? 'plant-hand__packet-wrap--equipped' : ''} ${cardData.isGolden ? 'plant-hand__packet-wrap--golden' : ''}`}>
                   <img
                     className={`plant-hand__packet-img ${cardData.equippedItem ? 'plant-hand__packet-img--equipped' : ''}`}
                     src={packetSrc}
@@ -506,7 +523,7 @@ export default function PlantHand({
                 {/* Hover Buffs Tooltip */}
                 {(() => {
                   const equippedDef = getEquippableItemDef(cardData.equippedItem)
-                  if (cardData.level <= 0 && !equippedDef) return null
+                  if (cardData.level <= 0 && !equippedDef && !cardData.isGolden) return null
                   return (
                     <div className="plant-hand__tooltip">
                       <div className="plant-hand__tooltip-head">
@@ -514,8 +531,16 @@ export default function PlantHand({
                         {cardData.level > 0 && (
                           <span className="plant-hand__tooltip-lvl">⭐ LVL {cardData.level}</span>
                         )}
+                        {cardData.isGolden && (
+                          <span className="plant-hand__tooltip-lvl" style={{ color: '#fbbf24' }}>✨ DORADA</span>
+                        )}
                       </div>
                       <div className="plant-hand__tooltip-buffs">
+                        {cardData.isGolden && (
+                          <span style={{ color: '#fbbf24', fontWeight: 800 }}>
+                            ✨ Carta Dorada (+10% Token PLANTS en Victoria)
+                          </span>
+                        )}
                         {equippedDef && (
                           <span style={{ color: '#facc15', fontWeight: 800 }}>
                             {equippedDef.emoji} {equippedDef.name}: {equippedDef.statBonusText}

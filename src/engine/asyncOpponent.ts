@@ -389,6 +389,7 @@ export function resolverCartaRival(
     statRolls,
     level,
     equippedItem: encontrada.equippedItem ?? null,
+    isGolden: encontrada.isGolden ?? null,
   }
 }
 
@@ -717,6 +718,7 @@ function intentarEjecutarPlant(
     statRolls,
     level: statRolls.length > 0 ? statRolls.length : (carta.level ?? 0),
     equippedItem: carta.equippedItem ?? null,
+    isGolden: carta.isGolden ?? null,
   })
 
   return true
@@ -1167,7 +1169,8 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
         const plantIdValido = cartaP1.plantId as PlantId
         const statRolls = rollsValidos(cartaP1.statRolls ?? j.statRolls)
         const equippedItem = cartaP1.equippedItem ?? j.equippedItem ?? null
-        const config = getScaledPlantConfig(plantIdValido, statRolls, equippedItem)
+        const isGolden = cartaP1.isGolden ?? j.isGolden ?? null
+        const config = getScaledPlantConfig(plantIdValido, statRolls, equippedItem, isGolden)
         if (!config || state.sunBank < config.cost) {
           // Soles insuficientes en este tic en el replay autoritativo: se descarta la acción sin abortar
           continue
@@ -1201,6 +1204,7 @@ export function runAsyncTimeline(options: RunAsyncTimelineOptions): RunAsyncTime
           statRolls,
           level: statRolls.length > 0 ? statRolls.length : (cartaP1.level ?? j.level ?? 0),
           equippedItem,
+          isGolden,
         })
         continue
       }

@@ -1193,6 +1193,7 @@ export function useGameEngine() {
       let rolls: PlantStatKey[]
       let cardLevel: number
       let cardEquippedItem: string | null = null
+      let cardIsGolden = false
 
       if (mazoMioRef.current) {
         // ── EN 1C1, LAS MEJORAS SALEN DEL MAZO DE LA SALA ─────────────────────
@@ -1210,14 +1211,16 @@ export function useGameEngine() {
         rolls = mejoras.statRolls
         cardLevel = mejoras.level
         cardEquippedItem = mejoras.equippedItem || null
+        cardIsGolden = Boolean(mejoras.isGolden)
 
-        if (!cardEquippedItem) {
+        if (!cardEquippedItem || !cardIsGolden) {
           try {
             const savedInstances = localStorage.getItem('plant_arena_plant_instances')
             const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
-            const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, card) && i.equippedItem)
+            const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, card) && (i.equippedItem || i.isGolden))
             if (found) {
-              cardEquippedItem = found.equippedItem || null
+              if (!cardEquippedItem) cardEquippedItem = found.equippedItem || null
+              if (!cardIsGolden) cardIsGolden = Boolean(found.isGolden)
             }
           } catch {}
         }
@@ -1241,10 +1244,11 @@ export function useGameEngine() {
               const adsDeck = leerMazo(parsedAds.deck)
               if (adsDeck) {
                 const adsMejoras = mejorasDeLaCartaEnSlot(adsDeck, card, slotIdx)
-                if (adsMejoras.level > 0 || adsMejoras.statRolls.length > 0 || adsMejoras.equippedItem) {
+                if (adsMejoras.level > 0 || adsMejoras.statRolls.length > 0 || adsMejoras.equippedItem || adsMejoras.isGolden) {
                   rolls = adsMejoras.statRolls
                   cardLevel = adsMejoras.level
                   cardEquippedItem = adsMejoras.equippedItem || null
+                  cardIsGolden = Boolean(adsMejoras.isGolden)
                 }
               }
             }
@@ -1263,6 +1267,7 @@ export function useGameEngine() {
               rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
               cardLevel = found.level || 0
               cardEquippedItem = found.equippedItem || null
+              cardIsGolden = Boolean(found.isGolden)
             }
           }
           if (rolls.length === 0 && !cardEquippedItem) {
@@ -1280,6 +1285,7 @@ export function useGameEngine() {
               rolls = copies[0].statRolls && copies[0].statRolls.length > 0 ? copies[0].statRolls : []
               cardLevel = copies[0].level || 0
               cardEquippedItem = copies[0].equippedItem || null
+              cardIsGolden = Boolean(copies[0].isGolden)
             }
           }
         }
@@ -1302,7 +1308,7 @@ export function useGameEngine() {
         }
       }
 
-      const config = getScaledPlantConfig(card, rolls, cardEquippedItem)
+      const config = getScaledPlantConfig(card, rolls, cardEquippedItem, cardIsGolden)
       if (!config) return null
 
       if (state.sunBank < config.cost) return null
@@ -1360,7 +1366,8 @@ export function useGameEngine() {
           col,
           rolls,
           cardLevel,
-          cardEquippedItem
+          cardEquippedItem,
+          cardIsGolden
         )
         nuevaPlanta.isWalking = false
         nuevaPlanta.state = 'idle'
@@ -1385,6 +1392,7 @@ export function useGameEngine() {
         rolls,
         cardLevel,
         equippedItem: cardEquippedItem,
+        isGolden: cardIsGolden,
         state,
         seq,
         enTic,
@@ -1421,6 +1429,7 @@ export function useGameEngine() {
           statRolls: rolls,
           level: cardLevel,
           equippedItem: cardEquippedItem,
+          isGolden: cardIsGolden,
         })
         costeDeMisJugadasRef.current.set(claveDeJugada(enTic, lane, col), {
           coste: config.cost,
@@ -1506,6 +1515,7 @@ export function useGameEngine() {
         statRolls: mejoras?.statRolls,
         level: mejoras?.level,
         equippedItem: mejoras?.equippedItem,
+        isGolden: mejoras?.isGolden ?? null,
       })
 
       // TARDE: su tic ya pasó. No se aplica más tarde — se rehace la partida con
@@ -1541,6 +1551,7 @@ export function useGameEngine() {
         statRolls: mejoras?.statRolls,
         level: mejoras?.level,
         equippedItem: mejoras?.equippedItem,
+        isGolden: mejoras?.isGolden ?? null,
       })
     },
     []
@@ -2261,7 +2272,7 @@ export function useGameEngine() {
     placePlant,
     digPlant,
     pendingOwnPlants: (stateRef.current.pending || []).filter(
-      (p): p is { atTick: number; kind: 'own_plant'; plantId: PlantId; lane: number; col: number; statRolls?: PlantStatKey[]; level?: number; equippedItem?: string | null } =>
+      (p): p is { atTick: number; kind: 'own_plant'; plantId: PlantId; lane: number; col: number; statRolls?: PlantStatKey[]; level?: number; equippedItem?: string | null; isGolden?: boolean | null } =>
         p.kind === 'own_plant' && typeof p.col === 'number'
     ),
     encolarAccionDelRival,

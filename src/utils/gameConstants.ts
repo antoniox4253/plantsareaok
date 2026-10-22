@@ -584,10 +584,76 @@ export function getFusionGoldCost(plantId: PlantId, level: number): number {
   return Math.round(base * Math.pow(1.5, Math.max(0, level)))
 }
 
+export const GOLDEN_PLANT_ASSETS: Partial<
+  Record<PlantId, { sprite: string; icon: string; packetActive: string; packetDisabled: string }>
+> = {
+  wallnut: {
+    sprite: '/game-assets/plants_golden/wallnut_golden.webp',
+    icon: '/game-assets/plants_golden/wallnut_golden.webp',
+    packetActive: '/game-assets/plants_golden/wallnut_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/wallnut_golden.webp',
+  },
+  garlic: {
+    sprite: '/game-assets/plants_golden/garlic_golden.webp',
+    icon: '/game-assets/plants_golden/garlic_golden.webp',
+    packetActive: '/game-assets/plants_golden/garlic_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/garlic_golden.webp',
+  },
+  repeater: {
+    sprite: '/game-assets/plants_golden/repeater_golden.webp',
+    icon: '/game-assets/plants_golden/repeater_golden.webp',
+    packetActive: '/game-assets/plants_golden/repeater_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/repeater_golden.webp',
+  },
+  iceberglettuce: {
+    sprite: '/game-assets/plants_golden/iceberglettuce_golden.webp',
+    icon: '/game-assets/plants_golden/iceberglettuce_golden.webp',
+    packetActive: '/game-assets/plants_golden/iceberglettuce_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/iceberglettuce_golden.webp',
+  },
+  bonkchoy: {
+    sprite: '/game-assets/plants_golden/bonkchoy_golden.webp',
+    icon: '/game-assets/plants_golden/bonkchoy_golden.webp',
+    packetActive: '/game-assets/plants_golden/bonkchoy_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/bonkchoy_golden.webp',
+  },
+  peashooter: {
+    sprite: '/game-assets/plants_golden/peashooter_golden.webp',
+    icon: '/game-assets/plants_golden/peashooter_golden.webp',
+    packetActive: '/game-assets/plants_golden/peashooter_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/peashooter_golden.webp',
+  },
+  jalapeno: {
+    sprite: '/game-assets/plants_golden/jalapeno_golden.webp',
+    icon: '/game-assets/plants_golden/jalapeno_golden.webp',
+    packetActive: '/game-assets/plants_golden/jalapeno_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/jalapeno_golden.webp',
+  },
+  sunflower: {
+    sprite: '/game-assets/plants_golden/sunflower_golden.webp',
+    icon: '/game-assets/plants_golden/sunflower_golden.webp',
+    packetActive: '/game-assets/plants_golden/sunflower_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/sunflower_golden.webp',
+  },
+  twinsunflower: {
+    sprite: '/game-assets/plants_golden/twinsunflower_golden.webp',
+    icon: '/game-assets/plants_golden/twinsunflower_golden.webp',
+    packetActive: '/game-assets/plants_golden/twinsunflower_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/twinsunflower_golden.webp',
+  },
+  melonpult: {
+    sprite: '/game-assets/plants_golden/melonpult_golden.webp',
+    icon: '/game-assets/plants_golden/melonpult_golden.webp',
+    packetActive: '/game-assets/plants_golden/melonpult_golden.webp',
+    packetDisabled: '/game-assets/plants_golden/melonpult_golden.webp',
+  },
+}
+
 export function getScaledPlantConfig(
   plantId: PlantId | string,
   levelOrRolls: number | PlantStatKey[] = 0,
-  equippedItem?: string | null
+  equippedItem?: string | null,
+  isGolden?: boolean | null
 ): PlantConfig {
   const base = (PLANT_CONFIGS as Record<string, PlantConfig>)[plantId] || PLANT_CONFIGS.peashooter
 
@@ -656,6 +722,20 @@ export function getScaledPlantConfig(
       ...base,
       maxHp: Math.round(base.maxHp * scale),
       damage: base.damage !== undefined ? Math.round(base.damage * scale) : undefined,
+    }
+  }
+
+  // ── ASPECTO VISUAL DE CARTAS DORADAS (GOLD FOIL) ──────────────────────────────
+  const pId = plantId as PlantId
+  if (isGolden && GOLDEN_PLANT_ASSETS[pId]) {
+    const goldAssets = GOLDEN_PLANT_ASSETS[pId]!
+    scaled = {
+      ...scaled,
+      name: `${scaled.name} Dorada`,
+      sprite: goldAssets.sprite,
+      icon: goldAssets.icon,
+      packetActive: goldAssets.packetActive,
+      packetDisabled: goldAssets.packetDisabled,
     }
   }
 

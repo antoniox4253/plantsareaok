@@ -88,6 +88,7 @@ export interface PlantEntity {
   frozenUntil?: number
   isHealingFx?: boolean
   equippedItem?: string | null
+  isGolden?: boolean
   chewingUntilTick?: number
   lastBaseAttackTime?: number
   isCommandoAura?: boolean
@@ -157,6 +158,7 @@ export interface EnemyPlantEntity {
   lastAttackTime: number
   frozenUntil?: number
   chewingUntilTick?: number
+  isGolden?: boolean
 }
 
 export interface ProjectileEntity {
@@ -207,6 +209,7 @@ export interface PlantCardInstance {
   level: number
   statRolls: import('../utils/gameConstants').PlantStatKey[]
   isBase?: boolean
+  isGolden?: boolean
   obtainedAt?: number
   germinationsCount?: number
   equippedItem?: string | null

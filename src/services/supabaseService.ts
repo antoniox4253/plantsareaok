@@ -177,6 +177,7 @@ export const SupabaseService = {
     last_plants_cashout_at?: string | null
     usdt_balance?: number
     battle_pass_xp?: number
+    golden_pity_counter?: number
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
@@ -196,7 +197,7 @@ export const SupabaseService = {
           const { data: userData } = await supabase.auth.getUser()
           if (userData?.user) {
             const { data: prof } = await (supabase.from as any)('profiles')
-              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, claimed_vip_levels, battle_pass_xp, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels, plants_balance, plants_vesting_locked, last_plants_cashout_at, usdt_balance')
+              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, claimed_vip_levels, battle_pass_xp, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels, plants_balance, plants_vesting_locked, last_plants_cashout_at, usdt_balance, golden_pity_counter')
               .eq('id', userData.user.id)
               .single()
             if (prof) {
@@ -221,6 +222,7 @@ export const SupabaseService = {
                 plants_vesting_locked: Number(prof.plants_vesting_locked ?? 0),
                 last_plants_cashout_at: prof.last_plants_cashout_at ?? null,
                 usdt_balance: Number(prof.usdt_balance ?? 0),
+                golden_pity_counter: Number(prof.golden_pity_counter ?? 0),
               }
             }
           }
@@ -236,11 +238,12 @@ export const SupabaseService = {
           locked_gems_balance: locked,
           withdrawable_gems: Number(data.withdrawable_gems ?? Math.max(0, total - locked)),
           claimed_arena_ads_levels: Array.isArray(data.claimed_arena_ads_levels) ? data.claimed_arena_ads_levels : [],
-          battle_pass_xp: Number(data.battle_pass_xp ?? 0),
+          battle_pass_xp: data.battle_pass_xp !== undefined ? Number(data.battle_pass_xp) : undefined,
           plants_balance: Number(data.plants_balance ?? 0),
           plants_vesting_locked: Number(data.plants_vesting_locked ?? 0),
           last_plants_cashout_at: data.last_plants_cashout_at ?? null,
           usdt_balance: Number(data.usdt_balance ?? 0),
+          golden_pity_counter: Number(data.golden_pity_counter ?? 0),
         }
       }
       return data
@@ -4783,7 +4786,7 @@ export const SupabaseService = {
   async openPack(packRowId: string): Promise<{
     success: boolean
     packId?: string
-    drops?: { plantId: string; rarity: string; isNew: boolean }[]
+    drops?: { plantId: string; rarity: string; isNew: boolean; isGolden?: boolean }[]
     colosseumTicket?: boolean
     error?: string
   }> {
@@ -4807,7 +4810,7 @@ export const SupabaseService = {
   async openMultiplePacks(packRowIds: string[]): Promise<{
     success: boolean
     packsOpened?: number
-    drops?: { plantId: string; rarity: string; isNew: boolean }[]
+    drops?: { plantId: string; rarity: string; isNew: boolean; isGolden?: boolean }[]
     ticketsWon?: number
     error?: string
   }> {
@@ -6317,17 +6320,41 @@ export const SupabaseService = {
 
   /** Acredita el oro obtenido por Margarita (Marigold) durante el combate en profiles.gold_balance */
   async creditMarigoldGold(goldAmount: number): Promise<{ success: boolean; newGoldBalance?: number; goldCredited?: number; error?: string }> {
-    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    if (!isSupabaseConfigured()) {
+      if (typeof window !== 'undefined') {
+        const current = Number(localStorage.getItem('plant_arena_gold') || '500')
+        const nextGold = current + Math.round(goldAmount)
+        localStorage.setItem('plant_arena_gold', String(nextGold))
+        window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+        return { success: true, newGoldBalance: nextGold, goldCredited: Math.round(goldAmount) }
+      }
+      return { success: false, error: 'Supabase no configurado' }
+    }
     if (!goldAmount || goldAmount <= 0) return { success: true, goldCredited: 0 }
     try {
       const { data, error } = await (supabase.rpc as any)('credit_marigold_gold', {
         p_gold_amount: Math.round(goldAmount),
       })
       if (error) {
+        // Fallback para usuarios invitados o no autenticados en Supabase
+        if (error.message?.includes('No autenticado') || error.code === 'P0001') {
+          if (typeof window !== 'undefined') {
+            const current = Number(localStorage.getItem('plant_arena_gold') || '500')
+            const nextGold = current + Math.round(goldAmount)
+            localStorage.setItem('plant_arena_gold', String(nextGold))
+            window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+            return { success: true, newGoldBalance: nextGold, goldCredited: Math.round(goldAmount) }
+          }
+        }
         logError('creditMarigoldGold', error)
         return { success: false, error: error.message }
       }
       const res = Array.isArray(data) ? data[0] : data
+      if (res?.success) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+        }
+      }
       return {
         success: res?.success ?? true,
         newGoldBalance: res?.new_gold_balance,

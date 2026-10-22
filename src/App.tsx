@@ -294,6 +294,7 @@ function App() {
     equippedTreeSkin,
     equipMotherTreeSkin,
     unequipMotherTreeSkin,
+    goldenPityCounter,
   } = useInventory()
 
 
@@ -1816,6 +1817,7 @@ function App() {
             activeDeck={activeDeck}
             activeDeckInstances={activeDeckInstances}
             initialTab={shopInitialTab}
+            goldenPityCounter={goldenPityCounter}
             playerEnergy={playerEnergy}
             maxPlayerEnergy={maxPlayerEnergy}
             onBuyEnergyPack={buyEnergyPack}

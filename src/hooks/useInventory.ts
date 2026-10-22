@@ -241,6 +241,8 @@ export function useInventory() {
     return saved ? JSON.parse(saved) : []
   })
 
+  const [goldenPityCounter, setGoldenPityCounter] = useState<number>(0)
+
   const [unlockedPlants, setUnlockedPlants] = useState<PlantId[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.UNLOCKED_PLANTS)
     if (saved) {
@@ -517,6 +519,7 @@ export function useInventory() {
           rarityLabel: RARITY_LABEL[d.rarity] ?? 'COMÚN',
           rarityColor: RARITY_COLOR[d.rarity] ?? '#4ade80',
           isNew: Boolean(d.isNew),
+          isGolden: Boolean(d.isGolden),
         }))
         return {
           drops,
@@ -543,6 +546,7 @@ export function useInventory() {
               rarityLabel: RARITY_LABEL[d.rarity] ?? 'COMÚN',
               rarityColor: RARITY_COLOR[d.rarity] ?? '#4ade80',
               isNew: Boolean(d.isNew),
+              isGolden: Boolean(d.isGolden),
             })
           }
         }
@@ -733,7 +737,14 @@ export function useInventory() {
    */
   const [hasVipPass, setHasVipPass] = useState<boolean>(false)
   const [hasPurchasedStarterPack, setHasPurchasedStarterPack] = useState<boolean>(false)
-  const [battlePassXp, setBattlePassXp] = useState<number>(0)
+  const [battlePassXp, setBattlePassXp] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('plant_arena_battle_pass_xp')
+      return saved ? Number(saved) : 0
+    } catch {
+      return 0
+    }
+  })
 
   const [claimedVipLevels, setClaimedVipLevels] = useState<number[]>(() => {
     const saved = localStorage.getItem('plant_arena_claimed_vip_pass')
@@ -750,6 +761,12 @@ export function useInventory() {
   })
 
   // Tampoco se guarda el pase VIP: lo dice profiles.has_vip_pass.
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('plant_arena_battle_pass_xp', battlePassXp.toString())
+    } catch {}
+  }, [battlePassXp])
 
   useEffect(() => {
     localStorage.setItem('plant_arena_claimed_vip_pass', JSON.stringify(claimedVipLevels))
@@ -1239,6 +1256,9 @@ export function useInventory() {
     }
     setColosseumCurrentStreak(Number(b.colosseum_current_streak))
     setColosseumMaxStreak(Number(b.colosseum_max_streak))
+    if (b.golden_pity_counter !== undefined) {
+      setGoldenPityCounter(Number(b.golden_pity_counter ?? 0))
+    }
     if (b.energy_current !== undefined) {
       const en = Number(b.energy_current)
       setPlayerEnergy(en)
@@ -1314,6 +1334,7 @@ export function useInventory() {
         level: i.level,
         statRolls: (i.statRolls || []) as PlantStatKey[],
         isBase: i.isBase,
+        isGolden: Boolean((i as any).isGolden),
         germinationsCount: i.germinationsCount ?? 0,
         equippedItem: (i as any).equippedItem || null,
         isListed: Boolean((i as any).isListed),
@@ -1664,6 +1685,7 @@ export function useInventory() {
       rarityLabel: RARITY_LABEL[d.rarity] ?? 'COMÚN',
       rarityColor: RARITY_COLOR[d.rarity] ?? '#4ade80',
       isNew: d.isNew,
+      isGolden: Boolean(d.isGolden),
     }))
     return { drops, colosseumTicket: Boolean(res.colosseumTicket) }
   }
@@ -1965,6 +1987,7 @@ export function useInventory() {
     buyEnergyPack,
     useEnergyPotion,
     hasPurchasedStarterPack,
+    goldenPityCounter,
   }
 }
 

@@ -148,7 +148,7 @@ export const SYSTEM_DECKS: SystemDeckConfig[] = [
     plants: [
       { id: 'repeater', level: 2, statsCount: 2, roleNote: 'Cadencia doble' },
       { id: 'bonkchoy', level: 2, statsCount: 2, roleNote: 'Mele veloz' },
-      { id: 'squash', level: 1, statsCount: 1, roleNote: 'Impacto directo' },
+      { id: 'garlic', level: 1, statsCount: 1, roleNote: 'Squash (Aplastamiento)' },
       { id: 'sunflower', level: 2, statsCount: 2, roleNote: 'Economía solar' },
       { id: 'tallnut', level: 1, statsCount: 1, roleNote: 'Muro alto' },
       { id: 'jalapeno', level: 1, statsCount: 1, roleNote: 'Limpia carril' },
@@ -186,7 +186,7 @@ export const SYSTEM_DECKS: SystemDeckConfig[] = [
       { id: 'jalapeno', level: 1, statsCount: 1, roleNote: 'Fuego total' },
       { id: 'iceberglettuce', level: 1, statsCount: 1, roleNote: 'Freno helado' },
       { id: 'gatlingpea', level: 1, statsCount: 1, roleNote: 'Cañón cuádruple' },
-      { id: 'squash', level: 2, statsCount: 2, roleNote: 'Aplastamiento pesado' },
+      { id: 'garlic', level: 2, statsCount: 2, roleNote: 'Squash Lv.2 (Aplastamiento pesado)' },
       { id: 'marigold', level: 2, statsCount: 2, roleNote: 'Generador de Oro' },
     ],
   },

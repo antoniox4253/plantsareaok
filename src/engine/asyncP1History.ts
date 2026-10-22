@@ -57,6 +57,7 @@ export interface AccionP1RankedEstricta {
   statRolls?: PlantStatKey[]
   level?: number
   equippedItem?: string | null
+  isGolden?: boolean | null
 }
 
 // Tipo de compatibilidad para código existente
@@ -326,6 +327,8 @@ export function validarAccionP1RankedEstricta(
         ? a.equippedItem
         : null
 
+    const isGolden = typeof a.isGolden === 'boolean' ? a.isGolden : (a.isGolden ? true : false)
+
     return {
       ok: true,
       accion: {
@@ -340,6 +343,7 @@ export function validarAccionP1RankedEstricta(
         statRolls,
         level,
         equippedItem,
+        isGolden,
       },
     }
   }
@@ -366,6 +370,7 @@ export function sonAccionesIdenticas(a: AccionP1RankedEstricta, b: AccionP1Ranke
       a.col === b.col &&
       (a.level ?? 0) === (b.level ?? 0) &&
       (a.equippedItem ?? null) === (b.equippedItem ?? null) &&
+      Boolean(a.isGolden) === Boolean(b.isGolden) &&
       JSON.stringify(a.statRolls ?? []) === JSON.stringify(b.statRolls ?? [])
     )
   }

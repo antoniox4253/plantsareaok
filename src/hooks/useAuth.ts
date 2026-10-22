@@ -111,6 +111,7 @@ export function useAuth() {
                 colosseum_tickets: Number(b.colosseum_tickets),
                 has_vip_pass: Boolean(b.has_vip_pass),
                 claimed_vip_levels: b.claimed_vip_levels || [],
+                battle_pass_xp: b.battle_pass_xp !== undefined ? Number(b.battle_pass_xp) : (prev as any).battle_pass_xp,
                 colosseum_current_streak: Number(b.colosseum_current_streak),
                 colosseum_max_streak: Number(b.colosseum_max_streak),
                 elo_rating: Number(b.elo_rating),

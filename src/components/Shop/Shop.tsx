@@ -191,6 +191,7 @@ export interface ShopProps {
   onDonatePlant?: (plantId: PlantId) => boolean
   onReceivePlant?: (plantId: PlantId, level?: number, statRolls?: PlantStatKey[]) => void
   onServerChange?: () => void
+  goldenPityCounter?: number
 }
 
 export default function Shop({
@@ -204,6 +205,7 @@ export default function Shop({
   hasPurchasedStarterPack = false,
   playerEnergy = 20,
   maxPlayerEnergy = 20,
+  goldenPityCounter = 0,
   inventoryPacks,
   plantCopies = {},
   plantLevels = {},
@@ -724,6 +726,7 @@ export default function Shop({
           maxPlayerEnergy={maxPlayerEnergy}
           userElo={userElo}
           isPurchasing={isPurchasingPack}
+          goldenPityCounter={goldenPityCounter}
         />
         {renderSharedModals()}
       </div>

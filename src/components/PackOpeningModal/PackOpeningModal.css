@@ -265,6 +265,34 @@
   margin-top: 2px;
 }
 
+/* Estilos de Carta Dorada en Apertura de Sobres */
+.pack-reveal-multi-item--golden {
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.75), rgba(69, 26, 3, 0.9)) !important;
+  border: 1.5px solid #f59e0b !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.6), inset 0 0 10px rgba(245, 158, 11, 0.3) !important;
+  animation: goldenCardShimmer 2s ease-in-out infinite alternate;
+}
+
+@keyframes goldenCardShimmer {
+  from {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.5), inset 0 0 8px rgba(245, 158, 11, 0.25);
+  }
+  to {
+    box-shadow: 0 0 20px rgba(254, 240, 138, 0.8), inset 0 0 14px rgba(254, 240, 138, 0.4);
+  }
+}
+
+.pack-reveal-multi-img--golden {
+  filter: drop-shadow(0 0 10px rgba(254, 240, 138, 0.8));
+  transform: scale(1.08);
+}
+
+.pack-reveal-multi-new--golden {
+  color: #fef08a !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 6px rgba(254, 240, 138, 0.8);
+}
+
 @media (max-width: 480px) {
   .pack-reveal-card {
     padding: 16px 18px;
