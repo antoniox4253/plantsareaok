@@ -56,9 +56,56 @@ export interface StreamingQueryResult {
     email: string
     raw?: unknown
   }
+}export interface StreamingOrder {
+  id: string
+  platform: string
+  product_name: string
+  gem_cost: number
+  is_on_demand: boolean
+  order_status: 'pending' | 'delivered' | 'cancelled'
+  email?: string | null
+  password?: string | null
+  profile_number?: number | null
+  profile_pin?: string | null
+  bot_code?: string | null
+  created_at: string
+  delivered_at?: string | null
+  expires_at?: string | null
+  days_remaining: number
+}
+
+export interface AdminStreamingOverview {
+  pending_orders: Array<{
+    id: string
+    user_id: string
+    username?: string
+    platform: string
+    product_name: string
+    gem_cost: number
+    is_on_demand: boolean
+    order_status: string
+    created_at: string
+  }>
+  stock_summary: Record<string, number>
+  inventory: Array<{
+    id: string
+    platform: string
+    account_identifier: string
+    account_email: string
+    profile_number: number
+    profile_pin?: string | null
+    bot_code: string
+    status: 'available' | 'assigned' | 'expired' | 'disabled'
+    assigned_to?: string | null
+    assigned_username?: string | null
+    assigned_at?: string | null
+    expires_at?: string | null
+    created_at: string
+  }>
 }
 
 export const STREAMING_PLATFORMS: StreamingPlatform[] = [
+  { value: 'netflix', label: 'Netflix 4K', image: '/images/helpers/netflix.webp', category: 'Streaming' },
   { value: 'disney', label: 'Disney+', image: '/images/helpers/disney.webp', category: 'Streaming' },
   { value: 'max', label: 'Max (HBO)', image: '/images/helpers/max.webp', category: 'Streaming' },
   { value: 'primevideo', label: 'Prime Video', image: '/images/helpers/primevideo.webp', category: 'Streaming' },
@@ -79,6 +126,21 @@ export const STREAMING_SERVERS: StreamingServer[] = [
 ]
 
 export const DEFAULT_STREAMING_PRODUCTS: StreamingProduct[] = [
+  {
+    id: 'netflix',
+    name: 'Netflix Premium 4K (A Pedido)',
+    type: 'Streaming',
+    price: '400 Gemas o S/ 15.00',
+    originalPrice: '600 Gemas',
+    gemCost: 400,
+    image: '/images/helpers/netflix.webp',
+    badge: '⏳ A Pedido · Entrega en 30 min',
+    plans: [
+      { name: '1 Perfil 4K UHD Ultra HD (A Pedido)', price: '400 Gemas o S/ 15.00', gemCost: 400 },
+    ],
+    description: 'Disfruta de series, películas y estrenos mundiales en máxima resolución 4K HDR. Activación personalizada y garantizada con entrega estimada en 30 minutos.',
+    botType: 'netflix',
+  },
   {
     id: 'disney',
     name: 'Disney+ Premium',

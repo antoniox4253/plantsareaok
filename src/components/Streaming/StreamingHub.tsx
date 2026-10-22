@@ -7,6 +7,8 @@ import {
   type StreamingQueryResult,
   type StreamingPlatform,
   type StreamingServer,
+  type StreamingOrder,
+  type AdminStreamingOverview,
 } from '../../types/streaming'
 import { streamingService } from '../../services/streamingService'
 import { getPlayerAvatarUrl } from '../../utils/userManager'
@@ -21,12 +23,13 @@ interface StreamingHubProps {
     elo_rating?: number
     gems_balance?: number
     gold_balance?: number
+    is_admin?: boolean
   } | null
   userEmail?: string | null
   isLoggedIn?: boolean
   onOpenAuth?: () => void
   onBack: () => void
-  initialTab?: 'catalog' | 'bot'
+  initialTab?: 'catalog' | 'bot' | 'my_accounts' | 'admin'
   initialPlatform?: string
 }
 
@@ -39,7 +42,7 @@ export default function StreamingHub({
   initialTab = 'catalog',
   initialPlatform,
 }: StreamingHubProps) {
-  const [activeTab, setActiveTab] = useState<'catalog' | 'bot'>(initialTab)
+  const [activeTab, setActiveTab] = useState<'catalog' | 'bot' | 'my_accounts' | 'admin'>(initialTab)
 
   // Sincronización de Correo con Sesión de Usuario
   const [useCustomEmail, setUseCustomEmail] = useState<boolean>(false)
@@ -71,8 +74,89 @@ export default function StreamingHub({
   const [isCopied, setIsCopied] = useState<boolean>(false)
   const [toastNotification, setToastNotification] = useState<string | null>(null)
 
+  // Estado de Stock en Vivo y Compras
+  const [stockMap, setStockMap] = useState<Record<string, number>>({})
+  const [myOrders, setMyOrders] = useState<StreamingOrder[]>([])
+  const [isPurchasing, setIsPurchasing] = useState<boolean>(false)
+  const [purchaseSuccessData, setPurchaseSuccessData] = useState<{
+    isOnDemand: boolean
+    productName: string
+    email?: string
+    password?: string
+    profileNumber?: number
+    profilePin?: string | null
+    botCode?: string
+    message: string
+  } | null>(null)
+
+  // Estado del Panel de Administrador (para stock y entregas de Netflix)
+  const [adminOverview, setAdminOverview] = useState<AdminStreamingOverview | null>(null)
+  const [isAdminSubmitting, setIsAdminSubmitting] = useState<boolean>(false)
+  const [adminPlatform, setAdminPlatform] = useState<string>('disney')
+  const [adminAccountIdent, setAdminAccountIdent] = useState<string>('Cuenta A')
+  const [adminEmail, setAdminEmail] = useState<string>('')
+  const [adminPassword, setAdminPassword] = useState<string>('')
+  const [adminBotCode, setAdminBotCode] = useState<string>('')
+  const [adminProfilesCount, setAdminProfilesCount] = useState<number>(3)
+  const [adminPin1, setAdminPin1] = useState<string>('')
+  const [adminPin2, setAdminPin2] = useState<string>('')
+  const [adminPin3, setAdminPin3] = useState<string>('')
+
+  // Estado de entrega para orden pendiente en admin
+  const [deliveringOrderId, setDeliveringOrderId] = useState<string | null>(null)
+  const [delivEmail, setDelivEmail] = useState<string>('')
+  const [delivPassword, setDelivPassword] = useState<string>('')
+  const [delivProfile, setDelivProfile] = useState<number>(1)
+  const [delivPin, setDelivPin] = useState<string>('')
+  const [delivBotCode, setDelivBotCode] = useState<string>('')
+
   const serverDropdownRef = useRef<HTMLDivElement>(null)
   const platformDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Funciones de recarga
+  const refreshStock = async () => {
+    try {
+      const summary = await streamingService.getStockSummary()
+      setStockMap(summary)
+    } catch {
+      // Ignorar
+    }
+  }
+
+  const refreshMyOrders = async () => {
+    if (!isLoggedIn) return
+    try {
+      const orders = await streamingService.getMyOrders()
+      setMyOrders(orders)
+    } catch {
+      // Ignorar
+    }
+  }
+
+  const refreshAdminOverview = async () => {
+    if (!userProfile?.is_admin) return
+    try {
+      const res = await streamingService.adminGetOverview()
+      if (res.success && res.data) {
+        setAdminOverview(res.data)
+      }
+    } catch {
+      // Ignorar
+    }
+  }
+
+  useEffect(() => {
+    refreshStock()
+  }, [])
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      refreshMyOrders()
+    }
+    if (userProfile?.is_admin) {
+      refreshAdminOverview()
+    }
+  }, [isLoggedIn, userProfile?.is_admin])
 
   // Actualizar email cuando cambie la sesión si no se seleccionó custom email
   useEffect(() => {
@@ -110,12 +194,154 @@ export default function StreamingHub({
     setToastNotification('📱 Pagos con Yape: ¡Muy pronto disponible!')
   }
 
-  // Manejar clic en botón de Gemas
-  const handleBuyWithGems = (product: StreamingProduct) => {
+  // Manejar compra real con Gemas
+  const handleBuyWithGems = async (product: StreamingProduct) => {
     soundManager.playSound('click', 0.5)
-    setToastNotification(
-      `💎 Canje con Gemas (${product.name}): ¡Muy pronto disponible! Estamos preparando la entrega automatizada para que recibas tus accesos sin demoras.`
-    )
+    if (!isLoggedIn) {
+      setToastNotification('Debes iniciar sesión para canjear con Gemas.')
+      onOpenAuth?.()
+      return
+    }
+
+    const available = stockMap[product.id] ?? 0
+    const isOnDemand = product.id === 'netflix' || product.id === 'gemini'
+    if (!isOnDemand && available <= 0) {
+      setToastNotification(`🔴 ${product.name} está temporalmente agotado.`)
+      return
+    }
+
+    const cost = product.gemCost || 300
+    if ((userProfile?.gems_balance ?? 0) < cost) {
+      setToastNotification(
+        `💎 Saldo insuficiente: Tienes ${(userProfile?.gems_balance ?? 0).toLocaleString()} Gemas y se requieren ${cost.toLocaleString()} Gemas.`
+      )
+      return
+    }
+
+    setIsPurchasing(true)
+    try {
+      const res = await streamingService.buyProduct(product.id)
+      if (!res.success) {
+        setToastNotification(`❌ ${res.error || 'Error al procesar el canje'}`)
+        soundManager.playSound('defeat', 0.4)
+      } else {
+        soundManager.playSound('victory', 0.6)
+        setModalProduct(null)
+        setPurchaseSuccessData({
+          isOnDemand: Boolean(res.is_on_demand),
+          productName: product.name,
+          email: res.email,
+          password: res.password,
+          profileNumber: res.profile_number,
+          profilePin: res.profile_pin,
+          botCode: res.bot_code,
+          message: res.message || 'Canje completado con éxito.',
+        })
+        if (userProfile && res.new_gems_balance !== undefined) {
+          userProfile.gems_balance = res.new_gems_balance
+        }
+        refreshStock()
+        refreshMyOrders()
+      }
+    } catch (err: any) {
+      setToastNotification(`❌ ${err?.message || 'Error de conexión'}`)
+    } finally {
+      setIsPurchasing(false)
+    }
+  }
+
+  // Ir directamente al BOT con credenciales precargadas
+  const handleDirectToBot = (accountEmail?: string | null, accountBotCode?: string | null, platformId?: string) => {
+    if (accountEmail) {
+      setEmail(accountEmail)
+      setUseCustomEmail(true)
+    }
+    if (accountBotCode) {
+      setBotCode(accountBotCode)
+    }
+    if (platformId) {
+      const found = STREAMING_PLATFORMS.find((p) => p.value.toLowerCase() === platformId.toLowerCase())
+      if (found) setSelectedPlatform(found)
+    }
+    setActiveTab('bot')
+    setPurchaseSuccessData(null)
+    soundManager.playSound('click', 0.5)
+  }
+
+  // Handlers para el Panel de Administrador
+  const handleAdminAddBatch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!adminEmail.trim() || !adminPassword.trim() || !adminBotCode.trim()) {
+      setToastNotification('Por favor completa el email, contraseña y código BOT.')
+      return
+    }
+    setIsAdminSubmitting(true)
+    try {
+      const pins = [adminPin1, adminPin2, adminPin3].filter((p) => p.trim())
+      const res = await streamingService.adminAddBatch({
+        platform: adminPlatform,
+        accountIdentifier: adminAccountIdent,
+        accountEmail: adminEmail,
+        accountPassword: adminPassword,
+        botCode: adminBotCode,
+        profileCount: adminProfilesCount,
+        pins: pins.length > 0 ? pins : undefined,
+      })
+
+      if (res.success) {
+        soundManager.playSound('victory', 0.5)
+        setToastNotification(`✅ ¡Lote creado! Se agregaron ${res.inserted_profiles} perfiles en stock.`)
+        setAdminEmail('')
+        setAdminPassword('')
+        setAdminBotCode('')
+        setAdminPin1('')
+        setAdminPin2('')
+        setAdminPin3('')
+        refreshStock()
+        refreshAdminOverview()
+      } else {
+        setToastNotification(`❌ ${res.error || 'Error al agregar lote'}`)
+      }
+    } finally {
+      setIsAdminSubmitting(false)
+    }
+  }
+
+  const handleAdminDeliverOrder = async (orderId: string) => {
+    if (!delivEmail.trim() || !delivPassword.trim()) {
+      setToastNotification('Por favor completa el email y contraseña.')
+      return
+    }
+    const res = await streamingService.adminDeliverOrder({
+      orderId,
+      email: delivEmail,
+      password: delivPassword,
+      profileNumber: delivProfile,
+      profilePin: delivPin || undefined,
+      botCode: delivBotCode || undefined,
+    })
+    if (res.success) {
+      soundManager.playSound('victory', 0.5)
+      setToastNotification('✅ ¡Orden entregada al usuario!')
+      setDeliveringOrderId(null)
+      setDelivEmail('')
+      setDelivPassword('')
+      setDelivPin('')
+      setDelivBotCode('')
+      refreshAdminOverview()
+    } else {
+      setToastNotification(`❌ ${res.error || 'Error al entregar orden'}`)
+    }
+  }
+
+  const handleAdminDeleteProfile = async (id: string) => {
+    if (!confirm('¿Seguro que deseas eliminar este perfil libre del inventario?')) return
+    const res = await streamingService.adminDeleteProfile(id)
+    if (res.success) {
+      setToastNotification('Perfil eliminado del stock.')
+      refreshStock()
+      refreshAdminOverview()
+    }
   }
   const filteredProducts = useMemo(() => {
     const q = catalogSearch.toLowerCase().trim()
@@ -318,7 +544,7 @@ export default function StreamingHub({
             }}
           >
             <span>🛒 Catálogo de Cuentas</span>
-            <span className="streaming-hub__tab-badge">12+ SERVICIOS</span>
+            <span className="streaming-hub__tab-badge">13 SERVICIOS</span>
           </button>
 
           <button
@@ -336,6 +562,46 @@ export default function StreamingHub({
               AUTOMÁTICO
             </span>
           </button>
+
+          {isLoggedIn && (
+            <button
+              type="button"
+              className={`streaming-hub__tab-btn ${
+                activeTab === 'my_accounts' ? 'streaming-hub__tab-btn--active' : ''
+              }`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setActiveTab('my_accounts')
+                refreshMyOrders()
+              }}
+            >
+              <span>📦 Mis Suscripciones</span>
+              {myOrders.length > 0 && (
+                <span className="streaming-hub__tab-badge" style={{ background: 'rgba(16, 185, 129, 0.25)', color: '#6ee7b7' }}>
+                  {myOrders.length} ACTIVAS
+                </span>
+              )}
+            </button>
+          )}
+
+          {isLoggedIn && userProfile?.is_admin && (
+            <button
+              type="button"
+              className={`streaming-hub__tab-btn ${
+                activeTab === 'admin' ? 'streaming-hub__tab-btn--active' : ''
+              }`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setActiveTab('admin')
+                refreshAdminOverview()
+              }}
+            >
+              <span>⚙️ Stock &amp; Admin</span>
+              <span className="streaming-hub__tab-badge" style={{ background: 'rgba(239, 68, 68, 0.25)', color: '#fca5a5' }}>
+                ADMIN
+              </span>
+            </button>
+          )}
         </div>
 
         {/* ================================================================= */}
@@ -444,65 +710,95 @@ export default function StreamingHub({
 
             {/* Products Grid */}
             <div className="streaming-grid">
-              {filteredProducts.map((item) => (
-                <div key={item.id} className="streaming-card">
-                  <div className="streaming-card__glow-bar" />
-                  <div>
-                    <div className="streaming-card__top">
-                      <div className="streaming-card__icon-wrap">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="streaming-card__icon"
-                          onError={(e) => {
-                            ;(e.target as HTMLImageElement).src = '/images/helpers/disney.webp'
+              {filteredProducts.map((item) => {
+                const isOnDemand = item.id === 'netflix' || item.id === 'gemini'
+                const available = stockMap[item.id] ?? 0
+                const isOutOfStock = !isOnDemand && available <= 0
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`streaming-card ${isOutOfStock ? 'streaming-card--out-of-stock' : ''}`}
+                  >
+                    <div className="streaming-card__glow-bar" />
+                    <div>
+                      <div className="streaming-card__top">
+                        <div className="streaming-card__icon-wrap">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="streaming-card__icon"
+                            onError={(e) => {
+                              ;(e.target as HTMLImageElement).src = '/images/helpers/disney.webp'
+                            }}
+                          />
+                        </div>
+                        <div className="streaming-card__badges">
+                          {isOnDemand ? (
+                            <span className="streaming-card__badge streaming-card__badge--ondemand">
+                              ⏳ A Pedido · 30 min
+                            </span>
+                          ) : isOutOfStock ? (
+                            <span className="streaming-card__badge streaming-card__badge--out">
+                              🔴 AGOTADO
+                            </span>
+                          ) : available <= 2 ? (
+                            <span className="streaming-card__badge streaming-card__badge--low">
+                              🔥 ¡Últimos {available}!
+                            </span>
+                          ) : (
+                            <span className="streaming-card__badge streaming-card__badge--instock">
+                              🟢 {available} disponibles
+                            </span>
+                          )}
+
+                          {item.originalPrice && (
+                            <span className="streaming-card__original-price">{item.originalPrice}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <h3 className="streaming-card__title">{item.name}</h3>
+                      <p className="streaming-card__desc">{item.description}</p>
+                    </div>
+
+                    <div className="streaming-card__bottom">
+                      <div className="streaming-card__price-row">
+                        <span className="streaming-card__price-label">Desde</span>
+                        <span className="streaming-card__price-value">{item.price}</span>
+                      </div>
+
+                      <div className="streaming-card__btn-row">
+                        <button
+                          type="button"
+                          className={`streaming-card__btn-buy ${
+                            isOutOfStock ? 'streaming-card__btn-buy--disabled' : ''
+                          }`}
+                          disabled={isOutOfStock}
+                          onClick={() => {
+                            if (isOutOfStock) return
+                            soundManager.playSound('click', 0.5)
+                            setModalProduct(item)
                           }}
-                        />
+                        >
+                          {isOutOfStock ? 'Sin Stock' : isOnDemand ? 'Pedir 4K' : 'Comprar'}
+                        </button>
+                        <button
+                          type="button"
+                          className="streaming-card__btn-bot"
+                          title={`Consultar código para ${item.name}`}
+                          onClick={() => handleGoToBotWithPlatform(item.botType || item.id)}
+                        >
+                          <svg style={{ width: 14, height: 14, color: '#4ade80' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                          <span>Bot</span>
+                        </button>
                       </div>
-                      <div className="streaming-card__badges">
-                        {item.badge && <span className="streaming-card__badge">{item.badge}</span>}
-                        {item.originalPrice && (
-                          <span className="streaming-card__original-price">{item.originalPrice}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <h3 className="streaming-card__title">{item.name}</h3>
-                    <p className="streaming-card__desc">{item.description}</p>
-                  </div>
-
-                  <div className="streaming-card__bottom">
-                    <div className="streaming-card__price-row">
-                      <span className="streaming-card__price-label">Desde</span>
-                      <span className="streaming-card__price-value">{item.price}</span>
-                    </div>
-
-                    <div className="streaming-card__btn-row">
-                      <button
-                        type="button"
-                        className="streaming-card__btn-buy"
-                        onClick={() => {
-                          soundManager.playSound('click', 0.5)
-                          setModalProduct(item)
-                        }}
-                      >
-                        Comprar
-                      </button>
-                      <button
-                        type="button"
-                        className="streaming-card__btn-bot"
-                        title={`Consultar código para ${item.name}`}
-                        onClick={() => handleGoToBotWithPlatform(item.botType || item.id)}
-                      >
-                        <svg style={{ width: 14, height: 14, color: '#4ade80' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                        </svg>
-                        <span>Bot</span>
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -890,6 +1186,544 @@ export default function StreamingHub({
         )}
 
         {/* ================================================================= */}
+        {/* TAB 3: MIS SUSCRIPCIONES / CUENTAS */}
+        {/* ================================================================= */}
+        {activeTab === 'my_accounts' && (
+          <div className="streaming-subs animate-fade-in">
+            <div className="streaming-hero" style={{ padding: '24px 20px', marginBottom: 20 }}>
+              <div className="streaming-hero__badge">
+                <span className="streaming-hero__pulse" />
+                <span>Tus Accesos y Credenciales Seguras</span>
+              </div>
+              <h2 className="streaming-hero__title" style={{ fontSize: '1.6rem' }}>
+                Mis <span className="streaming-hero__title-gradient">Suscripciones VIP</span>
+              </h2>
+              <p className="streaming-hero__desc" style={{ maxWidth: 640 }}>
+                Aquí encuentras los correos, contraseñas y perfiles asignados a tu cuenta. Puedes consultar tus
+                códigos de inicio de sesión con 1 clic en el BOT.
+              </p>
+            </div>
+
+            {myOrders.length === 0 ? (
+              <div className="streaming-subs__empty">
+                <div className="streaming-subs__empty-icon">📺</div>
+                <h3 className="streaming-subs__empty-title">Aún no tienes suscripciones activas</h3>
+                <p className="streaming-subs__empty-desc">
+                  Adquiere perfiles de Netflix 4K, Disney+, Max, Prime Video o Crunchyroll con entrega garantizada
+                  usando tus Gemas o soles.
+                </p>
+                <button
+                  type="button"
+                  className="streaming-hero__btn-primary"
+                  onClick={() => setActiveTab('catalog')}
+                >
+                  Explorar Catálogo de Cuentas
+                </button>
+              </div>
+            ) : (
+              <div className="streaming-subs__grid">
+                {myOrders.map((ord) => {
+                  const plat = STREAMING_PLATFORMS.find((p) => p.value.toLowerCase() === ord.platform.toLowerCase())
+                  const isPending = ord.order_status === 'pending'
+
+                  return (
+                    <div key={ord.id} className="streaming-sub-card">
+                      <div className="streaming-sub-card__glow" />
+
+                      <div className="streaming-sub-card__top">
+                        <div className="streaming-sub-card__platform">
+                          <img
+                            src={plat?.image || '/images/helpers/disney.webp'}
+                            alt={ord.product_name}
+                            className="streaming-sub-card__icon"
+                            onError={(e) => {
+                              ;(e.target as HTMLImageElement).src = '/images/helpers/disney.webp'
+                            }}
+                          />
+                          <div>
+                            <h4 className="streaming-sub-card__name">{ord.product_name}</h4>
+                            <span className="streaming-sub-card__profile-tag">
+                              {ord.profile_number ? `Perfil Asignado: #${ord.profile_number}` : 'A Pedido'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`streaming-sub-card__badge ${
+                            isPending ? 'streaming-sub-card__badge--pending' : 'streaming-sub-card__badge--active'
+                          }`}
+                        >
+                          {isPending ? '⏳ En Preparación' : `🟢 Activa (${ord.days_remaining}d)`}
+                        </span>
+                      </div>
+
+                      {isPending ? (
+                        <div
+                          style={{
+                            background: 'rgba(245, 158, 11, 0.1)',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            borderRadius: 10,
+                            padding: 16,
+                            textAlign: 'center',
+                          }}
+                        >
+                          <p style={{ color: '#fde047', fontWeight: 700, fontSize: '0.9rem', marginBottom: 6 }}>
+                            ⏳ Preparando tu cuenta (~30 min)
+                          </p>
+                          <p style={{ color: '#cbd5e1', fontSize: '0.8rem' }}>
+                            El administrador está activando tu perfil 4K exclusivo. En cuanto esté listo, tus
+                            credenciales aparecerán aquí automáticamente.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="streaming-sub-card__fields">
+                            {/* Correo */}
+                            <div className="streaming-sub-card__field">
+                              <span className="streaming-sub-card__label">Correo:</span>
+                              <div className="streaming-sub-card__val-wrap">
+                                <span className="streaming-sub-card__val">{ord.email}</span>
+                                <button
+                                  type="button"
+                                  className="streaming-sub-card__copy-btn"
+                                  onClick={() => handleCopyCode(ord.email || '')}
+                                >
+                                  Copiar
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Contraseña */}
+                            <div className="streaming-sub-card__field">
+                              <span className="streaming-sub-card__label">Clave:</span>
+                              <div className="streaming-sub-card__val-wrap">
+                                <span className="streaming-sub-card__val">{ord.password}</span>
+                                <button
+                                  type="button"
+                                  className="streaming-sub-card__copy-btn"
+                                  onClick={() => handleCopyCode(ord.password || '')}
+                                >
+                                  Copiar
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Perfil & PIN */}
+                            <div className="streaming-sub-card__field">
+                              <span className="streaming-sub-card__label">Perfil Asignado:</span>
+                              <span className="streaming-sub-card__val" style={{ color: '#38bdf8' }}>
+                                Perfil {ord.profile_number || 1} {ord.profile_pin ? `(PIN: ${ord.profile_pin})` : ''}
+                              </span>
+                            </div>
+
+                            {/* Token / Bot Code */}
+                            {ord.bot_code && (
+                              <div className="streaming-sub-card__field">
+                                <span className="streaming-sub-card__label">Token BOT:</span>
+                                <div className="streaming-sub-card__val-wrap">
+                                  <span className="streaming-sub-card__val">{ord.bot_code}</span>
+                                  <button
+                                    type="button"
+                                    className="streaming-sub-card__copy-btn"
+                                    onClick={() => handleCopyCode(ord.bot_code || '')}
+                                  >
+                                    Copiar
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            className="streaming-sub-card__bot-btn"
+                            onClick={() => handleDirectToBot(ord.email, ord.bot_code, ord.platform)}
+                          >
+                            <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                            </svg>
+                            <span>🤖 Consultar Código en BOT con 1 Clic</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB 4: PANEL DE ADMINISTRADOR (STOCK & ENTREGAS) */}
+        {/* ================================================================= */}
+        {activeTab === 'admin' && userProfile?.is_admin && (
+          <div className="streaming-admin animate-fade-in">
+            {/* Header Admin */}
+            <div className="streaming-hero" style={{ padding: '24px 20px', marginBottom: 20 }}>
+              <div className="streaming-hero__badge" style={{ background: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444' }}>
+                <span className="streaming-hero__pulse" style={{ background: '#ef4444' }} />
+                <span>Panel de Control Autorizado</span>
+              </div>
+              <h2 className="streaming-hero__title" style={{ fontSize: '1.6rem' }}>
+                Gestión de <span className="streaming-hero__title-gradient">Stock &amp; Asignación</span>
+              </h2>
+              <p className="streaming-hero__desc" style={{ maxWidth: 640 }}>
+                Carga lotes de cuentas (Cuenta A, B) con 3 perfiles cada una. El sistema balancea automáticamente
+                la entrega (A1 → B1 → A2 → B2) y despacha pedidos pendientes de Netflix 4K.
+              </p>
+            </div>
+
+            {/* Resumen de Stock en Vivo */}
+            <div className="streaming-admin__box">
+              <h3 className="streaming-admin__section-title">📊 Disponibilidad en Tiempo Real</h3>
+              <div className="streaming-admin__stats-grid">
+                {STREAMING_PLATFORMS.map((plat) => {
+                  const count = stockMap[plat.value] || 0
+                  const isOnDemand = plat.value === 'netflix' || plat.value === 'gemini'
+                  return (
+                    <div key={plat.value} className="streaming-admin__stat-card">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <img src={plat.image} alt={plat.label} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                        <span className="streaming-admin__stat-name">{plat.label}</span>
+                      </div>
+                      <span
+                        className="streaming-admin__stat-val"
+                        style={{ color: isOnDemand ? '#c084fc' : count > 0 ? '#4ade80' : '#f87171' }}
+                      >
+                        {isOnDemand ? 'A Pedido' : `${count} disp.`}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Sección 1: Cargar Nuevo Lote de Cuentas */}
+            <div className="streaming-admin__box">
+              <h3 className="streaming-admin__section-title">➕ Cargar Lote de Perfiles (Ej: Cuenta A con 3 Perfiles)</h3>
+              <form onSubmit={handleAdminAddBatch}>
+                <div className="streaming-admin__form-grid">
+                  <div className="streaming-admin__form-field">
+                    <label>Plataforma</label>
+                    <select
+                      value={adminPlatform}
+                      onChange={(e) => setAdminPlatform(e.target.value)}
+                    >
+                      {STREAMING_PLATFORMS.map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="streaming-admin__form-field">
+                    <label>Identificador de Cuenta</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Cuenta A o Cuenta 1"
+                      required
+                      value={adminAccountIdent}
+                      onChange={(e) => setAdminAccountIdent(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="streaming-admin__form-field">
+                    <label>Correo Electrónico Maestro</label>
+                    <input
+                      type="email"
+                      placeholder="cuenta@plataforma.com"
+                      required
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="streaming-admin__form-field">
+                    <label>Contraseña de Acceso</label>
+                    <input
+                      type="text"
+                      placeholder="Contraseña segura"
+                      required
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="streaming-admin__form-field">
+                    <label>Código BOT / Token de Consulta</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: COD-MAX-01"
+                      required
+                      value={adminBotCode}
+                      onChange={(e) => setAdminBotCode(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="streaming-admin__form-field">
+                    <label>Cantidad de Perfiles</label>
+                    <select
+                      value={adminProfilesCount}
+                      onChange={(e) => setAdminProfilesCount(Number(e.target.value))}
+                    >
+                      <option value={1}>1 Perfil</option>
+                      <option value={2}>2 Perfiles</option>
+                      <option value={3}>3 Perfiles (Recomendado)</option>
+                      <option value={4}>4 Perfiles</option>
+                      <option value={5}>5 Perfiles</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* PINs opcionales */}
+                <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                  <div className="streaming-admin__form-field" style={{ flex: 1 }}>
+                    <label>PIN Perfil 1 (Opcional)</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: 1234"
+                      maxLength={6}
+                      value={adminPin1}
+                      onChange={(e) => setAdminPin1(e.target.value)}
+                    />
+                  </div>
+                  <div className="streaming-admin__form-field" style={{ flex: 1 }}>
+                    <label>PIN Perfil 2 (Opcional)</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: 5678"
+                      maxLength={6}
+                      value={adminPin2}
+                      onChange={(e) => setAdminPin2(e.target.value)}
+                    />
+                  </div>
+                  <div className="streaming-admin__form-field" style={{ flex: 1 }}>
+                    <label>PIN Perfil 3 (Opcional)</label>
+                    <input
+                      type="text"
+                      placeholder="Ej: 9012"
+                      maxLength={6}
+                      value={adminPin3}
+                      onChange={(e) => setAdminPin3(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="streaming-admin__submit-btn"
+                  disabled={isAdminSubmitting}
+                >
+                  {isAdminSubmitting ? 'Guardando Lote...' : `🚀 Crear ${adminProfilesCount} Perfiles en Stock`}
+                </button>
+              </form>
+            </div>
+
+            {/* Sección 2: Pedidos Pendientes (Netflix 4K A Pedido) */}
+            <div className="streaming-admin__box">
+              <h3 className="streaming-admin__section-title">
+                ⏳ Pedidos Pendientes de Entrega ({adminOverview?.pending_orders?.length || 0})
+              </h3>
+              {!adminOverview?.pending_orders || adminOverview.pending_orders.length === 0 ? (
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                  No hay pedidos pendientes. Todas las solicitudes de Netflix 4K están al día.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {adminOverview.pending_orders.map((ord) => (
+                    <div
+                      key={ord.id}
+                      style={{
+                        background: 'rgba(30, 41, 59, 0.7)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        borderRadius: 12,
+                        padding: 16,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <div>
+                          <span style={{ fontWeight: 800, color: '#f8fafc', fontSize: '1rem' }}>
+                            {ord.product_name}
+                          </span>
+                          <span style={{ color: '#94a3b8', fontSize: '0.8rem', marginLeft: 8 }}>
+                            Pedido por @{ord.username || 'Usuario'}
+                          </span>
+                        </div>
+                        <span style={{ color: '#fde047', fontWeight: 700, fontSize: '0.75rem' }}>
+                          Hace {Math.max(1, Math.round((Date.now() - new Date(ord.created_at).getTime()) / 60000))} min
+                        </span>
+                      </div>
+
+                      {deliveringOrderId === ord.id ? (
+                        <div style={{ background: 'rgba(15, 23, 42, 0.9)', padding: 14, borderRadius: 10 }}>
+                          <h4 style={{ color: '#38bdf8', fontSize: '0.85rem', marginBottom: 10 }}>
+                            Asignar Credenciales para @{ord.username}:
+                          </h4>
+                          <div className="streaming-admin__form-grid" style={{ marginBottom: 12 }}>
+                            <div className="streaming-admin__form-field">
+                              <label>Correo Electrónico</label>
+                              <input
+                                type="email"
+                                required
+                                value={delivEmail}
+                                onChange={(e) => setDelivEmail(e.target.value)}
+                              />
+                            </div>
+                            <div className="streaming-admin__form-field">
+                              <label>Contraseña</label>
+                              <input
+                                type="text"
+                                required
+                                value={delivPassword}
+                                onChange={(e) => setDelivPassword(e.target.value)}
+                              />
+                            </div>
+                            <div className="streaming-admin__form-field">
+                              <label>Perfil #</label>
+                              <input
+                                type="number"
+                                min={1}
+                                max={5}
+                                value={delivProfile}
+                                onChange={(e) => setDelivProfile(Number(e.target.value))}
+                              />
+                            </div>
+                            <div className="streaming-admin__form-field">
+                              <label>PIN (Opcional)</label>
+                              <input
+                                type="text"
+                                value={delivPin}
+                                onChange={(e) => setDelivPin(e.target.value)}
+                              />
+                            </div>
+                            <div className="streaming-admin__form-field">
+                              <label>Código BOT</label>
+                              <input
+                                type="text"
+                                value={delivBotCode}
+                                onChange={(e) => setDelivBotCode(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 10 }}>
+                            <button
+                              type="button"
+                              className="streaming-admin__submit-btn"
+                              onClick={() => handleAdminDeliverOrder(ord.id)}
+                            >
+                              ✅ Confirmar y Entregar Cuenta
+                            </button>
+                            <button
+                              type="button"
+                              style={{
+                                background: 'transparent',
+                                border: '1px solid #64748b',
+                                color: '#94a3b8',
+                                borderRadius: 8,
+                                padding: '8px 16px',
+                                cursor: 'pointer',
+                              }}
+                              onClick={() => setDeliveringOrderId(null)}
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="streaming-admin__submit-btn"
+                          onClick={() => {
+                            setDeliveringOrderId(ord.id)
+                            setDelivEmail('')
+                            setDelivPassword('')
+                            setDelivProfile(1)
+                            setDelivPin('')
+                            setDelivBotCode('')
+                          }}
+                        >
+                          📦 Asignar y Entregar Cuenta
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Sección 3: Inventario en Vivo de Perfiles */}
+            <div className="streaming-admin__box">
+              <h3 className="streaming-admin__section-title">📋 Inventario Completo de Perfiles</h3>
+              <div className="streaming-admin__table-wrap">
+                <table className="streaming-admin__table">
+                  <thead>
+                    <tr>
+                      <th>Plataforma</th>
+                      <th>Cuenta</th>
+                      <th>Perfil</th>
+                      <th>Email</th>
+                      <th>Clave</th>
+                      <th>Bot Code</th>
+                      <th>Estado</th>
+                      <th>Asignado A</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!adminOverview?.inventory || adminOverview.inventory.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} style={{ textAlign: 'center', padding: 24, color: '#94a3b8' }}>
+                          No hay perfiles cargados en el inventario. Usa el formulario de arriba para cargar tu primer lote.
+                        </td>
+                      </tr>
+                    ) : (
+                      adminOverview.inventory.map((inv) => (
+                        <tr key={inv.id}>
+                          <td style={{ fontWeight: 700, textTransform: 'capitalize' }}>{inv.platform}</td>
+                          <td>{inv.account_identifier}</td>
+                          <td style={{ color: '#38bdf8' }}>Perfil {inv.profile_number}</td>
+                          <td>{inv.account_email}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{inv.profile_pin ? `${inv.account_email} (PIN: ${inv.profile_pin})` : '••••••'}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{inv.bot_code}</td>
+                          <td>
+                            <span
+                              style={{
+                                padding: '2px 8px',
+                                borderRadius: 6,
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                background: inv.status === 'available' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                color: inv.status === 'available' ? '#4ade80' : '#93c5fd',
+                              }}
+                            >
+                              {inv.status === 'available' ? 'Disponible' : 'Vendido'}
+                            </span>
+                          </td>
+                          <td>{inv.assigned_username ? `@${inv.assigned_username}` : '—'}</td>
+                          <td>
+                            {inv.status === 'available' && (
+                              <button
+                                type="button"
+                                className="streaming-admin__del-btn"
+                                onClick={() => handleAdminDeleteProfile(inv.id)}
+                              >
+                                Eliminar
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
         {/* MODAL DE COMPRA / DETALLES DE PLANES */}
         {/* ================================================================= */}
         {modalProduct && (
@@ -929,25 +1763,45 @@ export default function StreamingHub({
               <div className="streaming-modal__actions">
                 <div className="streaming-modal__buy-options">
                   {/* Botón 1: Valor en Gemas */}
-                  <button
-                    type="button"
-                    className="streaming-modal__gem-btn"
-                    onClick={() => handleBuyWithGems(modalProduct)}
-                    title="Canjear con Gemas (Muy pronto)"
-                  >
-                    <div className="streaming-modal__gem-btn-inner">
-                      <span className="streaming-modal__gem-icon">💎</span>
-                      <span className="streaming-modal__gem-val">
-                        {modalProduct.gemCost || 300} Gemas
-                      </span>
-                      <span className="streaming-modal__gem-tag">MUY PRONTO</span>
-                    </div>
-                    <span className="streaming-modal__gem-sub">
-                      {isLoggedIn && userProfile?.gems_balance !== undefined
-                        ? `(Tienes ${userProfile.gems_balance.toLocaleString()} 💎)`
-                        : 'Canje con Gemas'}
-                    </span>
-                  </button>
+                  {(() => {
+                    const isOnDemand = modalProduct.id === 'netflix' || modalProduct.id === 'gemini'
+                    const available = stockMap[modalProduct.id] ?? 0
+                    const isOutOfStock = !isOnDemand && available <= 0
+
+                    return (
+                      <button
+                        type="button"
+                        className={`streaming-modal__gem-btn ${
+                          isOutOfStock ? 'streaming-modal__gem-btn--disabled' : 'streaming-modal__gem-btn--enabled'
+                        }`}
+                        disabled={isOutOfStock || isPurchasing}
+                        onClick={() => handleBuyWithGems(modalProduct)}
+                        title={isOutOfStock ? 'Agotado temporalmente' : 'Canjear con Gemas'}
+                      >
+                        <div className="streaming-modal__gem-btn-inner">
+                          <span className="streaming-modal__gem-icon">💎</span>
+                          <span className="streaming-modal__gem-val">
+                            {isPurchasing
+                              ? 'Procesando...'
+                              : `${modalProduct.gemCost || 300} Gemas`}
+                          </span>
+                          <span
+                            className="streaming-modal__gem-tag"
+                            style={{
+                              background: isOutOfStock ? '#ef4444' : isOnDemand ? '#a855f7' : '#10b981',
+                            }}
+                          >
+                            {isOutOfStock ? 'SIN STOCK' : isOnDemand ? 'A PEDIDO (30 MIN)' : 'ENTREGA INMEDIATA'}
+                          </span>
+                        </div>
+                        <span className="streaming-modal__gem-sub">
+                          {isLoggedIn && userProfile?.gems_balance !== undefined
+                            ? `(Tienes ${userProfile.gems_balance.toLocaleString()} 💎)`
+                            : 'Canje con Gemas'}
+                        </span>
+                      </button>
+                    )
+                  })()}
 
                   {/* Botón 2: Yape */}
                   <button
@@ -981,7 +1835,127 @@ export default function StreamingHub({
             </div>
           </div>
         )}
+
+        {/* ================================================================= */}
+        {/* MODAL DE COMPRA EXITOSA / CREDENCIALES AL INSTANTE */}
+        {/* ================================================================= */}
+        {purchaseSuccessData && (
+          <div className="streaming-modal-backdrop" onClick={() => setPurchaseSuccessData(null)}>
+            <div className="streaming-success-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="streaming-success-modal__icon">
+                {purchaseSuccessData.isOnDemand ? '⏳' : '🎉'}
+              </div>
+              <h3 className="streaming-success-modal__title">
+                {purchaseSuccessData.isOnDemand ? '¡Pedido Registrado con Éxito!' : '¡Felicidades por tu Compra!'}
+              </h3>
+              <p className="streaming-success-modal__desc">
+                {purchaseSuccessData.message}
+              </p>
+
+              {!purchaseSuccessData.isOnDemand && purchaseSuccessData.email && (
+                <div className="streaming-success-modal__creds">
+                  <div className="streaming-success-modal__cred-row">
+                    <span style={{ color: '#94a3b8' }}>Correo:</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <strong style={{ color: '#f8fafc', fontFamily: 'monospace' }}>
+                        {purchaseSuccessData.email}
+                      </strong>
+                      <button
+                        type="button"
+                        className="streaming-sub-card__copy-btn"
+                        onClick={() => handleCopyCode(purchaseSuccessData.email!)}
+                      >
+                        Copiar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="streaming-success-modal__cred-row">
+                    <span style={{ color: '#94a3b8' }}>Contraseña:</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <strong style={{ color: '#f8fafc', fontFamily: 'monospace' }}>
+                        {purchaseSuccessData.password}
+                      </strong>
+                      <button
+                        type="button"
+                        className="streaming-sub-card__copy-btn"
+                        onClick={() => handleCopyCode(purchaseSuccessData.password!)}
+                      >
+                        Copiar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="streaming-success-modal__cred-row">
+                    <span style={{ color: '#94a3b8' }}>Perfil Asignado:</span>
+                    <strong style={{ color: '#38bdf8' }}>
+                      Perfil #{purchaseSuccessData.profileNumber || 1}
+                      {purchaseSuccessData.profilePin ? ` (PIN: ${purchaseSuccessData.profilePin})` : ''}
+                    </strong>
+                  </div>
+
+                  {purchaseSuccessData.botCode && (
+                    <div className="streaming-success-modal__cred-row">
+                      <span style={{ color: '#94a3b8' }}>Token BOT:</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <strong style={{ color: '#4ade80', fontFamily: 'monospace' }}>
+                          {purchaseSuccessData.botCode}
+                        </strong>
+                        <button
+                          type="button"
+                          className="streaming-sub-card__copy-btn"
+                          onClick={() => handleCopyCode(purchaseSuccessData.botCode!)}
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {!purchaseSuccessData.isOnDemand && (
+                  <button
+                    type="button"
+                    className="streaming-hero__btn-primary"
+                    style={{ width: '100%', justifyContent: 'center' }}
+                    onClick={() =>
+                      handleDirectToBot(
+                        purchaseSuccessData.email,
+                        purchaseSuccessData.botCode,
+                        modalProduct?.id
+                      )
+                    }
+                  >
+                    🤖 Ir al BOT para Extraer Códigos
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#f8fafc',
+                    borderRadius: 10,
+                    padding: '10px 16px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    setPurchaseSuccessData(null)
+                    setActiveTab('my_accounts')
+                  }}
+                >
+                  Ver en "Mis Suscripciones"
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
+
