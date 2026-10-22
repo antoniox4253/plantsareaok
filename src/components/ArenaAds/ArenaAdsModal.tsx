@@ -1122,15 +1122,13 @@ export default function ArenaAdsModal({
                     >
                       💰 RETIRARSE ({activeRun.accumulatedRewards.tokenPlants ?? Math.max(0, (activeRun.level - 1) * 2)} 🌱)
                     </button>
-                    {activeRun.level <= 50 && (
-                      <button
-                        type="button"
-                        className="arena-ads-btn arena-ads-btn--primary"
-                        onClick={handleResumeRun}
-                      >
-                        ▶️ CONTINUAR (NIV {activeRun.level})
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="arena-ads-btn arena-ads-btn--primary"
+                      onClick={handleResumeRun}
+                    >
+                      ▶️ CONTINUAR (NIV {activeRun.level})
+                    </button>
                   </>
                 ) : (
                   <button
@@ -1176,20 +1174,38 @@ export default function ArenaAdsModal({
 
               <div className="arena-ads-footer-actions">
                 {activeRun && activeRun.level > 50 ? (
-                  <button
-                    type="button"
-                    className="arena-ads-btn arena-ads-btn--cashout"
-                    style={{
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                      borderColor: '#fbbf24',
-                      color: '#fff',
-                      fontWeight: 800,
-                    }}
-                    onClick={handleCashout}
-                    disabled={isProcessing}
-                  >
-                    🏆 COBRAR BOTÍN SUPREMO ({activeRun.accumulatedRewards.gems} 💎)
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    <button
+                      type="button"
+                      className="arena-ads-btn arena-ads-btn--cashout"
+                      style={{
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                        borderColor: '#fbbf24',
+                        color: '#fff',
+                        fontWeight: 800,
+                        flex: 1,
+                      }}
+                      onClick={handleCashout}
+                      disabled={isProcessing}
+                    >
+                      🏆 COBRAR BOTÍN
+                    </button>
+                    <button
+                      type="button"
+                      className="arena-ads-btn arena-ads-btn--primary"
+                      style={{
+                        background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                        borderColor: '#f87171',
+                        color: '#fff',
+                        fontWeight: 900,
+                        flex: 1.4,
+                      }}
+                      onClick={() => handleEquipPlantAndBattle()}
+                      disabled={isProcessing}
+                    >
+                      🔥 PESADILLA (NIV {activeRun?.level})
+                    </button>
+                  </div>
                 ) : (
                   <button
                     type="button"

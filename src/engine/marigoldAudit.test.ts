@@ -3,8 +3,6 @@ import {
   createBattleState,
   stepTick,
   crearPlantaPropia,
-  crearPlantaDelRival,
-  type GameState,
 } from './simulate'
 import { msToTicks } from './time'
 import { conservarLoLocal } from './reconstruir'

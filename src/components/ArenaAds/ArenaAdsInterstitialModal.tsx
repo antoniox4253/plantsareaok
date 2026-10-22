@@ -146,20 +146,42 @@ export default function ArenaAdsInterstitialModal({
             </button>
           </div>
         ) : isMaxLevelReached ? (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center', marginTop: '8px', width: '100%' }}>
+            <button
+              type="button"
+              className="arena-ads-btn arena-ads-btn--primary"
+              style={{
+                width: '100%',
+                padding: '13px 20px',
+                fontSize: '14px',
+                fontWeight: 900,
+                background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                borderColor: '#f87171',
+                color: '#ffffff',
+                boxShadow: '0 0 20px rgba(239, 68, 68, 0.6)',
+                letterSpacing: '0.5px',
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                soundManager.playSound('click', 0.5)
+                onNextLevel()
+              }}
+            >
+              🔥 MODO PESADILLA: CONTINUAR AL NIVEL {levelCleared + 1} ⚔️
+            </button>
             <button
               type="button"
               className="arena-ads-btn arena-ads-btn--cashout"
               style={{
                 width: '100%',
-                padding: '12px 20px',
-                fontSize: '15px',
-                fontWeight: 900,
+                padding: '11px 20px',
+                fontSize: '13px',
+                fontWeight: 800,
                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)',
                 borderColor: '#fbbf24',
                 color: '#ffffff',
-                boxShadow: '0 0 20px rgba(245, 158, 11, 0.6)',
-                letterSpacing: '0.5px',
+                boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
+                cursor: 'pointer',
               }}
               onClick={() => {
                 soundManager.playSound('click', 0.5)

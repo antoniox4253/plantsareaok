@@ -743,20 +743,20 @@ export function buildArenaAdsDeck(
  */
 export function generateBotDeckForLevel(level: number): CartaDeMazo[] {
   const deck: CartaDeMazo[] = []
-  // Girasol en slot 0
-  const sunflowerLevel = level >= 30 ? 4 : level >= 15 ? 3 : level >= 5 ? 2 : 1
+  // Girasol en slot 0 (A partir de nivel 45: Girasol Nivel 5 con aceleración de soles)
+  const sunflowerLevel = level >= 45 ? 5 : level >= 30 ? 4 : level >= 15 ? 3 : level >= 5 ? 2 : 1
   deck.push({
     plantId: 'sunflower',
     slot: 0,
     level: sunflowerLevel,
-    statRolls: [],
+    statRolls: level >= 45 ? ['attackSpeed', 'attackSpeed', 'hp'] : [],
   })
 
   // Composiciones sinérgicas según nivel de mazmorra
-  const tankPool: PlantId[] = level >= 25 ? ['tallnut', 'wallnut'] : ['wallnut', 'garlic']
-  const dpsPool: PlantId[] = level >= 20 ? ['melonpult', 'threepeater', 'repeater'] : ['repeater', 'peashooter']
-  const meleePool: PlantId[] = level >= 15 ? ['bonkchoy', 'squash', 'chomper'] : ['bonkchoy', 'chomper']
-  const utilityPool: PlantId[] = level >= 20 ? ['iceberglettuce', 'jalapeno', 'kernelpult', 'aloe'] : ['kernelpult', 'iceberglettuce']
+  const tankPool: PlantId[] = level >= 45 ? ['tallnut', 'explodeonut'] : level >= 25 ? ['tallnut', 'wallnut'] : ['wallnut', 'garlic']
+  const dpsPool: PlantId[] = level >= 45 ? ['gatlingpea', 'melonpult', 'threepeater'] : level >= 20 ? ['melonpult', 'threepeater', 'repeater'] : ['repeater', 'peashooter']
+  const meleePool: PlantId[] = level >= 45 ? ['squash', 'jalapeno', 'bonkchoy'] : level >= 15 ? ['bonkchoy', 'squash', 'chomper'] : ['bonkchoy', 'chomper']
+  const utilityPool: PlantId[] = level >= 45 ? ['jalapeno', 'torchwood', 'iceberglettuce'] : level >= 20 ? ['iceberglettuce', 'jalapeno', 'kernelpult', 'aloe'] : ['kernelpult', 'iceberglettuce']
 
   const selectedPlants: PlantId[] = [
     randomPick(tankPool),
@@ -765,9 +765,9 @@ export function generateBotDeckForLevel(level: number): CartaDeMazo[] {
     randomPick(utilityPool),
   ]
 
-  // Escalado de nivel de cartas y tiradas de estadísticas
-  const cardLevel = level >= 40 ? 4 : level >= 20 ? 3 : level >= 5 ? 2 : 1
-  const rollsCount = level >= 30 ? 4 : level >= 20 ? 3 : level >= 10 ? 2 : level >= 5 ? 1 : 0
+  // Escalado de nivel de cartas y tiradas de estadísticas: a partir de Nivel 45 son Nivel 5 con 5 tiradas legendarias
+  const cardLevel = level >= 45 ? 5 : level >= 40 ? 4 : level >= 20 ? 3 : level >= 5 ? 2 : 1
+  const rollsCount = level >= 45 ? 5 : level >= 30 ? 4 : level >= 20 ? 3 : level >= 10 ? 2 : level >= 5 ? 1 : 0
   const rollPool: PlantStatKey[] = ['damage', 'hp', 'attackSpeed', 'cooldown']
 
   selectedPlants.forEach((plantId, index) => {
@@ -789,6 +789,7 @@ export function generateBotDeckForLevel(level: number): CartaDeMazo[] {
 /**
  * Calcula los atributos del bot rival para el nivel actual de la mazmorra.
  * A partir del Nivel 5 se eleva significativamente el ELO y la vida base del bot.
+ * A partir del Nivel 45 se activa la Dificultad Pesadilla (HP de 3,230 a 5,480+, cartas Nv.5 y ELO hasta 3,865+).
  */
 export function getBotStatsForLevel(level: number): {
   botElo: number
@@ -803,8 +804,14 @@ export function getBotStatsForLevel(level: number): {
     botElo = 1325 + (level - 4) * 65 // Lv 5: 1390, Lv 10: 1715, Lv 20: 2365
   } else if (level <= 40) {
     botElo = 2365 + (level - 20) * 35 // Lv 30: 2715, Lv 40: 3065
+  } else if (level < 45) {
+    botElo = 3065 + (level - 40) * 35 // Lv 44: 3205
+  } else if (level <= 50) {
+    // A partir de nivel 45: IA competitiva agresiva (Lv 45: 3315, Lv 50: 3865)
+    botElo = 3205 + (level - 44) * 110
   } else {
-    botElo = Math.min(3600, 3065 + (level - 40) * 35) // Lv 50: 3415
+    // Modo Pesadilla Infinita (Nivel 51+)
+    botElo = Math.min(5000, 3865 + (level - 50) * 80)
   }
 
   let botBaseHp = 1000
@@ -818,8 +825,14 @@ export function getBotStatsForLevel(level: number): {
     botBaseHp = 1500 + (level - 20) * 45 // Lv 30: 1950
   } else if (level <= 40) {
     botBaseHp = 1950 + (level - 30) * 55 // Lv 40: 2500
+  } else if (level < 45) {
+    botBaseHp = 2500 + (level - 40) * 70 // Lv 44: 2780
+  } else if (level <= 50) {
+    // Dificultad Pesadilla Nv 45 al 50: la vida base escala drásticamente hasta 5,480 HP
+    botBaseHp = 2780 + (level - 44) * 450 // Lv 45: 3230, Lv 46: 3680, Lv 47: 4130, Lv 48: 4580, Lv 49: 5030, Lv 50: 5480
   } else {
-    botBaseHp = 2500 + (level - 40) * 70 // Lv 50: 3200
+    // Pesadilla Infinita: +600 HP por nivel adicional
+    botBaseHp = 5480 + (level - 50) * 600
   }
 
   const botDeck = generateBotDeckForLevel(level)
@@ -829,7 +842,7 @@ export function getBotStatsForLevel(level: number): {
     'Comandante', 'Campeón', 'Titán', 'Coloso', 'Señor Supremo'
   ]
   const titleIdx = Math.min(titles.length - 1, Math.floor((level - 1) / 5))
-  const botName = `Bot ${titles[titleIdx]} (Nv.${level})`
+  const botName = level > 50 ? `Pesadilla Titánica (Nv.${level})` : `Bot ${titles[titleIdx]} (Nv.${level})`
 
   return { botElo, botBaseHp, botName, botDeck }
 }

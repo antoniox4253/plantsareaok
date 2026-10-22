@@ -442,6 +442,28 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
     return () => clearInterval(timer)
   }, [])
 
+  // Reloj regresivo de 5 días para la entrega de premios de Survivor ADS (anclado a 00:00 UTC)
+  const [survivorRewardCountdown, setSurvivorRewardCountdown] = useState<string>('')
+  useEffect(() => {
+    const updateSurvivorTimer = () => {
+      const now = Date.now()
+      const CYCLE_MS = 5 * 24 * 60 * 60 * 1000 // 5 días exactos en ms
+      const ANCHOR_MS = new Date('2026-10-22T00:00:00Z').getTime()
+      const elapsed = (now - ANCHOR_MS) % CYCLE_MS
+      const remainingMs = CYCLE_MS - (elapsed >= 0 ? elapsed : elapsed + CYCLE_MS)
+      const days = Math.floor(remainingMs / (24 * 3600 * 1000))
+      const hours = Math.floor((remainingMs % (24 * 3600 * 1000)) / 3600000)
+      const minutes = Math.floor((remainingMs % 3600000) / 60000)
+      const seconds = Math.floor((remainingMs % 60000) / 1000)
+      setSurvivorRewardCountdown(
+        `${days}d ${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
+      )
+    }
+    updateSurvivorTimer()
+    const interval = setInterval(updateSurvivorTimer, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
   // Cargar ranking de clanes
   const loadClansRanking = useCallback(() => {
     setIsLoadingClans(true)
@@ -2078,8 +2100,45 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                   <span>⏳ Cargando clasificación de Survivor ADS...</span>
                 </div>
               ) : (
-                <div className="leaderboard-split-layout">
-                  {/* LEFT COLUMN: PODIUM #1 TOP, #2 & #3 BOTTOM */}
+                <>
+                  {/* SECCIÓN DE RECOMPENSAS Y TEMPORIZADOR DE 5 DÍAS */}
+                  <div className="survivor-rewards-banner">
+                    <div className="survivor-rewards-banner__left">
+                      <div className="survivor-rewards-banner__badge">
+                        <span className="survivor-rewards-banner__icon">🏆</span>
+                        <div className="survivor-rewards-banner__titles">
+                          <h3 className="survivor-rewards-banner__title">RECOMPENSAS DE TEMPORADA SURVIVOR ADS</h3>
+                          <span className="survivor-rewards-banner__subtitle">
+                            Los mejores clasificados reciben Plantas Doradas exclusivas directas a su colección
+                          </span>
+                        </div>
+                      </div>
+                      <div className="survivor-rewards-cards">
+                        <div className="survivor-reward-tier survivor-reward-tier--top13">
+                          <span className="survivor-reward-tier__pos">TOP 1 - 3</span>
+                          <div className="survivor-reward-tier__prize">
+                            <span className="survivor-reward-tier__icon">🌟</span>
+                            <strong className="survivor-reward-tier__name">2 Gold Plants</strong>
+                          </div>
+                        </div>
+                        <div className="survivor-reward-tier survivor-reward-tier--top45">
+                          <span className="survivor-reward-tier__pos">TOP 4 - 5</span>
+                          <div className="survivor-reward-tier__prize">
+                            <span className="survivor-reward-tier__icon">✨</span>
+                            <strong className="survivor-reward-tier__name">1 Gold Plant (Aleatoria)</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="survivor-rewards-banner__timer">
+                      <span className="survivor-timer-label">⏳ ENTREGA DE PREMIOS EN:</span>
+                      <strong className="survivor-timer-value">{survivorRewardCountdown || '5d 00h 00m 00s'}</strong>
+                      <small className="survivor-timer-sub">Temporada de 5 días · Cierre 00:00 UTC</small>
+                    </div>
+                  </div>
+
+                  <div className="leaderboard-split-layout">
+                    {/* LEFT COLUMN: PODIUM #1 TOP, #2 & #3 BOTTOM */}
                   <div className="leaderboard-podium-col">
                     {/* 1st Place Golden Card */}
                     {arenaAdsLeaderboard[0] ? (
@@ -2137,10 +2196,8 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
 
                         <div className="podium-v2-prize-box podium-v2-prize-box--gold">
                           <div className="podium-v2-gems-val">⚔️ NIVEL MÁXIMO {arenaAdsLeaderboard[0].levelReached}</div>
-                          <div className="podium-v2-pack-val">
-                            🌱 {arenaAdsLeaderboard[0].totalRewards?.tokenPlants ?? (arenaAdsLeaderboard[0].levelReached * 2)} PLANTS
-                            {(arenaAdsLeaderboard[0].totalRewards?.basicPacks ?? Math.floor(arenaAdsLeaderboard[0].levelReached / 10)) > 0 &&
-                              ` · 📦 ${arenaAdsLeaderboard[0].totalRewards?.basicPacks ?? Math.floor(arenaAdsLeaderboard[0].levelReached / 10)} Sobres`}
+                          <div className="podium-v2-pack-val podium-v2-pack-val--gold-reward">
+                            🌟 PREMIO: 2 Gold Plants
                           </div>
                         </div>
 
@@ -2197,8 +2254,8 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           </div>
                           <div className="podium-v2-prize-box podium-v2-prize-box--silver">
                             <div className="podium-v2-gems-val podium-v2-gems-val--sub">⚔️ Nivel {arenaAdsLeaderboard[1].levelReached}</div>
-                            <div className="podium-v2-pack-val podium-v2-pack-val--sub">
-                              🌱 {arenaAdsLeaderboard[1].totalRewards?.tokenPlants ?? (arenaAdsLeaderboard[1].levelReached * 2)} PLANTS
+                            <div className="podium-v2-pack-val podium-v2-pack-val--sub podium-v2-pack-val--gold-reward">
+                              🌟 PREMIO: 2 Gold Plants
                             </div>
                           </div>
                           <div className="podium-v2-sub-stats">
@@ -2247,8 +2304,8 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           </div>
                           <div className="podium-v2-prize-box podium-v2-prize-box--bronze">
                             <div className="podium-v2-gems-val podium-v2-gems-val--sub">⚔️ Nivel {arenaAdsLeaderboard[2].levelReached}</div>
-                            <div className="podium-v2-pack-val podium-v2-pack-val--sub">
-                              🌱 {arenaAdsLeaderboard[2].totalRewards?.tokenPlants ?? (arenaAdsLeaderboard[2].levelReached * 2)} PLANTS
+                            <div className="podium-v2-pack-val podium-v2-pack-val--sub podium-v2-pack-val--gold-reward">
+                              🌟 PREMIO: 2 Gold Plants
                             </div>
                           </div>
                           <div className="podium-v2-sub-stats">
@@ -2300,16 +2357,13 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                               <th style={{ width: '50px', textAlign: 'center' }}>#</th>
                               <th>SUPERVIVIENTE</th>
                               <th style={{ width: '120px', textAlign: 'center' }}>NIVEL MÁXIMO</th>
-                              <th style={{ width: '150px', textAlign: 'center' }}>BOTÍN PLANTS</th>
-                              <th style={{ width: '90px', textAlign: 'center' }}>DETALLES</th>
+                              <th style={{ width: '110px', textAlign: 'center' }}>DETALLES</th>
+                              <th style={{ width: '160px', textAlign: 'center' }}>REWARD</th>
                             </tr>
                           </thead>
                           <tbody>
                             {paginatedArenaAdsUsers.map((usr) => {
                               const isMe = isCurrentLeaderboardUser(usr.userId, userProfile?.id)
-                              const tokensWon = usr.totalRewards?.tokenPlants ?? (usr.levelReached * 2)
-                              const packsWon = usr.totalRewards?.basicPacks ?? Math.floor(usr.levelReached / 10)
-                              const raresWon = usr.totalRewards?.rareCards ?? Math.floor(usr.levelReached / 25)
                               return (
                                 <tr
                                   key={`${usr.rank}-${usr.userId}`}
@@ -2357,19 +2411,6 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                       ⚔️ Nivel {usr.levelReached}
                                     </span>
                                   </td>
-                                  <td style={{ textAlign: 'center', fontSize: '11px', color: '#4ade80', fontWeight: 800 }}>
-                                    🌱 {tokensWon} PLANTS
-                                    {packsWon > 0 && (
-                                      <span style={{ color: '#93c5fd', marginLeft: '4px', fontSize: '10px' }}>
-                                        · 📦 {packsWon}
-                                      </span>
-                                    )}
-                                    {raresWon > 0 && (
-                                      <span style={{ color: '#fef08a', marginLeft: '4px', fontSize: '10px' }}>
-                                        · 🌟 {raresWon}
-                                      </span>
-                                    )}
-                                  </td>
                                   <td style={{ textAlign: 'center' }}>
                                     <button
                                       type="button"
@@ -2382,6 +2423,19 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                     >
                                       🎁 Ver Botín
                                     </button>
+                                  </td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    {usr.rank <= 3 ? (
+                                      <span className="survivor-table-reward survivor-table-reward--gold" title="Premio Top 1-3: 2 Gold Plants">
+                                        🌟 2 Gold Plants
+                                      </span>
+                                    ) : usr.rank <= 5 ? (
+                                      <span className="survivor-table-reward survivor-table-reward--silver" title="Premio Top 4-5: 1 Gold Plant (Aleatoria)">
+                                        ✨ 1 Gold Plant
+                                      </span>
+                                    ) : (
+                                      <span className="survivor-table-reward survivor-table-reward--none">—</span>
+                                    )}
                                   </td>
                                 </tr>
                               )
@@ -2462,6 +2516,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                     </div>
                   </div>
                 </div>
+              </>
               )}
             </div>
           </div>

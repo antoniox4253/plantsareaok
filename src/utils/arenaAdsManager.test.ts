@@ -97,7 +97,7 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
 
     const run = ArenaAdsManager.startNewRun(12345)
     expect(run.level).toBe(1)
-    expect(run.status).toBe('prep')
+    expect(run.status).toBe('battle')
     expect(run.deck.length).toBe(5)
     expect(run.deck[0].plantId).toBe('sunflower')
 
@@ -205,13 +205,13 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(botLvl20.botElo).toBe(2365) // Muy desafiante en nivel 20
     expect(botLvl20.botBaseHp).toBe(1500)
 
-    expect(botLvl50.botElo).toBe(3415)
-    expect(botLvl50.botBaseHp).toBe(3200)
+    expect(botLvl50.botElo).toBe(3865)
+    expect(botLvl50.botBaseHp).toBe(5480)
 
-    // Mazos sinérgicos y con niveles escalados
+    // Mazos sinérgicos y con niveles escalados (Nivel 50 alcanza nivel 5 de cartas)
     expect(botLvl5.botDeck[1].level).toBe(2)
     expect(botLvl20.botDeck[1].level).toBe(3)
-    expect(botLvl50.botDeck[1].level).toBe(4)
+    expect(botLvl50.botDeck[1].level).toBe(5)
   })
 
   it('8. Flujo completo: victoria de nivel, 0 oro y recompensa fija', () => {
@@ -229,7 +229,7 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     // Continuar al siguiente nivel
     run = ArenaAdsManager.advanceToNextLevel(run)
     expect(run.level).toBe(2)
-    expect(run.status).toBe('prep')
+    expect(run.status).toBe('battle')
     expect(run.deck[0].plantId).toBe('sunflower')
   })
 
@@ -298,7 +298,7 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
 
     const freshRun = ArenaAdsManager.startNewRun()
     expect(freshRun.level).toBe(1)
-    expect(freshRun.status).toBe('prep')
+    expect(freshRun.status).toBe('battle')
     expect(freshRun.accumulatedRewards.gold).toBe(0)
     expect(freshRun.accumulatedRewards.gems).toBe(0)
   })
