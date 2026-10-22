@@ -63,7 +63,7 @@ class StreamingService {
    */
   async getStockSummary(): Promise<Record<string, number>> {
     try {
-      const { data, error } = await supabase.rpc('get_streaming_stock_summary')
+      const { data, error } = await (supabase.rpc as any)('get_streaming_stock_summary')
       if (error) {
         console.error('Error al obtener stock de streaming:', error)
         return {}
@@ -93,7 +93,7 @@ class StreamingService {
     error?: string
   }> {
     try {
-      const { data, error } = await supabase.rpc('buy_streaming_product', {
+      const { data, error } = await (supabase.rpc as any)('buy_streaming_product', {
         p_platform: platform.toLowerCase().trim(),
         p_region: region ? region.toLowerCase().trim() : null,
       })
@@ -126,7 +126,7 @@ class StreamingService {
    */
   async getMyOrders(): Promise<StreamingOrder[]> {
     try {
-      const { data, error } = await supabase.rpc('get_my_streaming_orders')
+      const { data, error } = await (supabase.rpc as any)('get_my_streaming_orders')
       if (error) {
         console.error('Error al obtener mis órdenes:', error)
         return []
@@ -151,7 +151,7 @@ class StreamingService {
     pins?: string[]
   }): Promise<{ success: boolean; inserted_profiles?: number; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc('admin_add_streaming_batch', {
+      const { data, error } = await (supabase.rpc as any)('admin_add_streaming_batch', {
         p_platform: params.platform.toLowerCase().trim(),
         p_account_identifier: params.accountIdentifier.trim(),
         p_account_email: params.accountEmail.trim(),
@@ -175,11 +175,11 @@ class StreamingService {
    */
   async adminGetOverview(): Promise<{ success: boolean; data?: AdminStreamingOverview; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc('admin_get_streaming_overview')
+      const { data, error } = await (supabase.rpc as any)('admin_get_streaming_overview')
       if (error) {
         return { success: false, error: error.message }
       }
-      return { success: true, data: data as AdminStreamingOverview }
+      return { success: true, data: data as unknown as AdminStreamingOverview }
     } catch (err: any) {
       return { success: false, error: err?.message || 'Error al consultar inventario admin' }
     }
@@ -197,7 +197,7 @@ class StreamingService {
     botCode?: string
   }): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc('admin_deliver_streaming_order', {
+      const { data, error } = await (supabase.rpc as any)('admin_deliver_streaming_order', {
         p_order_id: params.orderId,
         p_email: params.email.trim(),
         p_password: params.password.trim(),
@@ -220,7 +220,7 @@ class StreamingService {
    */
   async adminDeleteProfile(id: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.rpc('admin_delete_streaming_profile', {
+      const { data, error } = await (supabase.rpc as any)('admin_delete_streaming_profile', {
         p_id: id,
       })
       if (error) return { success: false, error: error.message }

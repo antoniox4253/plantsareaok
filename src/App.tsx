@@ -1754,6 +1754,8 @@ function App() {
             unlockedPlants={unlockedPlants}
             plantCopies={plantCopies}
             plantLevels={plantLevels}
+            userGems={userTokens}
+            onRefreshData={refreshFromServer}
           />
         )}
         {screen === 'jardin' && (

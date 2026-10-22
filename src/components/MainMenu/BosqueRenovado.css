@@ -296,9 +296,9 @@
 
 /* 3. Energía (Sincronizado con base de datos) */
 .topbar-pill--energy {
-  left: 38.6%;
+  left: 41.8%;
   top: 4.144527%;
-  width: 16.8%;
+  width: 14.4%;
   height: 8.182784%;
   gap: 8px;
   justify-content: flex-start;
@@ -321,9 +321,9 @@
 
 /* 4. Oro */
 .topbar-pill--gold {
-  left: 56.4%;
+  left: 56.8%;
   top: 4.144527%;
-  width: 16.8%;
+  width: 14.4%;
   height: 8.182784%;
   gap: 8px;
   justify-content: flex-start;
@@ -332,20 +332,66 @@
 
 /* 5. Gemas */
 .topbar-pill--gems {
-  left: 74.2%;
+  left: 71.8%;
   top: 4.144527%;
-  width: 16.8%;
+  width: 14.4%;
   height: 8.182784%;
   gap: 8px;
   justify-content: flex-start;
   padding: 0 10px;
 }
 
-/* 6. Ajustes (Tuerca) */
-.topbar-pill--settings {
-  left: 92.0%;
+/* 6. Notificaciones (Campana) */
+.topbar-pill--notifications {
+  left: 86.8%;
   top: 4.144527%;
-  width: 6.0%;
+  width: 4.8%;
+  height: 8.182784%;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+}
+
+.topbar-notif-bell-icon {
+  font-size: 18px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  transition: transform 0.2s ease;
+}
+
+.topbar-pill--notifications:hover .topbar-notif-bell-icon {
+  transform: scale(1.15) rotate(10deg);
+}
+
+.topbar-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border: 1.5px solid #fecaca;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  animation: notifPulse 1.5s infinite;
+}
+
+@keyframes notifPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* 7. Ajustes (Tuerca) */
+.topbar-pill--settings {
+  left: 92.2%;
+  top: 4.144527%;
+  width: 5.2%;
   height: 8.182784%;
   justify-content: center;
   padding: 0;

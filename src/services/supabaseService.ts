@@ -6338,6 +6338,210 @@ export const SupabaseService = {
       return { success: false, error: e?.message }
     }
   },
+
+  /** Alquila un Deck Oficial del Sistema por 7 días */
+  async rentSystemDeck(deckId: 'deck_1' | 'deck_2' | 'deck_3'): Promise<{
+    success: boolean
+    deckId?: string
+    deckName?: string
+    priceGems?: number
+    expiresAt?: string
+    newGemsBalance?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('rent_system_deck', {
+        p_deck_id: deckId,
+      })
+      if (error) {
+        logError('rentSystemDeck', error)
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('rentSystemDeck', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Obtiene los Decks de Sistema activos del usuario */
+  async getUserSystemDeckRentals(): Promise<Array<{
+    deckId: string
+    startsAt: string
+    expiresAt: string
+    secondsRemaining: number
+  }>> {
+    if (!isSupabaseConfigured()) return []
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_user_system_deck_rentals')
+      if (error) {
+        logError('getUserSystemDeckRentals', error)
+        return []
+      }
+      return (data || []) as any
+    } catch (e: any) {
+      logError('getUserSystemDeckRentals', e)
+      return []
+    }
+  },
+
+  /** Pone una carta propia en oferta de alquiler (P2P) */
+  async listPlantForRent(instanceId: string, priceGems: number): Promise<{
+    success: boolean
+    listingId?: string
+    priceGems?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('list_plant_for_rent', {
+        p_instance_id: instanceId,
+        p_price_gems: priceGems,
+      })
+      if (error) {
+        logError('listPlantForRent', error)
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('listPlantForRent', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Cancela una oferta de alquiler activa propia */
+  async cancelPlantRentalListing(listingId: string): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('cancel_plant_rental_listing', {
+        p_listing_id: listingId,
+      })
+      if (error) {
+        logError('cancelPlantRentalListing', error)
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('cancelPlantRentalListing', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Alquila una carta de otro usuario en el Marketplace (P2P) */
+  async rentMarketplacePlant(listingId: string, autoRenew = false): Promise<{
+    success: boolean
+    expiresAt?: string
+    priceGems?: number
+    netSeller?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('rent_marketplace_plant', {
+        p_listing_id: listingId,
+        p_auto_renew: autoRenew,
+      })
+      if (error) {
+        logError('rentMarketplacePlant', error)
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('rentMarketplacePlant', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Activa o desactiva la renovación automática de una carta alquilada */
+  async toggleRentalAutoRenew(instanceId: string, autoRenew: boolean): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('toggle_rental_auto_renew', {
+        p_instance_id: instanceId,
+        p_auto_renew: autoRenew,
+      })
+      if (error) {
+        logError('toggleRentalAutoRenew', error)
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('toggleRentalAutoRenew', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Obtiene resumen de alquileres propios (ofrecidos y tomados) */
+  async getMyRentalsSummary(): Promise<{
+    success: boolean
+    myOfferedRentals?: any[]
+    myBorrowedRentals?: any[]
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_my_rentals_summary')
+      if (error) {
+        logError('getMyRentalsSummary', error)
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('getMyRentalsSummary', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  /** Consulta notificaciones internas del jugador */
+  async getPlayerNotifications(limit = 30): Promise<{
+    success: boolean
+    unreadCount: number
+    notifications: PlayerNotificationItem[]
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, unreadCount: 0, notifications: [] }
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_player_notifications', {
+        p_limit: limit,
+      })
+      if (error) {
+        logError('getPlayerNotifications', error)
+        return { success: false, unreadCount: 0, notifications: [], error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('getPlayerNotifications', e)
+      return { success: false, unreadCount: 0, notifications: [], error: e?.message }
+    }
+  },
+
+  /** Marca todas las notificaciones del jugador como leídas */
+  async markPlayerNotificationsRead(): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false }
+    try {
+      const { data, error } = await (supabase.rpc as any)('mark_player_notifications_read')
+      if (error) {
+        logError('markPlayerNotificationsRead', error)
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('markPlayerNotificationsRead', e)
+      return { success: false, error: e?.message }
+    }
+  },
+}
+
+export interface PlayerNotificationItem {
+  id: string
+  title: string
+  message: string
+  icon?: string
+  type: string
+  isRead: boolean
+  metadata?: any
+  createdAt: string
 }
 
 export interface GlobalTransactionItem {

@@ -70,7 +70,7 @@ interface MarketplaceProps {
   onServerChange?: () => void
   onBuyVipPass: () => Promise<{ success: boolean; error?: string }>
   onBackToMenu: () => void
-  initialTab?: 'browse' | 'sell' | 'my_sales' | 'transactions'
+  initialTab?: 'browse' | 'sell' | 'rent' | 'my_sales' | 'transactions'
   initialCategory?: 'plants' | 'farming' | 'gold' | null
 }
 
@@ -80,6 +80,8 @@ interface MarketplaceProps {
 interface OfertaDelMercado {
   id: string
   itemType?: 'plant' | 'farming' | 'gold'
+  listingType?: 'sale' | 'rental'
+  rentalDurationDays?: number
   itemId?: string
   quantity?: number
   plantId?: PlantId
@@ -170,7 +172,7 @@ export default function Marketplace({
   initialTab = 'browse',
   initialCategory = null,
 }: MarketplaceProps) {
-  const [activeTab, setActiveTab] = useState<'browse' | 'sell' | 'my_sales' | 'transactions'>(initialTab)
+  const [activeTab, setActiveTab] = useState<'browse' | 'sell' | 'rent' | 'my_sales' | 'transactions'>(initialTab)
   const [selectedCategory, setSelectedCategory] = useState<'plants' | 'farming' | 'gold' | null>(initialCategory)
 
   useEffect(() => {
@@ -194,7 +196,17 @@ export default function Marketplace({
   const [txFilter, setTxFilter] = useState<'all' | 'marketplace' | 'shop' | 'reward' | 'tournament'>('all')
   const [mySalesData, setMySalesData] = useState<MyMarketplaceListingsResponse | null>(null)
   const [mySalesLoading, setMySalesLoading] = useState<boolean>(false)
-  const [mySalesSubTab, setMySalesSubTab] = useState<'active' | 'history'>('active')
+  const [mySalesSubTab, setMySalesSubTab] = useState<'active' | 'my_rentals' | 'borrowed' | 'history'>('active')
+  const [browseListingType, setBrowseListingType] = useState<'all' | 'sale' | 'rental'>('all')
+  const [myRentalsSummary, setMyRentalsSummary] = useState<{ myOfferedRentals: any[]; myBorrowedRentals: any[] }>({
+    myOfferedRentals: [],
+    myBorrowedRentals: [],
+  })
+  const [rentPlantModal, setRentPlantModal] = useState<OfertaDelMercado | null>(null)
+  const [rentAutoRenew, setRentAutoRenew] = useState<boolean>(false)
+  const [selectedRentPlantInstanceId, setSelectedRentPlantInstanceId] = useState<string | null>(null)
+  const [rentalListingPrice, setRentalListingPrice] = useState<number>(50)
+  const [isSubmittingRental, setIsSubmittingRental] = useState<boolean>(false)
 
   // Filtros y búsqueda para la pestaña Comercio
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -357,6 +369,8 @@ export default function Marketplace({
   const filteredPlantOffers = useMemo(() => {
     const list = plantOffers.filter((item) => {
       if (filterOnlyMine && !item.esMia) return false
+      if (browseListingType === 'sale' && item.listingType === 'rental') return false
+      if (browseListingType === 'rental' && item.listingType !== 'rental') return false
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim()
         const pDef = item.plantId ? PLANT_CONFIGS[item.plantId] : null
@@ -377,7 +391,7 @@ export default function Marketplace({
       if (sortBy === 'sprouts_asc') return (a.germinationsCount ?? 0) - (b.germinationsCount ?? 0)
       return new Date(b.desde).getTime() - new Date(a.desde).getTime()
     })
-  }, [plantOffers, filterOnlyMine, searchQuery, rarityFilter, sortBy])
+  }, [plantOffers, filterOnlyMine, browseListingType, searchQuery, rarityFilter, sortBy])
 
   const filteredFarmingOffers = useMemo(() => {
     const list = farmingOffers.filter((item) => {
@@ -416,6 +430,45 @@ export default function Marketplace({
 
   const sellablePlants = useMemo(() => sellableItems.filter((c) => c.kind === 'plant'), [sellableItems])
   const sellableFarming = useMemo(() => sellableItems.filter((c) => c.kind === 'farming'), [sellableItems])
+
+  // Plantas elegibles exclusivamente para ALQUILER (sólo cartas que posee el jugador, no alquiladas de terceros, no en venta)
+  const rentEligiblePlants = useMemo(() => {
+    return sellablePlants.filter((item) => {
+      const inst = plantInstances?.find((i) => i.instanceId === item.instanceId)
+      if (inst) {
+        if ((inst as any).is_rented || (inst as any).isRented || (inst as any).borrower_id || (inst as any).borrowerId) return false
+        if ((inst as any).is_listed_for_rent || (inst as any).isListedForRent) return false
+      }
+      return true
+    })
+  }, [sellablePlants, plantInstances])
+
+  const selectedRentPlant = useMemo(() => {
+    return rentEligiblePlants.find((p) => p.instanceId === selectedRentPlantInstanceId) || rentEligiblePlants[0] || null
+  }, [rentEligiblePlants, selectedRentPlantInstanceId])
+
+  useEffect(() => {
+    if (rentEligiblePlants.length > 0) {
+      if (!selectedRentPlantInstanceId || !rentEligiblePlants.some((p) => p.instanceId === selectedRentPlantInstanceId)) {
+        const firstAvailable = rentEligiblePlants.find((p) => !p.inDeck) || rentEligiblePlants[0]
+        setSelectedRentPlantInstanceId(firstAvailable?.instanceId || null)
+      }
+    }
+  }, [rentEligiblePlants, selectedRentPlantInstanceId])
+
+  const formatRemainingTime = (secondsRemaining?: number, expiresAt?: string) => {
+    let secs = secondsRemaining
+    if (secs === undefined && expiresAt) {
+      secs = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000))
+    }
+    if (secs === undefined || secs <= 0) return 'Expirado'
+    const days = Math.floor(secs / 86400)
+    const hours = Math.floor((secs % 86400) / 3600)
+    const minutes = Math.floor((secs % 3600) / 60)
+    if (days > 0) return `${days}d ${hours}h restantes`
+    if (hours > 0) return `${hours}h ${minutes}m restantes`
+    return `${minutes}m restantes`
+  }
 
   const displayedSellableItems = useMemo(() => {
     if (sellCategory === 'farming') return sellableFarming
@@ -521,17 +574,33 @@ export default function Marketplace({
     }
   }
 
+  const refreshRentals = async () => {
+    try {
+      const data = await marketplaceService.getMyRentalsSummary()
+      if (data && data.success) {
+        setMyRentalsSummary({
+          myOfferedRentals: data.myOfferedRentals || [],
+          myBorrowedRentals: data.myBorrowedRentals || [],
+        })
+      }
+    } catch (e) {
+      console.warn('Error cargando alquileres:', e)
+    }
+  }
+
   useEffect(() => {
     void refreshListings(selectedCategory === 'plants' ? 'plant' : selectedCategory)
     void refreshTransactions()
     void refreshMyListings()
+    void refreshRentals()
   }, [])
 
   useEffect(() => {
     if (activeTab === 'browse') {
       void refreshListings(selectedCategory === 'plants' ? 'plant' : selectedCategory)
-    } else if (activeTab === 'my_sales') {
+    } else if (activeTab === 'my_sales' || activeTab === 'rent') {
       void refreshMyListings()
+      void refreshRentals()
     } else if (activeTab === 'transactions') {
       void refreshTransactions()
     }
@@ -890,7 +959,9 @@ export default function Marketplace({
       `¿Deseas retirar ${detalle} del mercado y recuperar ${isGold ? 'el oro en tu cuenta' : isFarming ? 'los recursos en tu inventario' : 'la planta en tu Jardín'} de inmediato?`,
       '📦',
       async () => {
-        const r = await marketplaceService.cancelMarketplaceListing(item.id)
+        const r = (item as any).listingType === 'rental'
+          ? await marketplaceService.cancelPlantRentalListing(item.id)
+          : await marketplaceService.cancelMarketplaceListing(item.id)
         if (!r.success) {
           showModalAlert('NO SE PUDO RETIRAR', r.error || 'Inténtalo de nuevo.', '⚠️', 'error')
           return
@@ -910,6 +981,189 @@ export default function Marketplace({
       },
       'SÍ, RECUPERAR AHORA',
       'MANTENER EN VENTA'
+    )
+  }
+
+  const handleConfirmRentPlant = async (offer: OfertaDelMercado, autoRenew: boolean) => {
+    if (userTokens < offer.precio) {
+      soundManager.playSound('surrender', 0.6)
+      showModalAlert(
+        'GEMAS INSUFICIENTES',
+        `Requieres ${offer.precio} Gemas 💎 para alquilar esta planta durante 7 días.\nTu saldo actual es de ${Math.floor(userTokens)} Gemas.`,
+        '💎',
+        'warning'
+      )
+      setRentPlantModal(null)
+      return
+    }
+
+    try {
+      const res = await marketplaceService.rentMarketplacePlant(offer.id, autoRenew)
+      if (!res.success) {
+        soundManager.playSound('surrender', 0.6)
+        showModalAlert('ERROR EN ALQUILER', res.error || 'No se pudo completar el alquiler.', '⚠️', 'error')
+      } else {
+        soundManager.playSound('victory', 0.7)
+        showModalAlert(
+          '¡PLANTA ALQUILADA!',
+          `Has alquilado la planta por 7 días por ${offer.precio} Gemas 💎.\n${autoRenew ? '✨ Renovación automática ACTIVADA al vencer los 7 días.' : '✨ Duración de 7 días sin renovación.'}\n\n¡Ya está disponible en tu Jardín para añadirla a tu mazo!`,
+          '🎉',
+          'success'
+        )
+        await refreshListings(selectedCategory === 'plants' ? 'plant' : selectedCategory)
+        await refreshRentals()
+        window.dispatchEvent(new Event('refresh_user_balance'))
+        window.dispatchEvent(new Event('refresh_user_inventory'))
+        onServerChange?.()
+      }
+    } catch (e: any) {
+      soundManager.playSound('surrender', 0.6)
+      showModalAlert('ERROR DE CONEXIÓN', e?.message || 'Error al conectar con el servidor', '⚠️', 'error')
+    } finally {
+      setRentPlantModal(null)
+    }
+  }
+
+  const handleConfirmListPlantForRent = async (instanceId: string, priceGems: number) => {
+    if (priceGems < 20) {
+      showModalAlert('PRECIO INVÁLIDO', 'El precio mínimo de alquiler es de 20 Gemas por 7 días.', '⚠️', 'warning')
+      return
+    }
+
+    setIsSubmittingRental(true)
+    try {
+      const res = await marketplaceService.listPlantForRent(instanceId, priceGems)
+      if (!res.success) {
+        soundManager.playSound('surrender', 0.6)
+        showModalAlert('ERROR AL PUBLICAR', res.error || 'No se pudo publicar la oferta de alquiler.', '⚠️', 'error')
+      } else {
+        soundManager.playSound('upgrade', 0.7)
+        showModalAlert(
+          '¡PLANTA EN ALQUILER!',
+          `Tu planta ha sido publicada en oferta de alquiler por ${priceGems} Gemas 💎 durante 7 días.\n\nEn cuanto otro jugador la alquile recibirás tus gemas netas (-10% comisión) al instante.`,
+          '🤝',
+          'success'
+        )
+        setSelectedRentPlantInstanceId(null)
+        await refreshRentals()
+        await refreshListings('plant')
+        window.dispatchEvent(new Event('refresh_user_inventory'))
+        onServerChange?.()
+        setActiveTab('my_sales')
+        setMySalesSubTab('my_rentals')
+      }
+    } catch (e: any) {
+      soundManager.playSound('surrender', 0.6)
+      showModalAlert('ERROR DE CONEXIÓN', e?.message || 'Error al conectar con el servidor', '⚠️', 'error')
+    } finally {
+      setIsSubmittingRental(false)
+    }
+  }
+
+  const handleToggleAutoRenew = async (instanceId: string, currentAutoRenew: boolean) => {
+    try {
+      const res = await marketplaceService.toggleRentalAutoRenew(instanceId, !currentAutoRenew)
+      if (!res.success) {
+        showModalAlert('ERROR', res.error || 'No se pudo cambiar el estado de renovación.', '⚠️', 'error')
+      } else {
+        soundManager.playSound('click', 0.5)
+        await refreshRentals()
+      }
+    } catch (e: any) {
+      showModalAlert('ERROR', e?.message || 'Fallo de conexión', '⚠️', 'error')
+    }
+  }
+
+  const handleCancelRentalOffer = (listingId: string) => {
+    showModalConfirm(
+      '¿RETIRAR OFERTA DE ALQUILER?',
+      '¿Deseas retirar esta planta del catálogo de alquileres y recuperarla a tu Jardín?',
+      '⚠️',
+      async () => {
+        const res = await marketplaceService.cancelPlantRentalListing(listingId)
+        if (res.success) {
+          soundManager.playSound('plantation', 0.6)
+          await refreshRentals()
+          await refreshListings('plant')
+          window.dispatchEvent(new Event('refresh_user_inventory'))
+          onServerChange?.()
+        } else {
+          showModalAlert('ERROR', res.error || 'No se pudo retirar la oferta', '⚠️', 'error')
+        }
+      },
+      'SÍ, RETIRAR',
+      'CANCELAR'
+    )
+  }
+
+  const handleListRentSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedRentPlant) return
+
+    if (!canSell) {
+      showModalConfirm(
+        'ALQUILER BLOQUEADO',
+        `Para poner en alquiler cartas de tu Jardín necesitas el Pase PvP o alcanzar 1,350 Copas en la Arena.\n\nTus copas actuales: ${copasActuales} / 1,350.\n\n¿Deseas activar tu Pase PvP (${VIP_PASS_PRECIO_GEMAS} 💎) ahora?`,
+        '🔒',
+        () => {
+          handleDirectBuyVip()
+        },
+        `ACTIVAR PASE PVP (${VIP_PASS_PRECIO_GEMAS} 💎)`,
+        'CANCELAR'
+      )
+      return
+    }
+
+    if (rentalListingPrice < 20) {
+      showModalAlert('PRECIO MÍNIMO', 'El precio mínimo de alquiler es de 20 Gemas por 7 días.', '⚠️', 'warning')
+      return
+    }
+
+    if (selectedRentPlant.inDeck) {
+      showModalAlert(
+        'PLANTA EN MAZO DE BATALLA',
+        'Esta planta está actualmente en tu mazo de combate. Para alquilarla a otro jugador, primero debes desequiparla de tu mazo en Mi Jardín.',
+        '🛑',
+        'warning'
+      )
+      return
+    }
+
+    if (availablePlantsCount <= 3) {
+      showModalAlert(
+        'INVENTARIO MÍNIMO REQUERIDO',
+        'Necesitas conservar al menos 3 plantas en tu inventario para poder combatir en la Arena.',
+        '🛑',
+        'warning'
+      )
+      return
+    }
+
+    let targetInstanceId = selectedRentPlant.instanceId
+    if (!/^[0-9a-f-]{36}$/i.test(targetInstanceId)) {
+      const realCandidate = (plantInstances || []).find(
+        (i) => i.plantId === selectedRentPlant.plantId && /^[0-9a-f-]{36}$/i.test(i.instanceId) && !i.isListed
+      )
+      if (realCandidate) {
+        targetInstanceId = realCandidate.instanceId
+      }
+    }
+
+    const split = calculateMarketplaceSplit(rentalListingPrice, comisionPct)
+
+    showModalConfirm(
+      '🤝 ¿PUBLICAR PLANTA EN ALQUILER?',
+      `¿Deseas poner en alquiler tu carta "${selectedRentPlant.name}" (⭐${selectedRentPlant.level} · 🌱${selectedRentPlant.germinationsCount ?? 0}) por 7 días a un precio de ${rentalListingPrice} 💎?\n\n` +
+        `• Inquilino pagará al instante: ${rentalListingPrice} 💎 por 7 días de alquiler.\n` +
+        `• Comisión del mercado (${split.comisionPct}%): -${split.comision} 💎.\n` +
+        `• Ganancia neta para ti (90%): +${split.neto} 💎 (se acreditan de inmediato a tu cuenta cuando la alquilen).\n\n` +
+        `🔒 La carta sigue siendo 100% de tu propiedad. El inquilino no puede venderla ni fusionarla. Al expirar los 7 días, volverá automáticamente a tu Jardín si no tiene renovación automática activa con gemas.`,
+      '🤝',
+      () => {
+        void handleConfirmListPlantForRent(targetInstanceId, rentalListingPrice)
+      },
+      `SÍ, PONER EN ALQUILER (${rentalListingPrice} 💎)`,
+      'CANCELAR'
     )
   }
 
@@ -1220,9 +1474,15 @@ export default function Marketplace({
               🌱{item.germinationsCount ?? 0}
             </span>
           </div>
-          <span className="market-item-rarity-badge" style={{ color: rInfo.color, borderColor: rInfo.color }}>
-            {rInfo.rarity}
-          </span>
+          {item.listingType === 'rental' ? (
+            <span className="market-item-rental-badge">
+              ⏳ ALQUILER (7D)
+            </span>
+          ) : (
+            <span className="market-item-rarity-badge" style={{ color: rInfo.color, borderColor: rInfo.color }}>
+              {rInfo.rarity}
+            </span>
+          )}
           <span className="market-item-seller">👤 {isMine ? 'TÚ' : item.vendedor ?? 'Jugador'}</span>
         </div>
 
@@ -1244,7 +1504,7 @@ export default function Marketplace({
         {/* Price and Action Button */}
         <div className="market-item-card__footer">
           <div className="market-item-price-box">
-            <span className="market-price-label">PRECIO</span>
+            <span className="market-price-label">{item.listingType === 'rental' ? 'ALQUILER 7 DÍAS' : 'PRECIO'}</span>
             <span className="market-price-val">{item.precio} 💎</span>
           </div>
 
@@ -1255,6 +1515,18 @@ export default function Marketplace({
               onClick={() => handleCancelListing(item)}
             >
               RETIRAR
+            </button>
+          ) : item.listingType === 'rental' ? (
+            <button
+              type="button"
+              className="market-buy-btn market-buy-btn--rent"
+              onClick={() => {
+                soundManager.playSound('click', 0.5)
+                setRentPlantModal(item)
+                setRentAutoRenew(false)
+              }}
+            >
+              🤝 ALQUILAR
             </button>
           ) : (
             <button
@@ -1464,7 +1736,7 @@ export default function Marketplace({
             setActiveTab('my_sales')
           }}
         >
-          📦 MIS VENTAS ({mySalesData?.active?.length || 0})
+          📦 ALQUILER Y VENTAS ({(mySalesData?.active?.length || 0) + (myRentalsSummary.myOfferedRentals.length || 0) + (myRentalsSummary.myBorrowedRentals.length || 0)})
         </button>
         <button
           type="button"
@@ -1489,6 +1761,30 @@ export default function Marketplace({
           title={!canSell ? 'Requiere Pase PvP o 1,350 Copas para vender cartas' : 'Vender cartas de tu Jardín'}
         >
           {!canSell ? '🔒 VENDER (PASE PVP / 1,350 COPAS)' : '🏷️ VENDER'}
+        </button>
+        <button
+          type="button"
+          className={`market-tab-btn market-tab-btn--rent ${activeTab === 'rent' ? 'market-tab-btn--active' : ''} ${!canSell ? 'market-tab-btn--locked' : ''}`}
+          onClick={() => {
+            soundManager.playSound('click', 0.5)
+            if (!canSell) {
+              showModalConfirm(
+                'ALQUILER BLOQUEADO',
+                `Para poner en alquiler cartas de tu Jardín necesitas el Pase PvP o alcanzar 1,350 Copas en la Arena.\n\nTus copas actuales: ${copasActuales} / 1,350.\n\n¿Deseas activar tu Pase PvP (${VIP_PASS_PRECIO_GEMAS} 💎) ahora?`,
+                '🔒',
+                () => {
+                  handleDirectBuyVip()
+                },
+                `ACTIVAR PASE PVP (${VIP_PASS_PRECIO_GEMAS} 💎)`,
+                'CANCELAR'
+              )
+              return
+            }
+            setActiveTab('rent')
+          }}
+          title={!canSell ? 'Requiere Pase PvP o 1,350 Copas para alquilar cartas' : 'Poner cartas de tu Jardín en alquiler para otros jugadores'}
+        >
+          {!canSell ? '🔒 ALQUILAR (PASE PVP / 1,350 COPAS)' : '🤝 ALQUILAR'}
         </button>
         <button
           type="button"
@@ -1638,17 +1934,29 @@ export default function Marketplace({
 
                 <div className="market-subcategory-actions">
                   {selectedCategory === 'plants' && (
-                    <button
-                      type="button"
-                      className="market-sub-action-btn"
-                      onClick={() => {
-                        soundManager.playSound('click', 0.4)
-                        setActiveTab('sell')
-                        setSellCategory('plants')
-                      }}
-                    >
-                      ➕ Vender Planta
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="market-sub-action-btn"
+                        onClick={() => {
+                          soundManager.playSound('click', 0.4)
+                          setActiveTab('sell')
+                          setSellCategory('plants')
+                        }}
+                      >
+                        🏷️ Vender Planta
+                      </button>
+                      <button
+                        type="button"
+                        className="market-sub-action-btn market-sub-action-btn--rent"
+                        onClick={() => {
+                          soundManager.playSound('click', 0.4)
+                          setActiveTab('rent')
+                        }}
+                      >
+                        🤝 Alquilar Planta
+                      </button>
+                    </>
                   )}
                   {selectedCategory === 'farming' && (
                     <button
@@ -1701,6 +2009,33 @@ export default function Marketplace({
                         ✕
                       </button>
                     )}
+                  </div>
+                )}
+
+                {/* FILTRO TIPO DE OFERTA: COMPRA O ALQUILER (SOLO PARA PLANTAS) */}
+                {selectedCategory === 'plants' && (
+                  <div className="market-filter-listing-type-group">
+                    <button
+                      type="button"
+                      className={`market-filter-pill-btn ${browseListingType === 'all' ? 'market-filter-pill-btn--active' : ''}`}
+                      onClick={() => setBrowseListingType('all')}
+                    >
+                      🌿 Todas
+                    </button>
+                    <button
+                      type="button"
+                      className={`market-filter-pill-btn ${browseListingType === 'sale' ? 'market-filter-pill-btn--active' : ''}`}
+                      onClick={() => setBrowseListingType('sale')}
+                    >
+                      🏷️ Compra
+                    </button>
+                    <button
+                      type="button"
+                      className={`market-filter-pill-btn ${browseListingType === 'rental' ? 'market-filter-pill-btn--active market-filter-pill-btn--rental' : ''}`}
+                      onClick={() => setBrowseListingType('rental')}
+                    >
+                      🤝 Alquiler (7D)
+                    </button>
                   </div>
                 )}
 
@@ -2440,14 +2775,245 @@ export default function Marketplace({
         </div>
       )}
 
-      {/* SELL LOCKED BANNER: cuando el usuario está en la pestaña VENDER pero no tiene permisos */}
-      {activeTab === 'sell' && !canSell && (
+      {/* TAB: ALQUILAR CARTA (P2P RENTAL) */}
+      {activeTab === 'rent' && canSell && (
+        <div className="market-sell-pane market-rent-pane">
+          {/* Header explicativo */}
+          <div className="market-rent-header-banner">
+            <div className="market-rent-header-badge">🤝 SISTEMA DE ALQUILER P2P</div>
+            <h3>Pon tus Cartas en Alquiler por 7 Días</h3>
+            <p>
+              Genera ingresos pasivos en Gemas 💎 prestando tus cartas a otros jugadores.
+              Recibes el 90% neto de forma inmediata en cuanto otro jugador alquile tu carta.
+              Tú conservas la propiedad en todo momento y no puede ser vendida ni transferida.
+            </p>
+          </div>
+
+          {rentEligiblePlants.length === 0 ? (
+            <div className="market-empty-state">
+              <span>
+                🌱 No tienes cartas de plantas disponibles para alquilar.
+                Las cartas que estén en tu mazo de batalla o que ya hayas alquilado a otros no se pueden alquilar hasta que las desequipes.
+              </span>
+            </div>
+          ) : (
+            <div className="market-sell-columns-wrap">
+              {/* Columna 1: Selección de Planta */}
+              <div className="market-sell-column market-sell-column--inventory">
+                <label className="market-sell-label">
+                  1. Elige la Carta a Alquilar ({rentEligiblePlants.length} disponibles)
+                </label>
+                <div className="market-sell-items-grid">
+                  {rentEligiblePlants.map((item) => {
+                    const isSelected = selectedRentPlant?.instanceId === item.instanceId
+                    const pConfig = PLANT_CONFIGS[item.plantId]
+                    return (
+                      <div
+                        key={item.instanceId}
+                        role="button"
+                        tabIndex={0}
+                        className={`market-garden-card-item ${isSelected ? 'market-garden-card-item--active' : ''} ${item.inDeck ? 'market-garden-card-item--in-deck' : ''}`}
+                        onClick={() => {
+                          soundManager.playSound('click', 0.4)
+                          setSelectedRentPlantInstanceId(item.instanceId)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setSelectedRentPlantInstanceId(item.instanceId)
+                          }
+                        }}
+                      >
+                        <img
+                          src={pConfig?.packetActive || pConfig?.icon}
+                          alt={pConfig?.name || item.plantId}
+                          className="market-garden-card-item__img"
+                        />
+                        <div className="market-garden-card-item__info">
+                          <div className="market-garden-card-item__header">
+                            <div className="market-item-tags-row">
+                              <span className="market-item-level-tag">⭐{item.level}</span>
+                              <span className="market-item-sprouts-tag">🌱{item.germinationsCount ?? 0}</span>
+                            </div>
+                            <span
+                              className="market-rarity-pill"
+                              style={{ color: item.rarityColor, borderColor: item.rarityColor }}
+                            >
+                              {item.rarity}
+                            </span>
+                            {item.inDeck && <span className="market-deck-tag">⚔️ EN MAZO</span>}
+                          </div>
+                          <strong className="market-garden-card-item__name">
+                            {pConfig?.name || item.plantId}
+                          </strong>
+                          <div className="market-garden-card-item__stats">
+                            {item.statRolls && item.statRolls.length > 0 ? (
+                              formatStatRolls(item.statRolls)
+                            ) : (
+                              <span className="market-stat-pill market-stat-pill--none">Stats estándar</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="market-garden-card-item__price-badge" style={{ color: '#38bdf8', borderColor: '#38bdf8' }}>
+                          ⏳ 7 DÍAS
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Columna 2: Configurar Precio y Publicar */}
+              <div className="market-sell-column market-sell-column--summary">
+                <label className="market-sell-label">2. Fijar Precio y Confirmar Alquiler</label>
+                {selectedRentPlant && (
+                  <form className="market-sell-preview-card" onSubmit={handleListRentSubmit}>
+                    <div className="market-sell-preview-header">
+                      <div className="market-item-tags-row">
+                        <span className="market-item-level-tag">⭐{selectedRentPlant.level}</span>
+                        <span className="market-item-sprouts-tag">🌱{selectedRentPlant.germinationsCount ?? 0}</span>
+                      </div>
+                      <span className="market-item-rental-badge">⏳ 7 DÍAS DE DURACIÓN</span>
+                    </div>
+
+                    <img
+                      src={
+                        PLANT_CONFIGS[selectedRentPlant.plantId]?.packetActive ||
+                        PLANT_CONFIGS[selectedRentPlant.plantId]?.icon
+                      }
+                      alt=""
+                      className="market-preview-icon"
+                    />
+                    <h4>{PLANT_CONFIGS[selectedRentPlant.plantId]?.name}</h4>
+
+                    <div className="market-plant-notice-box" style={{ borderColor: 'rgba(56, 189, 248, 0.4)', background: 'rgba(56, 189, 248, 0.08)' }}>
+                      🤝 <strong>Alquilarás tu carta jugable por 7 días.</strong> El inquilino la podrá usar en sus batallas. Tú conservas la propiedad y no puede ser vendida ni transferida.
+                    </div>
+
+                    {selectedRentPlant.inDeck && (
+                      <div className="market-deck-warning market-deck-warning--danger">
+                        🛑 Esta planta está en tu mazo de batalla. Desequípala en Mi Jardín antes de ponerla en alquiler.
+                      </div>
+                    )}
+
+                    {availablePlantsCount <= 3 && (
+                      <div className="market-deck-warning market-deck-warning--danger">
+                        🛑 No puedes alquilar esta planta: necesitas conservar al menos 3 plantas para poder combatir en la Arena.
+                      </div>
+                    )}
+
+                    <div className="market-item-stats-box">
+                      {selectedRentPlant.statRolls && selectedRentPlant.statRolls.length > 0 ? (
+                        formatStatRolls(selectedRentPlant.statRolls)
+                      ) : (
+                        <span className="market-stat-pill market-stat-pill--none">Stats estándar de fábrica</span>
+                      )}
+                    </div>
+
+                    {/* Selector de Precio en Gemas */}
+                    <div className="market-price-input-group">
+                      <label>
+                        Precio de Alquiler (💎 Gemas por 7 días) —{' '}
+                        <span style={{ color: '#38bdf8' }}>Mínimo: 20 💎</span>
+                      </label>
+                      <div className="market-price-stepper-wrap">
+                        <button
+                          type="button"
+                          className="market-stepper-btn"
+                          disabled={rentalListingPrice <= 20}
+                          onClick={() => setRentalListingPrice((p) => Math.max(20, p - 5))}
+                        >
+                          -
+                        </button>
+                        <div className="market-price-input-wrap">
+                          <span>💎</span>
+                          <input
+                            type="number"
+                            step="5"
+                            min={20}
+                            max={99999}
+                            value={rentalListingPrice}
+                            onChange={(e) => setRentalListingPrice(Math.max(20, parseInt(e.target.value, 10) || 20))}
+                            required
+                          />
+                          <span>Gemas / 7d</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="market-stepper-btn"
+                          onClick={() => setRentalListingPrice((p) => p + 5)}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <div className="market-price-shortcuts">
+                        <button type="button" className="market-shortcut-btn" onClick={() => setRentalListingPrice(20)}>20 💎</button>
+                        <button type="button" className="market-shortcut-btn" onClick={() => setRentalListingPrice(50)}>50 💎</button>
+                        <button type="button" className="market-shortcut-btn" onClick={() => setRentalListingPrice(100)}>100 💎</button>
+                        <button type="button" className="market-shortcut-btn" onClick={() => setRentalListingPrice(200)}>200 💎</button>
+                      </div>
+                    </div>
+
+                    {/* Desglose de Comisión y Neto */}
+                    <div className="market-gold-summary-card" style={{ margin: '10px 0' }}>
+                      <div className="market-gold-summary-row">
+                        <span>Inquilino pagará:</span>
+                        <strong>{rentalListingPrice} 💎</strong>
+                      </div>
+                      <div className="market-gold-summary-row">
+                        <span>Comisión del mercado ({comisionPct}%):</span>
+                        <span style={{ color: '#ef4444' }}>-{calculateMarketplaceSplit(rentalListingPrice, comisionPct).comision} 💎</span>
+                      </div>
+                      <div className="market-gold-summary-row market-gold-summary-row--total">
+                        <span>Recibirás neto de inmediato:</span>
+                        <strong style={{ color: '#4ade80', fontSize: '14px' }}>+{calculateMarketplaceSplit(rentalListingPrice, comisionPct).neto} 💎</strong>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={
+                        !canSell ||
+                        rentalListingPrice < 20 ||
+                        selectedRentPlant.inDeck ||
+                        availablePlantsCount <= 3 ||
+                        isSubmittingRental
+                      }
+                      className={`market-publish-btn ${
+                        !canSell || selectedRentPlant.inDeck || availablePlantsCount <= 3
+                          ? 'market-publish-btn--locked'
+                          : ''
+                      }`}
+                      style={{
+                        background: canSell && !selectedRentPlant.inDeck && availablePlantsCount > 3
+                          ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)'
+                          : undefined
+                      }}
+                    >
+                      {isSubmittingRental
+                        ? '⏳ PUBLICANDO...'
+                        : selectedRentPlant.inDeck
+                        ? '🛑 DESEQUÍPALA EN MI JARDÍN'
+                        : availablePlantsCount <= 3
+                        ? '🛑 MÍNIMO 3 PLANTAS REQUERIDAS'
+                        : `🤝 PONER EN ALQUILER (${rentalListingPrice} 💎 / 7 DÍAS)`}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SELL & RENT LOCKED BANNER: cuando el usuario está en la pestaña VENDER o ALQUILAR pero no tiene permisos */}
+      {(activeTab === 'sell' || activeTab === 'rent') && !canSell && (
         <div className="market-vip-lock-banner" style={{ margin: '20px auto', maxWidth: '750px' }}>
           <div className="market-vip-lock-icon">🔒</div>
           <div className="market-vip-lock-info">
-            <h3>VENTAS BLOQUEADAS: ¡ALCANZA 1,350 COPAS O ACTIVA PASE PVP!</h3>
+            <h3>{activeTab === 'rent' ? 'ALQUILER BLOQUEADO: ¡ALCANZA 1,350 COPAS O ACTIVA PASE PVP!' : 'VENTAS BLOQUEADAS: ¡ALCANZA 1,350 COPAS O ACTIVA PASE PVP!'}</h3>
             <p>
-              Todos los jugadores pueden comprar ofertas en el mercado libremente. Para <strong>poner en venta cartas o recursos de tu Jardín</strong> necesitas: <strong>alcanzar 1,350 Copas</strong> compitiendo gratis en la Arena, o <strong>activar el Pase PvP ({VIP_PASS_PRECIO_GEMAS} 💎)</strong> para desbloqueo inmediato.
+              Todos los jugadores pueden comprar y alquilar ofertas en el mercado libremente. Para <strong>{activeTab === 'rent' ? 'poner en alquiler cartas de tu Jardín' : 'poner en venta cartas o recursos de tu Jardín'}</strong> necesitas: <strong>alcanzar 1,350 Copas</strong> compitiendo gratis en la Arena, o <strong>activar el Pase PvP ({VIP_PASS_PRECIO_GEMAS} 💎)</strong> para desbloqueo inmediato.
             </p>
             <div className="market-copas-progress-wrap">
               <span className="market-copas-progress-text">
@@ -2468,7 +3034,7 @@ export default function Marketplace({
         </div>
       )}
 
-      {/* TAB 4: MIS VENTAS (MY LISTINGS & ESCROW) */}
+      {/* TAB 4: ALQUILER Y VENTAS (MY LISTINGS, RENTALS & ESCROW) */}
       {activeTab === 'my_sales' && (
         <div className="market-my-sales-container">
           {/* Ribbon de Métricas Horizontales */}
@@ -2476,18 +3042,27 @@ export default function Marketplace({
             <div className="market-my-sales-stat-card market-my-sales-stat-card--active">
               <span className="market-my-sales-stat-icon">🛡️</span>
               <div className="market-my-sales-stat-info">
-                <span className="market-my-sales-stat-label">EN CUSTODIA SEGURA</span>
+                <span className="market-my-sales-stat-label">EN VENTA</span>
                 <span className="market-my-sales-stat-value">
                   {mySalesData?.stats.totalActive || 0} {mySalesData?.stats.totalActive === 1 ? 'oferta' : 'ofertas'}
                 </span>
               </div>
             </div>
-            <div className="market-my-sales-stat-card market-my-sales-stat-card--value">
-              <span className="market-my-sales-stat-icon">💎</span>
+            <div className="market-my-sales-stat-card market-my-sales-stat-card--rent">
+              <span className="market-my-sales-stat-icon">🤝</span>
               <div className="market-my-sales-stat-info">
-                <span className="market-my-sales-stat-label">VALOR PUBLICADO</span>
+                <span className="market-my-sales-stat-label">PUESTAS EN ALQUILER</span>
                 <span className="market-my-sales-stat-value">
-                  {(mySalesData?.stats.totalValueGems || 0).toLocaleString()} 💎
+                  {myRentalsSummary.myOfferedRentals.length} {myRentalsSummary.myOfferedRentals.length === 1 ? 'carta' : 'cartas'}
+                </span>
+              </div>
+            </div>
+            <div className="market-my-sales-stat-card market-my-sales-stat-card--borrowed">
+              <span className="market-my-sales-stat-icon">⏳</span>
+              <div className="market-my-sales-stat-info">
+                <span className="market-my-sales-stat-label">QUE HE ALQUILADO</span>
+                <span className="market-my-sales-stat-value">
+                  {myRentalsSummary.myBorrowedRentals.length} {myRentalsSummary.myBorrowedRentals.length === 1 ? 'carta' : 'cartas'}
                 </span>
               </div>
             </div>
@@ -2496,7 +3071,7 @@ export default function Marketplace({
               <div className="market-my-sales-stat-info">
                 <span className="market-my-sales-stat-label">VENTAS CONCRETADAS</span>
                 <span className="market-my-sales-stat-value">
-                  {mySalesData?.stats.totalSold || 0} (+{(mySalesData?.stats.totalEarnedGems || 0).toLocaleString()} 💎 cobrados)
+                  {mySalesData?.stats.totalSold || 0} (+{(mySalesData?.stats.totalEarnedGems || 0).toLocaleString()} 💎)
                 </span>
               </div>
             </div>
@@ -2506,15 +3081,16 @@ export default function Marketplace({
               onClick={() => {
                 soundManager.playSound('click', 0.4)
                 void refreshMyListings()
+                void refreshRentals()
               }}
               disabled={mySalesLoading}
-              title="Refrescar mis ventas"
+              title="Refrescar mis ventas y alquileres"
             >
               {mySalesLoading ? '⏳ ACTUALIZANDO...' : '🔄 ACTUALIZAR'}
             </button>
           </div>
 
-          {/* Sub-Tabs: Activas vs Historial */}
+          {/* Sub-Tabs: Activas vs Puestas en Alquiler vs Alquiladas vs Historial */}
           <div className="market-my-sales-subtabs">
             <button
               type="button"
@@ -2524,7 +3100,27 @@ export default function Marketplace({
                 setMySalesSubTab('active')
               }}
             >
-              🟡 ACTIVAS EN CUSTODIA ({mySalesData?.active?.length || 0})
+              🟡 EN VENTA ({mySalesData?.active?.length || 0})
+            </button>
+            <button
+              type="button"
+              className={`market-my-sales-subtab-btn ${mySalesSubTab === 'my_rentals' ? 'market-my-sales-subtab-btn--active' : ''}`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setMySalesSubTab('my_rentals')
+              }}
+            >
+              🤝 PUESTAS EN ALQUILER ({myRentalsSummary.myOfferedRentals.length})
+            </button>
+            <button
+              type="button"
+              className={`market-my-sales-subtab-btn ${mySalesSubTab === 'borrowed' ? 'market-my-sales-subtab-btn--active' : ''}`}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setMySalesSubTab('borrowed')
+              }}
+            >
+              ⏳ QUE HE ALQUILADO ({myRentalsSummary.myBorrowedRentals.length})
             </button>
             <button
               type="button"
@@ -2550,7 +3146,7 @@ export default function Marketplace({
           {/* Contenido de la Sub-Tab */}
           {mySalesLoading && !mySalesData ? (
             <div className="market-empty-state">
-              <span>⏳ Cargando tus publicaciones y ventas…</span>
+              <span>⏳ Cargando tus publicaciones y alquileres…</span>
             </div>
           ) : mySalesSubTab === 'active' ? (
             mySalesData?.active && mySalesData.active.length > 0 ? (
@@ -2560,7 +3156,7 @@ export default function Marketplace({
             ) : (
               <div className="market-my-sales-empty">
                 <span className="market-empty-icon">📦</span>
-                <h4>No tienes ofertas activas en este momento</h4>
+                <h4>No tienes ofertas activas de venta en este momento</h4>
                 <p>
                   Todos tus recursos, cartas y oro se encuentran 100% seguros en tu cuenta.
                   Si deseas poner en venta una carta, recursos de cultivo o vender oro por gemas, hazlo desde la pestaña VENDER.
@@ -2574,6 +3170,197 @@ export default function Marketplace({
                   }}
                 >
                   ➕ PUBLICAR EN EL MERCADO
+                </button>
+              </div>
+            )
+          ) : mySalesSubTab === 'my_rentals' ? (
+            myRentalsSummary.myOfferedRentals && myRentalsSummary.myOfferedRentals.length > 0 ? (
+              <div className="market-my-sales-grid">
+                {myRentalsSummary.myOfferedRentals.map((item: any) => {
+                  const pDef = item.plantId ? PLANT_CONFIGS[item.plantId as PlantId] : undefined
+                  const itemIcon = pDef?.packetActive || pDef?.icon
+                  const itemName = pDef?.name || item.plantId || 'Carta de Planta'
+                  const isRented = item.status === 'rented'
+                  return (
+                    <div key={item.instanceId || item.listingId} className={`market-my-card ${isRented ? 'market-my-card--rented-out' : 'market-my-card--active'}`}>
+                      <div className="market-item-card__header">
+                        <div className="market-item-tags-row">
+                          <span className="market-item-level-tag">⭐{item.level || 1}</span>
+                          <span className="market-item-rental-badge">⏳ 7 DÍAS</span>
+                        </div>
+                        <span className={`market-rental-status-badge ${isRented ? 'market-rental-status-badge--active' : 'market-rental-status-badge--listed'}`}>
+                          {isRented ? '🟢 ALQUILADA' : '🟡 EN CATÁLOGO'}
+                        </span>
+                      </div>
+
+                      <div className="market-item-card__img-wrap">
+                        <img src={itemIcon} alt={itemName} className="market-item-icon" />
+                      </div>
+                      <h4 className="market-item-name">{itemName}</h4>
+
+                      <div className="market-item-stats-box">
+                        {item.statRolls && item.statRolls.length > 0 ? (
+                          formatStatRolls(item.statRolls)
+                        ) : (
+                          <span className="market-stat-pill market-stat-pill--none">Stats estándar</span>
+                        )}
+                      </div>
+
+                      <div className="market-rental-info-box">
+                        <div className="market-rental-info-row">
+                          <span>Precio fijado:</span>
+                          <strong style={{ color: '#38bdf8' }}>{item.priceGems} 💎 / 7d</strong>
+                        </div>
+                        {isRented ? (
+                          <>
+                            <div className="market-rental-info-row">
+                              <span>Inquilino:</span>
+                              <strong>👤 {item.borrowerName || 'Jugador'}</strong>
+                            </div>
+                            <div className="market-rental-info-row">
+                              <span>Tiempo restante:</span>
+                              <strong style={{ color: '#fbbf24' }}>⏳ {formatRemainingTime(item.secondsRemaining, item.expiresAt)}</strong>
+                            </div>
+                            <div className="market-rental-auto-renew-tag">
+                              {item.autoRenew ? '🔄 Renovación por inquilino: ACTIVA' : '⏸️ Renovación por inquilino: INACTIVA'}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="market-rental-info-row" style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '11px' }}>
+                            Esperando que otro jugador la alquile
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="market-item-card__footer">
+                        {!isRented && item.listingId ? (
+                          <button
+                            type="button"
+                            className="market-cancel-btn"
+                            onClick={() => handleCancelRentalOffer(item.listingId)}
+                          >
+                            RETIRAR DE ALQUILER
+                          </button>
+                        ) : (
+                          <div className="market-rental-guarantee-tag">
+                            🛡️ Vuelve automáticamente al expirar
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="market-my-sales-empty">
+                <span className="market-empty-icon">🤝</span>
+                <h4>No tienes cartas puestas en alquiler</h4>
+                <p>
+                  Pon tus cartas jugables en alquiler por 7 días a cambio de Gemas 💎.
+                  Ganarás gemas de forma inmediata al alquilarse (-10% de comisión del mercado) y conservarás la propiedad de tu planta al 100%.
+                </p>
+                <button
+                  type="button"
+                  className="market-empty-action-btn"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setActiveTab('rent')
+                  }}
+                >
+                  ➕ PONER CARTA EN ALQUILER
+                </button>
+              </div>
+            )
+          ) : mySalesSubTab === 'borrowed' ? (
+            myRentalsSummary.myBorrowedRentals && myRentalsSummary.myBorrowedRentals.length > 0 ? (
+              <div className="market-my-sales-grid">
+                {myRentalsSummary.myBorrowedRentals.map((item: any) => {
+                  const pDef = item.plantId ? PLANT_CONFIGS[item.plantId as PlantId] : undefined
+                  const itemIcon = pDef?.packetActive || pDef?.icon
+                  const itemName = pDef?.name || item.plantId || 'Carta de Planta'
+                  return (
+                    <div key={item.instanceId} className="market-my-card market-my-card--borrowed">
+                      <div className="market-item-card__header">
+                        <div className="market-item-tags-row">
+                          <span className="market-item-level-tag">⭐{item.level || 1}</span>
+                          <span className="market-item-rental-badge">⏳ 7 DÍAS</span>
+                        </div>
+                        <span className="market-item-seller">👤 {item.ownerName || 'Propietario'}</span>
+                      </div>
+
+                      <div className="market-item-card__img-wrap">
+                        <img src={itemIcon} alt={itemName} className="market-item-icon" />
+                      </div>
+                      <h4 className="market-item-name">{itemName}</h4>
+
+                      <div className="market-item-stats-box">
+                        {item.statRolls && item.statRolls.length > 0 ? (
+                          formatStatRolls(item.statRolls)
+                        ) : (
+                          <span className="market-stat-pill market-stat-pill--none">Stats estándar</span>
+                        )}
+                      </div>
+
+                      <div className="market-rental-info-box">
+                        <div className="market-rental-info-row">
+                          <span>Costo pagado:</span>
+                          <strong>{item.priceGems || 0} 💎 / 7 días</strong>
+                        </div>
+                        <div className="market-rental-info-row">
+                          <span>Tiempo restante:</span>
+                          <strong style={{ color: '#fbbf24' }}>⏳ {formatRemainingTime(item.secondsRemaining, item.expiresAt)}</strong>
+                        </div>
+                        <div className="market-rental-info-row">
+                          <span>Ubicación:</span>
+                          <span style={{ color: item.isInDeck ? '#4ade80' : '#cbd5e1' }}>
+                            {item.isInDeck ? '⚔️ En tu Mazo Activo' : '🌿 En tu Jardín'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Toggle de Auto-Renovación */}
+                      <div className="market-renew-control-card">
+                        <div className="market-renew-status-line">
+                          <span>Renovación automática:</span>
+                          <strong style={{ color: item.autoRenew ? '#4ade80' : '#94a3b8' }}>
+                            {item.autoRenew ? '✅ ACTIVADA' : '❌ DESACTIVADA'}
+                          </strong>
+                        </div>
+                        <p className="market-renew-desc-text">
+                          {item.autoRenew
+                            ? `Al expirar en ${formatRemainingTime(item.secondsRemaining, item.expiresAt)}, si tienes saldo se descontarán ${item.priceGems || 0} 💎 y se renovará 7 días más directo al dueño.`
+                            : 'Al terminar los 7 días la carta volverá a su dueño sin cobro adicional.'}
+                        </p>
+                        <button
+                          type="button"
+                          className={`market-renew-toggle-btn ${item.autoRenew ? 'market-renew-toggle-btn--disable' : 'market-renew-toggle-btn--enable'}`}
+                          onClick={() => void handleToggleAutoRenew(item.instanceId, Boolean(item.autoRenew))}
+                        >
+                          {item.autoRenew ? '⏸️ Desactivar Renovación' : `🔄 Activar Renovación (${item.priceGems || 0} 💎)`}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="market-my-sales-empty">
+                <span className="market-empty-icon">🌱</span>
+                <h4>No has alquilado cartas de otros jugadores</h4>
+                <p>
+                  Puedes alquilar cartas de alto nivel ⭐ y stats potenciados por 7 días en el catálogo de Plantas para competir con ventaja en la Arena.
+                </p>
+                <button
+                  type="button"
+                  className="market-empty-action-btn"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setActiveTab('browse')
+                    setSelectedCategory('plants')
+                    setBrowseListingType('rental')
+                  }}
+                >
+                  🔍 EXPLORAR CARTAS EN ALQUILER
                 </button>
               </div>
             )
@@ -3112,6 +3899,122 @@ export default function Marketplace({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ALQUILER P2P DE PLANTA (CON OPCIÓN DE RENOVACIÓN AUTOMÁTICA) */}
+      {rentPlantModal && (
+        <div className="clan-dialog-backdrop" onClick={() => setRentPlantModal(null)}>
+          <div className="market-gold-modal-card market-rent-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="market-gold-modal-header">
+              <div className="market-gold-modal-title-box">
+                <div className="market-gold-modal-icon-ring" style={{ borderColor: '#38bdf8' }}>
+                  <span>🤝</span>
+                </div>
+                <div>
+                  <h3 className="market-gold-modal-title">ALQUILAR CARTA POR 7 DÍAS</h3>
+                  <p className="market-gold-modal-subtitle">
+                    P2P Rental · Disfruta esta carta en tus batallas competitivas durante 7 días
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="market-gold-modal-close-btn"
+                onClick={() => setRentPlantModal(null)}
+                title="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="market-rent-modal-body">
+              <div className="market-rent-plant-preview">
+                <img
+                  src={
+                    PLANT_CONFIGS[rentPlantModal.plantId as PlantId]?.packetActive ||
+                    PLANT_CONFIGS[rentPlantModal.plantId as PlantId]?.icon
+                  }
+                  alt={PLANT_CONFIGS[rentPlantModal.plantId as PlantId]?.name || rentPlantModal.plantId}
+                  className="market-rent-plant-img"
+                />
+                <div className="market-rent-plant-info">
+                  <div className="market-item-tags-row">
+                    <span className="market-item-level-tag">⭐{rentPlantModal.nivel}</span>
+                    <span className="market-item-sprouts-tag">🌱{rentPlantModal.germinationsCount ?? 0}</span>
+                    <span className="market-item-rental-badge">⏳ 7 DÍAS</span>
+                  </div>
+                  <h4>{PLANT_CONFIGS[rentPlantModal.plantId as PlantId]?.name || rentPlantModal.plantId}</h4>
+                  <div className="market-item-stats-box">
+                    {rentPlantModal.statRolls && rentPlantModal.statRolls.length > 0 ? (
+                      formatStatRolls(rentPlantModal.statRolls)
+                    ) : (
+                      <span className="market-stat-pill market-stat-pill--none">Stats estándar</span>
+                    )}
+                  </div>
+                  <div className="market-rent-owner-tag">
+                    👤 Propietario: <strong>{rentPlantModal.vendedor || 'Jugador'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="market-gold-summary-card" style={{ marginTop: '14px' }}>
+                <div className="market-gold-summary-row">
+                  <span>Duración del Alquiler:</span>
+                  <strong>7 Días de Combate</strong>
+                </div>
+                <div className="market-gold-summary-row">
+                  <span>Costo Total:</span>
+                  <strong style={{ color: '#38bdf8', fontSize: '15px' }}>{rentPlantModal.precio} 💎 Gemas</strong>
+                </div>
+                <div className="market-gold-summary-row">
+                  <span>Tu saldo actual:</span>
+                  <span style={{ color: userTokens >= rentPlantModal.precio ? '#4ade80' : '#ef4444' }}>
+                    {Math.floor(userTokens)} 💎 {userTokens < rentPlantModal.precio && '(Insuficiente)'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Checkbox de Auto-Renovación */}
+              <div className="market-rent-autorenew-box">
+                <label className="market-rent-autorenew-label">
+                  <input
+                    type="checkbox"
+                    checked={rentAutoRenew}
+                    onChange={(e) => setRentAutoRenew(e.target.checked)}
+                    className="market-rent-checkbox"
+                  />
+                  <div className="market-rent-autorenew-text">
+                    <strong>Habilitar Renovación Automática al vencer los 7 días</strong>
+                    <span>
+                      Si está activada, al cumplirse los 7 días se descontarán {rentPlantModal.precio} 💎 de tu cuenta y se renovará por 7 días más directamente al propietario. Si la desactivas o no tienes gemas suficientes, la carta regresará limpiamente a su dueño.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="market-gold-modal-actions">
+              <button
+                type="button"
+                className="clan-dialog-btn clan-dialog-btn--cancel"
+                onClick={() => setRentPlantModal(null)}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                disabled={userTokens < rentPlantModal.precio}
+                className="clan-dialog-btn clan-dialog-btn--confirm"
+                style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)' }}
+                onClick={() => void handleConfirmRentPlant(rentPlantModal, rentAutoRenew)}
+              >
+                {userTokens < rentPlantModal.precio
+                  ? 'GEMAS INSUFICIENTES'
+                  : `ALQUILAR AHORA (${rentPlantModal.precio} 💎)`}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { RANKED_MATCHMAKING_TIMEOUT_SECONDS } from '../utils/gameConstants'
 
 /**
- * Simulación pura de la lógica canónica de _emparejar_lote (Migración 185)
+ * Simulación pura de la lógica canónica de _emparejar_lote (Migración 351)
  */
 function simularCriterioEmparejamiento(
   p1Elo: number,
@@ -10,9 +10,10 @@ function simularCriterioEmparejamiento(
   waitedSeconds: number,
   lastMatchMinutesAgo?: number
 ): { matched: boolean; reason?: string } {
-  // 1. Cooldown de revancha: 45 minutos (Migración 196)
-  const COOLDOWN_MINUTOS = 45
-  if (lastMatchMinutesAgo !== undefined && lastMatchMinutesAgo < COOLDOWN_MINUTOS) {
+  // 1. Cooldown de revancha inteligente: 3 minutos para Arenas 4 y 5 (>3000), 30 minutos para arenas bajas
+  const isHighArena = p1Elo > 3000 || p2Elo > 3000
+  const cooldownMinutos = isHighArena ? 3 : 30
+  if (lastMatchMinutesAgo !== undefined && lastMatchMinutesAgo < cooldownMinutos) {
     return { matched: false, reason: 'cooldown_activo' }
   }
 
@@ -26,22 +27,24 @@ function simularCriterioEmparejamiento(
   const eloDiff = Math.abs(p1Elo - p2Elo)
 
   // REGLA 1: ARENA 5 (Olimpo de Leyendas - 4001+ copas):
-  // Cualquier jugador de Arena 5 puede jugar contra cualquier otro de Arena 5
+  // Cualquier jugador de Arena 5 puede jugar contra cualquier otro de Arena 5 sin límite de ELO
   if (p1Elo > 4000 && p2Elo > 4000) {
     return { matched: true, reason: 'arena_5_todos_contra_todos' }
   }
 
   // REGLA 2: ARENA 4 (Coliseo Galáctico - 3001 a 4000 copas):
-  // Banda arranca en al menos 700 copas
-  if ((p1Elo >= 3001 && p1Elo <= 4000) || (p2Elo >= 3001 && p2Elo <= 4000)) {
-    const bandaA4 = Math.max(700, bandaNovatos)
-    if (eloDiff <= bandaA4) {
-      return { matched: true, reason: 'arena_4_banda_700' }
-    }
-    return { matched: false, reason: 'fuera_de_banda_arena_4' }
+  // Cualquier jugador de Arena 4 puede jugar contra cualquier otro de Arena 4 sin límite de ELO
+  if (p1Elo >= 3001 && p1Elo <= 4000 && p2Elo >= 3001 && p2Elo <= 4000) {
+    return { matched: true, reason: 'arena_4_todos_contra_todos' }
   }
 
-  // REGLA 3: ARENAS 1 A 3 (0 a 3000 copas):
+  // REGLA 3: Frontera Arenas Altas (Ambos > 3000):
+  // Cruce permitido si llevan esperando >= 10s
+  if (p1Elo > 3000 && p2Elo > 3000 && waitedSeconds >= 10) {
+    return { matched: true, reason: 'arena_alta_cruce' }
+  }
+
+  // REGLA 4: ARENAS 1 A 3 (0 a 3000 copas):
   // Banda progresiva protegida para novatos
   if (eloDiff <= bandaNovatos) {
     return { matched: true, reason: 'arenas_bajas_banda_estandar' }
@@ -63,16 +66,16 @@ describe('Emparejamiento Optimizado en Arenas 4 y 5', () => {
     expect(res.reason).toBe('arena_5_todos_contra_todos')
   })
 
-  it('3. Arena 4: Jugador con 3,300 empareja con jugador de 3,950 (+650 copas) en el primer segundo', () => {
-    const res = simularCriterioEmparejamiento(3300, 3950, 1)
+  it('3. Arena 4: Jugador con 3,100 empareja con jugador de 3,950 (+850 copas) en Arena 4 sin límite de ELO', () => {
+    const res = simularCriterioEmparejamiento(3100, 3950, 1)
     expect(res.matched).toBe(true)
-    expect(res.reason).toBe('arena_4_banda_700')
+    expect(res.reason).toBe('arena_4_todos_contra_todos')
   })
 
-  it('4. Arena 4: Jugador de Arena 4 (3,900) empareja con un jugador que acaba de entrar a Arena 5 (4,200) (diff 300 <= 700)', () => {
-    const res = simularCriterioEmparejamiento(3900, 4200, 2)
+  it('4. Arenas Altas: Jugador de Arena 4 (3,900) empareja con jugador de Arena 5 (4,200) tras 10s', () => {
+    const res = simularCriterioEmparejamiento(3900, 4200, 10)
     expect(res.matched).toBe(true)
-    expect(res.reason).toBe('arena_4_banda_700')
+    expect(res.reason).toBe('arena_alta_cruce')
   })
 
   it('5. Arenas Bajas: Un novato de 1,200 NO empareja con un jugador de 1,900 (+700 diff rechazada en novatos)', () => {
@@ -81,16 +84,16 @@ describe('Emparejamiento Optimizado en Arenas 4 y 5', () => {
     expect(res.reason).toBe('fuera_de_banda_estandar')
   })
 
-  it('6. Cooldown de revancha: Bloquea si jugaron hace menos de 45 minutos (ej. 30 min), pero permite si pasaron 45 minutos', () => {
-    const resBloqueado = simularCriterioEmparejamiento(5000, 5200, 10, 30)
+  it('6. Cooldown de revancha en Arenas Altas: Permite tras 3 minutos (ej. 3.5 min), bloquea si es menor (ej. 1 min)', () => {
+    const resBloqueado = simularCriterioEmparejamiento(5000, 5200, 10, 1)
     expect(resBloqueado.matched).toBe(false)
     expect(resBloqueado.reason).toBe('cooldown_activo')
 
-    const resPermitido = simularCriterioEmparejamiento(5000, 5200, 10, 45.5)
+    const resPermitido = simularCriterioEmparejamiento(5000, 5200, 10, 3.5)
     expect(resPermitido.matched).toBe(true)
   })
 
-  it('7. Timeout de Ranked es 30 segundos exactos', () => {
-    expect(RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(30)
+  it('7. Timeout de Ranked es 45 segundos según Migración 321', () => {
+    expect(RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(45)
   })
 })

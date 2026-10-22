@@ -19,6 +19,8 @@ import AuctionModal from '../Auction/AuctionModal'
 import MisionesModal from '../Misiones/MisionesModal'
 import LotteryModal from '../Lottery/LotteryModal'
 import KeybindingsModal from '../KeybindingsModal/KeybindingsModal'
+import NotificationModal from '../Notifications/NotificationModal'
+import { SupabaseService, type PlayerNotificationItem } from '../../services/supabaseService'
 import moneda from '../../assets/ico/moneda.webp'
 import gema from '../../assets/ico/gema.webp'
 import ranking from '../../assets/ico/Ranking.webp'
@@ -172,6 +174,47 @@ export default function MainMenu({
     actionLabel?: string
     onAction?: () => void
   } | null>(null)
+
+  // Centro de Notificaciones del Jugador
+  const [notifications, setNotifications] = useState<PlayerNotificationItem[]>([])
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0)
+  const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState<boolean>(false)
+  const [notificationsLoading, setNotificationsLoading] = useState<boolean>(false)
+
+  const refreshNotifications = useCallback(async () => {
+    if (!userProfile?.id) return
+    setNotificationsLoading(true)
+    try {
+      const res = await SupabaseService.getPlayerNotifications(30)
+      if (res && res.success) {
+        setNotifications(res.notifications || [])
+        setUnreadNotificationsCount(res.unreadCount || 0)
+      }
+    } catch (e) {
+      console.warn('Error cargando notificaciones del jugador:', e)
+    } finally {
+      setNotificationsLoading(false)
+    }
+  }, [userProfile?.id])
+
+  useEffect(() => {
+    void refreshNotifications()
+    const intv = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+      void refreshNotifications()
+    }, 30000)
+    return () => clearInterval(intv)
+  }, [refreshNotifications])
+
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      await SupabaseService.markPlayerNotificationsRead()
+      setUnreadNotificationsCount(0)
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    } catch (e) {
+      console.warn('Error marcando notificaciones leídas:', e)
+    }
+  }
 
   useEffect(() => {
     const handleOpenLottery = (e: any) => {
@@ -888,7 +931,27 @@ export default function MainMenu({
         </span>
       </div>
 
-      {/* 6. Ajustes */}
+      {/* 6. Notificaciones */}
+      <button
+        type="button"
+        className={`topbar-pill topbar-pill--notifications ${unreadNotificationsCount > 0 ? 'topbar-pill--notifications-active' : ''}`}
+        data-action="notificaciones"
+        aria-label="notificaciones"
+        title={unreadNotificationsCount > 0 ? `Tienes ${unreadNotificationsCount} notificación(es) sin leer` : 'Centro de Notificaciones'}
+        onClick={() => {
+          soundManager.playSound('click', 0.5)
+          setIsNotificationsModalOpen(true)
+        }}
+      >
+        <span className="topbar-notif-bell-icon">🔔</span>
+        {unreadNotificationsCount > 0 && (
+          <span className="topbar-notif-badge">
+            {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+          </span>
+        )}
+      </button>
+
+      {/* 7. Ajustes */}
       <button
         type="button"
         className="topbar-pill topbar-pill--settings"
@@ -1855,6 +1918,17 @@ export default function MainMenu({
       <KeybindingsModal
         isOpen={isKeybindingsOpen}
         onClose={() => setIsKeybindingsOpen(false)}
+      />
+
+      {/* Centro de Notificaciones del Jugador */}
+      <NotificationModal
+        isOpen={isNotificationsModalOpen}
+        onClose={() => setIsNotificationsModalOpen(false)}
+        notifications={notifications}
+        unreadCount={unreadNotificationsCount}
+        onMarkAllAsRead={handleMarkAllNotificationsRead}
+        onRefresh={refreshNotifications}
+        loading={notificationsLoading}
       />
     </div>
   )
