@@ -229,6 +229,9 @@ export interface MyMarketplaceItem {
   statRolls: import('../utils/gameConstants').PlantStatKey[]
   germinationsCount?: number
   equippedItem?: string | null
+  isGolden?: boolean
+  listingType?: 'sale' | 'rental'
+  rentalDurationDays?: number
   precio: number
   neto: number
   status: 'active' | 'sold' | 'cancelled'

@@ -43,6 +43,21 @@ describe('Marketplace My Sales & Category Filtering Audit', () => {
       expect(content).toContain('totalActive')
       expect(content).toContain('totalSold')
     })
+
+    it('verifica que la migración 361 elimina la sobrecarga conflictiva de marketplace_board y proyecta isGolden', () => {
+      const migrationPath = join(
+        process.cwd(),
+        'supabase',
+        'migrations',
+        '361-fix-marketplace-board-unique-function-and-golden.sql'
+      )
+      expect(existsSync(migrationPath)).toBe(true)
+
+      const content = readFileSync(migrationPath, 'utf8')
+      expect(content).toContain('DROP FUNCTION IF EXISTS public.marketplace_board(INTEGER, TEXT);')
+      expect(content).toContain('p_listing_type')
+      expect(content).toContain('isGolden')
+    })
   })
 
   describe('2. Split de Comisión y Ganancia Neta', () => {

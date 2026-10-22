@@ -1809,12 +1809,15 @@ export const SupabaseService = {
    */
   async marketplaceBoard(
     limite = 80,
-    category?: 'plant' | 'farming' | 'gold' | null
+    category?: 'plant' | 'farming' | 'gold' | null,
+    listingType?: 'sale' | 'rental' | 'all' | null
   ): Promise<{
     comisionPct: number
     ofertas: Array<{
       id: string
       itemType?: 'plant' | 'farming' | 'gold'
+      listingType?: 'sale' | 'rental'
+      rentalDurationDays?: number
       itemId?: string
       quantity?: number
       plantId?: any
@@ -1826,6 +1829,7 @@ export const SupabaseService = {
       desde: string
       germinationsCount?: number
       equippedItem?: string | null
+      isGolden?: boolean
     }>
   } | null> {
     if (!isSupabaseConfigured()) return null
@@ -1833,6 +1837,9 @@ export const SupabaseService = {
       const rpcArgs: any = { p_limite: limite }
       if (category) {
         rpcArgs.p_category = category
+      }
+      if (listingType) {
+        rpcArgs.p_listing_type = listingType
       }
       const { data, error } = await (supabase.rpc as any)('marketplace_board', rpcArgs)
       if (error) {
