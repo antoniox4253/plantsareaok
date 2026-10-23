@@ -1245,6 +1245,31 @@
   color: #c4b5fd;
 }
 
+.lb-reward-badge--top6-10 {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(126, 34, 206, 0.35));
+  border: 1px solid #c084fc;
+  color: #f3e8ff;
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
+}
+
+.lb-reward-badge--mid-tier {
+  background: rgba(56, 189, 248, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #bae6fd;
+}
+
+.lb-reward-badge--low-tier {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  color: #bbf7d0;
+}
+
+.lb-reward-badge--bronze-tier {
+  background: rgba(251, 191, 36, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fef08a;
+}
+
 .lb-reward-badge--gold-tier {
   background: rgba(234, 179, 8, 0.12);
   border: 1px solid rgba(234, 179, 8, 0.4);

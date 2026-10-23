@@ -121,6 +121,7 @@ export interface RankRewardInfo {
   gems: number
   pack: string | null
   gold: number
+  goldenPlant?: string | null
   badgeText: string
   fullText: string
   tierClass: string
@@ -129,72 +130,101 @@ export interface RankRewardInfo {
 export function getRankReward(rank: number): RankRewardInfo | null {
   if (rank === 1) {
     return {
-      gems: 4000,
+      gems: 5000,
       pack: '1x Pack Legendario 👑',
       gold: 0,
-      badgeText: '4k 💎 + 👑 Pack',
-      fullText: '4,000 Gemas 💎 + 1x Pack Legendario 👑',
+      goldenPlant: '1x Dorada de Élite aleatoria ✨',
+      badgeText: '5k 💎 + 👑 + ✨',
+      fullText: '5,000 Gemas 💎 + 1x Pack Legendario 👑 + 1x Planta Dorada Élite ✨',
       tierClass: 'lb-reward-badge--top1',
     }
   }
   if (rank === 2) {
     return {
-      gems: 2500,
-      pack: '1x Pack Épico 🟣',
+      gems: 3500,
+      pack: '1x Pack Legendario 👑',
       gold: 0,
-      badgeText: '2.5k 💎 + 🟣 Pack',
-      fullText: '2,500 Gemas 💎 + 1x Pack Épico 🟣',
+      goldenPlant: '1x Dorada de Élite aleatoria ✨',
+      badgeText: '3.5k 💎 + 👑 + ✨',
+      fullText: '3,500 Gemas 💎 + 1x Pack Legendario 👑 + 1x Planta Dorada Élite ✨',
       tierClass: 'lb-reward-badge--top2',
     }
   }
   if (rank === 3) {
     return {
-      gems: 1500,
-      pack: '2x Packs Comunes 📦',
+      gems: 2500,
+      pack: '1x Pack Legendario 👑',
       gold: 0,
-      badgeText: '1.5k 💎 + 📦 2 Packs',
-      fullText: '1,500 Gemas 💎 + 2x Packs Comunes 📦',
+      goldenPlant: '1x Dorada de Élite aleatoria ✨',
+      badgeText: '2.5k 💎 + 👑 + ✨',
+      fullText: '2,500 Gemas 💎 + 1x Pack Legendario 👑 + 1x Planta Dorada Élite ✨',
       tierClass: 'lb-reward-badge--top3',
     }
   }
   if (rank === 4) {
     return {
-      gems: 1200,
-      pack: null,
-      gold: 2000,
-      badgeText: '1.2k 💎 + 2k 💰',
-      fullText: '1,200 Gemas 💎 + 2,000 Oro 💰',
+      gems: 1800,
+      pack: '1x Pack Épico 🟣',
+      gold: 0,
+      goldenPlant: '1x Dorada de Élite aleatoria ✨',
+      badgeText: '1.8k 💎 + 🟣 + ✨',
+      fullText: '1,800 Gemas 💎 + 1x Pack Épico 🟣 + 1x Planta Dorada Élite ✨',
       tierClass: 'lb-reward-badge--top4',
     }
   }
   if (rank === 5) {
     return {
-      gems: 800,
-      pack: null,
-      gold: 1000,
-      badgeText: '800 💎 + 1k 💰',
-      fullText: '800 Gemas 💎 + 1,000 Oro 💰',
+      gems: 1800,
+      pack: '1x Pack Épico 🟣',
+      gold: 0,
+      goldenPlant: '1x Dorada de Élite aleatoria ✨',
+      badgeText: '1.8k 💎 + 🟣 + ✨',
+      fullText: '1,800 Gemas 💎 + 1x Pack Épico 🟣 + 1x Planta Dorada Élite ✨',
       tierClass: 'lb-reward-badge--top5',
     }
   }
   if (rank >= 6 && rank <= 10) {
     return {
-      gems: 0,
-      pack: null,
-      gold: 500,
-      badgeText: '500 💰',
-      fullText: '500 Oro 💰',
-      tierClass: 'lb-reward-badge--gold-tier',
+      gems: 1200,
+      pack: '1x Pack Épico 🟣',
+      gold: 0,
+      goldenPlant: '1x Dorada Común aleatoria ✨',
+      badgeText: '1.2k 💎 + 🟣 + ✨',
+      fullText: '1,200 Gemas 💎 + 1x Pack Épico 🟣 + 1x Planta Dorada Común ✨',
+      tierClass: 'lb-reward-badge--top6-10',
     }
   }
   if (rank >= 11 && rank <= 20) {
     return {
-      gems: 0,
-      pack: null,
-      gold: 250,
-      badgeText: '250 💰',
-      fullText: '250 Oro 💰',
-      tierClass: 'lb-reward-badge--gold-tier',
+      gems: 800,
+      pack: '1x Pack Básico 📦',
+      gold: 3000,
+      goldenPlant: null,
+      badgeText: '800 💎 + 📦 + 3k 💰',
+      fullText: '800 Gemas 💎 + 1x Pack Básico 📦 + 3,000 Oro 💰',
+      tierClass: 'lb-reward-badge--mid-tier',
+    }
+  }
+  if (rank >= 21 && rank <= 35) {
+    return {
+      gems: 500,
+      pack: '1x Pack Básico 📦',
+      gold: 2000,
+      goldenPlant: null,
+      badgeText: '500 💎 + 📦 + 2k 💰',
+      fullText: '500 Gemas 💎 + 1x Pack Básico 📦 + 2,000 Oro 💰',
+      tierClass: 'lb-reward-badge--low-tier',
+    }
+  }
+  if (rank >= 36 && rank <= 50) {
+    return {
+      gems: 400,
+      pack: '1x Pack Básico 📦',
+      gold: 1000,
+      goldenPlant: null,
+      badgeText: '400 💎 + 📦 + 1k 💰',
+      fullText: '400 Gemas 💎 + 1x Pack Básico 📦 + 1,000 Oro 💰',
+      tierClass: 'lb-reward-badge--bronze-tier',
     }
   }
   return null
@@ -1019,8 +1049,8 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                         </div>
 
                         <div className="podium-v2-prize-box podium-v2-prize-box--gold">
-                          <div className="podium-v2-gems-val">💎 4,000 GEMAS</div>
-                          <div className="podium-v2-pack-val">👑 1x Pack Legendario</div>
+                          <div className="podium-v2-gems-val">💎 5,000 GEMAS</div>
+                          <div className="podium-v2-pack-val">👑 Pack Legendario + ✨ Dorada</div>
                         </div>
 
                         <div className="podium-v2-stats-row">
@@ -1079,8 +1109,8 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             />
                           </div>
                           <div className="podium-v2-prize-box podium-v2-prize-box--silver">
-                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 2,500 GEMAS</div>
-                            <div className="podium-v2-pack-val podium-v2-pack-val--sub">🟣 1x Pack Épico</div>
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 3,500 GEMAS</div>
+                            <div className="podium-v2-pack-val podium-v2-pack-val--sub">👑 Pack Legendario + ✨ Dorada</div>
                           </div>
                           <div className="podium-v2-sub-stats">
                             <span className="podium-v2-sub-cups">🏆 {leaderboardData[1].elo} Copas</span>
@@ -1131,8 +1161,8 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             />
                           </div>
                           <div className="podium-v2-prize-box podium-v2-prize-box--bronze">
-                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 1,500 GEMAS</div>
-                            <div className="podium-v2-pack-val podium-v2-pack-val--sub">📦 2x Packs Comunes</div>
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 2,500 GEMAS</div>
+                            <div className="podium-v2-pack-val podium-v2-pack-val--sub">👑 Pack Legendario + ✨ Dorada</div>
                           </div>
                           <div className="podium-v2-sub-stats">
                             <span className="podium-v2-sub-cups">🏆 {leaderboardData[2].elo} Copas</span>
