@@ -4,6 +4,7 @@ import { soundManager } from '../../utils/audioManager'
 import { enlaceDeReferido } from '../../utils/direccionPublica'
 import { getPlayerAvatarUrl, UserManager } from '../../utils/userManager'
 import GoldIcon from '../Common/GoldIcon'
+import SeasonRewardModal from '../Ranking/SeasonRewardModal'
 import './PanelDeReferidos.css'
 
 /**
@@ -54,6 +55,7 @@ export default function PanelDeReferidos() {
   const [copiado, setCopiado] = useState(false)
   const [ocupado, setOcupado] = useState<string | null>(null)
   const [codigoEscrito, setCodigoEscrito] = useState('')
+  const [mostrarPremiosModal, setMostrarPremiosModal] = useState<number | null>(null)
 
   // Paginación y búsqueda de amigos invitados
   const [amigosBusqueda, setAmigosBusqueda] = useState('')
@@ -495,7 +497,16 @@ export default function PanelDeReferidos() {
                     {/* Recompensas entregadas del puesto */}
                     <div className="ref-ranking__right">
                       {premio ? (
-                        <div className={`ref-ranking__reward-badge ref-ranking__reward-badge--top${premio.puesto}`}>
+                        <div
+                          className={`ref-ranking__reward-badge ref-ranking__reward-badge--top${premio.puesto}`}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.3)
+                            setMostrarPremiosModal(r.puesto)
+                          }}
+                          title="Clic para ver desglose detallado de qué gana este puesto"
+                          role="button"
+                          tabIndex={0}
+                        >
                           <span className="ref-ranking__reward-icon">{premio.icono}</span>
                           <div className="ref-ranking__reward-info">
                             <span className="ref-ranking__reward-titulo">Premio Entregado:</span>
@@ -511,7 +522,17 @@ export default function PanelDeReferidos() {
                           </div>
                         </div>
                       ) : (
-                        <span className="ref-ranking__sin-premio">Participante Top</span>
+                        <span
+                          className="ref-ranking__sin-premio"
+                          onClick={() => {
+                            soundManager.playSound('click', 0.3)
+                            setMostrarPremiosModal(r.puesto)
+                          }}
+                          style={{ cursor: 'pointer' }}
+                          title="Clic para ver requisitos de premios"
+                        >
+                          Participante Top ℹ️
+                        </span>
                       )}
                     </div>
                   </li>
@@ -690,6 +711,16 @@ export default function PanelDeReferidos() {
           </>
         )}
       </div>
+
+      {/* MODAL: DETALLES DE PREMIOS DE TEMPORADA */}
+      {mostrarPremiosModal !== null && (
+        <SeasonRewardModal
+          initialRank={mostrarPremiosModal}
+          initialTab="referrals"
+          myReferralRank={datos?.miPuesto || null}
+          onClose={() => setMostrarPremiosModal(null)}
+        />
+      )}
     </div>
   )
 }

@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { ClanManager, type ClanRankingEntry } from '../../utils/clanManager'
 import { arenaAdsService, type ArenaAdsLeaderboardEntry } from '../../services/arenaAdsService'
 import { FARMING_ITEM_DEFINITIONS } from '../../utils/pvpRewardManager'
+import SeasonRewardModal from './SeasonRewardModal'
 import './Ranking.css'
 
 import type { Database } from '../../types/database.types'
@@ -350,6 +351,35 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
   const [selectedClanReward, setSelectedClanReward] = useState<ClanRankingEntry | null>(null)
   const [showAllRewardsModal, setShowAllRewardsModal] = useState<boolean>(false)
 
+  // Estado para modal detallado de recompensas de temporada
+  const [seasonRewardModalState, setSeasonRewardModalState] = useState<{
+    isOpen: boolean
+    rank: number
+    tab: 'ranked' | 'referrals'
+  }>({
+    isOpen: false,
+    rank: 1,
+    tab: 'ranked',
+  })
+
+  const openRankRewardDetail = useCallback((rank: number) => {
+    soundManager.playSound('click', 0.3)
+    setSeasonRewardModalState({
+      isOpen: true,
+      rank: Math.max(1, rank || 1),
+      tab: 'ranked',
+    })
+  }, [])
+
+  const openReferralRewardDetail = useCallback((rank: number) => {
+    soundManager.playSound('click', 0.3)
+    setSeasonRewardModalState({
+      isOpen: true,
+      rank: Math.max(1, rank || 1),
+      tab: 'referrals',
+    })
+  }, [])
+
   const loadLeaderboard = useCallback(() => {
     const myId = userProfile?.id
 
@@ -655,6 +685,16 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
   }
 
   const leaderboardData = realLeaderboard
+
+  const myRank = useMemo(() => {
+    const me = realLeaderboard.find((u) => u.isCurrentUser)
+    return me ? me.rank : null
+  }, [realLeaderboard])
+
+  const myReferralRank = useMemo(() => {
+    const me = referralLeaderboard.find((u) => u.isCurrentUser)
+    return me ? me.rank : null
+  }, [referralLeaderboard])
 
   // Ranked Table Filtered and Paginated
   const filteredTableUsers = useMemo(() => {
@@ -1048,8 +1088,17 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           />
                         </div>
 
-                        <div className="podium-v2-prize-box podium-v2-prize-box--gold">
-                          <div className="podium-v2-gems-val">💎 5,000 GEMAS</div>
+                        <div
+                          className="podium-v2-prize-box podium-v2-prize-box--gold podium-v2-prize-box--clickable"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openRankRewardDetail(1)
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          title="Clic para ver detalles de la recompensa del Puesto #1"
+                        >
+                          <div className="podium-v2-gems-val">💎 5,000 GEMAS <span className="podium-v2-prize-hint">👆</span></div>
                           <div className="podium-v2-pack-val">👑 Pack Legendario + ✨ Dorada</div>
                         </div>
 
@@ -1108,8 +1157,17 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                               }}
                             />
                           </div>
-                          <div className="podium-v2-prize-box podium-v2-prize-box--silver">
-                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 3,500 GEMAS</div>
+                          <div
+                            className="podium-v2-prize-box podium-v2-prize-box--silver podium-v2-prize-box--clickable"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openRankRewardDetail(2)
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            title="Clic para ver detalles de la recompensa del Puesto #2"
+                          >
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 3,500 GEMAS <span className="podium-v2-prize-hint">👆</span></div>
                             <div className="podium-v2-pack-val podium-v2-pack-val--sub">👑 Pack Legendario + ✨ Dorada</div>
                           </div>
                           <div className="podium-v2-sub-stats">
@@ -1160,8 +1218,17 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                               }}
                             />
                           </div>
-                          <div className="podium-v2-prize-box podium-v2-prize-box--bronze">
-                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 2,500 GEMAS</div>
+                          <div
+                            className="podium-v2-prize-box podium-v2-prize-box--bronze podium-v2-prize-box--clickable"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openRankRewardDetail(3)
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            title="Clic para ver detalles de la recompensa del Puesto #3"
+                          >
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 2,500 GEMAS <span className="podium-v2-prize-hint">👆</span></div>
                             <div className="podium-v2-pack-val podium-v2-pack-val--sub">👑 Pack Legendario + ✨ Dorada</div>
                           </div>
                           <div className="podium-v2-sub-stats">
@@ -1286,6 +1353,16 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           {sortField === 'winrate' ? (sortAsc ? '▲' : '▼') : '▼'}
                         </span>
                       </button>
+
+                      {/* Botón Ver Tabla de Premios */}
+                      <button
+                        type="button"
+                        className="lb-view-rewards-btn"
+                        onClick={() => openRankRewardDetail(myRank || 1)}
+                        title="Ver tabla detallada de recompensas de fin de temporada"
+                      >
+                        🎁 Ver Premios
+                      </button>
                     </div>
 
                     {/* Table Container */}
@@ -1296,7 +1373,15 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             <tr>
                               <th style={{ width: '45px', textAlign: 'center' }}>#</th>
                               <th>JUGADOR</th>
-                              <th>REWARDS</th>
+                              <th
+                                className="lb-col-rewards-th"
+                                onClick={() => openRankRewardDetail(1)}
+                                title="Clic para ver la tabla completa de recompensas de la temporada"
+                              >
+                                <span className="lb-rewards-header-btn">
+                                  REWARDS <span className="lb-rewards-info-icon">ℹ️</span>
+                                </span>
+                              </th>
                               <th style={{ width: '46px', textAlign: 'center' }}>PLANTA</th>
                               <th>COPAS</th>
                               <th>WIN RATE</th>
@@ -1326,13 +1411,21 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="lb-col-rewards">
+                                  <td
+                                    className="lb-col-rewards"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openRankRewardDetail(usr.rank)
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                    title="Clic para ver en detalle qué gana este puesto"
+                                  >
                                     {rew ? (
                                       <span className={`lb-reward-badge ${rew.tierClass}`} title={rew.fullText}>
-                                        {rew.badgeText}
+                                        {rew.badgeText} <span className="lb-reward-badge__click-hint">ℹ️</span>
                                       </span>
                                     ) : (
-                                      <span className="lb-reward-badge--none">-</span>
+                                      <span className="lb-reward-badge--none" title="Puesto #51+: Clic para ver requisitos de premiación">- ℹ️</span>
                                     )}
                                   </td>
                                   <td className="lb-col-plant">
@@ -1543,8 +1636,17 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                           {referralLeaderboard[0].tierBadge}
                         </div>
 
-                        <div className="podium-v2-prize-box podium-v2-prize-box--gold" title="Premio de Fin de Temporada Top 1">
-                          <div className="podium-v2-gems-val">💎 1,000 GEMAS</div>
+                        <div
+                          className="podium-v2-prize-box podium-v2-prize-box--gold podium-v2-prize-box--clickable"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            openReferralRewardDetail(1)
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          title="Premio de Fin de Temporada Top 1 (Clic para ver detalles)"
+                        >
+                          <div className="podium-v2-gems-val">💎 1,000 GEMAS <span className="podium-v2-prize-hint">👆</span></div>
                           <div className="podium-v2-pack-val">🌟 1x Sobre Legendario</div>
                         </div>
 
@@ -1588,8 +1690,17 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             {referralLeaderboard[1].tierBadge}
                           </div>
 
-                          <div className="podium-v2-prize-box podium-v2-prize-box--silver" title="Premio de Fin de Temporada Top 2">
-                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 500 GEMAS</div>
+                          <div
+                            className="podium-v2-prize-box podium-v2-prize-box--silver podium-v2-prize-box--clickable"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openReferralRewardDetail(2)
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            title="Premio de Fin de Temporada Top 2 (Clic para ver detalles)"
+                          >
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 500 GEMAS <span className="podium-v2-prize-hint">👆</span></div>
                             <div className="podium-v2-pack-val podium-v2-pack-val--sub">🟣 1x Sobre Épico</div>
                           </div>
 
@@ -1631,8 +1742,17 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             {referralLeaderboard[2].tierBadge}
                           </div>
 
-                          <div className="podium-v2-prize-box podium-v2-prize-box--bronze" title="Premio de Fin de Temporada Top 3">
-                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 200 GEMAS</div>
+                          <div
+                            className="podium-v2-prize-box podium-v2-prize-box--bronze podium-v2-prize-box--clickable"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openReferralRewardDetail(3)
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            title="Premio de Fin de Temporada Top 3 (Clic para ver detalles)"
+                          >
+                            <div className="podium-v2-gems-val podium-v2-gems-val--sub">💎 200 GEMAS <span className="podium-v2-prize-hint">👆</span></div>
                             <div className="podium-v2-pack-val podium-v2-pack-val--sub">🟢 2x Sobres Comunes</div>
                           </div>
 
@@ -1653,30 +1773,40 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                   {/* RIGHT COLUMN: SEARCH, TABLE & FOOTER */}
                   <div className="leaderboard-table-col">
                     {/* Top Search Bar */}
-                    <div className="lb-search-container">
-                      <span className="lb-search-icon">🔍</span>
-                      <input
-                        type="text"
-                        className="lb-search-input"
-                        placeholder="Buscar embajador por nombre..."
-                        value={referralSearch}
-                        onChange={(e) => {
-                          setReferralSearch(e.target.value)
-                          setReferralPage(1)
-                        }}
-                      />
-                      {referralSearch && (
-                        <button
-                          type="button"
-                          className="lb-search-clear"
-                          onClick={() => {
-                            setReferralSearch('')
+                    <div className="lb-search-container" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ position: 'relative', flex: 1 }}>
+                        <span className="lb-search-icon">🔍</span>
+                        <input
+                          type="text"
+                          className="lb-search-input"
+                          placeholder="Buscar embajador por nombre..."
+                          value={referralSearch}
+                          onChange={(e) => {
+                            setReferralSearch(e.target.value)
                             setReferralPage(1)
                           }}
-                        >
-                          ✕
-                        </button>
-                      )}
+                        />
+                        {referralSearch && (
+                          <button
+                            type="button"
+                            className="lb-search-clear"
+                            onClick={() => {
+                              setReferralSearch('')
+                              setReferralPage(1)
+                            }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="lb-view-rewards-btn"
+                        onClick={() => openReferralRewardDetail(myReferralRank || 1)}
+                        title="Ver tabla detallada de recompensas de referidos"
+                      >
+                        🎁 Premios de Referidos
+                      </button>
                     </div>
 
                     {/* Table Container */}
@@ -1687,7 +1817,16 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                             <tr>
                               <th style={{ width: '45px', textAlign: 'center' }}>#</th>
                               <th>EMBAJADOR</th>
-                              <th style={{ width: '160px', textAlign: 'center' }}>RECOMPENSA</th>
+                              <th
+                                className="lb-col-rewards-th"
+                                style={{ width: '160px', textAlign: 'center' }}
+                                onClick={() => openReferralRewardDetail(1)}
+                                title="Clic para ver la tabla completa de recompensas de referidos"
+                              >
+                                <span className="lb-rewards-header-btn">
+                                  RECOMPENSA <span className="lb-rewards-info-icon">ℹ️</span>
+                                </span>
+                              </th>
                               <th style={{ width: '140px', textAlign: 'center' }}>AMIGOS ACTIVOS</th>
                               <th style={{ width: '150px', textAlign: 'right' }}>RANGO</th>
                             </tr>
@@ -1717,13 +1856,21 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="lb-col-rewards" style={{ textAlign: 'center' }}>
+                                  <td
+                                    className="lb-col-rewards"
+                                    style={{ textAlign: 'center', cursor: 'pointer' }}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openReferralRewardDetail(usr.rank)
+                                    }}
+                                    title="Clic para ver en detalle qué gana este puesto"
+                                  >
                                     {refRew ? (
                                       <span className={`lb-reward-badge ${refRew.tierClass}`} title={refRew.fullText}>
-                                        {refRew.badgeText}
+                                        {refRew.badgeText} <span className="lb-reward-badge__click-hint">ℹ️</span>
                                       </span>
                                     ) : (
-                                      <span className="lb-reward-badge--none">-</span>
+                                      <span className="lb-reward-badge--none" title="Puesto #6+: Clic para ver requisitos">- ℹ️</span>
                                     )}
                                   </td>
                                   <td style={{ textAlign: 'center', fontWeight: 900, color: '#38bdf8', fontSize: '12px' }}>
@@ -2059,7 +2206,15 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                 </td>
                                 <td className="lb-col-members">👥 {cln.memberCount}/{cln.maxMembers || 15}</td>
                                 <td className="lb-col-damage">⚔️ {cln.damageDealt.toLocaleString()}</td>
-                                <td className="lb-col-rewards">
+                                <td
+                                  className="lb-col-rewards clan-col-rewards--clickable"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    soundManager.playSound('click', 0.3)
+                                    setSelectedClanReward(cln)
+                                  }}
+                                  title="Clic para ver detalles de recompensas de este clan"
+                                >
                                   <div className="clan-table-rewards-stack">
                                     {seasonGemsRew.gems > 0 && (
                                       <span
@@ -2070,7 +2225,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                                       </span>
                                     )}
                                     <span className="lb-reward-badge lb-reward-badge--gold-tier" title={dailyRew.text}>
-                                      {dailyRew.badge}
+                                      {dailyRew.badge} 👆
                                     </span>
                                   </div>
                                 </td>
@@ -3081,6 +3236,17 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL: DESGLOSE DETALLADO DE RECOMPENSAS DE TEMPORADA (RANKED Y REFERIDOS) */}
+      {seasonRewardModalState.isOpen && (
+        <SeasonRewardModal
+          initialRank={seasonRewardModalState.rank}
+          initialTab={seasonRewardModalState.tab}
+          myRank={myRank}
+          myReferralRank={myReferralRank}
+          onClose={() => setSeasonRewardModalState((prev) => ({ ...prev, isOpen: false }))}
+        />
       )}
     </div>
   )

@@ -702,6 +702,13 @@
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.ref-ranking__reward-badge:hover {
+  transform: translateY(-2px) scale(1.03);
+  filter: brightness(1.2);
 }
 
 .ref-ranking__reward-badge--top1 {

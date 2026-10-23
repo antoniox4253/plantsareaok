@@ -1,0 +1,663 @@
+/* ==========================================================================
+   SEASON REWARD MODAL - DESGLOSE DETALLADO DE RECOMPENSAS DE TEMPORADA
+   ========================================================================== */
+
+.season-reward-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: srmFadeIn 0.25s ease-out;
+}
+
+@keyframes srmFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.season-reward-dialog {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 840px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8),
+              0 0 30px rgba(251, 191, 36, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  animation: srmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  color: #f8fafc;
+}
+
+@keyframes srmSlideUp {
+  from {
+    transform: translateY(24px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Header */
+.season-reward-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 14px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%);
+  border-bottom: 1.5px solid rgba(251, 191, 36, 0.3);
+}
+
+.season-reward-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.season-reward-header-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 6px rgba(251, 191, 36, 0.5));
+}
+
+.season-reward-header-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff 0%, #fde047 50%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+}
+
+.season-reward-header-sub {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.season-reward-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  font-size: 1.2rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.season-reward-close-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+/* Tabs Switcher */
+.season-reward-tabs-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 24px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.season-reward-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.season-reward-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+.season-reward-tab-btn--active {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.4) 100%);
+  border: 1.5px solid #fbbf24;
+  color: #fde047;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.25);
+}
+
+/* Body */
+.season-reward-body {
+  padding: 18px 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.season-reward-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.season-reward-body::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.season-reward-body::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.4);
+  border-radius: 4px;
+}
+
+/* Notice Banner */
+.season-reward-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border-left: 4px solid #38bdf8;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.season-reward-banner-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* Tier Selector Pills */
+.season-reward-pills-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.season-reward-pills-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.season-reward-pills-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.season-reward-pills-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.season-reward-pills-scroll::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.3);
+  border-radius: 3px;
+}
+
+.season-reward-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.season-reward-pill-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.season-reward-pill-btn--active {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(180, 83, 9, 0.5) 100%) !important;
+  border: 1.5px solid #fbbf24 !important;
+  color: #fef08a !important;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.4) !important;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.season-reward-pill-btn--user {
+  position: relative;
+  border-color: #38bdf8;
+}
+
+.season-reward-pill-tag-you {
+  font-size: 8.5px;
+  background: #38bdf8;
+  color: #0f172a;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 900;
+  margin-left: 2px;
+}
+
+/* Hero Detail Card */
+.season-reward-hero-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid rgba(251, 191, 36, 0.45);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(251, 191, 36, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.season-reward-hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.season-reward-hero-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.season-reward-hero-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+}
+
+.season-reward-hero-rank {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #fde047;
+  letter-spacing: 0.5px;
+}
+
+.season-reward-hero-subtitle {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.season-reward-hero-you-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
+  border: 1px solid #38bdf8;
+  border-radius: 20px;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+/* Reward Breakdown Grid */
+.season-reward-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.season-reward-item-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.season-reward-item-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.season-reward-item-card--gems {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.2) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.season-reward-item-card--pack {
+  border-color: rgba(168, 85, 247, 0.4);
+  background: linear-gradient(135deg, rgba(126, 34, 206, 0.2) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.season-reward-item-card--goldplant {
+  border-color: rgba(251, 191, 36, 0.6);
+  background: linear-gradient(135deg, rgba(180, 83, 9, 0.25) 0%, rgba(15, 23, 42, 0.85) 100%);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.15);
+}
+
+.season-reward-item-card--gold {
+  border-color: rgba(234, 179, 8, 0.4);
+  background: linear-gradient(135deg, rgba(161, 98, 7, 0.2) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.season-reward-item-icon-box {
+  font-size: 26px;
+  line-height: 1;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.season-reward-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.season-reward-item-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+}
+
+.season-reward-item-value {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.season-reward-item-card--gems .season-reward-item-value {
+  color: #38bdf8;
+}
+
+.season-reward-item-card--pack .season-reward-item-value {
+  color: #e9d5ff;
+}
+
+.season-reward-item-card--goldplant .season-reward-item-value {
+  color: #fef08a;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+}
+
+.season-reward-item-card--gold .season-reward-item-value {
+  color: #fde047;
+}
+
+.season-reward-item-desc {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+/* Empty Tier Alert */
+.season-reward-empty-tier {
+  text-align: center;
+  padding: 24px 16px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+}
+
+.season-reward-empty-tier-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.season-reward-empty-tier-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  margin-bottom: 4px;
+}
+
+.season-reward-empty-tier-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Full Ladder Table */
+.season-reward-table-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.season-reward-table-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.season-reward-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.season-reward-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  text-align: left;
+}
+
+.season-reward-table th {
+  background: rgba(30, 41, 59, 0.9);
+  padding: 8px 12px;
+  font-weight: 800;
+  color: #cbd5e1;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+}
+
+.season-reward-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.season-reward-table tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.season-reward-table tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.season-reward-table tr.season-reward-table-row--active {
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.season-reward-table tr.season-reward-table-row--user {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.season-reward-table tr.season-reward-table-row--active td:first-child {
+  font-weight: 900;
+  color: #fbbf24;
+}
+
+/* Footer */
+.season-reward-footer {
+  padding: 14px 24px;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.season-reward-footer-btn {
+  padding: 8px 24px;
+  font-size: 0.9rem;
+}
+
+/* Extra interactive hints */
+.lb-col-rewards-th {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.lb-col-rewards-th:hover {
+  color: #fbbf24;
+}
+
+.lb-rewards-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lb-rewards-info-icon {
+  font-size: 11px;
+  background: rgba(251, 191, 36, 0.2);
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fbbf24;
+}
+
+.lb-view-rewards-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.35) 100%);
+  border: 1.2px solid #fbbf24;
+  color: #fde047;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.2);
+  white-space: nowrap;
+}
+
+.lb-view-rewards-btn:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(217, 119, 6, 0.5) 100%);
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.4);
+  color: #ffffff;
+}
+
+.podium-v2-prize-box--clickable {
+  cursor: pointer !important;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.podium-v2-prize-box--clickable:hover {
+  transform: scale(1.04);
+  filter: brightness(1.2);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.5);
+}
+
+.podium-v2-prize-hint {
+  font-size: 11px;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+
+.lb-reward-badge {
+  cursor: pointer !important;
+  user-select: none;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.lb-reward-badge:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  filter: brightness(1.25) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+}
+
+.lb-reward-badge__click-hint {
+  font-size: 8px;
+  opacity: 0.75;
+  margin-left: 2px;
+}
+
+.clan-col-rewards--clickable {
+  cursor: pointer !important;
+}
+
+.clan-col-rewards--clickable:hover .clan-table-rewards-stack {
+  transform: scale(1.04);
+  filter: brightness(1.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .season-reward-dialog {
+    border-radius: 14px;
+    max-height: 94vh;
+  }
+  .season-reward-header {
+    padding: 14px 16px;
+  }
+  .season-reward-tabs-bar {
+    padding: 8px 16px;
+  }
+  .season-reward-body {
+    padding: 14px 16px;
+  }
+  .season-reward-items-grid {
+    grid-template-columns: 1fr;
+  }
+}
