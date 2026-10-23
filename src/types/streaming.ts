@@ -77,6 +77,28 @@ export interface StreamingOrder {
   days_remaining: number
 }
 
+export interface AdminDeliveredOrder {
+  id: string
+  user_id: string
+  username?: string
+  platform: string
+  product_name: string
+  gem_cost: number
+  is_on_demand: boolean
+  order_status: string
+  account_region?: 'peru' | 'extranjero' | string | null
+  email?: string | null
+  password?: string | null
+  profile_number?: number | null
+  profile_pin?: string | null
+  bot_code?: string | null
+  admin_notes?: string | null
+  created_at: string
+  delivered_at?: string | null
+  expires_at?: string | null
+  days_remaining: number
+}
+
 export interface AdminStreamingOverview {
   pending_orders: Array<{
     id: string
@@ -90,6 +112,7 @@ export interface AdminStreamingOverview {
     account_region?: 'peru' | 'extranjero' | string | null
     created_at: string
   }>
+  delivered_orders?: AdminDeliveredOrder[]
   stock_summary: Record<string, number>
   inventory: Array<{
     id: string

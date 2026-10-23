@@ -229,6 +229,40 @@ class StreamingService {
       return { success: false, error: err?.message || 'Error al eliminar perfil' }
     }
   }
+
+  /**
+   * [ADMIN] Actualiza las credenciales, perfil o vigencia de una orden ya vendida
+   */
+  async adminUpdateOrder(params: {
+    orderId: string
+    email: string
+    password: string
+    profileNumber?: number
+    profilePin?: string
+    botCode?: string
+    daysRemaining?: number
+    status?: string
+  }): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const { data, error } = await (supabase.rpc as any)('admin_update_streaming_order', {
+        p_order_id: params.orderId,
+        p_email: params.email.trim(),
+        p_password: params.password.trim(),
+        p_profile_number: params.profileNumber ?? 1,
+        p_profile_pin: params.profilePin ? params.profilePin.trim() : null,
+        p_bot_code: params.botCode ? params.botCode.trim() : '',
+        p_days_remaining: params.daysRemaining ?? null,
+        p_status: params.status ? params.status.trim() : null,
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Error al actualizar orden' }
+    }
+  }
 }
 
 export const streamingService = new StreamingService()

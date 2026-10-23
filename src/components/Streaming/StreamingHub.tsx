@@ -9,6 +9,7 @@ import {
   type StreamingServer,
   type StreamingOrder,
   type AdminStreamingOverview,
+  type AdminDeliveredOrder,
 } from '../../types/streaming'
 import { streamingService } from '../../services/streamingService'
 import { getPlayerAvatarUrl } from '../../utils/userManager'
@@ -111,6 +112,18 @@ export default function StreamingHub({
   const [delivProfile, setDelivProfile] = useState<number>(1)
   const [delivPin, setDelivPin] = useState<string>('')
   const [delivBotCode, setDelivBotCode] = useState<string>('')
+
+  // Estado de edición para orden vendida/entregada en admin
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null)
+  const [editEmail, setEditEmail] = useState<string>('')
+  const [editPassword, setEditPassword] = useState<string>('')
+  const [editProfile, setEditProfile] = useState<number>(1)
+  const [editPin, setEditPin] = useState<string>('')
+  const [editBotCode, setEditBotCode] = useState<string>('')
+  const [editDaysRemaining, setEditDaysRemaining] = useState<number>(30)
+  const [editStatus, setEditStatus] = useState<string>('delivered')
+  const [adminSearchSold, setAdminSearchSold] = useState<string>('')
+  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, boolean>>({})
 
   const serverDropdownRef = useRef<HTMLDivElement>(null)
   const platformDropdownRef = useRef<HTMLDivElement>(null)
@@ -354,6 +367,68 @@ export default function StreamingHub({
       refreshAdminOverview()
     }
   }
+
+  const handleStartEditOrder = (ord: AdminDeliveredOrder) => {
+    setEditingOrderId(ord.id)
+    setEditEmail(ord.email || '')
+    setEditPassword(ord.password || '')
+    setEditProfile(ord.profile_number || 1)
+    setEditPin(ord.profile_pin || '')
+    setEditBotCode(ord.bot_code || '')
+    setEditDaysRemaining(ord.days_remaining > 0 ? ord.days_remaining : 30)
+    setEditStatus(ord.order_status || 'delivered')
+  }
+
+  const handleAdminUpdateOrder = async (orderId: string) => {
+    if (!editEmail.trim() || !editPassword.trim()) {
+      setToastNotification('Por favor completa el correo y la contraseña.')
+      return
+    }
+    setIsAdminSubmitting(true)
+    try {
+      const res = await streamingService.adminUpdateOrder({
+        orderId,
+        email: editEmail,
+        password: editPassword,
+        profileNumber: editProfile,
+        profilePin: editPin,
+        botCode: editBotCode,
+        daysRemaining: editDaysRemaining,
+        status: editStatus,
+      })
+      if (res.success) {
+        soundManager.playSound('victory', 0.5)
+        setToastNotification('✅ ¡Suscripción actualizada exitosamente!')
+        setEditingOrderId(null)
+        refreshAdminOverview()
+        refreshStock()
+      } else {
+        setToastNotification(`❌ ${res.error || 'Error al actualizar suscripción'}`)
+      }
+    } finally {
+      setIsAdminSubmitting(false)
+    }
+  }
+
+  const togglePasswordVisibility = (orderId: string) => {
+    setRevealedPasswords((prev) => ({
+      ...prev,
+      [orderId]: !prev[orderId],
+    }))
+  }
+
+  const filteredDeliveredOrders = useMemo(() => {
+    if (!adminOverview?.delivered_orders) return []
+    const q = adminSearchSold.toLowerCase().trim()
+    if (!q) return adminOverview.delivered_orders
+    return adminOverview.delivered_orders.filter((ord) => {
+      const u = (ord.username || '').toLowerCase()
+      const e = (ord.email || '').toLowerCase()
+      const p = (ord.platform || '').toLowerCase()
+      const prod = (ord.product_name || '').toLowerCase()
+      return u.includes(q) || e.includes(q) || p.includes(q) || prod.includes(q)
+    })
+  }, [adminOverview?.delivered_orders, adminSearchSold])
   const filteredProducts = useMemo(() => {
     const q = catalogSearch.toLowerCase().trim()
     return products.filter((item) => {
@@ -1686,7 +1761,313 @@ export default function StreamingHub({
               )}
             </div>
 
-            {/* Sección 3: Inventario en Vivo de Perfiles */}
+            {/* Sección 3: Suscripciones Vendidas / Entregadas (Gestión & Edición) */}
+            <div className="streaming-admin__box">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+                <h3 className="streaming-admin__section-title" style={{ marginBottom: 0 }}>
+                  💎 Suscripciones Vendidas / Entregadas ({adminOverview?.delivered_orders?.length || 0})
+                </h3>
+                {adminOverview?.delivered_orders && adminOverview.delivered_orders.length > 0 && (
+                  <input
+                    type="text"
+                    placeholder="🔍 Buscar por usuario, email o plataforma..."
+                    value={adminSearchSold}
+                    onChange={(e) => setAdminSearchSold(e.target.value)}
+                    style={{
+                      background: 'rgba(30, 41, 59, 0.8)',
+                      border: '1px solid rgba(148, 163, 184, 0.25)',
+                      borderRadius: 8,
+                      padding: '6px 12px',
+                      fontSize: '0.82rem',
+                      color: '#ffffff',
+                      minWidth: 260,
+                    }}
+                  />
+                )}
+              </div>
+
+              {!adminOverview?.delivered_orders || adminOverview.delivered_orders.length === 0 ? (
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                  Aún no hay suscripciones vendidas o entregadas registradas.
+                </p>
+              ) : filteredDeliveredOrders.length === 0 ? (
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                  No se encontraron suscripciones con ese criterio de búsqueda.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {filteredDeliveredOrders.map((ord) => {
+                    const plat = STREAMING_PLATFORMS.find((p) => p.value.toLowerCase() === ord.platform.toLowerCase())
+                    const isEditing = editingOrderId === ord.id
+                    const isPassRevealed = Boolean(revealedPasswords[ord.id])
+
+                    return (
+                      <div
+                        key={ord.id}
+                        style={{
+                          background: 'rgba(30, 41, 59, 0.75)',
+                          border: isEditing ? '1px solid #38bdf8' : '1px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: 12,
+                          padding: 16,
+                          boxShadow: isEditing ? '0 0 15px rgba(56, 189, 248, 0.2)' : 'none',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                            <img
+                              src={plat?.image || '/images/helpers/disney.webp'}
+                              alt={ord.platform}
+                              style={{ width: 22, height: 22, objectFit: 'contain' }}
+                              onError={(e) => {
+                                ;(e.target as HTMLImageElement).src = '/images/helpers/disney.webp'
+                              }}
+                            />
+                            <span style={{ fontWeight: 800, color: '#f8fafc', fontSize: '1rem' }}>
+                              {ord.product_name}
+                            </span>
+                            <span style={{ color: '#38bdf8', fontWeight: 700, fontSize: '0.85rem' }}>
+                              @{ord.username || 'Usuario'}
+                            </span>
+                            {ord.account_region && (
+                              <span
+                                style={{
+                                  padding: '2px 8px',
+                                  borderRadius: 6,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  background: ord.account_region === 'peru' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(56, 189, 248, 0.25)',
+                                  color: ord.account_region === 'peru' ? '#fca5a5' : '#7dd3fc',
+                                  border: ord.account_region === 'peru' ? '1px solid #ef4444' : '1px solid #38bdf8',
+                                }}
+                              >
+                                {ord.account_region === 'peru' ? '🇵🇪 Perú' : '🌎 Extranjero'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span
+                              style={{
+                                padding: '3px 10px',
+                                borderRadius: 6,
+                                fontSize: '0.75rem',
+                                fontWeight: 800,
+                                background: ord.days_remaining > 0 ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                color: ord.days_remaining > 0 ? '#4ade80' : '#f87171',
+                                border: ord.days_remaining > 0 ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+                              }}
+                            >
+                              {ord.days_remaining > 0 ? `🟢 ${ord.days_remaining} días restantes` : '🔴 Vencida'}
+                            </span>
+                            {!isEditing && (
+                              <button
+                                type="button"
+                                style={{
+                                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: 6,
+                                  padding: '6px 14px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                }}
+                                onClick={() => handleStartEditOrder(ord)}
+                              >
+                                ✏️ Editar Credenciales
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Vista Normal / Credenciales */}
+                        {!isEditing ? (
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                              gap: 12,
+                              background: 'rgba(15, 23, 42, 0.6)',
+                              padding: 12,
+                              borderRadius: 8,
+                              fontSize: '0.82rem',
+                            }}
+                          >
+                            <div>
+                              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>CORREO:</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                <span style={{ color: '#f8fafc', fontWeight: 700, wordBreak: 'break-all' }}>{ord.email || '—'}</span>
+                                {ord.email && (
+                                  <button
+                                    type="button"
+                                    className="streaming-sub-card__copy-btn"
+                                    style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                                    onClick={() => handleCopyCode(ord.email || '')}
+                                  >
+                                    Copiar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>CONTRASEÑA:</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                <span style={{ color: '#fde047', fontFamily: 'monospace', fontWeight: 700 }}>
+                                  {isPassRevealed ? ord.password || '—' : '••••••••'}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="streaming-sub-card__copy-btn"
+                                  style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                                  onClick={() => togglePasswordVisibility(ord.id)}
+                                >
+                                  {isPassRevealed ? 'Ocultar' : '👁️ Ver'}
+                                </button>
+                                {ord.password && (
+                                  <button
+                                    type="button"
+                                    className="streaming-sub-card__copy-btn"
+                                    style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                                    onClick={() => handleCopyCode(ord.password || '')}
+                                  >
+                                    Copiar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>PERFIL &amp; PIN:</span>
+                              <span style={{ color: '#38bdf8', fontWeight: 700, marginTop: 2, display: 'block' }}>
+                                Perfil #{ord.profile_number || 1} {ord.profile_pin ? `(PIN: ${ord.profile_pin})` : '(Sin PIN)'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.72rem', fontWeight: 600 }}>TOKEN BOT:</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                <span style={{ color: '#a78bfa', fontFamily: 'monospace', fontWeight: 700 }}>{ord.bot_code || '—'}</span>
+                                {ord.bot_code && (
+                                  <button
+                                    type="button"
+                                    className="streaming-sub-card__copy-btn"
+                                    style={{ padding: '2px 6px', fontSize: '0.7rem' }}
+                                    onClick={() => handleCopyCode(ord.bot_code || '')}
+                                  >
+                                    Copiar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Formulario de Edición */
+                          <div style={{ background: 'rgba(15, 23, 42, 0.95)', padding: 16, borderRadius: 10, border: '1px solid rgba(56, 189, 248, 0.4)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                              <span style={{ fontSize: '1.1rem' }}>✏️</span>
+                              <h4 style={{ color: '#38bdf8', fontSize: '0.9rem', margin: 0 }}>
+                                Editando Credenciales y Vigencia para @{ord.username}:
+                              </h4>
+                            </div>
+
+                            <div className="streaming-admin__form-grid" style={{ marginBottom: 14 }}>
+                              <div className="streaming-admin__form-field">
+                                <label>Correo Electrónico</label>
+                                <input
+                                  type="email"
+                                  required
+                                  value={editEmail}
+                                  onChange={(e) => setEditEmail(e.target.value)}
+                                />
+                              </div>
+                              <div className="streaming-admin__form-field">
+                                <label>Contraseña</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={editPassword}
+                                  onChange={(e) => setEditPassword(e.target.value)}
+                                />
+                              </div>
+                              <div className="streaming-admin__form-field">
+                                <label>Perfil #</label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={5}
+                                  value={editProfile}
+                                  onChange={(e) => setEditProfile(Number(e.target.value))}
+                                />
+                              </div>
+                              <div className="streaming-admin__form-field">
+                                <label>PIN Perfil (Opcional)</label>
+                                <input
+                                  type="text"
+                                  placeholder="Ej: 1234"
+                                  value={editPin}
+                                  onChange={(e) => setEditPin(e.target.value)}
+                                />
+                              </div>
+                              <div className="streaming-admin__form-field">
+                                <label>Código BOT / Token</label>
+                                <input
+                                  type="text"
+                                  placeholder="Ej: COD-NET-01"
+                                  value={editBotCode}
+                                  onChange={(e) => setEditBotCode(e.target.value)}
+                                />
+                              </div>
+                              <div className="streaming-admin__form-field">
+                                <label>Días de Vigencia Restantes</label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={365}
+                                  value={editDaysRemaining}
+                                  onChange={(e) => setEditDaysRemaining(Number(e.target.value))}
+                                />
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 10 }}>
+                              <button
+                                type="button"
+                                className="streaming-admin__submit-btn"
+                                style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' }}
+                                disabled={isAdminSubmitting}
+                                onClick={() => handleAdminUpdateOrder(ord.id)}
+                              >
+                                {isAdminSubmitting ? 'Guardando...' : '💾 Guardar Cambios'}
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  background: 'transparent',
+                                  border: '1px solid #64748b',
+                                  color: '#94a3b8',
+                                  borderRadius: 8,
+                                  padding: '8px 16px',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => setEditingOrderId(null)}
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Sección 4: Inventario en Vivo de Perfiles */}
             <div className="streaming-admin__box">
               <h3 className="streaming-admin__section-title">📋 Inventario Completo de Perfiles</h3>
               <div className="streaming-admin__table-wrap">
