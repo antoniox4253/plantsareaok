@@ -8,16 +8,21 @@ function simularCriterioEmparejamiento(
   p1Elo: number,
   p2Elo: number,
   waitedSeconds: number,
-  lastMatchMinutesAgo?: number
+  lastMatchMinutesAgo?: number,
+  lastMatchHadDisconnect?: boolean
 ): { matched: boolean; reason?: string } {
-  // 1. Cooldown de revancha inteligente: 3 minutos para Arenas 4 y 5 (>3000), 30 minutos para arenas bajas
-  const isHighArena = p1Elo > 3000 || p2Elo > 3000
-  const cooldownMinutos = isHighArena ? 3 : 30
+  // 1. Blindaje de 30 minutos ante desconexión, abandono o forfeit previo
+  if (lastMatchHadDisconnect && lastMatchMinutesAgo !== undefined && lastMatchMinutesAgo < 30) {
+    return { matched: false, reason: 'cooldown_desconexion_30m' }
+  }
+
+  // 2. Cooldown base de 10 minutos para partidas normales en todas las arenas (Migración 366)
+  const cooldownMinutos = 10
   if (lastMatchMinutesAgo !== undefined && lastMatchMinutesAgo < cooldownMinutos) {
     return { matched: false, reason: 'cooldown_activo' }
   }
 
-  // 2. Parámetros de banda para novatos
+  // 3. Parámetros de banda para novatos
   const v_inicio = 150
   const v_paso = 75
   const v_cada = 15
@@ -84,16 +89,27 @@ describe('Emparejamiento Optimizado en Arenas 4 y 5', () => {
     expect(res.reason).toBe('fuera_de_banda_estandar')
   })
 
-  it('6. Cooldown de revancha en Arenas Altas: Permite tras 3 minutos (ej. 3.5 min), bloquea si es menor (ej. 1 min)', () => {
-    const resBloqueado = simularCriterioEmparejamiento(5000, 5200, 10, 1)
+  it('6. Cooldown de revancha (Migración 366): Bloquea si hace < 10 min (ej. 5 min), permite tras 10 min (ej. 11 min)', () => {
+    const resBloqueado = simularCriterioEmparejamiento(5000, 5200, 10, 5)
     expect(resBloqueado.matched).toBe(false)
     expect(resBloqueado.reason).toBe('cooldown_activo')
 
-    const resPermitido = simularCriterioEmparejamiento(5000, 5200, 10, 3.5)
+    const resPermitido = simularCriterioEmparejamiento(5000, 5200, 10, 11)
     expect(resPermitido.matched).toBe(true)
   })
 
-  it('7. Timeout de Ranked es 45 segundos según Migración 321', () => {
+  it('7. Blindaje contra desconexión (Migración 366): Bloquea por 30 minutos si la última partida terminó en desconexión', () => {
+    // A los 15 minutos (que ya superó el cooldown base de 10m), sigue bloqueado por haber sido desconexión
+    const resDesconexionBloqueado = simularCriterioEmparejamiento(5000, 5200, 10, 15, true)
+    expect(resDesconexionBloqueado.matched).toBe(false)
+    expect(resDesconexionBloqueado.reason).toBe('cooldown_desconexion_30m')
+
+    // Tras 31 minutos, se levanta el bloqueo incluso tras desconexión
+    const resDesconexionPermitido = simularCriterioEmparejamiento(5000, 5200, 10, 31, true)
+    expect(resDesconexionPermitido.matched).toBe(true)
+  })
+
+  it('8. Timeout de Ranked es 45 segundos según Migración 321', () => {
     expect(RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(45)
   })
 })
