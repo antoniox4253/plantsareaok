@@ -475,11 +475,11 @@ export default function Clan({
   const getTreeResourceNeeded = (res: 'water' | 'fertilizer' | 'gems'): number => {
     switch (res) {
       case 'water':
-        return Math.max(0, (fortressData?.nextTreeWaterReq || 150) - (fortressData?.motherTreeWater || 0))
+        return Math.max(0, (fortressData?.nextTreeWaterReq ?? 150) - (fortressData?.motherTreeWater || 0))
       case 'fertilizer':
-        return Math.max(0, (fortressData?.nextTreeFertReq || 100) - (fortressData?.motherTreeFertilizer || 0))
+        return Math.max(0, (fortressData?.nextTreeFertReq ?? 100) - (fortressData?.motherTreeFertilizer || 0))
       case 'gems':
-        return Math.max(0, (fortressData?.nextTreeGemsReq || 600) - (fortressData?.motherTreeGems || 0))
+        return Math.max(0, (fortressData?.nextTreeGemsReq ?? 600) - (fortressData?.motherTreeGems || 0))
     }
   }
 
@@ -3270,13 +3270,13 @@ export default function Clan({
                       <div className="clan-fhub-card__body">
                         <div className="clan-fhub-nutrients-preview">
                           <div className="clan-fhub-nutrient-chip">
-                            <span>💧 {fortressData?.motherTreeWater ?? 0}/{fortressData?.nextTreeWaterReq || 150}</span>
+                            <span>💧 {fortressData?.motherTreeWater ?? 0}/{fortressData?.nextTreeWaterReq ?? 150}</span>
                           </div>
                           <div className="clan-fhub-nutrient-chip">
-                            <span>🧪 {fortressData?.motherTreeFertilizer ?? 0}/{fortressData?.nextTreeFertReq || 100}</span>
+                            <span>🧪 {fortressData?.motherTreeFertilizer ?? 0}/{fortressData?.nextTreeFertReq ?? 100}</span>
                           </div>
                           <div className="clan-fhub-nutrient-chip">
-                            <span>💎 {fortressData?.motherTreeGems ?? 0}/{fortressData?.nextTreeGemsReq || 600}</span>
+                            <span>💎 {fortressData?.motherTreeGems ?? 0}/{fortressData?.nextTreeGemsReq ?? 600}</span>
                           </div>
                         </div>
 
@@ -3641,7 +3641,7 @@ export default function Clan({
                             <span className="clan-tree-res-card__name">Agua</span>
                           </div>
                           <div className="clan-tree-res-card__meta">
-                            <span>Req: <strong>{fortressData?.motherTreeWater ?? 0} / {fortressData?.nextTreeWaterReq || 150}</strong></span>
+                            <span>Req: <strong>{fortressData?.motherTreeWater ?? 0} / {fortressData?.nextTreeWaterReq ?? 150}</strong></span>
                           </div>
                           <div className="clan-tree-res-card__balance">
                             Tu Saldo: <b>{userFarmingInv.water || 0}</b>
@@ -3663,7 +3663,7 @@ export default function Clan({
                             <span className="clan-tree-res-card__name">Fertilizante</span>
                           </div>
                           <div className="clan-tree-res-card__meta">
-                            <span>Req: <strong>{fortressData?.motherTreeFertilizer ?? 0} / {fortressData?.nextTreeFertReq || 100}</strong></span>
+                            <span>Req: <strong>{fortressData?.motherTreeFertilizer ?? 0} / {fortressData?.nextTreeFertReq ?? 100}</strong></span>
                           </div>
                           <div className="clan-tree-res-card__balance">
                             Tu Saldo: <b>{userFarmingInv.fertilizer || 0}</b>
@@ -3685,7 +3685,7 @@ export default function Clan({
                             <span className="clan-tree-res-card__name">Gemas</span>
                           </div>
                           <div className="clan-tree-res-card__meta">
-                            <span>Req: <strong>{fortressData?.motherTreeGems ?? 0} / {fortressData?.nextTreeGemsReq || 600}</strong></span>
+                            <span>Req: <strong>{fortressData?.motherTreeGems ?? 0} / {fortressData?.nextTreeGemsReq ?? 600}</strong></span>
                           </div>
                           <div className="clan-tree-res-card__balance">
                             Tu Saldo: <b>{userGems || 0}</b>
@@ -3781,11 +3781,11 @@ export default function Clan({
                         {/* Barra de Progreso de Ofrendas del Árbol */}
                         {(fortressData?.motherTreeLevel ?? 1) < 4 ? (() => {
                           const wCur = fortressData?.motherTreeWater ?? 0
-                          const wReq = fortressData?.nextTreeWaterReq || 150
+                          const wReq = fortressData?.nextTreeWaterReq ?? 150
                           const fCur = fortressData?.motherTreeFertilizer ?? 0
-                          const fReq = fortressData?.nextTreeFertReq || 100
+                          const fReq = fortressData?.nextTreeFertReq ?? 100
                           const gCur = fortressData?.motherTreeGems ?? 0
-                          const gReq = fortressData?.nextTreeGemsReq || 600
+                          const gReq = fortressData?.nextTreeGemsReq ?? 600
 
                           const wClamped = Math.min(wCur, wReq)
                           const fClamped = Math.min(fCur, fReq)
@@ -5806,7 +5806,7 @@ export default function Clan({
               <div className="clan-tree-input-card">
                 <div className="clan-tree-input-info">
                   <label>💧 Agua de Cultivo</label>
-                  <small>Tienes: {userFarmingInv.water} 💧 • Requerido: {fortressData.motherTreeWater || 0}/{fortressData.nextTreeWaterReq || 150}</small>
+                  <small>Tienes: {userFarmingInv.water} 💧 • Requerido: {fortressData.motherTreeWater || 0}/{fortressData.nextTreeWaterReq ?? 150}</small>
                 </div>
                 <div className="clan-tree-input-controls">
                   <input
@@ -5820,7 +5820,7 @@ export default function Clan({
                     type="button"
                     className="clan-tree-max-btn"
                     onClick={() => {
-                      const needed = Math.max(0, (fortressData.nextTreeWaterReq || 150) - (fortressData.motherTreeWater || 0))
+                      const needed = Math.max(0, (fortressData.nextTreeWaterReq ?? 150) - (fortressData.motherTreeWater || 0))
                       setMotherTreeWaterInput(Math.min(userFarmingInv.water, needed))
                     }}
                   >
@@ -5833,7 +5833,7 @@ export default function Clan({
               <div className="clan-tree-input-card">
                 <div className="clan-tree-input-info">
                   <label>🧪 Fertilizante</label>
-                  <small>Tienes: {userFarmingInv.fertilizer} 🧪 • Requerido: {fortressData.motherTreeFertilizer || 0}/{fortressData.nextTreeFertReq || 100}</small>
+                  <small>Tienes: {userFarmingInv.fertilizer} 🧪 • Requerido: {fortressData.motherTreeFertilizer || 0}/{fortressData.nextTreeFertReq ?? 100}</small>
                 </div>
                 <div className="clan-tree-input-controls">
                   <input
@@ -5847,7 +5847,7 @@ export default function Clan({
                     type="button"
                     className="clan-tree-max-btn"
                     onClick={() => {
-                      const needed = Math.max(0, (fortressData.nextTreeFertReq || 100) - (fortressData.motherTreeFertilizer || 0))
+                      const needed = Math.max(0, (fortressData.nextTreeFertReq ?? 100) - (fortressData.motherTreeFertilizer || 0))
                       setMotherTreeFertInput(Math.min(userFarmingInv.fertilizer, needed))
                     }}
                   >
@@ -5860,7 +5860,7 @@ export default function Clan({
               <div className="clan-tree-input-card">
                 <div className="clan-tree-input-info">
                   <label>💎 Gemas</label>
-                  <small>Tienes: {userGems} 💎 • Requerido: {fortressData.motherTreeGems || 0}/{fortressData.nextTreeGemsReq || 600}</small>
+                  <small>Tienes: {userGems} 💎 • Requerido: {fortressData.motherTreeGems || 0}/{fortressData.nextTreeGemsReq ?? 600}</small>
                 </div>
                 <div className="clan-tree-input-controls">
                   <input
@@ -5874,7 +5874,7 @@ export default function Clan({
                     type="button"
                     className="clan-tree-max-btn"
                     onClick={() => {
-                      const needed = Math.max(0, (fortressData.nextTreeGemsReq || 600) - (fortressData.motherTreeGems || 0))
+                      const needed = Math.max(0, (fortressData.nextTreeGemsReq ?? 600) - (fortressData.motherTreeGems || 0))
                       setMotherTreeGemsInput(Math.min(userGems, needed))
                     }}
                   >
