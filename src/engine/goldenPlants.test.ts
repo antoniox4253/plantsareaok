@@ -6,6 +6,7 @@ import {
 } from '../utils/gameConstants'
 import { leerMazo } from './mazoDeLaSala'
 import { crearPlantaPropia } from './simulate'
+import { parseServerPlantCopies } from '../hooks/useInventory'
 import type { PlantId } from '../types/game'
 
 describe('Sistema de Plantas Doradas (Gold Foil & Play-to-Earn)', () => {
@@ -121,5 +122,26 @@ describe('Sistema de Plantas Doradas (Gold Foil & Play-to-Earn)', () => {
     pityCounter = 0
     pityRemaining = 100 - (pityCounter % 100)
     expect(pityRemaining).toBe(100)
+  })
+
+  it('8. parseServerPlantCopies parsea copias doradas (<plantId>_golden) sin mezclarlas con las normales', () => {
+    // Usuario con 5 copias de girasol normal y 0 doradas
+    const raw = { sunflower: 5 }
+    const parsed = parseServerPlantCopies(raw)
+    expect(parsed.sunflower).toBe(5)
+    expect(parsed['sunflower_golden']).toBeUndefined()
+
+    // Usuario con 5 copias normales y 2 copias doradas obtenidas en sobres
+    const rawWithGolden = { sunflower: 5, sunflower_golden: 2 }
+    const parsedWithGolden = parseServerPlantCopies(rawWithGolden)
+    expect(parsedWithGolden.sunflower).toBe(5)
+    expect(parsedWithGolden['sunflower_golden']).toBe(2)
+  })
+
+  it('9. Validación de tope máximo de 5 copias también aplica a copias doradas', () => {
+    const rawExcess = { sunflower: 99, sunflower_golden: 10 }
+    const parsed = parseServerPlantCopies(rawExcess)
+    expect(parsed.sunflower).toBe(5)
+    expect(parsed['sunflower_golden']).toBe(5)
   })
 })

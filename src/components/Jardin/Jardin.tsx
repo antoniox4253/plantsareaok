@@ -204,6 +204,7 @@ export default function Jardin({
     name: string
     icon: string
     cost: number
+    isGolden?: boolean
   } | null>(null)
   const [isFusing, setIsFusing] = useState(false)
   const [fuseAlert, setFuseAlert] = useState<{ title: string; message: string; icon: string } | null>(null)
@@ -262,6 +263,7 @@ export default function Jardin({
     waterCost: number
     fertCost: number
     childNumber: number
+    isGolden?: boolean
   } | null>(null)
   const [isSprouting, setIsSprouting] = useState(false)
 
@@ -386,6 +388,7 @@ export default function Jardin({
     equippedItem?: string | null
     inDeck: boolean
     speciesCount?: number
+    isGolden?: boolean
   } | null>(null)
   const [isConverting, setIsConverting] = useState(false)
 
@@ -1491,7 +1494,8 @@ export default function Jardin({
               const { instanceId, plantId, level, statRolls, isUnlocked, equippedItem } = card
               const config = PLANT_CONFIGS[plantId]
               const inDeck = deckInstanceIds.includes(instanceId)
-              const copies = plantCopies[plantId] || 0
+              const copiesKey = card.isGolden ? `${plantId}_golden` : plantId
+              const copies = (plantCopies as Record<string, number>)[copiesKey] || 0
               const isLegendary = plantId === 'threepeater' || plantId === 'iceberglettuce'
               const isEpic = plantId === 'aloe' || plantId === 'tallnut'
               const maxLvl = isLegendary ? 3 : 5
@@ -1501,7 +1505,9 @@ export default function Jardin({
               const scaledCardConfig = getScaledPlantConfig(plantId, statRolls, equippedItem, card.isGolden)
               const cardImgSrc = scaledCardConfig.icon || scaledCardConfig.sprite || config.icon
 
-              const instancesOfThisPlant = plantInstances.filter((i) => i.plantId === plantId)
+              const instancesOfThisPlant = plantInstances.filter(
+                (i) => i.plantId === plantId && Boolean(i.isGolden) === Boolean(card.isGolden)
+              )
               const instanceIndex = instancesOfThisPlant.findIndex((i) => i.instanceId === instanceId)
               const instanceNum = instanceIndex !== -1 ? instanceIndex + 1 : 1
               const displayName = card.isGolden
@@ -1587,6 +1593,7 @@ export default function Jardin({
                             setConvertCandidate({
                               instanceId,
                               plantId,
+                              isGolden: Boolean(card.isGolden),
                               name: displayName,
                               icon: cardImgSrc,
                               level,
@@ -1667,6 +1674,7 @@ export default function Jardin({
                             setSproutCandidate({
                               instanceId,
                               plantId,
+                              isGolden: Boolean(card.isGolden),
                               name: displayName,
                               icon: config.icon,
                               waterCost: sproutWaterCost,
@@ -1690,6 +1698,7 @@ export default function Jardin({
                             setFuseCandidate({
                               plantId,
                               instanceId,
+                              isGolden: Boolean(card.isGolden),
                               level,
                               name: displayName,
                               icon: config.icon,
@@ -1827,7 +1836,7 @@ export default function Jardin({
               <div className="jardin-fuse-req-item">
                 <span className="jardin-fuse-req-icon">🧩</span>
                 <span className="jardin-fuse-req-text">
-                  5 copias (tienes {plantCopies[fuseCandidate.plantId] || 0}/5)
+                  5 copias {fuseCandidate.isGolden ? 'doradas ' : ''}(tienes {(plantCopies as Record<string, number>)[fuseCandidate.isGolden ? `${fuseCandidate.plantId}_golden` : fuseCandidate.plantId] || 0}/5)
                 </span>
               </div>
               <div className="jardin-fuse-req-item">
@@ -1841,10 +1850,10 @@ export default function Jardin({
               </div>
             </div>
 
-            {((userGold ?? 0) < fuseCandidate.cost || (plantCopies[fuseCandidate.plantId] || 0) < 5) && (
+            {((userGold ?? 0) < fuseCandidate.cost || ((plantCopies as Record<string, number>)[fuseCandidate.isGolden ? `${fuseCandidate.plantId}_golden` : fuseCandidate.plantId] || 0) < 5) && (
               <div style={{ color: '#f87171', fontSize: '11px', fontWeight: 800, marginTop: '10px', textAlign: 'center' }}>
-                {(plantCopies[fuseCandidate.plantId] || 0) < 5
-                  ? `⚠️ Copias insuficientes: necesitas 5 copias de ${fuseCandidate.name} (tienes ${plantCopies[fuseCandidate.plantId] || 0}/5).`
+                {((plantCopies as Record<string, number>)[fuseCandidate.isGolden ? `${fuseCandidate.plantId}_golden` : fuseCandidate.plantId] || 0) < 5
+                  ? `⚠️ Copias insuficientes: necesitas 5 copias ${fuseCandidate.isGolden ? 'doradas ' : ''}de ${fuseCandidate.name} (tienes ${(plantCopies as Record<string, number>)[fuseCandidate.isGolden ? `${fuseCandidate.plantId}_golden` : fuseCandidate.plantId] || 0}/5).`
                   : `⚠️ Oro insuficiente para fusionar (requiere ${fuseCandidate.cost.toLocaleString()} Oro).`}
               </div>
             )}
@@ -1861,7 +1870,7 @@ export default function Jardin({
               <button
                 type="button"
                 className="jardin-upgrade-modal-btn jardin-fuse-btn-confirm"
-                disabled={isFusing || (userGold ?? 0) < fuseCandidate.cost || (plantCopies[fuseCandidate.plantId] || 0) < 5}
+                disabled={isFusing || (userGold ?? 0) < fuseCandidate.cost || ((plantCopies as Record<string, number>)[fuseCandidate.isGolden ? `${fuseCandidate.plantId}_golden` : fuseCandidate.plantId] || 0) < 5}
                 onClick={handleConfirmFuse}
               >
                 {isFusing ? 'FUSIONANDO...' : '🔥 FUSIONAR'}
@@ -1899,7 +1908,7 @@ export default function Jardin({
               <div className="jardin-fuse-req-item">
                 <span className="jardin-fuse-req-icon">🧩</span>
                 <span className="jardin-fuse-req-text">
-                  5 copias (tienes {plantCopies[sproutCandidate.plantId] || 0}/5)
+                  5 copias {sproutCandidate.isGolden ? 'doradas ' : ''}(tienes {(plantCopies as Record<string, number>)[sproutCandidate.isGolden ? `${sproutCandidate.plantId}_golden` : sproutCandidate.plantId] || 0}/5)
                 </span>
               </div>
               <div className="jardin-fuse-req-item">
@@ -2019,21 +2028,21 @@ export default function Jardin({
                 <span className="jardin-fuse-req-icon">🧩</span>
                 <span
                   className="jardin-fuse-req-text"
-                  style={{ color: (plantCopies[convertCandidate.plantId] || 0) < 5 ? '#a3e635' : '#f87171' }}
+                  style={{ color: ((plantCopies as Record<string, number>)[convertCandidate.isGolden ? `${convertCandidate.plantId}_golden` : convertCandidate.plantId] || 0) < 5 ? '#a3e635' : '#f87171' }}
                 >
-                  Copias: {plantCopies[convertCandidate.plantId] || 0}/5
-                  {(plantCopies[convertCandidate.plantId] || 0) < 5 ? ' ➔ Recibirás +1' : ' (LÍMITE MÁXIMO)'}
+                  Copias {convertCandidate.isGolden ? 'doradas' : ''}: {(plantCopies as Record<string, number>)[convertCandidate.isGolden ? `${convertCandidate.plantId}_golden` : convertCandidate.plantId] || 0}/5
+                  {((plantCopies as Record<string, number>)[convertCandidate.isGolden ? `${convertCandidate.plantId}_golden` : convertCandidate.plantId] || 0) < 5 ? ' ➔ Recibirás +1' : ' (LÍMITE MÁXIMO)'}
                 </span>
               </div>
             </div>
 
             {/* Mensajes de validación visual preventiva */}
-            {((userTokens ?? 0) < 50 || (plantCopies[convertCandidate.plantId] || 0) >= 5 || (convertCandidate.speciesCount !== undefined && convertCandidate.speciesCount < 2)) && (
+            {((userTokens ?? 0) < 50 || ((plantCopies as Record<string, number>)[convertCandidate.isGolden ? `${convertCandidate.plantId}_golden` : convertCandidate.plantId] || 0) >= 5 || (convertCandidate.speciesCount !== undefined && convertCandidate.speciesCount < 2)) && (
               <div style={{ color: '#f87171', fontSize: '11px', fontWeight: 800, marginTop: '10px', textAlign: 'center' }}>
                 {convertCandidate.speciesCount !== undefined && convertCandidate.speciesCount < 2
                   ? `⚠️ No puedes usar el bote si solo tienes la carta base. Debes tener al menos 2 cartas de ${convertCandidate.name}.`
-                  : (plantCopies[convertCandidate.plantId] || 0) >= 5
-                  ? `⚠️ Límite alcanzado: Ya posees el máximo de 5 copias de ${convertCandidate.name}. No puedes convertir más.`
+                  : ((plantCopies as Record<string, number>)[convertCandidate.isGolden ? `${convertCandidate.plantId}_golden` : convertCandidate.plantId] || 0) >= 5
+                  ? `⚠️ Límite alcanzado: Ya posees el máximo de 5 copias ${convertCandidate.isGolden ? 'doradas ' : ''}de ${convertCandidate.name}. No puedes convertir más.`
                   : `⚠️ Gemas insuficientes: Requieres 50 gemas (tienes ${Math.floor(userTokens ?? 0)} 💎).`}
               </div>
             )}
@@ -2057,7 +2066,7 @@ export default function Jardin({
                 disabled={
                   isConverting ||
                   (userTokens ?? 0) < 50 ||
-                  (plantCopies[convertCandidate.plantId] || 0) >= 5 ||
+                  ((plantCopies as Record<string, number>)[convertCandidate.isGolden ? `${convertCandidate.plantId}_golden` : convertCandidate.plantId] || 0) >= 5 ||
                   (convertCandidate.speciesCount !== undefined && convertCandidate.speciesCount < 2)
                 }
                 onClick={handleConfirmConvert}

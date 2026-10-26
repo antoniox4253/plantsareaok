@@ -108,17 +108,17 @@ const DEFAULT_PLANT_COPIES: Record<PlantId, number> = {
  *   Cualquier valor NaN, flotante, negativo o corrupto lanza Error y NO se oculta con fallbacks permisivos.
  * - Las plantas ausentes en `rawCopies` adoptan legítimamente 0 copias.
  */
-export function parseServerPlantCopies(rawCopies: unknown): Record<PlantId, number> {
-  const baseCopies: Record<PlantId, number> = ALL_15_PLANTS.reduce(
+export function parseServerPlantCopies(rawCopies: unknown): Record<PlantId, number> & Record<string, number> {
+  const baseCopies: Record<string, number> = ALL_15_PLANTS.reduce(
     (acc, id) => {
       acc[id] = 0
       return acc
     },
-    {} as Record<PlantId, number>
+    {} as Record<string, number>
   )
 
   if (rawCopies === null || rawCopies === undefined) {
-    return baseCopies
+    return baseCopies as Record<PlantId, number>
   }
 
   if (typeof rawCopies !== 'object' || Array.isArray(rawCopies)) {
@@ -128,7 +128,9 @@ export function parseServerPlantCopies(rawCopies: unknown): Record<PlantId, numb
   }
 
   for (const [id, count] of Object.entries(rawCopies as Record<string, unknown>)) {
-    if (!ALL_15_PLANTS.includes(id as PlantId)) {
+    const isGoldenKey = id.endsWith('_golden')
+    const baseId = isGoldenKey ? id.replace('_golden', '') : id
+    if (!ALL_15_PLANTS.includes(baseId as PlantId)) {
       continue
     }
     if (typeof count !== 'number' && typeof count !== 'string') {
@@ -138,10 +140,10 @@ export function parseServerPlantCopies(rawCopies: unknown): Record<PlantId, numb
     if (!Number.isInteger(n) || n < 0) {
       throw new Error(`[useInventory] Valor de copias inválido para ${id}: ${count}`)
     }
-    baseCopies[id as PlantId] = Math.min(5, n)
+    baseCopies[id] = Math.min(5, n)
   }
 
-  return baseCopies
+  return baseCopies as Record<PlantId, number>
 }
 
 const DEFAULT_PLANT_LEVELS: Record<PlantId, number> = {
@@ -256,20 +258,20 @@ export function useInventory() {
     return ['sunflower', 'peashooter', 'wallnut', 'chomper']
   })
 
-  const [plantCopies, setPlantCopies] = useState<Record<PlantId, number>>(() => {
+  const [plantCopies, setPlantCopies] = useState<Record<PlantId, number> & Record<string, number>>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.PLANT_COPIES)
-    const base = { ...DEFAULT_PLANT_COPIES }
+    const base: Record<string, number> = { ...DEFAULT_PLANT_COPIES }
     if (saved) {
       try {
-        const parsed = JSON.parse(saved) as Record<PlantId, number>
-        ALL_15_PLANTS.forEach((id) => {
-          base[id] = parsed[id] !== undefined ? parsed[id] : (DEFAULT_PLANT_COPIES[id] || 0)
+        const parsed = JSON.parse(saved) as Record<string, number>
+        Object.entries(parsed).forEach(([k, v]) => {
+          base[k] = typeof v === 'number' ? v : 0
         })
       } catch {
         // fallback
       }
     }
-    return base
+    return base as Record<PlantId, number>
   })
 
   // plantLevels y plantStatRolls ya no son estado propio: se DERIVAN de las
