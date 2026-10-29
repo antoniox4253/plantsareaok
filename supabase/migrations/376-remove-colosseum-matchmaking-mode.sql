@@ -1,6 +1,11 @@
 -- Migración 376: Desactivar oficialmente el modo Coliseo y garantizar independencia
 -- de los 3 modos oficiales: Ranked, Arena Ads y Torneos.
 
+-- 0. Asegurar que las columnas requeridas existan en public.profiles
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS unban_at TIMESTAMPTZ DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS matchmaking_banned_until TIMESTAMPTZ DEFAULT NULL;
+
 -- 1. Actualizar enter_matchmaking para restringir a los modos activos (ranked, friendly, tournament)
 CREATE OR REPLACE FUNCTION public.enter_matchmaking(
   p_mode text,
@@ -16,19 +21,21 @@ CREATE OR REPLACE FUNCTION public.enter_matchmaking(
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_uid             UUID := auth.uid();
-  v_elo             INTEGER := 1000;
-  v_now             TIMESTAMPTZ := NOW();
-  v_room_record     RECORD;
-  v_is_bot_only     BOOLEAN := FALSE;
-  v_is_banned       BOOLEAN := FALSE;
-  v_ban_reason      TEXT := NULL;
-  v_unban_at        TIMESTAMPTZ := NULL;
-  v_lockout_seconds INTEGER := 0;
-  v_client_version  TEXT := COALESCE(p_engine_version, 'auth-v2');
-  v_tournament_id   UUID := p_tournament_id;
-  v_tourn           RECORD;
-  v_tourn_part      RECORD;
+  v_uid                      UUID := auth.uid();
+  v_elo                      INTEGER := 1000;
+  v_now                      TIMESTAMPTZ := NOW();
+  v_room_record              RECORD;
+  v_is_bot_only              BOOLEAN := FALSE;
+  v_is_banned                BOOLEAN := FALSE;
+  v_ban_reason               TEXT := NULL;
+  v_unban_at                 TIMESTAMPTZ := NULL;
+  v_matchmaking_banned_until TIMESTAMPTZ := NULL;
+  v_effective_unban_at       TIMESTAMPTZ := NULL;
+  v_lockout_seconds          INTEGER := 0;
+  v_client_version           TEXT := COALESCE(p_engine_version, 'auth-v2');
+  v_tournament_id            UUID := p_tournament_id;
+  v_tourn                    RECORD;
+  v_tourn_part               RECORD;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'No autenticado';
@@ -44,26 +51,69 @@ BEGIN
   END IF;
 
   -- Validación de sanción / ban / leaver buster
-  SELECT is_banned, ban_reason, unban_at, is_bot_only, elo_rating
-    INTO v_is_banned, v_ban_reason, v_unban_at, v_is_bot_only, v_elo
+  SELECT is_banned, ban_reason, unban_at, matchmaking_banned_until, is_bot_only, elo_rating
+    INTO v_is_banned, v_ban_reason, v_unban_at, v_matchmaking_banned_until, v_is_bot_only, v_elo
     FROM public.profiles
    WHERE id = v_uid;
 
-  IF v_is_banned IS TRUE THEN
-    IF v_unban_at IS NOT NULL AND v_unban_at <= v_now THEN
+  -- ── BLOQUEO PERMANENTE O SANCION PROGRAMADA ───────────────────────────────
+  IF COALESCE(v_is_banned, FALSE) = TRUE THEN
+    v_effective_unban_at := COALESCE(v_unban_at, v_matchmaking_banned_until);
+    IF v_effective_unban_at IS NOT NULL AND v_effective_unban_at <= v_now THEN
+      -- Sanción temporal cumplida: levantar ban automáticamente
       UPDATE public.profiles
-         SET is_banned = FALSE, ban_reason = NULL, unban_at = NULL, updated_at = v_now
+         SET is_banned = FALSE,
+             ban_reason = NULL,
+             unban_at = NULL,
+             matchmaking_banned_until = NULL,
+             updated_at = v_now
        WHERE id = v_uid;
     ELSE
-      v_lockout_seconds := GREATEST(1, EXTRACT(EPOCH FROM (v_unban_at - v_now))::INTEGER);
+      v_lockout_seconds := CASE 
+        WHEN v_effective_unban_at IS NOT NULL AND v_effective_unban_at > v_now THEN 
+          GREATEST(1, EXTRACT(EPOCH FROM (v_effective_unban_at - v_now))::INTEGER)
+        ELSE 0 
+      END;
       RETURN jsonb_build_object(
         'matched', FALSE, 'searching', FALSE,
-        'error', 'banned',
-        'banReason', COALESCE(v_ban_reason, 'Cuenta sancionada temporalmente por abandono o conducta antideportiva.'),
+        'error', 'account_banned',
+        'banReason', COALESCE(v_ban_reason, 'Esta cuenta ha sido suspendida permanentemente.'),
         'lockoutSeconds', v_lockout_seconds,
-        'message', COALESCE(v_ban_reason, 'Bloqueo temporal de matchmaking activo.')
+        'message', COALESCE(v_ban_reason, 'Esta cuenta ha sido suspendida permanentemente.')
       );
     END IF;
+  END IF;
+
+  -- ── BLOQUEO TEMPORAL: LEAVER BUSTER POR DESCONEXIONES ──────────────────────
+  v_effective_unban_at := COALESCE(v_matchmaking_banned_until, v_unban_at);
+  IF v_effective_unban_at IS NOT NULL THEN
+    IF v_effective_unban_at <= v_now THEN
+      -- Sanción temporal expirada: limpiar columna
+      UPDATE public.profiles
+         SET matchmaking_banned_until = NULL,
+             unban_at = NULL,
+             updated_at = v_now
+       WHERE id = v_uid;
+    ELSE
+      v_lockout_seconds := GREATEST(1, EXTRACT(EPOCH FROM (v_effective_unban_at - v_now))::INTEGER);
+      RETURN jsonb_build_object(
+        'matched', FALSE, 'searching', FALSE,
+        'error', 'matchmaking_cooldown',
+        'banReason', COALESCE(v_ban_reason, 'Bloqueo temporal por desconexión o abandono de partida.'),
+        'lockoutSeconds', v_lockout_seconds,
+        'message', 'Bloqueo temporal por desconexión o abandono de partida. Podrás jugar de nuevo en ' ||
+                   GREATEST(1, ROUND(v_lockout_seconds / 60.0)) || ' minuto(s).'
+      );
+    END IF;
+  END IF;
+
+  -- ── RESTRICCIÓN DE CUENTAS BOT ────────────────────────────────────────────
+  IF COALESCE(v_is_bot_only, FALSE) = TRUE THEN
+    RETURN jsonb_build_object(
+      'matched', FALSE, 'searching', FALSE,
+      'error', 'bot_restricted',
+      'message', 'Las cuentas de prueba o bot no pueden ingresar al matchmaking global.'
+    );
   END IF;
 
   v_elo := COALESCE(v_elo, 1000);
