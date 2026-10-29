@@ -666,14 +666,16 @@ export default function MainMenu({
   }, [ticker])
 
   const [bannerSlide, setBannerSlide] = useState<number>(0)
+  // Banner recordatorio de torneo (inicializado en true para que cada vez que carguen o actualicen la página aparezca)
+  const [showTournamentBanner, setShowTournamentBanner] = useState<boolean>(true)
 
   useEffect(() => {
-    if (isReturningUser) return
+    if (isReturningUser || showTournamentBanner) return
     const timer = setInterval(() => {
       setBannerSlide((prev) => (prev + 1) % 5)
     }, 10000)
     return () => clearInterval(timer)
-  }, [isReturningUser])
+  }, [isReturningUser, showTournamentBanner])
 
   const displayAvatar = getPlayerAvatarUrl(
     userProfile?.avatar_id || userProfile?.avatar_url || playerProfile.avatar
@@ -973,7 +975,9 @@ export default function MainMenu({
         role="button"
         tabIndex={0}
         aria-label={
-          isReturningUser
+          showTournamentBanner
+            ? 'Prueba de torneo dentro 4 horas :) atentos para el registro'
+            : isReturningUser
             ? 'Por regresar cuentas con un 30% en tu primera compra'
             : bannerSlide === 0
             ? `Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`
@@ -986,7 +990,9 @@ export default function MainMenu({
             : `${onlineUsersCount} Jugadores en línea jugando en la Arena`
         }
         title={
-          isReturningUser
+          showTournamentBanner
+            ? 'Prueba de torneo dentro 4 horas :) atentos para el registro (Clic para ver torneos)'
+            : isReturningUser
             ? 'Por regresar cuentas con un 30% en tu primera compra (Clic para comprar Gemas y desbloquear tu Pack Starter)'
             : bannerSlide === 0
             ? `Temporada ${seasonStatus.seasonNumber} - Clic para ver ranking y recompensas`
@@ -1000,7 +1006,9 @@ export default function MainMenu({
         }
         onClick={() => {
           soundManager.playSound('click', 0.5)
-          if (isReturningUser) {
+          if (showTournamentBanner) {
+            setIsTournamentModalOpen(true)
+          } else if (isReturningUser) {
             setProfileInitialTab('deposit')
             setIsProfileModalOpen(true)
           } else if (bannerSlide === 0) {
@@ -1018,7 +1026,9 @@ export default function MainMenu({
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             soundManager.playSound('click', 0.5)
-            if (isReturningUser) {
+            if (showTournamentBanner) {
+              setIsTournamentModalOpen(true)
+            } else if (isReturningUser) {
               setProfileInitialTab('deposit')
               setIsProfileModalOpen(true)
             } else if (bannerSlide === 0) onOpenRanking?.()
@@ -1029,8 +1039,43 @@ export default function MainMenu({
           }
         }}
       >
-        {/* SLIDE EXCLUSIVO PARA CUENTAS DE RETORNO (CHURN) */}
-        {isReturningUser ? (
+        {/* BANNER DESTACADO DE PRUEBA DE TORNEO (CON CIERRE 'X') */}
+        {showTournamentBanner ? (
+          <div className="bosque-banner-slide bosque-banner-slide--clean bosque-banner-slide--tournament">
+            <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--tournament">
+              <span className="bosque-clean-banner__icon">🏆</span>
+            </div>
+            <div className="bosque-clean-banner__content">
+              <div className="bosque-clean-banner__header-row">
+                <span className="bosque-clean-banner__badge bosque-clean-banner__badge--tournament">
+                  <span className="bosque-clean-banner__radar-dot bosque-clean-banner__radar-dot--gold" /> PRUEBA DE TORNEO
+                </span>
+                <span className="bosque-clean-banner__live-tag bosque-clean-banner__live-tag--tournament">
+                  ⏰ DENTRO DE 4 HORAS
+                </span>
+              </div>
+              <span className="bosque-clean-banner__title bosque-clean-banner__title--tournament">
+                Prueba de torneo dentro 4 horas :) atentos para el registro
+              </span>
+              <span className="bosque-clean-banner__subtitle">
+                ¡Prepara tu mazo y tus mejores plantas! Clic aquí para entrar al lobby de torneos
+              </span>
+            </div>
+            <button
+              type="button"
+              className="bosque-banner-close-btn"
+              aria-label="Cerrar recordatorio de torneo"
+              title="Cerrar recordatorio"
+              onClick={(e) => {
+                e.stopPropagation()
+                soundManager.playSound('click', 0.4)
+                setShowTournamentBanner(false)
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ) : isReturningUser ? (
           <div className="bosque-banner-slide bosque-banner-slide--clean bosque-banner-slide--returning">
             <div className="bosque-clean-banner__icon-wrap bosque-clean-banner__icon-wrap--returning">
               <span className="bosque-clean-banner__icon">🎁</span>
