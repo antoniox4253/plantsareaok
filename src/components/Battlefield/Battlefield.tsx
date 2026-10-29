@@ -1881,12 +1881,19 @@ export default function Battlefield({
           }
         } else {
           // Partida multijugador con sala: el servidor (_settle_room) ya liquidó e incrementó
-          // victorias/derrotas de forma autoritativa. Obtenemos el registro actualizado sin doble conteo.
+          // victorias/derrotas de forma autoritativa.
+          // 1. Inmediatamente actualizamos estado local optimista para evitar pantalla vacía o parpadeo
+          const resolved = TournamentManager.resolveMatch(tourneyId, isVictory)
+          if (resolved) {
+            setTournamentResult(resolved)
+          }
+
+          // 2. Sincronizamos con el registro autoritativo del servidor
           void tournamentService.getTournamentDetails(tourneyId).then((details) => {
             if (details?.my_participation) {
               const p = details.my_participation
               setTournamentResult((prev) => {
-                const base = prev || TournamentManager.getSession(tourneyId) || {
+                const base = prev || resolved || TournamentManager.getSession(tourneyId) || {
                   tournamentId: tourneyId,
                   tournamentName: details.tournament?.title || 'Torneo',
                   registered: true,
@@ -1898,11 +1905,16 @@ export default function Battlefield({
                   isEliminated: false,
                   leaderboard: [],
                 }
+                const dbWins = p.wins ?? 0
+                const dbLosses = p.losses ?? 0
+                const effectiveWins = Math.max(dbWins, base.userWins ?? 0)
+                const effectiveLosses = Math.max(dbLosses, base.userLosses ?? 0)
+                const effectiveEliminated = Boolean(p.is_eliminated || effectiveLosses >= (base.maxLosses || 3))
                 return {
                   ...base,
-                  userWins: p.wins ?? base.userWins,
-                  userLosses: p.losses ?? base.userLosses,
-                  isEliminated: Boolean(p.is_eliminated),
+                  userWins: effectiveWins,
+                  userLosses: effectiveLosses,
+                  isEliminated: effectiveEliminated,
                 }
               })
             }
