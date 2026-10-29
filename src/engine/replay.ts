@@ -699,7 +699,16 @@ export function recalcularGanadorAutoritativo(
     ganador = 1
     motivo = 'forfeit_p2'
   } else if (p1Ilegal && p2Ilegal) {
-    motivo = 'illegal_both'
+    // Si AMBOS tienen acciones ilegales (ej. microdesincronizacion de red o spam al caer la base),
+    // pero el combate resolvio una victoria contundente por destruccion de base
+    // (una base cayo a 0 HP y la otra sobrevivio), la victoria en combate PREVALECE.
+    // Esto evita que un perdedor provoque illegal_both al desconectarse o spamear clics para eludir la derrota.
+    if (ganadorP1 !== null && ganadorP1 === ganadorP2) {
+      ganador = ganadorP1
+      motivo = 'simulation'
+    } else {
+      motivo = 'illegal_both'
+    }
   } else if (
     vistaP1.status === 'defeat' &&
     vistaP2.status === 'defeat' &&

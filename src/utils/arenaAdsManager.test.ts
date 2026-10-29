@@ -233,6 +233,26 @@ describe('ArenaAdsManager (Mazmorra 50 Niveles)', () => {
     expect(run.deck[0].plantId).toBe('sunflower')
   })
 
+  it('8b. Progresión a Modo Pesadilla (Nivel 51+): escala bot, permite avanzar y acumula botín progresivo', () => {
+    let run = ArenaAdsManager.startNewRun()
+    run.level = 50
+    run.status = 'level_cleared'
+    run = ArenaAdsManager.advanceToNextLevel(run, 450)
+    expect(run.level).toBe(51)
+    expect(run.conservedSuns).toBe(450)
+    expect(run.status).toBe('battle')
+
+    const botLvl51 = getBotStatsForLevel(51)
+    expect(botLvl51.botElo).toBe(3945)
+    expect(botLvl51.botBaseHp).toBe(6080)
+    expect(botLvl51.botName).toContain('Pesadilla Titánica')
+
+    run = ArenaAdsManager.completeLevelVictory(run)
+    expect(run.accumulatedRewards.tokenPlants).toBe(102) // 51 * 2
+    expect(run.accumulatedRewards.basicPacks).toBe(5) // floor(51 / 10)
+    expect(run.accumulatedRewards.rareCards).toBe(2) // floor(51 / 25)
+  })
+
   it('9. Consistencia estricta de niveles: ⭐1 base y ⭐3 fusión se preservan en deck y mejorasDeLaCartaEnSlot', async () => {
     const { mejorasDeLaCartaEnSlot } = await import('../engine/mazoDeLaSala')
     const { crearPlantaPropia, createBattleState } = await import('../engine/simulate')

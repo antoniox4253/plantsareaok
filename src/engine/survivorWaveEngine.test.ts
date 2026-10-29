@@ -434,5 +434,27 @@ describe('survivorWaveEngine', () => {
     expect(SURVIVOR_P2_COLUMNS).toBe(5)
     expect(SURVIVOR_P1_COLUMNS + SURVIVOR_P2_COLUMNS).toBe(TOTAL_COLUMNS)
   })
+
+  it('15. Nivel 51 (Modo Pesadilla): genera correctamente oleadas masivas con multiplicadores de dificultad altos', () => {
+    const config51 = generateSurvivorLevel(51, 99999)
+    expect(config51.waves).toHaveLength(3)
+    expect(config51.waves[0].spawns.length).toBeGreaterThanOrEqual(6)
+    expect(config51.waves[1].spawns.length).toBeGreaterThanOrEqual(12)
+    expect(config51.waves[2].spawns.length).toBeGreaterThanOrEqual(20)
+
+    // Los multiplicadores de salud y daño de las plantas enemigas deben superar el 300% de la base
+    const spawnW1 = config51.waves[0].spawns[0]
+    expect(spawnW1.hpMultiplier).toBeGreaterThan(3.0)
+    expect(spawnW1.damageMultiplier).toBeGreaterThan(2.5)
+
+    // Todos los carriles deben estar en el rango 0..2
+    for (const wave of config51.waves) {
+      for (const sp of wave.spawns) {
+        expect(sp.lane).toBeGreaterThanOrEqual(0)
+        expect(sp.lane).toBeLessThanOrEqual(2)
+        expect(sp.plantId).toBeDefined()
+      }
+    }
+  })
 })
 

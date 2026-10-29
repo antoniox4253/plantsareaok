@@ -433,14 +433,14 @@ export default function ArenaAdsModal({
 
   // Equipar planta y avanzar al combate
   const handleEquipPlantAndBattle = (plantOverride?: ArenaAdsPlantOption, isSponsored = false) => {
-    if (!activeRun || !activeRun.currentPrepChoice) return
+    if (!activeRun) return
     soundManager.playSound('click', 0.7)
 
     const plant =
       plantOverride ||
       selectedPlantOption ||
-      activeRun.currentPrepChoice.tacticalColumns?.[0]?.plant ||
-      activeRun.currentPrepChoice.normalPlantOptions[0]
+      activeRun.currentPrepChoice?.tacticalColumns?.[0]?.plant ||
+      activeRun.currentPrepChoice?.normalPlantOptions?.[0]
 
     if (isSponsored) {
       soundManager.playSound('victory', 0.6)

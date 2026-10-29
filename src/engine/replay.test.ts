@@ -310,6 +310,33 @@ describe('arbitro autoritativo auth-v1 (recalcularGanadorAutoritativo)', () => {
     expect(res.ilegales[0].de).toBe(1)
   })
 
+  it('resuelve ganador por destrucción de base si ambos tienen acciones ilegales (evita escape por illegal_both)', () => {
+    const datos: DatosDeRepeticion = {
+      roomId: 'room-anti-ragequit-illegal-both',
+      mode: 'ranked',
+      seed: 12345,
+      engineVersion: 'auth-v1',
+      jugadaEn: '2026-08-20T00:00:00Z',
+      jugador1: { nombre: 'Ana', avatar: null, mazo: mazoBasico },
+      jugador2: { nombre: 'Beto', avatar: null, mazo: mazoBasico },
+      ganador: null,
+      yoSoy: 1,
+      jugadas: [
+        // Ana planta peashooter legalmente en tick 960
+        { de: 1, seq: 1, issuedTick: 960, tick: 966, kind: 'plant', plantId: 'peashooter', lane: 1, col: 2, slot: 0 },
+        // Ana comete una acción ilegal (sol despawneado)
+        { de: 1, seq: 2, issuedTick: 1100, tick: 1100, kind: 'collect', targetId: 'sol-fantasma-1', plantId: null, lane: null, col: null, slot: null },
+        // Beto comete una acción ilegal (sol despawneado)
+        { de: 2, seq: 1, issuedTick: 1200, tick: 1200, kind: 'collect', targetId: 'sol-fantasma-2', plantId: null, lane: null, col: null, slot: null },
+      ],
+    }
+
+    const res = recalcularGanadorAutoritativo(datos)
+    expect(res.ilegales.length).toBe(2)
+    expect(res.ganador).toBe(1) // Gana Ana por destrucción de base/simulación legítima
+    expect(res.motivo).toBe('simulation')
+  })
+
   it('declara empate perfecto cuando ambos terminan en defeat simétrico', () => {
     const datos: DatosDeRepeticion = {
       roomId: 'room-auth-draw',

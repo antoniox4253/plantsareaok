@@ -200,8 +200,9 @@ export function useMatchmaking() {
       }
 
       if (r.error) {
-        setEstado({ ...ESTADO_INICIAL, error: r.error })
-        return { ok: false, error: r.error }
+        const msg = r.message || r.error
+        setEstado({ ...ESTADO_INICIAL, error: msg })
+        return { ok: false, error: msg }
       }
 
       if (r.matched && r.roomId) {

@@ -2316,57 +2316,45 @@ export default function Battlefield({
       if (gameStatus === 'victory') {
         const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
         if (run) {
-          if (run.level >= 50) {
-            soundManager.playBgm('menu')
-            if (onArenaAdsRetreat) {
-              onArenaAdsRetreat(
-                run.accumulatedRewards,
-                run.multiplier || 1,
-                run.newlyClaimedLevels
-              )
-              return
-            }
-          } else {
-            // Avanzar DIRECTAMENTE al siguiente nivel sin ningún segundo modal
-            resetPopunderQuota()
-            const conservedSuns = Math.max(250, run.conservedSuns ?? sunBank ?? 250)
-            const nextRun = ArenaAdsManager.advanceToNextLevel(run, conservedSuns)
-            setCurrentArenaAdsRun(nextRun)
-            ArenaAdsManager.saveRun(nextRun)
-            if (onArenaAdsAdvance) {
-              onArenaAdsAdvance(nextRun)
-            }
-            const nextSeed = Math.floor(Math.random() * 1000000)
-            const adsBotStats = getBotStatsForLevel(nextRun.level)
-            const rivalBonusHp = Math.max(0, adsBotStats.botBaseHp - 1000)
-            hasHandledEndRef.current = false
-            hasCreditedMarigoldGoldRef.current = false
-            startGame(
-              nextSeed,
-              false,
-              undefined,
-              adsBotStats.botElo,
-              undefined,
-              { mio: mazoMioParsed, rival: adsBotStats.botDeck },
-              undefined,
-              undefined,
-              'auth-v2',
-              treeBonusHpRef.current,
-              rivalBonusHp,
-              treeSkinRef.current,
-              rivalTreeSkinRef.current,
-              undefined,
-              undefined,
-              undefined,
-              nextRun.conservedSuns ?? 250,
-              undefined,
-              undefined,
-              undefined,
-              true,
-              nextRun.level
-            )
-            return
+          // Avanzar DIRECTAMENTE al siguiente nivel sin expulsar al jugador (permite jugar Modo Pesadilla Nivel 51+)
+          resetPopunderQuota()
+          const conservedSuns = Math.max(250, run.conservedSuns ?? sunBank ?? 250)
+          const nextRun = ArenaAdsManager.advanceToNextLevel(run, conservedSuns)
+          setCurrentArenaAdsRun(nextRun)
+          ArenaAdsManager.saveRun(nextRun)
+          if (onArenaAdsAdvance) {
+            onArenaAdsAdvance(nextRun)
           }
+          const nextSeed = Math.floor(Math.random() * 1000000)
+          const adsBotStats = getBotStatsForLevel(nextRun.level)
+          const rivalBonusHp = Math.max(0, adsBotStats.botBaseHp - 1000)
+          hasHandledEndRef.current = false
+          hasCreditedMarigoldGoldRef.current = false
+          startGame(
+            nextSeed,
+            false,
+            undefined,
+            adsBotStats.botElo,
+            undefined,
+            { mio: mazoMioParsed, rival: adsBotStats.botDeck },
+            undefined,
+            undefined,
+            'auth-v2',
+            treeBonusHpRef.current,
+            rivalBonusHp,
+            treeSkinRef.current,
+            rivalTreeSkinRef.current,
+            undefined,
+            undefined,
+            undefined,
+            nextRun.conservedSuns ?? 250,
+            undefined,
+            undefined,
+            undefined,
+            true,
+            nextRun.level
+          )
+          return
         }
       }
 
@@ -3948,8 +3936,14 @@ export default function Battlefield({
                     <div className="colosseum-battle-payout-box" style={{ borderColor: '#10b981', boxShadow: '0 0 20px rgba(16, 185, 129, 0.35)', margin: 0 }}>
                       {gameStatus === 'victory' ? (
                         <>
-                          <div className="colosseum-payout-header" style={{ color: '#34d399' }}>
-                            <span>🎉 ¡NIVEL {currentArenaAdsRun?.level || 1} SUPERADO!</span>
+                          <div className="colosseum-payout-header" style={{ color: currentArenaAdsRun && currentArenaAdsRun.level >= 50 ? '#fbbf24' : '#34d399' }}>
+                            <span>
+                              {currentArenaAdsRun && currentArenaAdsRun.level === 50
+                                ? '🏆 ¡NIVEL 50 CONQUISTADO! MODO PESADILLA DESBLOQUEADO'
+                                : currentArenaAdsRun && currentArenaAdsRun.level > 50
+                                ? `🔥 ¡PESADILLA: NIVEL ${currentArenaAdsRun.level} SUPERADO!`
+                                : `🎉 ¡NIVEL ${currentArenaAdsRun?.level || 1} SUPERADO!`}
+                            </span>
                           </div>
                           <div className="colosseum-payout-gems" style={{ color: '#facc15' }}>
                             💰 BOTÍN ACUMULADO ACTUAL:
@@ -3970,7 +3964,9 @@ export default function Battlefield({
                             )}
                           </div>
                           <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
-                            🛡️ ¡3 oleadas resistidas con éxito! Pulsa avanzar para desafiar el siguiente nivel.
+                            {currentArenaAdsRun && currentArenaAdsRun.level >= 50
+                              ? '👑 ¡Hito de Supervivencia alcanzado! Pulsa avanzar para entrar a Modo Pesadilla o retírate y cobra tu botín supremo.'
+                              : '🛡️ ¡3 oleadas resistidas con éxito! Pulsa avanzar para desafiar el siguiente nivel.'}
                           </p>
                         </>
                       ) : (
@@ -4386,11 +4382,47 @@ export default function Battlefield({
                   {matchMode === 'tournament'
                     ? '🏆 VOLVER AL TORNEO'
                     : matchMode === 'arena_ads'
-                    ? (gameStatus === 'victory' ? `⚔️ AVANZAR AL NIVEL ${(currentArenaAdsRun?.level || 1) + 1}` : '🏆 RECLAMAR BOTÍN Y SALIR')
+                    ? (gameStatus === 'victory'
+                        ? (currentArenaAdsRun && currentArenaAdsRun.level >= 50
+                            ? `🔥 PESADILLA: AVANZAR AL NIVEL ${currentArenaAdsRun.level + 1} ⚔️`
+                            : `⚔️ AVANZAR AL NIVEL ${(currentArenaAdsRun?.level || 1) + 1}`)
+                        : '🏆 RECLAMAR BOTÍN Y SALIR')
                     : isRerollingTarget
                     ? '🔍 BUSCANDO FORTALEZA...'
                     : '🎮 SEGUIR JUGANDO'}
                 </button>
+                {matchMode === 'arena_ads' && gameStatus === 'victory' && (
+                  <button
+                    className="game-button game-button--secondary"
+                    type="button"
+                    style={
+                      currentArenaAdsRun && currentArenaAdsRun.level >= 50
+                        ? {
+                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                            borderColor: '#fbbf24',
+                            color: '#ffffff',
+                            fontWeight: 800,
+                          }
+                        : undefined
+                    }
+                    onClick={() => {
+                      soundManager.playBgm('menu')
+                      if (currentArenaAdsRun && onArenaAdsRetreat) {
+                        onArenaAdsRetreat(
+                          currentArenaAdsRun.accumulatedRewards,
+                          currentArenaAdsRun.multiplier || 1,
+                          currentArenaAdsRun.newlyClaimedLevels
+                        )
+                        return
+                      }
+                      if (onBackToMenu) onBackToMenu()
+                    }}
+                  >
+                    {currentArenaAdsRun && currentArenaAdsRun.level >= 50
+                      ? '🏆 RECLAMAR BOTÍN SUPREMO Y SALIR'
+                      : '💰 RETIRARSE Y COBRAR BOTÍN'}
+                  </button>
+                )}
                 {onBackToMenu && matchMode !== 'tournament' && (matchMode !== 'arena_ads' || gameStatus !== 'victory') && (
                   <button
                     className="game-button game-button--secondary"
