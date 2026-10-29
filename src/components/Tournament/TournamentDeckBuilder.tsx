@@ -153,7 +153,7 @@ export default function TournamentDeckBuilder({
                   : undefined
               }
             >
-              {plantRule === 'owned_only' ? '🌿 Solo Plantas Propias' : '🌟 15 Cartas Libres'}
+              {plantRule === 'owned_only' ? '🌿 Solo Plantas Propias' : `🌟 ${ALL_PLANT_IDS.length} Cartas Libres`}
             </span>
           </div>
           <button
@@ -272,7 +272,7 @@ export default function TournamentDeckBuilder({
               <span>
                 {plantRule === 'owned_only'
                   ? 'Catálogo: Tus Plantas Desbloqueadas'
-                  : 'Catálogo Disponible (16 Plantas)'}
+                  : `Catálogo Disponible (${ALL_PLANT_IDS.length} Plantas)`}
               </span>
               <span style={{ fontSize: 12, color: '#94a3b8' }}>
                 Haz clic en una planta para añadirla o quitarla

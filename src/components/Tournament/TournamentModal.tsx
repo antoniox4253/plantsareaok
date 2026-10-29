@@ -661,7 +661,7 @@ export default function TournamentModal({
                           <span className="tourney-test-badge">🧪 PRUEBA</span>
                         )}
                         <span className={`tourney-rule-badge ${t.plant_rule === 'owned_only' ? 'owned' : 'free'}`}>
-                          {t.plant_rule === 'owned_only' ? '🌿 Propias' : '🌟 15 Libres'}
+                          {t.plant_rule === 'owned_only' ? '🌿 Propias' : '🌟 25 Libres'}
                         </span>
                       </div>
                       <div className="tourney-card-fee">
@@ -732,7 +732,7 @@ export default function TournamentModal({
                       </span>
                     ) : (
                       <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: 6, background: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', color: '#bae6fd' }}>
-                        🌟 15 Plantas Libres
+                        🌟 25 Plantas Libres
                       </span>
                     )}
                     {selectedTourney.is_test && (
@@ -1888,7 +1888,7 @@ export default function TournamentModal({
                   )}
 
                   <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: 10, borderRadius: 8, fontSize: '0.78rem', color: '#d8b4fe' }}>
-                    ℹ️ Reglas: {createCategory === 'free' || createPlantRule === 'all_unlocked' ? '🌟 15 plantas 100% desbloqueadas para todos' : '🌿 Solo plantas propias (colección de cada jugador)'}, eliminación a las 3 derrotas y reentrada disponible por 200 💎 (2 vidas).
+                    ℹ️ Reglas: {createCategory === 'free' || createPlantRule === 'all_unlocked' ? '🌟 25 plantas 100% desbloqueadas para todos' : '🌿 Solo plantas propias (colección de cada jugador)'}, eliminación a las 3 derrotas y reentrada disponible por 200 💎 (2 vidas).
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
