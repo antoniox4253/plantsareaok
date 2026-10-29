@@ -3,7 +3,6 @@ import {
   MatchmakingService,
   ReplayService,
   replayService,
-  colosseumService,
   inventoryService,
   leaderboardService,
   profileService,
@@ -35,10 +34,9 @@ describe('domain service facades', () => {
     expect(ReplayService).toBe(replayService)
   })
 
-  it('exposes leaderboard, season, colosseum and referral operations', () => {
+  it('exposes leaderboard, season and referral operations', () => {
     expect(typeof leaderboardService.getGlobalLeaderboard).toBe('function')
     expect(typeof seasonService.getActiveSeason).toBe('function')
-    expect(typeof colosseumService.getColosseumLeaderboard).toBe('function')
     expect(typeof referralService.myReferrals).toBe('function')
   })
 })

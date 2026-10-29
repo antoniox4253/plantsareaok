@@ -622,7 +622,7 @@ export const SupabaseService = {
    * encola nada.
    */
   async enterMatchmaking(
-    mode: 'ranked' | 'friendly' | 'colosseum' | 'tournament',
+    mode: 'ranked' | 'friendly' | 'tournament',
     opts: { betGems?: number; useTicket?: boolean; roomCode?: string; tournamentId?: string } = {}
   ): Promise<{
     matched: boolean

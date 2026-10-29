@@ -138,7 +138,7 @@
   background: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.15) 0%, rgba(15, 23, 42, 0.9) 100%);
 }
 
-.mode-card--colosseum:hover:not(.mode-card--locked) {
+.mode-card--deprecated-colosseum:hover:not(.mode-card--locked) {
   border-color: #f59e0b;
   background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%);
 }

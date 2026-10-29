@@ -1835,9 +1835,9 @@
 }
 
 /* =========================================================================
-   COLOSSEUM BATTLEFIELD STYLES
+   BATTLE MODE HEADER & PAYOUT STYLES
    ========================================================================= */
-.battlefield-colosseum-header-pill {
+.battlefield-mode-header-pill {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1850,19 +1850,19 @@
   font-weight: 800;
   font-size: 0.82rem;
   letter-spacing: 0.5px;
-  animation: colosseumPillPulse 2s infinite ease-in-out;
+  animation: modePillPulse 2s infinite ease-in-out;
 }
 
-@keyframes colosseumPillPulse {
+@keyframes modePillPulse {
   0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
   50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.75); }
 }
 
-.battlefield-colosseum-icon {
+.battlefield-mode-header-icon {
   font-size: 1.1rem;
 }
 
-.colosseum-battle-payout-box {
+.battle-mode-payout-box {
   background: linear-gradient(135deg, rgba(30, 27, 75, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
   border: 2px solid #818cf8;
   border-radius: 14px;
@@ -1875,36 +1875,36 @@
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
 }
 
-.colosseum-payout-header {
+.battle-mode-payout-header {
   font-size: 0.85rem;
   font-weight: 800;
   color: #a5b4fc;
   letter-spacing: 0.5px;
 }
 
-.colosseum-payout-header--defeat {
+.battle-mode-payout-header--defeat {
   color: #f87171;
 }
 
-.colosseum-payout-gems {
+.battle-mode-payout-gems {
   font-size: 1.3rem;
   font-weight: 900;
   color: #4ade80;
   text-shadow: 0 0 12px rgba(74, 222, 128, 0.5);
 }
 
-.colosseum-payout-loss {
+.battle-mode-payout-loss {
   font-size: 1.1rem;
   font-weight: 800;
   color: #f87171;
 }
 
-.colosseum-payout-streak {
+.battle-mode-payout-streak {
   font-size: 0.82rem;
   color: #fdba74;
 }
 
-.colosseum-payout-record {
+.battle-mode-payout-record {
   font-size: 0.78rem;
   font-weight: 800;
   background: linear-gradient(135deg, #eab308, #ca8a04);

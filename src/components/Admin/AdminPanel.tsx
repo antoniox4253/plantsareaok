@@ -416,9 +416,6 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
   const [top1EloReward, setTop1EloReward] = useState(4000)
   const [top2EloReward, setTop2EloReward] = useState(2500)
   const [top3EloReward, setTop3EloReward] = useState(1500)
-  const [top1ColoReward, setTop1ColoReward] = useState(50)
-  const [top2ColoReward, setTop2ColoReward] = useState(25)
-  const [top3ColoReward, setTop3ColoReward] = useState(10)
 
   // Player search & Ban management
   const [searchQuery, setSearchQuery] = useState('')
@@ -616,9 +613,6 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
           setTop1EloReward(cur.top1_elo_reward)
           setTop2EloReward(cur.top2_elo_reward)
           setTop3EloReward(cur.top3_elo_reward)
-          setTop1ColoReward(cur.top1_colosseum_reward)
-          setTop2ColoReward(cur.top2_colosseum_reward)
-          setTop3ColoReward(cur.top3_colosseum_reward)
         }
       }
       if (pRes.data) setPlayers(pRes.data)
@@ -880,9 +874,6 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
       top1_elo_reward: top1EloReward,
       top2_elo_reward: top2EloReward,
       top3_elo_reward: top3EloReward,
-      top1_colosseum_reward: top1ColoReward,
-      top2_colosseum_reward: top2ColoReward,
-      top3_colosseum_reward: top3ColoReward,
       is_current: true,
     }
 
@@ -2429,36 +2420,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                   </div>
                 </div>
 
-                <div className="admin-reward-box">
-                  <h4>🏛️ Premios del Coliseo (Racha Máxima)</h4>
-                  <div className="admin-reward-row">
-                    <span>🥇 Top 1 Coliseo:</span>
-                    <input
-                      type="number"
-                      value={top1ColoReward}
-                      onChange={(e) => setTop1ColoReward(Number(e.target.value))}
-                    />
-                    <strong>Gemas 💎</strong>
-                  </div>
-                  <div className="admin-reward-row">
-                    <span>🥈 Top 2 Coliseo:</span>
-                    <input
-                      type="number"
-                      value={top2ColoReward}
-                      onChange={(e) => setTop2ColoReward(Number(e.target.value))}
-                    />
-                    <strong>Gemas 💎</strong>
-                  </div>
-                  <div className="admin-reward-row">
-                    <span>🥉 Top 3 Coliseo:</span>
-                    <input
-                      type="number"
-                      value={top3ColoReward}
-                      onChange={(e) => setTop3ColoReward(Number(e.target.value))}
-                    />
-                    <strong>Gemas 💎</strong>
-                  </div>
-                </div>
+
               </div>
 
               <button

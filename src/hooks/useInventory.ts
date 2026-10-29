@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import type { PlantCardInstance, PlantId, ColosseumBetAmount } from '../types/game'
+import type { PlantCardInstance, PlantId } from '../types/game'
 import {
   PACK_DEFINITIONS,
   type InventoryPack,
@@ -428,7 +428,7 @@ export function useInventory() {
 
   const resolveColosseumMatch = (
     won: boolean,
-    betGems: ColosseumBetAmount,
+    betGems: number,
     usedTicket: boolean
   ): { payoutGems: number; newStreak: number; newMaxStreak: number; isNewRecord: boolean } => {
     // 80% payout of total pot (2x bet) = 1.6x bet

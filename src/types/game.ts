@@ -255,24 +255,6 @@ export interface MyMarketplaceListingsResponse {
   stats: MyMarketplaceStats
 }
 
-export type ColosseumBetAmount = 50 | 100 | 200
-
-export interface ColosseumMatchConfig {
-  betGems: ColosseumBetAmount
-  usedTicket: boolean
-  payoutGems: number
-  rakeGems: number
-}
-
-export interface ColosseumLeaderboardEntry {
-  rank: number
-  username: string
-  avatarPlant: PlantId
-  maxStreak: number
-  prizeGems: number
-  isUser?: boolean
-}
-
 export type { EngineVersion } from '../engine/simulate'
 export { parseEngineVersion } from '../engine/simulate'
 

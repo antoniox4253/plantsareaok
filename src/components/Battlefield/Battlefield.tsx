@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import type { PlantId, ColosseumMatchConfig, EngineVersion } from '../../types/game'
+import type { PlantId, EngineVersion } from '../../types/game'
 import { parseEngineVersion } from '../../types/game'
 import { TournamentManager, type ActiveTournamentSession } from '../../utils/tournamentManager'
 import { tournamentService } from '../../services/tournamentService'
@@ -187,16 +187,14 @@ interface BattlefieldProps {
   activeDeck?: PlantId[]
   userElo?: number
   customBgImage?: string
-  matchMode?: 'ranked' | 'colosseum' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads'
+  matchMode?: 'ranked' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads'
   arenaAdsRun?: ArenaAdsRun | null
   onArenaAdsAdvance?: (run: ArenaAdsRun) => void
   onArenaAdsRetreat?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => void
   onArenaAdsRevive?: (costGems?: number) => void
   friendlyBetGems?: number
-  colosseumConfig?: ColosseumMatchConfig | null
   tournamentOpponent?: { name: string; tournamentId: string } | null
   tournamentDeck?: PlantId[] | null
-  onColosseumComplete?: (won: boolean) => { payoutGems: number; newStreak: number; newMaxStreak: number; isNewRecord: boolean }
   strategicPlaytestConfig?: StrategicPlaytestConfig | null
   onPlayAgainPlaytest?: () => void
   clanFortressConfig?: { targetClan: ClanFortressMatchOpponent } | null
@@ -272,10 +270,8 @@ export default function Battlefield({
   mazosDeLaSala = null,
   isAsyncMatch = false,
   engineVersion = null,
-  colosseumConfig,
   tournamentOpponent,
   tournamentDeck,
-  onColosseumComplete,
   strategicPlaytestConfig = null,
   onPlayAgainPlaytest,
   clanFortressConfig = null,
@@ -646,12 +642,6 @@ export default function Battlefield({
       })
   }, [seed, soyP1, mazosDeLaSala, isAsyncMatch, engineVersion, userElo, startGame])
 
-  const [colosseumResult, setColosseumResult] = useState<{
-    payoutGems: number
-    newStreak: number
-    newMaxStreak: number
-    isNewRecord: boolean
-  } | null>(null)
 
   const [tournamentResult, setTournamentResult] = useState<ActiveTournamentSession | null>(null)
 
@@ -1836,12 +1826,6 @@ export default function Battlefield({
         })()
       }
 
-      // Handle Colosseum match resolution
-      if (!roomId && matchMode === 'colosseum' && onColosseumComplete) {
-        const coloRes = onColosseumComplete(gameStatus === 'victory')
-        setColosseumResult(coloRes)
-      }
-
       // Handle Tournament match resolution
       if (matchMode === 'tournament') {
         const tourneyId = tournamentOpponent?.tournamentId || 'tourney_official_1'
@@ -2060,7 +2044,7 @@ export default function Battlefield({
         }
       }
     }
-  }, [gameStatus, onBattleComplete, onServerEloUpdated, matchMode, onColosseumComplete, roomId, opponentId, currentUserId, tournamentOpponent?.tournamentId, terminarPorOrdenDelServidor, isAsyncMatch, soyP1, currentFortressOpponent])
+  }, [gameStatus, onBattleComplete, onServerEloUpdated, matchMode, roomId, opponentId, currentUserId, tournamentOpponent?.tournamentId, terminarPorOrdenDelServidor, isAsyncMatch, soyP1, currentFortressOpponent])
 
   useEffect(() => {
     if (practicePlantId) {
@@ -2250,8 +2234,7 @@ export default function Battlefield({
     hasCreditedMarigoldGoldRef.current = false
     setResultadoServidor(null)
     setBattleSummaryResult(null)
-    setColosseumResult(null)
-    setTournamentResult(null)
+        setTournamentResult(null)
     setClanRaidResult(null)
 
     // ============================================================
@@ -2500,7 +2483,7 @@ export default function Battlefield({
           }}
         >
           <div
-            className="battlefield-colosseum-header-pill"
+            className="battlefield-mode-header-pill"
             style={{
               borderColor: '#10b981',
               boxShadow: '0 0 16px rgba(16, 185, 129, 0.45)',
@@ -2515,7 +2498,7 @@ export default function Battlefield({
               color: '#f8fafc',
             }}
           >
-            <span className="battlefield-colosseum-icon">🧟</span>
+            <span className="battlefield-mode-header-icon">🧟</span>
             <span>SURVIVOR ADS • NV.{currentArenaAdsRun?.level || 1}</span>
             <span>•</span>
             <span style={{ color: '#facc15', fontWeight: 800 }}>
@@ -2554,7 +2537,7 @@ export default function Battlefield({
           sideBadge={
             matchMode === 'clan_fortress' ? (
               <div
-                className="battlefield-colosseum-header-pill"
+                className="battlefield-mode-header-pill"
                 style={{
                   borderColor: '#eab308',
                   boxShadow: '0 0 15px rgba(234, 179, 8, 0.4)',
@@ -2562,7 +2545,7 @@ export default function Battlefield({
                   whiteSpace: 'nowrap',
                 }}
               >
-                <span className="battlefield-colosseum-icon">{currentFortressOpponent?.targetBadge || '🏰'}</span>
+                <span className="battlefield-mode-header-icon">{currentFortressOpponent?.targetBadge || '🏰'}</span>
                 <span>{currentFortressOpponent?.targetClanTag || '#FORT'}</span>
                 <span>•</span>
                 <span style={{ color: '#facc15', fontWeight: 'bold' }}>☀️ {p2SunBank} Def</span>
@@ -2571,7 +2554,7 @@ export default function Battlefield({
               </div>
             ) : matchMode === 'tournament' ? (
               <div
-                className="battlefield-colosseum-header-pill"
+                className="battlefield-mode-header-pill"
                 style={{
                   borderColor: '#a855f7',
                   boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)',
@@ -2579,28 +2562,19 @@ export default function Battlefield({
                   whiteSpace: 'nowrap',
                 }}
               >
-                <span className="battlefield-colosseum-icon">🎪</span>
+                <span className="battlefield-mode-header-icon">🎪</span>
                 <span>TORNEO EN VIVO</span>
-              </div>
-            ) : matchMode === 'colosseum' ? (
-              <div className="battlefield-colosseum-header-pill" style={{ whiteSpace: 'nowrap' }}>
-                <span className="battlefield-colosseum-icon">🏛️</span>
-                <span>COLISEO</span>
-                <span>•</span>
-                <span style={{ color: '#38bdf8' }}>Sala: {colosseumConfig?.betGems || 0.5} 💎</span>
-                <span>•</span>
-                <span style={{ color: '#fbbf24' }}>Pozo: {((colosseumConfig?.betGems || 0.5) * 2).toFixed(1)} 💎</span>
               </div>
             ) : matchMode === 'friendly' ? (
               <div
-                className="battlefield-colosseum-header-pill"
+                className="battlefield-mode-header-pill"
                 style={{
                   borderColor: '#34d399',
                   boxShadow: '0 0 15px rgba(52, 211, 153, 0.4)',
                   whiteSpace: 'nowrap',
                 }}
               >
-                <span className="battlefield-colosseum-icon">🤝</span>
+                <span className="battlefield-mode-header-icon">🤝</span>
                 <span>DUELO AMISTOSO</span>
                 {friendlyBetGems !== undefined && friendlyBetGems > 0 ? (
                   <>
@@ -2611,7 +2585,7 @@ export default function Battlefield({
               </div>
             ) : userElo >= 2001 ? (
               <div
-                className="battlefield-colosseum-header-pill"
+                className="battlefield-mode-header-pill"
                 style={{
                   borderColor: !isAsyncMatch ? '#10b981' : '#38bdf8',
                   boxShadow: !isAsyncMatch
@@ -2626,7 +2600,7 @@ export default function Battlefield({
                     : 'Rival asíncrono: Recompensa estándar de Token PLANTS activa'
                 }
               >
-                <span className="battlefield-colosseum-icon">{!isAsyncMatch ? '⚔️' : '🤖'}</span>
+                <span className="battlefield-mode-header-icon">{!isAsyncMatch ? '⚔️' : '🤖'}</span>
                 <span>{!isAsyncMatch ? 'PvP EN VIVO' : 'ASÍNCRONO'}</span>
                 <span>•</span>
                 <span style={{ color: '#34d399', fontWeight: 800 }}>🌱 PLANTS</span>
@@ -3945,10 +3919,10 @@ export default function Battlefield({
                     <div className="game-card__panel-title">
                       <span>🧟</span> Resultado Survivor ADS
                     </div>
-                    <div className="colosseum-battle-payout-box" style={{ borderColor: '#10b981', boxShadow: '0 0 20px rgba(16, 185, 129, 0.35)', margin: 0 }}>
+                    <div className="battle-mode-payout-box" style={{ borderColor: '#10b981', boxShadow: '0 0 20px rgba(16, 185, 129, 0.35)', margin: 0 }}>
                       {gameStatus === 'victory' ? (
                         <>
-                          <div className="colosseum-payout-header" style={{ color: currentArenaAdsRun && currentArenaAdsRun.level >= 50 ? '#fbbf24' : '#34d399' }}>
+                          <div className="battle-mode-payout-header" style={{ color: currentArenaAdsRun && currentArenaAdsRun.level >= 50 ? '#fbbf24' : '#34d399' }}>
                             <span>
                               {currentArenaAdsRun && currentArenaAdsRun.level === 50
                                 ? '🏆 ¡NIVEL 50 CONQUISTADO! MODO PESADILLA DESBLOQUEADO'
@@ -3957,7 +3931,7 @@ export default function Battlefield({
                                 : `🎉 ¡NIVEL ${currentArenaAdsRun?.level || 1} SUPERADO!`}
                             </span>
                           </div>
-                          <div className="colosseum-payout-gems" style={{ color: '#facc15' }}>
+                          <div className="battle-mode-payout-gems" style={{ color: '#facc15' }}>
                             💰 BOTÍN ACUMULADO ACTUAL:
                           </div>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '6px' }}>
@@ -3983,55 +3957,14 @@ export default function Battlefield({
                         </>
                       ) : (
                         <>
-                          <div className="colosseum-payout-header colosseum-payout-header--defeat">
+                          <div className="battle-mode-payout-header battle-mode-payout-header--defeat">
                             <span>💀 ¡FUISTE DERROTADO!</span>
                           </div>
-                          <div className="colosseum-payout-streak" style={{ color: '#f87171' }}>
+                          <div className="battle-mode-payout-streak" style={{ color: '#f87171' }}>
                             Fuiste derrotado por las oleadas en el Nivel {currentArenaAdsRun?.level || 1}.
                           </div>
-                          <div className="colosseum-payout-loss" style={{ color: '#34d399', fontWeight: 800 }}>
+                          <div className="battle-mode-payout-loss" style={{ color: '#34d399', fontWeight: 800 }}>
                             🎉 ¡Te llevas {Math.max(0, (currentArenaAdsRun?.level || 1) - 1) * 2} Token PLANTS por los {Math.max(0, (currentArenaAdsRun?.level || 1) - 1)} niveles superados!
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ) : matchMode === 'colosseum' && colosseumResult ? (
-                  /* COLOSSEUM MATCH REWARD CARD */
-                  <div className="game-card__panel game-card__panel--colosseum">
-                    <div className="game-card__panel-title">
-                      <span>🏛️</span> Resultado del Coliseo
-                    </div>
-                    <div className="colosseum-battle-payout-box" style={{ margin: 0 }}>
-                      {gameStatus === 'victory' ? (
-                        <>
-                          <div className="colosseum-payout-header">
-                            <span>🏛️ ¡VICTORIA EN EL COLISEO!</span>
-                          </div>
-                          <div className="colosseum-payout-gems">
-                            + {colosseumResult.payoutGems} GEMAS 💎
-                          </div>
-                          <div className="colosseum-payout-streak">
-                            🔥 Racha Actual: <strong>{colosseumResult.newStreak} victorias</strong>
-                          </div>
-                          {colosseumResult.isNewRecord && (
-                            <div className="colosseum-payout-record">
-                              👑 ¡NUEVO RÉCORD! ({colosseumResult.newMaxStreak} Victorias)
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <div className="colosseum-payout-header colosseum-payout-header--defeat">
-                            <span>💀 DERROTA EN EL COLISEO</span>
-                          </div>
-                          <div className="colosseum-payout-loss">
-                            {colosseumConfig?.usedTicket
-                              ? '🎟️ 1 Ticket consumido'
-                              : `💎 -${colosseumConfig?.betGems || 0.5} Gemas`}
-                          </div>
-                          <div className="colosseum-payout-streak" style={{ color: '#ef4444' }}>
-                            🔥 Racha reiniciada a 0
                           </div>
                         </>
                       )}
@@ -4044,18 +3977,18 @@ export default function Battlefield({
                       <span>🏆</span> Ronda del Torneo
                     </div>
                     <div
-                      className="colosseum-battle-payout-box"
+                      className="battle-mode-payout-box"
                       style={{ borderColor: '#a855f7', boxShadow: '0 0 20px rgba(168, 85, 247, 0.35)', margin: 0 }}
                     >
                       {gameStatus === 'victory' ? (
                         <>
-                          <div className="colosseum-payout-header" style={{ color: '#d8b4fe' }}>
+                          <div className="battle-mode-payout-header" style={{ color: '#d8b4fe' }}>
                             🏆 ¡VICTORIA EN EL TORNEO!
                           </div>
-                          <div className="colosseum-payout-gems" style={{ color: '#4ade80' }}>
+                          <div className="battle-mode-payout-gems" style={{ color: '#4ade80' }}>
                             +1 VICTORIA (Total: 🔥 {tournamentResult.userWins})
                           </div>
-                          <div className="colosseum-payout-streak">
+                          <div className="battle-mode-payout-streak">
                             📊 Posición: <strong>#{TournamentManager.getUserRank(tournamentResult)}</strong> | Vidas: {Array.from({ length: 3 }).map((_, i) => (
                               <span key={i}>{i < 3 - tournamentResult.userLosses ? '❤️' : '💔'}</span>
                             ))}
@@ -4063,13 +3996,13 @@ export default function Battlefield({
                         </>
                       ) : (
                         <>
-                          <div className="colosseum-payout-header colosseum-payout-header--defeat">
+                          <div className="battle-mode-payout-header battle-mode-payout-header--defeat">
                             💔 DERROTA EN EL TORNEO
                           </div>
-                          <div className="colosseum-payout-loss">
+                          <div className="battle-mode-payout-loss">
                             Perdiste 1 vida ({Math.max(0, 3 - tournamentResult.userLosses)}/3 restantes)
                           </div>
-                          <div className="colosseum-payout-streak" style={{ color: tournamentResult.isEliminated ? '#ef4444' : '#fdba74' }}>
+                          <div className="battle-mode-payout-streak" style={{ color: tournamentResult.isEliminated ? '#ef4444' : '#fdba74' }}>
                             {tournamentResult.isEliminated
                               ? '💀 ¡ELIMINADO DEL TORNEO!'
                               : `⚠️ Te quedan ${3 - tournamentResult.userLosses} vida(s).`}

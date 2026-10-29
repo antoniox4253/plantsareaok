@@ -10,7 +10,6 @@ import { BATTLE_PASS_LEVELS } from '../../utils/battlePassManager'
 import { UserManager, type PlayerProfile, getPlayerAvatarUrl } from '../../utils/userManager'
 import ProfileModal, { type ProfileTab } from '../ProfileModal/ProfileModal'
 import ModeSelectorModal from '../ModeSelector/ModeSelectorModal'
-import ColosseumModal from '../Colosseum/ColosseumModal'
 import ArenaAdsModal from '../ArenaAds/ArenaAdsModal'
 import type { ArenaAdsRun, ArenaAdsLoot } from '../../utils/arenaAdsManager'
 import TournamentModal from '../Tournament/TournamentModal'
@@ -27,7 +26,7 @@ import ranking from '../../assets/ico/Ranking.webp'
 import ajustesIcon from '../../assets/ico/ajustes.webp'
 import { tournamentService } from '../../services/tournamentService'
 import { SeasonManager } from '../../utils/seasonManager'
-import type { ColosseumBetAmount, PlantId, TournamentModel, PlantCardInstance } from '../../types/game'
+import type { PlantId, TournamentModel, PlantCardInstance } from '../../types/game'
 import './MainMenu.css'
 import './BosqueRenovado.css'
 
@@ -56,13 +55,9 @@ interface MainMenuProps {
   claimedVipLevels?: number[]
   claimedArenaAdsLevels?: number[]
   freePackSlots?: FreePackSlot[]
-  colosseumTickets?: number
-  colosseumCurrentStreak?: number
-  colosseumMaxStreak?: number
   onPlay: () => void
   /** Duelo amistoso: código de sala privada y apuesta opcional. */
   onPlayFriendly?: (roomCode: string, betGems: number) => void
-  onStartColosseumMatch?: (betGems: ColosseumBetAmount, usedTicket: boolean) => void
   onStartArenaAdsBattle?: (run: ArenaAdsRun) => void
   onClaimArenaAdsLoot?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => Promise<any> | void
   onStartTournamentMatch?: (opponentName: string, tournamentId: string, tournamentDeck?: PlantId[]) => void
@@ -116,12 +111,8 @@ export default function MainMenu({
   claimedVipLevels = [],
   claimedArenaAdsLevels = [],
   freePackSlots = [],
-  colosseumTickets = 0,
-  colosseumCurrentStreak = 0,
-  colosseumMaxStreak = 0,
   onPlay,
   onPlayFriendly,
-  onStartColosseumMatch,
   onStartArenaAdsBattle,
   onClaimArenaAdsLoot,
   onStartTournamentMatch,
@@ -159,7 +150,6 @@ export default function MainMenu({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>('profile')
   const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false)
-  const [isColosseumModalOpen, setIsColosseumModalOpen] = useState(false)
   const [isArenaAdsModalOpen, setIsArenaAdsModalOpen] = useState<boolean>(false)
   const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false)
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
@@ -1814,12 +1804,10 @@ export default function MainMenu({
         onClose={() => setIsModeSelectorOpen(false)}
         userElo={userElo}
         userTokens={userTokens}
-        colosseumTickets={colosseumTickets}
         playerEnergy={playerEnergy}
         maxPlayerEnergy={maxPlayerEnergy}
         onSelectRanked={onPlay}
         onSelectArenaAds={() => setIsArenaAdsModalOpen(true)}
-        onSelectColosseum={() => setIsArenaAdsModalOpen(true)}
         onSelectTournament={() => setIsTournamentModalOpen(true)}
         onSelectFriendly={onPlayFriendly}
         onSelectStrategicPlaytest={onOpenStrategicPlaytest}
@@ -1850,20 +1838,7 @@ export default function MainMenu({
         onRefreshBalances={onRewardsChanged}
       />
 
-      {/* Coliseo */}
-      <ColosseumModal
-        isOpen={isColosseumModalOpen}
-        onClose={() => setIsColosseumModalOpen(false)}
-        userTokens={userTokens}
-        userElo={userElo}
-        colosseumTickets={colosseumTickets}
-        currentStreak={colosseumCurrentStreak}
-        maxStreak={colosseumMaxStreak}
-        onStartColosseumMatch={(betGems, usedTicket) => {
-          if (onStartColosseumMatch) onStartColosseumMatch(betGems, usedTicket)
-        }}
-        onOpenShop={onOpenShop}
-      />
+      
 
       {/* Torneos */}
       <TournamentModal

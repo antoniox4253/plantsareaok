@@ -21,11 +21,9 @@ interface ModeSelectorModalProps {
   onClose: () => void
   userElo: number
   userTokens: number
-  colosseumTickets: number
   playerEnergy?: number
   maxPlayerEnergy?: number
   onSelectRanked: () => void
-  onSelectColosseum: () => void
   onSelectArenaAds?: () => void
   onSelectTournament?: () => void
   onSelectStrategicPlaytest?: () => void
@@ -51,11 +49,9 @@ export default function ModeSelectorModal({
   onClose,
   userElo,
   userTokens,
-  colosseumTickets,
   playerEnergy = 20,
   maxPlayerEnergy = 20,
   onSelectRanked,
-  onSelectColosseum: _onSelectColosseum,
   onSelectArenaAds,
   onSelectTournament,
   onSelectFriendly,
@@ -99,7 +95,7 @@ export default function ModeSelectorModal({
                 <div>
                   <h2 className="mode-selector-title">SELECCIONA MODO DE JUEGO</h2>
                   <p className="mode-selector-subtitle">
-                    Tu Rango Actual: <strong>{userElo} 🏆</strong> | Saldo: <strong>{userTokens} 💎</strong> | Tickets: <strong>{colosseumTickets} 🎟️</strong>
+                    Tu Rango Actual: <strong>{userElo} 🏆</strong> | Saldo: <strong>{userTokens} 💎</strong>
                   </p>
                 </div>
               </div>
@@ -240,8 +236,6 @@ export default function ModeSelectorModal({
                   onClose()
                   if (onSelectArenaAds) {
                     onSelectArenaAds()
-                  } else {
-                    _onSelectColosseum()
                   }
                 }}
               >
@@ -281,8 +275,6 @@ export default function ModeSelectorModal({
                     onClose()
                     if (onSelectArenaAds) {
                       onSelectArenaAds()
-                    } else {
-                      _onSelectColosseum()
                     }
                   }}
                 >

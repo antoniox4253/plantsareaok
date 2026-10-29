@@ -282,10 +282,6 @@ function App() {
     receivePlantInstance,
     removePlantInstance,
     addPacksToInventory,
-    colosseumTickets,
-    colosseumCurrentStreak,
-    colosseumMaxStreak,
-    resolveColosseumMatch,
     playerEnergy,
     setPlayerEnergy,
     maxPlayerEnergy,
@@ -568,10 +564,9 @@ function App() {
     }
   }, [loading, user])
 
-  const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'colosseum' | 'tournament' | 'strategic_test' | 'clan_fortress' | 'arena_ads'>('ranked')
+  const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'tournament' | 'strategic_test' | 'clan_fortress' | 'arena_ads'>('ranked')
   const [arenaAdsRun, setArenaAdsRun] = useState<ArenaAdsRun | null>(() => ArenaAdsManager.getStoredRun())
   const [friendlyBet, setFriendlyBet] = useState<number>(0)
-  const [colosseumConfig, setColosseumConfig] = useState<import('./types/game').ColosseumMatchConfig | null>(null)
   const [tournamentOpponent, setTournamentOpponent] = useState<{ name: string; tournamentId: string } | null>(null)
   const [tournamentDeck, setTournamentDeck] = useState<PlantId[] | null>(null)
   const [isStrategicPlaytestModalOpen, setIsStrategicPlaytestModalOpen] = useState<boolean>(false)
@@ -742,7 +737,7 @@ function App() {
       })
       const esTorneo = modoBuscando === 'tournament' || sala.mode === 'tournament'
       setPartidaAsincrona(esTorneo ? false : Boolean(sala.isAsyncMatch))
-      setBattleMatchMode(esTorneo ? 'tournament' : (sala.mode as 'ranked' | 'friendly' | 'colosseum' | 'tournament'))
+      setBattleMatchMode(esTorneo ? 'tournament' : (sala.mode as 'ranked' | 'friendly' | 'tournament'))
       if (esTorneo) {
         const tId = (sala as any).tournament_id || (sala as any).tournamentId || (encontrada as any)?.tournamentId || tournamentOpponent?.tournamentId || 'tourney_official_1'
         setTournamentOpponent((prev) => ({
@@ -754,7 +749,7 @@ function App() {
         setPlayerEnergy((prev) => Math.max(0, prev - 1))
       }
       if (sala.mode === 'friendly') {
-        setFriendlyBet(Number((sala as any).colosseumBet) || 0)
+        setFriendlyBet(Number((sala as any).colosseumBet || (sala as any).friendlyBet) || 0)
       }
       setPracticePlantId(null)
       setScreen('battle')
@@ -892,7 +887,6 @@ function App() {
   const handlePlayFriendly = (roomCode: string, betGems: number) => {
     setBattleMatchMode('friendly')
     setFriendlyBet(betGems)
-    setColosseumConfig(null)
     setTournamentOpponent(null)
     setPracticePlantId(null)
     setCustomArenaBg(undefined)
@@ -1019,7 +1013,6 @@ function App() {
     if (!mazoGuardado) return
 
     setBattleMatchMode('ranked')
-    setColosseumConfig(null)
     setTournamentOpponent(null)
     setPracticePlantId(null)
     setCustomArenaBg(undefined)
@@ -1065,7 +1058,6 @@ function App() {
   }
 
   /**
-   * COLISEO
    *
    * Ya no se descuenta el ticket aquí: lo hace el servidor dentro de
    * enter_matchmaking, junto con la retención de la apuesta. Antes se restaba en
@@ -1075,44 +1067,9 @@ function App() {
    *
    * Si no aparece rival en 4 minutos, el servidor devuelve lo cobrado solo.
    */
-  const handleStartColosseumMatch = async (betGems: import('./types/game').ColosseumBetAmount, usedTicket: boolean) => {
-    setBattleMatchMode('colosseum')
-    setTournamentOpponent(null)
-    setColosseumConfig({
-      betGems,
-      usedTicket,
-      // Informativo: el pago real lo calcula report_match_result sobre el pozo
-      // efectivamente retenido, no sobre esta cuenta.
-      payoutGems: Number((betGems * 1.6).toFixed(2)),
-      rakeGems: Number((betGems * 0.4).toFixed(2)),
-    })
-    setPracticePlantId(null)
-    setCustomArenaBg(undefined)
-    setSalaId(null)
-    setSemillaPartida(undefined)
-    if (!buscaRival('colosseum')) {
-      const miNombre = profile?.username || UserManager.getProfile().name || 'Tú'
-      setNombresEnPartida({ mio: miNombre, rival: 'Gladiador Bot' })
-      setScreen('battle')
-      return
-    }
-    setModoBuscando('colosseum')
-    setScreen('searching')
-    const r = await buscar('colosseum', { betGems, useTicket: usedTicket })
-    if (!r.ok) {
-      // No se cobró nada: enter_matchmaking cobra dentro de la misma transacción
-      // que encola, así que si falla no hay retención que devolver.
-      setScreen('menu')
-      return
-    }
-    // El saldo lo pone el servidor, que ya cobró.
-    void refreshFromServer()
-  }
-
   const handleStartTournamentMatch = async (opponentName: string, tournamentId: string, tourneyDeck?: PlantId[]) => {
     setBattleMatchMode('tournament')
     setPartidaAsincrona(false)
-    setColosseumConfig(null)
     setTournamentOpponent({ name: opponentName || 'Rival del Torneo', tournamentId })
     setTournamentDeck(tourneyDeck || null)
     setPracticePlantId(null)
@@ -1140,7 +1097,6 @@ function App() {
     setBattleMatchMode('arena_ads')
     setArenaAdsRun(run)
     setPartidaAsincrona(false)
-    setColosseumConfig(null)
     setTournamentOpponent(null)
     setTournamentDeck(null)
     setPracticePlantId(null)
@@ -1291,7 +1247,6 @@ function App() {
 
     setBattleMatchMode('strategic_test')
     setStrategicPlaytestConfig(config)
-    setColosseumConfig(null)
     setTournamentOpponent(null)
     setPracticePlantId(null)
     setCustomArenaBg(undefined)
@@ -1596,14 +1551,10 @@ function App() {
             claimedVipLevels={claimedVipLevels}
             claimedArenaAdsLevels={claimedArenaAdsLevels}
             freePackSlots={freePackSlots}
-            colosseumTickets={colosseumTickets}
-            colosseumCurrentStreak={colosseumCurrentStreak}
-            colosseumMaxStreak={colosseumMaxStreak}
             playerEnergy={playerEnergy}
             maxPlayerEnergy={maxPlayerEnergy}
             onPlay={handlePlayNormal}
             onPlayFriendly={handlePlayFriendly}
-            onStartColosseumMatch={handleStartColosseumMatch}
             onStartArenaAdsBattle={handleStartArenaAdsMatch}
             onClaimArenaAdsLoot={handleClaimArenaAdsLoot}
             onOpenMisPartidas={() => setScreen('partidas')}
@@ -1686,11 +1637,7 @@ function App() {
           <MatchmakingScreen
             modo={modoBuscando}
             estado={estadoCola}
-            apuesta={
-              modoBuscando === 'colosseum' && colosseumConfig
-                ? { gemas: colosseumConfig.betGems, conTicket: colosseumConfig.usedTicket }
-                : null
-            }
+            apuesta={null}
             onCancelar={() => { void salirDeLaCola() }}
           />
         )}
@@ -1707,7 +1654,6 @@ function App() {
             customBgImage={customArenaBg}
             matchMode={battleMatchMode}
             friendlyBetGems={friendlyBet}
-            colosseumConfig={colosseumConfig}
             tournamentOpponent={tournamentOpponent}
             tournamentDeck={tournamentDeck}
             strategicPlaytestConfig={strategicPlaytestConfig}
@@ -1739,12 +1685,6 @@ function App() {
             }}
             onClanFortressComplete={() => {
               void refreshFromServer()
-            }}
-            onColosseumComplete={(won) => {
-              if (colosseumConfig) {
-                return resolveColosseumMatch(won, colosseumConfig.betGems, colosseumConfig.usedTicket)
-              }
-              return { payoutGems: 0, newStreak: 0, newMaxStreak: colosseumMaxStreak, isNewRecord: false }
             }}
           />
         )}

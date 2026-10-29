@@ -14,7 +14,7 @@ import { RANKED_MATCHMAKING_TIMEOUT_SECONDS } from '../utils/gameConstants'
  * no hay humano, selecciona un Rival Semilla determinista con nueva sala.
  */
 
-export type ModoPartida = 'ranked' | 'friendly' | 'colosseum' | 'tournament'
+export type ModoPartida = 'ranked' | 'friendly' | 'tournament'
 
 export const MODOS_CON_EMPAREJAMIENTO: ReadonlySet<ModoPartida> = new Set<ModoPartida>([
   'ranked',
@@ -40,6 +40,7 @@ export interface EstadoCola {
   /** Segundos esperando. Lo cuenta el servidor, no el navegador. */
   segundos: number
   /** En coliseo, a los cuántos segundos se cancela y se devuelve la entrada. */
+  /** Plazo maximo en segundos antes de cancelar busqueda. */
   plazoSegundos: number | null
   /** Mensaje del servidor, si trae alguno (por ejemplo al devolver la entrada). */
   mensaje: string | null
