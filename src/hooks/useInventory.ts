@@ -1737,11 +1737,53 @@ export function useInventory() {
     if (!res.success) {
       console.warn('[claimSlotOnServer] Error al reclamar slot:', res.error)
       const isSyncing = res.error?.includes('SLOT_NOT_READY')
-      const title = isSyncing ? 'SINCRONIZANDO COFRE' : 'ERROR AL ABRIR COFRE'
-      const message = isSyncing
-        ? 'El cofre aún está sincronizando su tiempo con el servidor. Por favor intenta de nuevo en unos segundos.'
-        : `No se pudo abrir el cofre: ${res.error || 'Error inesperado'}`
-      const icon = isSyncing ? '⏳' : '⚠️'
+      if (isSyncing) {
+        const match = res.error?.match(/SLOT_NOT_READY:?(\d+)?/)
+        const remainingSec = match && match[1] ? parseInt(match[1], 10) : null
+
+        // Recalibrar de inmediato el estado del cofre con los tiempos autoritativos del servidor
+        if (currentUserIdRef.current) {
+          void inventoryService.getUserPackSlots(currentUserIdRef.current).then((remoteSlots) => {
+            if (remoteSlots && remoteSlots.length > 0) {
+              const adjusted = remoteSlots.map((s) => {
+                if (s.slotId === slotIndex && s.status === 'unlocking') {
+                  if (remainingSec !== null && remainingSec > 0) {
+                    const correctedStartedAt = Date.now() - (s.durationHours * 3600 - remainingSec) * 1000
+                    return { ...s, unlockStartedAt: correctedStartedAt, status: 'unlocking' as const }
+                  }
+                  return { ...s, status: 'unlocking' as const }
+                }
+                return s
+              })
+              const normalized = normalizePackSlots(adjusted)
+              setFreePackSlots(normalized)
+              localStorage.setItem('plant_arena_free_pack_slots', JSON.stringify(normalized))
+            }
+          }).catch(() => {})
+        }
+
+        const mins = remainingSec ? Math.ceil(remainingSec / 60) : null
+        const message = mins && mins > 1
+          ? `Aún faltan ${mins} minutos para que termine de abrirse (o puedes acelerarlo con oro).`
+          : 'El cofre aún se está desbloqueando en el servidor. Por favor intenta de nuevo en unos instantes.'
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('plant-arena:game-alert', {
+              detail: {
+                title: 'DESBLOQUEO EN CURSO',
+                message,
+                icon: '⏱️',
+              },
+            })
+          )
+        }
+        return null
+      }
+
+      const title = 'ERROR AL ABRIR COFRE'
+      const message = `No se pudo abrir el cofre: ${res.error || 'Error inesperado'}`
+      const icon = '⚠️'
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
