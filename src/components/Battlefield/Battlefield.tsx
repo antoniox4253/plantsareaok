@@ -518,6 +518,12 @@ export default function Battlefield({
   roomIdRef.current = roomId ?? null
   const gameStatusRef = useRef<string>(gameStatus)
   gameStatusRef.current = gameStatus
+  const userEloRef = useRef<number>(userElo ?? 1000)
+  userEloRef.current = userElo ?? 1000
+  const statsRef = useRef(stats)
+  statsRef.current = stats
+  const tickRef = useRef<number>(tick)
+  tickRef.current = tick
 
   /**
    * Lo que dijo el servidor al liquidar la partida real.
@@ -1698,7 +1704,8 @@ export default function Battlefield({
               }
 
               // ── RECLAMO DE TOKEN PLANTS (EXCLUSIVO ARENA 3+ / 2,001+ COPAS) ──
-              if (userElo >= 2001 && capturedRoomId && matchMode !== 'clan_fortress') {
+              const effectiveElo = Number(eloAfter || (reportRes as any)?.eloBefore || userEloRef.current || userElo || 0)
+              if (effectiveElo >= 2001 && capturedRoomId && matchMode !== 'clan_fortress') {
                 try {
                   const matchDurationSec = Math.max(1, Math.round(tick * 0.033))
                   const plantsClaimRes = await plantsTokenService.claimPvpPlantsReward({
@@ -1800,7 +1807,8 @@ export default function Battlefield({
             }
 
             // ── RECLAMO DE TOKEN PLANTS (EXCLUSIVO ARENA 3+ / 2,001+ COPAS) ──
-            if (userElo >= 2001 && roomId && matchMode !== 'clan_fortress') {
+            const effectiveEloLive = Number(verificacion.settlement?.eloAfter || verificacion.settlement?.eloBefore || userEloRef.current || userElo || 0)
+            if (effectiveEloLive >= 2001 && (capturedRoomId || roomId) && matchMode !== 'clan_fortress') {
               try {
                 const matchDurationSec = Math.max(1, Math.round(tick * 0.033))
                 const plantsClaimRes = await plantsTokenService.claimPvpPlantsReward({
