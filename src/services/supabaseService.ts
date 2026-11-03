@@ -3473,8 +3473,8 @@ export const SupabaseService = {
     // Asegurar sesión válida antes de ejecutar RPC
     try {
       const { data: s } = await supabase.auth.getSession()
-      if (!s?.session) {
-        await supabase.auth.refreshSession().catch(() => null)
+      if (s?.session) {
+        await safeRefreshSession().catch(() => null)
       }
     } catch (_) {}
 
@@ -3677,8 +3677,8 @@ export const SupabaseService = {
 
     try {
       const { data: s } = await supabase.auth.getSession()
-      if (!s?.session) {
-        await supabase.auth.refreshSession().catch(() => null)
+      if (s?.session) {
+        await safeRefreshSession().catch(() => null)
       }
     } catch (_) {}
 
@@ -4918,10 +4918,7 @@ export const SupabaseService = {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       try {
-        const { data: s } = await supabase.auth.getSession()
-        if (!s?.session) {
-          await supabase.auth.refreshSession().catch(() => null)
-        }
+        await safeRefreshSession().catch(() => null)
       } catch (_) {}
 
       let { data, error } = await (supabase.rpc as any)('claim_pack_slot', {
@@ -4929,8 +4926,8 @@ export const SupabaseService = {
       })
 
       if (error && (error.message?.includes('permission denied') || error.message?.includes('NOT_AUTHENTICATED') || error.code === '42501')) {
-        const refreshed = await supabase.auth.refreshSession().catch(() => null)
-        if (refreshed?.data?.session) {
+        const ok = await safeRefreshSession()
+        if (ok) {
           const retry = await (supabase.rpc as any)('claim_pack_slot', {
             p_slot_index: slotIndex,
           })
@@ -4963,10 +4960,7 @@ export const SupabaseService = {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       try {
-        const { data: s } = await supabase.auth.getSession()
-        if (!s?.session) {
-          await supabase.auth.refreshSession().catch(() => null)
-        }
+        await safeRefreshSession().catch(() => null)
       } catch (_) {}
 
       let { data, error } = await (supabase.rpc as any)('instant_unlock_pack_slot', {
@@ -4974,8 +4968,8 @@ export const SupabaseService = {
       })
 
       if (error && (error.message?.includes('permission denied') || error.message?.includes('NOT_AUTHENTICATED') || error.code === '42501')) {
-        const refreshed = await supabase.auth.refreshSession().catch(() => null)
-        if (refreshed?.data?.session) {
+        const ok = await safeRefreshSession()
+        if (ok) {
           const retry = await (supabase.rpc as any)('instant_unlock_pack_slot', {
             p_slot_index: slotIndex,
           })
@@ -5837,10 +5831,7 @@ export const SupabaseService = {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       try {
-        const { data: s } = await supabase.auth.getSession()
-        if (!s?.session) {
-          await supabase.auth.refreshSession().catch(() => null)
-        }
+        await safeRefreshSession().catch(() => null)
       } catch (_) {}
 
       let { data, error } = await (supabase.rpc as any)('instant_unlock_reward_pack', {
@@ -5848,8 +5839,8 @@ export const SupabaseService = {
       })
 
       if (error && (error.message?.includes('permission denied') || error.message?.includes('NOT_AUTHENTICATED') || error.code === '42501')) {
-        const refreshed = await supabase.auth.refreshSession().catch(() => null)
-        if (refreshed?.data?.session) {
+        const ok = await safeRefreshSession()
+        if (ok) {
           const retry = await (supabase.rpc as any)('instant_unlock_reward_pack', {
             p_pack_id: packId,
           })
@@ -5883,10 +5874,7 @@ export const SupabaseService = {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
       try {
-        const { data: s } = await supabase.auth.getSession()
-        if (!s?.session) {
-          await supabase.auth.refreshSession().catch(() => null)
-        }
+        await safeRefreshSession().catch(() => null)
       } catch (_) {}
 
       let { data, error } = await (supabase.rpc as any)('claim_reward_pack', {
@@ -5894,8 +5882,8 @@ export const SupabaseService = {
       })
 
       if (error && (error.message?.includes('permission denied') || error.message?.includes('NOT_AUTHENTICATED') || error.code === '42501')) {
-        const refreshed = await supabase.auth.refreshSession().catch(() => null)
-        if (refreshed?.data?.session) {
+        const ok = await safeRefreshSession()
+        if (ok) {
           const retry = await (supabase.rpc as any)('claim_reward_pack', {
             p_pack_id: packId,
           })
