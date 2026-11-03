@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient'
+import { supabase, isSupabaseConfigured, safeRefreshSession } from '../lib/supabaseClient'
 export { isSupabaseConfigured }
 import type { Database, CodeRoundPrizeTier } from '../types/database.types'
 export type { CodeRoundPrizeTier }
@@ -128,10 +128,8 @@ export const SupabaseService = {
       if (s?.session) {
         const expiresAt = s.session.expires_at ? s.session.expires_at * 1000 : 0
         if (expiresAt > 0 && Date.now() >= expiresAt - 60000) {
-          await supabase.auth.refreshSession().catch(() => null)
+          await safeRefreshSession()
         }
-      } else {
-        await supabase.auth.refreshSession().catch(() => null)
       }
     } catch (_) {}
 
@@ -145,8 +143,8 @@ export const SupabaseService = {
         error.code === '42501')
     ) {
       try {
-        const refreshed = await supabase.auth.refreshSession().catch(() => null)
-        if (refreshed?.data?.session) {
+        const refreshedOk = await safeRefreshSession()
+        if (refreshedOk) {
           const retry = await (supabase.rpc as any)(rpcName, params)
           data = retry.data
           error = retry.error
@@ -234,7 +232,7 @@ export const SupabaseService = {
         return null
       }
 
-      const { data, error } = await (supabase.rpc as any)('my_balance')
+      const { data, error } = await this.callAuthRpc('my_balance')
       if (error) {
         if (error.message?.includes('No autenticado') || error.code === 'P0001') {
           return null

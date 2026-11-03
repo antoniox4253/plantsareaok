@@ -28,6 +28,46 @@ export const supabase = createClient<Database>(
   }
 )
 
+let refreshPromise: Promise<boolean> | null = null
+let lastRefreshTime = 0
+
+/**
+ * Refresca la sesión de Supabase de manera atómica, coordinada y con deduplicación.
+ * Evita condiciones de carrera que revocarían el refresh_token si múltiples peticiones
+ * (acciones de partida, RPCs o eventos de visibilidad) intentan refrescar simultáneamente.
+ */
+export async function safeRefreshSession(): Promise<boolean> {
+  const now = Date.now()
+  // Throttle defensivo: no refrescar más de una vez cada 8 segundos
+  if (now - lastRefreshTime < 8000) {
+    return true
+  }
+  if (refreshPromise) {
+    return refreshPromise
+  }
+  refreshPromise = (async () => {
+    try {
+      const { data: s } = await supabase.auth.getSession()
+      if (!s?.session?.refresh_token) {
+        return false
+      }
+      lastRefreshTime = Date.now()
+      const { data, error } = await supabase.auth.refreshSession()
+      if (error || !data?.session) {
+        console.warn('[SupabaseClient] safeRefreshSession falló:', error?.message)
+        return false
+      }
+      return true
+    } catch (e) {
+      console.warn('[SupabaseClient] safeRefreshSession excepción:', e)
+      return false
+    } finally {
+      refreshPromise = null
+    }
+  })()
+  return refreshPromise
+}
+
 // Gestión limpia del ciclo de vida del navegador (Back-Forward Cache / bfcache):
 // Al congelar o cambiar de página, desconectamos el WebSocket de forma ordenada
 // para evitar que el navegador reporte "WebSocket connection failed: Page entered Back-Forward Cache".
@@ -61,6 +101,7 @@ if (typeof window !== 'undefined') {
       }
     })
   }
+
   const refreshSessionIfNeeded = () => {
     try {
       if (!isSupabaseConfigured()) return
@@ -68,7 +109,7 @@ if (typeof window !== 'undefined') {
         if (data?.session) {
           const expiresAt = data.session.expires_at ? data.session.expires_at * 1000 : 0
           if (expiresAt > 0 && Date.now() >= expiresAt - 120000) {
-            void supabase.auth.refreshSession()
+            void safeRefreshSession()
           }
         }
       }).catch(() => {})
@@ -92,4 +133,3 @@ if (typeof window !== 'undefined') {
     })
   }
 }
-

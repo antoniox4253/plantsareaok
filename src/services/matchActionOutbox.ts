@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import { isSupabaseConfigured, supabase, safeRefreshSession } from '../lib/supabaseClient'
 
 /**
  * Outbox de acciones PvP.
@@ -127,7 +127,7 @@ function isRetryableCode(code?: string, errorMessage?: string): boolean {
   if (!code) return true
 
   if (errorMessage && (errorMessage.includes('No autenticado') || errorMessage.includes('permission denied') || errorMessage.includes('NOT_AUTHENTICATED'))) {
-    return true
+    return false
   }
 
   if (
@@ -190,8 +190,8 @@ async function sendOnce(
         error.code === '42501')
     ) {
       try {
-        const refreshed = await supabase.auth.refreshSession().catch(() => null)
-        if (refreshed?.data?.session) {
+        const refreshedOk = await safeRefreshSession()
+        if (refreshedOk) {
           const retry = await (supabase.rpc as any)('submit_match_action', {
             p_room_id: roomId,
             p_seq: action.seq,
