@@ -1643,6 +1643,7 @@ function App() {
         )}
         {screen === 'battle' && (
           <Battlefield
+            currentUserId={user?.id ?? null}
             onBackToMenu={handleRegresarAlMenu}
             onBackToCollection={() => setScreen('collection')}
             onBattleComplete={handleBattleComplete}

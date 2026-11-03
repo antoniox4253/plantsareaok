@@ -109,6 +109,54 @@ function logError(op: string, error: unknown): void {
 }
 
 export const SupabaseService = {
+  /**
+   * Ejecuta una RPC autenticada garantizando que el JWT esté vigente.
+   * Si el token está por expirar o expiró, o si PostgREST rechaza con
+   * 'No autenticado' / 'permission denied' / 'NOT_AUTHENTICATED',
+   * fuerza automáticamente refreshSession() y reintenta de inmediato.
+   */
+  async callAuthRpc<T = any>(
+    rpcName: string,
+    params: Record<string, any> = {}
+  ): Promise<{ data: T | null; error: any | null }> {
+    if (!isSupabaseConfigured()) {
+      return { data: null, error: { message: 'sin_supabase' } }
+    }
+
+    try {
+      const { data: s } = await supabase.auth.getSession()
+      if (s?.session) {
+        const expiresAt = s.session.expires_at ? s.session.expires_at * 1000 : 0
+        if (expiresAt > 0 && Date.now() >= expiresAt - 60000) {
+          await supabase.auth.refreshSession().catch(() => null)
+        }
+      } else {
+        await supabase.auth.refreshSession().catch(() => null)
+      }
+    } catch (_) {}
+
+    let { data, error } = await (supabase.rpc as any)(rpcName, params)
+
+    if (
+      error &&
+      (error.message?.includes('No autenticado') ||
+        error.message?.includes('NOT_AUTHENTICATED') ||
+        error.message?.includes('permission denied') ||
+        error.code === '42501')
+    ) {
+      try {
+        const refreshed = await supabase.auth.refreshSession().catch(() => null)
+        if (refreshed?.data?.session) {
+          const retry = await (supabase.rpc as any)(rpcName, params)
+          data = retry.data
+          error = retry.error
+        }
+      } catch (_) {}
+    }
+
+    return { data, error }
+  },
+
   // ---------------------------------------------------------------------------
   // PROFILE & BALANCES
   // ---------------------------------------------------------------------------
@@ -634,7 +682,7 @@ export const SupabaseService = {
   }> {
     if (!isSupabaseConfigured()) return { matched: false, error: 'sin_supabase' }
     try {
-      const { data, error } = await (supabase.rpc as any)('enter_matchmaking', {
+      const { data, error } = await this.callAuthRpc<any>('enter_matchmaking', {
         p_mode: mode,
         p_bet: opts.betGems ?? 0,
         p_use_ticket: opts.useTicket ?? false,
@@ -676,7 +724,7 @@ export const SupabaseService = {
   }> {
     if (!isSupabaseConfigured()) return { matched: false, error: 'sin_supabase' }
     try {
-      const { data, error } = await (supabase.rpc as any)('poll_matchmaking')
+      const { data, error } = await this.callAuthRpc<any>('poll_matchmaking')
       if (error) {
         logError('pollMatchmaking', error)
         return { matched: false, error: error.message }
@@ -700,7 +748,7 @@ export const SupabaseService = {
   }> {
     if (!isSupabaseConfigured()) return { matched: false, error: 'sin_supabase' }
     try {
-      const { data, error } = await (supabase.rpc as any)('claim_ranked_async_opponent')
+      const { data, error } = await this.callAuthRpc<any>('claim_ranked_async_opponent')
       if (error) {
         logError('claimRankedAsyncOpponent', error)
         return { matched: false, error: error.message }
@@ -719,7 +767,7 @@ export const SupabaseService = {
   async cancelMatchmaking(): Promise<{ cancelled: boolean; refund?: unknown; reason?: string }> {
     if (!isSupabaseConfigured()) return { cancelled: false, reason: 'sin_supabase' }
     try {
-      const { data, error } = await (supabase.rpc as any)('cancel_matchmaking')
+      const { data, error } = await this.callAuthRpc<any>('cancel_matchmaking')
       if (error) {
         logError('cancelMatchmaking', error)
         return { cancelled: false, reason: error.message }
@@ -784,13 +832,12 @@ export const SupabaseService = {
     let ultimoError: any = null
     for (let intento = 0; intento < 3; intento += 1) {
       try {
-        const { data, error } = await (supabase.rpc as any)('submit_match_action', payload)
+        const { data, error } = await this.callAuthRpc('submit_match_action', payload)
         if (!error) return data
         ultimoError = error
 
-        // P0001 normalmente es RAISE EXCEPTION de nuestras validaciones: repetirlo
-        // no lo va a convertir en una jugada válida.
-        if (error.code === 'P0001') break
+        // P0001 normalmente es RAISE EXCEPTION de nuestras validaciones (excepto auth expirada)
+        if (error.code === 'P0001' && !error.message?.includes('No autenticado')) break
       } catch (e) {
         ultimoError = e
       }
@@ -1499,7 +1546,7 @@ export const SupabaseService = {
     let lastError: any = null
     for (let intento = 1; intento <= 3; intento++) {
       try {
-        const { data, error } = await (supabase.rpc as any)('report_match_result', {
+        const { data, error } = await this.callAuthRpc<any>('report_match_result', {
           p_room_id: roomId,
           p_winner_id: winnerId,
         })

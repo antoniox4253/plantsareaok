@@ -1,0 +1,129 @@
+/* ============================================================
+   MODO RENDIMIENTO / GRÁFICOS MÍNIMOS (Plants Arena)
+   Activo cuando body.low-graphics-mode está presente.
+   Diseñado para teléfonos móviles y PCs de bajos recursos:
+   - Elimina filtros GPU pesados (drop-shadow compuestos, blur, etc.)
+   - Elimina backdrop-filter: blur()
+   - Desactiva animaciones de bucle infinito ornamentales (pulsos, auras)
+   - Reemplaza sombras difusas por bordes limpios u outlines
+   - Preserva 100% la jugabilidad, mecánicas y visibilidad en combate
+   ============================================================ */
+
+/* 1. ELIMINACIÓN UNIVERSAL DE BACKDROP-FILTER PESADO */
+body.low-graphics-mode * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 2. ÁRBOL MADRE (BASE ALIADA Y RIVAL) */
+body.low-graphics-mode .base__mothertree-img,
+body.low-graphics-mode .base__mothertree-img--skin {
+  filter: none !important;
+  animation: none !important;
+}
+
+/* 3. PLANTAS Y UNIDADES EN COMBATE */
+body.low-graphics-mode .plant-unit__sprite {
+  filter: none !important;
+}
+
+body.low-graphics-mode .enemy-unit__sprite {
+  /* Mantiene un tinte simple y rápido para identificar al rival sin coste de blur */
+  filter: hue-rotate(-30deg) !important;
+}
+
+body.low-graphics-mode .plant-unit--sprouting {
+  filter: none !important;
+  animation: none !important;
+  outline: 2px solid #4ade80 !important;
+}
+
+body.low-graphics-mode .plant-unit--potato-unarmed .plant-unit__sprite {
+  filter: opacity(0.7) !important;
+}
+
+body.low-graphics-mode .plant-unit--shovel-target {
+  filter: none !important;
+  outline: 3px solid #ef4444 !important;
+  outline-offset: 2px !important;
+  animation: none !important;
+}
+
+/* Desactivar pulsaciones luminosas de patata armada y similares */
+body.low-graphics-mode .plant-unit--potato-armed,
+body.low-graphics-mode .plant-unit--potato-armed .plant-unit__sprite {
+  animation: none !important;
+  filter: none !important;
+}
+
+/* 4. PROYECTILES Y BALAS */
+body.low-graphics-mode .projectile,
+body.low-graphics-mode .projectile--pea,
+body.low-graphics-mode .projectile--melon,
+body.low-graphics-mode .projectile--kernel,
+body.low-graphics-mode .projectile--butter,
+body.low-graphics-mode .projectile--needle,
+body.low-graphics-mode .projectile--frozen-pea,
+body.low-graphics-mode .projectile--fire-pea {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* 5. SOLES FLOTANTES Y GENERADORES */
+body.low-graphics-mode .battlefield-sun {
+  filter: none !important;
+  animation: none !important;
+  box-shadow: 0 0 0 2px #facc15 !important;
+}
+
+/* 6. PREVISUALIZACIÓN DE CASILLAS (GHOST PREVIEW) */
+body.low-graphics-mode .lane__cell-ghost-preview {
+  filter: none !important;
+  opacity: 0.8 !important;
+  outline: 2px dashed #4ade80 !important;
+}
+
+/* 7. AURAS, RESPLANDORES Y PARTÍCULAS EN BUCLE */
+body.low-graphics-mode [class*="aura"],
+body.low-graphics-mode [class*="glow"],
+body.low-graphics-mode [class*="sparkle"],
+body.low-graphics-mode [class*="shimmer"],
+body.low-graphics-mode .plant-unit__aura,
+body.low-graphics-mode .bosque-plants-token-banner__glow {
+  animation: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* 8. MANO DE CARTAS DE SEMILLAS */
+body.low-graphics-mode .plant-hand {
+  backdrop-filter: none !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8) !important;
+}
+
+body.low-graphics-mode .plant-hand__packet-img {
+  filter: none !important;
+}
+
+body.low-graphics-mode .plant-hand__slot--ready {
+  animation: none !important;
+  box-shadow: 0 0 0 2px #4ade80 !important;
+}
+
+/* 9. MODALES Y SUPERPOSICIONES EN COMBATE */
+body.low-graphics-mode .battlefield-overlay,
+body.low-graphics-mode .battle-surrender-modal-overlay,
+body.low-graphics-mode .practice-bar,
+body.low-graphics-mode .bosque-settings-backdrop,
+body.low-graphics-mode .bosque-news-modal-backdrop {
+  backdrop-filter: none !important;
+  background-color: rgba(0, 0, 0, 0.88) !important;
+}
+
+/* 10. BOTONES DE CONTROL DE COMBATE (INDICADOR RENDIMIENTO) */
+body.low-graphics-mode .sound-toggle-btn--perf-active {
+  border-color: #facc15 !important;
+  color: #facc15 !important;
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.6) !important;
+}

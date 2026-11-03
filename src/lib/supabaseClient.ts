@@ -61,9 +61,35 @@ if (typeof window !== 'undefined') {
       }
     })
   }
+  const refreshSessionIfNeeded = () => {
+    try {
+      if (!isSupabaseConfigured()) return
+      void supabase.auth.getSession().then(({ data }) => {
+        if (data?.session) {
+          const expiresAt = data.session.expires_at ? data.session.expires_at * 1000 : 0
+          if (expiresAt > 0 && Date.now() >= expiresAt - 120000) {
+            void supabase.auth.refreshSession()
+          }
+        }
+      }).catch(() => {})
+    } catch {}
+  }
+
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('visibilitychange', () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        connectRealtime()
+        refreshSessionIfNeeded()
+      }
+    })
+  }
+
   if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
     document.addEventListener('freeze', disconnectRealtime)
-    document.addEventListener('resume', connectRealtime)
+    document.addEventListener('resume', () => {
+      connectRealtime()
+      refreshSessionIfNeeded()
+    })
   }
 }
 

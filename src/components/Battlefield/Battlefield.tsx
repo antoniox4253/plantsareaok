@@ -42,6 +42,7 @@ import { MARGEN_DE_RED_TICS } from '../../engine/pvp'
 import { TICK_MS } from '../../engine/time'
 import { soundManager } from '../../utils/audioManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
+import { useGraphicsQuality } from '../../utils/graphicsSettings'
 import { resolverLiquidacionPartida } from '../../engine/asyncOpponent'
 import { leerMazo, mejorasDeLaCartaEnSlot, type CartaDeMazo } from '../../engine/mazoDeLaSala'
 import { StrategicPlaytestPostMatch } from '../StrategicPlaytest/StrategicPlaytestPostMatch'
@@ -248,9 +249,11 @@ interface BattlefieldProps {
   onServerEloUpdated?: (newElo: number) => void
   treeLevels?: { mio: number; rival: number } | null
   treeSkins?: { mio: string | null; rival: string | null } | null
+  currentUserId?: string | null
 }
 
 export default function Battlefield({
+  currentUserId: propCurrentUserId = null,
   onBackToMenu,
   onBackToCollection,
   onBattleComplete,
@@ -335,7 +338,8 @@ export default function Battlefield({
   } = useGameEngine()
 
   const { user } = useAuth()
-  const currentUserId = user?.id ?? null
+  const currentUserId = propCurrentUserId || user?.id || null
+  const { isLowGraphics, toggleGraphicsQuality } = useGraphicsQuality()
 
   const [incomingRivalEmote, setIncomingRivalEmote] = useState<{
     id?: number
@@ -4437,6 +4441,18 @@ export default function Battlefield({
             title={isMuted ? 'Activar sonido' : 'Silenciar sonido'}
           >
             {isMuted ? '🔇' : '🔊'}
+          </button>
+          <button
+            type="button"
+            className={`sound-toggle-btn ${isLowGraphics ? 'sound-toggle-btn--perf-active' : ''}`}
+            onClick={toggleGraphicsQuality}
+            title={
+              isLowGraphics
+                ? 'Modo Rendimiento Activo (Gráficos Mínimos). Clic para Calidad Alta.'
+                : 'Calidad Alta Activa. Clic para activar Gráficos Mínimos (Rendimiento).'
+            }
+          >
+            {isLowGraphics ? '⚡' : '🎨'}
           </button>
         </div>
 

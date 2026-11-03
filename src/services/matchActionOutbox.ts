@@ -123,8 +123,12 @@ function sleepAbortable(ms: number, signal?: AbortSignal): Promise<boolean> {
  * Sólo estos códigos son razonablemente transitorios.
  * Cualquier RAISE EXCEPTION de nuestras reglas (`P0001`) es definitivo.
  */
-function isRetryableCode(code?: string): boolean {
+function isRetryableCode(code?: string, errorMessage?: string): boolean {
   if (!code) return true
+
+  if (errorMessage && (errorMessage.includes('No autenticado') || errorMessage.includes('permission denied') || errorMessage.includes('NOT_AUTHENTICATED'))) {
+    return true
+  }
 
   if (
     code === '40001' || // serialization_failure
@@ -162,7 +166,7 @@ async function sendOnce(
   }
 
   try {
-    const { data, error } = await (supabase.rpc as any)('submit_match_action', {
+    let { data, error } = await (supabase.rpc as any)('submit_match_action', {
       p_room_id: roomId,
       p_seq: action.seq,
       p_tick: action.tick,
@@ -176,6 +180,37 @@ async function sendOnce(
       p_target_id: action.targetId ?? null,
     })
 
+    // Resiliencia de sesión: si el token de autenticación expiró o se desincronizó,
+    // refrescar inmediatamente la sesión y reintentar la acción sin descartarla
+    if (
+      error &&
+      (error.message?.includes('No autenticado') ||
+        error.message?.includes('permission denied') ||
+        error.message?.includes('NOT_AUTHENTICATED') ||
+        error.code === '42501')
+    ) {
+      try {
+        const refreshed = await supabase.auth.refreshSession().catch(() => null)
+        if (refreshed?.data?.session) {
+          const retry = await (supabase.rpc as any)('submit_match_action', {
+            p_room_id: roomId,
+            p_seq: action.seq,
+            p_tick: action.tick,
+            p_kind: action.kind,
+            p_plant_id: action.plantId ?? null,
+            p_plant: action.plantId ?? null,
+            p_lane: action.lane ?? null,
+            p_col: action.col ?? null,
+            p_slot: action.slot ?? null,
+            p_issued_tick: action.issuedTick,
+            p_target_id: action.targetId ?? null,
+          })
+          data = retry.data
+          error = retry.error
+        }
+      } catch {}
+    }
+
     if (!error) {
       return { ok: true, ack: (data ?? {}) as MatchActionAck }
     }
@@ -183,7 +218,7 @@ async function sendOnce(
     const code = typeof error.code === 'string' ? error.code : undefined
     return {
       ok: false,
-      retryable: isRetryableCode(code),
+      retryable: isRetryableCode(code, error.message),
       error: error.message ?? 'submit_match_action falló',
       code,
     }

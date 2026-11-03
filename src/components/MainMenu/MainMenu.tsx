@@ -29,6 +29,7 @@ import { SeasonManager } from '../../utils/seasonManager'
 import type { PlantId, TournamentModel, PlantCardInstance } from '../../types/game'
 import './MainMenu.css'
 import './BosqueRenovado.css'
+import { useGraphicsQuality } from '../../utils/graphicsSettings'
 
 interface MainMenuProps {
   userProfile?: {
@@ -254,6 +255,7 @@ export default function MainMenu({
   }, [reopenModeSelector, onResetReopenModeSelector])
 
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
+  const { isLowGraphics, toggleGraphicsQuality } = useGraphicsQuality()
   const [ticker, setTicker] = useState<number>(0)
   const [upcomingTournament, setUpcomingTournament] = useState<TournamentModel | null>(null)
   const [activeAlert, setActiveAlert] = useState<{
@@ -1540,6 +1542,13 @@ export default function MainMenu({
               }}
             >
               {isMuted ? '🔇 Activar Música' : '🔊 Silenciar Música'}
+            </button>
+            <button
+              type="button"
+              className="bosque-settings-menu__btn"
+              onClick={toggleGraphicsQuality}
+            >
+              {isLowGraphics ? '⚡ Gráficos: Mínimos (Rendimiento)' : '🎨 Gráficos: Calidad Alta'}
             </button>
             <button type="button" className="bosque-settings-menu__btn" onClick={toggleFullscreen}>
               ⛶ Pantalla Completa

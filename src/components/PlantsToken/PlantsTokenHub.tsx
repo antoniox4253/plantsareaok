@@ -24,6 +24,7 @@ import monedaImg from '../../assets/ico/moneda.webp'
 import ajustesIcon from '../../assets/ico/ajustes.webp'
 import { getPlayerAvatarUrl } from '../../utils/userManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
+import { useGraphicsQuality } from '../../utils/graphicsSettings'
 import { BATTLE_PASS_LEVELS } from '../../utils/battlePassManager'
 import ProfileModal from '../ProfileModal/ProfileModal'
 import KeybindingsModal from '../KeybindingsModal/KeybindingsModal'
@@ -91,6 +92,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   const [isMintingModalOpen, setIsMintingModalOpen] = useState(false)
   const [mintingInitialFilter, setMintingInitialFilter] = useState<'all' | 'pvp' | 'survivor' | 'presale' | 'burns' | 'cashout'>('all')
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
+  const { isLowGraphics, toggleGraphicsQuality } = useGraphicsQuality()
   const [marketState, setMarketState] = useState<PlantsMarketState | null>(null)
   const [priceHistory, setPriceHistory] = useState<PlantsPriceHistoryPoint[]>([])
   const [vestingSummary, setVestingSummary] = useState<PlantsVestingSummary | null>(null)
@@ -691,6 +693,13 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
                 onClick={toggleFullscreen}
               >
                 ⛶ Pantalla Completa
+              </button>
+              <button
+                type="button"
+                className="bosque-settings-menu__btn"
+                onClick={toggleGraphicsQuality}
+              >
+                {isLowGraphics ? '⚡ Gráficos: Mínimos (Rendimiento)' : '🎨 Gráficos: Calidad Alta'}
               </button>
               <button
                 type="button"
