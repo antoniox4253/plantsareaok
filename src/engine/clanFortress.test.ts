@@ -291,11 +291,11 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
       const lvl = Math.max(1, Math.min(4, level))
       return {
         maxMembers: lvl === 1 ? 15 : lvl === 2 ? 18 : lvl === 3 ? 20 : 25,
-        initialAttackSuns: lvl === 1 ? 650 : lvl === 2 ? 800 : lvl === 3 ? 950 : 1100,
-        conquestDamageBonusPct: lvl === 1 ? 0 : lvl === 2 ? 5 : lvl === 3 ? 10 : 20,
-        dailyPassiveSuns: lvl === 1 ? 0 : lvl === 2 ? 10 : lvl === 3 ? 20 : 30,
+        initialAttackSuns: lvl === 1 ? 650 : lvl === 2 ? 750 : lvl === 3 ? 850 : 1000,
+        conquestDamageBonusPct: lvl === 1 ? 0 : lvl === 2 ? 5 : lvl === 3 ? 10 : 15,
+        dailyPassiveSuns: lvl === 1 ? 0 : lvl === 2 ? 100 : lvl === 3 ? 250 : 500,
         vipGoldBonusPct: lvl === 1 ? 0 : lvl === 2 ? 5 : lvl === 3 ? 10 : 15,
-        pvpDamageBonusPct: lvl === 1 ? 0 : lvl === 2 ? 0 : lvl === 3 ? 5 : 10,
+        pvpDamageBonusPct: lvl === 1 ? 0 : lvl === 2 ? 2 : lvl === 3 ? 5 : 8,
       }
     }
 
@@ -309,34 +309,34 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
       pvpDamageBonusPct: 0,
     })
 
-    // Nivel 2: +3 miembros, 800 soles, +5% conquista, 10 soles diarios, 5% vip gold
+    // Nivel 2: +3 miembros (18), 750 soles, +5% conquista, 100 soles diarios, 5% vip gold, 2% pvp dmg
     expect(getLevelPerks(2)).toEqual({
       maxMembers: 18,
-      initialAttackSuns: 800,
+      initialAttackSuns: 750,
       conquestDamageBonusPct: 5,
-      dailyPassiveSuns: 10,
+      dailyPassiveSuns: 100,
       vipGoldBonusPct: 5,
-      pvpDamageBonusPct: 0,
+      pvpDamageBonusPct: 2,
     })
 
-    // Nivel 3: +2 miembros (20), 950 soles, +10% conquista, 20 soles diarios, 10% vip gold, 5% pvp dmg
+    // Nivel 3: +2 miembros (20), 850 soles, +10% conquista, 250 soles diarios, 10% vip gold, 5% pvp dmg
     expect(getLevelPerks(3)).toEqual({
       maxMembers: 20,
-      initialAttackSuns: 950,
+      initialAttackSuns: 850,
       conquestDamageBonusPct: 10,
-      dailyPassiveSuns: 20,
+      dailyPassiveSuns: 250,
       vipGoldBonusPct: 10,
       pvpDamageBonusPct: 5,
     })
 
-    // Nivel 4: +5 miembros (25), 1100 soles, +20% conquista, 30 soles diarios, 15% vip gold, 10% pvp dmg
+    // Nivel 4: +5 miembros (25), 1000 soles, +15% conquista, 500 soles diarios, 15% vip gold, 8% pvp dmg
     expect(getLevelPerks(4)).toEqual({
       maxMembers: 25,
-      initialAttackSuns: 1100,
-      conquestDamageBonusPct: 20,
-      dailyPassiveSuns: 30,
+      initialAttackSuns: 1000,
+      conquestDamageBonusPct: 15,
+      dailyPassiveSuns: 500,
       vipGoldBonusPct: 15,
-      pvpDamageBonusPct: 10,
+      pvpDamageBonusPct: 8,
     })
   })
 
@@ -385,29 +385,33 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(ambushBonkChoy.x).toBeGreaterThan(80)
   })
 
-  it('calcula los soles iniciales del atacante según el nivel del Árbol Madre (500 base + 150 por nivel)', () => {
+  it('calcula los soles iniciales del atacante según el nivel del Árbol Madre (L1: 650, L2: 750, L3: 850, L4: 1000)', () => {
     const calculateAttackerInitialSuns = (motherTreeLevel: number) => {
-      return 500 + Math.max(0, motherTreeLevel) * 150
+      const lvl = motherTreeLevel ?? 1
+      if (lvl >= 4) return 1000
+      if (lvl === 3) return 850
+      if (lvl === 2) return 750
+      return 650
     }
 
-    // Nivel 0 (sin mejoras): 500 Soles
-    expect(calculateAttackerInitialSuns(0)).toBe(500)
+    // Nivel 0 (sin mejoras): 650 Soles
+    expect(calculateAttackerInitialSuns(0)).toBe(650)
 
     // Nivel 1: 650 Soles
     expect(calculateAttackerInitialSuns(1)).toBe(650)
 
-    // Nivel 2: 800 Soles
-    expect(calculateAttackerInitialSuns(2)).toBe(800)
+    // Nivel 2: 750 Soles
+    expect(calculateAttackerInitialSuns(2)).toBe(750)
 
-    // Nivel 3: 950 Soles
-    expect(calculateAttackerInitialSuns(3)).toBe(950)
+    // Nivel 3: 850 Soles
+    expect(calculateAttackerInitialSuns(3)).toBe(850)
 
-    // Nivel 4: 1100 Soles
-    expect(calculateAttackerInitialSuns(4)).toBe(1100)
+    // Nivel 4: 1000 Soles
+    expect(calculateAttackerInitialSuns(4)).toBe(1000)
 
     // Al crear el estado de batalla con initialAttackSuns, sunBank adopta el valor exacto
     const state = createBattleState(999, false, false, NIVEL_POR_DEFECTO, 'auth-v2', 1000, 1000, null, null, 5, true, calculateAttackerInitialSuns(2))
-    expect(state.sunBank).toBe(800)
+    expect(state.sunBank).toBe(750)
   })
 
   it('permite desenterrar con la pala y reembolsar el 100% de soles durante la fase de preparación', () => {

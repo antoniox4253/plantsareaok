@@ -427,6 +427,7 @@ export interface ClanFortressMatchOpponent {
   paidWith: 'clan_gold' | 'personal_gold'
   costPaid: number
   initialAttackSuns?: number
+  conquestDamageBonusPct?: number
 }
 
 export interface ClanFortressRaidResult {

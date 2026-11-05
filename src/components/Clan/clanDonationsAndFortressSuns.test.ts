@@ -50,4 +50,41 @@ describe('Clan Donations & Fortress Sun Budget System (Audit & Fixes)', () => {
     expect(editorCode).toContain('setLocalPlantCopies')
     expect(editorCode).toMatch(/\[plantId\]:\s*Math\.max\(0,\s*\(prev\[plantId\]\s*\|\|\s*0\)\s*-\s*1\)/)
   })
+
+  it('7. Migración 388 garantiza que search_clan_fortress_match asigna 750 soles para Árbol Madre Nivel 2 (en lugar de 400)', () => {
+    const mig388Path = path.resolve(__dirname, '../../../supabase/migrations/388-fix-clan-fortress-raid-suns-and-perks.sql')
+    const mig388Sql = fs.readFileSync(mig388Path, 'utf8')
+
+    // Verifica que v_initial_attack_suns se asigne con CASE y no con la fórmula legada 300 + lvl*50
+    expect(mig388Sql).not.toContain('v_initial_attack_suns := 300 + (v_attacker_tree_lvl * 50);')
+    expect(mig388Sql).toContain('WHEN 2 THEN 750')
+    expect(mig388Sql).toContain('WHEN 3 THEN 850')
+    expect(mig388Sql).toContain('WHEN 4 THEN 1000')
+    expect(mig388Sql).toContain('ELSE 650')
+  })
+
+  it('8. Battlefield.tsx tiene fallback alineado con los niveles del Árbol Madre', () => {
+    const battlefieldPath = path.resolve(__dirname, '../Battlefield/Battlefield.tsx')
+    const bfCode = fs.readFileSync(battlefieldPath, 'utf8')
+
+    expect(bfCode).toContain('getFortressAttackSunsForLevel')
+    expect(bfCode).not.toContain('500 + Math.max(0, treeLevel) * 150')
+  })
+
+  it('9. Migración 389 empareja exclusivamente entre clanes reales existentes y no bots', () => {
+    const mig389Path = path.resolve(__dirname, '../../../supabase/migrations/389-fix-clan-fortress-pvp-and-raid-history.sql')
+    const mig389Sql = fs.readFileSync(mig389Path, 'utf8')
+
+    expect(mig389Sql).toContain('COALESCE(is_npc, FALSE) = FALSE')
+    expect(mig389Sql).toContain('id <> v_my_clan_id')
+    expect(mig389Sql).not.toContain('is_npc = TRUE')
+  })
+
+  it('10. Migración 389 persiste stars_earned y stolen_gems en clan_war_attacks', () => {
+    const mig389Path = path.resolve(__dirname, '../../../supabase/migrations/389-fix-clan-fortress-pvp-and-raid-history.sql')
+    const mig389Sql = fs.readFileSync(mig389Path, 'utf8')
+
+    expect(mig389Sql).toMatch(/INSERT\s+INTO\s+public\.clan_war_attacks[\s\S]*?stars_earned[\s\S]*?stolen_gems/i)
+    expect(mig389Sql).toContain('p_stars_earned')
+  })
 })

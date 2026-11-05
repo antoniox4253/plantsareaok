@@ -3324,9 +3324,15 @@ export default function Clan({
 
                       <div className="clan-raid-item-middle">
                         <div className="clan-raid-stars">
-                          {entry.stars_earned > 0
-                            ? '⭐'.repeat(entry.stars_earned)
-                            : <span className="no-stars">0 ⭐ (Derrota)</span>}
+                          {isAttack ? (
+                            entry.stars_earned > 0
+                              ? '⭐'.repeat(entry.stars_earned)
+                              : <span className="no-stars">0 ⭐ (Derrota)</span>
+                          ) : (
+                            entry.is_win
+                              ? <span className="defense-win" style={{ color: '#22c55e', fontWeight: 800, fontSize: '12px' }}>🛡️ Defensa Exitosa</span>
+                              : <span className="no-stars">🛑 Vulnerada ({entry.stars_earned > 0 ? '⭐'.repeat(entry.stars_earned) : '0⭐'})</span>
+                          )}
                         </div>
                         <span className="clan-raid-damage">💥 {entry.damage_dealt.toLocaleString()} Daño</span>
                       </div>
@@ -3334,7 +3340,11 @@ export default function Clan({
                       <div className="clan-raid-item-right">
                         <div className="clan-raid-loot">
                           {Number(entry.stolen_gems) > 0 ? (
-                            <strong className="loot-positive">+{Number(entry.stolen_gems).toFixed(0)} 💎</strong>
+                            isAttack ? (
+                              <strong className="loot-positive">+{Number(entry.stolen_gems).toFixed(0)} 💎</strong>
+                            ) : (
+                              <strong className="loot-negative" style={{ color: '#ef4444' }}>-{Number(entry.stolen_gems).toFixed(0)} 💎</strong>
+                            )
                           ) : (
                             <span className="loot-zero">0 💎</span>
                           )}
@@ -4022,7 +4032,7 @@ export default function Clan({
                             <span className="clan-tree-perk-icon">☀️</span>
                             <div className="clan-tree-perk-meta">
                               <span className="clan-tree-perk-label">Límite Solar Defensivo</span>
-                              <strong className="clan-tree-perk-val">{1000 + (((fortressData?.motherTreeLevel ?? 1) - 1) * 500)} Soles</strong>
+                              <strong className="clan-tree-perk-val">{(fortressData?.maxDefenseSunsBudget || (fortressData?.motherTreeLevel === 2 ? 5000 : fortressData?.motherTreeLevel === 3 ? 8000 : (fortressData?.motherTreeLevel ?? 1) >= 4 ? 12000 : 2500)).toLocaleString()} Soles</strong>
                             </div>
                           </div>
 
@@ -6010,7 +6020,7 @@ export default function Clan({
           userGems={userGems}
           clanName={userClan.name}
           currentBudget={fortressData?.defenseSunsBudget || 1000}
-          maxBudget={fortressData?.maxDefenseSunsBudget || (1000 + (((fortressData?.motherTreeLevel || 1) - 1) * 500))}
+          maxBudget={fortressData?.maxDefenseSunsBudget || 2500}
           sunsSpent={fortressData?.sunsSpent ?? 0}
           motherTreeLevel={fortressData?.motherTreeLevel ?? 1}
         />

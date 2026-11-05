@@ -252,6 +252,14 @@ interface BattlefieldProps {
   currentUserId?: string | null
 }
 
+const getFortressAttackSunsForLevel = (lvl?: number): number => {
+  const l = typeof lvl === 'number' ? lvl : 1
+  if (l >= 4) return 1000
+  if (l === 3) return 850
+  if (l === 2) return 750
+  return 650
+}
+
 export default function Battlefield({
   currentUserId: propCurrentUserId = null,
   onBackToMenu,
@@ -891,7 +899,7 @@ export default function Battlefield({
       setClanRaidPhase('prep')
       soundManager.playSound('plantation', 0.8)
 
-      const fortressAttackSuns = newOpponent.initialAttackSuns || (500 + Math.max(0, treeLevel) * 150)
+      const fortressAttackSuns = newOpponent.initialAttackSuns || getFortressAttackSunsForLevel(treeLevel)
 
       startGame(
         Math.floor(Math.random() * 1000000),
@@ -2073,7 +2081,7 @@ export default function Battlefield({
     ) {
       hasClanFortressStartedRef.current = true
       const opp = currentFortressOpponent || clanFortressConfig!.targetClan
-      const fortressAttackSuns = opp.initialAttackSuns || (500 + Math.max(0, treeLevel) * 150)
+      const fortressAttackSuns = opp.initialAttackSuns || getFortressAttackSunsForLevel(treeLevel)
       startGame(
         seed || Math.floor(Math.random() * 1000000),
         false,
@@ -2282,7 +2290,7 @@ export default function Battlefield({
         soundManager.playSound('plantation', 0.8)
         soundManager.playBgm('battle')
 
-        const fortressAttackSuns = newOpponent.initialAttackSuns || (500 + Math.max(0, treeLevel) * 150)
+        const fortressAttackSuns = newOpponent.initialAttackSuns || getFortressAttackSunsForLevel(treeLevel)
 
         startGame(
           Math.floor(Math.random() * 1000000),
