@@ -1821,89 +1821,64 @@ function App() {
           />
         )}
         {screen === 'pass' && (
-          <div
-            className="ranking-screen"
-            style={{ backgroundImage: `url(${background})` }}
-          >
-            <div className="ranking-header">
-              <button
-                type="button"
-                className="ranking-back-btn"
-                onClick={() => {
-                  setScreen(passReturnScreen)
-                  setPassReturnScreen('menu')
-                }}
-              >
-                {passReturnScreen === 'plants-token' ? '⬅ VOLVER A TOKEN PLANTS' : '⬅ VOLVER AL MENÚ'}
-              </button>
-              <div className="ranking-header__center">
-                <h1 className="ranking-title">👑 PASE DE TEMPORADA VIP</h1>
-                <span className="ranking-subtitle">
-                  Gana partidas Ranked PvP (+25 XP) y completa Misiones Diarias (+35 XP) para reclamar recompensas exclusivas
-                </span>
-              </div>
-              <div className="ranking-header__right">
-                <button
-                  type="button"
-                  className="ranking-mute-btn"
-                  onClick={() => soundManager.toggleMute()}
-                >
-                  🔊
-                </button>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, minHeight: 0, padding: '6px 0' }}>
-              <BattlePass
-                userElo={userElo}
-                userXp={battlePassXp}
-                hasVipPass={hasVipPass}
-                claimedVipLevels={claimedVipLevels}
-                userGold={userGold}
-                userTokens={userTokens}
-                playerEnergy={playerEnergy}
-                onBackToMenu={() => {
-                  setScreen(passReturnScreen)
-                  setPassReturnScreen('menu')
-                }}
-                onBuyVipPass={handleBuyVipPassDirect}
-                onClaimReward={async (lvl) => {
-                  const res = await claimPassReward(lvl.reward, lvl.level)
-                  if (res?.success) {
-                    const isLvl20 = lvl.level === 20
-                    setActiveAppAlert({
-                      title: isLvl20 ? '🌟 ¡GRAN PREMIO SUPREMO RECLAMADO! 🌟' : '¡RECOMPENSA RECLAMADA!',
-                      message: isLvl20
-                        ? `👑 ¡HAS COMPLETADO EL PASE DE LA TEMPORADA 2!\n\nSe han entregado en tu cuenta:\n📦 1x Sobre de Semillas VIP Legendario en tu inventario de sobres.\n🃏 1x Carta Legendaria Aleatoria Garantizada en tu colección de Mi Jardín.\n💰 +1,000 Monedas de Oro adicionales.`
-                        : `👑 ¡RECOMPENSA VIP DEL NIVEL ${lvl.level} RECLAMADA!\n${lvl.reward.label}\nSe ha añadido a tu inventario de Mi Jardín.`,
-                      icon: isLvl20 ? '🏆' : '🎉',
-                    })
-                  } else {
-                    setActiveAppAlert({
-                      title: 'NO SE PUDO RECLAMAR',
-                      message: res?.error || 'No se pudo reclamar la recompensa.',
-                      icon: '⚠️',
-                    })
-                  }
-                }}
-                onClaimAllRewards={async (levels) => {
-                  const res = await claimAllPassRewards()
-                  if (res?.success) {
-                    setActiveAppAlert({
-                      title: '¡RECOMPENSAS RECLAMADAS!',
-                      message: `👑 ¡${levels.length} RECOMPENSAS VIP RECLAMADAS CON ÉXITO!\nSe han guardado en tu inventario de Mi Jardín.`,
-                      icon: '🎁',
-                    })
-                  } else {
-                    setActiveAppAlert({
-                      title: 'NO SE PUDO RECLAMAR',
-                      message: res?.error || 'No se pudieron reclamar las recompensas.',
-                      icon: '⚠️',
-                    })
-                  }
-                }}
-              />
-            </div>
+          <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+            <BattlePass
+              userElo={userElo}
+              userXp={battlePassXp}
+              hasVipPass={hasVipPass}
+              claimedVipLevels={claimedVipLevels}
+              userGold={userGold}
+              userTokens={userTokens}
+              playerEnergy={playerEnergy}
+              onBackToMenu={() => {
+                setScreen(passReturnScreen)
+                setPassReturnScreen('menu')
+              }}
+              onSelectTab={(tab) => {
+                setShopInitialTab(tab)
+                setScreen('shop')
+              }}
+              onOpenStreaming={() => {
+                setStreamingInitialTab('catalog')
+                setScreen('streaming')
+              }}
+              onBuyVipPass={handleBuyVipPassDirect}
+              onClaimReward={async (lvl) => {
+                const res = await claimPassReward(lvl.reward, lvl.level)
+                if (res?.success) {
+                  const isLvl20 = lvl.level === 20
+                  setActiveAppAlert({
+                    title: isLvl20 ? '🌟 ¡GRAN PREMIO SUPREMO RECLAMADO! 🌟' : '¡RECOMPENSA RECLAMADA!',
+                    message: isLvl20
+                      ? `👑 ¡HAS COMPLETADO EL PASE DE LA TEMPORADA 2!\n\nSe han entregado en tu cuenta:\n📦 1x Sobre de Semillas VIP Legendario en tu inventario de sobres.\n🃏 1x Carta Legendaria Aleatoria Garantizada en tu colección de Mi Jardín.\n💰 +1,000 Monedas de Oro adicionales.`
+                      : `👑 ¡RECOMPENSA VIP DEL NIVEL ${lvl.level} RECLAMADA!\n${lvl.reward.label}\nSe ha añadido a tu inventario de Mi Jardín.`,
+                    icon: isLvl20 ? '🏆' : '🎉',
+                  })
+                } else {
+                  setActiveAppAlert({
+                    title: 'NO SE PUDO RECLAMAR',
+                    message: res?.error || 'No se pudo reclamar la recompensa.',
+                    icon: '⚠️',
+                  })
+                }
+              }}
+              onClaimAllRewards={async (levels) => {
+                const res = await claimAllPassRewards()
+                if (res?.success) {
+                  setActiveAppAlert({
+                    title: '¡RECOMPENSAS RECLAMADAS!',
+                    message: `👑 ¡${levels.length} RECOMPENSAS VIP RECLAMADAS CON ÉXITO!\nSe han guardado en tu inventario de Mi Jardín.`,
+                    icon: '🎁',
+                  })
+                } else {
+                  setActiveAppAlert({
+                    title: 'NO SE PUDO RECLAMAR',
+                    message: res?.error || 'No se pudieron reclamar las recompensas.',
+                    icon: '⚠️',
+                  })
+                }
+              }}
+            />
           </div>
         )}
 

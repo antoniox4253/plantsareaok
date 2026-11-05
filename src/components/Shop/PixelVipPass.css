@@ -7,16 +7,27 @@
   position: relative;
   width: 100%;
   height: 100%;
-  max-width: 1672px;
-  max-height: 941px;
-  aspect-ratio: 1672 / 941;
   margin: 0 auto;
   overflow: hidden;
   user-select: none;
   background-color: #080d1a;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #ffffff;
+}
+
+/* Escenario con relación de aspecto estricta 1672/941 para sincronización píxel-perfect en cualquier pantalla */
+.pixel-vippass-stage {
+  position: relative;
+  aspect-ratio: 1672 / 941;
+  width: min(100%, calc(100vh * (1672 / 941)));
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
 }
 
 /* Imagen de arte maestro */
@@ -25,7 +36,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
   pointer-events: none;
   z-index: 1;
 }
@@ -150,9 +161,9 @@
   position: absolute;
   z-index: 8;
   left: calc(35 / 1672 * 100%);
-  top: calc(510 / 941 * 100%);
+  top: calc(410 / 941 * 100%);
   width: calc(1047 / 1672 * 100%);
-  height: calc(398 / 941 * 100%);
+  height: calc(498 / 941 * 100%);
   background: linear-gradient(155deg, rgba(11, 27, 49, 0.97) 5%, rgba(12, 24, 41, 0.98) 100%);
   border: 2px solid #dcaa2b;
   border-radius: 16px;

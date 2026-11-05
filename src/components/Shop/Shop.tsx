@@ -1291,6 +1291,14 @@ export default function Shop({
               hasVipPass={Boolean(hasVipPass)}
               claimedVipLevels={claimedVipLevels}
               onBuyVipPass={handleBuyVipFromShop}
+              onBackToMenu={onBack}
+              onSelectTab={(tab) => {
+                setActiveTab(tab as any)
+              }}
+              onOpenStreaming={onOpenStreaming}
+              userGold={userGold}
+              userTokens={userTokens}
+              playerEnergy={playerEnergy}
               onClaimReward={(lvl) => {
                 if (onClaimPassReward) {
                   void onClaimPassReward(lvl.reward, lvl.level)

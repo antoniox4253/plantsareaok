@@ -171,17 +171,16 @@ export default function PixelVipPass({
 
   return (
     <div className="pixel-vippass-root">
-
-
-      {/* Arte de fondo pixel-perfect */}
-      <picture>
-        <source srcSet="/game-assets/shop/pase_vip_fondo.webp" type="image/webp" />
-        <img
-          src="/game-assets/shop/pase_vip_fondo.png"
-          alt="Pase VIP Plant Arena"
-          className="pixel-vippass-art"
-        />
-      </picture>
+      <div className="pixel-vippass-stage">
+        {/* Arte de fondo pixel-perfect */}
+        <picture>
+          <source srcSet="/game-assets/shop/pase_vip_fondo.webp" type="image/webp" />
+          <img
+            src="/game-assets/shop/pase_vip_fondo.png"
+            alt="Pase VIP Plant Arena"
+            className="pixel-vippass-art"
+          />
+        </picture>
 
       {/* Badges interactivos en vivo: Oro, Gemas, Energía y Sonido */}
       <PixelHeaderBadges
@@ -461,8 +460,9 @@ export default function PixelVipPass({
         </div>
       </div>
 
-      {/* Toast informativo */}
-      {toastMessage && <div className="pixel-vippass-toast">{toastMessage}</div>}
+        {/* Toast informativo */}
+        {toastMessage && <div className="pixel-vippass-toast">{toastMessage}</div>}
+      </div>
     </div>
   )
 }

@@ -4169,12 +4169,26 @@ export default function Clan({
         // Aggregate top depositors (Gems and Gold)
         const depositorGems: Record<string, number> = {}
         const depositorGold: Record<string, number> = {}
+
+        // Seed with cumulative stats from clan members
+        ;(userClan?.members || []).forEach((m) => {
+          if (m.totalGoldDonated && m.totalGoldDonated > 0) {
+            depositorGold[m.name] = Math.max(depositorGold[m.name] || 0, m.totalGoldDonated)
+          }
+          if (m.totalGemsDonated && m.totalGemsDonated > 0) {
+            depositorGems[m.name] = Math.max(depositorGems[m.name] || 0, m.totalGemsDonated)
+          }
+        })
+
+        // Accumulate from logs in case logs have newer or extra contributors
         validDeposits.forEach((d) => {
           const isGold = d.currency === 'gold' || d.reason === 'deposit_gold' || (d.amountGold && d.amountGold > 0)
           if (isGold) {
-            depositorGold[d.depositorName] = (depositorGold[d.depositorName] || 0) + (d.amountGold || d.amountUsd || 0)
+            const amt = d.amountGold || d.amountUsd || 0
+            depositorGold[d.depositorName] = (depositorGold[d.depositorName] || 0) + amt
           } else {
-            depositorGems[d.depositorName] = (depositorGems[d.depositorName] || 0) + (d.amountGems || d.amountUsd || 0)
+            const amt = d.amountGems || d.amountUsd || 0
+            depositorGems[d.depositorName] = (depositorGems[d.depositorName] || 0) + amt
           }
         })
         const allDepositorNames = Array.from(new Set([...Object.keys(depositorGems), ...Object.keys(depositorGold)]))
@@ -4404,14 +4418,26 @@ export default function Clan({
                   <div className="clan-deposits-feed-box">
                     <h5>📜 REGISTRO DE DEPÓSITOS & ACTIVIDAD</h5>
                     <div className="clan-deposits-feed-list">
-                      {validDeposits.map((dep) => {
-                        const isGold = dep.currency === 'gold' || dep.reason === 'deposit_gold' || (dep.amountGold && dep.amountGold > 0)
-                        const reasonLabels: Record<string, string> = {
-                          deposit: '💎 Aporte de Gemas',
-                          deposit_gold: '💰 Aporte de Oro',
-                          join: '⚡ Cuota de Ingreso',
-                          repair: '⚡ Reactivación del Clan',
-                        }
+                      {validDeposits.length === 0 ? (
+                        <div style={{ padding: '24px 8px', color: '#94a3b8', fontSize: '11px', textAlign: 'center' }}>
+                          📜 No hay registros recientes de actividad o depósitos en el tesoro.
+                        </div>
+                      ) : (
+                        validDeposits.map((dep) => {
+                          const isGold = dep.currency === 'gold' || dep.reason === 'deposit_gold' || (dep.amountGold && dep.amountGold > 0)
+                          const reasonLabels: Record<string, string> = {
+                            deposit: '💎 Aporte de Gemas',
+                            deposit_gold: '💰 Aporte de Oro',
+                            join: '⚡ Cuota de Ingreso',
+                            repair: '⚡ Reactivación del Clan',
+                            fortress_raid: '🏰 Botín de Fortaleza',
+                            mother_tree_contribution: '🌳 Árbol Madre',
+                            donate_suns: '☀️ Soles Donados',
+                            invite_accepted: '🤝 Ingreso de Miembro',
+                            invite_accepted_sponsored: '🤝 Ingreso Patrocinado',
+                            invite_sponsored: '🤝 Invitación Patrocinada',
+                            season_reward: '🏆 Recompensa',
+                          }
                         const isMe = dep.depositorName === playerName
                         const timeAgoHours = Math.max(0, Math.round((Date.now() - dep.timestamp) / 3600000))
                         const timeText = timeAgoHours < 1 ? 'Hace unos instantes' : timeAgoHours < 24 ? `Hace ${timeAgoHours}h` : `Hace ${Math.round(timeAgoHours / 24)}d`
@@ -4437,7 +4463,7 @@ export default function Clan({
                             </div>
                           </div>
                         )
-                      })}
+                      }))}
                     </div>
                   </div>
                 </div>

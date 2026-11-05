@@ -92,10 +92,10 @@ export const UNIFIED_SHOP_TABS: TabDef[] = [
 
 // Contenedor de respaldo que cubre y unifica el arte previo en todas las pantallas
 const BACKDROP_BOX = {
-  x: 58,
-  y: 102,
-  w: 1545,
-  h: 86,
+  x: 54,
+  y: 98,
+  w: 1555,
+  h: 94,
 }
 
 export default function PixelShopTabs({

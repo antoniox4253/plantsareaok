@@ -14,6 +14,8 @@ interface BattlePassProps {
   onClaimReward: (level: PassLevel) => void
   onClaimAllRewards?: (levels: PassLevel[]) => void
   onBackToMenu?: () => void
+  onSelectTab?: (tab: 'packs' | 'pass' | 'gold' | 'energy' | 'market') => void
+  onOpenStreaming?: () => void
   userGold?: number
   userTokens?: number
   playerEnergy?: number
@@ -28,6 +30,8 @@ export default function BattlePass({
   onClaimReward,
   onClaimAllRewards,
   onBackToMenu,
+  onSelectTab,
+  onOpenStreaming,
   userGold,
   userTokens,
   playerEnergy,
@@ -39,6 +43,8 @@ export default function BattlePass({
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
         <PixelVipPass
           onBackToHome={onBackToMenu || (() => {})}
+          onOpenStreaming={onOpenStreaming}
+          onSelectTab={onSelectTab}
           onToggleClassic={() => setUseClassic(true)}
           userXp={userXp}
           userGold={userGold}

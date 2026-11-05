@@ -207,8 +207,8 @@ export default function FortressDonateModal({
                 <div className="fortress-flow-step">
                   <div className="step-badge">🛡️</div>
                   <div>
-                    <strong>3. Consumo en Defensas</strong>
-                    <p>Cada planta y trampa armada en la arena consume soles de este tesoro solar acumulado.</p>
+                    <strong>3. Bastión Defensivo del Clan</strong>
+                    <p>Permite a los Líderes plantar más defensas y trampas en la base comunal frente a invasiones rivales. <em>(En Asaltos Ofensivos, el atacante usa soles de asalto independientes)</em>.</p>
                   </div>
                 </div>
               </div>
