@@ -1,0 +1,33 @@
+{
+  "name": "Plant Arena - Batallas y Estrategia",
+  "short_name": "Plant Arena",
+  "description": "Juego de estrategia, batallas PvP tácticas y supervivencia de plantas.",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0a0f18",
+  "theme_color": "#1a2e1a",
+  "categories": ["games", "strategy"],
+  "icons": [
+    {
+      "src": "/icons/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -413,6 +413,14 @@ function registrarIlegal(
   })
 }
 
+export function esIlegalGrave(razon: string): boolean {
+  if (!razon) return false
+  if (razon === 'sol_no_existe_o_ya_fue_recogido') return false
+  if (razon === 'casilla_ocupada') return false
+  if (razon === 'dig_sin_planta_estatica') return false
+  return true
+}
+
 function validarCoordenadas(j: JugadaGrabada): string | null {
   if (j.kind === 'collect') return null
   if (!Number.isInteger(j.lane) || (j.lane as number) < 0 || (j.lane as number) > 2) {
@@ -687,10 +695,17 @@ export function recalcularGanadorAutoritativo(
 
   const ganadorP1 = ganadorDesdeVistaP1(vistaP1)
   const ganadorP2 = ganadorDesdeVistaP2(vistaP2)
-  const p1Ilegal = ilegales.some((x) => x.de === 1)
-  const p2Ilegal = ilegales.some((x) => x.de === 2)
+  const p1Ilegal = ilegales.some((x) => x.de === 1 && esIlegalGrave(x.razon))
+  const p2Ilegal = ilegales.some((x) => x.de === 2 && esIlegalGrave(x.razon))
   let ganador: 1 | 2 | null = null
   let motivo: ResultadoAutoritativo['motivo'] = 'no_result'
+
+  // Detección física contundente de destrucción del Árbol Madre:
+  const baseP1Destruida = vistaP1.p1BaseHp <= 0 || vistaP2.p2BaseHp <= 0
+  const baseP2Destruida = vistaP1.p2BaseHp <= 0 || vistaP2.p1BaseHp <= 0
+  const victoriaContundenteBase: 1 | 2 | null =
+    baseP2Destruida && !baseP1Destruida ? 1 :
+    baseP1Destruida && !baseP2Destruida ? 2 : null
 
   if (p1Ilegal && !p2Ilegal) {
     ganador = 2
@@ -698,11 +713,12 @@ export function recalcularGanadorAutoritativo(
   } else if (p2Ilegal && !p1Ilegal) {
     ganador = 1
     motivo = 'forfeit_p2'
+  } else if (victoriaContundenteBase !== null) {
+    // Si una base cayó físicamente a 0 HP y la otra sobrevivió, la victoria contundente
+    // en combate PREVALECE sobre discrepancias de catchup o micro-desincronizaciones.
+    ganador = victoriaContundenteBase
+    motivo = 'simulation'
   } else if (p1Ilegal && p2Ilegal) {
-    // Si AMBOS tienen acciones ilegales (ej. microdesincronizacion de red o spam al caer la base),
-    // pero el combate resolvio una victoria contundente por destruccion de base
-    // (una base cayo a 0 HP y la otra sobrevivio), la victoria en combate PREVALECE.
-    // Esto evita que un perdedor provoque illegal_both al desconectarse o spamear clics para eludir la derrota.
     if (ganadorP1 !== null && ganadorP1 === ganadorP2) {
       ganador = ganadorP1
       motivo = 'simulation'
@@ -715,18 +731,24 @@ export function recalcularGanadorAutoritativo(
     esEmpatePerfecto(vistaP1) &&
     esEmpatePerfecto(vistaP2)
   ) {
-    // decidirPorPuntos devuelve 'defeat' a los dos en un empate absolutamente
-    // simétrico para no inventar un ganador dependiente de la perspectiva.
     motivo = 'true_draw'
   } else if (ganadorP1 !== null && ganadorP1 === ganadorP2) {
     ganador = ganadorP1
+    motivo = 'simulation'
+  } else if (ganadorP1 !== null && ganadorP2 === null) {
+    // Si la simulación de P1 llegó a un resultado definitivo y la de P2 se detuvo
+    // en catchup sin contradecir a P1, se acepta el veredicto definitivo de P1.
+    ganador = ganadorP1
+    motivo = 'simulation'
+  } else if (ganadorP2 !== null && ganadorP1 === null) {
+    ganador = ganadorP2
     motivo = 'simulation'
   } else if (ganadorP1 !== ganadorP2) {
     motivo = 'engine_divergence'
   }
 
   const consistente =
-    (ganadorP1 !== null && ganadorP1 === ganadorP2) || motivo === 'true_draw'
+    ganador !== null || motivo === 'true_draw'
 
   return {
     ganador,

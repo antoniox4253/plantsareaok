@@ -6695,6 +6695,12 @@
    ============================================================================== */
 
 .clan-raids-history-pane {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -6703,6 +6709,24 @@
   margin: 0 auto;
   padding: 16px 20px 32px;
   box-sizing: border-box;
+}
+
+.clan-raids-history-pane::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clan-raids-history-pane::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 4px;
+}
+
+.clan-raids-history-pane::-webkit-scrollbar-thumb {
+  background: rgba(239, 68, 68, 0.45);
+  border-radius: 4px;
+}
+
+.clan-raids-history-pane::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.75);
 }
 
 .clan-raids-history-header {
@@ -8001,6 +8025,10 @@
 .clan-gacha-modal-box {
   width: 95vw;
   max-width: 420px;
+  max-height: 94vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
   background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
   border: 2px solid #f59e0b;
   border-radius: 20px;
@@ -8013,7 +8041,7 @@
 
 .clan-gacha-header {
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .clan-gacha-header-trophy {
@@ -8038,10 +8066,12 @@
 /* 3D Card Stage */
 .clan-gacha-card-stage {
   perspective: 1000px;
-  width: 250px;
+  -webkit-perspective: 1000px;
+  width: 260px;
   height: 350px;
-  margin: 12px 0;
+  margin: 8px auto;
   cursor: pointer;
+  position: relative;
 }
 
 .clan-gacha-3d-card {
@@ -8049,15 +8079,19 @@
   height: 100%;
   position: relative;
   transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transition: transform 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .clan-gacha-3d-card--flipped {
   transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg);
 }
 
 .clan-gacha-card-face {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border-radius: 16px;
@@ -8067,7 +8101,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 18px;
+  padding: 16px;
   box-sizing: border-box;
 }
 
@@ -8076,8 +8110,10 @@
   background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
   border: 3px solid #fbbf24;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(251, 191, 36, 0.4);
-  position: relative;
+  transform: rotateY(0deg) translateZ(1px);
+  -webkit-transform: rotateY(0deg) translateZ(1px);
   overflow: hidden;
+  z-index: 2;
 }
 
 .clan-gacha-back-shimmer {
@@ -8141,7 +8177,18 @@
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   border: 3px solid #22c55e;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(34, 197, 94, 0.4);
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(1px);
+  -webkit-transform: rotateY(180deg) translateZ(1px);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.clan-gacha-3d-card--flipped .clan-gacha-card-face--front {
+  z-index: 3;
+}
+
+.clan-gacha-3d-card--flipped .clan-gacha-card-face--back {
+  z-index: 0;
 }
 
 .clan-gacha-reveal-content {
@@ -8150,6 +8197,9 @@
   align-items: center;
   gap: 12px;
   width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .clan-gacha-reveal-lvl-tag {

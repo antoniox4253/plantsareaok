@@ -4745,6 +4745,8 @@ export default function Clan({
                 if (!isCardFlipped) {
                   soundManager.playSound('fusion_success', 1)
                   setIsCardFlipped(true)
+                } else {
+                  setShowWeeklyGachaModal(false)
                 }
               }}
             >

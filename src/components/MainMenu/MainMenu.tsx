@@ -30,6 +30,7 @@ import type { PlantId, TournamentModel, PlantCardInstance } from '../../types/ga
 import './MainMenu.css'
 import './BosqueRenovado.css'
 import { useGraphicsQuality } from '../../utils/graphicsSettings'
+import { useNetworkQuality } from '../../utils/networkSettings'
 
 interface MainMenuProps {
   userProfile?: {
@@ -256,6 +257,7 @@ export default function MainMenu({
 
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const { isLowGraphics, toggleGraphicsQuality } = useGraphicsQuality()
+  const { isLowSignal, toggleNetworkQuality } = useNetworkQuality()
   const [ticker, setTicker] = useState<number>(0)
   const [upcomingTournament, setUpcomingTournament] = useState<TournamentModel | null>(null)
   const [activeAlert, setActiveAlert] = useState<{
@@ -1550,6 +1552,17 @@ export default function MainMenu({
             >
               {isLowGraphics ? '⚡ Gráficos: Mínimos (Rendimiento)' : '🎨 Gráficos: Calidad Alta'}
             </button>
+            <button
+              type="button"
+              className="bosque-settings-menu__btn"
+              style={{ color: isLowSignal ? '#f59e0b' : undefined }}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                toggleNetworkQuality()
+              }}
+            >
+              {isLowSignal ? '📶 Red: Baja Señal / Ahorro (Activo)' : '🌐 Red: Normal (Estándar)'}
+            </button>
             <button type="button" className="bosque-settings-menu__btn" onClick={toggleFullscreen}>
               ⛶ Pantalla Completa
             </button>
@@ -1562,6 +1575,18 @@ export default function MainMenu({
               }}
             >
               🎮 Controles de Teclado
+            </button>
+            <button
+              type="button"
+              className="bosque-settings-menu__btn"
+              style={{ color: '#38bdf8' }}
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                setIsSettingsOpen(false)
+                window.dispatchEvent(new Event('open_pwa_install_guide'))
+              }}
+            >
+              📱 Instalar App en Celular
             </button>
             {onOpenBetaInfo && (
               <button

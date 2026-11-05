@@ -34,6 +34,7 @@ import { useAuth } from './hooks/useAuth'
 import AuthModal from './components/Auth/AuthModal'
 import AdminPanel from './components/Admin/AdminPanel'
 import BannedScreen from './components/Common/BannedScreen'
+import PwaInstallPrompt from './components/Common/PwaInstallPrompt'
 import { supabaseService, isSupabaseConfigured } from './services/supabaseService'
 import { ClanManager } from './utils/clanManager'
 
@@ -2242,6 +2243,7 @@ function App() {
       </GameFrame>
       <RotateOverlay />
       <CookieBanner screen={screen} />
+      <PwaInstallPrompt />
     </>
   )
 }

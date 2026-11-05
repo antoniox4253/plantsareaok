@@ -87,4 +87,53 @@ describe('Clan Donations & Fortress Sun Budget System (Audit & Fixes)', () => {
     expect(mig389Sql).toMatch(/INSERT\s+INTO\s+public\.clan_war_attacks[\s\S]*?stars_earned[\s\S]*?stolen_gems/i)
     expect(mig389Sql).toContain('p_stars_earned')
   })
+
+  it('11. Clan.css habilita scroll vertical fluido en .clan-raids-history-pane', () => {
+    const clanCssPath = path.resolve(__dirname, 'Clan.css')
+    const clanCss = fs.readFileSync(clanCssPath, 'utf8')
+
+    // Verificar que .clan-raids-history-pane posea flex: 1, min-height: 0 y overflow-y: auto
+    const paneMatch = clanCss.match(/\.clan-raids-history-pane\s*\{([^}]+)\}/)
+    expect(paneMatch).toBeTruthy()
+    const paneCss = paneMatch![1]
+
+    expect(paneCss).toContain('flex: 1;')
+    expect(paneCss).toContain('min-height: 0;')
+    expect(paneCss).toContain('overflow-y: auto;')
+    expect(paneCss).toContain('-webkit-overflow-scrolling: touch;')
+  })
+
+  it('12. Modal de Cofre de Clan (Gacha) tiene caras alineadas y no se desplaza fuera de pantalla', () => {
+    const clanCssPath = path.resolve(__dirname, 'Clan.css')
+    const clanCss = fs.readFileSync(clanCssPath, 'utf8')
+
+    // 1. .clan-gacha-card-face debe tener position: absolute, top: 0, left: 0
+    const faceMatch = clanCss.match(/\.clan-gacha-card-face\s*\{([^}]+)\}/)
+    expect(faceMatch).toBeTruthy()
+    const faceCss = faceMatch![1]
+    expect(faceCss).toContain('position: absolute;')
+    expect(faceCss).toContain('top: 0;')
+    expect(faceCss).toContain('left: 0;')
+    expect(faceCss).toContain('backface-visibility: hidden;')
+
+    // 2. .clan-gacha-card-face--back NO debe tener position: relative (que empujaba la cara frontal 350px abajo)
+    const backMatch = clanCss.match(/\.clan-gacha-card-face--back\s*\{([^}]+)\}/)
+    expect(backMatch).toBeTruthy()
+    const backCss = backMatch![1]
+    expect(backCss).not.toContain('position: relative;')
+    expect(backCss).toContain('rotateY(0deg)')
+
+    // 3. .clan-gacha-card-face--front debe tener transform: rotateY(180deg)
+    const frontMatch = clanCss.match(/\.clan-gacha-card-face--front\s*\{([^}]+)\}/)
+    expect(frontMatch).toBeTruthy()
+    const frontCss = frontMatch![1]
+    expect(frontCss).toContain('rotateY(180deg)')
+
+    // 4. Modal box debe tener max-height y overflow-y: auto para pantallas pequeñas
+    const modalMatch = clanCss.match(/\.clan-gacha-modal-box\s*\{([^}]+)\}/)
+    expect(modalMatch).toBeTruthy()
+    const modalCss = modalMatch![1]
+    expect(modalCss).toContain('max-height: 94vh;')
+    expect(modalCss).toContain('overflow-y: auto;')
+  })
 })

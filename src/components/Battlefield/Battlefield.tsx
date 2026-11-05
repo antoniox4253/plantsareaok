@@ -43,6 +43,7 @@ import { TICK_MS } from '../../engine/time'
 import { soundManager } from '../../utils/audioManager'
 import { toggleFullscreen } from '../../utils/fullscreen'
 import { useGraphicsQuality } from '../../utils/graphicsSettings'
+import { isLowSignalMode, getMaxInFlightActions, getAsyncPollInterval, getPvpRecoveryInterval } from '../../utils/networkSettings'
 import { resolverLiquidacionPartida } from '../../engine/asyncOpponent'
 import { leerMazo, mejorasDeLaCartaEnSlot, type CartaDeMazo } from '../../engine/mazoDeLaSala'
 import { StrategicPlaytestPostMatch } from '../StrategicPlaytest/StrategicPlaytestPostMatch'
@@ -616,9 +617,10 @@ export default function Battlefield({
     setClockSyncStatus('syncing')
     setClockSyncError(null)
 
-    battleService.startMatchClock(targetRoomId)
-      .then((reloj) => {
-        // Protección contra respuestas stale o doble inicio:
+    const trySync = async (retryCount = 0) => {
+      if (matchClockGenRef.current !== attemptGen) return
+      try {
+        const reloj = await battleService.startMatchClock(targetRoomId)
         if (matchClockGenRef.current !== attemptGen || startedGensRef.current.has(attemptGen)) {
           return
         }
@@ -650,14 +652,27 @@ export default function Battlefield({
           treeSkinRef.current,
           rivalTreeSkinRef.current
         )
-      })
-      .catch((err: any) => {
-        if (matchClockGenRef.current !== attemptGen) {
+      } catch (err: any) {
+        if (matchClockGenRef.current !== attemptGen) return
+
+        const maxRetries = isLowSignalMode() ? 5 : 4
+        if (retryCount < maxRetries) {
+          const delays = [600, 1200, 2000, 3200, 4500]
+          const nextDelay = delays[retryCount] || 2500
+          console.warn(`[Battlefield] Error de reloj (intento ${retryCount + 1}/${maxRetries + 1}), reintentando en ${nextDelay}ms...`, err?.message)
+          setClockSyncStatus('syncing')
+          setClockSyncError(`Reintentando sincronizar partida (${retryCount + 1}/${maxRetries})...`)
+          setTimeout(() => {
+            void trySync(retryCount + 1)
+          }, nextDelay)
           return
         }
+
         setClockSyncStatus('error')
         setClockSyncError(err?.message || 'No se pudo sincronizar la partida con el servidor.')
-      })
+      }
+    }
+    void trySync(0)
   }, [seed, soyP1, mazosDeLaSala, isAsyncMatch, engineVersion, userElo, startGame])
 
 
@@ -981,7 +996,7 @@ export default function Battlefield({
   const ultimaSeqAsyncRef = useRef<number>(0)
   const aplicadasRef = useRef<Set<number>>(new Set())
 
-  const MAX_IN_FLIGHT_ACTIONS = 3
+  const MAX_IN_FLIGHT_ACTIONS = getMaxInFlightActions()
   const inFlightCountRef = useRef(0)
   const [, setInFlightCount] = useState(0)
   const redBloqueadaRef = useRef(false)
@@ -1314,7 +1329,7 @@ export default function Battlefield({
             programarRecuperar()
           }
         }
-      }, 3000)
+      }, getPvpRecoveryInterval())
     }
 
     const recuperar = async () => {
@@ -1395,7 +1410,7 @@ export default function Battlefield({
       if (cancelado || enVuelo || capturedRoomId !== roomIdRef.current || gameStatusRef.current !== 'playing') return
       const requestGeneration = sessionGenerationRef.current
       enVuelo = true
-      let nextDelayMs = 450
+      let nextDelayMs = getAsyncPollInterval()
 
       try {
         const res = await battleService.pollRankedAsyncIntents(
@@ -1430,13 +1445,15 @@ export default function Battlefield({
           if (typeof res.maxRevealedTick === 'number' && typeof res.serverTick === 'number') {
             const holgura = res.maxRevealedTick - res.serverTick
             if (holgura > 30) {
-              nextDelayMs = 800
+              nextDelayMs = isLowSignalMode() ? 1500 : 800
             } else if (holgura > 18) {
-              nextDelayMs = 500
+              nextDelayMs = isLowSignalMode() ? 1200 : 500
+            } else {
+              nextDelayMs = isLowSignalMode() ? 900 : 450
             }
           }
         } else {
-          nextDelayMs = 600
+          nextDelayMs = isLowSignalMode() ? 1200 : 600
         }
       } catch {
         nextDelayMs = 600
@@ -2188,6 +2205,7 @@ export default function Battlefield({
   }, [tick, roomId, tomarHuellasPendientes, isAsyncMatch])
 
   const [showSurrenderModal, setShowSurrenderModal] = useState<boolean>(false)
+  const [showArenaAdsRetreatConfirm, setShowArenaAdsRetreatConfirm] = useState<boolean>(false)
 
   const handleSurrenderClick = () => {
     soundManager.playSound('click', 0.5)
@@ -4371,15 +4389,12 @@ export default function Battlefield({
                         : undefined
                     }
                     onClick={() => {
-                      soundManager.playBgm('menu')
-                      if (currentArenaAdsRun && onArenaAdsRetreat) {
-                        onArenaAdsRetreat(
-                          currentArenaAdsRun.accumulatedRewards,
-                          currentArenaAdsRun.multiplier || 1,
-                          currentArenaAdsRun.newlyClaimedLevels
-                        )
+                      if (currentArenaAdsRun) {
+                        soundManager.playSound('click', 0.4)
+                        setShowArenaAdsRetreatConfirm(true)
                         return
                       }
+                      soundManager.playBgm('menu')
                       if (onBackToMenu) onBackToMenu()
                     }}
                   >
@@ -4502,6 +4517,104 @@ export default function Battlefield({
                 onClick={handleConfirmSurrender}
               >
                 🏳️ SÍ, RENDIRME
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Arena Ads Cashout / Retreat Confirmation Modal */}
+      {showArenaAdsRetreatConfirm && currentArenaAdsRun && (
+        <div className="battle-surrender-modal-overlay" onClick={() => setShowArenaAdsRetreatConfirm(false)}>
+          <div
+            className="battle-surrender-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              borderColor: '#f59e0b',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(245, 158, 11, 0.4)',
+            }}
+          >
+            <div className="battle-surrender-modal__icon">💰</div>
+            <h3 className="battle-surrender-modal__title" style={{ color: '#fbbf24' }}>
+              ¿RETIRARTE Y COBRAR BOTÍN?
+            </h3>
+            <p className="battle-surrender-modal__desc">
+              Has superado el <strong>Nivel {currentArenaAdsRun.level}</strong> de Survivor ADS. Si te retiras ahora, <strong>la expedición finalizará</strong> y asegurarás tus recompensas acumuladas:
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                marginBottom: '14px',
+              }}
+            >
+              <span
+                style={{
+                  background: 'rgba(16, 185, 129, 0.25)',
+                  border: '1px solid #10b981',
+                  color: '#34d399',
+                  padding: '3px 10px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: 900,
+                }}
+              >
+                🌱 {currentArenaAdsRun.accumulatedRewards.tokenPlants ?? Math.max(0, currentArenaAdsRun.level * 2)} Token PLANTS
+              </span>
+              {Boolean(currentArenaAdsRun.accumulatedRewards.gems && currentArenaAdsRun.accumulatedRewards.gems > 0) && (
+                <span
+                  style={{
+                    background: 'rgba(56, 189, 248, 0.25)',
+                    border: '1px solid #38bdf8',
+                    color: '#38bdf8',
+                    padding: '3px 10px',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    fontWeight: 900,
+                  }}
+                >
+                  💎 +{currentArenaAdsRun.accumulatedRewards.gems} Gemas
+                </span>
+              )}
+            </div>
+            <div className="battle-surrender-modal__actions">
+              <button
+                type="button"
+                className="battle-surrender-modal__btn battle-surrender-modal__btn--cancel"
+                onClick={() => {
+                  soundManager.playSound('click', 0.4)
+                  setShowArenaAdsRetreatConfirm(false)
+                }}
+              >
+                ⚔️ SEGUIR LUCHANDO
+              </button>
+              <button
+                type="button"
+                className="battle-surrender-modal__btn"
+                style={{
+                  background: 'linear-gradient(180deg, #f59e0b 0%, #d97706 100%)',
+                  border: '1.5px solid #fbbf24',
+                  color: '#fff',
+                  fontWeight: 900,
+                  boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
+                }}
+                onClick={() => {
+                  soundManager.playBgm('menu')
+                  setShowArenaAdsRetreatConfirm(false)
+                  if (onArenaAdsRetreat) {
+                    onArenaAdsRetreat(
+                      currentArenaAdsRun.accumulatedRewards,
+                      currentArenaAdsRun.multiplier || 1,
+                      currentArenaAdsRun.newlyClaimedLevels
+                    )
+                  } else if (onBackToMenu) {
+                    onBackToMenu()
+                  }
+                }}
+              >
+                💰 SÍ, RETIRARME
               </button>
             </div>
           </div>

@@ -58,6 +58,7 @@ export default function ArenaAdsModal({
   const [activeView, setActiveView] = useState<'lobby' | 'prep'>('lobby')
   const [selectedPlantOption, setSelectedPlantOption] = useState<ArenaAdsPlantOption | null>(null)
   const [claimSummary, setClaimSummary] = useState<ArenaAdsLoot | null>(null)
+  const [showCashoutConfirm, setShowCashoutConfirm] = useState<boolean>(false)
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
   const [isFullscreenActive, setIsFullscreenActive] = useState<boolean>(() => {
     if (typeof document !== 'undefined') return isFullscreen()
@@ -1117,7 +1118,10 @@ export default function ArenaAdsModal({
                     <button
                       type="button"
                       className="arena-ads-btn arena-ads-btn--cashout"
-                      onClick={handleCashout}
+                      onClick={() => {
+                        soundManager.playSound('click', 0.4)
+                        setShowCashoutConfirm(true)
+                      }}
                       disabled={isProcessing}
                     >
                       💰 RETIRARSE ({activeRun.accumulatedRewards.tokenPlants ?? Math.max(0, (activeRun.level - 1) * 2)} 🌱)
@@ -1156,7 +1160,10 @@ export default function ArenaAdsModal({
                 <button
                   type="button"
                   className="arena-ads-btn arena-ads-btn--cashout"
-                  onClick={handleCashout}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setShowCashoutConfirm(true)
+                  }}
                   disabled={isProcessing}
                   title="Retírate ahora con todo lo que has acumulado"
                 >
@@ -1185,7 +1192,10 @@ export default function ArenaAdsModal({
                         fontWeight: 800,
                         flex: 1,
                       }}
-                      onClick={handleCashout}
+                      onClick={() => {
+                        soundManager.playSound('click', 0.4)
+                        setShowCashoutConfirm(true)
+                      }}
                       disabled={isProcessing}
                     >
                       🏆 COBRAR BOTÍN
@@ -1221,6 +1231,77 @@ export default function ArenaAdsModal({
             </>
           )}
         </div>
+
+        {/* MODAL DE CONFIRMACIÓN DE RETIRO (EVITAR CLICKS ACCIDENTALES) */}
+        {showCashoutConfirm && activeRun && (
+          <div className="arena-ads-confirm-overlay" onClick={() => setShowCashoutConfirm(false)}>
+            <div className="arena-ads-confirm-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="arena-ads-confirm-icon">💰</div>
+              <h3 className="arena-ads-confirm-title">¿SEGURO QUE DESEAS RETIRARTE?</h3>
+              <p className="arena-ads-confirm-desc">
+                Estás en el <strong>Nivel {activeRun.level}</strong> de Survivor ADS.
+                Si te retiras ahora, <strong>tu expedición finalizará</strong> y asegurarás tu botín acumulado:
+              </p>
+
+              <div className="arena-ads-loot-pills arena-ads-loot-pills--center" style={{ margin: '8px 0 14px' }}>
+                <div className="arena-ads-loot-pill" style={{ background: 'rgba(16, 185, 129, 0.25)', border: '1px solid #10b981', color: '#34d399', fontWeight: 900 }}>
+                  <span>🌱</span> {activeRun.accumulatedRewards.tokenPlants ?? Math.max(0, (activeRun.level - 1) * 2)} Token PLANTS
+                </div>
+                {Boolean(activeRun.accumulatedRewards.gems && activeRun.accumulatedRewards.gems > 0) && (
+                  <div className="arena-ads-loot-pill arena-ads-loot-pill--gems">
+                    <span>💎</span> +{activeRun.accumulatedRewards.gems} Gemas
+                  </div>
+                )}
+                {Boolean(activeRun.accumulatedRewards.gold && activeRun.accumulatedRewards.gold > 0) && (
+                  <div className="arena-ads-loot-pill arena-ads-loot-pill--gold">
+                    <GoldIcon size={16} /> +{activeRun.accumulatedRewards.gold} Oro
+                  </div>
+                )}
+                {Math.floor(Math.max(0, activeRun.level - 1) / 10) > 0 && (
+                  <div className="arena-ads-loot-pill" style={{ background: 'rgba(56, 189, 248, 0.25)', border: '1px solid #38bdf8', color: '#38bdf8', fontWeight: 900 }}>
+                    <span>📦</span> {Math.floor(Math.max(0, activeRun.level - 1) / 10)} Sobres Básicos
+                  </div>
+                )}
+                {Math.floor(Math.max(0, activeRun.level - 1) / 25) > 0 && (
+                  <div className="arena-ads-loot-pill" style={{ background: 'rgba(168, 85, 247, 0.25)', border: '1px solid #a855f7', color: '#c084fc', fontWeight: 900 }}>
+                    <span>🌟</span> {Math.floor(Math.max(0, activeRun.level - 1) / 25)} Cartas Raras
+                  </div>
+                )}
+              </div>
+
+              <div className="arena-ads-confirm-warning">
+                ⚠️ No podrás continuar esta expedición desde el Nivel {activeRun.level}.
+              </div>
+
+              <div className="arena-ads-confirm-actions">
+                <button
+                  type="button"
+                  className="arena-ads-btn arena-ads-btn--primary"
+                  onClick={() => {
+                    soundManager.playSound('click', 0.4)
+                    setShowCashoutConfirm(false)
+                  }}
+                  disabled={isProcessing}
+                  style={{ flex: 1.2 }}
+                >
+                  ⚔️ SEGUIR JUGANDO
+                </button>
+                <button
+                  type="button"
+                  className="arena-ads-btn arena-ads-btn--cashout"
+                  onClick={() => {
+                    setShowCashoutConfirm(false)
+                    void handleCashout()
+                  }}
+                  disabled={isProcessing}
+                  style={{ flex: 1 }}
+                >
+                  {isProcessing ? '⏳ COBRANDO...' : '💰 SÍ, RETIRARME'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body

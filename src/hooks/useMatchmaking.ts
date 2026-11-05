@@ -68,6 +68,7 @@ export function useMatchmaking() {
   const vivoRef = useRef<boolean>(true)
   const buscandoRef = useRef<boolean>(false)
   const sondeandoRef = useRef<boolean>(false)
+  const transientErrorCountRef = useRef<number>(0)
 
   const pararSondeo = useCallback(() => {
     if (intervaloRef.current) {
@@ -82,6 +83,7 @@ export function useMatchmaking() {
     buscandoRef.current = false
     claimingRef.current = false
     sondeandoRef.current = false
+    transientErrorCountRef.current = 0
     if (vivoRef.current) setEstado(ESTADO_INICIAL)
     await MatchmakingService.cancelMatchmaking()
   }, [pararSondeo])
@@ -98,9 +100,25 @@ export function useMatchmaking() {
     if (!vivoRef.current) return
 
     if (r.error) {
+      const errStr = String(r.error)
+      const isTransient =
+        errStr === 'network_error' ||
+        errStr.includes('fetch') ||
+        errStr.includes('NetworkError') ||
+        errStr.includes('Failed to fetch') ||
+        errStr.includes('timeout') ||
+        errStr.includes('Load failed')
+
+      if (isTransient) {
+        transientErrorCountRef.current += 1
+        if (transientErrorCountRef.current <= 5) {
+          return
+        }
+      }
       setEstado((e) => ({ ...e, error: r.error ?? null }))
       return
     }
+    transientErrorCountRef.current = 0
 
     if (r.matched && r.roomId) {
       pararSondeo()
