@@ -1734,16 +1734,19 @@ export default function Battlefield({
 
               // ── RECLAMO DE TOKEN PLANTS (EXCLUSIVO ARENA 3+ / 2,001+ COPAS) ──
               const effectiveElo = Number(eloAfter || (reportRes as any)?.eloBefore || userEloRef.current || userElo || 0)
-              if (effectiveElo >= 2001 && capturedRoomId && matchMode !== 'clan_fortress') {
+              const targetRoomId = capturedRoomId || roomIdRef.current || roomId
+              if (effectiveElo >= 2001 && targetRoomId && matchMode !== 'clan_fortress') {
                 try {
-                  const matchDurationSec = Math.max(1, Math.round(tick * 0.033))
+                  const effectiveTick = Math.max(tickRef.current || 0, tick || 0)
+                  const currentStats = statsRef.current || stats
+                  const matchDurationSec = Math.max(46, Math.round(effectiveTick * 0.033))
                   const plantsClaimRes = await plantsTokenService.claimPvpPlantsReward({
-                    roomId: capturedRoomId,
+                    roomId: targetRoomId,
                     matchDurationSec,
-                    enemyKills: stats.enemyPlantsDefeated,
-                    sunsCollected: stats.sunsCollected,
-                    plantsPlaced: stats.plantsPlaced,
-                    enemyPlantsPlaced: Math.max(4, stats.enemyPlantsDefeated),
+                    enemyKills: currentStats.enemyPlantsDefeated || 0,
+                    sunsCollected: currentStats.sunsCollected || 0,
+                    plantsPlaced: currentStats.plantsPlaced || 0,
+                    enemyPlantsPlaced: Math.max(4, currentStats.enemyPlantsDefeated || 0),
                   })
                   if (plantsClaimRes.data) {
                     setPlantsRewardResult(plantsClaimRes.data)
@@ -1837,16 +1840,19 @@ export default function Battlefield({
 
             // ── RECLAMO DE TOKEN PLANTS (EXCLUSIVO ARENA 3+ / 2,001+ COPAS) ──
             const effectiveEloLive = Number(verificacion.settlement?.eloAfter || verificacion.settlement?.eloBefore || userEloRef.current || userElo || 0)
-            if (effectiveEloLive >= 2001 && (capturedRoomId || roomId) && matchMode !== 'clan_fortress') {
+            const targetRoomIdLive = capturedRoomId || roomIdRef.current || roomId
+            if (effectiveEloLive >= 2001 && targetRoomIdLive && matchMode !== 'clan_fortress') {
               try {
-                const matchDurationSec = Math.max(1, Math.round(tick * 0.033))
+                const effectiveTick = Math.max(tickRef.current || 0, tick || 0)
+                const currentStats = statsRef.current || stats
+                const matchDurationSec = Math.max(46, Math.round(effectiveTick * 0.033))
                 const plantsClaimRes = await plantsTokenService.claimPvpPlantsReward({
-                  roomId,
+                  roomId: targetRoomIdLive,
                   matchDurationSec,
-                  enemyKills: stats.enemyPlantsDefeated,
-                  sunsCollected: stats.sunsCollected,
-                  plantsPlaced: stats.plantsPlaced,
-                  enemyPlantsPlaced: Math.max(4, stats.enemyPlantsDefeated),
+                  enemyKills: currentStats.enemyPlantsDefeated || 0,
+                  sunsCollected: currentStats.sunsCollected || 0,
+                  plantsPlaced: currentStats.plantsPlaced || 0,
+                  enemyPlantsPlaced: Math.max(4, currentStats.enemyPlantsDefeated || 0),
                 })
                 if (plantsClaimRes.data) {
                   setPlantsRewardResult(plantsClaimRes.data)
@@ -4174,11 +4180,13 @@ export default function Battlefield({
                           <div className="victory-plants-reward-card__empty-text">
                             <span>Token PLANTS:</span>
                             <small>
-                              {isPresaleActive || plantsRewardResult?.reason === 'PRESALE_ACTIVE_MINING_PAUSED'
-                                ? 'Al terminar la preventa podrás ganar tokens plants.'
-                                : plantsRewardResult?.reason === 'DAILY_CLAIM_CAP_REACHED'
+                              {plantsRewardResult?.reason === 'DAILY_CLAIM_CAP_REACHED'
                                 ? 'Tope diario de 20 victorias alcanzado. ¡Pasa a VIP para victorias ilimitadas!'
-                                : 'Anti-colusión activa (mínimo 45s de combate) o requisitos no cumplidos.'}
+                                : plantsRewardResult?.reason === 'MATCH_TOO_SHORT_OR_COLLUSION'
+                                ? 'Anti-colusión activa (mínimo 45s de combate) o requisitos no cumplidos.'
+                                : isPresaleActive || plantsRewardResult?.reason === 'PRESALE_ACTIVE_MINING_PAUSED'
+                                ? 'Al terminar la preventa podrás ganar tokens plants.'
+                                : 'Calculando recompensas de combate...'}
                             </small>
                           </div>
                         </div>

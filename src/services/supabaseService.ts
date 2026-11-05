@@ -5432,6 +5432,46 @@ export const SupabaseService = {
     }
   },
 
+  /** Acredita un depósito de Yape (Soles S/.) procesado por la pasarela con tasa 3.50 PEN = 100 Gemas */
+  async confirmYapeDeposit(params: {
+    paymentId: string
+    orderId: string
+    amountPen: number
+    securityCode?: string
+    rawData?: any
+  }): Promise<{
+    success: boolean
+    paymentId?: string
+    orderId?: string
+    amountPen?: number
+    amountGems?: number
+    baseGems?: number
+    bonusGems?: number
+    retirableGems?: number
+    lockedGems?: number
+    error?: string
+    message?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'NO_SUPABASE' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('confirm_yape_deposit', {
+        p_payment_id: params.paymentId,
+        p_order_id: params.orderId,
+        p_amount_pen: params.amountPen,
+        p_security_code: params.securityCode || '---',
+        p_raw_data: params.rawData || {},
+      })
+      if (error) {
+        logError('confirmYapeDeposit', error)
+        return { success: false, error: error.code || 'RPC_ERROR', message: error.message }
+      }
+      return data ?? { success: false }
+    } catch (e: any) {
+      logError('confirmYapeDeposit', e)
+      return { success: false, error: 'EXCEPTION', message: e?.message }
+    }
+  },
+
   /** Gasta gemas consumiendo prioritariamente el saldo no retirable (bonos) y completando con el saldo retirable */
   async spendUserGems(amountGems: number): Promise<{
     success: boolean

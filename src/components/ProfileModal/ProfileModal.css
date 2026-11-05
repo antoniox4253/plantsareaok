@@ -2013,3 +2013,219 @@
   font-size: 9px;
   color: #64748b;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SELECTOR DE MÉTODOS DE DEPÓSITO (USDT vs YAPE)
+   ══════════════════════════════════════════════════════════════════════════ */
+.deposit-method-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.deposit-method-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+}
+
+.deposit-method-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.deposit-method-btn--active {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.18) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-color: #fbbf24;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.25);
+  color: #ffffff;
+}
+
+.deposit-method-btn--active.deposit-method-btn--yape {
+  background: linear-gradient(135deg, rgba(116, 34, 132, 0.35) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border-color: #00d2b6;
+  box-shadow: 0 0 18px rgba(0, 210, 182, 0.28);
+}
+
+.deposit-method-icon {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.deposit-method-icon--yape {
+  background: #742284;
+  color: #00d2b6;
+  font-weight: 900;
+  font-size: 18px;
+  font-style: italic;
+  box-shadow: 0 2px 8px rgba(0, 210, 182, 0.3);
+}
+
+.deposit-method-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.deposit-method-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.deposit-method-subtitle {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.deposit-method-btn--active .deposit-method-subtitle {
+  color: #e2e8f0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TARJETA Y ELEMENTOS DE YAPE (PERÚ)
+   ══════════════════════════════════════════════════════════════════════════ */
+.deposit-yape-card {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(10, 15, 29, 0.95) 100%);
+  border: 1.5px solid #742284;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(116, 34, 132, 0.2);
+}
+
+.deposit-yape-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.deposit-yape-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deposit-yape-badge-logo {
+  background: #742284;
+  color: #00d2b6;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.deposit-yape-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.deposit-yape-speed-badge {
+  background: rgba(0, 210, 182, 0.15);
+  border: 1px solid #00d2b6;
+  color: #00d2b6;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.yape-rate-pill {
+  background: rgba(116, 34, 132, 0.25);
+  border: 1px solid rgba(116, 34, 132, 0.5);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #f1f5f9;
+}
+
+.yape-embedded-container {
+  width: 100%;
+  margin: 6px 0;
+  min-height: 120px;
+}
+
+.yape-success-banner {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  animation: profilePopIn 0.3s ease;
+}
+
+.yape-success-icon {
+  font-size: 28px;
+}
+
+.yape-success-info h4 {
+  margin: 0;
+  color: #34d399;
+  font-size: 14px;
+}
+
+.yape-success-info p {
+  margin: 2px 0 0;
+  color: #e2e8f0;
+  font-size: 11px;
+}
+
+.yape-new-deposit-btn {
+  background: #059669;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.yape-new-deposit-btn:hover {
+  background: #10b981;
+  transform: scale(1.03);
+}
+
+@media (max-width: 600px) {
+  .deposit-method-nav {
+    grid-template-columns: 1fr;
+  }
+}

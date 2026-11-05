@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import {
   UserManager,
   PRESET_AVATARS,
@@ -88,6 +88,17 @@ export default function ProfileModal({
   const [metaMaskUsdtBalance, setMetaMaskUsdtBalance] = useState<number | null>(null)
   const [showManualTransferSection, setShowManualTransferSection] = useState<boolean>(false)
   const isMetaMaskAvailable = Web3DepositService.isMetaMaskAvailable()
+
+  // ── MÉTODO DE DEPÓSITO SELECCIONADO (USDT vs YAPE) ─────────────────────────
+  const [depositMethod, setDepositMethod] = useState<'usdt' | 'yape'>('usdt')
+
+  // ── ESTADO YAPE (PERÚ - SOLES) ─────────────────────────────────────────────
+  const [yapeAmount, setYapeAmount] = useState<number>(25.0)
+  const [customYapeInput, setCustomYapeInput] = useState<string>('')
+  const [isYapeProcessing, setIsYapeProcessing] = useState<boolean>(false)
+  const [yapeSuccessData, setYapeSuccessData] = useState<{ gems: number; soles: number; code?: string } | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string>('')
+  const yapeContainerRef = useRef<HTMLDivElement | null>(null)
 
 
 
@@ -301,6 +312,138 @@ export default function ProfileModal({
   }
 
   // ── REGISTRAR WALLET PERSONAL DE DEPÓSITO ──────────────────────────────────
+  // Cargar UID autenticado para armar el orderId seguro de Yape
+  useEffect(() => {
+    if (!isOpen) return
+    void supabase.auth.getUser().then(({ data }) => {
+      if (data?.user?.id) {
+        setCurrentUserId(data.user.id)
+      }
+    })
+  }, [isOpen])
+
+  const yapeOrderId = useMemo(() => {
+    const uid = currentUserId || userIdentifier || 'PLAYER'
+    return `PA-${uid}-${Date.now().toString(36).toUpperCase()}`
+  }, [currentUserId, userIdentifier, yapeAmount, customYapeInput])
+
+  // Acreditar pago de Yape tras validación exitosa del código
+  const handleYapePaymentComplete = async (paymentData: any) => {
+    if (isYapeProcessing) return
+    setIsYapeProcessing(true)
+
+    try {
+      const paymentId = paymentData?.paymentId || paymentData?.id || paymentData?.data?.id
+      const orderId = paymentData?.orderId || yapeOrderId
+      const activeAmount = customYapeInput ? (Number(customYapeInput) || 0) : yapeAmount
+      const amountPen = Number(
+        paymentData?.amountCredited ||
+        paymentData?.amountPaid ||
+        paymentData?.amount ||
+        paymentData?.data?.amountCredited ||
+        paymentData?.data?.amountPaid ||
+        activeAmount
+      )
+      const securityCode = paymentData?.securityCode || paymentData?.data?.securityCode || '---'
+
+      const res = await accountService.confirmYapeDeposit({
+        paymentId: paymentId || `yape_${Date.now()}`,
+        orderId,
+        amountPen,
+        securityCode,
+        rawData: paymentData,
+      })
+
+      if (res.success) {
+        soundManager.playSound('victory', 1.0)
+        setYapeSuccessData({
+          gems: res.amountGems || Math.round((amountPen / 3.5) * 100),
+          soles: amountPen,
+          code: securityCode,
+        })
+        showFeedback(
+          `🎉 ¡DEPÓSITO YAPE CONFIRMADO! +${res.amountGems || Math.round((amountPen / 3.5) * 100)} Gemas 💎 acreditadas a tu cuenta.`,
+          'success'
+        )
+        window.dispatchEvent(new Event('refresh_user_balance'))
+        window.dispatchEvent(new Event('player_profile_updated'))
+
+        const hist = await accountService.getFinancialHistory()
+        if (hist.success) {
+          setFinancialHistory({ deposits: hist.deposits, withdrawals: hist.withdrawals })
+        }
+      } else {
+        showFeedback(res.message || 'Error al procesar la acreditación de Yape.', 'error')
+      }
+    } catch (err: any) {
+      showFeedback(err?.message || 'Error de conexión al acreditar Yape.', 'error')
+    } finally {
+      setIsYapeProcessing(false)
+    }
+  }
+
+  // Carga e inicialización dinámica del widget SDK de Yape
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'deposit' || depositMethod !== 'yape') return
+
+    let isMounted = true
+
+    const initWidget = () => {
+      if (!yapeContainerRef.current) return
+      const container = yapeContainerRef.current
+      container.innerHTML = ''
+      container.removeAttribute('data-yape-initialized')
+
+      const activeAmount = customYapeInput ? (Number(customYapeInput) || 0) : yapeAmount
+      if (activeAmount <= 0) return
+
+      if ((window as any).YapeWidget?.init) {
+        ;(window as any).YapeWidget.init(container, {
+          tenant: 'xplorastream',
+          amount: activeAmount,
+          orderId: yapeOrderId,
+          onSuccess: (data: any) => {
+            void handleYapePaymentComplete(data)
+          },
+        })
+      }
+    }
+
+    const existingScript = document.querySelector('script[src*="yape-widget.js"]')
+    if (existingScript && (window as any).YapeWidget) {
+      const timer = setTimeout(() => {
+        if (isMounted) initWidget()
+      }, 60)
+      return () => clearTimeout(timer)
+    } else if (!existingScript) {
+      const script = document.createElement('script')
+      script.src = 'https://yape-app-six.vercel.app/sdk/yape-widget.js'
+      script.async = true
+      script.onload = () => {
+        if (isMounted) {
+          setTimeout(initWidget, 60)
+        }
+      }
+      document.body.appendChild(script)
+    }
+
+    const handleCustomSuccess = (e: any) => {
+      if (e.detail) {
+        void handleYapePaymentComplete(e.detail.data || e.detail)
+      }
+    }
+    document.addEventListener('yape:payment_success', handleCustomSuccess)
+
+    ;(window as any).onYapePaymentSuccess = (pago: any) => {
+      void handleYapePaymentComplete(pago?.data || pago)
+    }
+
+    return () => {
+      isMounted = false
+      document.removeEventListener('yape:payment_success', handleCustomSuccess)
+    }
+  }, [isOpen, activeTab, depositMethod, yapeAmount, customYapeInput, yapeOrderId])
+
   const handleRegisterPersonalWallet = async (e: React.FormEvent) => {
     e.preventDefault()
     const address = personalWalletInput.trim()
@@ -840,7 +983,7 @@ export default function ProfileModal({
           </div>
         )}
 
-        {/* TAB 2: DEPOSITAR USDT BEP20 */}
+        {/* TAB 2: DEPOSITAR (USDT BEP20 / YAPE PERÚ) */}
         {activeTab === 'deposit' && (() => {
           const activeAmountUsdt = customMetaMaskInput ? (Number(customMetaMaskInput) || 0) : metaMaskAmount
           const previewBaseGems = Math.round(activeAmountUsdt * 100)
@@ -850,12 +993,54 @@ export default function ProfileModal({
           const previewRetirableGems = Math.round(previewBaseGems * 0.5)
           const previewLockedGems = (previewBaseGems - previewRetirableGems) + previewBonusGems
 
+          // Cálculos dinámicos Yape (3.50 Soles = 100 Gemas)
+          const activeAmountYape = customYapeInput ? (Number(customYapeInput) || 0) : yapeAmount
+          const previewYapeBaseGems = Math.round((activeAmountYape / 3.5) * 100)
+          const previewYapeRetirable = Math.round(previewYapeBaseGems * 0.5)
+          const previewYapeLocked = previewYapeBaseGems - previewYapeRetirable
+
           return (
             <div className="profile-tab-body">
-              <div className="profile-section-title">
-                <span>💰 DEPÓSITO DE USDT (BNB SMART CHAIN)</span>
-                <small>Tasa oficial: <strong>1 USDT = 100 Gemas 💎</strong> (Red BSC BEP-20)</small>
+              {/* SELECTOR DE MÉTODOS DE DEPÓSITO */}
+              <div className="deposit-method-nav">
+                <button
+                  type="button"
+                  className={`deposit-method-btn ${depositMethod === 'usdt' ? 'deposit-method-btn--active' : ''}`}
+                  onClick={() => {
+                    setDepositMethod('usdt')
+                    soundManager.playSound('click', 0.5)
+                  }}
+                >
+                  <span className="deposit-method-icon">💰</span>
+                  <div className="deposit-method-content">
+                    <span className="deposit-method-title">1. Cripto USDT (BEP-20)</span>
+                    <span className="deposit-method-subtitle">MetaMask / BNB Smart Chain</span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className={`deposit-method-btn ${depositMethod === 'yape' ? 'deposit-method-btn--active deposit-method-btn--yape' : ''}`}
+                  onClick={() => {
+                    setDepositMethod('yape')
+                    soundManager.playSound('click', 0.5)
+                  }}
+                >
+                  <span className="deposit-method-icon deposit-method-icon--yape">Y</span>
+                  <div className="deposit-method-content">
+                    <span className="deposit-method-title">2. Yape (Perú - Soles)</span>
+                    <span className="deposit-method-subtitle">QR Dinámico + Código 3 Dígitos</span>
+                  </div>
+                </button>
               </div>
+
+              {/* ══════════ OPCIÓN 1: USDT BEP-20 ══════════ */}
+              {depositMethod === 'usdt' && (
+                <>
+                  <div className="profile-section-title">
+                    <span>💰 DEPÓSITO DE USDT (BNB SMART CHAIN)</span>
+                    <small>Tasa oficial: <strong>1 USDT = 100 Gemas 💎</strong> (Red BSC BEP-20)</small>
+                  </div>
 
               {/* ── 1. BOTÓN NATIVO WEB3 CON METAMASK (1 CLIC) ──────────────── */}
               <div className="crypto-metamask-card">
@@ -1177,6 +1362,126 @@ export default function ProfileModal({
                     </div>
                   </div>
                 </>
+              )}
+                </>
+              )}
+
+              {/* ══════════ OPCIÓN 2: YAPE PERÚ (SOLES) ══════════ */}
+              {depositMethod === 'yape' && (
+                <div className="deposit-yape-card">
+                  <div className="deposit-yape-header">
+                    <div className="deposit-yape-title-wrap">
+                      <span className="deposit-yape-badge-logo">Y</span>
+                      <span className="deposit-yape-title">Depósito con Yape (Perú)</span>
+                    </div>
+                    <span className="deposit-yape-speed-badge">⚡ Validación Automática por Código</span>
+                  </div>
+
+                  {/* TASA DE CAMBIO OFICIAL */}
+                  <div className="yape-rate-pill">
+                    <span>🇵🇪 Tasa Oficial: <strong>3.50 Soles = 100 Gemas 💎</strong></span>
+                    <span style={{ color: '#00d2b6', fontWeight: 700 }}>Acreditación Directa</span>
+                  </div>
+
+                  {/* SELECTOR DE MONTOS RÁPIDOS EN SOLES */}
+                  <div className="crypto-amount-presets">
+                    {[3.5, 7.0, 17.5, 25.0, 35.0, 70.0, 175.0].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        className={`crypto-preset-btn ${
+                          !customYapeInput && yapeAmount === preset ? 'crypto-preset-btn--active' : ''
+                        }`}
+                        onClick={() => {
+                          setYapeAmount(preset)
+                          setCustomYapeInput('')
+                          soundManager.playSound('click', 0.5)
+                        }}
+                      >
+                        S/ {preset.toFixed(2)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* MONTO PERSONALIZADO EN SOLES */}
+                  <div className="crypto-custom-amount-wrap">
+                    <span>Otro Monto en Soles:</span>
+                    <input
+                      type="number"
+                      min="3.5"
+                      step="0.5"
+                      placeholder="Monto en Soles..."
+                      value={customYapeInput}
+                      onChange={(e) => setCustomYapeInput(e.target.value)}
+                      className="crypto-custom-amount-input"
+                    />
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>PEN (S/.)</span>
+                  </div>
+
+                  {/* PREVIEW DINÁMICO DE GEMAS */}
+                  <div className="crypto-calc-preview" style={{ borderColor: 'rgba(0, 210, 182, 0.4)' }}>
+                    <div className="crypto-calc-main-row">
+                      <span className="crypto-calc-usdt">
+                        Recibes por S/ {activeAmountYape > 0 ? activeAmountYape.toFixed(2) : '0.00'}:
+                      </span>
+                      <span className="crypto-calc-gems" style={{ color: '#00d2b6' }}>
+                        +{previewYapeBaseGems.toLocaleString()} Gemas 💎
+                      </span>
+                    </div>
+                    <div className="crypto-calc-sub-row">
+                      <span>50% Retirable: {previewYapeRetirable.toLocaleString()} 💎</span>
+                      <span>50% Bloqueado/Juego: {previewYapeLocked.toLocaleString()} 💎</span>
+                    </div>
+                  </div>
+
+                  {/* BANNER DE ÉXITO TRAS PAGO VERIFICADO */}
+                  {yapeSuccessData && (
+                    <div className="yape-success-banner">
+                      <div className="yape-success-icon">🎉</div>
+                      <div className="yape-success-info">
+                        <h4>¡Pago Validado y Acreditado!</h4>
+                        <p>
+                          Se acreditaron <strong>+{yapeSuccessData.gems.toLocaleString()} Gemas 💎</strong> por tu depósito de <strong>S/ {yapeSuccessData.soles.toFixed(2)}</strong>.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="yape-new-deposit-btn"
+                        onClick={() => setYapeSuccessData(null)}
+                      >
+                        Hacer otro depósito
+                      </button>
+                    </div>
+                  )}
+
+                  {/* GUÍA RÁPIDA DE PASOS */}
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.35)',
+                    border: '1px dashed rgba(255, 255, 255, 0.15)',
+                    borderRadius: '10px',
+                    padding: '10px 12px',
+                    fontSize: '11px',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}>
+                    <strong style={{ color: '#f8fafc' }}>📱 Pasos para recargar con Yape:</strong>
+                    <span>1. Escanea el código QR o copia el número de celular que aparece abajo en el widget.</span>
+                    <span>2. Yapea el monto exacto (<strong>S/ {activeAmountYape > 0 ? activeAmountYape.toFixed(2) : '0.00'}</strong>).</span>
+                    <span>3. Escribe en el casillero el <strong>código de seguridad de 3 dígitos</strong> que te entrega Yape y presiona <strong>Validar y Confirmar Pago</strong>.</span>
+                  </div>
+
+                  {/* ── 1. SECCIÓN YAPE (QR DINÁMICO + DESCARGA + CELULAR + CÓDIGO) ── */}
+                  <div
+                    id="yape-widget"
+                    ref={yapeContainerRef}
+                    data-tenant="xplorastream"
+                    data-amount={activeAmountYape.toFixed(2)}
+                    data-order-id={yapeOrderId}
+                    className="yape-embedded-container"
+                  />
+                </div>
               )}
             </div>
           )
