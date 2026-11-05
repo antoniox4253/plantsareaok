@@ -12,6 +12,7 @@ export interface ClanMember {
   treeGemsContributed?: number
   totalGemsDonated?: number
   totalGoldDonated?: number
+  dailyDonatedGold?: number
   weeklyCrowns?: number
   consecutiveRoundsMissed?: number // Rondas seguidas sin participar en guerra (mínimo 2 para poder expulsar por inactividad)
   roundsParticipated?: number // Rondas participadas en la temporada (>= 2 protege contra expulsión hasta fin de temporada)
@@ -19,6 +20,18 @@ export interface ClanMember {
   rewardPercentage?: number // Cuota porcentual asignada para el reparto de ganancias (0 - 100%)
   lastActiveAt?: string | null // Timestamp ISO de última actividad o inicio de sesión
   isOnline?: boolean // Estatus autoritativo en línea según Supabase
+  receivedCards?: number
+  warAttacksCount?: number
+  warDamageDealt?: number
+  warStarsEarned?: number
+}
+
+export function getMemberInactiveDays(lastActiveAt?: string | null): number {
+  if (!lastActiveAt) return 999
+  const t = new Date(lastActiveAt).getTime()
+  if (isNaN(t)) return 999
+  const diffMs = Math.max(0, Date.now() - t)
+  return Math.floor(diffMs / (24 * 60 * 60 * 1000))
 }
 
 export function formatMemberActivityStatus(
@@ -145,12 +158,23 @@ export interface ClanSettings {
 export interface KickValidationResult {
   canKick: boolean
   isProtected: boolean
-  reasonCode: 'PROTECTED_ACTIVE_WARRIOR' | 'INSUFFICIENT_INFRACTIONS' | 'ELIGIBLE_INACTIVE' | 'ELIGIBLE_WALKOVER' | 'LEADER_CANNOT_BE_KICKED'
+  reasonCode:
+    | 'PROTECTED_ACTIVE_WARRIOR'
+    | 'INSUFFICIENT_INFRACTIONS'
+    | 'ELIGIBLE_INACTIVE'
+    | 'ELIGIBLE_WALKOVER'
+    | 'LEADER_CANNOT_BE_KICKED'
+    | 'CANNOT_KICK_COLEADER'
+    | 'ELIGIBLE_OFFLINE_DAYS'
+    | 'ELIGIBLE_NO_CONTRIBUTION'
+    | 'LEADER_FREEDOM'
   message: string
   details: {
     roundsParticipated: number
     consecutiveMissed: number
     walkoverLosses: number
+    daysInactive?: number
+    totalDonations?: number
   }
 }
 
@@ -844,7 +868,7 @@ export class ClanManager {
    *    - Inactive for >= 2 consecutive war rounds (2 weeks), OR
    *    - Has >= 1 W.O. loss for not attending their scheduled match.
    */
-  static validateKickMember(_clan: ClanData, member: ClanMember): KickValidationResult {
+  static validateKickMember(_clan: ClanData, member: ClanMember, callerRole?: string): KickValidationResult {
     if (member.role === 'Líder') {
       return {
         canKick: false,
@@ -855,6 +879,22 @@ export class ClanManager {
           roundsParticipated: member.roundsParticipated || 0,
           consecutiveMissed: member.consecutiveRoundsMissed || 0,
           walkoverLosses: member.walkoverLosses || 0,
+          daysInactive: getMemberInactiveDays(member.lastActiveAt),
+        },
+      }
+    }
+
+    if (callerRole === 'Colíder' && member.role === 'Colíder') {
+      return {
+        canKick: false,
+        isProtected: true,
+        reasonCode: 'CANNOT_KICK_COLEADER',
+        message: '⚔️ Un Colíder no puede expulsar a otro Colíder. Solo el Líder tiene esa facultad.',
+        details: {
+          roundsParticipated: member.roundsParticipated || 0,
+          consecutiveMissed: member.consecutiveRoundsMissed || 0,
+          walkoverLosses: member.walkoverLosses || 0,
+          daysInactive: getMemberInactiveDays(member.lastActiveAt),
         },
       }
     }
@@ -862,6 +902,32 @@ export class ClanManager {
     const participated = member.roundsParticipated || 0
     const missed = member.consecutiveRoundsMissed || 0
     const wo = member.walkoverLosses || 0
+    const daysInactive = getMemberInactiveDays(member.lastActiveAt)
+    const totalContributed =
+      (member.treeWaterContributed || 0) +
+      (member.treeFertilizerContributed || 0) +
+      (member.treeGemsContributed || 0) +
+      (member.totalGoldDonated || 0) +
+      (member.totalGemsDonated || 0) +
+      (member.donatedCount || 0) +
+      (member.warAttacksCount || 0)
+
+    // Si lleva más de 14 días sin conectarse al juego, el blindaje expira por abandono prolongado
+    if (daysInactive >= 14 && member.lastActiveAt) {
+      return {
+        canKick: true,
+        isProtected: false,
+        reasonCode: 'ELIGIBLE_OFFLINE_DAYS',
+        message: `⚠️ ABANDONO PROLONGADO: El jugador lleva ${daysInactive} días sin conectarse. El blindaje expira por abandono del juego. Expulsión habilitada.`,
+        details: {
+          roundsParticipated: participated,
+          consecutiveMissed: missed,
+          walkoverLosses: wo,
+          daysInactive,
+          totalDonations: totalContributed,
+        },
+      }
+    }
 
     // Protection rule: Participated in 2 or more war rounds this season
     if (participated >= 2) {
@@ -874,6 +940,25 @@ export class ClanManager {
           roundsParticipated: participated,
           consecutiveMissed: missed,
           walkoverLosses: wo,
+          daysInactive,
+          totalDonations: totalContributed,
+        },
+      }
+    }
+
+    // Eligible by Inactivity in connection (>= 7 days offline)
+    if (daysInactive >= 7 && member.lastActiveAt) {
+      return {
+        canKick: true,
+        isProtected: false,
+        reasonCode: 'ELIGIBLE_OFFLINE_DAYS',
+        message: `⚠️ INACTIVIDAD POR CONEXIÓN: El jugador lleva ${daysInactive} días sin conectarse al juego. Expulsión permitida para dar lugar a miembros activos.`,
+        details: {
+          roundsParticipated: participated,
+          consecutiveMissed: missed,
+          walkoverLosses: wo,
+          daysInactive,
+          totalDonations: totalContributed,
         },
       }
     }
@@ -884,11 +969,13 @@ export class ClanManager {
         canKick: true,
         isProtected: false,
         reasonCode: 'ELIGIBLE_INACTIVE',
-        message: `⚠️ INACTIVIDAD CONFIRMADA: El jugador no ha participado en ${missed} rondas consecutivas de Guerra de Clanes (2 semanas seguidas sin jugar). Expulsión permitida.`,
+        message: `⚠️ INACTIVIDAD EN GUERRA: El jugador no ha participado en ${missed} rondas consecutivas de Guerra de Clanes (2 semanas seguidas sin jugar). Expulsión permitida.`,
         details: {
           roundsParticipated: participated,
           consecutiveMissed: missed,
           walkoverLosses: wo,
+          daysInactive,
+          totalDonations: totalContributed,
         },
       }
     }
@@ -904,6 +991,42 @@ export class ClanManager {
           roundsParticipated: participated,
           consecutiveMissed: missed,
           walkoverLosses: wo,
+          daysInactive,
+          totalDonations: totalContributed,
+        },
+      }
+    }
+
+    // Eligible by Offline >= 3 days and zero contributions
+    if (daysInactive >= 3 && totalContributed === 0 && member.lastActiveAt) {
+      return {
+        canKick: true,
+        isProtected: false,
+        reasonCode: 'ELIGIBLE_NO_CONTRIBUTION',
+        message: `⚠️ AUSENCIA Y CERO APORTES: Lleva ${daysInactive} días sin conectarse y no registra aportes ni donaciones al clan. Expulsión permitida.`,
+        details: {
+          roundsParticipated: participated,
+          consecutiveMissed: missed,
+          walkoverLosses: wo,
+          daysInactive,
+          totalDonations: totalContributed,
+        },
+      }
+    }
+
+    // Leader management prerogative for non-protected members
+    if (callerRole === 'Líder') {
+      return {
+        canKick: true,
+        isProtected: false,
+        reasonCode: 'LEADER_FREEDOM',
+        message: `👑 FACULTAD DE LIDERAZGO: Como Líder Supremo, tienes autorización para gestionar las plazas de tu clan y prescindir de este miembro.`,
+        details: {
+          roundsParticipated: participated,
+          consecutiveMissed: missed,
+          walkoverLosses: wo,
+          daysInactive,
+          totalDonations: totalContributed,
         },
       }
     }
@@ -913,11 +1036,13 @@ export class ClanManager {
       canKick: false,
       isProtected: false,
       reasonCode: 'INSUFFICIENT_INFRACTIONS',
-      message: `❌ EXPULSIÓN NO PERMITIDA: Para expulsar a un jugador, debe acumular al menos 2 rondas consecutivas sin participar en guerra (tiene ${missed}/2) o haber perdido al menos 1 vez por W.O. por no presentarse (tiene ${wo}/1).`,
+      message: `❌ EXPULSIÓN NO PERMITIDA: Para expulsar a un jugador, debe acumular al menos 7 días sin conectarse (tiene ${daysInactive}d/7d), faltar 2 rondas de guerra o registrar derrotas por W.O.`,
       details: {
         roundsParticipated: participated,
         consecutiveMissed: missed,
         walkoverLosses: wo,
+        daysInactive,
+        totalDonations: totalContributed,
       },
     }
   }

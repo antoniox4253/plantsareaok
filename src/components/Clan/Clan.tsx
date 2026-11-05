@@ -8,6 +8,7 @@ import {
   type ClanDepositLog,
   type KickValidationResult,
   formatMemberActivityStatus,
+  getMemberInactiveDays,
 } from '../../utils/clanManager'
 import type { PlantId, ClanFortressData, ClanFortressMatchOpponent, ClanRaidHistoryEntry } from '../../types/game'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
@@ -139,6 +140,9 @@ export default function Clan({
   // Mini Sub-tabs state
   const [donationSubTab, setDonationSubTab] = useState<'seeds' | 'deposits'>('seeds')
   const [vaultRankingFilter, setVaultRankingFilter] = useState<'gems' | 'gold'>('gems')
+  const [memberFilter, setMemberFilter] = useState<'all' | 'online' | 'inactive' | 'officers'>('all')
+  const [memberSortBy, setMemberSortBy] = useState<'hierarchy' | 'name' | 'elo' | 'donations' | 'lastActive' | 'war'>('hierarchy')
+  const [memberSortDir, setMemberSortDir] = useState<'asc' | 'desc'>('desc')
 
   // Modals
   const [showDepositModal, setShowDepositModal] = useState(false)
@@ -237,6 +241,68 @@ export default function Clan({
 
   const myRole = isLeader ? 'Líder' : (myMember?.role || 'Miembro')
   const isOfficer = isLeader || myRole === 'Colíder' || myRole === 'Veterano'
+
+  const handleToggleMemberSort = (col: 'hierarchy' | 'name' | 'elo' | 'donations' | 'lastActive' | 'war') => {
+    soundManager.playSound('click', 0.3)
+    if (memberSortBy === col) {
+      setMemberSortDir((prev) => (prev === 'desc' ? 'asc' : 'desc'))
+    } else {
+      setMemberSortBy(col)
+      setMemberSortDir(col === 'name' ? 'asc' : 'desc')
+    }
+  }
+
+  const filteredAndSortedMembers = React.useMemo(() => {
+    if (!userClan?.members) return []
+    let list = [...userClan.members]
+
+    // 1. Filtrar
+    if (memberFilter === 'online') {
+      list = list.filter((m) => onlineMemberIds.has(m.id) || Boolean(m.isOnline))
+    } else if (memberFilter === 'inactive') {
+      list = list.filter((m) => {
+        const days = getMemberInactiveDays(m.lastActiveAt)
+        return (days >= 3 && Boolean(m.lastActiveAt)) || (m.consecutiveRoundsMissed || 0) >= 2
+      })
+    } else if (memberFilter === 'officers') {
+      list = list.filter((m) => m.role === 'Líder' || m.role === 'Colíder' || m.role === 'Veterano')
+    }
+
+    // 2. Ordenar
+    list.sort((a, b) => {
+      let diff = 0
+      if (memberSortBy === 'hierarchy') {
+        const roleOrder: Record<string, number> = { Líder: 4, Colíder: 3, Veterano: 2, Miembro: 1 }
+        const rA = roleOrder[a.role] || 0
+        const rB = roleOrder[b.role] || 0
+        diff = rB - rA
+        if (diff === 0) diff = (b.elo || 0) - (a.elo || 0)
+        return memberSortDir === 'asc' ? -diff : diff
+      } else if (memberSortBy === 'name') {
+        diff = a.name.localeCompare(b.name)
+        return memberSortDir === 'asc' ? diff : -diff
+      } else if (memberSortBy === 'elo') {
+        diff = (b.elo || 0) - (a.elo || 0)
+        return memberSortDir === 'asc' ? -diff : diff
+      } else if (memberSortBy === 'donations') {
+        diff = (b.donatedCount || 0) - (a.donatedCount || 0)
+        return memberSortDir === 'asc' ? -diff : diff
+      } else if (memberSortBy === 'lastActive') {
+        const tA = a.lastActiveAt ? new Date(a.lastActiveAt).getTime() : 0
+        const tB = b.lastActiveAt ? new Date(b.lastActiveAt).getTime() : 0
+        diff = tB - tA
+        return memberSortDir === 'asc' ? -diff : diff
+      } else if (memberSortBy === 'war') {
+        const wA = (a.warAttacksCount || 0) * 1000 + (a.roundsParticipated || 0)
+        const wB = (b.warAttacksCount || 0) * 1000 + (b.roundsParticipated || 0)
+        diff = wB - wA
+        return memberSortDir === 'asc' ? -diff : diff
+      }
+      return 0
+    })
+
+    return list
+  }, [userClan?.members, memberFilter, memberSortBy, memberSortDir, onlineMemberIds])
 
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false)
   const activeClaim = userClan?.leadershipClaim
@@ -1033,12 +1099,26 @@ export default function Clan({
             id: m.id,
             name: m.name,
             role: m.role,
-            elo: m.elo,
-            donatedCount: m.donatedCount || 0,
+            elo: Number(m.elo || 1000),
+            donatedCount: Number(m.donatedCount || 0),
             joinedAt: typeof m.joinedAt === 'string' ? m.joinedAt.split('T')[0] : '',
             rewardPercentage: typeof m.rewardPercentage === 'number' ? m.rewardPercentage : undefined,
             lastActiveAt: m.lastActiveAt || null,
             isOnline: Boolean(m.isOnline),
+            treeWaterContributed: Number(m.treeWaterContributed || 0),
+            treeFertilizerContributed: Number(m.treeFertilizerContributed || 0),
+            treeGemsContributed: Number(m.treeGemsContributed || 0),
+            totalGemsDonated: Number(m.totalGemsDonated || 0),
+            totalGoldDonated: Number(m.totalGoldDonated || 0),
+            dailyDonatedGold: Number(m.dailyDonatedGold || 0),
+            weeklyCrowns: Number(m.weeklyCrowns || 0),
+            receivedCards: Number(m.receivedCards || 0),
+            warAttacksCount: Number(m.warAttacksCount || 0),
+            warDamageDealt: Number(m.warDamageDealt || 0),
+            warStarsEarned: Number(m.warStarsEarned || 0),
+            roundsParticipated: Number(m.roundsParticipated || 0),
+            consecutiveRoundsMissed: Number(m.consecutiveRoundsMissed || 0),
+            walkoverLosses: Number(m.walkoverLosses || 0),
           })),
           vaultGems: Number(myClanData.clan.vaultGems || 0),
           vaultUsd: Number(myClanData.clan.vaultGems || 0),
@@ -1147,6 +1227,20 @@ export default function Clan({
                   rewardPercentage: typeof m.rewardPercentage === 'number' ? m.rewardPercentage : undefined,
                   lastActiveAt: m.lastActiveAt || null,
                   isOnline: Boolean(m.isOnline),
+                  treeWaterContributed: Number(m.treeWaterContributed || 0),
+                  treeFertilizerContributed: Number(m.treeFertilizerContributed || 0),
+                  treeGemsContributed: Number(m.treeGemsContributed || 0),
+                  totalGemsDonated: Number(m.totalGemsDonated || 0),
+                  totalGoldDonated: Number(m.totalGoldDonated || 0),
+                  dailyDonatedGold: Number(m.dailyDonatedGold || 0),
+                  weeklyCrowns: Number(m.weeklyCrowns || 0),
+                  receivedCards: Number(m.receivedCards || 0),
+                  warAttacksCount: Number(m.warAttacksCount || 0),
+                  warDamageDealt: Number(m.warDamageDealt || 0),
+                  warStarsEarned: Number(m.warStarsEarned || 0),
+                  roundsParticipated: Number(m.roundsParticipated || 0),
+                  consecutiveRoundsMissed: Number(m.consecutiveRoundsMissed || 0),
+                  walkoverLosses: Number(m.walkoverLosses || 0),
                 }))
               : Array(c.member_count || 1).fill({}).map((_, i) => ({
                   id: `mem-${i}`,
@@ -1391,7 +1485,7 @@ export default function Clan({
   const handleOpenKickDialog = (member: ClanMember) => {
     if (!userClan) return
     soundManager.playSound('click', 0.5)
-    const result = ClanManager.validateKickMember(userClan, member)
+    const result = ClanManager.validateKickMember(userClan, member, myRole)
     setSelectedMemberToKick(member)
     setKickValidation(result)
     setShowKickModal(true)
@@ -2808,32 +2902,102 @@ export default function Clan({
             </div>
           </div>
 
+          {/* Barra de Filtros Rápidos de Gestión para Líderes y Miembros */}
+          {(() => {
+            const onlineCount = userClan.members.filter((m) => onlineMemberIds.has(m.id) || Boolean(m.isOnline)).length
+            const inactiveCount = userClan.members.filter((m) => {
+              const days = getMemberInactiveDays(m.lastActiveAt)
+              return (days >= 3 && Boolean(m.lastActiveAt)) || (m.consecutiveRoundsMissed || 0) >= 2
+            }).length
+            const officersCount = userClan.members.filter((m) => m.role !== 'Miembro').length
+
+            return (
+              <div className="clan-members-filter-bar">
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#e2e8f0', marginRight: '4px' }}>
+                  Filtrar:
+                </span>
+                <button
+                  type="button"
+                  className={`clan-filter-chip ${memberFilter === 'all' ? 'clan-filter-chip--active' : ''}`}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.3)
+                    setMemberFilter('all')
+                  }}
+                >
+                  Todos ({userClan.members.length})
+                </button>
+                <button
+                  type="button"
+                  className={`clan-filter-chip ${memberFilter === 'online' ? 'clan-filter-chip--active' : ''}`}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.3)
+                    setMemberFilter('online')
+                  }}
+                >
+                  🟢 En Línea ({onlineCount})
+                </button>
+                <button
+                  type="button"
+                  className={`clan-filter-chip clan-filter-chip--danger ${memberFilter === 'inactive' ? 'clan-filter-chip--active' : ''}`}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.3)
+                    setMemberFilter('inactive')
+                  }}
+                  title="Jugadores que llevan 3 o más días sin conectarse o faltaron a guerras"
+                >
+                  ⚠️ Inactivos ({inactiveCount})
+                </button>
+                <button
+                  type="button"
+                  className={`clan-filter-chip ${memberFilter === 'officers' ? 'clan-filter-chip--active' : ''}`}
+                  onClick={() => {
+                    soundManager.playSound('click', 0.3)
+                    setMemberFilter('officers')
+                  }}
+                >
+                  👑 Oficiales ({officersCount})
+                </button>
+              </div>
+            )
+          })()}
+
           <div className="clan-members-table-wrap">
             <table className="clan-members-table">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>JUGADOR</th>
+                  <th className="clan-th-sortable" onClick={() => handleToggleMemberSort('hierarchy')} title="Ordenar por rango y jerarquía">
+                    # {memberSortBy === 'hierarchy' && <span className="clan-th-sort-arrow">{memberSortDir === 'desc' ? '▼' : '▲'}</span>}
+                  </th>
+                  <th className="clan-th-sortable" onClick={() => handleToggleMemberSort('name')} title="Ordenar alfabéticamente por nombre">
+                    JUGADOR {memberSortBy === 'name' && <span className="clan-th-sort-arrow">{memberSortDir === 'desc' ? '▼' : '▲'}</span>}
+                  </th>
                   <th>ROL</th>
-                  <th>COPAS ELO</th>
-                  <th>DONACIONES</th>
-                  <th>ASISTENCIA A GUERRA</th>
-                  <th>ESTADO</th>
+                  <th className="clan-th-sortable" onClick={() => handleToggleMemberSort('elo')} title="Ordenar por copas ELO">
+                    COPAS ELO {memberSortBy === 'elo' && <span className="clan-th-sort-arrow">{memberSortDir === 'desc' ? '▼' : '▲'}</span>}
+                  </th>
+                  <th className="clan-th-sortable" onClick={() => handleToggleMemberSort('donations')} title="Ordenar por cartas donadas">
+                    DONACIONES {memberSortBy === 'donations' && <span className="clan-th-sort-arrow">{memberSortDir === 'desc' ? '▼' : '▲'}</span>}
+                  </th>
+                  <th className="clan-th-sortable" onClick={() => handleToggleMemberSort('war')} title="Ordenar por actividad y asedios">
+                    ACTIVIDAD Y GUERRA {memberSortBy === 'war' && <span className="clan-th-sort-arrow">{memberSortDir === 'desc' ? '▼' : '▲'}</span>}
+                  </th>
+                  <th className="clan-th-sortable" onClick={() => handleToggleMemberSort('lastActive')} title="Ordenar por última conexión">
+                    ÚLTIMA CONEXIÓN {memberSortBy === 'lastActive' && <span className="clan-th-sort-arrow">{memberSortDir === 'desc' ? '▼' : '▲'}</span>}
+                  </th>
                   <th>GESTIÓN</th>
                 </tr>
               </thead>
               <tbody>
-                {userClan.members.map((member, idx) => {
+                {filteredAndSortedMembers.map((member, idx) => {
                   const isMe =
                     member.name?.trim().toLowerCase() === playerName?.trim().toLowerCase() ||
                     (Boolean(myMember?.id) && member.id === myMember?.id)
-                  const isUserLeader = userClan.leader === playerName || userClan.members.find((m) => m.name === playerName)?.role === 'Líder'
-                  const isUserColeader = userClan.members.find((m) => m.name === playerName)?.role === 'Colíder'
-                  const canKickMembers = isUserLeader || isUserColeader
-                  const validation = ClanManager.validateKickMember(userClan, member)
+                  const canKickMembers = isLeader || (myRole === 'Colíder' && member.role !== 'Líder' && member.role !== 'Colíder')
+                  const validation = ClanManager.validateKickMember(userClan, member, myRole)
                   const roundsPart = member.roundsParticipated || 0
                   const missed = member.consecutiveRoundsMissed || 0
                   const wo = member.walkoverLosses || 0
+                  const daysInactive = getMemberInactiveDays(member.lastActiveAt)
 
                   return (
                     <tr key={member.id} className={isMe ? 'clan-row--me' : ''}>
@@ -2872,6 +3036,20 @@ export default function Clan({
                               </span>
                             )}
                           </div>
+                        ) : daysInactive >= 30 && member.lastActiveAt ? (
+                          <span
+                            className="clan-war-badge clan-war-badge--danger"
+                            title={`Inactivo hace ${daysInactive} días (+1 mes sin conexión)`}
+                          >
+                            💀 Inactivo (+30d)
+                          </span>
+                        ) : daysInactive >= 7 && member.lastActiveAt ? (
+                          <span
+                            className="clan-war-badge clan-war-badge--danger"
+                            title={`Inactivo hace ${daysInactive} días sin conectarse`}
+                          >
+                            ⚠️ Inactivo ({daysInactive}d)
+                          </span>
                         ) : validation.isProtected ? (
                           <span
                             className="clan-war-badge clan-war-badge--protected"
@@ -2893,12 +3071,26 @@ export default function Clan({
                           >
                             🚨 {wo} Falta W.O.
                           </span>
+                        ) : daysInactive >= 3 && member.lastActiveAt ? (
+                          <span
+                            className="clan-war-badge clan-war-badge--warning"
+                            title={`Inactivo hace ${daysInactive} días sin conectarse`}
+                          >
+                            ⚠️ Inactivo ({daysInactive}d)
+                          </span>
+                        ) : (member.warAttacksCount || 0) > 0 ? (
+                          <span
+                            className="clan-war-badge clan-war-badge--active"
+                            title={`${member.warAttacksCount} ataques en guerra, ${(member.warDamageDealt || 0).toLocaleString()} daño infligido`}
+                          >
+                            ⚔️ {member.warAttacksCount} Ataques ({roundsPart} R)
+                          </span>
                         ) : (
                           <span
                             className="clan-war-badge clan-war-badge--active"
-                            title="Al día con la asistencia de guerra"
+                            title="Conectado recientemente al juego"
                           >
-                            ✓ Activo ({roundsPart} Rondas)
+                            ✓ Activo (Al día)
                           </span>
                         )}
                       </td>
@@ -2971,7 +3163,7 @@ export default function Clan({
                               onClick={() => handleOpenKickDialog(member)}
                               title={
                                 validation.canKick
-                                  ? 'Expulsar por faltas comprobadas al reglamento'
+                                  ? validation.message
                                   : 'Ver motivo de protección o faltas acumuladas'
                               }
                             >
@@ -5363,6 +5555,25 @@ export default function Clan({
             {/* Attendance breakdown stats */}
             <div className="clan-kick-stats-grid">
               <div className="clan-kick-stat-item">
+                <span
+                  className="clan-kick-stat-val"
+                  style={{
+                    color:
+                      (kickValidation.details.daysInactive ?? 0) >= 7
+                        ? '#ef4444'
+                        : (kickValidation.details.daysInactive ?? 0) >= 3
+                        ? '#fbbf24'
+                        : '#38bdf8',
+                  }}
+                >
+                  {(kickValidation.details.daysInactive ?? 0) >= 999
+                    ? 'N/A'
+                    : `${kickValidation.details.daysInactive ?? 0}d`}
+                </span>
+                <span className="clan-kick-stat-lbl">Desconectado</span>
+                <small>(Sin conexión)</small>
+              </div>
+              <div className="clan-kick-stat-item">
                 <span className="clan-kick-stat-val" style={{ color: '#4ade80' }}>
                   {kickValidation.details.roundsParticipated}
                 </span>
@@ -6020,8 +6231,25 @@ export default function Clan({
                   <div className="clan-profile-meta-row">
                     <span>🏆 {selectedMemberForProfile.elo} Copas ELO</span>
                     <span>•</span>
-                    <span>📅 Unido: {selectedMemberForProfile.joinedAt ? new Date(selectedMemberForProfile.joinedAt).toLocaleDateString() : 'Veterano'}</span>
+                    <span>📅 En el clan: {selectedMemberForProfile.joinedAt ? new Date(selectedMemberForProfile.joinedAt).toLocaleDateString() : 'Veterano'}</span>
                   </div>
+                  {(() => {
+                    const isMe = selectedMemberForProfile.name?.trim().toLowerCase() === playerName?.trim().toLowerCase()
+                    const isOnlineRealtime = onlineMemberIds.has(selectedMemberForProfile.id) || Boolean(selectedMemberForProfile.isOnline)
+                    const status = formatMemberActivityStatus(selectedMemberForProfile.lastActiveAt, isOnlineRealtime, isMe)
+                    const daysInactive = getMemberInactiveDays(selectedMemberForProfile.lastActiveAt)
+
+                    return (
+                      <div className="clan-profile-connection-row" style={{ marginTop: '4px', fontSize: '11px', color: '#94a3b8' }}>
+                        <span>🕒 Última conexión: </span>
+                        <strong style={{ color: isOnlineRealtime || isMe ? '#4ade80' : daysInactive >= 7 ? '#f87171' : daysInactive >= 3 ? '#fbbf24' : '#38bdf8' }}>
+                          {selectedMemberForProfile.lastActiveAt
+                            ? `${new Date(selectedMemberForProfile.lastActiveAt).toLocaleString()} (${status.label})`
+                            : 'Sin registro'}
+                        </strong>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
 
@@ -6041,31 +6269,66 @@ export default function Clan({
               </div>
             </div>
 
-            {/* Badge de Nivel de Compromiso */}
+            {/* Badge de Nivel de Compromiso y Diagnóstico */}
             {(() => {
+              const daysInactive = getMemberInactiveDays(selectedMemberForProfile.lastActiveAt)
               const totalGems = (selectedMemberForProfile.treeGemsContributed || 0) + (selectedMemberForProfile.totalGemsDonated || 0)
               const totalWaterFert = (selectedMemberForProfile.treeWaterContributed || 0) + (selectedMemberForProfile.treeFertilizerContributed || 0)
               const totalGold = selectedMemberForProfile.totalGoldDonated || 0
               const totalCards = selectedMemberForProfile.donatedCount || 0
               const rounds = selectedMemberForProfile.roundsParticipated || 0
+              const attacks = selectedMemberForProfile.warAttacksCount || 0
 
-              const isHigh = totalGems >= 100 || totalWaterFert >= 50 || totalGold >= 10000 || rounds >= 3
-              const isMed = totalGems > 0 || totalWaterFert > 0 || totalGold > 0 || totalCards >= 3 || rounds >= 1
+              const isAbandoned = daysInactive >= 14 && Boolean(selectedMemberForProfile.lastActiveAt)
+              const isInactive = (daysInactive >= 7 && Boolean(selectedMemberForProfile.lastActiveAt)) || (selectedMemberForProfile.consecutiveRoundsMissed || 0) >= 2
+              const isAtRisk = daysInactive >= 3 && Boolean(selectedMemberForProfile.lastActiveAt) && (totalGems + totalWaterFert + totalGold + totalCards + attacks === 0)
+              const isShielded = rounds >= 2 && !isAbandoned
+              const isHigh = totalGems >= 100 || totalWaterFert >= 50 || totalGold >= 10000 || attacks >= 10 || rounds >= 3
+              const isMed = totalGems > 0 || totalWaterFert > 0 || totalGold > 0 || totalCards >= 3 || attacks >= 1 || rounds >= 1
+
+              let bannerClass = 'clan-commitment-banner--low'
+              let bannerIcon = '⚠️'
+              let bannerTitle = 'NIVEL DE COMPROMISO: BAJA PARTICIPACIÓN'
+              let bannerDesc = 'Registra aportes mínimos en el Árbol Madre y en el Tesoro del Clan.'
+
+              if (isAbandoned) {
+                bannerClass = 'clan-commitment-banner--low'
+                bannerIcon = '🚨'
+                bannerTitle = 'DIAGNÓSTICO: CANDIDATO A EXPULSIÓN INMEDIATA (ABANDONO)'
+                bannerDesc = `Lleva ${daysInactive} días sin conectarse al juego. El blindaje ha caducado por abandono prolongado. Los oficiales pueden expulsarlo.`
+              } else if (isInactive) {
+                bannerClass = 'clan-commitment-banner--low'
+                bannerIcon = '⚠️'
+                bannerTitle = 'DIAGNÓSTICO: INACTIVO (EXPULSIÓN HABILITADA)'
+                bannerDesc = `Lleva ${daysInactive} días sin entrar al juego o acumula ${selectedMemberForProfile.consecutiveRoundsMissed || 0} semanas sin participar en guerra. Expulsión habilitada para mantener activo el clan.`
+              } else if (isAtRisk) {
+                bannerClass = 'clan-commitment-banner--low'
+                bannerIcon = '⏳'
+                bannerTitle = 'DIAGNÓSTICO: EN RIESGO DE INACTIVIDAD'
+                bannerDesc = `Lleva ${daysInactive} días ausente sin aportar recursos ni participar en combate. Expulsable por falta de aportes.`
+              } else if (isShielded) {
+                bannerClass = 'clan-commitment-banner--shielded'
+                bannerIcon = '🛡️'
+                bannerTitle = 'DIAGNÓSTICO: GUERRERO BLINDADO EN TEMPORADA'
+                bannerDesc = `Participó en ${rounds} rondas de guerra de esta temporada. Cuenta con blindaje reglamentario contra expulsión.`
+              } else if (isHigh) {
+                bannerClass = 'clan-commitment-banner--high'
+                bannerIcon = '🔥'
+                bannerTitle = 'NIVEL DE COMPROMISO: PILAR DEL CLAN (MUY ACTIVO)'
+                bannerDesc = 'Este guerrero demuestra gran dedicación aportando recursos botánicos, tesoro y participando en los asedios de guerra.'
+              } else if (isMed) {
+                bannerClass = 'clan-commitment-banner--med'
+                bannerIcon = '🌿'
+                bannerTitle = 'NIVEL DE COMPROMISO: COLABORADOR ACTIVO'
+                bannerDesc = 'Participa de forma regular en el crecimiento del clan y sus actividades.'
+              }
 
               return (
-                <div className={`clan-commitment-banner ${isHigh ? 'clan-commitment-banner--high' : isMed ? 'clan-commitment-banner--med' : 'clan-commitment-banner--low'}`}>
-                  <span className="clan-commitment-icon">{isHigh ? '🔥' : isMed ? '🌿' : '⚠️'}</span>
+                <div className={`clan-commitment-banner ${bannerClass}`}>
+                  <span className="clan-commitment-icon">{bannerIcon}</span>
                   <div className="clan-commitment-info">
-                    <strong>
-                      {isHigh ? 'NIVEL DE COMPROMISO: PILAR DEL CLAN (MUY ACTIVO)' : isMed ? 'NIVEL DE COMPROMISO: COLABORADOR ACTIVO' : 'NIVEL DE COMPROMISO: BAJA PARTICIPACIÓN'}
-                    </strong>
-                    <small>
-                      {isHigh
-                        ? 'Este guerrero demuestra gran dedicación aportando recursos y participando en los asedios.'
-                        : isMed
-                        ? 'Participa de forma regular en el crecimiento del clan y sus actividades.'
-                        : 'Registra aportes mínimos en el Árbol Madre y en el Tesoro del Clan.'}
-                    </small>
+                    <strong>{bannerTitle}</strong>
+                    <small>{bannerDesc}</small>
                   </div>
                 </div>
               )
@@ -6115,9 +6378,15 @@ export default function Clan({
                     </strong>
                   </div>
                   <div className="clan-profile-stat-item">
-                    <span className="clan-profile-stat-item__label">🪙 Oro Donado</span>
+                    <span className="clan-profile-stat-item__label">🪙 Oro Donado Total</span>
                     <strong className="clan-profile-stat-item__val" style={{ color: '#fbbf24' }}>
                       {(selectedMemberForProfile.totalGoldDonated || 0).toLocaleString()} <GoldIcon size={12} />
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">🪙 Oro Donado Hoy</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#f59e0b' }}>
+                      {(selectedMemberForProfile.dailyDonatedGold || 0).toLocaleString()} <GoldIcon size={12} />
                     </strong>
                   </div>
                 </div>
@@ -6137,6 +6406,12 @@ export default function Clan({
                     </strong>
                   </div>
                   <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">📥 Cartas Recibidas</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#a855f7' }}>
+                      {selectedMemberForProfile.receivedCards || 0} cartas
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
                     <span className="clan-profile-stat-item__label">👑 Coronas Semanales</span>
                     <strong className="clan-profile-stat-item__val" style={{ color: '#facc15' }}>
                       {selectedMemberForProfile.weeklyCrowns || 0} 👑
@@ -6145,13 +6420,25 @@ export default function Clan({
                 </div>
               </div>
 
-              {/* BLOQUE 4: Guerra y Disciplina */}
+              {/* BLOQUE 4: Guerra y Asedio */}
               <div className="clan-profile-stat-box">
                 <div className="clan-profile-stat-box__header">
-                  <span>⚔️ ASISTENCIA DE GUERRA</span>
+                  <span>⚔️ GUERRA & DISCIPLINA</span>
                   <small>Asedio y Disciplina</small>
                 </div>
                 <div className="clan-profile-stat-rows">
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">⚔️ Ataques Realizados</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#38bdf8' }}>
+                      {selectedMemberForProfile.warAttacksCount || 0} ataques
+                    </strong>
+                  </div>
+                  <div className="clan-profile-stat-item">
+                    <span className="clan-profile-stat-item__label">💥 Daño Infligido</span>
+                    <strong className="clan-profile-stat-item__val" style={{ color: '#fb923c' }}>
+                      {(selectedMemberForProfile.warDamageDealt || 0).toLocaleString()} pts
+                    </strong>
+                  </div>
                   <div className="clan-profile-stat-item">
                     <span className="clan-profile-stat-item__label">🛡️ Rondas Jugadas</span>
                     <strong className="clan-profile-stat-item__val" style={{ color: '#34d399' }}>
@@ -6180,7 +6467,7 @@ export default function Clan({
                 const isMe = selectedMemberForProfile.name?.trim().toLowerCase() === playerName?.trim().toLowerCase()
                 const canManageRoles = !isMe && (isLeader || (myRole === 'Colíder' && selectedMemberForProfile.role !== 'Líder' && selectedMemberForProfile.role !== 'Colíder'))
                 const canKick = !isMe && selectedMemberForProfile.role !== 'Líder' && (isLeader || myRole === 'Colíder')
-                const validation = userClan ? ClanManager.validateKickMember(userClan, selectedMemberForProfile) : null
+                const validation = userClan ? ClanManager.validateKickMember(userClan, selectedMemberForProfile, myRole) : null
 
                 return (
                   <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>

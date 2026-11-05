@@ -363,5 +363,72 @@ describe('ClanManager & Gem Valuations', () => {
       expect(member.weeklyCrowns).toBe(42)
     })
   })
+
+  describe('Clan Inactivity and Kick Rules', () => {
+    const clan = ClanManager.createClan('Imperio Fénix', 'IF', '👑', 'Clan de prueba', 'Líder', 1200)
+
+    it('allows kicking a member offline for >= 7 days', () => {
+      const offlineMember: ClanMember = {
+        id: 'm-offline',
+        name: 'Inactivo7d',
+        role: 'Miembro',
+        elo: 1100,
+        donatedCount: 0,
+        joinedAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+        lastActiveAt: new Date(Date.now() - 8 * 86400000).toISOString(),
+      }
+      const res = ClanManager.validateKickMember(clan, offlineMember, 'Colíder')
+      expect(res.canKick).toBe(true)
+      expect(res.reasonCode).toBe('ELIGIBLE_OFFLINE_DAYS')
+      expect(res.details.daysInactive).toBe(8)
+    })
+
+    it('expires war protection if the member has abandoned for >= 14 days', () => {
+      const abandonedMember: ClanMember = {
+        id: 'm-abandoned',
+        name: 'Desaparecido14d',
+        role: 'Miembro',
+        elo: 1200,
+        donatedCount: 10,
+        joinedAt: new Date(Date.now() - 40 * 86400000).toISOString(),
+        roundsParticipated: 3, // Had war rounds
+        lastActiveAt: new Date(Date.now() - 15 * 86400000).toISOString(), // 15 days offline
+      }
+      const res = ClanManager.validateKickMember(clan, abandonedMember, 'Colíder')
+      expect(res.canKick).toBe(true)
+      expect(res.reasonCode).toBe('ELIGIBLE_OFFLINE_DAYS')
+      expect(res.isProtected).toBe(false)
+    })
+
+    it('prevents a coleader from kicking another coleader', () => {
+      const coleaderMember: ClanMember = {
+        id: 'm-coleader',
+        name: 'SegundoAlMando',
+        role: 'Colíder',
+        elo: 1400,
+        donatedCount: 20,
+        joinedAt: new Date().toISOString(),
+      }
+      const res = ClanManager.validateKickMember(clan, coleaderMember, 'Colíder')
+      expect(res.canKick).toBe(false)
+      expect(res.reasonCode).toBe('CANNOT_KICK_COLEADER')
+    })
+
+    it('allows the leader to manage roster for non-protected members', () => {
+      const member: ClanMember = {
+        id: 'm-active-low',
+        name: 'PocoAporte',
+        role: 'Miembro',
+        elo: 1050,
+        donatedCount: 1,
+        joinedAt: new Date().toISOString(),
+        roundsParticipated: 0,
+        lastActiveAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      }
+      const res = ClanManager.validateKickMember(clan, member, 'Líder')
+      expect(res.canKick).toBe(true)
+      expect(res.reasonCode).toBe('LEADER_FREEDOM')
+    })
+  })
 })
 
