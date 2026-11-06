@@ -93,12 +93,14 @@ export default function ProfileModal({
   const [depositMethod, setDepositMethod] = useState<'usdt' | 'yape'>('usdt')
 
   // ── ESTADO YAPE (PERÚ - SOLES) ─────────────────────────────────────────────
-  const [yapeAmount, setYapeAmount] = useState<number>(25.0)
+  const [yapeAmount, setYapeAmount] = useState<number>(3.5)
   const [customYapeInput, setCustomYapeInput] = useState<string>('')
   const [isYapeProcessing, setIsYapeProcessing] = useState<boolean>(false)
   const [yapeSuccessData, setYapeSuccessData] = useState<{ gems: number; soles: number; code?: string } | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string>('')
   const yapeContainerRef = useRef<HTMLDivElement | null>(null)
+  const handledYapePaymentIdsRef = useRef<Set<string>>(new Set())
+  const isYapeProcessingRef = useRef<boolean>(false)
 
 
 
@@ -327,27 +329,35 @@ export default function ProfileModal({
     return `PA-${uid}-${Date.now().toString(36).toUpperCase()}`
   }, [currentUserId, userIdentifier, yapeAmount, customYapeInput])
 
-  // Acreditar pago de Yape tras validación exitosa del código
+  // Acreditar pago de Yape tras validación exitosa del código (Blindado contra doble acreditación)
   const handleYapePaymentComplete = async (paymentData: any) => {
-    if (isYapeProcessing) return
+    const rawPaymentId = paymentData?.paymentId || paymentData?.id || paymentData?.data?.id
+    const securityCode = paymentData?.securityCode || paymentData?.data?.securityCode || '---'
+    const orderId = paymentData?.orderId || yapeOrderId
+    const activeAmount = customYapeInput ? (Number(customYapeInput) || 0) : yapeAmount
+    const amountPen = Number(
+      paymentData?.amountCredited ||
+      paymentData?.amountPaid ||
+      paymentData?.amount ||
+      paymentData?.data?.amountCredited ||
+      paymentData?.data?.amountPaid ||
+      activeAmount
+    )
+    const cleanPaymentId = rawPaymentId ? String(rawPaymentId).trim() : `yape_${orderId}`
+
+    if (handledYapePaymentIdsRef.current.has(cleanPaymentId)) {
+      return
+    }
+    if (isYapeProcessingRef.current) {
+      return
+    }
+    isYapeProcessingRef.current = true
+    handledYapePaymentIdsRef.current.add(cleanPaymentId)
     setIsYapeProcessing(true)
 
     try {
-      const paymentId = paymentData?.paymentId || paymentData?.id || paymentData?.data?.id
-      const orderId = paymentData?.orderId || yapeOrderId
-      const activeAmount = customYapeInput ? (Number(customYapeInput) || 0) : yapeAmount
-      const amountPen = Number(
-        paymentData?.amountCredited ||
-        paymentData?.amountPaid ||
-        paymentData?.amount ||
-        paymentData?.data?.amountCredited ||
-        paymentData?.data?.amountPaid ||
-        activeAmount
-      )
-      const securityCode = paymentData?.securityCode || paymentData?.data?.securityCode || '---'
-
       const res = await accountService.confirmYapeDeposit({
-        paymentId: paymentId || `yape_${Date.now()}`,
+        paymentId: cleanPaymentId,
         orderId,
         amountPen,
         securityCode,
@@ -356,13 +366,14 @@ export default function ProfileModal({
 
       if (res.success) {
         soundManager.playSound('victory', 1.0)
+        const creditedGems = res.amountGems || Math.round((amountPen / 3.5) * 100)
         setYapeSuccessData({
-          gems: res.amountGems || Math.round((amountPen / 3.5) * 100),
+          gems: creditedGems,
           soles: amountPen,
           code: securityCode,
         })
         showFeedback(
-          `🎉 ¡DEPÓSITO YAPE CONFIRMADO! +${res.amountGems || Math.round((amountPen / 3.5) * 100)} Gemas 💎 acreditadas a tu cuenta.`,
+          `🎉 ¡DEPÓSITO YAPE CONFIRMADO! +${creditedGems.toLocaleString()} Gemas 💎 acreditadas a tu cuenta.`,
           'success'
         )
         window.dispatchEvent(new Event('refresh_user_balance'))
@@ -379,6 +390,7 @@ export default function ProfileModal({
       showFeedback(err?.message || 'Error de conexión al acreditar Yape.', 'error')
     } finally {
       setIsYapeProcessing(false)
+      isYapeProcessingRef.current = false
     }
   }
 
@@ -1385,7 +1397,7 @@ export default function ProfileModal({
 
                   {/* SELECTOR DE MONTOS RÁPIDOS EN SOLES */}
                   <div className="crypto-amount-presets">
-                    {[3.5, 7.0, 17.5, 25.0, 35.0, 70.0, 175.0].map((preset) => (
+                    {[3.5, 7.0, 14.0, 21.0, 35.0, 70.0, 140.0].map((preset) => (
                       <button
                         key={preset}
                         type="button"
@@ -1429,8 +1441,7 @@ export default function ProfileModal({
                       </span>
                     </div>
                     <div className="crypto-calc-sub-row">
-                      <span>50% Retirable: {previewYapeRetirable.toLocaleString()} 💎</span>
-                      <span>50% Bloqueado/Juego: {previewYapeLocked.toLocaleString()} 💎</span>
+                      <span style={{ color: '#34d399', fontWeight: 600 }}>⚡ Acreditación 100% directa a tu saldo de Gemas</span>
                     </div>
                   </div>
 

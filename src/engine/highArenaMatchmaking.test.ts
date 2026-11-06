@@ -49,10 +49,17 @@ function simularCriterioEmparejamiento(
     return { matched: true, reason: 'arena_alta_cruce' }
   }
 
-  // REGLA 4: ARENAS 1 A 3 (0 a 3000 copas):
-  // Banda progresiva protegida para novatos
-  if (eloDiff <= bandaNovatos) {
-    return { matched: true, reason: 'arenas_bajas_banda_estandar' }
+  // REGLA 4: ARENAS BAJAS (0 a 3000 copas - Migración 394):
+  // Ambos DEBEN ser <= 3000 copas
+  if (p1Elo <= 3000 && p2Elo <= 3000) {
+    // Blindaje Arena 1: NUNCA cruzar Arena 1 (<= 1600) con Arena 3+ (> 2000)
+    if ((p1Elo <= 1600 && p2Elo > 2000) || (p2Elo <= 1600 && p1Elo > 2000)) {
+      return { matched: false, reason: 'frontera_arena_1_arena_3_bloqueada' }
+    }
+    // Banda progresiva protegida para arenas bajas
+    if (eloDiff <= bandaNovatos) {
+      return { matched: true, reason: 'arenas_bajas_banda_estandar' }
+    }
   }
 
   return { matched: false, reason: 'fuera_de_banda_estandar' }
@@ -111,5 +118,28 @@ describe('Emparejamiento Optimizado en Arenas 4 y 5', () => {
 
   it('8. Timeout de Ranked es 45 segundos según Migración 321', () => {
     expect(RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(45)
+  })
+  it('9. Migración 394: Arena 5 (ej. 6,000) NUNCA empareja con Arena 1 (ej. 1,200) bajo ninguna circunstancia', () => {
+    const res = simularCriterioEmparejamiento(6000, 1200, 45)
+    expect(res.matched).toBe(false)
+    expect(res.reason).toBe('fuera_de_banda_estandar')
+  })
+
+  it('10. Migración 394: Arena 5 (ej. 4,100) NUNCA empareja con Arena 3 (ej. 2,900) aunque la banda elástica sea 1200', () => {
+    const res = simularCriterioEmparejamiento(4100, 2900, 45)
+    expect(res.matched).toBe(false)
+    expect(res.reason).toBe('fuera_de_banda_estandar')
+  })
+
+  it('11. Migración 394: Arena 1 (ej. 1,400) NUNCA empareja con Arena 3 (ej. 2,400) aunque la diferencia esté en banda', () => {
+    const res = simularCriterioEmparejamiento(1400, 2400, 45)
+    expect(res.matched).toBe(false)
+    expect(res.reason).toBe('frontera_arena_1_arena_3_bloqueada')
+  })
+
+  it('12. Migración 394: Arena 1 (ej. 1,400) empareja con Arena 1 (1,500) en su rango normal', () => {
+    const res = simularCriterioEmparejamiento(1400, 1500, 5)
+    expect(res.matched).toBe(true)
+    expect(res.reason).toBe('arenas_bajas_banda_estandar')
   })
 })

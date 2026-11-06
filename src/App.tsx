@@ -720,6 +720,10 @@ function App() {
         || (sala as any).async_display_name
         || ((sala as any).isAsyncMatch ? 'Rival Bot' : 'Rival')
       setNombresEnPartida({ mio: miNick, rival: suNick })
+      const miEloDeSala = soyP1 ? ((sala as any).player1?.elo ?? (sala as any).user_elo) : ((sala as any).player2?.elo ?? (sala as any).elo_rating)
+      if (typeof miEloDeSala === 'number' && Number.isFinite(miEloDeSala) && miEloDeSala > 0) {
+        setUserElo(miEloDeSala)
+      }
       setMazosDeLaSala({
         mio: soyP1 ? sala.p1Deck : sala.p2Deck,
         rival: soyP1 ? sala.p2Deck : sala.p1Deck,

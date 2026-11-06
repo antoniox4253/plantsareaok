@@ -690,7 +690,8 @@ export default function Battlefield({
       ? Math.ceil((-desfaseDeTics * TICK_MS) / 1000)
       : 0
 
-  const activeArena = useMemo(() => getArenaForElo(userElo), [userElo])
+  const effectiveUserElo = Math.max(Number(userElo) || 0, Number(userEloRef.current) || 0)
+  const activeArena = useMemo(() => getArenaForElo(effectiveUserElo > 0 ? effectiveUserElo : 1000), [effectiveUserElo])
   const activeBgImage = customBgImage || (matchMode === 'clan_fortress' ? arena1Bg : activeArena.bgImage)
   const [clanRaidResult, setClanRaidResult] = useState<ClanFortressRaidResult | null>(null)
   const [clanRaidPhase, setClanRaidPhase] = useState<'prep' | 'battle'>('prep')
@@ -4174,7 +4175,7 @@ export default function Battlefield({
                             📊 Desglose de scoring y fórmula a la derecha 👉
                           </div>
                         </div>
-                      ) : userElo >= 2001 ? (
+                      ) : (effectiveUserElo >= 2001 || userElo >= 2001) ? (
                         <div className="victory-plants-reward-card victory-plants-reward-card--empty">
                           <span className="victory-plants-reward-card__icon">🌱</span>
                           <div className="victory-plants-reward-card__empty-text">
