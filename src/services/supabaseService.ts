@@ -5449,16 +5449,44 @@ export const SupabaseService = {
     bonusGems?: number
     retirableGems?: number
     lockedGems?: number
+    newTotalGems?: number
     error?: string
     message?: string
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'NO_SUPABASE' }
     try {
+      let finalAmountPen = params.amountPen
+      let finalSecurityCode = params.securityCode || '---'
+      let finalOrderId = params.orderId
+
+      // Si el paymentId es un UUID válido de la pasarela, consultar la verificación autoritativa para obtener el monto real acreditado
+      if (params.paymentId && !params.paymentId.startsWith('yape_')) {
+        try {
+          const verifyRes = await fetch(`https://yape-app-six.vercel.app/api/v1/payments/verify/${encodeURIComponent(params.paymentId)}`)
+          const verifyData = await verifyRes.json()
+          if (!verifyData?.success || verifyData?.status !== 'COMPLETED') {
+            return {
+              success: false,
+              error: 'PAYMENT_NOT_COMPLETED',
+              message: verifyData?.message || 'El pago no figura como completado en la pasarela Yape.',
+            }
+          }
+          const authoritativePen = Number(verifyData.amountCredited || verifyData.amountPaid)
+          if (authoritativePen > 0) {
+            finalAmountPen = authoritativePen
+          }
+          if (verifyData.securityCode) finalSecurityCode = String(verifyData.securityCode)
+          if (verifyData.orderId) finalOrderId = String(verifyData.orderId)
+        } catch (fetchErr: any) {
+          logError('confirmYapeDeposit:verify', fetchErr)
+        }
+      }
+
       const { data, error } = await (supabase.rpc as any)('confirm_yape_deposit', {
         p_payment_id: params.paymentId,
-        p_order_id: params.orderId,
-        p_amount_pen: params.amountPen,
-        p_security_code: params.securityCode || '---',
+        p_order_id: finalOrderId,
+        p_amount_pen: finalAmountPen,
+        p_security_code: finalSecurityCode,
         p_raw_data: params.rawData || {},
       })
       if (error) {

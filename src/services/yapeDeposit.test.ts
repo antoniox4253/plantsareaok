@@ -16,13 +16,13 @@ describe('Pasarela de Depósito Yape (Perú - S/.)', () => {
     expect(calcularGemasYape(175.0)).toBe(5000)
   })
 
-  it('2. Acredita 100% directo al saldo de Gemas (ej. 1,820 + 100 = 1,920 💎 para S/ 3.50)', () => {
+  it('2. Acredita 100% directo al saldo de Gemas (ej. 1,920 + 100 = 2,020 💎 para S/ 3.50)', () => {
     const calcularNuevoSaldo = (saldoPrevio: number, soles: number) => {
       const gemas = Math.round((soles / 3.5) * 100)
       return saldoPrevio + gemas
     }
 
-    expect(calcularNuevoSaldo(1820, 3.5)).toBe(1920)
+    expect(calcularNuevoSaldo(1920, 3.5)).toBe(2020)
     expect(calcularNuevoSaldo(1000, 7.0)).toBe(1200)
     expect(calcularNuevoSaldo(500, 35.0)).toBe(1500)
   })
@@ -39,14 +39,14 @@ describe('Pasarela de Depósito Yape (Perú - S/.)', () => {
       return { success: true, already_credited: false, nuevoSaldo: saldoActual + gemas }
     }
 
-    const llamada1 = procesarPago('yape_tx_test_1', 1820, 3.5)
+    const llamada1 = procesarPago('yape_tx_test_1', 1920, 3.5)
     expect(llamada1.already_credited).toBe(false)
-    expect(llamada1.nuevoSaldo).toBe(1920)
+    expect(llamada1.nuevoSaldo).toBe(2020)
 
     // Segunda llamada concurrente o repetida
     const llamada2 = procesarPago('yape_tx_test_1', llamada1.nuevoSaldo, 3.5)
     expect(llamada2.already_credited).toBe(true)
-    expect(llamada2.nuevoSaldo).toBe(1920) // No se duplica
+    expect(llamada2.nuevoSaldo).toBe(2020) // No se duplica
   })
 
   it('4. Genera la comisión de referidos del 5% requerida por protocolo', () => {
@@ -69,5 +69,27 @@ describe('Pasarela de Depósito Yape (Perú - S/.)', () => {
 
   it('6. SupabaseService expone el método confirmYapeDeposit', () => {
     expect(typeof SupabaseService.confirmYapeDeposit).toBe('function')
+  })
+
+  it('7. Protección contra carrera y debounce: Llamadas en menos de 5 segundos se serializan e ignoran órdenes fantasmas', () => {
+    let ultimoPagoMs = 0
+    const procesarPagoConDebounce = (timestampMs: number, saldoActual: number, soles: number) => {
+      if (timestampMs - ultimoPagoMs < 5000) {
+        return { success: true, already_credited: true, nuevoSaldo: saldoActual }
+      }
+      ultimoPagoMs = timestampMs
+      const gemas = Math.round((soles / 3.5) * 100)
+      return { success: true, already_credited: false, nuevoSaldo: saldoActual + gemas }
+    }
+
+    const t0 = 1793997070519
+    const primerDeposito = procesarPagoConDebounce(t0, 1920, 3.5)
+    expect(primerDeposito.already_credited).toBe(false)
+    expect(primerDeposito.nuevoSaldo).toBe(2020)
+
+    // Llamada concurrente 2ms después con una orden residual/fantasma de S/ 25
+    const llamadaFantasma = procesarPagoConDebounce(t0 + 2, primerDeposito.nuevoSaldo, 25.0)
+    expect(llamadaFantasma.already_credited).toBe(true)
+    expect(llamadaFantasma.nuevoSaldo).toBe(2020) // El saldo se mantiene estrictamente en 2,020
   })
 })

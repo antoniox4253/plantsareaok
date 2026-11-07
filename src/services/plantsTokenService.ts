@@ -649,24 +649,30 @@ export const plantsTokenService = {
   async getAdminCashoutRequests(status?: string): Promise<CashoutRequestItem[]> {
     if (!isSupabaseConfigured()) return []
     try {
+      const effectiveStatus = status && status !== 'all' ? status : 'all'
       const { data, error } = await (supabase.rpc as any)('get_admin_cashout_requests', {
-        p_status: status || null,
+        p_status: effectiveStatus,
       })
       if (error) {
         console.warn('[plantsTokenService] getAdminCashoutRequests error:', error.message)
         return []
       }
-      if (data && data.success && Array.isArray(data.requests)) {
-        return data.requests.map((r: any) => ({
+      // Soporta tanto array directo [...] como objeto { success: true, requests: [...] }
+      const list: any[] = Array.isArray(data)
+        ? data
+        : (data && Array.isArray(data.requests) ? data.requests : [])
+
+      if (list.length > 0) {
+        return list.map((r: any) => ({
           id: String(r.id),
           userId: String(r.user_id),
-          usdtAmount: Number(r.usdt_amount ?? 0),
+          usdtAmount: Number(r.usdt_amount ?? r.gross_usdt ?? r.net_usdt ?? 0),
           feeUsdt: Number(r.fee_usdt ?? 0),
           netUsdt: Number(r.net_usdt ?? 0),
-          walletAddress: String(r.wallet_address ?? ''),
-          status: r.status as 'pending' | 'completed' | 'rejected',
+          walletAddress: String(r.wallet_address ?? r.destination_wallet ?? ''),
+          status: (r.status || 'pending') as 'pending' | 'completed' | 'rejected',
           createdAt: String(r.created_at),
-          processedAt: r.processed_at ? String(r.processed_at) : null,
+          processedAt: r.processed_at || r.settled_at ? String(r.processed_at || r.settled_at) : null,
           txHash: r.tx_hash ? String(r.tx_hash) : null,
           rejectReason: r.reject_reason ? String(r.reject_reason) : null,
           userIsVip: Boolean(r.user_is_vip),
