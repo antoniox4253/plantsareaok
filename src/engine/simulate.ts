@@ -1049,7 +1049,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
 
             // 🧈 La mantequilla puede salir disparada a cualquiera de las líneas donde haya enemigos
             const totalLanes = state.lanesCount || 3
-            const poolLanes = Array.from({ length: totalLanes }, (_, i) => i)
+            const poolLanes = state.allowedLanes && state.allowedLanes.length > 0 ? state.allowedLanes : Array.from({ length: totalLanes }, (_, i) => i)
             const lanesConEnemigos = poolLanes.filter((l) =>
               susPlantas.some((e) => e.lane === l && e.hp > 0 && (lado.sentido > 0 ? e.x > salidaX : e.x < salidaX))
             )
@@ -1079,7 +1079,8 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
 
         if (planta.plantId === 'threepeater') {
           const maxLaneIndex = (state.lanesCount || 3) - 1
-          for (const carril of [planta.lane - 1, planta.lane, planta.lane + 1].filter((l) => l >= 0 && l <= maxLaneIndex)) {
+          const allowed = state.allowedLanes && state.allowedLanes.length > 0 ? state.allowedLanes : null
+          for (const carril of [planta.lane - 1, planta.lane, planta.lane + 1].filter((l) => l >= 0 && l <= maxLaneIndex && (!allowed || allowed.includes(l)))) {
             state.projectiles.push({
               id: entityId(`proj-${lado.equipo}-3p-${carril}`, state.tick, state.entityCounter++),
               type: 'pea',
@@ -1472,6 +1473,9 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
   const siguientes: ProjectileEntity[] = []
 
   for (const proy of state.projectiles) {
+    if (state.allowedLanes && state.allowedLanes.length > 0 && !state.allowedLanes.includes(proy.lane)) {
+      continue
+    }
     const sentido: 1 | -1 = proy.targetTeam === 'p2' ? 1 : -1
     const blancos = proy.targetTeam === 'p2' ? state.enemyPlants : state.plants
     const baseX = proy.targetTeam === 'p2' ? BASE_RIGHT_START_X : BASE_LEFT_END_X
@@ -1575,8 +1579,10 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
 
     if (!impacto && (proy.x - baseX) * sentido >= 0) {
       impacto = true
-      dañarBase(state, proy.targetTeam, proy.damage)
-      sonar('pea_hit', 0.5)
+      if (!state.allowedLanes || state.allowedLanes.length === 0 || state.allowedLanes.includes(proy.lane)) {
+        dañarBase(state, proy.targetTeam, proy.damage)
+        sonar('pea_hit', 0.5)
+      }
     }
 
     if (!impacto && proy.x > 10 && proy.x < 90) siguientes.push(proy)
@@ -2305,7 +2311,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     if (ultimoDisparo === 0 || state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
       state.timers.lastP1TreeShot = state.tick
       for (let i = 0; i < 2; i++) {
-        const lane = nextInt(state.rng, 3)
+        const poolLanes = state.allowedLanes && state.allowedLanes.length > 0 ? state.allowedLanes : [0, 1, 2]
+        const lane = poolLanes[nextInt(state.rng, poolLanes.length)]
         const target = state.enemyPlants
           .filter((e) => e.lane === lane && e.hp > 0 && e.x > BASE_LEFT_END_X)
           .sort((a, b) => a.x - b.x)[0]
@@ -2334,7 +2341,8 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     if (ultimoDisparo === 0 || state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
       state.timers.lastP2TreeShot = state.tick
       for (let i = 0; i < 2; i++) {
-        const lane = nextInt(state.rng, 3)
+        const poolLanes = state.allowedLanes && state.allowedLanes.length > 0 ? state.allowedLanes : [0, 1, 2]
+        const lane = poolLanes[nextInt(state.rng, poolLanes.length)]
         const target = state.plants
           .filter((e) => e.lane === lane && e.hp > 0 && e.x < BASE_RIGHT_START_X)
           .sort((a, b) => b.x - a.x)[0]

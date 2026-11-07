@@ -69,6 +69,96 @@ describe('SISTEMA DE FORTALEZAS DE CLAN — COMBATE 5 CARRILES Y ECONOMÍA REBAL
     expect(proyLanes).toContain(4)
   })
 
+  it('CORRECCIÓN DE BUG: Threepeater NUNCA dispara a carriles bloqueados (solo carriles activos)', () => {
+    // Escenario Árbol Madre Nivel 1 o 2: carriles permitidos son [1, 2, 3]. Carriles 0 y 4 bloqueados.
+    const state = createBattleState(
+      999,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      5,
+      true,
+      undefined,
+      [1, 2, 3] // allowedLanes: solo 1, 2 y 3
+    )
+
+    // Threepeater en carril 3 (adyacente al carril 4 que está bloqueado)
+    const tpCarril3 = crearPlantaPropia(state, 'threepeater', 3, 1)
+    state.plants.push(tpCarril3)
+
+    // Threepeater en carril 1 (adyacente al carril 0 que está bloqueado)
+    const tpCarril1 = crearPlantaPropia(state, 'threepeater', 1, 1)
+    state.plants.push(tpCarril1)
+
+    // Simular hasta disparo
+    let disparado = false
+    for (let t = 0; t < 100; t++) {
+      stepTick(state, () => {})
+      if (state.projectiles.length > 0) {
+        disparado = true
+        break
+      }
+    }
+
+    expect(disparado).toBe(true)
+    const proyLanes = state.projectiles.map((p) => p.lane)
+
+    // Debe contener carriles activos 1, 2 y 3
+    expect(proyLanes).toContain(1)
+    expect(proyLanes).toContain(2)
+    expect(proyLanes).toContain(3)
+
+    // BAJO NINGUNA CIRCUNSTANCIA puede haber proyectiles en carriles 0 o 4 bloqueados
+    expect(proyLanes).not.toContain(0)
+    expect(proyLanes).not.toContain(4)
+    for (const p of state.projectiles) {
+      expect([1, 2, 3]).toContain(p.lane)
+    }
+  })
+
+  it('CORRECCIÓN DE BUG: Proyectiles en carriles bloqueados no pueden dañar la base', () => {
+    const state = createBattleState(
+      999,
+      false,
+      false,
+      NIVEL_POR_DEFECTO,
+      'auth-v2',
+      1000,
+      1000,
+      null,
+      null,
+      5,
+      true,
+      undefined,
+      [1, 2, 3]
+    )
+
+    // Inyectar manualmente un proyectil en carril 4 (bloqueado)
+    state.projectiles.push({
+      id: 'proj-blocked-test',
+      type: 'pea',
+      targetTeam: 'p2',
+      lane: 4,
+      x: 95, // Directo al borde de la base
+      y: 20 + 4 * 19.33 + 7,
+      speed: 32,
+      damage: 100,
+    })
+
+    const initialHp = state.p2BaseHp
+    stepTick(state, () => {})
+
+    // La base rival NO debe haber recibido ningún daño
+    expect(state.p2BaseHp).toBe(initialHp)
+    // El proyectil en carril bloqueado debe haber sido descartado
+    expect(state.projectiles.some((p) => p.lane === 4)).toBe(false)
+  })
+
   it('calcula correctamente el presupuesto y coste de Soles de una fortaleza', () => {
     const layout: ClanFortressPlant[] = [
       { plantId: 'wallnut', lane: 1, col: 8 }, // 50
