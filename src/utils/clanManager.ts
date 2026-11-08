@@ -263,6 +263,9 @@ export interface ClanData {
   vaultUsd: number
   vaultGems?: number
   vaultGold?: number
+  tournamentFundGold?: number
+  tournamentFundPvpPacks?: number
+  tournamentFundEpicPacks?: number
   status: 'active' | 'defeated' // Active by default, Defeated only if depleted in war
   shieldUntil?: number // 24h shield timestamp
   wins: number
@@ -278,6 +281,77 @@ export interface ClanData {
   leadershipClaim?: ClanLeadershipClaim | null
   isLeaderInactive?: boolean
   leaderInactiveDays?: number
+}
+
+export interface ClanTournamentEntryRequirements {
+  require_card_donation_5d?: boolean
+  require_gems_donation_5d?: boolean
+  require_gold_donation_5d?: boolean
+  require_ranked_matches_5d?: number
+}
+
+export interface ClanTournamentParticipant {
+  id: string
+  user_id: string
+  username: string
+  lives_remaining: number
+  wins: number
+  losses: number
+  is_eliminated: boolean
+  joined_at: string
+}
+
+export interface ClanTournamentCardPrize {
+  id: string
+  plant_id: string
+  plant_name: string
+  plant_level: number
+  target_rank: number
+  status: string
+}
+
+export interface ClanTournamentData {
+  id: string
+  title: string
+  description?: string
+  status: 'registering' | 'active' | 'finished' | 'cancelled'
+  rewarded_places: number
+  prize_gold: number
+  prize_epic_packs: number
+  prize_pvp_packs: number
+  entry_requirements: ClanTournamentEntryRequirements
+  min_participants: number
+  max_participants: number
+  starts_at?: string
+  ends_at?: string
+  participants: ClanTournamentParticipant[]
+  card_prizes: ClanTournamentCardPrize[]
+  eligibility?: {
+    eligible: boolean
+    reasons: string[]
+    is_registered?: boolean
+    stats?: any
+  }
+}
+
+export interface ClanTournamentHistoryItem {
+  id: string
+  title: string
+  rewarded_places: number
+  prize_gold: number
+  prize_epic_packs: number
+  prize_pvp_packs: number
+  finished_at: string
+  podium: Array<{
+    rank: number
+    user_id: string
+    username: string
+    wins: number
+    losses: number
+    prize_gold: number
+    prize_epic_packs: number
+    prize_pvp_packs: number
+  }>
 }
 
 const STORAGE_KEYS = {

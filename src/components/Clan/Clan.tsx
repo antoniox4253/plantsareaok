@@ -9,6 +9,11 @@ import {
   type KickValidationResult,
   formatMemberActivityStatus,
   getMemberInactiveDays,
+  type ClanTournamentData,
+  type ClanTournamentParticipant,
+  type ClanTournamentHistoryItem,
+  type ClanTournamentEntryRequirements,
+  type ClanTournamentCardPrize,
 } from '../../utils/clanManager'
 import type { PlantId, ClanFortressData, ClanFortressMatchOpponent, ClanRaidHistoryEntry } from '../../types/game'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
@@ -100,7 +105,7 @@ export default function Clan({
   const [allClans, setAllClans] = useState<ClanData[]>(() => ClanManager.getClans())
   const [isRefreshing, setIsRefreshing] = useState(false)
   const isRefreshingRef = React.useRef(false)
-  const [activeTab, setActiveTab] = useState<'members' | 'wars' | 'donations' | 'rewards' | 'fortress'>('members')
+  const [activeTab, setActiveTab] = useState<'members' | 'wars' | 'donations' | 'rewards' | 'fortress' | 'tournaments'>('members')
   const [noClanTab, setNoClanTab] = useState<'browse' | 'create'>('browse')
   const [selectedBrowseClanId, setSelectedBrowseClanId] = useState<string>(() => allClans[0]?.id || '')
 
@@ -219,6 +224,42 @@ export default function Clan({
   } | null>(null)
   const [isCardFlipped, setIsCardFlipped] = useState(false)
   const [selectedRewardTierLevel, setSelectedRewardTierLevel] = useState<number>(1)
+
+  // Clan Tournaments State
+  const [tournamentData, setTournamentData] = useState<{
+    currentTournament: ClanTournamentData | null
+    history: ClanTournamentHistoryItem[]
+  } | null>(null)
+  const [isLoadingTournaments, setIsLoadingTournaments] = useState(false)
+  const [isSubmittingTournament, setIsSubmittingTournament] = useState(false)
+  const [isExchangingPacks, setIsExchangingPacks] = useState(false)
+  const [showCreateTournamentModal, setShowCreateTournamentModal] = useState(false)
+  const [tournamentForm, setTournamentForm] = useState({
+    title: '',
+    description: '',
+    rewardedPlaces: 3 as 3 | 5,
+    prizeGold: 0,
+    prizeEpicPacks: 0,
+    prizePvpPacks: 0,
+    entryFree: true,
+    reqCardDonation: false,
+    reqGemsDonation: false,
+    reqGoldDonation: false,
+    reqBattles20: false,
+  })
+  const [userAvailablePlants, setUserAvailablePlants] = useState<any[]>([])
+  const [selectedDonatedCards, setSelectedDonatedCards] = useState<Array<{
+    instanceId: string
+    plantId: string
+    level: number
+    targetRank: number
+  }>>([])
+
+  // Match Report State
+  const [showReportMatchModal, setShowReportMatchModal] = useState(false)
+  const [reportMatchWinnerId, setReportMatchWinnerId] = useState('')
+  const [reportMatchLoserId, setReportMatchLoserId] = useState('')
+  const [isSubmittingMatchReport, setIsSubmittingMatchReport] = useState(false)
 
   // Floating Clan Chat State & Realtime
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -528,6 +569,304 @@ export default function Clan({
       void loadRaidHistory()
     }
   }, [activeTab, userClan?.id, loadRaidHistory])
+
+  const loadTournamentData = useCallback(async () => {
+    if (!userClan?.id) return
+    setIsLoadingTournaments(true)
+    try {
+      const res = await supabaseService.getClanTournamentDetails(userClan.id)
+      if (res.success) {
+        setTournamentData({
+          currentTournament: res.current_tournament || null,
+          history: res.history || [],
+        })
+      }
+    } catch (e) {
+      console.error('Error cargando torneos de clan:', e)
+    } finally {
+      setIsLoadingTournaments(false)
+    }
+  }, [userClan?.id])
+
+  useEffect(() => {
+    if (activeTab === 'tournaments' && userClan?.id) {
+      void loadTournamentData()
+    }
+  }, [activeTab, userClan?.id, loadTournamentData])
+
+  const handleExchangePacks = async () => {
+    if (!userClan?.id || isExchangingPacks) return
+    const currentPvp = userClan.tournamentFundPvpPacks || 0
+    if (currentPvp < 6) {
+      showModalAlert('CANJE 6x1', 'Se requieren al menos 6 Sobres PvP para canjear por 1 Sobre Épico.', '📦', 'warning')
+      return
+    }
+    setIsExchangingPacks(true)
+    try {
+      soundManager.playSound('click', 0.5)
+      const res = await supabaseService.exchangeClanTournamentPacks(userClan.id)
+      if (res.success) {
+        soundManager.playSound('gacha_legendary', 1)
+        setUserClan((prev) => prev ? {
+          ...prev,
+          tournamentFundPvpPacks: res.new_pvp_packs,
+          tournamentFundEpicPacks: res.new_epic_packs,
+        } : null)
+        showModalAlert('¡CANJE EXITOSO!', 'Has canjeado 6 Sobres PvP por 1 Sobre Épico 🔮 para el Fondo de Torneos.', '✨', 'success')
+      } else {
+        showModalAlert('ERROR EN CANJE', res.error || 'No se pudo realizar el canje.', '❌', 'error')
+      }
+    } catch (e: any) {
+      showModalAlert('ERROR', e.message || 'Error inesperado.', '❌', 'error')
+    } finally {
+      setIsExchangingPacks(false)
+    }
+  }
+
+  const handleOpenCreateTournamentModal = async () => {
+    if (!isLeader) {
+      showModalAlert('ACCESO DENEGADO', 'Solo el Líder del clan puede organizar torneos.', '👑', 'warning')
+      return
+    }
+    soundManager.playSound('click', 0.5)
+    setTournamentForm({
+      title: `Torneo de Clan #${(tournamentData?.history.length || 0) + 1}`,
+      description: '',
+      rewardedPlaces: 3,
+      prizeGold: Math.min(1000, userClan?.tournamentFundGold || 0),
+      prizeEpicPacks: Math.min(1, userClan?.tournamentFundEpicPacks || 0),
+      prizePvpPacks: 0,
+      entryFree: true,
+      reqCardDonation: false,
+      reqGemsDonation: false,
+      reqGoldDonation: false,
+      reqBattles20: false,
+    })
+    setSelectedDonatedCards([])
+    setShowCreateTournamentModal(true)
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const plants = await supabaseService.getUserPlants(user.id)
+        const available = plants.filter((p: any) => !p.is_in_deck && !p.in_tournament_escrow && !p.is_locked)
+        setUserAvailablePlants(available)
+      }
+    } catch (e) {
+      console.error('Error cargando plantas disponibles del líder:', e)
+    }
+  }
+
+  const handleCreateTournament = async () => {
+    if (!userClan?.id || isSubmittingTournament) return
+    if (!tournamentForm.title.trim()) {
+      showModalAlert('TÍTULO REQUERIDO', 'Debes ingresar un título para el torneo.', '⚠️', 'warning')
+      return
+    }
+    const availableGold = userClan.tournamentFundGold || 0
+    const availableEpic = userClan.tournamentFundEpicPacks || 0
+    const availablePvp = userClan.tournamentFundPvpPacks || 0
+
+    if (tournamentForm.prizeGold > availableGold) {
+      showModalAlert('ORO INSUFICIENTE', `El oro asignado (${tournamentForm.prizeGold.toLocaleString()}) supera los fondos comunales disponibles (${availableGold.toLocaleString()}).`, '🪙', 'warning')
+      return
+    }
+    if (tournamentForm.prizeEpicPacks > availableEpic) {
+      showModalAlert('SOBRES INSUFICIENTES', `Los sobres épicos asignados superan los disponibles en el fondo (${availableEpic}).`, '🔮', 'warning')
+      return
+    }
+    if (tournamentForm.prizePvpPacks > availablePvp) {
+      showModalAlert('SOBRES INSUFICIENTES', `Los sobres PvP asignados superan los disponibles en el fondo (${availablePvp}).`, '📦', 'warning')
+      return
+    }
+
+    setIsSubmittingTournament(true)
+    try {
+      const entryRequirements = tournamentForm.entryFree
+        ? {}
+        : {
+            require_card_donation_5d: tournamentForm.reqCardDonation,
+            require_gems_donation_5d: tournamentForm.reqGemsDonation,
+            require_gold_donation_5d: tournamentForm.reqGoldDonation,
+            require_ranked_matches_5d: tournamentForm.reqBattles20 ? 20 : 0,
+          }
+
+      const donatedCards = selectedDonatedCards.map((c) => ({
+        plant_instance_id: c.instanceId,
+        target_rank: c.targetRank,
+      }))
+
+      const res = await supabaseService.createClanTournament({
+        clanId: userClan.id,
+        title: tournamentForm.title.trim(),
+        description: tournamentForm.description.trim(),
+        rewardedPlaces: tournamentForm.rewardedPlaces,
+        prizeGold: tournamentForm.prizeGold,
+        prizeEpicPacks: tournamentForm.prizeEpicPacks,
+        prizePvpPacks: tournamentForm.prizePvpPacks,
+        entryRequirements,
+        donatedCards,
+      })
+
+      if (res.success) {
+        soundManager.playSound('fusion_success', 1)
+        setShowCreateTournamentModal(false)
+        showModalAlert('¡TORNEO CREADO!', 'El torneo ha sido publicado y las inscripciones están abiertas.', '🏆', 'success')
+        await refreshClanData()
+        await loadTournamentData()
+      } else {
+        showModalAlert('ERROR', res.error || 'No se pudo crear el torneo.', '❌', 'error')
+      }
+    } catch (e: any) {
+      showModalAlert('ERROR', e.message || 'Error creando torneo.', '❌', 'error')
+    } finally {
+      setIsSubmittingTournament(false)
+    }
+  }
+
+  const handleRegisterTournament = async (tournamentId: string) => {
+    soundManager.playSound('click', 0.5)
+    try {
+      const res = await supabaseService.registerClanTournament(tournamentId)
+      if (res.success) {
+        soundManager.playSound('fusion_success', 1)
+        showModalAlert('¡INSCRIPCIÓN EXITOSA!', 'Te has inscrito al torneo con 3 vidas ❤️❤️❤️. ¡Prepárate para la batalla!', '⚔️', 'success')
+        await loadTournamentData()
+      } else {
+        showModalAlert('NO ELEGIBLE', res.error || 'No cumples con los requisitos para ingresar a este torneo.', '⚠️', 'warning')
+      }
+    } catch (e: any) {
+      showModalAlert('ERROR', e.message || 'Error en inscripción.', '❌', 'error')
+    }
+  }
+
+  const handleStartTournament = async (tournamentId: string) => {
+    soundManager.playSound('click', 0.5)
+    try {
+      const res = await supabaseService.startClanTournament(tournamentId)
+      if (res.success) {
+        soundManager.playSound('gacha_legendary', 1)
+        showModalAlert('¡TORNEO EN MARCHA!', 'El torneo ha comenzado oficialmente. ¡Todos contra todos con 3 vidas!', '🔥', 'success')
+        await loadTournamentData()
+      } else {
+        showModalAlert('ERROR', res.error || 'No se pudo iniciar el torneo.', '❌', 'error')
+      }
+    } catch (e: any) {
+      showModalAlert('ERROR', e.message || 'Error iniciando torneo.', '❌', 'error')
+    }
+  }
+
+  const handleCancelTournament = (tournamentId: string) => {
+    showModalConfirm(
+      'Cancelar Torneo',
+      '¿Estás seguro de cancelar este torneo? Los premios y fondos comunales serán devueltos a la bóveda del clan, y las cartas donadas se reintegrarán a tu inventario.',
+      async () => {
+        try {
+          const res = await supabaseService.cancelClanTournament(tournamentId)
+          if (res.success) {
+            showModalAlert('TORNEO CANCELADO', 'El torneo fue cancelado y los fondos reintegrados con éxito.', '↩️', 'info')
+            await refreshClanData()
+            await loadTournamentData()
+          } else {
+            showModalAlert('ERROR', res.error || 'No se pudo cancelar el torneo.', '❌', 'error')
+          }
+        } catch (e: any) {
+          showModalAlert('ERROR', e.message || 'Error cancelando torneo.', '❌', 'error')
+        }
+      }
+    )
+  }
+
+  const handleFinalizeTournament = (tournamentId: string) => {
+    showModalConfirm(
+      'Finalizar Torneo y Repartir Premios',
+      '¿Deseas dar por terminado el torneo y transferir automáticamente los premios (oro, sobres y cartas de plantas) a los mejores clasificados?',
+      async () => {
+        try {
+          const res = await supabaseService.finalizeClanTournament(tournamentId)
+          if (res.success) {
+            soundManager.playSound('fusion_success', 1)
+            showModalAlert('¡PREMIOS ENTREGADOS!', 'El torneo ha culminado y los premios se enviaron a los ganadores.', '👑', 'success')
+            await refreshClanData()
+            await loadTournamentData()
+          } else {
+            showModalAlert('ERROR', res.error || 'No se pudo finalizar el torneo.', '❌', 'error')
+          }
+        } catch (e: any) {
+          showModalAlert('ERROR', e.message || 'Error finalizando torneo.', '❌', 'error')
+        }
+      }
+    )
+  }
+
+  const handleReportMatch = async () => {
+    const t = tournamentData?.currentTournament
+    if (!t || !reportMatchWinnerId || !reportMatchLoserId) return
+    if (reportMatchWinnerId === reportMatchLoserId) {
+      showModalAlert('ERROR', 'El ganador y el perdedor deben ser participantes distintos.', '⚠️', 'warning')
+      return
+    }
+
+    setIsSubmittingMatchReport(true)
+    try {
+      const res = await supabaseService.reportClanTournamentMatch(t.id, reportMatchWinnerId, reportMatchLoserId)
+      if (res.success) {
+        soundManager.playSound('click', 0.7)
+        setShowReportMatchModal(false)
+        setReportMatchWinnerId('')
+        setReportMatchLoserId('')
+
+        if (res.active_remaining === 1) {
+          soundManager.playSound('gacha_legendary', 1)
+          showModalAlert('¡TENEMOS UN CAMPEÓN!', 'Solo queda 1 sobreviviente en el torneo. ¡Se han finalizado los combates y entregado los premios a los vencedores!', '🏆', 'success')
+        } else if (res.loser_eliminated) {
+          showModalAlert('JUGADOR ELIMINADO', 'El jugador derrotado ha perdido su última vida (0 vidas restantes) y quedó eliminado.', '💀', 'info')
+        } else {
+          showModalAlert('RESULTADO REGISTRADO', 'Combate registrado con éxito. Se ha descontado 1 vida al perdedor.', '⚔️', 'success')
+        }
+        await refreshClanData()
+        await loadTournamentData()
+      } else {
+        showModalAlert('ERROR', res.error || 'No se pudo registrar el resultado.', '❌', 'error')
+      }
+    } catch (e: any) {
+      showModalAlert('ERROR', e.message || 'Error registrando resultado.', '❌', 'error')
+    } finally {
+      setIsSubmittingMatchReport(false)
+    }
+  }
+
+  const handleShareTournament = (tournament: ClanTournamentData) => {
+    soundManager.playSound('click', 0.5)
+    const clanName = userClan?.name || 'Clan'
+    const cardNames = tournament.card_prizes?.length
+      ? tournament.card_prizes.map((cp) => {
+          const cfg = PLANT_CONFIGS[cp.plant_id as PlantId]
+          return `${cfg?.name || cp.plant_id} (Top ${cp.target_rank})`
+        }).join(', ')
+      : null
+
+    const text = `🏆 ¡GRAN TORNEO EN NUESTRO CLAN ${clanName.toUpperCase()}! 🏆\n\n` +
+      `⚔️ Torneo: "${tournament.title}"\n` +
+      `❤️ Formato: Todos contra Todos (3 Vidas)\n` +
+      `💰 Pozo Comunal: ${tournament.prize_gold.toLocaleString()} 🪙 Oro | ${tournament.prize_epic_packs} 🔮 Sobres Épicos | ${tournament.prize_pvp_packs} 📦 Sobres PvP\n` +
+      (cardNames ? `🌱 Plantas en juego: ${cardNames}\n` : '') +
+      `🎯 Premios: Top ${tournament.rewarded_places} clasificados\n\n` +
+      `¡Entra ya a la app e inscríbete para luchar por el clan! 🔥🌿\nhttps://plants-arena.online/play/clan`
+
+    if (navigator.share) {
+      navigator.share({
+        title: `Torneo de Clan: ${tournament.title}`,
+        text: text,
+      }).catch(() => {
+        navigator.clipboard.writeText(text)
+        showModalAlert('¡COPIADO!', 'Mensaje del torneo copiado al portapapeles para compartir en WhatsApp o Discord.', '📋', 'success')
+      })
+    } else {
+      navigator.clipboard.writeText(text)
+      showModalAlert('¡COPIADO!', 'Mensaje del torneo copiado al portapapeles para compartir en WhatsApp o Discord.', '📋', 'success')
+    }
+  }
 
   const getTreeResourceBalance = (res: 'water' | 'fertilizer' | 'gems'): number => {
     switch (res) {
@@ -2940,6 +3279,13 @@ export default function Clan({
         </button>
         <button
           type="button"
+          className={`clan-tab-btn ${activeTab === 'tournaments' ? 'clan-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('tournaments')}
+        >
+          🏆 TORNEOS
+        </button>
+        <button
+          type="button"
           className={`clan-tab-btn ${activeTab === 'fortress' ? 'clan-tab-btn--active' : ''}`}
           onClick={() => {
             setActiveTab('fortress')
@@ -4858,6 +5204,452 @@ export default function Clan({
         </div>
       )}
 
+      {/* TAB: CLAN TOURNAMENTS */}
+      {activeTab === 'tournaments' && (
+        <div className="clan-tournaments-pane">
+          {isLoadingTournaments && !tournamentData && (
+            <div className="clan-tournament-loading-bar">
+              ⏳ Sincronizando torneos y fondo comunal con la arena del clan...
+            </div>
+          )}
+
+          {/* 1. HERO BANNER: FONDO COMUNAL DE RECOMPENSAS PARA TORNEOS */}
+          <div className="clan-tournament-hero-card">
+            <div className="clan-tournament-hero-top">
+              <div className="clan-tournament-hero-badge">
+                <span className="clan-tournament-hero-icon">🏛️</span>
+                <span className="clan-tournament-hero-tag">FONDO COMUNAL</span>
+              </div>
+              <div className="clan-tournament-hero-info">
+                <h3>FONDO DE RECOMPENSAS DE TORNEO</h3>
+                <p>
+                  Las recompensas diarias por ranking de clanes y donaciones se acumulan directamente en este pozo. El Líder puede organizar torneos para el clan y repartir estos premios junto a plantas exclusivas.
+                </p>
+              </div>
+            </div>
+
+            {/* Balances Grid */}
+            <div className="clan-tournament-balances-grid">
+              <div className="clan-tournament-balance-item clan-tournament-balance-item--gold">
+                <span className="clan-tournament-bal-icon">🪙</span>
+                <div className="clan-tournament-bal-text">
+                  <span className="clan-tournament-bal-lbl">Oro Acumulado</span>
+                  <strong>{(userClan.tournamentFundGold || 0).toLocaleString()} 🪙</strong>
+                </div>
+              </div>
+
+              <div className="clan-tournament-balance-item clan-tournament-balance-item--pvp">
+                <span className="clan-tournament-bal-icon">📦</span>
+                <div className="clan-tournament-bal-text">
+                  <span className="clan-tournament-bal-lbl">Sobres PvP</span>
+                  <strong>{userClan.tournamentFundPvpPacks || 0}</strong>
+                </div>
+              </div>
+
+              <div className="clan-tournament-balance-item clan-tournament-balance-item--epic">
+                <span className="clan-tournament-bal-icon">🔮</span>
+                <div className="clan-tournament-bal-text">
+                  <span className="clan-tournament-bal-lbl">Sobres Épicos</span>
+                  <strong>{userClan.tournamentFundEpicPacks || 0}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* 6x1 Pack Exchange Sub-card */}
+            <div className="clan-tournament-exchange-strip">
+              <div className="clan-tournament-exchange-info">
+                <div className="clan-tournament-exchange-title">
+                  <span>🔄 CANJE 6x1 DE SOBRES</span>
+                  <span className="clan-tournament-exchange-rate">6 Sobres PvP ➔ 1 Sobre Épico</span>
+                </div>
+                <div className="clan-tournament-exchange-progress-wrap">
+                  <div className="clan-tournament-exchange-labels">
+                    <small>Progreso de Canje:</small>
+                    <small><strong>{(userClan.tournamentFundPvpPacks || 0)} / 6 Sobres</strong></small>
+                  </div>
+                  <div className="clan-tournament-exchange-bar-bg">
+                    <div
+                      className="clan-tournament-exchange-bar-fill"
+                      style={{ width: `${Math.min(100, Math.round(((userClan.tournamentFundPvpPacks || 0) / 6) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {isLeader ? (
+                <button
+                  type="button"
+                  className="clan-tournament-exchange-btn"
+                  disabled={isExchangingPacks || (userClan.tournamentFundPvpPacks || 0) < 6}
+                  onClick={handleExchangePacks}
+                  title="Canjea 6 Sobres PvP comunales por 1 Sobre Épico para el pozo del torneo"
+                >
+                  {isExchangingPacks ? '⏳ CANJEANDO...' : '🔄 CANJEAR (6x1)'}
+                </button>
+              ) : (
+                <div className="clan-tournament-officer-hint">
+                  👑 Solo el Líder puede ejecutar el canje 6x1
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 2. TORNEO ACTIVO O EN INSCRIPCIÓN */}
+          {(() => {
+            const t = tournamentData?.currentTournament
+            if (!t) {
+              return (
+                <div className="clan-tournament-empty-card">
+                  <div className="clan-tournament-empty-icon">🏆</div>
+                  <h4>NO HAY NINGÚN TORNEO EN CURSO</h4>
+                  <p>
+                    El fondo comunal sigue recibiendo recompensas diarias. Cuando el clan esté listo, el Líder puede convocar un torneo interno todos contra todos con 3 vidas.
+                  </p>
+                  {isLeader ? (
+                    <button
+                      type="button"
+                      className="clan-tournament-create-btn"
+                      onClick={handleOpenCreateTournamentModal}
+                    >
+                      👑 ORGANIZAR TORNEO DE CLAN
+                    </button>
+                  ) : (
+                    <span className="clan-tournament-non-leader-tag">
+                      Esperando que el Líder convoque el próximo torneo
+                    </span>
+                  )}
+                </div>
+              )
+            }
+
+            const isRegistering = t.status === 'registering'
+            const isActive = t.status === 'active'
+            const myParticipant = t.participants.find(
+              (p) => p.user_id === myMember?.id || p.username.toLowerCase() === playerName.toLowerCase()
+            )
+            const isRegistered = Boolean(myParticipant)
+            const aliveParticipants = t.participants.filter((p) => !p.is_eliminated && p.lives_remaining > 0)
+
+            return (
+              <div className={`clan-tournament-active-card ${isRegistering ? 'clan-tournament-active-card--registering' : 'clan-tournament-active-card--active'}`}>
+                {/* Header */}
+                <div className="clan-tournament-active-header">
+                  <div className="clan-tournament-active-title-group">
+                    <span className={`clan-tournament-status-pill ${isRegistering ? 'clan-tournament-status-pill--reg' : 'clan-tournament-status-pill--war'}`}>
+                      {isRegistering ? '📝 INSCRIPCIONES ABIERTAS' : '🔥 EN COMBATE (3 VIDAS)'}
+                    </span>
+                    <h3>{t.title}</h3>
+                    {t.description && <p className="clan-tournament-active-desc">{t.description}</p>}
+                  </div>
+
+                  <button
+                    type="button"
+                    className="clan-tournament-share-btn"
+                    onClick={() => handleShareTournament(t)}
+                    title="Compartir anuncio del torneo en WhatsApp, Discord o Clan"
+                  >
+                    📢 COMPARTIR
+                  </button>
+                </div>
+
+                {/* Prize Pool Breakdown Card */}
+                <div className="clan-tournament-prizepool-box">
+                  <div className="clan-tournament-prizepool-header">
+                    <h4>💰 PREMIOS EN DISPUTA (TOP {t.rewarded_places} CLASIFICADOS)</h4>
+                    <span className="clan-tournament-prizepool-total">
+                      Pozo: {t.prize_gold.toLocaleString()} 🪙 | {t.prize_epic_packs} 🔮 Épicos | {t.prize_pvp_packs} 📦 PvP
+                    </span>
+                  </div>
+
+                  {/* Podium Payout Grid */}
+                  <div className="clan-tournament-payouts-grid">
+                    <div className="clan-tournament-payout-node clan-tournament-payout-node--1">
+                      <span className="clan-payout-trophy">🥇</span>
+                      <div className="clan-payout-details">
+                        <strong>1º PUESTO ({t.rewarded_places === 3 ? '50%' : '40%'})</strong>
+                        <span>+{t.rewarded_places === 3 ? Math.round(t.prize_gold * 0.5) : Math.round(t.prize_gold * 0.4)} 🪙 Oro</span>
+                        {t.prize_epic_packs > 0 && <span>+1 🔮 Pack Épico</span>}
+                        {t.card_prizes?.filter((c) => c.target_rank === 1).map((cp) => (
+                          <span key={cp.id} className="clan-payout-plant-chip">
+                            🌱 {PLANT_CONFIGS[cp.plant_id as PlantId]?.name || cp.plant_id} Nv.{cp.plant_level || 1}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="clan-tournament-payout-node clan-tournament-payout-node--2">
+                      <span className="clan-payout-trophy">🥈</span>
+                      <div className="clan-payout-details">
+                        <strong>2º PUESTO ({t.rewarded_places === 3 ? '30%' : '25%'})</strong>
+                        <span>+{t.rewarded_places === 3 ? Math.round(t.prize_gold * 0.3) : Math.round(t.prize_gold * 0.25)} 🪙 Oro</span>
+                        {t.prize_pvp_packs > 0 && <span>+1 📦 Pack PvP</span>}
+                        {t.card_prizes?.filter((c) => c.target_rank === 2).map((cp) => (
+                          <span key={cp.id} className="clan-payout-plant-chip">
+                            🌱 {PLANT_CONFIGS[cp.plant_id as PlantId]?.name || cp.plant_id} Nv.{cp.plant_level || 1}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="clan-tournament-payout-node clan-tournament-payout-node--3">
+                      <span className="clan-payout-trophy">🥉</span>
+                      <div className="clan-payout-details">
+                        <strong>3º PUESTO ({t.rewarded_places === 3 ? '20%' : '15%'})</strong>
+                        <span>+{t.rewarded_places === 3 ? Math.round(t.prize_gold * 0.2) : Math.round(t.prize_gold * 0.15)} 🪙 Oro</span>
+                        {t.card_prizes?.filter((c) => c.target_rank === 3).map((cp) => (
+                          <span key={cp.id} className="clan-payout-plant-chip">
+                            🌱 {PLANT_CONFIGS[cp.plant_id as PlantId]?.name || cp.plant_id} Nv.{cp.plant_level || 1}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {t.rewarded_places === 5 && (
+                      <>
+                        <div className="clan-tournament-payout-node clan-tournament-payout-node--4">
+                          <span className="clan-payout-trophy">🎖️</span>
+                          <div className="clan-payout-details">
+                            <strong>4º PUESTO (10%)</strong>
+                            <span>+{Math.round(t.prize_gold * 0.1)} 🪙 Oro</span>
+                          </div>
+                        </div>
+
+                        <div className="clan-tournament-payout-node clan-tournament-payout-node--5">
+                          <span className="clan-payout-trophy">🎖️</span>
+                          <div className="clan-payout-details">
+                            <strong>5º PUESTO (10%)</strong>
+                            <span>+{Math.round(t.prize_gold * 0.1)} 🪙 Oro</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Entry Requirements Notice */}
+                <div className="clan-tournament-reqs-strip">
+                  <div className="clan-tournament-reqs-title">
+                    <span>🛡️ Requisitos de Admisión (Últimos 5 Días):</span>
+                  </div>
+                  {(!t.entry_requirements || Object.keys(t.entry_requirements).length === 0) ? (
+                    <span className="clan-tournament-req-free">🟢 Entrada Libre y Gratuita para todos los miembros</span>
+                  ) : (
+                    <div className="clan-tournament-req-pills">
+                      {t.entry_requirements.require_card_donation_5d && (
+                        <span className="clan-tournament-req-pill">🃏 Donar al menos 1 carta</span>
+                      )}
+                      {t.entry_requirements.require_gems_donation_5d && (
+                        <span className="clan-tournament-req-pill">💎 Donación de gemas</span>
+                      )}
+                      {t.entry_requirements.require_gold_donation_5d && (
+                        <span className="clan-tournament-req-pill">🪙 Donación de oro</span>
+                      )}
+                      {t.entry_requirements.require_ranked_matches_5d && (
+                        <span className="clan-tournament-req-pill">⚔️ 20 batallas Ranked</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* User Registration Bar */}
+                {isRegistering && (
+                  <div className="clan-tournament-register-row">
+                    {isRegistered ? (
+                      <div className="clan-tournament-registered-badge">
+                        ✅ ¡ESTÁS INSCRITO! (❤️❤️❤️ 3 Vidas Listas)
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="clan-tournament-enter-btn"
+                        onClick={() => handleRegisterTournament(t.id)}
+                      >
+                        ⚔️ INSCRIBIRSE AL TORNEO (3 VIDAS ❤️❤️❤️)
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Leader Action Controls */}
+                <div className="clan-tournament-management-row">
+                  {isLeader && isRegistering && (
+                    <>
+                      <button
+                        type="button"
+                        className="clan-tournament-start-btn"
+                        disabled={t.participants.length < 4}
+                        onClick={() => handleStartTournament(t.id)}
+                        title={t.participants.length < 4 ? 'Se requieren mínimo 4 miembros inscritos' : 'Comenzar fase de combates'}
+                      >
+                        🚀 INICIAR TORNEO ({t.participants.length}/4 mín.)
+                      </button>
+                      <button
+                        type="button"
+                        className="clan-tournament-cancel-btn"
+                        onClick={() => handleCancelTournament(t.id)}
+                      >
+                        ❌ CANCELAR TORNEO
+                      </button>
+                    </>
+                  )}
+
+                  {isActive && (
+                    <>
+                      {isLeader && (
+                        <button
+                          type="button"
+                          className="clan-tournament-finish-btn"
+                          onClick={() => handleFinalizeTournament(t.id)}
+                        >
+                          🏁 FINALIZAR Y ENTREGAR PREMIOS
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="clan-tournament-report-match-btn"
+                        onClick={() => {
+                          setReportMatchWinnerId('')
+                          setReportMatchLoserId('')
+                          setShowReportMatchModal(true)
+                        }}
+                      >
+                        📝 REPORTAR COMBATE
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Participants & Lives Grid */}
+                <div className="clan-tournament-participants-section">
+                  <div className="clan-tournament-participants-header">
+                    <h4>
+                      👥 PARTICIPANTES & VIDAS RESTANTES ({isActive ? `${aliveParticipants.length} supervivientes de ${t.participants.length}` : `${t.participants.length} inscritos`})
+                    </h4>
+                    <span className="clan-tournament-format-tag">
+                      ❤️ 3 Vidas • Todos contra Todos
+                    </span>
+                  </div>
+
+                  {t.participants.length === 0 ? (
+                    <div className="clan-tournament-no-parts">
+                      Sé el primero en inscribirte en la contienda comunal.
+                    </div>
+                  ) : (
+                    <div className="clan-tournament-participants-grid">
+                      {t.participants.map((p, idx) => {
+                        const isMe = p.user_id === myMember?.id || p.username.toLowerCase() === playerName.toLowerCase()
+                        const lives = Math.max(0, p.lives_remaining)
+                        const isElim = p.is_eliminated || lives === 0
+
+                        return (
+                          <div
+                            key={p.id}
+                            className={`clan-tournament-participant-card ${isElim ? 'clan-tournament-participant-card--eliminated' : ''} ${isMe ? 'clan-tournament-participant-card--me' : ''}`}
+                          >
+                            <div className="clan-part-left">
+                              <span className="clan-part-rank">#{idx + 1}</span>
+                              <div className="clan-part-avatar">🌱</div>
+                              <div className="clan-part-name-group">
+                                <strong>{p.username} {isMe ? '(Tú)' : ''}</strong>
+                                <small>⚔️ {p.wins}V - {p.losses}D</small>
+                              </div>
+                            </div>
+
+                            <div className="clan-part-right">
+                              {/* 3 Lives indicator */}
+                              <div className="clan-part-lives-wrap">
+                                {lives >= 3 && <span className="clan-hearts">❤️❤️❤️</span>}
+                                {lives === 2 && <span className="clan-hearts">❤️❤️🖤</span>}
+                                {lives === 1 && <span className="clan-hearts">❤️🖤🖤</span>}
+                                {isElim && <span className="clan-elim-pill">💀 ELIMINADO</span>}
+                              </div>
+
+                              {/* Duel action */}
+                              {isActive && !isElim && !isMe && (
+                                <button
+                                  type="button"
+                                  className="clan-part-challenge-btn"
+                                  onClick={() => {
+                                    soundManager.playSound('click', 0.8)
+                                    const duelCode = `tourn_${t.id.slice(0, 4)}_${p.user_id.slice(0, 4)}`
+                                    if (onPlayFriendly) {
+                                      onPlayFriendly(duelCode, 0)
+                                    } else {
+                                      navigator.clipboard?.writeText(duelCode)
+                                      showModalAlert('DESAFÍO DE TORNEO', `Sala de combate: ${duelCode}. Compártela con ${p.username} para luchar.`, '⚔️', 'info')
+                                    }
+                                  }}
+                                  title={`Combatir contra ${p.username}`}
+                                >
+                                  ⚔️ DESAFIAR
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* 3. SALÓN DE LA FAMA (HISTORIAL DE TORNEOS DE CLAN) */}
+          <div className="clan-tournament-history-card">
+            <div className="clan-tournament-history-header">
+              <div className="clan-tournament-history-title-row">
+                <span className="clan-tournament-history-icon">🏛️</span>
+                <h4>SALÓN DE LA FAMA • TORNEOS ANTERIORES</h4>
+              </div>
+              <small>Registro histórico de los campeones y recompensas de este clan</small>
+            </div>
+
+            {(!tournamentData?.history || tournamentData.history.length === 0) ? (
+              <div className="clan-tournament-empty-history">
+                <span>🛡️ Aún no se han disputado torneos en este clan. ¡Inaugura el Salón de la Fama con la primera contienda!</span>
+              </div>
+            ) : (
+              <div className="clan-tournament-history-list">
+                {tournamentData.history.map((h) => (
+                  <div key={h.id} className="clan-tournament-history-item">
+                    <div className="clan-th-item-top">
+                      <div className="clan-th-item-title-group">
+                        <span className="clan-th-trophy">🏆</span>
+                        <div>
+                          <strong>{h.title}</strong>
+                          <span className="clan-th-date">
+                            Finalizado: {typeof h.finished_at === 'string' ? h.finished_at.split('T')[0] : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="clan-th-prizes-pill">
+                        Pozo: {h.prize_gold.toLocaleString()} 🪙 | {h.prize_epic_packs} 🔮 | {h.prize_pvp_packs} 📦
+                      </div>
+                    </div>
+
+                    {/* Podium */}
+                    <div className="clan-th-podium-grid">
+                      {h.podium && h.podium.slice(0, 3).map((pod) => (
+                        <div key={pod.rank} className={`clan-th-podium-node clan-th-podium-node--${pod.rank}`}>
+                          <span className="clan-th-rank-icon">
+                            {pod.rank === 1 ? '🥇' : pod.rank === 2 ? '🥈' : '🥉'}
+                          </span>
+                          <div className="clan-th-pod-info">
+                            <strong>{pod.username}</strong>
+                            <small>+{pod.prize_gold.toLocaleString()} 🪙 {pod.prize_epic_packs > 0 ? `• ${pod.prize_epic_packs} 🔮` : ''}</small>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* WEEKLY CLAN CHEST GACHA MODAL */}
       {showWeeklyGachaModal && gachaClaimResult && (
         <div className="clan-modal-backdrop clan-gacha-backdrop" onClick={() => setShowWeeklyGachaModal(false)}>
@@ -6765,6 +7557,429 @@ export default function Clan({
                   </div>
                 )
               })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CREAR TORNEO DE CLAN (SOLO LÍDER) */}
+      {showCreateTournamentModal && (
+        <div className="clan-modal-backdrop" onClick={() => !isSubmittingTournament && setShowCreateTournamentModal(false)}>
+          <div className="clan-modal-box clan-tournament-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="clan-modal-header-row">
+              <div className="clan-modal-header-title">
+                <span className="clan-modal-header-icon">👑</span>
+                <div>
+                  <h4>ORGANIZAR TORNEO DE CLAN</h4>
+                  <small>Asigna fondos comunales y dona plantas de tu colección como premios</small>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="clan-modal-close-btn"
+                onClick={() => setShowCreateTournamentModal(false)}
+                disabled={isSubmittingTournament}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="clan-tournament-form">
+              {/* Título & Descripción */}
+              <div className="clan-tform-field">
+                <label>Título del Torneo:</label>
+                <input
+                  type="text"
+                  maxLength={40}
+                  className="clan-tform-input"
+                  value={tournamentForm.title}
+                  onChange={(e) => setTournamentForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Ej: Gran Torneo de Honor #1"
+                />
+              </div>
+
+              <div className="clan-tform-field">
+                <label>Descripción / Reglas (Opcional):</label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  className="clan-tform-input"
+                  value={tournamentForm.description}
+                  onChange={(e) => setTournamentForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Mensaje de motivación o reglas para los miembros..."
+                />
+              </div>
+
+              {/* Puestos a Premiar */}
+              <div className="clan-tform-field">
+                <label>Puestos con Recompensa:</label>
+                <div className="clan-tform-places-row">
+                  <button
+                    type="button"
+                    className={`clan-tform-place-btn ${tournamentForm.rewardedPlaces === 3 ? 'clan-tform-place-btn--active' : ''}`}
+                    onClick={() => setTournamentForm((prev) => ({ ...prev, rewardedPlaces: 3 }))}
+                  >
+                    🏆 TOP 3 (50% / 30% / 20%)
+                  </button>
+                  <button
+                    type="button"
+                    className={`clan-tform-place-btn ${tournamentForm.rewardedPlaces === 5 ? 'clan-tform-place-btn--active' : ''}`}
+                    onClick={() => setTournamentForm((prev) => ({ ...prev, rewardedPlaces: 5 }))}
+                  >
+                    👑 TOP 5 (40% / 25% / 15% / 10% / 10%)
+                  </button>
+                </div>
+              </div>
+
+              {/* Aporte de Fondos del Clan */}
+              <div className="clan-tform-funds-section">
+                <label>Asignación de Fondos Comunales para Premios:</label>
+
+                <div className="clan-tform-fund-row">
+                  <div className="clan-tform-fund-label">
+                    <span>🪙 Oro de Torneo (Disp: {(userClan.tournamentFundGold || 0).toLocaleString()})</span>
+                  </div>
+                  <div className="clan-tform-fund-controls">
+                    <input
+                      type="number"
+                      min={0}
+                      max={userClan.tournamentFundGold || 0}
+                      className="clan-tform-number-input"
+                      value={tournamentForm.prizeGold}
+                      onChange={(e) => {
+                        const val = Math.max(0, Math.min(userClan.tournamentFundGold || 0, parseInt(e.target.value) || 0))
+                        setTournamentForm((prev) => ({ ...prev, prizeGold: val }))
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="clan-tform-max-btn"
+                      onClick={() => setTournamentForm((prev) => ({ ...prev, prizeGold: userClan.tournamentFundGold || 0 }))}
+                    >
+                      MAX
+                    </button>
+                  </div>
+                </div>
+
+                <div className="clan-tform-fund-row">
+                  <div className="clan-tform-fund-label">
+                    <span>🔮 Sobres Épicos (Disp: {userClan.tournamentFundEpicPacks || 0})</span>
+                  </div>
+                  <div className="clan-tform-fund-controls">
+                    <input
+                      type="number"
+                      min={0}
+                      max={userClan.tournamentFundEpicPacks || 0}
+                      className="clan-tform-number-input"
+                      value={tournamentForm.prizeEpicPacks}
+                      onChange={(e) => {
+                        const val = Math.max(0, Math.min(userClan.tournamentFundEpicPacks || 0, parseInt(e.target.value) || 0))
+                        setTournamentForm((prev) => ({ ...prev, prizeEpicPacks: val }))
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="clan-tform-max-btn"
+                      onClick={() => setTournamentForm((prev) => ({ ...prev, prizeEpicPacks: userClan.tournamentFundEpicPacks || 0 }))}
+                    >
+                      MAX
+                    </button>
+                  </div>
+                </div>
+
+                <div className="clan-tform-fund-row">
+                  <div className="clan-tform-fund-label">
+                    <span>📦 Sobres PvP (Disp: {userClan.tournamentFundPvpPacks || 0})</span>
+                  </div>
+                  <div className="clan-tform-fund-controls">
+                    <input
+                      type="number"
+                      min={0}
+                      max={userClan.tournamentFundPvpPacks || 0}
+                      className="clan-tform-number-input"
+                      value={tournamentForm.prizePvpPacks}
+                      onChange={(e) => {
+                        const val = Math.max(0, Math.min(userClan.tournamentFundPvpPacks || 0, parseInt(e.target.value) || 0))
+                        setTournamentForm((prev) => ({ ...prev, prizePvpPacks: val }))
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="clan-tform-max-btn"
+                      onClick={() => setTournamentForm((prev) => ({ ...prev, prizePvpPacks: userClan.tournamentFundPvpPacks || 0 }))}
+                    >
+                      MAX
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Requisitos de Entrada (Últimos 5 días) */}
+              <div className="clan-tform-reqs-section">
+                <div className="clan-tform-reqs-header">
+                  <label>Condiciones de Ingreso al Torneo:</label>
+                  <div className="clan-tform-req-mode-toggle">
+                    <button
+                      type="button"
+                      className={`clan-tform-mode-btn ${tournamentForm.entryFree ? 'clan-tform-mode-btn--active' : ''}`}
+                      onClick={() => setTournamentForm((prev) => ({ ...prev, entryFree: true }))}
+                    >
+                      🟢 Entrada Libre
+                    </button>
+                    <button
+                      type="button"
+                      className={`clan-tform-mode-btn ${!tournamentForm.entryFree ? 'clan-tform-mode-btn--active' : ''}`}
+                      onClick={() => setTournamentForm((prev) => ({ ...prev, entryFree: false }))}
+                    >
+                      🛡️ Exigir Actividad (5 días)
+                    </button>
+                  </div>
+                </div>
+
+                {!tournamentForm.entryFree && (
+                  <div className="clan-tform-checkboxes-grid">
+                    <label className="clan-tform-check-label">
+                      <input
+                        type="checkbox"
+                        checked={tournamentForm.reqCardDonation}
+                        onChange={(e) => setTournamentForm((prev) => ({ ...prev, reqCardDonation: e.target.checked }))}
+                      />
+                      <span>🃏 Donar al menos 1 carta en los últimos 5 días</span>
+                    </label>
+
+                    <label className="clan-tform-check-label">
+                      <input
+                        type="checkbox"
+                        checked={tournamentForm.reqGemsDonation}
+                        onChange={(e) => setTournamentForm((prev) => ({ ...prev, reqGemsDonation: e.target.checked }))}
+                      />
+                      <span>💎 Donar gemas en los últimos 5 días</span>
+                    </label>
+
+                    <label className="clan-tform-check-label">
+                      <input
+                        type="checkbox"
+                        checked={tournamentForm.reqGoldDonation}
+                        onChange={(e) => setTournamentForm((prev) => ({ ...prev, reqGoldDonation: e.target.checked }))}
+                      />
+                      <span>🪙 Donar oro en los últimos 5 días</span>
+                    </label>
+
+                    <label className="clan-tform-check-label">
+                      <input
+                        type="checkbox"
+                        checked={tournamentForm.reqBattles20}
+                        onChange={(e) => setTournamentForm((prev) => ({ ...prev, reqBattles20: e.target.checked }))}
+                      />
+                      <span>⚔️ Haber jugado 20 batallas Ranked en los últimos 5 días</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* Donación de Plantas por el Líder */}
+              <div className="clan-tform-plant-donations-section">
+                <label>🌱 Donar Cartas de tu Colección como Premios Especiales:</label>
+                <small className="clan-tform-plant-hint">
+                  Puedes asignar cartas de tu inventario al Top 1, Top 2 o Top 3. Quedarán en custodia y se transferirán automáticamente al ganador correspondiente.
+                </small>
+
+                {selectedDonatedCards.length > 0 && (
+                  <div className="clan-tform-selected-cards-list">
+                    {selectedDonatedCards.map((c, idx) => (
+                      <div key={idx} className="clan-tform-selected-card-chip">
+                        <span>🌱 {PLANT_CONFIGS[c.plantId as PlantId]?.name || c.plantId} Nv.{c.level}</span>
+                        <select
+                          className="clan-tform-rank-select"
+                          value={c.targetRank}
+                          onChange={(e) => {
+                            const newRank = parseInt(e.target.value) || 1
+                            setSelectedDonatedCards((prev) =>
+                              prev.map((item, i) => (i === idx ? { ...item, targetRank: newRank } : item))
+                            )
+                          }}
+                        >
+                          <option value={1}>🥇 Top 1</option>
+                          <option value={2}>🥈 Top 2</option>
+                          <option value={3}>🥉 Top 3</option>
+                          {tournamentForm.rewardedPlaces === 5 && (
+                            <>
+                              <option value={4}>🎖️ Top 4</option>
+                              <option value={5}>🎖️ Top 5</option>
+                            </>
+                          )}
+                        </select>
+                        <button
+                          type="button"
+                          className="clan-tform-card-remove-btn"
+                          onClick={() => {
+                            setSelectedDonatedCards((prev) => prev.filter((_, i) => i !== idx))
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {userAvailablePlants.length > 0 ? (
+                  <div className="clan-tform-available-cards-strip">
+                    {userAvailablePlants.slice(0, 15).map((p: any) => {
+                      const alreadySelected = selectedDonatedCards.some((c) => c.instanceId === p.id)
+                      const cfg = PLANT_CONFIGS[p.plant_id as PlantId]
+                      return (
+                        <div
+                          key={p.id}
+                          className={`clan-tform-avail-plant ${alreadySelected ? 'clan-tform-avail-plant--selected' : ''}`}
+                          onClick={() => {
+                            if (alreadySelected) {
+                              setSelectedDonatedCards((prev) => prev.filter((c) => c.instanceId !== p.id))
+                            } else {
+                              const nextRank = Math.min(tournamentForm.rewardedPlaces, selectedDonatedCards.length + 1)
+                              setSelectedDonatedCards((prev) => [
+                                ...prev,
+                                {
+                                  instanceId: p.id,
+                                  plantId: p.plant_id,
+                                  level: p.level || 1,
+                                  targetRank: nextRank,
+                                },
+                              ])
+                            }
+                          }}
+                        >
+                          <img
+                            src={cfg?.packetActive || cfg?.icon || `/game-assets/plants/${p.plant_id}.webp`}
+                            alt={cfg?.name || p.plant_id}
+                            className="clan-tform-avail-img"
+                            onError={(e) => { (e.currentTarget as any).src = '/game-assets/moneda.webp' }}
+                          />
+                          <span className="clan-tform-avail-name">{cfg?.name || p.plant_id}</span>
+                          <span className="clan-tform-avail-lvl">Nv.{p.level || 1}</span>
+                          <span className="clan-tform-avail-action">
+                            {alreadySelected ? '✓ ASIGNADA' : '+ ASIGNAR'}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="clan-tform-no-plants-msg">
+                    No tienes cartas base libres en tu inventario para donar (o están en tu mazo activo).
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="clan-modal-actions">
+              <button
+                type="button"
+                className="clan-cancel-btn"
+                onClick={() => setShowCreateTournamentModal(false)}
+                disabled={isSubmittingTournament}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className="clan-confirm-btn"
+                onClick={handleCreateTournament}
+                disabled={isSubmittingTournament}
+              >
+                {isSubmittingTournament ? 'CREANDO TORNEO...' : '🚀 CREAR Y ABRIR INSCRIPCIONES'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL REPORTAR RESULTADO DE COMBATE DE TORNEO */}
+      {showReportMatchModal && tournamentData?.currentTournament && (
+        <div className="clan-modal-backdrop" onClick={() => !isSubmittingMatchReport && setShowReportMatchModal(false)}>
+          <div className="clan-modal-box clan-report-match-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="clan-modal-header-row">
+              <div className="clan-modal-header-title">
+                <span className="clan-modal-header-icon">⚔️</span>
+                <div>
+                  <h4>REPORTAR RESULTADO DE DUELO</h4>
+                  <small>Resta 1 vida al participante derrotado</small>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="clan-modal-close-btn"
+                onClick={() => setShowReportMatchModal(false)}
+                disabled={isSubmittingMatchReport}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="clan-report-match-content">
+              {(() => {
+                const alive = tournamentData.currentTournament.participants.filter(
+                  (p) => !p.is_eliminated && p.lives_remaining > 0
+                )
+                return (
+                  <>
+                    <div className="clan-report-field">
+                      <label>👑 Ganador del Duelo (+1 Victoria):</label>
+                      <select
+                        className="clan-report-select"
+                        value={reportMatchWinnerId}
+                        onChange={(e) => setReportMatchWinnerId(e.target.value)}
+                      >
+                        <option value="">-- Selecciona Ganador --</option>
+                        {alive.map((p) => (
+                          <option key={p.user_id} value={p.user_id} disabled={p.user_id === reportMatchLoserId}>
+                            {p.username} ({p.lives_remaining} ❤️ restantes)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="clan-report-field">
+                      <label>💀 Derrotado del Duelo (-1 Vida ❤️):</label>
+                      <select
+                        className="clan-report-select"
+                        value={reportMatchLoserId}
+                        onChange={(e) => setReportMatchLoserId(e.target.value)}
+                      >
+                        <option value="">-- Selecciona Derrotado --</option>
+                        {alive.map((p) => (
+                          <option key={p.user_id} value={p.user_id} disabled={p.user_id === reportMatchWinnerId}>
+                            {p.username} ({p.lives_remaining} ❤️ restantes)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="clan-report-warning">
+                      ⚠️ Cada participante inicia con 3 vidas. Al llegar a 0 vidas queda eliminado. Si queda 1 sobreviviente, el torneo finaliza y entrega los premios de inmediato.
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+
+            <div className="clan-modal-actions">
+              <button
+                type="button"
+                className="clan-cancel-btn"
+                onClick={() => setShowReportMatchModal(false)}
+                disabled={isSubmittingMatchReport}
+              >
+                CANCELAR
+              </button>
+              <button
+                type="button"
+                className="clan-confirm-btn"
+                onClick={handleReportMatch}
+                disabled={isSubmittingMatchReport || !reportMatchWinnerId || !reportMatchLoserId}
+              >
+                {isSubmittingMatchReport ? 'GUARDANDO...' : '⚔️ CONFIRMAR RESULTADO'}
+              </button>
             </div>
           </div>
         </div>

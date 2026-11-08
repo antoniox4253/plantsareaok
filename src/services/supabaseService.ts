@@ -2458,6 +2458,182 @@ export const SupabaseService = {
     }
   },
 
+  async getClanTournamentDetails(clanId: string): Promise<{
+    success: boolean
+    current_tournament?: any
+    history?: any[]
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('get_clan_tournament_details', {
+        p_clan_id: clanId,
+      })
+      if (error) {
+        logError('getClanTournamentDetails', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('getClanTournamentDetails', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async exchangeClanTournamentPacks(clanId: string): Promise<{
+    success: boolean
+    new_pvp_packs?: number
+    new_epic_packs?: number
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('exchange_clan_tournament_packs', {
+        p_clan_id: clanId,
+      })
+      if (error) {
+        logError('exchangeClanTournamentPacks', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('exchangeClanTournamentPacks', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async createClanTournament(params: {
+    clanId: string
+    title: string
+    description?: string
+    rewardedPlaces: number
+    prizeGold: number
+    prizeEpicPacks: number
+    prizePvpPacks: number
+    entryRequirements: any
+    donatedCards?: Array<{ plant_instance_id: string; target_rank: number }>
+  }): Promise<{
+    success: boolean
+    tournament_id?: string
+    error?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('create_clan_tournament', {
+        p_clan_id: params.clanId,
+        p_title: params.title,
+        p_description: params.description || '',
+        p_rewarded_places: params.rewardedPlaces,
+        p_prize_gold: params.prizeGold,
+        p_prize_epic_packs: params.prizeEpicPacks,
+        p_prize_pvp_packs: params.prizePvpPacks,
+        p_entry_requirements: params.entryRequirements,
+        p_donated_cards: params.donatedCards || [],
+      })
+      if (error) {
+        logError('createClanTournament', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('createClanTournament', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async cancelClanTournament(tournamentId: string): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('cancel_clan_tournament', {
+        p_tournament_id: tournamentId,
+      })
+      if (error) {
+        logError('cancelClanTournament', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('cancelClanTournament', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async registerClanTournament(tournamentId: string): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('register_clan_tournament', {
+        p_tournament_id: tournamentId,
+      })
+      if (error) {
+        logError('registerClanTournament', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('registerClanTournament', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async startClanTournament(tournamentId: string): Promise<{ success: boolean; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('start_clan_tournament', {
+        p_tournament_id: tournamentId,
+      })
+      if (error) {
+        logError('startClanTournament', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('startClanTournament', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async reportClanTournamentMatch(
+    tournamentId: string,
+    winnerId: string,
+    loserId: string,
+    roomId?: string
+  ): Promise<{ success: boolean; error?: string; active_remaining?: number; loser_eliminated?: boolean }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('report_clan_tournament_match', {
+        p_tournament_id: tournamentId,
+        p_winner_id: winnerId,
+        p_loser_id: loserId,
+        p_room_id: roomId || null,
+      })
+      if (error) {
+        logError('reportClanTournamentMatch', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('reportClanTournamentMatch', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
+  async finalizeClanTournament(tournamentId: string): Promise<{ success: boolean; winners?: any[]; error?: string }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('finalize_clan_tournament', {
+        p_tournament_id: tournamentId,
+      })
+      if (error) {
+        logError('finalizeClanTournament', error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, ...(data as any) }
+    } catch (e: any) {
+      logError('finalizeClanTournament', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   async harvestAncestralSunflowers(): Promise<{
     success: boolean
     sunsGained?: number
