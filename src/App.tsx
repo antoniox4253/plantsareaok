@@ -1907,6 +1907,7 @@ function App() {
               userGold={userGold}
               hasVipPass={hasVipPass}
               plantCopies={plantCopies}
+              unlockedPlants={unlockedPlants}
               onDeductTokens={deductUserTokens}
               onAddTokens={addUserTokens}
               onDeductGold={deductGold}

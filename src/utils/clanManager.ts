@@ -187,6 +187,7 @@ export interface ClanDonationRequest {
   plantIcon: string
   copiesRequested: number // Always 1
   copiesReceived?: number // Up to 3
+  status?: 'active' | 'completed' | 'expired' | 'cancelled'
   donors: { donorId: string; donorName: string }[] // Max 3 donors
   createdAt: number
 }
@@ -637,35 +638,7 @@ export class ClanManager {
     }
 
     if (!all[clanId]) {
-      // Default demo donation request from clan members
-      all[clanId] = [
-        {
-          id: `req-${Date.now()}-1`,
-          requesterId: 'm2',
-          requesterName: 'PyroGuisante',
-          plantId: 'peashooter',
-          plantName: 'Lanza-guisantes',
-          plantIcon: '/game-assets/greenfoot/peashooterpacket1.webp',
-          copiesRequested: 1,
-          donors: [{ donorId: 'm3', donorName: 'SunGoddess' }],
-          createdAt: Date.now() - 3600000,
-        },
-        {
-          id: `req-${Date.now()}-2`,
-          requesterId: 'm4',
-          requesterName: 'LightStrike',
-          plantId: 'wallnut',
-          plantName: 'Nuez Muralla',
-          plantIcon: '/game-assets/greenfoot/walnutpacket1.webp',
-          copiesRequested: 1,
-          donors: [
-            { donorId: 'm1', donorName: 'SolarKing_PRO' },
-            { donorId: 'm5', donorName: 'GigaNuez' },
-          ],
-          createdAt: Date.now() - 7200000,
-        },
-      ]
-      localStorage.setItem(STORAGE_KEYS.DONATION_REQUESTS, JSON.stringify(all))
+      return []
     }
 
     return all[clanId] || []

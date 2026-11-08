@@ -136,4 +136,84 @@ describe('Clan Donations & Fortress Sun Budget System (Audit & Fixes)', () => {
     expect(modalCss).toContain('max-height: 94vh;')
     expect(modalCss).toContain('overflow-y: auto;')
   })
+
+  it('13. Migración 399 protege is_golden = FALSE y previene error de cardinalidad en plant_copies', () => {
+    const mig399Path = path.resolve(__dirname, '../../../supabase/migrations/399-fix-clan-card-donations-system.sql')
+    const mig399Sql = fs.readFileSync(mig399Path, 'utf8')
+
+    expect(mig399Sql).toContain('COALESCE(is_golden, FALSE) = FALSE')
+    expect(mig399Sql).toMatch(/INSERT\s+INTO\s+public\.plant_copies\s*\(user_id,\s*plant_id,\s*is_golden,\s*copies\)/i)
+    expect(mig399Sql).toContain('ON CONFLICT (user_id, plant_id, is_golden)')
+  })
+
+  it('14. Migración 399 auto-expira solicitudes viejas (>24h) y sincroniza completadas recientes en get_my_clan_details', () => {
+    const mig399Path = path.resolve(__dirname, '../../../supabase/migrations/399-fix-clan-card-donations-system.sql')
+    const mig399Sql = fs.readFileSync(mig399Path, 'utf8')
+
+    expect(mig399Sql).toContain("status = 'expired'")
+    expect(mig399Sql).toContain("created_at <= NOW() - INTERVAL '24 hours'")
+    expect(mig399Sql).toContain("cd.status = 'completed' AND cd.created_at > NOW() - INTERVAL '24 hours'")
+    expect(mig399Sql).toContain("ORDER BY (cd.status = 'active') DESC, cd.created_at DESC")
+  })
+
+  it('15. Migración 399 auto-completa solicitudes cuando el solicitante alcanza 5 copias y alinea errores', () => {
+    const mig399Path = path.resolve(__dirname, '../../../supabase/migrations/399-fix-clan-card-donations-system.sql')
+    const mig399Sql = fs.readFileSync(mig399Path, 'utf8')
+
+    expect(mig399Sql).toContain("DAILY_DONATION_LIMIT_REACHED")
+    expect(mig399Sql).toContain("NOT_ENOUGH_COPIES")
+    expect(mig399Sql).toContain("REQUESTER_ALREADY_MAX_COPIES")
+    expect(mig399Sql).toContain("status = 'completed'")
+  })
+
+  it('16. Clan.tsx calcula el cooldown exacto y gestiona estados activo/completado/expirado', () => {
+    const clanPath = path.resolve(__dirname, 'Clan.tsx')
+    const clanCode = fs.readFileSync(clanPath, 'utf8')
+
+    expect(clanCode).toContain('myRecentRequest')
+    expect(clanCode).toContain('cooldownTimeStr')
+    expect(clanCode).toContain("req.status === 'completed'")
+    expect(clanCode).toContain('DAILY_DONATION_LIMIT')
+    expect(clanCode).toContain('NOT_ENOUGH_COPIES')
+  })
+
+  it('17. Migración 400 exige poseer la carta base para solicitar semillas (PLANT_NOT_OWNED)', () => {
+    const mig400Path = path.resolve(__dirname, '../../../supabase/migrations/400-plants-capital-curva-and-anti-carousel.sql')
+    const mig400Sql = fs.readFileSync(mig400Path, 'utf8')
+
+    expect(mig400Sql).toContain('PLANT_NOT_OWNED')
+    expect(mig400Sql).toContain('plant_instances')
+    expect(mig400Sql).toContain('(owner_id = v_uid OR user_id = v_uid)')
+  })
+
+  it('18. Migración 400 previene el ruleteo de cartas entre miembros en 24h (ANTI_CAROUSEL_COOLDOWN)', () => {
+    const mig400Path = path.resolve(__dirname, '../../../supabase/migrations/400-plants-capital-curva-and-anti-carousel.sql')
+    const mig400Sql = fs.readFileSync(mig400Path, 'utf8')
+
+    expect(mig400Sql).toContain('ANTI_CAROUSEL_COOLDOWN')
+    expect(mig400Sql).toContain('cdd.donor_id = v_donation.requester_id')
+    expect(mig400Sql).toContain('cd.requester_id = v_donor_uid')
+    expect(mig400Sql).toContain("cdd.created_at > NOW() - INTERVAL '24 hours'")
+  })
+
+  it('19. Clan.tsx valida unlockedPlants bloqueando visualmente cartas no poseídas', () => {
+    const clanPath = path.resolve(__dirname, 'Clan.tsx')
+    const clanCode = fs.readFileSync(clanPath, 'utf8')
+
+    expect(clanCode).toContain('unlockedPlants')
+    expect(clanCode).toContain('clan-plant-picker-card--locked')
+    expect(clanCode).toContain('🔒 NO DESBLOQUEADA')
+    expect(clanCode).toContain('PLANT_NOT_OWNED')
+    expect(clanCode).toContain('ANTI_CAROUSEL_COOLDOWN')
+  })
+
+  it('20. AmmCurveModal implementa escala dinámica y tooltips detallados de eventos', () => {
+    const ammModalPath = path.resolve(__dirname, '../PlantsToken/modals/AmmCurveModal.tsx')
+    const ammModalCode = fs.readFileSync(ammModalPath, 'utf8')
+
+    expect(ammModalCode).toContain('priceSpread')
+    expect(ammModalCode).toContain('hoveredPoint')
+    expect(ammModalCode).toContain('cashout_payout')
+    expect(ammModalCode).toContain('isPositiveTrend')
+  })
 })

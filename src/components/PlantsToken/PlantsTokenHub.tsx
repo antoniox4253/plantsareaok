@@ -132,7 +132,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
     try {
       const [market, history, vesting] = await Promise.all([
         plantsTokenService.getMarketState(),
-        plantsTokenService.getPriceHistory(50),
+        plantsTokenService.getPriceHistory(100),
         plantsTokenService.getUserVestingSummary(),
       ])
       if (market) {

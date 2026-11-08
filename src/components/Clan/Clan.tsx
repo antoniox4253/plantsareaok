@@ -29,6 +29,7 @@ interface ClanProps {
   userGold?: number
   hasVipPass?: boolean
   plantCopies: Record<PlantId, number>
+  unlockedPlants?: PlantId[]
   onDeductTokens: (amountUsd: number) => boolean
   onAddTokens: (amountUsd: number) => void
   onDeductGold?: (amount: number) => boolean
@@ -80,6 +81,7 @@ export default function Clan({
   userGold = 0,
   hasVipPass = false,
   plantCopies,
+  unlockedPlants = [],
   onDeductTokens,
   onAddTokens,
   onDeductGold,
@@ -1170,6 +1172,7 @@ export default function Clan({
             plantIcon: PLANT_CONFIGS[d.plantId as PlantId]?.packetActive || PLANT_CONFIGS[d.plantId as PlantId]?.icon || '',
             copiesRequested: d.copiesRequested || 1,
             copiesReceived: typeof d.copiesReceived === 'number' ? d.copiesReceived : (d.donors || []).length,
+            status: d.status || 'active',
             donors: (d.donors || []).map((dn: any) => ({ donorId: dn.donorId, donorName: dn.donorName })),
             createdAt: new Date(d.createdAt).getTime(),
           })))
@@ -1972,11 +1975,23 @@ export default function Clan({
     try {
       const res = await supabaseService.requestClanPlantDonation(selectedRequestPlant)
       if (!res.success) {
-        if (res.error === 'COOLDOWN_ACTIVE') {
-          showModalAlert('LÍMITE DIARIO', 'Solo puedes realizar una solicitud de semilla cada 24 horas.', '⏳', 'warning')
+        const errMsg = res.error || ''
+        if (errMsg.includes('PLANT_NOT_OWNED')) {
+          showModalAlert(
+            'CARTA NO DESBLOQUEADA',
+            `Debes poseer la carta base de ${plantInfo?.name || 'esta planta'} en tu colección antes de poder solicitar semillas en el clan.`,
+            '🔒',
+            'warning'
+          )
           return
         }
-        if (res.error === 'MAX_COPIES_REACHED') {
+        if (errMsg.includes('COOLDOWN_ACTIVE')) {
+          const matchTime = errMsg.match(/\[(\d{2}:\d{2}:\d{2})\]/)
+          const timeStr = matchTime ? ` en [${matchTime[1]}]` : ' cada 24 horas'
+          showModalAlert('LÍMITE DIARIO', `Solo puedes realizar una solicitud de semilla cada 24 horas. Podrás solicitar${timeStr}.`, '⏳', 'warning')
+          return
+        }
+        if (errMsg.includes('MAX_COPIES_REACHED')) {
           showModalAlert(
             'LÍMITE DE COPIAS ALCANZADO',
             `Ya posees el tope máximo de 5 copias de ${plantInfo.name}. ¡Puedes germinarla en el jardín o solicitar otra planta!`,
@@ -1985,7 +2000,7 @@ export default function Clan({
           )
           return
         }
-        showModalAlert('ERROR', res.error || 'No se pudo crear la solicitud.', '❌', 'error')
+        showModalAlert('ERROR', errMsg || 'No se pudo crear la solicitud.', '❌', 'error')
         return
       }
 
@@ -2032,35 +2047,66 @@ export default function Clan({
         try {
           const res = await supabaseService.donateClanPlantCopy(req.id)
           if (!res.success) {
-            if (res.error === 'DAILY_DONATION_LIMIT_REACHED' || res.error?.includes('DAILY_DONATION_LIMIT')) {
-              const now = new Date()
-              const reset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0))
-              const diffMs = Math.max(0, reset.getTime() - now.getTime())
-              const hours = String(Math.floor(diffMs / 3600000)).padStart(2, '0')
-              const minutes = String(Math.floor((diffMs % 3600000) / 60000)).padStart(2, '0')
-              const seconds = String(Math.floor((diffMs % 60000) / 1000)).padStart(2, '0')
+            const errMsg = res.error || ''
+            if (errMsg.includes('ANTI_CAROUSEL_COOLDOWN')) {
+              showModalAlert(
+                'BLOQUEO ANTI-RULETEO',
+                `No puedes donar esta semilla a ${req.requesterName} porque ya te donó la misma planta en las últimas 24 horas.`,
+                '🛡️',
+                'warning'
+              )
+              return
+            }
+            if (errMsg.includes('DAILY_DONATION_LIMIT') || errMsg.includes('DAILY_LIMIT_REACHED')) {
+              const matchTime = errMsg.match(/\[(\d{2}:\d{2}:\d{2})\]/)
+              let timeFormatted = matchTime ? matchTime[1] : ''
+              if (!timeFormatted) {
+                const now = new Date()
+                const reset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0))
+                const diffMs = Math.max(0, reset.getTime() - now.getTime())
+                const hours = String(Math.floor(diffMs / 3600000)).padStart(2, '0')
+                const minutes = String(Math.floor((diffMs % 3600000) / 60000)).padStart(2, '0')
+                const seconds = String(Math.floor((diffMs % 60000) / 1000)).padStart(2, '0')
+                timeFormatted = `${hours}:${minutes}:${seconds}`
+              }
               showModalAlert(
                 'LÍMITE DIARIO',
-                `Has alcanzado tu límite diario (300/300 🪙). Podras donar en [${hours}:${minutes}:${seconds}].`,
+                `Has alcanzado tu límite diario (300/300 🪙). Podrás donar en [${timeFormatted}].`,
                 '⏳',
                 'warning'
               )
               return
             }
-            if (res.error === 'REQUESTER_ALREADY_MAX_COPIES') {
+            if (errMsg.includes('REQUESTER_ALREADY_MAX_COPIES')) {
               showModalAlert(
                 'LÍMITE ALCANZADO',
                 `${req.requesterName} ya alcanzó el tope máximo de 5 copias de ${req.plantName}. No puede recibir más copias por ahora.`,
                 '⚠️',
                 'warning'
               )
+              await refreshClanData()
               return
             }
-            if (res.error === 'NOT_ENOUGH_COPIES') {
+            if (errMsg.includes('NOT_ENOUGH_COPIES') || errMsg.includes('INSUFFICIENT_COPIES')) {
               showModalAlert('SIN COPIAS', `No tienes suficientes copias de ${req.plantName} en tu inventario.`, '⚠️', 'warning')
               return
             }
-            showModalAlert('ERROR AL DONAR', res.error || 'No se pudo completar la donación en el servidor.', '❌', 'error')
+            if (errMsg.includes('DONATION_EXPIRED')) {
+              showModalAlert('SOLICITUD EXPIRADA', 'Esta solicitud de semillas ya ha superado las 24 horas y ha expirado.', '⏳', 'warning')
+              await refreshClanData()
+              return
+            }
+            if (errMsg.includes('REQUESTER_LEFT_CLAN')) {
+              showModalAlert('JUGADOR NO DISPONIBLE', 'El jugador solicitante ya no pertenece a este clan.', '⚠️', 'warning')
+              await refreshClanData()
+              return
+            }
+            if (errMsg.includes('DONATION_FULL')) {
+              showModalAlert('SOLICITUD COMPLETA', 'Esta solicitud ya ha recibido el máximo de 3 donaciones permitidas.', '✅', 'info')
+              await refreshClanData()
+              return
+            }
+            showModalAlert('ERROR AL DONAR', errMsg || 'No se pudo completar la donación en el servidor.', '❌', 'error')
             return
           }
 
@@ -4166,9 +4212,15 @@ export default function Clan({
 
       {/* TAB 3: SEED DONATIONS & VAULT DEPOSITS */}
       {activeTab === 'donations' && (() => {
-        const hasActiveRequestToday = donationRequests.some(
+        const myRecentRequest = donationRequests.find(
           (r) => r.requesterName === playerName && Date.now() - r.createdAt < 86400000
         )
+        const hasActiveRequestToday = Boolean(myRecentRequest)
+        const cooldownMsLeft = myRecentRequest ? Math.max(0, 86400000 - (Date.now() - myRecentRequest.createdAt)) : 0
+        const cooldownHours = Math.floor(cooldownMsLeft / 3600000)
+        const cooldownMins = Math.floor((cooldownMsLeft % 3600000) / 60000)
+        const cooldownTimeStr = `${String(cooldownHours).padStart(2, '0')}h ${String(cooldownMins).padStart(2, '0')}m`
+
         // Only valid deposits from real players: exclude foundation fee (game tax) and sistema
         const validDeposits = vaultDeposits.filter(
           (d) =>
@@ -4252,13 +4304,18 @@ export default function Clan({
                     disabled={isDefeated || hasActiveRequestToday}
                     onClick={() => {
                       if (hasActiveRequestToday) {
-                        showModalAlert('SOLICITUD EN CURSO', 'Ya tienes una solicitud de semillas activa hoy. Podrás pedir otra en 24 horas.', '⏳', 'warning')
+                        showModalAlert(
+                          'SOLICITUD EN CURSO',
+                          `Ya realizaste una solicitud de semillas recientemente. Podrás pedir otra en ${cooldownHours}h ${cooldownMins}m.`,
+                          '⏳',
+                          'warning'
+                        )
                         return
                       }
                       setShowRequestSeedModal(true)
                     }}
                   >
-                    {hasActiveRequestToday ? '⏳ SOLICITUD EN CURSO (1/DÍA)' : '🌱 PEDIR SEMILLA (1 COPIA)'}
+                    {hasActiveRequestToday ? `⏳ SOLICITUD EN CURSO (${cooldownTimeStr})` : '🌱 PEDIR SEMILLA (1 COPIA)'}
                   </button>
                 </div>
 
@@ -4270,7 +4327,7 @@ export default function Clan({
                   ) : (
                     donationRequests.map((req) => {
                       const donorCount = Math.max(req.donors.length, req.copiesReceived || 0)
-                      const isMax = donorCount >= 3
+                      const isMax = donorCount >= 3 || req.status === 'completed'
                       const hasDonated = req.donors.some((d) => d.donorName === playerName)
                       const isMe = req.requesterName === playerName
                       const plantConf = PLANT_CONFIGS[req.plantId]
@@ -4287,7 +4344,7 @@ export default function Clan({
                             <div className="clan-donation-bar-wrap">
                               <div
                                 className="clan-donation-bar"
-                                style={{ width: `${(donorCount / 3) * 100}%` }}
+                                style={{ width: `${Math.min(100, (donorCount / 3) * 100)}%` }}
                               />
                             </div>
                             <span className="clan-donation-count">{donorCount}/3 Donaciones Recibidas</span>
@@ -4966,28 +5023,62 @@ export default function Clan({
                   const packetImg = p.packetActive || p.icon
                   const copies = plantCopies[plantId] || 0
                   const isMax = copies >= 5
+                  const isOwned = !unlockedPlants || unlockedPlants.length === 0 || unlockedPlants.includes(plantId)
                   return (
                     <button
                       key={plantId}
                       type="button"
-                      className={`clan-plant-picker-card ${isSelected ? 'clan-plant-picker-card--active' : ''} ${isMax ? 'clan-plant-picker-card--max' : ''}`}
-                      onClick={() => setSelectedRequestPlant(plantId)}
+                      className={`clan-plant-picker-card ${isSelected ? 'clan-plant-picker-card--active' : ''} ${isMax ? 'clan-plant-picker-card--max' : ''} ${!isOwned ? 'clan-plant-picker-card--locked' : ''}`}
+                      onClick={() => {
+                        if (!isOwned) {
+                          showModalAlert(
+                            'CARTA NO DESBLOQUEADA',
+                            `Debes poseer la carta base de ${p.name} en tu colección antes de poder solicitar semillas en el clan. ¡Primero debes conseguir esta carta!`,
+                            '🔒',
+                            'warning'
+                          )
+                          return
+                        }
+                        setSelectedRequestPlant(plantId)
+                      }}
                     >
-                      <img src={packetImg} alt={p.name} />
+                      <img
+                        src={packetImg}
+                        alt={p.name}
+                        style={{ filter: !isOwned ? 'grayscale(90%) opacity(55%)' : undefined }}
+                      />
                       <span>{p.name}</span>
-                      <small style={{ color: isMax ? '#f59e0b' : undefined, fontWeight: isMax ? 'bold' : 'normal' }}>
-                        {copies}/5 copias {isMax ? '⭐ (MÁX)' : ''}
-                      </small>
+                      {!isOwned ? (
+                        <small style={{ color: '#ef4444', fontWeight: 'bold' }}>🔒 NO DESBLOQUEADA</small>
+                      ) : (
+                        <small style={{ color: isMax ? '#f59e0b' : undefined, fontWeight: isMax ? 'bold' : 'normal' }}>
+                          {copies}/5 copias {isMax ? '⭐ (MÁX)' : ''}
+                        </small>
+                      )}
                     </button>
                   )
                 })}
             </div>
 
-            {(plantCopies[selectedRequestPlant] || 0) >= 5 && (
-              <p style={{ color: '#f59e0b', fontSize: '0.82rem', marginTop: '8px', textAlign: 'center' }}>
-                ⚠️ Ya posees el tope de 5 copias de esta planta. ¡Germínala en el jardín para liberar espacio o selecciona otra!
-              </p>
-            )}
+            {(() => {
+              const selectedOwned = !unlockedPlants || unlockedPlants.length === 0 || unlockedPlants.includes(selectedRequestPlant)
+              const selectedCopies = plantCopies[selectedRequestPlant] || 0
+              if (!selectedOwned) {
+                return (
+                  <p style={{ color: '#ef4444', fontSize: '0.82rem', marginTop: '8px', textAlign: 'center' }}>
+                    🔒 No posees la carta base de {PLANT_CONFIGS[selectedRequestPlant]?.name}. Debes conseguirla primero en tu colección antes de poder pedir donaciones.
+                  </p>
+                )
+              }
+              if (selectedCopies >= 5) {
+                return (
+                  <p style={{ color: '#f59e0b', fontSize: '0.82rem', marginTop: '8px', textAlign: 'center' }}>
+                    ⚠️ Ya posees el tope de 5 copias de esta planta. ¡Germínala en el jardín para liberar espacio o selecciona otra!
+                  </p>
+                )
+              }
+              return null
+            })()}
 
             <div className="clan-modal-actions">
               <button type="button" className="clan-cancel-btn" onClick={() => setShowRequestSeedModal(false)}>
@@ -4996,7 +5087,10 @@ export default function Clan({
               <button
                 type="button"
                 className="clan-confirm-btn"
-                disabled={(plantCopies[selectedRequestPlant] || 0) >= 5}
+                disabled={
+                  (!unlockedPlants || unlockedPlants.length === 0 ? false : !unlockedPlants.includes(selectedRequestPlant)) ||
+                  (plantCopies[selectedRequestPlant] || 0) >= 5
+                }
                 onClick={handleCreateRequest}
               >
                 PUBLICAR SOLICITUD
