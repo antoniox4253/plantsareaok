@@ -6522,6 +6522,36 @@
   box-shadow: 0 0 12px rgba(234, 179, 8, 0.35);
 }
 
+.clan-role-card-opt--leader {
+  border-color: rgba(234, 179, 8, 0.4);
+  background: rgba(30, 41, 59, 0.7);
+}
+
+.clan-role-card-opt--leader h5 {
+  color: #facc15;
+}
+
+.clan-role-current-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 9px;
+  padding: 1px 6px;
+  background: rgba(148, 163, 184, 0.25);
+  color: #94a3b8;
+  border-radius: 4px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.clan-confirm-btn--same-role {
+  background: rgba(71, 85, 105, 0.4) !important;
+  border-color: #475569 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
 .clan-role-card-opt h5 {
   margin: 0;
   font-size: 13px;

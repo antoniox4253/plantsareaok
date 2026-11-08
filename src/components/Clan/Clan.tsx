@@ -678,19 +678,91 @@ export default function Clan({
 
   const handleConfirmChangeRole = async () => {
     if (!selectedMemberForRole || !selectedRoleToAssign) return
+    const currentRoleKey =
+      selectedMemberForRole.role === 'Colíder'
+        ? 'coleader'
+        : selectedMemberForRole.role === 'Veterano'
+          ? 'elder'
+          : selectedMemberForRole.role === 'Líder'
+            ? 'leader'
+            : 'member'
+
+    if (selectedRoleToAssign === currentRoleKey) {
+      showModalAlert(
+        'ROL ACTUAL',
+        `${selectedMemberForRole.name} ya posee el rango de ${selectedMemberForRole.role}. Selecciona un rol diferente para cambiarlo.`,
+        'ℹ️',
+        'info'
+      )
+      return
+    }
+
+    if (selectedRoleToAssign === 'leader') {
+      showModalConfirm(
+        '¿TRANSFERIR LIDERAZGO?',
+        `¿Estás completamente seguro de transferir el liderazgo del clan a ${selectedMemberForRole.name}? Pasarás a ser Colíder y ${selectedMemberForRole.name} asumirá el control total del clan.`,
+        '👑',
+        () => {
+          void executeRoleChange()
+        },
+        'SÍ, TRANSFERIR',
+        'CANCELAR'
+      )
+      return
+    }
+
+    await executeRoleChange()
+  }
+
+  const executeRoleChange = async () => {
+    if (!selectedMemberForRole || !selectedRoleToAssign) return
     soundManager.playSound('click', 0.5)
     setIsSubmittingRole(true)
     try {
-      const res = await supabaseService.setClanMemberRole(selectedMemberForRole.id, selectedRoleToAssign)
+      const targetIdentifier =
+        ClanManager.isValidUuid(selectedMemberForRole.id)
+          ? selectedMemberForRole.id
+          : selectedMemberForRole.name
+
+      const res = await supabaseService.setClanMemberRole(targetIdentifier, selectedRoleToAssign)
       if (!res.success) {
         showModalAlert('ERROR AL ASIGNAR ROL', res.error || 'No se pudo cambiar el rol.', '❌', 'error')
         return
       }
       soundManager.playSound('click', 0.7)
       setShowRoleModal(false)
-      const roleDisplayName = selectedRoleToAssign === 'coleader' ? 'Colíder' : selectedRoleToAssign === 'elder' ? 'Veterano' : selectedRoleToAssign === 'leader' ? 'Líder' : 'Miembro'
+      const roleDisplayName =
+        selectedRoleToAssign === 'coleader'
+          ? 'Colíder'
+          : selectedRoleToAssign === 'elder'
+            ? 'Veterano'
+            : selectedRoleToAssign === 'leader'
+              ? 'Líder'
+              : 'Miembro'
+
+      // Actualización optimista inmediata del estado local para respuesta instantánea en UI
+      setUserClan((prev) => {
+        if (!prev) return prev
+        const updatedMembers = prev.members.map((m) => {
+          if (m.id === selectedMemberForRole.id || m.name.toLowerCase() === selectedMemberForRole.name.toLowerCase()) {
+            return { ...m, role: roleDisplayName as any }
+          }
+          if (selectedRoleToAssign === 'leader' && (m.role === 'Líder' || m.id === prev.leaderId)) {
+            return { ...m, role: 'Colíder' as any }
+          }
+          return m
+        })
+        return {
+          ...prev,
+          leader: selectedRoleToAssign === 'leader' ? selectedMemberForRole.name : prev.leader,
+          leaderId: selectedRoleToAssign === 'leader' ? selectedMemberForRole.id : prev.leaderId,
+          members: updatedMembers,
+        }
+      })
+
       showModalAlert('ROL ACTUALIZADO', `Se ha asignado el rango de ${roleDisplayName} a ${selectedMemberForRole.name}.`, '👑', 'success')
       setSelectedMemberForRole(null)
+      isRefreshingRef.current = false
       await refreshClanData()
     } catch (e: any) {
       showModalAlert('ERROR', e?.message || 'Error de conexión', '⚠️', 'error')
@@ -6272,13 +6344,30 @@ export default function Clan({
             </div>
 
             <div className="clan-role-select-grid">
+              {/* Líder (Solo Líder puede transferir liderazgo) */}
+              {isLeader && (
+                <div
+                  className={`clan-role-card-opt clan-role-card-opt--leader ${selectedRoleToAssign === 'leader' ? 'clan-role-card-opt--selected' : ''}`}
+                  onClick={() => setSelectedRoleToAssign('leader')}
+                >
+                  <h5>
+                    👑 Líder
+                    {selectedMemberForRole.role === 'Líder' && <span className="clan-role-current-tag">ACTUAL</span>}
+                  </h5>
+                  <p>Transferir liderazgo. Pasarás a ser Colíder y este miembro asumirá la dirección total del clan.</p>
+                </div>
+              )}
+
               {/* Colíder (Solo Líder) */}
               {isLeader && (
                 <div
                   className={`clan-role-card-opt ${selectedRoleToAssign === 'coleader' ? 'clan-role-card-opt--selected' : ''}`}
                   onClick={() => setSelectedRoleToAssign('coleader')}
                 >
-                  <h5>⚔️ Colíder</h5>
+                  <h5>
+                    ⚔️ Colíder
+                    {selectedMemberForRole.role === 'Colíder' && <span className="clan-role-current-tag">ACTUAL</span>}
+                  </h5>
                   <p>Mano derecha. Edita fortaleza, asalta con oro del clan (sin cooldown), acepta ingresos y promueve veteranos.</p>
                 </div>
               )}
@@ -6288,7 +6377,10 @@ export default function Clan({
                 className={`clan-role-card-opt ${selectedRoleToAssign === 'elder' ? 'clan-role-card-opt--selected' : ''}`}
                 onClick={() => setSelectedRoleToAssign('elder')}
               >
-                <h5>🛡️ Veterano</h5>
+                <h5>
+                  🛡️ Veterano
+                  {selectedMemberForRole.role === 'Veterano' && <span className="clan-role-current-tag">ACTUAL</span>}
+                </h5>
                 <p>Guerrero de honor. Edita fortaleza y asalta con oro del clan sin bloqueo de 24h tras derrota.</p>
               </div>
 
@@ -6297,7 +6389,10 @@ export default function Clan({
                 className={`clan-role-card-opt ${selectedRoleToAssign === 'member' ? 'clan-role-card-opt--selected' : ''}`}
                 onClick={() => setSelectedRoleToAssign('member')}
               >
-                <h5>🌱 Miembro</h5>
+                <h5>
+                  🌱 Miembro
+                  {selectedMemberForRole.role === 'Miembro' && <span className="clan-role-current-tag">ACTUAL</span>}
+                </h5>
                 <p>Rango inicial. Asalta con oro propio (500🪙) y sufre bloqueo de 24h tras derrota. Puede donar al altar.</p>
               </div>
             </div>
@@ -6311,14 +6406,40 @@ export default function Clan({
               >
                 CANCELAR
               </button>
-              <button
-                type="button"
-                className="clan-confirm-btn"
-                onClick={handleConfirmChangeRole}
-                disabled={isSubmittingRole}
-              >
-                {isSubmittingRole ? 'GUARDANDO...' : '👑 CONFIRMAR NUEVO ROL'}
-              </button>
+              {(() => {
+                const currentRoleKey =
+                  selectedMemberForRole.role === 'Colíder'
+                    ? 'coleader'
+                    : selectedMemberForRole.role === 'Veterano'
+                      ? 'elder'
+                      : selectedMemberForRole.role === 'Líder'
+                        ? 'leader'
+                        : 'member'
+                const isSameRole = selectedRoleToAssign === currentRoleKey
+
+                return (
+                  <button
+                    type="button"
+                    className={`clan-confirm-btn ${isSameRole ? 'clan-confirm-btn--same-role' : ''}`}
+                    onClick={handleConfirmChangeRole}
+                    disabled={isSubmittingRole || isSameRole}
+                  >
+                    {isSubmittingRole
+                      ? 'GUARDANDO...'
+                      : isSameRole
+                        ? 'ROL ACTUAL (ELIGE OTRO)'
+                        : `👑 ASIGNAR COMO ${
+                            selectedRoleToAssign === 'leader'
+                              ? 'LÍDER'
+                              : selectedRoleToAssign === 'coleader'
+                                ? 'COLÍDER'
+                                : selectedRoleToAssign === 'elder'
+                                  ? 'VETERANO'
+                                  : 'MIEMBRO'
+                          }`}
+                  </button>
+                )
+              })()}
             </div>
           </div>
         </div>
