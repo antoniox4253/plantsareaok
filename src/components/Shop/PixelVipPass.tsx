@@ -45,7 +45,7 @@ export default function PixelVipPass({
   userGold = 0,
   userTokens = 0,
   playerEnergy = 20,
-  maxPlayerEnergy = 20,
+  maxPlayerEnergy = 15,
   userElo = 1000,
   userXp = 0,
   hasVipPass,

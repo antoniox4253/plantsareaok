@@ -35,6 +35,7 @@ const needleImg = '/game-assets/greenfoot/needle1.png'
 const kernelImg = '/game-assets/plants/projectile_kernel.webp'
 const butterImg = '/game-assets/plants/projectile_butter.webp'
 import PlantHand from './PlantHand'
+import MapacheUnit from './MapacheUnit'
 import BattlefieldEmotesOverlay from './BattlefieldEmotesOverlay'
 import RelojDePartida from '../RelojDePartida/RelojDePartida'
 import { SOL_SE_RECOGE_SOLO_MS } from '../../engine/balance'
@@ -189,7 +190,10 @@ interface BattlefieldProps {
   activeDeck?: PlantId[]
   userElo?: number
   customBgImage?: string
-  matchMode?: 'ranked' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads'
+  matchMode?: 'ranked' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads' | 'story'
+  storyLevel?: number
+  onStoryVictory?: (level: number, rewards: { gold: number; gems: number; tokens: number }) => void
+  onNextStoryLevel?: (nextLevel: number) => void
   arenaAdsRun?: ArenaAdsRun | null
   onArenaAdsAdvance?: (run: ArenaAdsRun) => void
   onArenaAdsRetreat?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => void
@@ -292,6 +296,9 @@ export default function Battlefield({
   onArenaAdsAdvance,
   onArenaAdsRetreat,
   onArenaAdsRevive: _onArenaAdsRevive,
+  storyLevel = 1,
+  onStoryVictory,
+  onNextStoryLevel,
   treeLevels = null,
   treeSkins = null,
 }: BattlefieldProps) {
@@ -344,6 +351,12 @@ export default function Battlefield({
     survivorWaveIndex,
     survivorTotalWaves: _survivorTotalWaves,
     survivorEnemiesRemaining,
+    isStoryMode: _isStoryMode,
+    storyWaveIndex,
+    storyTotalWaves: _storyTotalWaves,
+    storyLevel: _currentStoryLevel,
+    storyEnemiesRemaining,
+    storyRewards,
   } = useGameEngine()
 
   const { user } = useAuth()
@@ -718,6 +731,76 @@ export default function Battlefield({
   // Al terminar la partida (victoria o derrota), se levanta el bloqueo para permitir
   // que Monetag Vignette se precargue y muestre en el interstitial modal sin interrupciones.
   useEffect(() => {
+    if (matchMode === 'story') {
+      soundManager.playSound('click', 0.4)
+      if (gameStatus === 'victory') {
+        if (storyLevel < 20) {
+          const nextLvl = storyLevel + 1
+          if (onNextStoryLevel) {
+            onNextStoryLevel(nextLvl)
+          }
+          const nextSeed = 1000 + nextLvl
+          startGame(
+            nextSeed,
+            false,
+            undefined,
+            1000,
+            undefined,
+            { mio: mazoMioParsed, rival: [] },
+            undefined,
+            undefined,
+            'auth-v2',
+            treeBonusHpRef.current,
+            0,
+            treeSkinRef.current,
+            null,
+            5,
+            undefined,
+            undefined,
+            150,
+            undefined,
+            undefined,
+            undefined,
+            false,
+            1,
+            true,
+            nextLvl
+          )
+        } else {
+          if (onBackToMenu) onBackToMenu()
+        }
+      } else {
+        const retrySeed = 1000 + storyLevel + Math.floor(Math.random() * 100)
+        startGame(
+          retrySeed,
+          false,
+          undefined,
+          1000,
+          undefined,
+          { mio: mazoMioParsed, rival: [] },
+          undefined,
+          undefined,
+          'auth-v2',
+          treeBonusHpRef.current,
+          0,
+          treeSkinRef.current,
+          null,
+          5,
+          undefined,
+          undefined,
+          150,
+          undefined,
+          undefined,
+          undefined,
+          false,
+          1,
+          true,
+          storyLevel
+        )
+      }
+      return
+    }
+
     if (matchMode === 'arena_ads') {
       const isPostCombat = gameStatus === 'victory' || gameStatus === 'defeat'
       setCombatAdsBlocked(!isPostCombat)
@@ -733,7 +816,7 @@ export default function Battlefield({
   // En clan_fortress la arena siempre opera sobre 5 carriles (LANES_CONFIG_5),
   // bloqueando visualmente los carriles no disponibles según el nivel del Árbol Madre rival.
   const activeLanesConfig = useMemo(() => {
-    if (matchMode === 'clan_fortress') return LANES_CONFIG_5
+    if (matchMode === 'clan_fortress' || matchMode === 'story') return LANES_CONFIG_5
     return LANES_CONFIG
   }, [matchMode])
 
@@ -772,8 +855,8 @@ export default function Battlefield({
   const allCatalogCards = useMemo(() => Object.keys(PLANT_CONFIGS) as PlantId[], [])
 
   const mazoMioParsed = useMemo<CartaDeMazo[] | null>(() => {
-    // En Survivor ADS (matchMode === 'arena_ads'), el jugador SIEMPRE usa su propio mazo activo
-    if (matchMode !== 'arena_ads') {
+    // En Survivor ADS y Modo Historia, el jugador SIEMPRE usa su propio mazo activo
+    if (matchMode !== 'arena_ads' && matchMode !== 'story') {
       const fromRoom = leerMazo(mazosDeLaSala?.mio)
       if (fromRoom && fromRoom.length > 0) return fromRoom
     }
@@ -1715,7 +1798,22 @@ export default function Battlefield({
                   }
                 }).catch((e) => console.warn('[Battlefield] Error registrando victoria de clan:', e))
               }
-              const serverChest = (reportRes as any)?.chest || (reportRes as any)?.cofre
+              let serverChest = (reportRes as any)?.chest || (reportRes as any)?.cofre
+              if ((!serverChest || !serverChest.awarded) && onBattleComplete) {
+                try {
+                  const compRes = await onBattleComplete(true)
+                  if (compRes?.packResult?.awarded) {
+                    serverChest = {
+                      awarded: true,
+                      durationHours: compRes.packResult.durationHours,
+                      arenaLevel: compRes.packResult.arenaLevel,
+                      slotId: compRes.packResult.slotId,
+                    }
+                  }
+                } catch (e) {
+                  console.warn('[Battlefield] Error en fallback de cofre de victoria:', e)
+                }
+              }
               if (serverChest && serverChest.awarded) {
                 setBattleSummaryResult((prev) => ({
                   ...prev,
@@ -1816,7 +1914,22 @@ export default function Battlefield({
           }
 
           if (liq.statusServidor === 'liquidada' && liq.resultadoFinal === 'victory' && matchMode !== 'tournament' && matchMode !== 'friendly') {
-            const serverChest = verificacion.settlement?.chest || (reportRes as any)?.chest || (verificacion.settlement as any)?.cofre
+            let serverChest = verificacion.settlement?.chest || (reportRes as any)?.chest || (verificacion.settlement as any)?.cofre
+            if ((!serverChest || !serverChest.awarded) && onBattleComplete) {
+                try {
+                  const compRes = await onBattleComplete(true)
+                  if (compRes?.packResult?.awarded) {
+                    serverChest = {
+                      awarded: true,
+                      durationHours: compRes.packResult.durationHours,
+                      arenaLevel: compRes.packResult.arenaLevel,
+                      slotId: compRes.packResult.slotId,
+                    }
+                  }
+                } catch (e) {
+                  console.warn('[Battlefield] Error en fallback de cofre de victoria:', e)
+                }
+              }
             if (serverChest && serverChest.awarded) {
               setBattleSummaryResult((prev) => ({
                 ...prev,
@@ -1978,6 +2091,19 @@ export default function Battlefield({
         })
       }
 
+      if (matchMode === 'story') {
+        if (gameStatus === 'victory') {
+          const rewards = storyRewards || {
+            gold: 150 + (storyLevel || 1) * 50,
+            gems: 10 + Math.floor((storyLevel || 1) * 2.5),
+            tokens: 15 + (storyLevel || 1) * 5,
+          }
+          if (onStoryVictory) {
+            onStoryVictory(storyLevel || 1, rewards)
+          }
+        }
+      }
+
       if (matchMode === 'arena_ads') {
         const run = currentArenaAdsRun || ArenaAdsManager.getStoredRun()
         if (gameStatus === 'victory') {
@@ -2056,7 +2182,7 @@ export default function Battlefield({
       // Partida con roomId = el servidor liquida autoritativamente arriba; no ejecutar aquí para no duplicar ni otorgar sobres en derrotas.
       if (!roomId) {
         if (gameStatus === 'victory') {
-          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress' && matchMode !== 'arena_ads') {
+          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress' && matchMode !== 'arena_ads' && matchMode !== 'story') {
             void (async () => {
               const res = await onBattleComplete(true)
               if (res) {
@@ -2074,7 +2200,7 @@ export default function Battlefield({
             })()
           }
         } else if (gameStatus === 'defeat') {
-          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress' && matchMode !== 'arena_ads') {
+          if (onBattleComplete && matchMode !== 'strategic_test' && matchMode !== 'tournament' && matchMode !== 'friendly' && matchMode !== 'clan_fortress' && matchMode !== 'arena_ads' && matchMode !== 'story') {
             void (async () => {
               const res = await onBattleComplete(false)
               if (res) {
@@ -2141,7 +2267,34 @@ export default function Battlefield({
         syncAndStartMatchClock(roomId)
       } else {
         // Entrenamiento contra el bot local o Mazmorra Arena ADS
-        if (matchMode === 'arena_ads' && currentArenaAdsRun) {
+        if (matchMode === 'story') {
+          startGame(
+            seed,
+            false,
+            undefined,
+            1000,
+            undefined,
+            { mio: mazoMioParsed, rival: [] },
+            undefined,
+            undefined,
+            'auth-v2',
+            treeBonusHpRef.current,
+            0,
+            treeSkinRef.current,
+            null,
+            5,
+            undefined,
+            undefined,
+            150,
+            undefined,
+            undefined,
+            undefined,
+            false,
+            1,
+            true,
+            storyLevel || 1
+          )
+        } else if (matchMode === 'arena_ads' && currentArenaAdsRun) {
           const adsBotStats = getBotStatsForLevel(currentArenaAdsRun.level)
           const rivalBonusHp = Math.max(0, adsBotStats.botBaseHp - 1000)
           startGame(
@@ -2458,6 +2611,7 @@ export default function Battlefield({
   }
 
   const isArenaAds = matchMode === 'arena_ads'
+  const isStory = matchMode === 'story'
 
   const battlefieldNode = (
     <div
@@ -2514,6 +2668,54 @@ export default function Battlefield({
           otro son cosa de SU navegador y aquí no se conocen, así que el contador
           se quedaría clavado en 150 — un número inventado en pantalla. Mejor no
           mostrarlo que mostrar uno falso. */}
+{/* HUD de Oleadas en Modo Historia (Invasión Mapache con 3 oleadas y Rey Garra en oleada 3) */}
+      {matchMode === 'story' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '24px',
+            zIndex: 35,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            className="battlefield-mode-header-pill"
+            style={{
+              borderColor: '#a855f7',
+              boxShadow: '0 0 16px rgba(168, 85, 247, 0.45)',
+              background: 'rgba(15, 23, 42, 0.94)',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              color: '#f8fafc',
+            }}
+          >
+            <span className="battlefield-mode-header-icon">🦝</span>
+            <span>MODO HISTORIA • NV.{storyLevel || 1}</span>
+            <span>•</span>
+            <span style={{ color: '#facc15', fontWeight: 800 }}>
+              {storyWaveIndex === 0
+                ? 'Oleada 1/3 (Incursión)'
+                : storyWaveIndex === 1
+                  ? 'Oleada 2/3 (Emboscada)'
+                  : '👑 Oleada 3/3 (¡Rey Garra!)'}
+            </span>
+            <span>•</span>
+            <span style={{ color: '#38bdf8' }}>
+              Restantes: {storyEnemiesRemaining}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* HUD de Oleadas en Modo Survivor ADS (El oponente no tiene árbol, es una invasión por oleadas) */}
       {matchMode === 'arena_ads' && (
         <div
@@ -2562,8 +2764,8 @@ export default function Battlefield({
         </div>
       )}
 
-      {/* Base Tower Rival (Sólo en modos estándar; en Survivor ADS no hay árbol rival) */}
-      {matchMode !== 'arena_ads' && (
+      {/* Base Tower Rival (Sólo en modos estándar; en Survivor ADS y Modo Historia no hay árbol rival) */}
+      {matchMode !== 'arena_ads' && matchMode !== 'story' && (
         <BaseTower
           team="p2"
           hp={p2BaseHp}
@@ -2967,7 +3169,7 @@ export default function Battlefield({
               )}
 
               {Array.from({ length: TOTAL_COLUMNS }).map((_, col) => {
-                const isP1Side = col < (matchMode === 'arena_ads' ? SURVIVOR_P1_COLUMNS : P1_COLUMNS)
+                const isP1Side = col < ((matchMode === 'arena_ads' || matchMode === 'story') ? SURVIVOR_P1_COLUMNS : P1_COLUMNS)
                 const isCellSelected = Boolean(selectedCard && (isP1Side || selectedCard === 'pickledpepper') && !isLaneLocked)
                 const isPlantCard = selectedCard && selectedCard !== 'shovel'
                 const selectedCardConfig = isPlantCard
@@ -3189,7 +3391,7 @@ export default function Battlefield({
       {/* Center Dividing Line */}
       <div
         className={`front-line ${isArenaAds ? 'front-line--arena-ads' : ''}`}
-        style={isArenaAds ? { left: `${BASE_LEFT_END_X + SURVIVOR_P1_COLUMNS * (FIELD_WIDTH_PCT / TOTAL_COLUMNS)}%` } : undefined}
+        style={(isArenaAds || isStory) ? { left: `${BASE_LEFT_END_X + SURVIVOR_P1_COLUMNS * (FIELD_WIDTH_PCT / TOTAL_COLUMNS)}%` } : undefined}
       />
 
       {/* Player 1 Plants */}
@@ -3545,6 +3747,12 @@ export default function Battlefield({
               <div className="jalapeno-lane-flame">
                 <img src="/game-assets/plants/jalapeno_flame_fx.webp" alt="Fuego" />
               </div>
+            ) : enemy.mapacheKey ? (
+              <MapacheUnit
+                enemy={enemy}
+                tick={tick}
+                laneHeightPx={Math.round((laneConfig?.heightPct || 19.33) * 5)}
+              />
             ) : (
               <img
                 className={`enemy-unit__sprite ${
@@ -3580,7 +3788,7 @@ export default function Battlefield({
 
       {/* Flying Projectiles */}
       {projectiles.map((proj) => {
-        const isCatapult = proj.type === 'kernel' || proj.type === 'butter' || proj.type === 'melon' || proj.id.startsWith('tree-')
+        const isCatapult = proj.type === 'kernel' || proj.type === 'butter' || proj.type === 'melon' || proj.type === 'cannonball' || proj.id.startsWith('tree-')
         const isTreeShot = proj.id.startsWith('tree-')
         const safeProjLane = Math.min(Math.max(0, proj.lane), activeLanesConfig.length - 1)
         const targetLaneCfg = activeLanesConfig[safeProjLane] || activeLanesConfig[0]
@@ -3605,6 +3813,39 @@ export default function Battlefield({
 
           currentY = startY + t * (endY - startY) - arcHeight
           scale = 1 + (isTreeShot ? 0.4 : 0.35) * Math.sin(t * Math.PI)
+        }
+
+        if (proj.type === 'cannonball') {
+          return (
+            <div
+              key={proj.id}
+              className="projectile projectile--cannonball projectile--left"
+              style={{
+                left: `${proj.x}%`,
+                top: `${currentY}%`,
+                transform: `scale(${scale})`,
+                zIndex: 35,
+              }}
+            >
+              <div className="projectile-cannonball-mesh" />
+            </div>
+          )
+        }
+        if (proj.type === 'knife') {
+          return (
+            <div
+              key={proj.id}
+              className="projectile projectile--knife projectile--left"
+              style={{
+                left: `${proj.x}%`,
+                top: `${currentY}%`,
+                transform: `scale(${scale})`,
+                zIndex: 25,
+              }}
+            >
+              <div className="projectile-knife-mesh" />
+            </div>
+          )
         }
 
         return (
@@ -3956,6 +4197,57 @@ export default function Battlefield({
                         )
                       })() : (
                         <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.82rem' }}>Liquidando botín de guerra con el tesoro...</p>
+                      )}
+                    </div>
+                  </div>
+                ) : matchMode === 'story' ? (
+                  /* MODO HISTORIA REWARD CARD */
+                  <div className="game-card__panel game-card__panel--story">
+                    <div className="game-card__panel-title">
+                      <span>🦝</span> Resultado Modo Historia
+                    </div>
+                    <div className="battle-mode-payout-box" style={{ borderColor: '#a855f7', boxShadow: '0 0 20px rgba(168, 85, 247, 0.35)', margin: 0 }}>
+                      {gameStatus === 'victory' ? (
+                        <>
+                          <div className="battle-mode-payout-header" style={{ color: '#c084fc' }}>
+                            <span>
+                              {storyLevel === 20
+                                ? '👑 ¡HAS VENCIDO AL REY GARRA Y SALVADO EL JARDÍN! (NIVEL 20 COMPLETADO)'
+                                : `🎉 ¡NIVEL ${storyLevel || 1} SUPERADO CON ÉXITO!`}
+                            </span>
+                          </div>
+                          <div className="battle-mode-payout-gems" style={{ color: '#facc15' }}>
+                            🎁 RECOMPENSAS OBTENIDAS:
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '6px' }}>
+                            <span style={{ color: '#fbbf24', fontWeight: 800, fontSize: '0.85rem' }}>
+                              🪙 +{storyRewards?.gold ?? (150 + (storyLevel || 1) * 50)} Oro
+                            </span>
+                            <span style={{ color: '#38bdf8', fontWeight: 800, fontSize: '0.85rem' }}>
+                              💎 +{storyRewards?.gems ?? (10 + Math.floor((storyLevel || 1) * 2.5))} Gemas
+                            </span>
+                            <span style={{ color: '#34d399', fontWeight: 800, fontSize: '0.85rem' }}>
+                              🌱 +{storyRewards?.tokens ?? (15 + (storyLevel || 1) * 5)} Token PLANTS
+                            </span>
+                          </div>
+                          <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
+                            {storyLevel < 20
+                              ? '🛡️ ¡Las 3 oleadas y el asalto mapache fueron repelidos! Pulsa avanzar para el siguiente desafío.'
+                              : '🏆 ¡Eres el campeón absoluto del jardín contra la Invasión Mapache!'}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="battle-mode-payout-header battle-mode-payout-header--defeat">
+                            <span>💀 ¡LOS MAPACHES ARRASARON TU JARDÍN!</span>
+                          </div>
+                          <div className="battle-mode-payout-streak" style={{ color: '#f87171' }}>
+                            El Árbol Madre cayó en el Nivel {storyLevel || 1}.
+                          </div>
+                          <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
+                            Revisa tu selección de plantas, refuerza tus líneas con nueces y lanzaguisantes, ¡y vuelve a intentarlo!
+                          </p>
+                        </>
                       )}
                     </div>
                   </div>
@@ -4374,6 +4666,12 @@ export default function Battlefield({
                 >
                   {matchMode === 'tournament'
                     ? '🏆 VOLVER AL TORNEO'
+                    : matchMode === 'story'
+                    ? (gameStatus === 'victory'
+                        ? (storyLevel < 20
+                            ? `⚔️ AVANZAR AL NIVEL ${(storyLevel || 1) + 1}`
+                            : '👑 ¡MODO HISTORIA COMPLETADO!')
+                        : '🔄 REINTENTAR NIVEL')
                     : matchMode === 'arena_ads'
                     ? (gameStatus === 'victory'
                         ? (currentArenaAdsRun && currentArenaAdsRun.level >= 50
@@ -4413,7 +4711,7 @@ export default function Battlefield({
                       : '💰 RETIRARSE Y COBRAR BOTÍN'}
                   </button>
                 )}
-                {onBackToMenu && matchMode !== 'tournament' && (matchMode !== 'arena_ads' || gameStatus !== 'victory') && (
+                {onBackToMenu && matchMode !== 'tournament' && ((matchMode !== 'arena_ads' && matchMode !== 'story') || gameStatus !== 'victory') && (
                   <button
                     className="game-button game-button--secondary"
                     type="button"

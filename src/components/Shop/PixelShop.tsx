@@ -56,7 +56,7 @@ export default function PixelShop({
   userGold = 0,
   userTokens = 0,
   playerEnergy = 20,
-  maxPlayerEnergy = 20,
+  maxPlayerEnergy = 15,
   userElo = 1000,
 }: PixelShopProps) {
   const [debugHotspots] = useState<boolean>(false)
@@ -125,7 +125,7 @@ export default function PixelShop({
       if (onSelectTab) {
         onSelectTab('energy')
       } else {
-        setToastMessage(`⚡ Energía actual: ${playerEnergy ?? 20} / ${maxPlayerEnergy ?? 20}`)
+        setToastMessage(`⚡ Energía actual: ${playerEnergy ?? 15} / ${maxPlayerEnergy ?? 15}`)
       }
       return
     }

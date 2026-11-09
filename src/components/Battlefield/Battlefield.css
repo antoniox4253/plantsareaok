@@ -825,6 +825,54 @@
   animation: firePeaFlicker 0.2s ease-in-out infinite alternate;
 }
 
+/* Mapache Story Projectiles */
+.projectile--cannonball {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.projectile-cannonball-mesh {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #94a3b8, #334155 60%, #0f172a);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(239, 68, 68, 0.5);
+  border: 1px solid #1e293b;
+  animation: cannonballSpin 0.3s linear infinite;
+}
+
+@keyframes cannonballSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
+.projectile--knife {
+  width: 28px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.projectile-knife-mesh {
+  width: 26px;
+  height: 8px;
+  background: linear-gradient(90deg, #f8fafc 0%, #cbd5e1 50%, #64748b 100%);
+  clip-path: polygon(0 50%, 35% 0, 100% 30%, 100% 70%, 35% 100%);
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+  animation: knifeSpin 0.15s linear infinite;
+}
+
+@keyframes knifeSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-360deg); }
+}
+
 .projectile--left {
   filter: drop-shadow(0 0 6px rgba(255, 80, 80, 0.8));
 }

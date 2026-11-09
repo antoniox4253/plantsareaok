@@ -204,7 +204,7 @@ export default function Shop({
   claimedVipLevels = [],
   hasPurchasedStarterPack = false,
   playerEnergy = 20,
-  maxPlayerEnergy = 20,
+  maxPlayerEnergy = 15,
   goldenPityCounter = 0,
   inventoryPacks,
   plantCopies = {},

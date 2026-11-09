@@ -1025,8 +1025,8 @@ export const FLASH_OFFER_PRICE_GEMS = 3000
  * SISTEMA DE ENERGÍAS DIARIAS (RANKED LADDER & TIENDA)
  */
 export const ENERGY_FREE_ELO_THRESHOLD = 1602 // Copas a partir de las cuales se cobra energía en Ranked
-export const BASE_DAILY_ENERGY = 20
-export const VIP_DAILY_ENERGY = 25
+export const BASE_DAILY_ENERGY = 15
+export const VIP_DAILY_ENERGY = 20
 
 export type EnergyCurrency = 'gems' | 'gold'
 
@@ -1069,14 +1069,14 @@ export const ENERGY_PACKAGES_GEMS: EnergyPackage[] = [
   {
     id: 'energy_full',
     name: 'Recarga Completa',
-    energyAmount: 20,
+    energyAmount: 15,
     isFullRefill: true,
     currency: 'gems',
     price: 500,
     priceGems: 500,
     badge: 'MEJOR VALOR',
     bestValue: true,
-    description: 'Restablece tu energía al 100% de tu capacidad máxima (20 o 25⚡ con VIP).',
+    description: 'Restablece tu energía al 100% de tu capacidad máxima (15 o 20⚡ con VIP).',
   },
 ]
 

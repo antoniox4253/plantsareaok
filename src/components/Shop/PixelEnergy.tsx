@@ -116,7 +116,7 @@ export default function PixelEnergy({
   userGold = 0,
   userTokens = 0,
   playerEnergy = 20,
-  maxPlayerEnergy = 20,
+  maxPlayerEnergy = 15,
   userElo = 1000,
   onRefreshBalance,
 }: PixelEnergyProps) {
@@ -329,7 +329,7 @@ export default function PixelEnergy({
 
   const isUnlimitedEnergy = (userElo ?? 1000) <= 1600
   const isEnergyFull = localEnergy >= maxPlayerEnergy
-  const energyRatio = Math.min(1, Math.max(0, localEnergy / (maxPlayerEnergy || 20)))
+  const energyRatio = Math.min(1, Math.max(0, localEnergy / (maxPlayerEnergy || 15)))
 
   return (
     <div className="pixel-energy-container">

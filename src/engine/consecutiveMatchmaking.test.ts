@@ -125,9 +125,9 @@ describe('D. Rematch / Matchmaking Consecutivo & Ciclo de Vida Limpio', () => {
     expect(poll.waitedSeconds).toBe(1)
     expect(poll.waitedSeconds! >= RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(false)
 
-    queueWaited = 29
-    poll = await SupabaseService.pollMatchmaking() // 30s
-    expect(poll.waitedSeconds).toBe(30)
+    queueWaited = RANKED_MATCHMAKING_TIMEOUT_SECONDS - 1
+    poll = await SupabaseService.pollMatchmaking()
+    expect(poll.waitedSeconds).toBe(RANKED_MATCHMAKING_TIMEOUT_SECONDS)
     expect(poll.waitedSeconds! >= RANKED_MATCHMAKING_TIMEOUT_SECONDS).toBe(true)
 
     // 3. Al alcanzar 30s, se activa claimRankedAsyncOpponent

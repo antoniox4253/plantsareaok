@@ -38,11 +38,11 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
     })
 
     it('La capacidad diaria base para usuarios gratuitos es 20 de energía', () => {
-      expect(BASE_DAILY_ENERGY).toBe(20)
+      expect(BASE_DAILY_ENERGY).toBe(15)
     })
 
     it('La capacidad diaria para usuarios con Pase VIP es 25 de energía (+5 partidas extra)', () => {
-      expect(VIP_DAILY_ENERGY).toBe(25)
+      expect(VIP_DAILY_ENERGY).toBe(20)
       expect(VIP_DAILY_ENERGY - BASE_DAILY_ENERGY).toBe(5)
     })
 
@@ -137,16 +137,16 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
 
       const result = simulateDailyReset(4, yesterday, today, false)
       expect(result.didReset).toBe(true)
-      expect(result.energy).toBe(20)
+      expect(result.energy).toBe(15)
     })
 
-    it('Reinicia a 25 a las 00:00 UTC para usuarios con Pase VIP', () => {
+    it('Reinicia a 20 a las 00:00 UTC para usuarios con Pase VIP', () => {
       const yesterday = new Date('2026-09-09T18:00:00Z')
       const today = new Date('2026-09-10T00:05:00Z')
 
       const result = simulateDailyReset(2, yesterday, today, true)
       expect(result.didReset).toBe(true)
-      expect(result.energy).toBe(25)
+      expect(result.energy).toBe(20)
     })
 
     it('Regla Anti-Acumulación: Si compró energía y le sobraron 28, a las 00:00 UTC se resetea a 20 (no se acumula)', () => {
@@ -155,7 +155,7 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
 
       const result = simulateDailyReset(28, yesterday, today, false)
       expect(result.didReset).toBe(true)
-      expect(result.energy).toBe(20)
+      expect(result.energy).toBe(15)
     })
 
     it('No reinicia si todavía estamos dentro del mismo día UTC', () => {
@@ -283,26 +283,26 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       const result = simulateBuyVipPass(currentEnergy)
 
       expect(result.hasVip).toBe(true)
-      expect(result.maxEnergy).toBe(25)
+      expect(result.maxEnergy).toBe(20)
       expect(result.energy).toBe(5) // Le quedan 5 energías para jugar de inmediato
-      expect(result.consumed).toBe(20) // 20 de 25 consumidas, ¡NO 25 de 25!
+      expect(result.consumed).toBe(15) // 20 de 25 consumidas, ¡NO 25 de 25!
     })
 
     it('Usuario con 10/20 restantes (10 consumidas): al comprar pase pasa a tener 15/25 (10 consumidas)', () => {
       const result = simulateBuyVipPass(10)
 
       expect(result.hasVip).toBe(true)
-      expect(result.maxEnergy).toBe(25)
+      expect(result.maxEnergy).toBe(20)
       expect(result.energy).toBe(15) // 15 de 25
-      expect(result.consumed).toBe(10) // Mantiene las 10 partidas jugadas
+      expect(result.consumed).toBe(5) // Mantiene las 10 partidas jugadas
     })
 
     it('Usuario con 20/20 restantes (0 consumidas): al comprar pase pasa a tener 25/25', () => {
-      const result = simulateBuyVipPass(20)
+      const result = simulateBuyVipPass(15)
 
       expect(result.hasVip).toBe(true)
-      expect(result.maxEnergy).toBe(25)
-      expect(result.energy).toBe(25)
+      expect(result.maxEnergy).toBe(20)
+      expect(result.energy).toBe(20)
       expect(result.consumed).toBe(0)
     })
   })
@@ -533,7 +533,7 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       }
       const res = simularEnterMatchmakingBackend(p, 'ranked', today)
       expect(res.searching).toBe(true)
-      expect(p.energyCurrent).toBe(20) // Se autorrecargó a 20
+      expect(p.energyCurrent).toBe(15) // Se autorrecargó a 15
     })
 
     it('Auditoría estática SQL: La migración 89 contiene todos los gates autoritativos requeridos', async () => {
@@ -604,31 +604,31 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
 
     it('useEnergyItem local: recarga 5 energías respetando el tope de 20 para usuarios estándar', async () => {
       mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 2 }))
-      mockStorage.setItem('plant_arena_player_energy', '12')
+      mockStorage.setItem('plant_arena_player_energy', '8')
       mockStorage.setItem('plant_arena_has_vip', 'false')
 
       const res = await inventoryService.useEnergyItem('energy_potion_5')
       expect(res.success).toBe(true)
       expect(res.energyAdded).toBe(5)
-      expect(res.energyCurrent).toBe(17)
+      expect(res.energyCurrent).toBe(13)
       expect(res.remainingItemQty).toBe(1)
     })
 
     it('useEnergyItem local: no excede el tope de 20 si el jugador tiene 18 energías (añade sólo 2)', async () => {
       mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 1 }))
-      mockStorage.setItem('plant_arena_player_energy', '18')
+      mockStorage.setItem('plant_arena_player_energy', '13')
       mockStorage.setItem('plant_arena_has_vip', 'false')
 
       const res = await inventoryService.useEnergyItem('energy_potion_5')
       expect(res.success).toBe(true)
       expect(res.energyAdded).toBe(2)
-      expect(res.energyCurrent).toBe(20)
+      expect(res.energyCurrent).toBe(15)
       expect(res.remainingItemQty).toBe(0)
     })
 
     it('useEnergyItem local: rechaza si el jugador ya está en su energía máxima (20/20)', async () => {
       mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 1 }))
-      mockStorage.setItem('plant_arena_player_energy', '20')
+      mockStorage.setItem('plant_arena_player_energy', '15')
       mockStorage.setItem('plant_arena_has_vip', 'false')
 
       const res = await inventoryService.useEnergyItem('energy_potion_5')
@@ -638,13 +638,13 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
 
     it('useEnergyItem local: respeta tope de 25 para usuarios con Pase VIP', async () => {
       mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 1 }))
-      mockStorage.setItem('plant_arena_player_energy', '22')
+      mockStorage.setItem('plant_arena_player_energy', '17')
       mockStorage.setItem('plant_arena_has_vip', 'true')
 
       const res = await inventoryService.useEnergyItem('energy_potion_5')
       expect(res.success).toBe(true)
       expect(res.energyAdded).toBe(3)
-      expect(res.energyCurrent).toBe(25)
+      expect(res.energyCurrent).toBe(20)
     })
 
     it('buyEnergyPack local: rechaza estrictamente compras de energía con oro', async () => {

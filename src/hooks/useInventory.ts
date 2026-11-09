@@ -225,7 +225,7 @@ export function useInventory() {
 
   const [playerEnergy, setPlayerEnergy] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ENERGY)
-    return saved ? Number(saved) : 20
+    return saved ? Number(saved) : 15
   })
 
   const [colosseumCurrentStreak, setColosseumCurrentStreak] = useState<number>(() => {
@@ -936,7 +936,7 @@ export function useInventory() {
     }
 
     // 3. Si settlement ya lo había entregado hace instantes ('demasiado_pronto') en un hueco que antes estaba vacío
-    if (res.reason === 'demasiado_pronto' && remoteSlots) {
+    if (remoteSlots) {
       const newlyAwarded = remoteSlots.find(
         (s) => s.status === 'locked' && prevSlots.find((p) => p.slotId === s.slotId)?.status === 'empty'
       )
@@ -2028,7 +2028,7 @@ export function useInventory() {
     // Energy System Exports
     playerEnergy,
     setPlayerEnergy,
-    maxPlayerEnergy: hasVipPass ? 25 : 20,
+    maxPlayerEnergy: hasVipPass ? 20 : 15,
     buyEnergyPack,
     useEnergyPotion,
     hasPurchasedStarterPack,

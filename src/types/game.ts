@@ -95,6 +95,15 @@ export interface PlantEntity {
   isCommandoAura?: boolean
   commandoAuraEndTick?: number
   nextCommandoAuraTick?: number
+  mapacheKey?: 'pumpum' | 'garritas' | 'punos' | 'navajas' | 'reygarra'
+  isBoss?: boolean
+  furyCount?: number
+  isFury?: boolean
+  furyEndTick?: number
+  hasJumped?: boolean
+  isJumping?: boolean
+  jumpStartTick?: number
+  lastShootTick?: number
 }
 
 export type EnemyPlantType =
@@ -164,7 +173,7 @@ export interface EnemyPlantEntity {
 
 export interface ProjectileEntity {
   id: string
-  type: 'pea' | 'melon' | 'needle' | 'kernel' | 'butter' | 'frozen_pea' | 'fire_pea' | 'ghost_spirit'
+  type: 'pea' | 'melon' | 'needle' | 'kernel' | 'butter' | 'frozen_pea' | 'fire_pea' | 'ghost_spirit' | 'cannonball' | 'knife' | 'claw_slash'
   targetTeam: 'p1' | 'p2'
   lane: number
   x: number // current % x position

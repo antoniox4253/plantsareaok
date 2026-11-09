@@ -68,7 +68,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   userXp = 0,
   hasVipPass = false,
   playerEnergy = 20,
-  maxPlayerEnergy = 20,
+  maxPlayerEnergy = 15,
   userProfile,
   onRefreshProfile,
   initialTab = 'summary',

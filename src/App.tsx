@@ -1,4 +1,4 @@
-import StoryBattlefield from './components/StoryMode/StoryBattlefield'
+import { saveStoryProgress } from './utils/mapaches/mapachesLevels'
 import { useState, useEffect, useCallback } from 'react'
 import GameFrame from './components/GameFrame/GameFrame'
 import RotateOverlay from './components/RotateOverlay/RotateOverlay'
@@ -568,7 +568,7 @@ function App() {
     }
   }, [loading, user])
 
-  const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'tournament' | 'strategic_test' | 'clan_fortress' | 'arena_ads'>('ranked')
+  const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'tournament' | 'strategic_test' | 'clan_fortress' | 'arena_ads' | 'story'>('ranked')
   const [storyModeLevel, setStoryModeLevel] = useState<number | null>(null)
   const [arenaAdsRun, setArenaAdsRun] = useState<ArenaAdsRun | null>(() => ArenaAdsManager.getStoredRun())
   const [friendlyBet, setFriendlyBet] = useState<number>(0)
@@ -1114,9 +1114,20 @@ function App() {
     void buscar('tournament', { roomCode: tournamentId, tournamentId })
   }
 
-    const handleStartStoryLevel = (level: number) => {
+  const handleStartStoryLevel = (level: number) => {
     setStoryModeLevel(level)
-    setScreen('story_battle')
+    setBattleMatchMode('story')
+    setPartidaAsincrona(false)
+    setTournamentOpponent(null)
+    setTournamentDeck(null)
+    setPracticePlantId(null)
+    setCustomArenaBg(undefined)
+    setSalaId(null)
+    setRivalId(null)
+    setSemillaPartida(1000 + level)
+    const miNombre = profile?.username || UserManager.getProfile().name || 'Tú'
+    setNombresEnPartida({ mio: miNombre, rival: 'Invasión Mapache' })
+    setScreen('battle')
   }
 
   const handleStartArenaAdsMatch = (run: ArenaAdsRun) => {
@@ -1674,25 +1685,7 @@ function App() {
           />
         )}
         
-        {screen === 'story_battle' && storyModeLevel !== null && (
-          <StoryBattlefield
-            level={storyModeLevel}
-            activeDeck={activeDeck}
-            plantInstances={plantInstances}
-            onVictory={(_wonLevel, rewards) => {
-              if (rewards.gold > 0) addGold(rewards.gold)
-              if (rewards.gems > 0) addUserTokens(rewards.gems)
-              void refreshFromServer?.()
-            }}
-            onNextLevel={(nextLvl) => {
-              setStoryModeLevel(nextLvl)
-            }}
-            onExit={() => {
-              setStoryModeLevel(null)
-              setScreen('menu')
-            }}
-          />
-        )}
+
 
         {screen === 'battle' && (
           <Battlefield
@@ -1707,6 +1700,17 @@ function App() {
             userElo={userElo}
             customBgImage={customArenaBg}
             matchMode={battleMatchMode}
+            storyLevel={storyModeLevel || 1}
+            onStoryVictory={(lvl, rewards) => {
+              if (rewards.gold > 0) addGold(rewards.gold)
+              if (rewards.gems > 0) addUserTokens(rewards.gems)
+              saveStoryProgress(lvl)
+              void refreshFromServer?.()
+            }}
+            onNextStoryLevel={(nextLvl) => {
+              setStoryModeLevel(nextLvl)
+              setSemillaPartida(1000 + nextLvl)
+            }}
             friendlyBetGems={friendlyBet}
             tournamentOpponent={tournamentOpponent}
             tournamentDeck={tournamentDeck}

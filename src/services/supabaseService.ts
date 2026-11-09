@@ -262,7 +262,7 @@ export const SupabaseService = {
                 claimed_arena_ads_levels: Array.isArray(prof.claimed_arena_ads_levels) ? prof.claimed_arena_ads_levels : [],
                 colosseum_current_streak: Number(prof.colosseum_current_streak ?? 0),
                 colosseum_max_streak: Number(prof.colosseum_max_streak ?? 0),
-                energy_current: prof.energy_current ?? (prof.has_vip_pass ? 25 : 20),
+                energy_current: prof.energy_current ?? (prof.has_vip_pass ? 20 : 15),
                 energy_last_reset_utc: prof.energy_last_reset_utc,
                 plants_balance: Number(prof.plants_balance ?? 0),
                 plants_vesting_locked: Number(prof.plants_vesting_locked ?? 0),
@@ -1647,6 +1647,8 @@ export const SupabaseService = {
         success: boolean
         status: string
         rawElo: any
+        chest?: any
+        vipGoldBonus?: number
         eloDelta?: number
         eloBefore?: number
         eloAfter?: number
@@ -1697,6 +1699,8 @@ export const SupabaseService = {
               success: true,
               status: isDraw ? 'empate' : isAbandoned ? 'abandonada' : 'liquidada',
               rawElo: eloAudit,
+              chest: room.verification_payload?.chest,
+              vipGoldBonus: room.verification_payload?.vipGoldBonus ?? 0,
               eloDelta,
               eloBefore,
               eloAfter,
@@ -4656,9 +4660,9 @@ export const SupabaseService = {
     }
 
     try {
-      const currentEnergy = parseInt(localStorage.getItem('plant_arena_player_energy') || '20', 10)
+      const currentEnergy = parseInt(localStorage.getItem('plant_arena_player_energy') || '15', 10)
       const hasVip = localStorage.getItem('plant_arena_has_vip') === 'true'
-      const maxEnergy = hasVip ? 25 : 20
+      const maxEnergy = hasVip ? 20 : 15
 
       if (isFullRefill) {
         if (currentEnergy >= maxEnergy) {
@@ -4775,9 +4779,9 @@ export const SupabaseService = {
         return { success: false, error: 'No tienes este objeto en tu inventario' }
       }
 
-      const currentEnergy = parseInt(localStorage.getItem('plant_arena_player_energy') || '20', 10)
+      const currentEnergy = parseInt(localStorage.getItem('plant_arena_player_energy') || '15', 10)
       const hasVip = localStorage.getItem('plant_arena_has_vip') === 'true'
-      const maxEnergy = hasVip ? 25 : 20
+      const maxEnergy = hasVip ? 20 : 15
 
       if (currentEnergy >= maxEnergy) {
         return {

@@ -496,7 +496,9 @@ export function useGameEngine() {
     clanFortressAmbushes?: ClanFortressAmbush[],
     targetTreeLevel?: number,
     isSurvivorMode?: boolean,
-    survivorLevel?: number
+    survivorLevel?: number,
+    isStoryMode?: boolean,
+    storyLevel?: number
   ) => {
     sessionGenerationRef.current += 1
     engineVersionRef.current = engineVersion
@@ -562,7 +564,9 @@ export function useGameEngine() {
           : 350
         : undefined,
       Boolean(isSurvivorMode),
-      survivorLevel || 1
+      survivorLevel || 1,
+      Boolean(isStoryMode),
+      storyLevel || 1
     )
 
     // Helper para normalizar el carril defensivo al espacio de combate activo (0..effectiveLanes-1)
@@ -2259,6 +2263,12 @@ export function useGameEngine() {
     survivorTotalWaves: 3,
     survivorLevel: state.survivorConfig?.level ?? 1,
     survivorEnemiesRemaining: (state.enemyPlants || []).filter((p) => p.hp > 0).length + ((state.survivorSpawnsQueue || []).length),
+    isStoryMode: Boolean(state.isStoryMode),
+    storyWaveIndex: state.storyWaveIndex ?? 0,
+    storyTotalWaves: 3,
+    storyLevel: state.storyConfig?.level ?? (state.storyLevel || 1),
+    storyEnemiesRemaining: (state.enemyPlants || []).filter((p) => p.hp > 0).length + ((state.storySpawnsQueue || []).length),
+    storyRewards: state.storyConfig?.rewards,
     stats: state.stats,
     startGame,
     startPracticeGame,

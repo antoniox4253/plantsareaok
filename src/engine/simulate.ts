@@ -64,6 +64,12 @@ import {
   type SurvivorEnemySpawn,
 } from './survivorWaveEngine.ts'
 import {
+  generateStoryLevel,
+  processStoryWaves,
+  type StoryLevelConfig,
+  type StoryEnemySpawn,
+} from './storyWaveEngine.ts'
+import {
   PLANT_CONFIGS,
   INITIAL_SUN,
   INITIAL_BASE_HP,
@@ -261,8 +267,12 @@ export function createBattleState(
   fortressRoster?: PlantId[],
   initialDefenseSuns?: number,
   isSurvivorMode = false,
-  survivorLevel = 1
+  survivorLevel = 1,
+  isStoryMode = false,
+  storyLevel = 1
 ): GameState {
+  const storyConfig = isStoryMode ? generateStoryLevel(storyLevel, seed) : undefined
+  const storySpawnsQueue = storyConfig ? [...storyConfig.waves[0].spawns] : undefined
   const survivorConfig = isSurvivorMode ? generateSurvivorLevel(survivorLevel, seed) : undefined
   const survivorSpawnsQueue = survivorConfig ? [...survivorConfig.waves[0].spawns] : undefined
 
@@ -281,6 +291,12 @@ export function createBattleState(
     survivorSpawnsQueue,
     survivorWaveIndex: isSurvivorMode ? 0 : undefined,
     survivorWavesCompleted: false,
+    isStoryMode,
+    storyLevel: isStoryMode ? storyLevel : undefined,
+    storyConfig,
+    storySpawnsQueue,
+    storyWaveIndex: isStoryMode ? 0 : undefined,
+    storyWavesCompleted: false,
     // El cartel de la primera oleada se oculta a los 3 s (4 en práctica). Antes lo
     // hacía un setTimeout tras el arranque; ahora es un tic concreto.
     pending: [{ atTick: msToTicks(isPracticeMode ? 4000 : 3000), kind: 'clear_wave_banner' }],
@@ -299,10 +315,10 @@ export function createBattleState(
         },
     status: 'playing',
     p1BaseHp: p1BaseHp ?? INITIAL_BASE_HP,
-    p2BaseHp: isSurvivorMode ? 99999 : (p2BaseHp ?? INITIAL_BASE_HP),
+    p2BaseHp: (isSurvivorMode || isStoryMode) ? 99999 : (p2BaseHp ?? INITIAL_BASE_HP),
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
-    sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isSurvivorMode ? 250 : (isFortressMode ? 200 : INITIAL_SUN)),
+    sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isSurvivorMode ? 250 : (isStoryMode ? 150 : (isFortressMode ? 200 : INITIAL_SUN))),
     p2SunBank: initialDefenseSuns !== undefined ? initialDefenseSuns : (isFortressMode ? 400 : INITIAL_SUN),
     plants: [],
     enemyPlants: [],
@@ -317,6 +333,8 @@ export function createBattleState(
       ? 'Modo Práctica'
       : isSurvivorMode
       ? '🧟 ¡OLEADA 1 (SUAVE)!'
+      : isStoryMode
+      ? '🦝 ¡OLEADA 1: INCURSIÓN MAPACHE!'
       : isFortressMode
       ? null
       : '¡Ola 1 de Plantas Enemigas!',
@@ -524,6 +542,13 @@ export interface GameState {
   survivorSpawnsQueue?: SurvivorEnemySpawn[]
   survivorWaveIndex?: number
   survivorWavesCompleted?: boolean
+  /** Modo Historia contra la Invasión Mapache. */
+  isStoryMode?: boolean
+  storyLevel?: number
+  storyConfig?: StoryLevelConfig
+  storySpawnsQueue?: StoryEnemySpawn[]
+  storyWaveIndex?: number
+  storyWavesCompleted?: boolean
 }
 
 /**
@@ -740,7 +765,7 @@ function dañarBase(state: GameState, equipo: 'p1' | 'p2', cuanto: number): void
   const danoFinal = cuanto
   if (equipo === 'p1') {
     state.p1BaseHp = Math.max(0, state.p1BaseHp - danoFinal)
-    if (state.isSurvivorMode && state.p1BaseHp <= 0 && state.status === 'playing') {
+    if ((state.isSurvivorMode || state.isStoryMode) && state.p1BaseHp <= 0 && state.status === 'playing') {
       state.status = 'defeat'
     }
   } else {
@@ -1200,7 +1225,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
     if (planta.isWalking) {
       // En Modo Survivor, si una planta que camina del jugador (p1) llega al final de la pantalla rival,
       // desaparece de inmediato para no quedarse ahí ni causar confusión visual
-      if (state.isSurvivorMode && lado.equipo === 'p1' && llegoALaBase(planta, lado)) {
+      if ((state.isSurvivorMode || state.isStoryMode) && lado.equipo === 'p1' && llegoALaBase(planta, lado)) {
         planta.hp = 0
         sonar('pea_hit', 0.6)
         continue
@@ -1233,7 +1258,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 6.0)
             planta.x += effectiveSpeed * dt * lado.sentido
             if (llegoALaBase(planta, lado)) {
-              if (!state.isSurvivorMode || lado.equipo === 'p2') {
+              if ((!state.isSurvivorMode && !state.isStoryMode) || lado.equipo === 'p2') {
                 dañarBase(state, lado.objetivo, 150)
               }
               sonar('pea_hit', 0.8)
@@ -1350,7 +1375,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
             const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 3.5)
             planta.x += effectiveSpeed * dt * lado.sentido
             if (llegoALaBase(planta, lado)) {
-              if (state.isSurvivorMode && lado.equipo === 'p2') {
+              if ((state.isSurvivorMode || state.isStoryMode) && lado.equipo === 'p2') {
                 planta.x = baseRivalX(lado)
                 planta.state = 'attacking'
                 if (planta.lastBaseAttackTime === undefined || state.tick - planta.lastBaseAttackTime >= msToTicks(config.attackSpeedMs || 1000)) {
@@ -1360,7 +1385,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
                   sonar('pea_hit', 0.6)
                 }
               } else {
-                if (!state.isSurvivorMode) {
+                if (!state.isSurvivorMode && !state.isStoryMode) {
                   dañarBase(state, lado.objetivo, 40)
                 }
                 sonar('pea_hit', 0.6)
@@ -1417,7 +1442,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
           const effectiveSpeed = planta.moveSpeed !== undefined ? planta.moveSpeed : (config.moveSpeed || 4.5)
           planta.x += effectiveSpeed * dt * lado.sentido
           if (llegoALaBase(planta, lado)) {
-            if (state.isSurvivorMode && lado.equipo === 'p2') {
+            if ((state.isSurvivorMode || state.isStoryMode) && lado.equipo === 'p2') {
               planta.x = baseRivalX(lado)
               planta.state = 'attacking'
               const baseDmg = planta.plantId === 'bonkchoy' ? (config.damage || 90) : (planta.plantId === 'guacodile' ? 60 : 40)
@@ -1428,7 +1453,7 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
                 sonar('pea_hit', 0.6)
               }
             } else {
-              if (!state.isSurvivorMode) {
+              if (!state.isSurvivorMode && !state.isStoryMode) {
                 const baseDmg = planta.plantId === 'guacodile' ? 60 : 40
                 dañarBase(state, lado.objetivo, baseDmg)
               }
@@ -1994,6 +2019,11 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     processSurvivorWaves(state, sonar)
   }
 
+  // ── MODO HISTORIA: INVASIÓN MAPACHE ─────────────────────────────────────────
+  if (state.isStoryMode && state.storyConfig) {
+    processStoryWaves(state, sonar)
+  }
+
   // ── GESTIÓN DE LA IA ENEMIGA ───────────────────────────────────────────────
   // En Asalto a Fortaleza de Clan, la IA defiende activamente el bastión,
   // cubriendo brechas y líneas vaciadas (anti-Jalapeño) con su economía solar.
@@ -2002,13 +2032,13 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
     if (!state.isPracticeMode && !state.isPvpMode) {
       simularDefensaDeFortaleza(state, sonar)
     }
-  } else if (!state.isSurvivorMode) {
+  } else if (!state.isSurvivorMode && !state.isStoryMode) {
     // 1. PC AI SKY SUN RECOVERY (Synchronized with sky sun drop every 6.0s for 100% fair parity)
     // El bot no juega si hay un rival de verdad al otro lado: sus plantas llegan
     // por el registro de acciones. Sin esta guarda, en una partida contra otro
     // jugador seguirías peleando contra la máquina — que es exactamente el fallo
     // que apareció al probarlo con dos cuentas.
-    const juegaElBot = !state.isPracticeMode && !state.isPvpMode && !state.isSurvivorMode
+    const juegaElBot = !state.isPracticeMode && !state.isPvpMode && !state.isSurvivorMode && !state.isStoryMode
 
     const mente = state.bot ?? (state.bot = menteNueva())
     const nivel = state.nivelBot ?? NIVEL_POR_DEFECTO
@@ -2379,7 +2409,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   // El desgaste es por segundo y se convierte a tics para que el daño sea idéntico
   // independientemente del tiempo que pase entre fotogramas.
   // ───────────────────────────────────────────────────────────────────────────
-  if (!state.isPracticeMode && !state.isSurvivorMode) {
+  if (!state.isPracticeMode && !state.isSurvivorMode && !state.isStoryMode) {
     if (state.tick === TIC_MUERTE_SUBITA) {
       state.waveBanner = '☠ MUERTE SÚBITA · las dos bases pierden vida'
       state.pending.push({ atTick: state.tick + msToTicks(4000), kind: 'clear_wave_banner' })
@@ -2418,7 +2448,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
         : 'victory',
       sonar
     )
-  } else if (!state.isPracticeMode && !state.isSurvivorMode && state.tick >= TIC_TOPE_DE_PARTIDA) {
+  } else if (!state.isPracticeMode && !state.isSurvivorMode && !state.isStoryMode && state.tick >= TIC_TOPE_DE_PARTIDA) {
     // Red de seguridad: aquí se acaba, pase lo que pase.
     terminar(state, decidirPorPuntos(state), sonar)
   }
@@ -2431,7 +2461,7 @@ export const TIC_TOPE_DE_PARTIDA = msToTicks(TOPE_DE_PARTIDA_MS)
 
 /** ¿Va ya la partida en muerte súbita? La interfaz lo usa para el cartel. */
 export function enMuerteSubita(state: GameState): boolean {
-  return !state.isPracticeMode && !state.isSurvivorMode && state.tick >= TIC_MUERTE_SUBITA
+  return !state.isPracticeMode && !state.isSurvivorMode && !state.isStoryMode && state.tick >= TIC_MUERTE_SUBITA
 }
 
 function terminar(state: GameState, resultado: 'victory' | 'defeat', sonar: SonarFn) {
