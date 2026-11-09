@@ -1034,7 +1034,22 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
         // Aumenta la velocidad de disparo un 35% más (reduce el intervalo entre disparos un 35%)
         cadenciaMs = Math.round(cadenciaMs * 0.65)
       }
-      if (state.tick - planta.lastActionTime > msToTicks(cadenciaMs)) {
+
+      // En Modo Historia, solo disparan cuando hay enemigos en ese carril (evita atacar por atacar al vacío)
+      let hayObjetivoEnCarril = true
+      if (state.isStoryMode) {
+        const maxLaneIndex = (state.lanesCount || 3) - 1
+        const allowed = state.allowedLanes && state.allowedLanes.length > 0 ? state.allowedLanes : null
+        const targetLanes = planta.plantId === 'threepeater'
+          ? [planta.lane - 1, planta.lane, planta.lane + 1].filter((l) => l >= 0 && l <= maxLaneIndex && (!allowed || allowed.includes(l)))
+          : [planta.lane]
+
+        hayObjetivoEnCarril = susPlantas.some(
+          (e) => targetLanes.includes(e.lane) && e.hp > 0 && (e.x - planta.x) * lado.sentido >= -2.5
+        )
+      }
+
+      if (hayObjetivoEnCarril && state.tick - planta.lastActionTime > msToTicks(cadenciaMs)) {
         planta.lastActionTime = state.tick
 
         let tipo: ProjectileEntity['type'] = 'pea'
@@ -2345,30 +2360,38 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   if (state.p1TreeSkin && state.tick >= RETARDO_INICIAL_ARBOL_TICKS) {
     const ultimoDisparo = state.timers.lastP1TreeShot ?? 0
     if (ultimoDisparo === 0 || state.tick - ultimoDisparo >= INTERVALO_DISPARO_ARBOL_TICKS) {
-      state.timers.lastP1TreeShot = state.tick
-      for (let i = 0; i < 2; i++) {
-        const poolLanes = state.allowedLanes && state.allowedLanes.length > 0 ? state.allowedLanes : [0, 1, 2]
-        const lane = poolLanes[nextInt(state.rng, poolLanes.length)]
-        const target = state.enemyPlants
-          .filter((e) => e.lane === lane && e.hp > 0 && e.x > BASE_LEFT_END_X)
-          .sort((a, b) => a.x - b.x)[0]
-        const targetX = target ? target.x : BASE_RIGHT_START_X
+      const poolLanes = state.allowedLanes && state.allowedLanes.length > 0 ? state.allowedLanes : [0, 1, 2]
+      const poolConEnemigos = poolLanes.filter((l) =>
+        state.enemyPlants.some((e) => e.lane === l && e.hp > 0 && e.x > BASE_LEFT_END_X)
+      )
 
-        state.projectiles.push({
-          id: entityId(`tree-p1-shot-${i}`, state.tick, state.entityCounter++),
-          type: 'pea',
-          targetTeam: 'p2',
-          lane,
-          originLane: 1,
-          originX: BASE_LEFT_END_X,
-          targetX,
-          x: BASE_LEFT_END_X,
-          y: 20 + lane * 19.33 + 7,
-          speed: 28,
-          damage: 20,
-        })
+      // En Modo Historia, el Árbol solo dispara si hay enemigos vivos presentes
+      if (!state.isStoryMode || poolConEnemigos.length > 0) {
+        state.timers.lastP1TreeShot = state.tick
+        const poolParaElegir = (state.isStoryMode && poolConEnemigos.length > 0) ? poolConEnemigos : poolLanes
+        for (let i = 0; i < 2; i++) {
+          const lane = poolParaElegir[nextInt(state.rng, poolParaElegir.length)]
+          const target = state.enemyPlants
+            .filter((e) => e.lane === lane && e.hp > 0 && e.x > BASE_LEFT_END_X)
+            .sort((a, b) => a.x - b.x)[0]
+          const targetX = target ? target.x : BASE_RIGHT_START_X
+
+          state.projectiles.push({
+            id: entityId(`tree-p1-shot-${i}`, state.tick, state.entityCounter++),
+            type: 'pea',
+            targetTeam: 'p2',
+            lane,
+            originLane: 1,
+            originX: BASE_LEFT_END_X,
+            targetX,
+            x: BASE_LEFT_END_X,
+            y: 20 + lane * 19.33 + 7,
+            speed: 28,
+            damage: 20,
+          })
+        }
+        sonar('pea_shoot', 0.4)
       }
-      sonar('pea_shoot', 0.4)
     }
   }
 

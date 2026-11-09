@@ -223,4 +223,133 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
     const garritas = state.enemyPlants.find(e => e.id === 'test_garritas')
     expect(garritas?.hp ?? 0).toBe(0)
   })
-})
+
+  it('en Modo Historia las plantas a distancia NO disparan si no hay enemigos en su carril', () => {
+    const sonar = () => {}
+    const state = createBattleState(1234, false, false, undefined, 'auth-v2', 1000, 1000, null, null, 3, false, 250, undefined, undefined, undefined, false, 1, true, 1)
+
+    // Colocar un Peashooter en el carril 0 a x=25 sin mapaches en ningún carril
+    state.plants.push({
+      id: 'peashooter_p1',
+      plantId: 'peashooter',
+      lane: 0,
+      x: 25,
+      hp: 300,
+      maxHp: 300,
+      lastActionTime: 0,
+    })
+
+    // Simular 50 tics (~1.6s, mayor a la cadencia de 1.2s)
+    for (let t = 0; t < 50; t++) {
+      stepTick(state, sonar)
+    }
+
+    // No debe haber disparado proyectiles porque el carril está vacío
+    expect(state.projectiles.filter(p => p.lane === 0).length).toBe(0)
+
+    // Ahora colocamos un enemigo en el carril 1 (distinto carril)
+    state.enemyPlants.push({
+      id: 'enemy_lane_1',
+      plantId: 'bonkchoy',
+      mapacheKey: 'garritas',
+      lane: 1,
+      x: 70,
+      hp: 200,
+      maxHp: 200,
+      moveSpeed: 0,
+      lastActionTime: 0,
+    })
+
+    for (let t = 0; t < 50; t++) {
+      stepTick(state, sonar)
+    }
+
+    // Peashooter en carril 0 sigue sin disparar porque el enemigo está en el carril 1
+    expect(state.projectiles.filter(p => p.lane === 0).length).toBe(0)
+
+    // Ahora colocamos un mapache en el carril 0 delante del Peashooter (x=70)
+    state.enemyPlants.push({
+      id: 'enemy_lane_0',
+      plantId: 'bonkchoy',
+      mapacheKey: 'garritas',
+      lane: 0,
+      x: 70,
+      hp: 200,
+      maxHp: 200,
+      moveSpeed: 0,
+      lastActionTime: 0,
+    })
+
+    for (let t = 0; t < 50; t++) {
+      stepTick(state, sonar)
+    }
+
+    // Ahora SÍ debe haber disparado proyectiles en el carril 0
+    expect(state.projectiles.filter(p => p.lane === 0).length).toBeGreaterThan(0)
+  })
+
+  it('Threepeater en Modo Historia dispara si hay enemigo en su carril o en carriles adyacentes', () => {
+    const sonar = () => {}
+    const state = createBattleState(1234, false, false, undefined, 'auth-v2', 1000, 1000, null, null, 3, false, 250, undefined, undefined, undefined, false, 1, true, 1)
+
+    // Threepeater en carril 1 (cubre 0, 1, 2)
+    state.plants.push({
+      id: 'threepeater_p1',
+      plantId: 'threepeater',
+      lane: 1,
+      x: 25,
+      hp: 300,
+      maxHp: 300,
+      lastActionTime: 0,
+    })
+
+    // Sin enemigos: no dispara
+    for (let t = 0; t < 50; t++) {
+      stepTick(state, sonar)
+    }
+    expect(state.projectiles.length).toBe(0)
+
+    // Añadir enemigo en carril 0 (adyacente a carril 1)
+    state.enemyPlants.push({
+      id: 'enemy_lane_0',
+      plantId: 'bonkchoy',
+      mapacheKey: 'garritas',
+      lane: 0,
+      x: 75,
+      hp: 200,
+      maxHp: 200,
+      moveSpeed: 0,
+      lastActionTime: 0,
+    })
+
+    for (let t = 0; t < 50; t++) {
+      stepTick(state, sonar)
+    }
+
+    // Debe disparar proyectiles cubriendo sus 3 carriles
+    expect(state.projectiles.length).toBeGreaterThan(0)
+  })
+
+  it('en modo PvP (isStoryMode: false) las plantas a distancia sí disparan por un carril vacío hacia la base', () => {
+    const sonar = () => {}
+    // isStoryMode = false
+    const state = createBattleState(1234, false, false, undefined, 'auth-v2', 1000, 1000, null, null, 3, false, 100, undefined, undefined, undefined, false, 1, false)
+
+    state.plants.push({
+      id: 'pvp_peashooter',
+      plantId: 'peashooter',
+      lane: 0,
+      x: 25,
+      hp: 300,
+      maxHp: 300,
+      lastActionTime: 0,
+    })
+
+    for (let t = 0; t < 50; t++) {
+      stepTick(state, sonar)
+    }
+
+    // En PvP sí dispara para dañar la base rival
+    expect(state.projectiles.filter(p => p.lane === 0).length).toBeGreaterThan(0)
+  })
+});
