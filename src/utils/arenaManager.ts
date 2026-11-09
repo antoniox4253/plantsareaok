@@ -91,23 +91,10 @@ export function getEloDeltasForElo(elo: number): { winElo: number; loseElo: numb
   } else if (elo <= 3000) {
     return { winElo: 18, loseElo: 8, surrenderElo: 8 }
   } else if (elo <= 5000) {
-    return { winElo: 20, loseElo: 12, surrenderElo: 12 }
+    return { winElo: 15, loseElo: 12, surrenderElo: 12 }
   } else if (elo <= 8000) {
     return { winElo: 25, loseElo: 20, surrenderElo: 20 }
   } else {
     return { winElo: 30, loseElo: 30, surrenderElo: 30 }
   }
 }
-
-// getGoldRewardForElo se eliminó.
-//
-// Devolvía de 50 a 150 de oro por victoria según el ELO, y no se llamaba desde
-// ningún sitio: era código muerto. Se borra en lugar de conectarse porque el oro
-// entra en el juego por un solo camino, y no es la victoria: lo da el cofre al
-// reclamarlo, según su duración (2h→10, 4h→20, 8h→40, 12h→60), y lo concede el
-// servidor en claim_pack_slot.
-//
-// El motivo es que un oro por victoria tendría que concederlo el servidor, y la
-// partida aún se resuelve en el navegador: una RPC "he ganado, dame oro" sería un
-// grifo sin tope. El cofre hereda los límites que ya existen — 4 huecos, de 2 a
-// 12 h de espera, y el enfriamiento de 2 minutos al concederlo.

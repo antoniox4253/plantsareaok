@@ -1658,15 +1658,16 @@ export default function Battlefield({
           }
 
           // Si el reporte ya liquidó directamente en la DB (éramos el segundo en reportar o la sala ya cerró):
-          if (reportRes && (reportRes.status === 'liquidada' || reportRes.status === 'ya_liquidada')) {
+          if (reportRes && (reportRes.status === 'liquidada' || reportRes.status === 'ya_liquidada' || reportRes.status === 'p1_won' || reportRes.status === 'p2_won')) {
             const yoGane = reportRes.winner ? reportRes.winner === currentUserId : gameStatus === 'victory'
             const rawElo = reportRes.elo
             const eloDelta = yoGane
-              ? (typeof reportRes.eloGained === 'number' ? reportRes.eloGained : (rawElo ? (soyP1 ? rawElo.p1Delta : rawElo.p2Delta) : undefined))
-              : (typeof reportRes.eloLost === 'number' ? -reportRes.eloLost : (rawElo ? (soyP1 ? rawElo.p1Delta : rawElo.p2Delta) : undefined))
+              ? (typeof reportRes.eloGained === 'number' ? reportRes.eloGained : (rawElo ? (typeof rawElo.delta === 'number' ? rawElo.delta : (soyP1 ? rawElo.p1Delta : rawElo.p2Delta)) : undefined))
+              : (typeof reportRes.eloLost === 'number' ? -reportRes.eloLost : (rawElo ? (typeof rawElo.delta === 'number' ? rawElo.delta : (soyP1 ? rawElo.p1Delta : rawElo.p2Delta)) : undefined))
             const eloAfter = typeof reportRes.eloAfter === 'number'
               ? reportRes.eloAfter
-              : (rawElo ? (soyP1 ? rawElo.p1After : rawElo.p2After) : undefined)
+              : (rawElo ? (typeof rawElo.after === 'number' ? rawElo.after : (soyP1 ? rawElo.p1After : rawElo.p2After)) : undefined)
+            const eloBefore = rawElo ? (typeof rawElo.before === 'number' ? rawElo.before : (soyP1 ? rawElo.p1Before : rawElo.p2Before)) : undefined
             const eloGained = yoGane ? (eloDelta && eloDelta > 0 ? eloDelta : reportRes.eloGained) : undefined
             const eloLost = !yoGane ? (eloDelta && eloDelta < 0 ? Math.abs(eloDelta) : reportRes.eloLost) : undefined
 
@@ -1685,7 +1686,7 @@ export default function Battlefield({
             setResultadoServidor({
               success: true,
               status: 'liquidada',
-              eloBefore: rawElo ? (soyP1 ? rawElo.p1Before : rawElo.p2Before) : undefined,
+              eloBefore: eloBefore ?? (rawElo ? (soyP1 ? rawElo.p1Before : rawElo.p2Before) : undefined),
               opponentElo: rawElo ? (soyP1 ? rawElo.p2Before : rawElo.p1Before) : undefined,
               eloDelta,
               eloAfter,

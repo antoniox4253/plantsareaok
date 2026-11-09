@@ -276,4 +276,25 @@ describe('Distribución de Recompensas de Temporada Ranked (Top 50)', () => {
       expect(sql).toContain('(999999, 30, 30)')
     })
   })
+  describe('10. Auditoría Estática de Migración 415 (Calibración Arena 3 Victoria a +15 Copas)', () => {
+    const migPath = path.resolve(__dirname, '../../supabase/migrations/415-sync-arena3-win-delta-15.sql')
+    const sql = fs.readFileSync(migPath, 'utf8')
+
+    it('A. Actualiza elo_rewards para max_elo 5000 a win_elo = 15', () => {
+      expect(sql).toContain('UPDATE public.elo_rewards')
+      expect(sql).toContain('SET win_elo = 15')
+      expect(sql).toContain('WHERE max_elo = 5000')
+    })
+
+    it('B. Calibra _ranked_elo_delta en Arena 3 para otorgar exactamente +15 en victoria', () => {
+      expect(sql).toContain('ELSIF v_p <= 5000 THEN')
+      expect(sql).toContain('v_win_delta  := 15')
+      expect(sql).toContain('v_lose_delta := -12')
+    })
+
+    it('C. Sincroniza settle_verified_async_ranked_match en Arena 3 a +15', () => {
+      expect(sql).toContain('ELSIF v_elo_p1_before > 3000 THEN')
+      expect(sql).toContain('v_delta_p1 := LEAST(v_delta_p1, 15)')
+    })
+  })
 })

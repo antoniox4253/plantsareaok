@@ -1647,6 +1647,11 @@ export const SupabaseService = {
         success: boolean
         status: string
         rawElo: any
+        eloDelta?: number
+        eloBefore?: number
+        eloAfter?: number
+        eloGained?: number
+        eloLost?: number
         earlySurrender?: boolean
         energyRestored?: boolean
       }
@@ -1672,6 +1677,16 @@ export const SupabaseService = {
             isAbandoned
           )
 
+          const eloDelta = typeof eloAudit?.delta === 'number'
+            ? eloAudit.delta
+            : (room.player1_id === room.server_winner_id ? eloAudit?.p1Delta : eloAudit?.p2Delta)
+          const eloBefore = typeof eloAudit?.before === 'number'
+            ? eloAudit.before
+            : eloAudit?.p1Before
+          const eloAfter = typeof eloAudit?.after === 'number'
+            ? eloAudit.after
+            : eloAudit?.p1After
+
           return {
             ok: true,
             status: isDraw ? 'verified_draw' : isAbandoned ? 'failed' : 'settled',
@@ -1682,6 +1697,11 @@ export const SupabaseService = {
               success: true,
               status: isDraw ? 'empate' : isAbandoned ? 'abandonada' : 'liquidada',
               rawElo: eloAudit,
+              eloDelta,
+              eloBefore,
+              eloAfter,
+              eloGained: typeof eloDelta === 'number' && eloDelta > 0 ? eloDelta : undefined,
+              eloLost: typeof eloDelta === 'number' && eloDelta < 0 ? Math.abs(eloDelta) : undefined,
               earlySurrender: isEarlySurrender,
               energyRestored,
             },

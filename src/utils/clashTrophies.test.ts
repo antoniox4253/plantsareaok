@@ -25,14 +25,14 @@ describe('Sistema de Copas Ranked estilo Clash Royale (Calibración Temporada 3+
       expect(deltas3000.loseElo).toBe(8)
     })
 
-    it('Arena 3 (3001 - 5000 copas): otorga +20 en victoria y -12 en derrota', () => {
+    it('Arena 3 (3001 - 5000 copas): otorga +15 en victoria y -12 en derrota', () => {
       const deltas3001 = getEloDeltasForElo(3001)
-      expect(deltas3001.winElo).toBe(20)
+      expect(deltas3001.winElo).toBe(15)
       expect(deltas3001.loseElo).toBe(12)
       expect(deltas3001.surrenderElo).toBe(12)
 
       const deltas5000 = getEloDeltasForElo(5000)
-      expect(deltas5000.winElo).toBe(20)
+      expect(deltas5000.winElo).toBe(15)
       expect(deltas5000.loseElo).toBe(12)
     })
 
@@ -126,10 +126,10 @@ describe('Sistema de Copas Ranked estilo Clash Royale (Calibración Temporada 3+
   })
 
   describe('4. Calibración de Copas por Arena', () => {
-    it('todas las victorias otorgan el ELO completo de la arena (+15, +18, +20, +25, +30)', () => {
+    it('todas las victorias otorgan el ELO completo de la arena (+15, +18, +15, +25, +30)', () => {
       expect(getEloDeltasForElo(1000).winElo).toBe(15)
       expect(getEloDeltasForElo(2000).winElo).toBe(18)
-      expect(getEloDeltasForElo(4000).winElo).toBe(20)
+      expect(getEloDeltasForElo(4000).winElo).toBe(15)
       expect(getEloDeltasForElo(6000).winElo).toBe(25)
       expect(getEloDeltasForElo(9000).winElo).toBe(30)
     })

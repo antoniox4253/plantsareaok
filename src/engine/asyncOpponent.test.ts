@@ -5009,6 +5009,37 @@ describe('Rival Semilla Ranked V1 — Suite de Tests', () => {
     expect(liq.eloLost).toBeUndefined()
   })
 
+  // 222b. resolverLiquidacionPartida extrae delta, before, after desde rawElo en partidas asíncronas (+15 copas)
+  it('222b. resolverLiquidacionPartida extrae delta, before, after desde rawElo en partidas asíncronas (+15 copas)', () => {
+    const mockPayload = {
+      status: 'settled',
+      winnerSide: 1 as const,
+      settlement: {
+        rawElo: {
+          before: 3001,
+          after: 3016,
+          delta: 15,
+        },
+        payout: 0,
+      },
+    }
+
+    const liq = resolverLiquidacionPartida({
+      isAsyncMatch: true,
+      soyP1: true,
+      currentUserId: 'p1-uuid',
+      serverVerification: mockPayload,
+    })
+
+    expect(liq.mostrarResultado).toBe(true)
+    expect(liq.resultadoFinal).toBe('victory')
+    expect(liq.statusServidor).toBe('liquidada')
+    expect(liq.eloBefore).toBe(3001)
+    expect(liq.eloDelta).toBe(15)
+    expect(liq.eloAfter).toBe(3016)
+    expect(liq.eloGained).toBe(15)
+  })
+
   // 223. resolverLiquidacionPartida propaga eloBefore, eloDelta, eloAfter en derrota
   it('223. resolverLiquidacionPartida extrae eloBefore, opponentElo, eloDelta, eloAfter en derrota autoritativa', () => {
     const mockPayload = {

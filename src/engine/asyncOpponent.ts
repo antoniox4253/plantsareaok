@@ -1561,22 +1561,22 @@ export function resolverLiquidacionPartida(options: {
     const eloDelta = typeof s.eloDelta === 'number'
       ? s.eloDelta
       : rawElo
-        ? (soyP1 ? rawElo.p1Delta : rawElo.p2Delta)
+        ? (typeof rawElo.delta === 'number' ? rawElo.delta : (soyP1 ? rawElo.p1Delta : rawElo.p2Delta))
         : undefined
     const eloBefore = typeof s.eloBefore === 'number'
       ? s.eloBefore
       : rawElo
-        ? (soyP1 ? rawElo.p1Before : rawElo.p2Before)
+        ? (typeof rawElo.before === 'number' ? rawElo.before : (soyP1 ? rawElo.p1Before : rawElo.p2Before))
         : undefined
     const eloAfter = typeof s.eloAfter === 'number'
       ? s.eloAfter
       : rawElo
-        ? (soyP1 ? rawElo.p1After : rawElo.p2After)
+        ? (typeof rawElo.after === 'number' ? rawElo.after : (soyP1 ? rawElo.p1After : rawElo.p2After))
         : undefined
     const opponentElo = typeof s.opponentElo === 'number'
       ? s.opponentElo
       : rawElo
-        ? (soyP1 ? rawElo.p2Before : rawElo.p1Before)
+        ? (typeof rawElo.opponentElo === 'number' ? rawElo.opponentElo : (soyP1 ? rawElo.p2Before : rawElo.p1Before))
         : undefined
     const eloGained = yoGaneServidor
       ? (typeof s.eloGained === 'number' && s.eloGained > 0 ? s.eloGained : (eloDelta !== undefined && eloDelta > 0 ? eloDelta : undefined))
