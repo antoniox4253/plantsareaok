@@ -95,4 +95,16 @@ describe('newsAndSuggestionsService', () => {
     expect(SUGGESTION_STATUS_CONFIG.recibida.label).toBe('Recibida')
     expect(SUGGESTION_STATUS_CONFIG.implementada.label).toBe('¡Implementada!')
   })
+
+  it('cuenta con los 7 bloques cronológicos segmentados de la última semana y la nota de AQP Game Fest', async () => {
+    const { WEEKLY_UPDATES_BLOCKS } = await import('./newsAndSuggestionsService')
+    expect(WEEKLY_UPDATES_BLOCKS.length).toBe(7)
+    expect(WEEKLY_UPDATES_BLOCKS[0].dayNumber).toBe(1)
+    expect(WEEKLY_UPDATES_BLOCKS[0].title).toContain('AQP Game Fest')
+
+    const posts = await newsAndSuggestionsService.getNewsPosts()
+    const aqp = posts.find((p) => p.title.includes('AQP Game Fest'))
+    expect(aqp).toBeDefined()
+    expect(aqp?.content).toContain('aqpgamesfest.com/juegos.html')
+  })
 })

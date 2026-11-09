@@ -1263,12 +1263,12 @@ export default function MainMenu({
         </div>
         <div className="bosque-news-devlog__content">
           <div className="bosque-news-devlog__top-row">
-            <span className="bosque-news-devlog__badge">🚀 ACTUALIZACIÓN</span>
-            <span className="bosque-news-devlog__type-tag">DEVLOG & PARCHES</span>
+            <span className="bosque-news-devlog__badge">🎉 AREQUIPA 2026</span>
+            <span className="bosque-news-devlog__type-tag">DEVLOG & FEST</span>
           </div>
-          <span className="bosque-news-devlog__title">Notas de Actualización</span>
+          <span className="bosque-news-devlog__title">Novedades & AQP Fest</span>
           <span className="bosque-news-devlog__desc">
-            Clanes, balance, torneos y mejoras
+            Últimos 7 días · Feria de Arequipa
           </span>
         </div>
         <span className="bosque-news-devlog__arrow">➔</span>

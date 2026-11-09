@@ -52,8 +52,197 @@ export const SUGGESTION_STATUS_CONFIG: Record<
   archivada: { label: 'Archivada', badgeClass: 'suggestion-badge--archived', icon: '📦' },
 }
 
+export interface WeeklyUpdateDayBlock {
+  dayNumber: number
+  dateLabel: string
+  title: string
+  tag: string
+  tagColor: string
+  icon: string
+  summary: string
+  highlights: string[]
+}
+
+export const WEEKLY_UPDATES_BLOCKS: WeeklyUpdateDayBlock[] = [
+  {
+    dayNumber: 1,
+    dateLabel: '8 Nov (Hoy)',
+    title: 'Blog de Novedades & AQP Game Fest 2026',
+    tag: 'HOY · DESTACADO',
+    tagColor: '#10b981',
+    icon: '📰',
+    summary: 'Lanzamiento del centro de devlog, buzón de sugerencias y vitrina en feria de Arequipa.',
+    highlights: [
+      'Nuevo Blog Oficial y notas técnicas de desarrollo sin publicidad invasiva.',
+      'Buzón Comunitario de Sugerencias con Nick de Jugador verificado y votos.',
+      'Presencia en AQP Game Fest 2026 destacada en aqpgamesfest.com/juegos.html (Atoniox).',
+    ],
+  },
+  {
+    dayNumber: 2,
+    dateLabel: '7 Nov',
+    title: 'Sistema de Clanes y Chat en Vivo',
+    tag: 'COMUNIDAD',
+    tagColor: '#3b82f6',
+    icon: '🏰',
+    summary: 'Fundación de clanes, roles de liderazgo y mensajería en tiempo real.',
+    highlights: [
+      'Creación y personalización de clanes con insignias y Fortaleza de Clan.',
+      'Chat de Clan instantáneo para coordinar tácticas entre compañeros.',
+      'Nivelación y donación de fondos comunales para la bóveda del clan.',
+    ],
+  },
+  {
+    dayNumber: 3,
+    dateLabel: '6 Nov',
+    title: 'Donación de Cartas y Torneos',
+    tag: 'COMPETITIVO',
+    tagColor: '#8b5cf6',
+    icon: '📦',
+    summary: 'Petición comunitaria de cartas y lobby con brackets automáticos.',
+    highlights: [
+      'Donación diaria de copias de plantas entre aliados con oro y XP.',
+      'Salas de torneo con brackets dinámicos y botes de gemas.',
+      'Optimización del emparejamiento por latencia regional.',
+    ],
+  },
+  {
+    dayNumber: 4,
+    dateLabel: '5 Nov',
+    title: 'Cinturón de Campeón (Bonk Choy)',
+    tag: 'EQUIPAMIENTO',
+    tagColor: '#f59e0b',
+    icon: '🥊',
+    summary: 'Primer ítem equipable exclusivo con estadísticas y efectos dorados.',
+    highlights: [
+      'Exclusivo para Bonk Choy: +60 de daño por puñetazo y +350 puntos de salud.',
+      'Efectos visuales dorados en combate y nuevo arte en el paquete de semillas.',
+      'Obtención mediante recursos de cultivo en el Jardín.',
+    ],
+  },
+  {
+    dayNumber: 5,
+    dateLabel: '4 Nov',
+    title: 'Notas de Balance Táctico',
+    tag: 'BALANCE',
+    tagColor: '#eab308',
+    icon: '⚖️',
+    summary: 'Ajuste de tiempos de recarga, producción de soles y daño por segundo.',
+    highlights: [
+      'Girasol: producción de soles un 5% más rápida para aperturas ágiles.',
+      'Repetidora: aumento de cadencia de tiro frente a zombis blindados.',
+      'Jalapeño: precisión en detonación y carril libre garantizado.',
+    ],
+  },
+  {
+    dayNumber: 6,
+    dateLabel: '3 Nov',
+    title: 'Motor 60 FPS y Anti-Desync',
+    tag: 'MOTOR DETERMINISTA',
+    tagColor: '#06b6d4',
+    icon: '⚡',
+    summary: 'Simulación fluida y reconstrucción determinista de jugadas.',
+    highlights: [
+      'Línea temporal a 60 FPS con sincronización tic a tic entre rivales.',
+      'Reconstrucción automática asíncrona ante microcortes de red.',
+      'Reducción drástica del lag en partidas ranked clasificatorias.',
+    ],
+  },
+  {
+    dayNumber: 7,
+    dateLabel: '2 Nov',
+    title: 'Arbitraje Elo y Optimización',
+    tag: 'SEGURIDAD & ELO',
+    tagColor: '#10b981',
+    icon: '🛡️',
+    summary: 'Validación en 1,400 Copas, sistema de amigos y carga web ligera.',
+    highlights: [
+      'Arbitraje automático anti-autowin en el sistema de referidos.',
+      'Recompensas permanentes de 100 de Oro y 5% de comisión en gemas.',
+      'Carga ultrarrápida en navegadores móviles sin necesidad de instalación.',
+    ],
+  },
+]
+
 // Fallback predeterminado por si no hay conexión o se está en modo aislado
 const DEFAULT_NEWS_POSTS: NewsPost[] = [
+  {
+    id: 'default-news-aqp',
+    title: '¡Plants Arena Presente en el AQP Game Fest 2026! (Arequipa, Perú)',
+    summary:
+      'Plants Arena forma parte del festival de videojuegos y tecnología más importante de Arequipa. Conoce nuestra participación oficial en aqpgamesfest.com/juegos.html.',
+    content: `### 🎮 Participación Oficial en AQP Game Fest 2026
+¡Estamos muy orgullosos de anunciar que **Plants Arena** está presente de manera oficial en el **AQP Game Fest 2026**, la gran fiesta del desarrollo de videojuegos, tecnología y creatividad digital celebrada en Arequipa, Perú!
+
+### 🌐 Destacados en la Muestra de Juegos
+Puedes encontrar a Plants Arena en la vitrina oficial de títulos del evento ingresando a:
+👉 **[aqpgamesfest.com/juegos.html](https://aqpgamesfest.com/juegos.html)**
+
+En la sección oficial de videojuegos se destaca:
+- **Título**: Plant Arena (Desarrollado por Atoniox).
+- **Género**: Estrategia táctica PvP en tiempo real (3 carriles).
+- **Plataformas**: 100% jugable en navegador web, tanto en PC como en dispositivos móviles, sin descargas.
+
+### 🏛️ Stand en Vivo en el Complejo Cultural Ateneo
+Del **6 al 8 de noviembre**, los asistentes a la feria en las instalaciones del **Complejo Cultural Ateneo** pudieron:
+- Probar en primicia el nuevo sistema de **Guerra de Clanes y Torneos**.
+- Jugar partidas de exhibición y duelos cara a cara con Bonk Choy equipado con su nuevo **Cinturón de Campeón**.
+- Conocer directamente al equipo desarrollador y compartir sugerencias para el futuro del juego.
+
+### 🎁 Celebración para Toda la Comunidad
+Para conmemorar este gran hito de marketing y crecimiento de la comunidad, estamos liberando nuevas actualizaciones semanales y el nuevo **Buzón de Sugerencias**, para que cada jugador pueda dejar su huella en el juego. ¡Gracias por hacer crecer a Plants Arena!`,
+    tag: '🎉 Feria Arequipa',
+    category: 'evento',
+    version: 'Especial AQP 2026',
+    author: 'Atoniox / Equipo Plants Arena',
+    is_pinned: true,
+    published_at: new Date().toISOString(),
+  },
+  {
+    id: 'default-news-weekly-7d',
+    title: 'Registro Semanal: Todas las Mejoras de los Últimos 7 Días (Día a Día)',
+    summary:
+      'Repasamos bloque a bloque cada una de las actualizaciones, balance, optimizaciones y nuevos sistemas implementados a lo largo de esta semana.',
+    content: `### 📅 Bitácora de Desarrollo: Últimos 7 Días
+
+#### 🟢 Día 1 · 8 de Noviembre (Hoy)
+- **Nuevo Blog de Novedades & Notas de Parche**: Sección oficial para seguir el progreso del juego sin publicidad.
+- **Buzón de Sugerencias Comunitario**: Envía propuestas con tu Nick verificado y vota las mejores ideas.
+- **Presentación en AQP Game Fest 2026**: Destacados en la vitrina de juegos en [aqpgamesfest.com/juegos.html](https://aqpgamesfest.com/juegos.html).
+
+#### 🟢 Día 2 · 7 de Noviembre
+- **Sistema de Clanes Oficial**: Creación de clanes, roles de líderes y miembros, y fundación de la Fortaleza de Clan.
+- **Chat de Clan en Tiempo Real**: Canales de mensajería instantánea para coordinar partidas entre compañeros.
+
+#### 🟢 Día 3 · 6 de Noviembre
+- **Donación de Cartas Comunitarias**: Petición diaria de copias de plantas con recompensas en Oro y Experiencia.
+- **Lobby de Torneos Programados**: Salas con brackets automáticos y botes de gemas acumulados.
+
+#### 🟢 Día 4 · 5 de Noviembre
+- **Equipamiento Épico para Bonk Choy**: Cinturón de Campeón (+60 de daño por golpe, +350 puntos de vida extra).
+- **Efectos Visuales Dorados**: Puñetazos dorados en combate y previsualización de skins en el paquete de semillas.
+
+#### 🟢 Día 5 · 4 de Noviembre
+- **Notas de Balance Táctico**:
+  - *Girasol*: Producción de soles un 5% más rápida para aperturas estratégicas activas.
+  - *Lanzaguisantes Repetidora*: Mayor cadencia de disparo contra zombis con armadura pesada.
+  - *Jalapeño*: Optimización del tiempo de detonación en carril.
+  - *Nuez Muralla*: Regeneración reforzada tras fusiones.
+
+#### 🟢 Día 6 · 3 de Noviembre
+- **Motor de Simulación a 60 FPS Determinista**: Sincronización perfecta tic por tic.
+- **Reconstrucción Asíncrona Automática**: Cero pérdida de jugadas ante microcortes o latencia de red.
+
+#### 🟢 Día 7 · 2 de Noviembre
+- **Sistema de Arbitraje Anti-Autowin**: Detección criptográfica contra victorias amañadas en ligas clasificatorias.
+- **Economía de Referidos Renovada**: Criterio de validación en 1,400 Copas Elo con 100 de oro y 5% de comisiones automáticas.`,
+    tag: '⏱️ Últimos 7 Días',
+    category: 'actualizacion',
+    version: 'Semana 45',
+    author: 'Equipo Plants Arena',
+    is_pinned: true,
+    published_at: new Date(Date.now() - 3600000).toISOString(),
+  },
   {
     id: 'default-news-1',
     title: '¡Gran Actualización: Sistema de Clanes, Torneos y Guerra de Fortalezas!',

@@ -930,6 +930,236 @@
   font-size: 32px;
 }
 
+/* ── BANNER DESTACADO: FERIA AREQUIPA (AQP GAME FEST) ── */
+.news-marketing-banner {
+  background: linear-gradient(135deg, rgba(30, 15, 45, 0.95) 0%, rgba(15, 25, 30, 0.98) 100%);
+  border: 1.5px solid #a855f7;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), inset 0 0 16px rgba(168, 85, 247, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.news-marketing-banner:hover {
+  border-color: #c084fc;
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.35), inset 0 0 20px rgba(168, 85, 247, 0.3);
+  transform: translateY(-1px);
+}
+
+.news-marketing-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.news-marketing-banner__icon {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 8px rgba(168, 85, 247, 0.8));
+  flex-shrink: 0;
+}
+
+.news-marketing-banner__info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.news-marketing-banner__badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.news-marketing-banner__tag {
+  font-size: 9px;
+  font-weight: 900;
+  color: #e9d5ff;
+  letter-spacing: 0.5px;
+}
+
+.news-marketing-banner__live {
+  font-size: 8.5px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #ffffff;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+  animation: pulseDot 1.5s infinite ease-in-out;
+}
+
+.news-marketing-banner__title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.news-marketing-banner__desc {
+  margin: 0;
+  font-size: 11.5px;
+  color: #d8b4fe;
+  line-height: 1.4;
+}
+
+.news-marketing-banner__link-btn {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+  border: 1px solid #c084fc;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+}
+
+.news-marketing-banner__link-btn:hover {
+  background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%);
+  box-shadow: 0 0 14px rgba(192, 132, 252, 0.6);
+  transform: scale(1.03);
+}
+
+/* ── LÍNEA DE TIEMPO SEGMENTADA (ÚLTIMOS 7 DÍAS) ── */
+.news-weekly-timeline {
+  background: linear-gradient(145deg, rgba(8, 28, 20, 0.95) 0%, rgba(4, 16, 11, 0.98) 100%);
+  border: 1.5px solid rgba(74, 222, 128, 0.4);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 0 16px rgba(74, 222, 128, 0.1);
+}
+
+.news-weekly-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+  padding-bottom: 10px;
+}
+
+.news-weekly-icon {
+  font-size: 26px;
+}
+
+.news-weekly-title {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #86efac;
+}
+
+.news-weekly-sub {
+  margin: 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.news-weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.news-weekly-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.news-weekly-card:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(74, 222, 128, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.news-weekly-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.news-weekly-card__day-badge {
+  font-size: 10px;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.news-weekly-card__tag {
+  font-size: 9px;
+  font-weight: 800;
+  border: 1px solid;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.news-weekly-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.news-weekly-card__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.news-weekly-card__title {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.3;
+}
+
+.news-weekly-card__summary {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.news-weekly-card__highlights {
+  margin: 0;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.news-weekly-card__highlights li {
+  list-style-type: circle;
+}
+
 /* Responsividad móvil */
 @media (max-width: 640px) {
   .news-modal-card {

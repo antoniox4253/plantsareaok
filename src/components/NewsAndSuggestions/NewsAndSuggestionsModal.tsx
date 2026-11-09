@@ -8,6 +8,7 @@ import {
   type SuggestionStatus,
   SUGGESTION_CATEGORIES,
   SUGGESTION_STATUS_CONFIG,
+  WEEKLY_UPDATES_BLOCKS,
 } from '../../services/newsAndSuggestionsService'
 import './NewsAndSuggestionsModal.css'
 
@@ -78,7 +79,8 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
   const loadNews = useCallback(async () => {
     setIsLoadingNews(true)
     try {
-      const posts = await newsAndSuggestionsService.getNewsPosts(selectedNewsCategory)
+      const cat = selectedNewsCategory === 'semanal' ? 'todas' : selectedNewsCategory
+      const posts = await newsAndSuggestionsService.getNewsPosts(cat)
       setNewsPosts(posts)
       if (posts.length > 0 && !expandedNewsId) {
         setExpandedNewsId(posts[0].id)
@@ -351,6 +353,8 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
               <div className="news-categories-chips">
                 {[
                   { id: 'todas', label: 'Todas' },
+                  { id: 'semanal', label: '⏱️ Últimos 7 Días (Bloques)' },
+                  { id: 'evento', label: '🎉 AQP Game Fest 2026' },
                   { id: 'actualizacion', label: '🚀 Actualizaciones' },
                   { id: 'balance', label: '⚖️ Balance' },
                   { id: 'devlog', label: '🛠️ Devlog Técnico' },
@@ -447,6 +451,94 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                   </button>
                 </div>
               </form>
+            )}
+
+            {/* Banner Destacado: Presencia en AQP Game Fest 2026 */}
+            <div
+              className="news-marketing-banner"
+              onClick={() => {
+                soundManager.playSound('click', 0.4)
+                const aqpPost = newsPosts.find(
+                  (p) => p.tag.includes('Arequipa') || p.category === 'evento'
+                )
+                if (aqpPost) {
+                  setExpandedNewsId(aqpPost.id)
+                  setSelectedNewsCategory('evento')
+                } else {
+                  setSelectedNewsCategory('evento')
+                }
+              }}
+            >
+              <div className="news-marketing-banner__left">
+                <span className="news-marketing-banner__icon">🏛️</span>
+                <div className="news-marketing-banner__info">
+                  <div className="news-marketing-banner__badges">
+                    <span className="news-marketing-banner__tag">FERIA DE VIDEOJUEGOS · AREQUIPA</span>
+                    <span className="news-marketing-banner__live">🔥 PARTICIPACIÓN OFICIAL</span>
+                  </div>
+                  <h4 className="news-marketing-banner__title">
+                    ¡Plants Arena Presente en el AQP Game Fest 2026!
+                  </h4>
+                  <p className="news-marketing-banner__desc">
+                    Exhibición oficial en el Complejo Cultural Ateneo. Encuéntranos en la vitrina de juegos en <strong>aqpgamesfest.com/juegos.html</strong>.
+                  </p>
+                </div>
+              </div>
+              <a
+                href="https://aqpgamesfest.com/juegos.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="news-marketing-banner__link-btn"
+                onClick={(e) => e.stopPropagation()}
+              >
+                🌐 Ver en aqpgamesfest.com ➔
+              </a>
+            </div>
+
+            {/* Bloques Segmentados Día a Día de los Últimos 7 Días */}
+            {selectedNewsCategory === 'semanal' && (
+              <div className="news-weekly-timeline">
+                <div className="news-weekly-header">
+                  <span className="news-weekly-icon">📅</span>
+                  <div>
+                    <h3 className="news-weekly-title">Mejoras de los Últimos 7 Días (Bloque a Bloque)</h3>
+                    <p className="news-weekly-sub">
+                      Lectura segmentada día a día para que revises fácilmente cada una de las mejoras y novedades recientes.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="news-weekly-grid">
+                  {WEEKLY_UPDATES_BLOCKS.map((block) => (
+                    <div key={block.dayNumber} className="news-weekly-card">
+                      <div className="news-weekly-card__header">
+                        <span className="news-weekly-card__day-badge">
+                          Día {block.dayNumber} · {block.dateLabel}
+                        </span>
+                        <span
+                          className="news-weekly-card__tag"
+                          style={{ borderColor: block.tagColor, color: block.tagColor }}
+                        >
+                          {block.tag}
+                        </span>
+                      </div>
+
+                      <div className="news-weekly-card__title-row">
+                        <span className="news-weekly-card__icon">{block.icon}</span>
+                        <h4 className="news-weekly-card__title">{block.title}</h4>
+                      </div>
+
+                      <p className="news-weekly-card__summary">{block.summary}</p>
+
+                      <ul className="news-weekly-card__highlights">
+                        {block.highlights.map((h, i) => (
+                          <li key={i}>{h}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* News Articles Feed */}
