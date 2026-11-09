@@ -135,10 +135,10 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     return allowedMapaches[idx] || allowedMapaches[0]
   }
 
-  // ── OLEADA 1: INCURSIÓN DIRECTA (Sin economía previa) ──────────────────────
+  // ── OLEADA 1: INCURSIÓN INICIAL (25s de gracia para sembrar economía PvZ) ──
   const w1Count = Math.min(8, 3 + Math.floor(level / 3))
   const wave1Spawns: StoryEnemySpawn[] = []
-  let w1Tick = 90 // Comienza a los ~3s directamente por oleadas
+  let w1Tick = 750 // 25s de gracia inicial como en Survivor ADS para plantar economía
 
   for (let i = 0; i < w1Count; i++) {
     const mapacheKey = pickEnemy()
@@ -159,14 +159,14 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     waveNumber: 1,
     name: 'Oleada 1 (Incursión)',
     subtitle: 'Repele la primera oleada mapache',
-    startTick: 90,
+    startTick: 750,
     spawns: wave1Spawns,
   }
 
   // ── OLEADA 2: EMBOSCADA Y PRESIÓN ──────────────────────────────────────────
   const w2Count = Math.min(14, 5 + Math.floor(level / 2))
   const wave2Spawns: StoryEnemySpawn[] = []
-  let w2Tick = Math.max(w1Tick + 90, 800)
+  let w2Tick = Math.max(w1Tick + 90, 1600)
 
   for (let i = 0; i < w2Count; i++) {
     const mapacheKey = pickEnemy()
@@ -202,14 +202,14 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     waveNumber: 2,
     name: 'Oleada 2 (Emboscada)',
     subtitle: 'Asalto de refuerzos en los 3 carriles',
-    startTick: Math.max(w1Tick + 90, 800),
+    startTick: Math.max(w1Tick + 90, 1600),
     spawns: wave2Spawns,
   }
 
   // ── OLEADA 3: OLEADA FINAL CON EL JEFE REY GARRA ───────────────────────────
   const w3Count = Math.min(16, 6 + Math.floor(level / 2))
   const wave3Spawns: StoryEnemySpawn[] = []
-  let w3Tick = Math.max(w2Tick + 120, 1600)
+  let w3Tick = Math.max(w2Tick + 120, 2400)
 
   // Escolta previa al jefe
   for (let i = 0; i < w3Count; i++) {
@@ -364,7 +364,7 @@ export function processStoryWaves(
   if (currentWaveIdx === 0) {
     const wave2 = state.storyConfig.waves[1]
     const shouldStartWave2 = (spawnsLeftInCurrentWave === 0 && livingEnemies === 0) || state.tick >= wave2.startTick
-    if (shouldStartWave2 && state.tick >= 270) {
+    if (shouldStartWave2 && state.tick >= 850) {
       state.storyWaveIndex = 1
       state.wave = 2
       state.waveBanner = '🦝 ¡OLEADA 2 (EMBOSCADA)!'
@@ -379,7 +379,7 @@ export function processStoryWaves(
   } else if (currentWaveIdx === 1) {
     const wave3 = state.storyConfig.waves[2]
     const shouldStartWave3 = (spawnsLeftInCurrentWave === 0 && livingEnemies === 0) || state.tick >= wave3.startTick
-    if (shouldStartWave3 && state.tick >= 540) {
+    if (shouldStartWave3 && state.tick >= 1700) {
       state.storyWaveIndex = 2
       state.wave = 3
       state.waveBanner = '👑 ¡OLEADA 3: JEFE FINAL REY GARRA!'
@@ -503,13 +503,14 @@ export function processStoryWaves(
       .filter((p) => p.lane === enemy.lane && p.hp > 0 && p.x < enemy.x)
       .sort((a, b) => b.x - a.x)[0]
 
-    const dist = targetPlant ? enemy.x - targetPlant.x : enemy.x - 15
+    const targetX = targetPlant ? targetPlant.x : 15
+    const distToTarget = enemy.x - targetX
 
-    // 💣 PUMPUM (Artillero de Rango)
+    // 💣 PUMPUM (Artillero de Rango: se planta a distancia y dispara balas de cañón)
     if (enemy.mapacheKey === 'pumpum') {
       const stopDist = 26
       const rangeDist = 38
-      if (dist > stopDist) {
+      if (distToTarget > stopDist) {
         enemy.x -= effSpeed * dt * 2.2
         enemy.isWalking = true
         enemy.state = 'walking'
@@ -518,12 +519,11 @@ export function processStoryWaves(
         enemy.state = 'idle'
       }
 
-      if (dist <= rangeDist) {
+      if (distToTarget <= rangeDist) {
         const cadencia = isBuffed ? 1800 : 2600
         if (state.tick - (enemy.lastShootTick || 0) >= msToTicks(cadencia)) {
           enemy.lastShootTick = state.tick
           enemy.state = 'attacking'
-          const targetX = targetPlant ? targetPlant.x : 15
           state.projectiles.push({
             id: entityId('cannonball', state.tick, state.entityCounter++),
             type: 'cannonball',
@@ -543,11 +543,11 @@ export function processStoryWaves(
       }
     }
 
-    // 🗡️ NAVAJAS (Lanzador de Cuchillos de Rango)
+    // 🗡️ NAVAJAS (Lanzador de Cuchillos de Rango: se planta a distancia y arroja navajas)
     else if (enemy.mapacheKey === 'navajas') {
       const stopDist = 28
       const rangeDist = 42
-      if (dist > stopDist) {
+      if (distToTarget > stopDist) {
         enemy.x -= effSpeed * dt * 2.2
         enemy.isWalking = true
         enemy.state = 'walking'
@@ -556,12 +556,11 @@ export function processStoryWaves(
         enemy.state = 'idle'
       }
 
-      if (dist <= rangeDist) {
+      if (distToTarget <= rangeDist) {
         const cadencia = isBuffed ? 1300 : 1900
         if (state.tick - (enemy.lastShootTick || 0) >= msToTicks(cadencia)) {
           enemy.lastShootTick = state.tick
           enemy.state = 'attacking'
-          const targetX = targetPlant ? targetPlant.x : 15
           state.projectiles.push({
             id: entityId('knife', state.tick, state.entityCounter++),
             type: 'knife',
@@ -580,73 +579,104 @@ export function processStoryWaves(
       }
     }
 
-    // 🐾 GARRITAS (Melee Rápido y Salto de Nuez)
+    // 🐾 GARRITAS (Melee Rápido: ataca plantas en contacto; al llegar al árbol le causa daño y desaparece)
     else if (enemy.mapacheKey === 'garritas') {
-      // Salto acrobático de Nuez
-      if (!enemy.hasJumped && targetPlant && (targetPlant.plantId === 'wallnut' || targetPlant.plantId === 'tallnut') && dist <= 7.5) {
-        enemy.x = Math.max(16, targetPlant.x - 6.5)
-        enemy.hasJumped = true
-        sonar('plantation', 0.8)
-      }
+      if (targetPlant) {
+        // Salto acrobático de defensas tipo Nuez
+        if (!enemy.hasJumped && (targetPlant.plantId === 'wallnut' || targetPlant.plantId === 'tallnut') && distToTarget <= 7.5) {
+          enemy.x = Math.max(16, targetPlant.x - 6.5)
+          enemy.hasJumped = true
+          sonar('plantation', 0.8)
+        }
 
-      const meleeDist = 6.0
-      if (dist > meleeDist) {
-        enemy.x -= effSpeed * dt * 2.2
-        enemy.isWalking = true
-        enemy.state = 'walking'
-      } else if (targetPlant) {
-        enemy.isWalking = false
-        enemy.state = 'attacking'
-        const cadencia = isBuffed ? 450 : 650
-        if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(cadencia)) {
-          enemy.lastAttackTick = state.tick
-          targetPlant.hp -= enemy.damage || 25
-          sonar('pea_hit', 0.5)
-          if (targetPlant.hp <= 0) {
-            targetPlant.hp = 0
-            sonar('zombie_fall', 0.5)
+        const meleeDist = 6.0
+        if (distToTarget > meleeDist) {
+          enemy.x -= effSpeed * dt * 2.2
+          enemy.isWalking = true
+          enemy.state = 'walking'
+        } else {
+          enemy.isWalking = false
+          enemy.state = 'attacking'
+          const cadencia = isBuffed ? 450 : 650
+          if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(cadencia)) {
+            enemy.lastAttackTick = state.tick
+            targetPlant.hp -= enemy.damage || 25
+            sonar('pea_hit', 0.5)
+            if (targetPlant.hp <= 0) {
+              targetPlant.hp = 0
+              sonar('zombie_fall', 0.5)
+            }
           }
+        }
+      } else {
+        // Sin plantas enfrente: avanza hacia el árbol madre
+        if (enemy.x > 16) {
+          enemy.x -= effSpeed * dt * 2.2
+          enemy.isWalking = true
+          enemy.state = 'walking'
+        } else {
+          // Impacto melee al árbol madre: inflige daño y desaparece inmediatamente
+          state.p1BaseHp = Math.max(0, state.p1BaseHp - (enemy.damage || 25))
+          enemy.hp = 0
+          sonar('pea_hit', 0.8)
+          sonar('zombie_fall', 0.8)
         }
       }
     }
 
-    // 🥊 PUÑOS (Melee Pesado y Furia)
+    // 🥊 PUÑOS (Melee Pesado: golpea plantas cuerpo a cuerpo; al llegar al árbol inflige daño y desaparece)
     else if (enemy.mapacheKey === 'punos') {
       if (enemy.isFury && enemy.furyEndTick && state.tick >= enemy.furyEndTick) {
         enemy.isFury = false
       }
 
-      const meleeDist = 6.0
-      if (dist > meleeDist) {
-        enemy.x -= effSpeed * dt * 2.2
-        enemy.isWalking = true
-        enemy.state = 'walking'
-      } else if (targetPlant) {
-        enemy.isWalking = false
-        enemy.state = 'attacking'
-        const cadencia = enemy.isFury ? 320 : (isBuffed ? 480 : 700)
-        if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(cadencia)) {
-          enemy.lastAttackTick = state.tick
-          enemy.hitCount = (enemy.hitCount || 0) + 1
-          if (enemy.hitCount % 5 === 0 && !enemy.isFury) {
-            enemy.isFury = true
-            enemy.furyEndTick = state.tick + msToTicks(2200)
-            sonar('level_select', 0.8)
+      if (targetPlant) {
+        const meleeDist = 6.0
+        if (distToTarget > meleeDist) {
+          enemy.x -= effSpeed * dt * 2.2
+          enemy.isWalking = true
+          enemy.state = 'walking'
+        } else {
+          enemy.isWalking = false
+          enemy.state = 'attacking'
+          const cadencia = enemy.isFury ? 320 : (isBuffed ? 480 : 700)
+          if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(cadencia)) {
+            enemy.lastAttackTick = state.tick
+            enemy.hitCount = (enemy.hitCount || 0) + 1
+            if (enemy.hitCount % 5 === 0 && !enemy.isFury) {
+              enemy.isFury = true
+              enemy.furyEndTick = state.tick + msToTicks(2200)
+              sonar('level_select', 0.8)
+            }
+            const dmg = enemy.isFury ? Math.round((enemy.damage || 40) * 1.5) : (enemy.damage || 40)
+            targetPlant.hp -= dmg
+            sonar('pea_hit', 0.6)
+            if (targetPlant.hp <= 0) {
+              targetPlant.hp = 0
+              sonar('zombie_fall', 0.5)
+            }
           }
+        }
+      } else {
+        // Sin plantas enfrente: avanza hacia el árbol madre
+        if (enemy.x > 16) {
+          enemy.x -= effSpeed * dt * 2.2
+          enemy.isWalking = true
+          enemy.state = 'walking'
+        } else {
+          // Impacto melee al árbol madre: inflige daño y desaparece inmediatamente
           const dmg = enemy.isFury ? Math.round((enemy.damage || 40) * 1.5) : (enemy.damage || 40)
-          targetPlant.hp -= dmg
-          sonar('pea_hit', 0.6)
-          if (targetPlant.hp <= 0) {
-            targetPlant.hp = 0
-            sonar('zombie_fall', 0.5)
-          }
+          state.p1BaseHp = Math.max(0, state.p1BaseHp - dmg)
+          enemy.hp = 0
+          sonar('pea_hit', 0.8)
+          sonar('zombie_fall', 0.8)
         }
       }
     }
 
-    // Impacto en la Base del Jugador (x <= 15)
-    if (enemy.x <= 15) {
-      state.p1BaseHp = Math.max(0, state.p1BaseHp - (enemy.damage || 30) * 2)
+    // Impacto de respaldo en la Base del Árbol (x <= 16) para tropas que no sean el Rey Garra
+    if (enemy.x <= 16 && enemy.hp > 0 && enemy.mapacheKey !== 'reygarra') {
+      state.p1BaseHp = Math.max(0, state.p1BaseHp - (enemy.damage || 30))
       enemy.hp = 0
       sonar('zombie_fall', 0.8)
     }

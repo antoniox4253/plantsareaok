@@ -331,7 +331,7 @@ export default function PlantHand({
                 : 0
             const cdTime = isDeckActive ? slotCd : (cooldowns[targetCard] || 0)
             const isOnCooldown = cdTime > now
-            const canAfford = isStoryMode || sunBank >= config.cost
+            const canAfford = sunBank >= config.cost
             const isDis = !canAfford || isOnCooldown
             triggerSelect(targetCard, realSlotIndex, isDis)
           }
@@ -375,17 +375,11 @@ export default function PlantHand({
 
   return (
     <div className="plant-hand-container">
-      {/* Sun Counter Widget / Story Mode Waves Badge */}
-      {isStoryMode ? (
-        <div className="sun-counter sun-counter--story" title="Modo Historia: Sin soles. Despliegue guiado por recarga">
-          <span className="sun-counter__story-badge">⚔️ OLEADAS</span>
-        </div>
-      ) : (
-        <div className="sun-counter">
-          <img className="sun-counter__icon" src={sunIcon} alt="Sol" />
-          <span className="sun-counter__value">{sunBank}</span>
-        </div>
-      )}
+      {/* Sun Counter Widget */}
+      <div className="sun-counter">
+        <img className="sun-counter__icon" src={sunIcon} alt="Sol" />
+        <span className="sun-counter__value">{sunBank}</span>
+      </div>
 
       {/* Real-time Marigold Gold Counter Widget */}
       {Boolean(goldEarned && goldEarned > 0) && (
@@ -436,7 +430,7 @@ export default function PlantHand({
             // Ambos lados en tics: el que queda y el total del enfriamiento.
             const cdTotalTicks = msToTicks(scaledConfig.cooldownMs)
             const cdRatio = isOnCooldown && cdTotalTicks > 0 ? cdRemaining / cdTotalTicks : 0
-            const canAfford = isStoryMode || sunBank >= config.cost
+            const canAfford = sunBank >= config.cost
             const isDisabled = !canAfford || isOnCooldown
 
             const activePacket = scaledConfig.packetActive || scaledConfig.icon || config.packetActive
@@ -504,12 +498,10 @@ export default function PlantHand({
                 <span className="plant-hand__hotkey-badge">{formatKeyLabel(getSlotKey(vIdx))}</span>
 
                 {/* Sun Cost Badge in bottom-right corner of seed packet */}
-                {!isStoryMode && (
-                  <div className="plant-hand__cost-badge" title={`Coste: ${scaledConfig.cost} soles`}>
-                    <img src={sunIcon} alt="Sol" className="plant-hand__cost-icon" />
-                    <span className="plant-hand__cost-val">{scaledConfig.cost}</span>
-                  </div>
-                )}
+                <div className="plant-hand__cost-badge" title={`Coste: ${scaledConfig.cost} soles`}>
+                  <img src={sunIcon} alt="Sol" className="plant-hand__cost-icon" />
+                  <span className="plant-hand__cost-val">{scaledConfig.cost}</span>
+                </div>
 
                 {/* Card Seed Packet */}
                 <div className={`plant-hand__packet-wrap ${cardData.equippedItem ? 'plant-hand__packet-wrap--equipped' : ''} ${cardData.isGolden ? 'plant-hand__packet-wrap--golden' : ''}`}>

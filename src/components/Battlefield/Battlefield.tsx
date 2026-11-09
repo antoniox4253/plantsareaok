@@ -2215,7 +2215,7 @@ export default function Battlefield({
             3,
             undefined,
             undefined,
-            9999,
+            250,
             undefined,
             undefined,
             undefined,
@@ -2395,7 +2395,7 @@ export default function Battlefield({
             3,
             undefined,
             undefined,
-            9999,
+            250,
             undefined,
             undefined,
             undefined,
@@ -2432,7 +2432,7 @@ export default function Battlefield({
           3,
           undefined,
           undefined,
-          9999,
+          250,
           undefined,
           undefined,
           undefined,
@@ -3946,10 +3946,8 @@ export default function Battlefield({
         )
       })}
 
-      {/* El reloj de la partida y la cuenta atrás hasta la muerte súbita. Sin
-          esto el plazo existía pero no se veía, y un plazo que no se ve no se
-          puede jugar. */}
-      {gameStatus === 'playing' && (
+      {/* El reloj de la partida y la cuenta atrás hasta la muerte súbita. En Modo Historia no aplica cronómetro */}
+      {gameStatus === 'playing' && matchMode !== 'story' && (
         <RelojDePartida
           tick={tick}
           practica={isPracticeMode}

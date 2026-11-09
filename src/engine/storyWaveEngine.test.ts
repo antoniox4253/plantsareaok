@@ -102,7 +102,7 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       null,
       3, // 3 carriles como PvP
       false,
-      9999, // sin limitante económica de soles
+      250, // economía inicial de soles estilo PvZ / Survivor ADS
       undefined,
       undefined,
       undefined,
@@ -115,7 +115,7 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
     expect(state.isStoryMode).toBe(true)
     expect(state.lanesCount).toBe(3)
     expect(state.p2BaseHp).toBe(99999)
-    expect(state.sunBank).toBe(9999)
+    expect(state.sunBank).toBe(250)
     expect(state.storyConfig).toBeDefined()
     expect(state.storyWaveIndex).toBe(0)
     expect(state.storyWavesCompleted).toBe(false)
@@ -152,8 +152,8 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       1
     )
 
-    // Avanzar 500 tics (~16 segundos) para que empiece la oleada 1
-    for (let t = 0; t < 500; t++) {
+    // Avanzar 800 tics (~26.6 segundos) para que empiece la oleada 1 (inicio a 25s / 750 tics)
+    for (let t = 0; t < 800; t++) {
       stepTick(state, sonar)
     }
 
@@ -190,5 +190,37 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
     state.p1BaseHp = 0
     stepTick(state, sonar)
     expect(state.status).toBe('defeat')
+  })
+  it('mapache melee (garritas) daña el árbol y desaparece al llegar a x<=16', () => {
+    const sonar = () => {}
+    const state = createBattleState(1234, false, false, undefined, 'auth-v2', 1000, 1000, null, null, 3, false, 250, undefined, undefined, undefined, false, 1, true, 1)
+
+    // Colocar un Garritas cerca del árbol madre (x = 18) en carril 0 sin plantas defensivas
+    state.enemyPlants.push({
+      id: 'test_garritas',
+      plantId: 'bonkchoy',
+      mapacheKey: 'garritas',
+      lane: 0,
+      x: 18,
+      hp: 200,
+      maxHp: 200,
+      damage: 25,
+      moveSpeed: 3.2,
+      lastActionTime: 0,
+      isWalking: true,
+      state: 'walking',
+    })
+
+    const initialTreeHp = state.p1BaseHp
+
+    // Simular avance hacia el árbol (x <= 16)
+    for (let t = 0; t < 60; t++) {
+      stepTick(state, sonar)
+    }
+
+    // Debe haber dañado el árbol y muerto (hp = 0 o desaparecido)
+    expect(state.p1BaseHp).toBeLessThan(initialTreeHp)
+    const garritas = state.enemyPlants.find(e => e.id === 'test_garritas')
+    expect(garritas?.hp ?? 0).toBe(0)
   })
 })
