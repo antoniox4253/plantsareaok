@@ -318,7 +318,7 @@ export function createBattleState(
     p2BaseHp: (isSurvivorMode || isStoryMode) ? 99999 : (p2BaseHp ?? INITIAL_BASE_HP),
     p1TreeSkin: p1TreeSkin ?? null,
     p2TreeSkin: p2TreeSkin ?? null,
-    sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isSurvivorMode ? 250 : (isStoryMode ? 150 : (isFortressMode ? 200 : INITIAL_SUN))),
+    sunBank: initialAttackSuns !== undefined ? initialAttackSuns : (isSurvivorMode ? 250 : (isStoryMode ? 9999 : (isFortressMode ? 200 : INITIAL_SUN))),
     p2SunBank: initialDefenseSuns !== undefined ? initialDefenseSuns : (isFortressMode ? 400 : INITIAL_SUN),
     plants: [],
     enemyPlants: [],
@@ -816,6 +816,12 @@ function procesarLado(state: GameState, lado: Lado, dt: number, sonar: SonarFn):
         state.stats.enemyPlantsDefeated += 1
         state.stats.score += 100
       }
+      continue
+    }
+
+    // Los mapaches enemigos son gobernados por storyWaveEngine (processStoryWaves)
+    if (planta.mapacheKey) {
+      siguientes.push(planta)
       continue
     }
 
@@ -2237,7 +2243,7 @@ export function stepTick(state: GameState, sonar: SonarFn = () => {}): void {
   }
 
   // 3. SKY SUN GENERATION (Every 6s)
-  if (state.tick - state.timers.lastSkySun > msToTicks(SOL_DEL_CIELO_MS)) {
+  if (!state.isStoryMode && state.tick - state.timers.lastSkySun > msToTicks(SOL_DEL_CIELO_MS)) {
     state.timers.lastSkySun = state.tick
     const contador = state.entityCounter++
     const seq = state.skySunSeq++

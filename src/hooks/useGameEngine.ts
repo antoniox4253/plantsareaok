@@ -1315,7 +1315,7 @@ export function useGameEngine() {
       const config = getScaledPlantConfig(card, rolls, cardEquippedItem, cardIsGolden)
       if (!config) return null
 
-      if (state.sunBank < config.cost) return null
+      if (!state.isStoryMode && state.sunBank < config.cost) return null
 
       // Los enfriamientos guardan el TIC en que expiran, no un instante de
       // reloj real: así se pueden reproducir.
@@ -1362,7 +1362,7 @@ export function useGameEngine() {
           // Jalapeño, Chile en Escabeche y Lechuga de Hielo son de acción inmediata: no se permite plantar en el tablero durante preparación
           return null
         }
-        state.sunBank -= config.cost
+        if (!state.isStoryMode) state.sunBank -= config.cost
         const nuevaPlanta = crearPlantaPropia(
           state,
           card,

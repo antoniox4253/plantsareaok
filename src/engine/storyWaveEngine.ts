@@ -122,7 +122,7 @@ export function getMapacheBaseSpeed(key: MapacheKey): number {
  * - El Jefe Final (Rey Garra) SIEMPRE sale en la 3era oleada
  */
 export function generateStoryLevel(level: number, seed: number = 1000 + level): StoryLevelConfig {
-  const lanesCount = 5
+  const lanesCount = 3
   const rng = createRng(seed ^ (level * 7919))
   const nextRng = () => nextFloat(rng)
 
@@ -135,10 +135,10 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     return allowedMapaches[idx] || allowedMapaches[0]
   }
 
-  // ── OLEADA 1: INTRODUCTORIA ────────────────────────────────────────────────
+  // ── OLEADA 1: INCURSIÓN DIRECTA (Sin economía previa) ──────────────────────
   const w1Count = Math.min(8, 3 + Math.floor(level / 3))
   const wave1Spawns: StoryEnemySpawn[] = []
-  let w1Tick = 450 // ~15s para sembrar economía inicial (girasoles)
+  let w1Tick = 90 // Comienza a los ~3s directamente por oleadas
 
   for (let i = 0; i < w1Count; i++) {
     const mapacheKey = pickEnemy()
@@ -151,26 +151,26 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       hpMultiplier: hpMult,
       damageMultiplier: dmgMult,
     })
-    const delay = Math.max(75, 150 - level * 3 + Math.floor(nextRng() * 45))
+    const delay = Math.max(75, 140 - level * 3 + Math.floor(nextRng() * 40))
     w1Tick += delay
   }
 
   const wave1: StoryWave = {
     waveNumber: 1,
     name: 'Oleada 1 (Incursión)',
-    subtitle: 'Prepara tus defensas',
-    startTick: 450,
+    subtitle: 'Repele la primera oleada mapache',
+    startTick: 90,
     spawns: wave1Spawns,
   }
 
   // ── OLEADA 2: EMBOSCADA Y PRESIÓN ──────────────────────────────────────────
   const w2Count = Math.min(14, 5 + Math.floor(level / 2))
   const wave2Spawns: StoryEnemySpawn[] = []
-  let w2Tick = Math.max(w1Tick + 120, 1500)
+  let w2Tick = Math.max(w1Tick + 90, 800)
 
   for (let i = 0; i < w2Count; i++) {
     const mapacheKey = pickEnemy()
-    const lane = (i * 3 + Math.floor(nextRng() * lanesCount)) % lanesCount
+    const lane = (i * 2 + Math.floor(nextRng() * lanesCount)) % lanesCount
     wave2Spawns.push({
       tick: w2Tick,
       lane,
@@ -180,7 +180,7 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       damageMultiplier: dmgMult,
     })
 
-    // Ataque doble en niveles >= 8 cada 3 mapaches
+    // Ataque coordinado en niveles >= 8 cada 3 mapaches
     if (level >= 8 && i > 0 && i % 3 === 0) {
       const secondLane = (lane + 1 + Math.floor(nextRng() * (lanesCount - 1))) % lanesCount
       const secondMapache = pickEnemy()
@@ -194,22 +194,22 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       })
     }
 
-    const delay = Math.max(60, 120 - level * 2 + Math.floor(nextRng() * 30))
+    const delay = Math.max(60, 110 - level * 2 + Math.floor(nextRng() * 30))
     w2Tick += delay
   }
 
   const wave2: StoryWave = {
     waveNumber: 2,
     name: 'Oleada 2 (Emboscada)',
-    subtitle: 'Asalto de refuerzos',
-    startTick: Math.max(w1Tick + 120, 1500),
+    subtitle: 'Asalto de refuerzos en los 3 carriles',
+    startTick: Math.max(w1Tick + 90, 800),
     spawns: wave2Spawns,
   }
 
   // ── OLEADA 3: OLEADA FINAL CON EL JEFE REY GARRA ───────────────────────────
-  const w3Count = Math.min(18, 7 + Math.floor(level / 2))
+  const w3Count = Math.min(16, 6 + Math.floor(level / 2))
   const wave3Spawns: StoryEnemySpawn[] = []
-  let w3Tick = Math.max(w2Tick + 150, 2600)
+  let w3Tick = Math.max(w2Tick + 120, 1600)
 
   // Escolta previa al jefe
   for (let i = 0; i < w3Count; i++) {
@@ -223,14 +223,14 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       hpMultiplier: hpMult * 1.1,
       damageMultiplier: dmgMult * 1.05,
     })
-    const delay = Math.max(50, 90 - level * 2 + Math.floor(nextRng() * 30))
+    const delay = Math.max(45, 80 - level * 2 + Math.floor(nextRng() * 25))
     w3Tick += delay
   }
 
-  // EL JEFE FINAL REY GARRA APARECE EN LA OLEADA 3
+  // EL JEFE FINAL REY GARRA APARECE EN LA OLEADA 3 EN EL CARRIL CENTRAL (LANE 1)
   const bossHpMultiplier = hpMult * (1.2 + level * 0.08)
   const bossDamageMultiplier = dmgMult * 1.2
-  const bossLane = 2 // Carril central en un tablero de 5 líneas
+  const bossLane = 1 // Carril central en un tablero de 3 líneas (0, 1, 2)
   wave3Spawns.push({
     tick: w3Tick + 30,
     lane: bossLane,
@@ -241,10 +241,10 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     isBoss: true,
   })
 
-  // Escolta pesada que acompaña al Rey Garra
+  // Escolta pesada que acompaña al Rey Garra (carriles flanqueantes 0 y 2)
   wave3Spawns.push({
     tick: w3Tick + 45,
-    lane: 1,
+    lane: 0,
     mapacheKey: allowedMapaches.includes('punos') ? 'punos' : 'garritas',
     moveSpeed: 2.2,
     hpMultiplier: hpMult,
@@ -252,7 +252,7 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
   })
   wave3Spawns.push({
     tick: w3Tick + 45,
-    lane: 3,
+    lane: 2,
     mapacheKey: allowedMapaches.includes('pumpum') ? 'pumpum' : 'garritas',
     moveSpeed: 2.0,
     hpMultiplier: hpMult,
@@ -497,9 +497,10 @@ export function processStoryWaves(
         sonar('level_select', 0.9)
       }
 
-      // Invocación de Garritas cada 18 segundos (~540 tics)
+      // Invocación de Garritas cada 18 segundos (~540 tics) en uno de los 3 carriles
       if (state.tick > 0 && state.tick % msToTicks(18000) === 0 && livingEnemies < 8) {
-        const summonLane = (enemy.lane + (nextFloat(state.rng) > 0.5 ? 1 : 4)) % 5
+        const lanesPool = [0, 1, 2]
+        const summonLane = lanesPool[Math.floor(nextFloat(state.rng) * lanesPool.length)]
         const summonSpawn: StoryEnemySpawn = {
           tick: state.tick,
           lane: summonLane,

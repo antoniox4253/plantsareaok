@@ -93,7 +93,7 @@ export function saveStoryProgress(level: number, stars: number = 3): StoryProgre
  */
 export function getStoryLevelConfig(level: number): StoryLevelConfig {
   const clampedLevel = Math.max(1, Math.min(20, level))
-  const lanesCount = 5
+  const lanesCount = 3
 
   // 1. Grupo y elenco de enemigos según las reglas
   let allowedMapaches: MapacheKey[]
@@ -156,7 +156,7 @@ export function getStoryLevelConfig(level: number): StoryLevelConfig {
   w3Spawns.push({
     delayMs: 1500,
     key: 'reygarra',
-    lane: 2, // Carril central para patrullar
+    lane: 1, // Carril central para patrullar (3 carriles: 0, 1, 2)
   })
 
   for (let i = 0; i < w3Count; i++) {

@@ -754,10 +754,10 @@ export default function Battlefield({
             0,
             treeSkinRef.current,
             null,
-            5,
+            3,
             undefined,
             undefined,
-            150,
+            9999,
             undefined,
             undefined,
             undefined,
@@ -785,10 +785,10 @@ export default function Battlefield({
           0,
           treeSkinRef.current,
           null,
-          5,
+          3,
           undefined,
           undefined,
-          150,
+          9999,
           undefined,
           undefined,
           undefined,
@@ -816,7 +816,7 @@ export default function Battlefield({
   // En clan_fortress la arena siempre opera sobre 5 carriles (LANES_CONFIG_5),
   // bloqueando visualmente los carriles no disponibles según el nivel del Árbol Madre rival.
   const activeLanesConfig = useMemo(() => {
-    if (matchMode === 'clan_fortress' || matchMode === 'story') return LANES_CONFIG_5
+    if (matchMode === 'clan_fortress') return LANES_CONFIG_5
     return LANES_CONFIG
   }, [matchMode])
 
@@ -2282,10 +2282,10 @@ export default function Battlefield({
             0,
             treeSkinRef.current,
             null,
-            5,
+            3,
             undefined,
             undefined,
-            150,
+            9999,
             undefined,
             undefined,
             undefined,
@@ -3827,7 +3827,8 @@ export default function Battlefield({
                 zIndex: 35,
               }}
             >
-              <div className="projectile-cannonball-mesh" />
+              <div className="projectile-cannonball-trail" />
+              <div className="projectile-cannonball-core" />
             </div>
           )
         }
@@ -3843,7 +3844,8 @@ export default function Battlefield({
                 zIndex: 25,
               }}
             >
-              <div className="projectile-knife-mesh" />
+              <div className="projectile-knife-trail" />
+              <div className="projectile-knife-blade" />
             </div>
           )
         }
@@ -4943,6 +4945,7 @@ export default function Battlefield({
 
       {/* Plant Hand */}
       <PlantHand
+        isStoryMode={matchMode === 'story'}
         sunBank={sunBank}
         selectedCard={selectedCard}
         selectedSlotIndex={selectedSlotIndex}

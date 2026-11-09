@@ -222,7 +222,9 @@ export function ejecutarCapturaPlantP1(
     isGolden,
   })
 
-  state.sunBank -= config.cost
+  if (!state.isStoryMode) {
+    state.sunBank -= config.cost
+  }
   if (slotIdx !== null) {
     state.slotCooldowns[slotIdx] = state.tick + msToTicks(config.cooldownMs)
   } else {

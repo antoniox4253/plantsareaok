@@ -9,13 +9,17 @@
 }
 
 .mapache-unit-wrap--boss {
-  filter: drop-shadow(0 0 14px rgba(255, 215, 0, 0.75));
+  filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.85));
   z-index: 15;
 }
 
 .mapache-unit-wrap--fury {
   animation: mapacheFuryPulse 0.4s infinite alternate ease-in-out;
-  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.85));
+  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.95));
+}
+
+.mapache-unit-wrap--buffed {
+  filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.9)) drop-shadow(0 0 16px rgba(245, 158, 11, 0.6));
 }
 
 @keyframes mapacheFuryPulse {
@@ -43,6 +47,25 @@
   border-radius: 999px;
   border: 1px solid #fef08a;
   box-shadow: 0 0 8px rgba(220, 38, 38, 0.8);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  z-index: 20;
+}
+
+.mapache-buff-indicator {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(234, 179, 8, 0.9);
+  color: #422006;
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid #fef08a;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.8);
   white-space: nowrap;
   letter-spacing: 0.5px;
   z-index: 20;
@@ -76,6 +99,44 @@
   overflow: visible;
 }
 
+/* ================== ESTILOS DE RIG Y ARTICULACIONES (Fieles a template3.html) ================== */
+.rig {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.p {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.p > img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.shadow {
+  position: absolute;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.32);
+  filter: blur(1.5px);
+  pointer-events: none;
+}
+
 .mapache-static-fallback {
   width: 100%;
   height: 100%;
@@ -93,5 +154,79 @@
   }
   100% {
     transform: translateY(-4px) rotate(2deg);
+  }
+}
+
+/* ================== PROYECTILES EXCLUSIVOS DE LOS MAPACHES ================== */
+
+/* 💣 Balas de Cañón de PumPum */
+.projectile--cannonball {
+  width: 22px;
+  height: 22px;
+  margin-top: -11px;
+  margin-left: -11px;
+  position: absolute;
+  pointer-events: none;
+}
+
+.projectile-cannonball-core {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #94a3b8, #334155 58%, #0f172a 92%);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(249, 115, 22, 0.6);
+  border: 1.5px solid #1e293b;
+}
+
+.projectile-cannonball-trail {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 8px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.85), rgba(239, 68, 68, 0.4), transparent);
+  filter: blur(1.2px);
+  z-index: -1;
+}
+
+/* 🗡️ Cuchillos Voladores de Navajas */
+.projectile--knife {
+  width: 26px;
+  height: 12px;
+  margin-top: -6px;
+  margin-left: -13px;
+  position: absolute;
+  pointer-events: none;
+}
+
+.projectile-knife-blade {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 35%, #64748b 100%);
+  clip-path: polygon(0% 50%, 35% 15%, 85% 25%, 100% 50%, 85% 75%, 35% 85%);
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
+  animation: knifeSpinAnim 0.22s linear infinite;
+}
+
+.projectile-knife-trail {
+  position: absolute;
+  top: 50%;
+  right: -10px;
+  width: 32px;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255, 214, 60, 0.95), rgba(255, 140, 0, 0));
+  z-index: -1;
+}
+
+@keyframes knifeSpinAnim {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
   }
 }

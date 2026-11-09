@@ -89,7 +89,7 @@ describe('StoryWaveEngine - Reglas y Niveles', () => {
 })
 
 describe('StoryWaveEngine - Simulación en el Motor', () => {
-  it('inicializa el estado de combate en Modo Historia con 5 carriles y base invulnerable p2', () => {
+  it('inicializa el estado de combate en Modo Historia con 3 carriles y base invulnerable p2', () => {
     const state = createBattleState(
       1234,
       false,
@@ -100,9 +100,9 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       1000,
       null,
       null,
-      5, // 5 carriles
+      3, // 3 carriles como PvP
       false,
-      150, // soles iniciales
+      9999, // sin limitante económica de soles
       undefined,
       undefined,
       undefined,
@@ -113,12 +113,19 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
     )
 
     expect(state.isStoryMode).toBe(true)
-    expect(state.lanesCount).toBe(5)
+    expect(state.lanesCount).toBe(3)
     expect(state.p2BaseHp).toBe(99999)
-    expect(state.sunBank).toBe(150)
+    expect(state.sunBank).toBe(9999)
     expect(state.storyConfig).toBeDefined()
     expect(state.storyWaveIndex).toBe(0)
     expect(state.storyWavesCompleted).toBe(false)
+
+    // Todos los spawns del nivel deben operar estrictamente en los 3 carriles (0, 1, 2)
+    for (const wave of state.storyConfig!.waves) {
+      for (const spawn of wave.spawns) {
+        expect([0, 1, 2]).toContain(spawn.lane)
+      }
+    }
   })
 
   it('simula la aparición de mapaches y disparo de proyectiles de cañón / navaja', () => {
@@ -133,9 +140,9 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       1000,
       null,
       null,
-      5,
+      3,
       false,
-      200,
+      9999,
       undefined,
       undefined,
       undefined,
