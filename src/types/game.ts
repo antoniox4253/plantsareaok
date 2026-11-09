@@ -104,6 +104,11 @@ export interface PlantEntity {
   isJumping?: boolean
   jumpStartTick?: number
   lastShootTick?: number
+  nextLaneChangeTick?: number
+  lastRoarTick?: number
+  lastSummonTick?: number
+  lastAttackTick?: number
+  hitCount?: number
 }
 
 export type EnemyPlantType =

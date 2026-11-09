@@ -1,4 +1,4 @@
-import type { PlantEntity, ProjectileEntity, PlantId } from '../types/game.ts'
+import type { PlantEntity, PlantId } from '../types/game.ts'
 import { BASE_RIGHT_START_X } from '../utils/gameConstants.ts'
 import { entityId, createRng, nextFloat } from './rng.ts'
 import type { GameState, SonarFn } from './simulate.ts'
@@ -73,30 +73,30 @@ export function getAllowedMapachesForLevel(level: number): MapacheKey[] {
 export function getMapacheBaseHp(key: MapacheKey): number {
   switch (key) {
     case 'pumpum':
-      return 350
+      return 180 // Artillero frágil a distancia (~9 guisantes)
     case 'garritas':
-      return 400
+      return 200 // Rasguñador veloz común (~10 guisantes)
     case 'punos':
-      return 750
+      return 380 // Peleador fornido (~19 guisantes, estilo cono)
     case 'navajas':
-      return 380
+      return 220 // Lanzador ágil (~11 guisantes)
     case 'reygarra':
-      return 2200
+      return 950 // Jefe de oleada 3 (resistente y derrotable)
   }
 }
 
 export function getMapacheBaseDamage(key: MapacheKey): number {
   switch (key) {
     case 'pumpum':
-      return 45
+      return 35
     case 'garritas':
-      return 40
+      return 25
     case 'punos':
-      return 65
+      return 40
     case 'navajas':
-      return 50
+      return 30
     case 'reygarra':
-      return 120
+      return 60
   }
 }
 
@@ -397,43 +397,134 @@ export function processStoryWaves(
     }
   }
 
-  // 3. Procesar Habilidades Especiales de los 5 Mapaches:
+  // 3. Procesar Avance, Combate Melee/Rango y Habilidades de los 5 Mapaches:
+  const dt = 0.033
+
   for (const enemy of state.enemyPlants) {
     if (enemy.hp <= 0 || !enemy.mapacheKey) continue
 
-    // 🐾 HABILIDAD DE GARRITAS: Salto acrobático sobre defensas
-    if (enemy.mapacheKey === 'garritas' && !enemy.hasJumped) {
-      const plantEnfrente = state.plants.find(
-        (p) => p.lane === enemy.lane && p.hp > 0 && Math.abs(p.x - enemy.x) <= 6.5
-      )
-      if (plantEnfrente && (plantEnfrente.plantId === 'wallnut' || plantEnfrente.plantId === 'tallnut')) {
-        // Ejecutar salto por encima de la nuez
-        enemy.x = Math.max(16, plantEnfrente.x - 7.5)
-        enemy.hasJumped = true
-        sonar('plantation', 0.8)
+    // AURA / BUFF DEL REY GARRA (Ánimo de combate)
+    if (enemy.isCommandoAura && enemy.commandoAuraEndTick && state.tick >= enemy.commandoAuraEndTick) {
+      enemy.isCommandoAura = false
+    }
+    const isBuffed = Boolean(enemy.isCommandoAura)
+    const effSpeed = (enemy.moveSpeed || 2.0) * (isBuffed ? 1.35 : 1.0)
+
+    // =========================================================================
+    // 👑 JEFE FINAL: REY GARRA
+    // - Avanza hasta la retaguardia (x = 76).
+    // - NO avanza más hacia la izquierda: patrulla verticalmente entre los 3 carriles (0, 1, 2).
+    // - Ruge periódicamente para bufar a los mapaches.
+    // - Alza el puño para invocar Garritas en otros carriles.
+    // =========================================================================
+    if (enemy.mapacheKey === 'reygarra' && enemy.isBoss) {
+      if (enemy.x > 76) {
+        // Entra caminando a su puesto de retaguardia
+        enemy.x -= 1.8 * dt * 2.2
+        enemy.isWalking = true
+        enemy.state = 'walking'
+      } else {
+        // Se queda en la retaguardia patrullando verticalmente entre los 3 carriles activos
+        enemy.x = 76
+        enemy.isWalking = false
+
+        if (!enemy.nextLaneChangeTick) {
+          enemy.nextLaneChangeTick = state.tick + msToTicks(3500)
+        }
+
+        // Cambio de carril arriba/abajo entre los 3 activos (0, 1, 2)
+        if (state.tick >= enemy.nextLaneChangeTick) {
+          const otherLanes = [0, 1, 2].filter((l) => l !== enemy.lane)
+          const newLane = otherLanes[Math.floor(nextFloat(state.rng) * otherLanes.length)]
+          enemy.lane = newLane
+          enemy.nextLaneChangeTick = state.tick + msToTicks(3200 + Math.floor(nextFloat(state.rng) * 2000))
+        }
+
+        // Rugido potenciador cada 10s (~300 tics)
+        if (state.tick - (enemy.lastRoarTick || 0) >= msToTicks(10000)) {
+          enemy.lastRoarTick = state.tick
+          enemy.isCommandoAura = true
+          enemy.commandoAuraEndTick = state.tick + msToTicks(1500)
+          for (const ally of state.enemyPlants) {
+            if (ally.hp > 0 && ally.mapacheKey) {
+              ally.isCommandoAura = true
+              ally.commandoAuraEndTick = state.tick + msToTicks(5000)
+            }
+          }
+          sonar('level_select', 1.0)
+        }
+
+        // Invocación de Garritas cada 12s (~360 tics)
+        if (state.tick - (enemy.lastSummonTick || 0) >= msToTicks(12000) && livingEnemies < 7) {
+          enemy.lastSummonTick = state.tick
+          const otherLanes = [0, 1, 2].filter((l) => l !== enemy.lane)
+          const summonLane = otherLanes[Math.floor(nextFloat(state.rng) * otherLanes.length)]
+          const minion = spawnStoryEnemyEntity(
+            state,
+            {
+              tick: state.tick,
+              lane: summonLane,
+              mapacheKey: 'garritas',
+              moveSpeed: 3.0,
+              hpMultiplier: 1.0,
+              damageMultiplier: 1.0,
+            },
+            state.storyConfig.level
+          )
+          state.enemyPlants.push(minion)
+          sonar('plantation', 0.8)
+        }
+
+        // Ataque cuerpo a cuerpo si una planta aliada llega a tocar al Rey
+        const targetPlant = state.plants
+          .filter((p) => p.lane === enemy.lane && p.hp > 0 && Math.abs(enemy.x - p.x) <= 6.5)
+          .sort((a, b) => b.x - a.x)[0]
+
+        if (targetPlant) {
+          enemy.state = 'attacking'
+          if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(900)) {
+            enemy.lastAttackTick = state.tick
+            targetPlant.hp -= enemy.damage || 60
+            sonar('pea_hit', 0.7)
+            if (targetPlant.hp <= 0) {
+              targetPlant.hp = 0
+              sonar('zombie_fall', 0.6)
+            }
+          }
+        }
       }
+      continue
     }
 
-    // 🥊 HABILIDAD DE PUÑOS: Modo Furia
-    if (enemy.mapacheKey === 'punos') {
-      if (enemy.isFury && enemy.furyEndTick && state.tick >= enemy.furyEndTick) {
-        enemy.isFury = false
-      }
-    }
+    // =========================================================================
+    // 🦝 TROPAS MAPACHES: AVANCE, DETECCIÓN Y COMBATE
+    // =========================================================================
+    const targetPlant = state.plants
+      .filter((p) => p.lane === enemy.lane && p.hp > 0 && p.x < enemy.x)
+      .sort((a, b) => b.x - a.x)[0]
 
-    // 💣 HABILIDAD DE PUMPUM: Disparo de balas de cañón explosivas
+    const dist = targetPlant ? enemy.x - targetPlant.x : enemy.x - 15
+
+    // 💣 PUMPUM (Artillero de Rango)
     if (enemy.mapacheKey === 'pumpum') {
-      const targetPlant = state.plants
-        .filter((p) => p.lane === enemy.lane && p.hp > 0 && p.x < enemy.x)
-        .sort((a, b) => b.x - a.x)[0]
+      const stopDist = 26
+      const rangeDist = 38
+      if (dist > stopDist) {
+        enemy.x -= effSpeed * dt * 2.2
+        enemy.isWalking = true
+        enemy.state = 'walking'
+      } else {
+        enemy.isWalking = false
+        enemy.state = 'idle'
+      }
 
-      const dist = targetPlant ? enemy.x - targetPlant.x : (enemy.x - 15)
-      if (dist >= 12 && dist <= 38) {
-        if (state.tick - (enemy.lastShootTick || 0) >= msToTicks(3200)) {
+      if (dist <= rangeDist) {
+        const cadencia = isBuffed ? 1800 : 2600
+        if (state.tick - (enemy.lastShootTick || 0) >= msToTicks(cadencia)) {
           enemy.lastShootTick = state.tick
           enemy.state = 'attacking'
           const targetX = targetPlant ? targetPlant.x : 15
-          const newProj: ProjectileEntity = {
+          state.projectiles.push({
             id: entityId('cannonball', state.tick, state.entityCounter++),
             type: 'cannonball',
             targetTeam: 'p1',
@@ -444,28 +535,34 @@ export function processStoryWaves(
             x: enemy.x,
             y: 20 + enemy.lane * 19.33 + 7,
             speed: 24,
-            damage: enemy.damage || 55,
+            damage: enemy.damage || 35,
             isSplash: true,
-          }
-          state.projectiles.push(newProj)
+          })
           sonar('pea_shoot', 0.8)
         }
       }
     }
 
-    // 🗡️ HABILIDAD DE NAVAJAS: Cuchillos voladores a distancia
-    if (enemy.mapacheKey === 'navajas') {
-      const targetPlant = state.plants
-        .filter((p) => p.lane === enemy.lane && p.hp > 0 && p.x < enemy.x)
-        .sort((a, b) => b.x - a.x)[0]
+    // 🗡️ NAVAJAS (Lanzador de Cuchillos de Rango)
+    else if (enemy.mapacheKey === 'navajas') {
+      const stopDist = 28
+      const rangeDist = 42
+      if (dist > stopDist) {
+        enemy.x -= effSpeed * dt * 2.2
+        enemy.isWalking = true
+        enemy.state = 'walking'
+      } else {
+        enemy.isWalking = false
+        enemy.state = 'idle'
+      }
 
-      const dist = targetPlant ? enemy.x - targetPlant.x : (enemy.x - 15)
-      if (dist >= 14 && dist <= 42) {
-        if (state.tick - (enemy.lastShootTick || 0) >= msToTicks(2400)) {
+      if (dist <= rangeDist) {
+        const cadencia = isBuffed ? 1300 : 1900
+        if (state.tick - (enemy.lastShootTick || 0) >= msToTicks(cadencia)) {
           enemy.lastShootTick = state.tick
           enemy.state = 'attacking'
           const targetX = targetPlant ? targetPlant.x : 15
-          const newProj: ProjectileEntity = {
+          state.projectiles.push({
             id: entityId('knife', state.tick, state.entityCounter++),
             type: 'knife',
             targetTeam: 'p1',
@@ -476,43 +573,82 @@ export function processStoryWaves(
             x: enemy.x,
             y: 20 + enemy.lane * 19.33 + 7,
             speed: 36,
-            damage: enemy.damage || 45,
-          }
-          state.projectiles.push(newProj)
+            damage: enemy.damage || 30,
+          })
           sonar('pea_shoot', 0.7)
         }
       }
     }
 
-    // 👑 HABILIDAD DEL REY GARRA: Rugido y llamada de esbirros
-    if (enemy.mapacheKey === 'reygarra' && enemy.isBoss) {
-      // Rugido potenciador cada 12 segundos (~360 tics)
-      if (state.tick > 0 && state.tick % msToTicks(12000) === 0) {
-        for (const ally of state.enemyPlants) {
-          if (ally.hp > 0) {
-            ally.isCommandoAura = true
-            ally.commandoAuraEndTick = state.tick + msToTicks(5000)
-          }
-        }
-        sonar('level_select', 0.9)
+    // 🐾 GARRITAS (Melee Rápido y Salto de Nuez)
+    else if (enemy.mapacheKey === 'garritas') {
+      // Salto acrobático de Nuez
+      if (!enemy.hasJumped && targetPlant && (targetPlant.plantId === 'wallnut' || targetPlant.plantId === 'tallnut') && dist <= 7.5) {
+        enemy.x = Math.max(16, targetPlant.x - 6.5)
+        enemy.hasJumped = true
+        sonar('plantation', 0.8)
       }
 
-      // Invocación de Garritas cada 18 segundos (~540 tics) en uno de los 3 carriles
-      if (state.tick > 0 && state.tick % msToTicks(18000) === 0 && livingEnemies < 8) {
-        const lanesPool = [0, 1, 2]
-        const summonLane = lanesPool[Math.floor(nextFloat(state.rng) * lanesPool.length)]
-        const summonSpawn: StoryEnemySpawn = {
-          tick: state.tick,
-          lane: summonLane,
-          mapacheKey: 'garritas',
-          moveSpeed: 3.2,
-          hpMultiplier: 1.0,
-          damageMultiplier: 1.0,
+      const meleeDist = 6.0
+      if (dist > meleeDist) {
+        enemy.x -= effSpeed * dt * 2.2
+        enemy.isWalking = true
+        enemy.state = 'walking'
+      } else if (targetPlant) {
+        enemy.isWalking = false
+        enemy.state = 'attacking'
+        const cadencia = isBuffed ? 450 : 650
+        if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(cadencia)) {
+          enemy.lastAttackTick = state.tick
+          targetPlant.hp -= enemy.damage || 25
+          sonar('pea_hit', 0.5)
+          if (targetPlant.hp <= 0) {
+            targetPlant.hp = 0
+            sonar('zombie_fall', 0.5)
+          }
         }
-        const minion = spawnStoryEnemyEntity(state, summonSpawn, state.storyConfig.level)
-        state.enemyPlants.push(minion)
-        sonar('plantation', 0.7)
       }
+    }
+
+    // 🥊 PUÑOS (Melee Pesado y Furia)
+    else if (enemy.mapacheKey === 'punos') {
+      if (enemy.isFury && enemy.furyEndTick && state.tick >= enemy.furyEndTick) {
+        enemy.isFury = false
+      }
+
+      const meleeDist = 6.0
+      if (dist > meleeDist) {
+        enemy.x -= effSpeed * dt * 2.2
+        enemy.isWalking = true
+        enemy.state = 'walking'
+      } else if (targetPlant) {
+        enemy.isWalking = false
+        enemy.state = 'attacking'
+        const cadencia = enemy.isFury ? 320 : (isBuffed ? 480 : 700)
+        if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(cadencia)) {
+          enemy.lastAttackTick = state.tick
+          enemy.hitCount = (enemy.hitCount || 0) + 1
+          if (enemy.hitCount % 5 === 0 && !enemy.isFury) {
+            enemy.isFury = true
+            enemy.furyEndTick = state.tick + msToTicks(2200)
+            sonar('level_select', 0.8)
+          }
+          const dmg = enemy.isFury ? Math.round((enemy.damage || 40) * 1.5) : (enemy.damage || 40)
+          targetPlant.hp -= dmg
+          sonar('pea_hit', 0.6)
+          if (targetPlant.hp <= 0) {
+            targetPlant.hp = 0
+            sonar('zombie_fall', 0.5)
+          }
+        }
+      }
+    }
+
+    // Impacto en la Base del Jugador (x <= 15)
+    if (enemy.x <= 15) {
+      state.p1BaseHp = Math.max(0, state.p1BaseHp - (enemy.damage || 30) * 2)
+      enemy.hp = 0
+      sonar('zombie_fall', 0.8)
     }
   }
 

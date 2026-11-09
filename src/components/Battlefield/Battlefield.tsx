@@ -731,76 +731,6 @@ export default function Battlefield({
   // Al terminar la partida (victoria o derrota), se levanta el bloqueo para permitir
   // que Monetag Vignette se precargue y muestre en el interstitial modal sin interrupciones.
   useEffect(() => {
-    if (matchMode === 'story') {
-      soundManager.playSound('click', 0.4)
-      if (gameStatus === 'victory') {
-        if (storyLevel < 20) {
-          const nextLvl = storyLevel + 1
-          if (onNextStoryLevel) {
-            onNextStoryLevel(nextLvl)
-          }
-          const nextSeed = 1000 + nextLvl
-          startGame(
-            nextSeed,
-            false,
-            undefined,
-            1000,
-            undefined,
-            { mio: mazoMioParsed, rival: [] },
-            undefined,
-            undefined,
-            'auth-v2',
-            treeBonusHpRef.current,
-            0,
-            treeSkinRef.current,
-            null,
-            3,
-            undefined,
-            undefined,
-            9999,
-            undefined,
-            undefined,
-            undefined,
-            false,
-            1,
-            true,
-            nextLvl
-          )
-        } else {
-          if (onBackToMenu) onBackToMenu()
-        }
-      } else {
-        const retrySeed = 1000 + storyLevel + Math.floor(Math.random() * 100)
-        startGame(
-          retrySeed,
-          false,
-          undefined,
-          1000,
-          undefined,
-          { mio: mazoMioParsed, rival: [] },
-          undefined,
-          undefined,
-          'auth-v2',
-          treeBonusHpRef.current,
-          0,
-          treeSkinRef.current,
-          null,
-          3,
-          undefined,
-          undefined,
-          9999,
-          undefined,
-          undefined,
-          undefined,
-          false,
-          1,
-          true,
-          storyLevel
-        )
-      }
-      return
-    }
-
     if (matchMode === 'arena_ads') {
       const isPostCombat = gameStatus === 'victory' || gameStatus === 'defeat'
       setCombatAdsBlocked(!isPostCombat)
@@ -2435,6 +2365,85 @@ export default function Battlefield({
     setBattleSummaryResult(null)
         setTournamentResult(null)
     setClanRaidResult(null)
+
+    // ============================================================
+    // MODO HISTORIA (Invasión Mapache - 20 Niveles)
+    // ============================================================
+    if (matchMode === 'story') {
+      soundManager.playSound('click', 0.4)
+      if (gameStatus === 'victory') {
+        const nextLvl = (storyLevel || 1) + 1
+        if (nextLvl <= 20) {
+          if (onNextStoryLevel) {
+            onNextStoryLevel(nextLvl)
+          }
+          const nextSeed = 1000 + nextLvl
+          startGame(
+            nextSeed,
+            false,
+            undefined,
+            1000,
+            undefined,
+            { mio: mazoMioParsed, rival: [] },
+            undefined,
+            undefined,
+            'auth-v2',
+            treeBonusHpRef.current,
+            0,
+            treeSkinRef.current,
+            null,
+            3,
+            undefined,
+            undefined,
+            9999,
+            undefined,
+            undefined,
+            undefined,
+            false,
+            1,
+            true,
+            nextLvl
+          )
+          return
+        } else {
+          // Ha completado los 20 niveles
+          soundManager.playBgm('menu')
+          if (onBackToMenu) onBackToMenu()
+          return
+        }
+      } else {
+        // Reintentar el mismo nivel
+        const currentLvl = storyLevel || 1
+        const retrySeed = 1000 + currentLvl + Math.floor(Math.random() * 1000)
+        startGame(
+          retrySeed,
+          false,
+          undefined,
+          1000,
+          undefined,
+          { mio: mazoMioParsed, rival: [] },
+          undefined,
+          undefined,
+          'auth-v2',
+          treeBonusHpRef.current,
+          0,
+          treeSkinRef.current,
+          null,
+          3,
+          undefined,
+          undefined,
+          9999,
+          undefined,
+          undefined,
+          undefined,
+          false,
+          1,
+          true,
+          currentLvl
+        )
+        return
+      }
+    }
 
     // ============================================================
     // MODO ASALTO A FORTALEZA DE CLAN (clan_fortress)
@@ -4713,7 +4722,7 @@ export default function Battlefield({
                       : '💰 RETIRARSE Y COBRAR BOTÍN'}
                   </button>
                 )}
-                {onBackToMenu && matchMode !== 'tournament' && ((matchMode !== 'arena_ads' && matchMode !== 'story') || gameStatus !== 'victory') && (
+                {onBackToMenu && matchMode !== 'tournament' && (
                   <button
                     className="game-button game-button--secondary"
                     type="button"
@@ -4735,7 +4744,7 @@ export default function Battlefield({
                       onBackToMenu()
                     }}
                   >
-                    🏠 MENÚ PRINCIPAL
+                    {matchMode === 'story' ? '🗺️ MAPA DE NIVELES' : '🏠 MENÚ PRINCIPAL'}
                   </button>
                 )}
               </div>
