@@ -10,10 +10,7 @@ import {
   formatMemberActivityStatus,
   getMemberInactiveDays,
   type ClanTournamentData,
-  type ClanTournamentParticipant,
   type ClanTournamentHistoryItem,
-  type ClanTournamentEntryRequirements,
-  type ClanTournamentCardPrize,
 } from '../../utils/clanManager'
 import type { PlantId, ClanFortressData, ClanFortressMatchOpponent, ClanRaidHistoryEntry } from '../../types/game'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
@@ -760,6 +757,7 @@ export default function Clan({
     showModalConfirm(
       'Cancelar Torneo',
       '¿Estás seguro de cancelar este torneo? Los premios y fondos comunales serán devueltos a la bóveda del clan, y las cartas donadas se reintegrarán a tu inventario.',
+      '↩️',
       async () => {
         try {
           const res = await supabaseService.cancelClanTournament(tournamentId)
@@ -781,6 +779,7 @@ export default function Clan({
     showModalConfirm(
       'Finalizar Torneo y Repartir Premios',
       '¿Deseas dar por terminado el torneo y transferir automáticamente los premios (oro, sobres y cartas de plantas) a los mejores clasificados?',
+      '👑',
       async () => {
         try {
           const res = await supabaseService.finalizeClanTournament(tournamentId)

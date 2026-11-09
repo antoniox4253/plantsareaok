@@ -1383,6 +1383,7 @@
 
 /* Tarjeta Viva: Gran Subasta de Jalapeños */
 [data-action="noticia-arena"],
+.bosque-news-item--devlog,
 .bosque-news-item--plants {
   position: absolute;
   left: 73.744019%;
@@ -1505,9 +1506,223 @@
   transition: transform 0.15s ease, color 0.15s ease;
 }
 
+.bosque-news-item--devlog:hover .bosque-news-devlog__arrow,
 .bosque-news-item--plants:hover .bosque-news-plants__arrow {
   transform: translateX(3px);
   color: #34d399;
+}
+
+.bosque-news-devlog__art-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(6, 30, 22, 0.9));
+  border: 1px solid rgba(52, 211, 153, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.bosque-news-devlog__icon {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.8));
+  animation: newsDevlogBob 2.5s infinite ease-in-out;
+}
+
+@keyframes newsDevlogBob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.08); }
+}
+
+.bosque-news-devlog__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.bosque-news-devlog__top-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bosque-news-devlog__badge {
+  font-size: 8px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #ffffff;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.bosque-news-devlog__type-tag {
+  font-size: 8px;
+  font-weight: 800;
+  color: #6ee7b7;
+  letter-spacing: 0.5px;
+}
+
+.bosque-news-devlog__title {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.3px;
+}
+
+.bosque-news-devlog__desc {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #a7f3d0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
+}
+
+.bosque-news-devlog__arrow {
+  font-size: 13px;
+  font-weight: 900;
+  color: #10b981;
+  margin-left: 2px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+/* ── Tarjeta Viva 2: Buzón de Sugerencias ── */
+.bosque-news-item--suggestions {
+  position: absolute;
+  left: 73.744019%;
+  top: 63.018066%;
+  width: 23.444976%;
+  height: 10.520723%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  background: linear-gradient(135deg, rgba(26, 22, 6, 0.96) 0%, rgba(14, 11, 2, 0.98) 100%);
+  border: 1.5px solid #eab308;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.65), inset 0 0 14px rgba(234, 179, 8, 0.22);
+  box-sizing: border-box;
+  cursor: pointer;
+  z-index: 10;
+  overflow: hidden;
+  user-select: none;
+  font-family: inherit;
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bosque-news-item--suggestions:hover {
+  transform: scale(1.02);
+  border-color: #fde047;
+  box-shadow: 0 0 18px rgba(234, 179, 8, 0.5), inset 0 0 16px rgba(234, 179, 8, 0.35);
+}
+
+.bosque-news-item--suggestions:active {
+  transform: scale(0.98);
+}
+
+.bosque-news-sugg__art-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.3), rgba(30, 24, 5, 0.9));
+  border: 1px solid rgba(250, 204, 21, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 8px rgba(234, 179, 8, 0.4);
+}
+
+.bosque-news-sugg__icon {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 6px rgba(234, 179, 8, 0.8));
+  animation: newsSuggBob 2.5s infinite ease-in-out;
+}
+
+@keyframes newsSuggBob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.08); }
+}
+
+.bosque-news-sugg__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.bosque-news-sugg__top-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bosque-news-sugg__badge {
+  font-size: 8px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  color: #ffffff;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+.bosque-news-sugg__type-tag {
+  font-size: 8px;
+  font-weight: 800;
+  color: #fde68a;
+  letter-spacing: 0.5px;
+}
+
+.bosque-news-sugg__title {
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.3px;
+}
+
+.bosque-news-sugg__desc {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #fef08a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.95;
+}
+
+.bosque-news-sugg__arrow {
+  font-size: 13px;
+  font-weight: 900;
+  color: #eab308;
+  margin-left: 2px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.bosque-news-item--suggestions:hover .bosque-news-sugg__arrow {
+  transform: translateX(3px);
+  color: #fde047;
 }
 
 [data-action="noticia-jardin"] {

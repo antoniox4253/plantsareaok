@@ -19,6 +19,7 @@ import MisionesModal from '../Misiones/MisionesModal'
 import LotteryModal from '../Lottery/LotteryModal'
 import KeybindingsModal from '../KeybindingsModal/KeybindingsModal'
 import NotificationModal from '../Notifications/NotificationModal'
+import NewsAndSuggestionsModal from '../NewsAndSuggestions/NewsAndSuggestionsModal'
 import { SupabaseService, type PlayerNotificationItem } from '../../services/supabaseService'
 import moneda from '../../assets/ico/moneda.webp'
 import gema from '../../assets/ico/gema.webp'
@@ -160,12 +161,14 @@ export default function MainMenu({
   const [lotteryInitialTab, setLotteryInitialTab] = useState<'wheel' | 'auction' | 'code'>('wheel')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isKeybindingsOpen, setIsKeybindingsOpen] = useState(false)
-  const [newsModal, setNewsModal] = useState<{
-    title: string
-    message: string | React.ReactNode
-    actionLabel?: string
-    onAction?: () => void
-  } | null>(null)
+  const [isNewsAndSuggestionsOpen, setIsNewsAndSuggestionsOpen] = useState(false)
+  const [newsModalInitialTab, setNewsModalInitialTab] = useState<'news' | 'suggestions'>('news')
+
+  const handleOpenNewsAndSuggestions = (tab: 'news' | 'suggestions' = 'news') => {
+    soundManager.playSound('click', 0.5)
+    setNewsModalInitialTab(tab)
+    setIsNewsAndSuggestionsOpen(true)
+  }
 
   // Centro de Notificaciones del Jugador
   const [notifications, setNotifications] = useState<PlayerNotificationItem[]>([])
@@ -349,199 +352,7 @@ export default function MainMenu({
     }
   }
 
-  const handleOpenNews = (
-    title: string,
-    message: string | React.ReactNode,
-    actionLabel?: string,
-    onAction?: () => void
-  ) => {
-    soundManager.playSound('click', 0.5)
-    setNewsModal({ title, message, actionLabel, onAction })
-  }
 
-  const handleOpenPlantsTokenNews = () => {
-    soundManager.playSound('click', 0.5)
-    setNewsModal({
-      title: 'Token PLANTS: Preventa Génesis y Packs Fundadores',
-      actionLabel: '🌱 IR A LA PREVENTA',
-      onAction: () => {
-        soundManager.playSound('click', 0.5)
-        onOpenPlantsToken?.()
-      },
-      message: (
-        <div className="bosque-plants-news">
-          <div className="bosque-plants-news__hero">
-            <div className="bosque-plants-news__avatar-wrap">
-              <img
-                src="/game-assets/token/logo.webp"
-                alt="Token PLANTS"
-                className="bosque-plants-news__avatar-img"
-              />
-            </div>
-            <div className="bosque-plants-news__hero-info">
-              <span className="bosque-plants-news__hero-tag">🌱 ECO-FINANZAS · FASE PREVENTA (5 DÍAS)</span>
-              <h4 className="bosque-plants-news__hero-title">¡Lanzamiento Oficial del Token PLANTS!</h4>
-              <p className="bosque-plants-news__hero-sub">
-                Participa en la <strong>Preventa Génesis</strong> exclusiva. Cada compra inyecta un <strong>60% directamente al Pool de Liquidez en USDT</strong>, otorga sobres, oro masivo y activa un vesting diario de 45 días al finalizar la beta.
-              </p>
-            </div>
-          </div>
-
-          <div className="bosque-plants-news__packs-grid">
-            {/* PACK BÁSICO */}
-            <div className="bosque-plants-news__pack-card bosque-plants-news__pack-card--common">
-              <div className="bosque-plants-news__pack-header">
-                <span className="bosque-plants-news__pack-badge">PACK BÁSICO</span>
-                <span className="bosque-plants-news__pack-gems text-gems">+200 Gemas 💎</span>
-              </div>
-              <div className="bosque-plants-news__pack-body">
-                <div className="bosque-plants-news__stat-row">
-                  <span>Recompensas:</span>
-                  <strong>1 Sobre Común + 1,000 Oro</strong>
-                </div>
-                <div className="bosque-plants-news__stat-row">
-                  <span>Inyección Pool:</span>
-                  <strong className="text-usdt">$6.0 USDT (60%)</strong>
-                </div>
-                <div className="bosque-plants-news__stat-row">
-                  <span>Vesting (45d):</span>
-                  <strong className="text-plants">+55.56 PLANTS / día</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* PACK ÉPICO */}
-            <div className="bosque-plants-news__pack-card bosque-plants-news__pack-card--epic">
-              <div className="bosque-plants-news__pack-header">
-                <span className="bosque-plants-news__pack-badge bosque-plants-news__pack-badge--epic">PACK ÉPICO</span>
-                <span className="bosque-plants-news__pack-gems text-gems">+500 Gemas 💎</span>
-              </div>
-              <div className="bosque-plants-news__pack-body">
-                <div className="bosque-plants-news__stat-row">
-                  <span>Recompensas:</span>
-                  <strong>1 Sobre Épico + 2,500 Oro</strong>
-                </div>
-                <div className="bosque-plants-news__stat-row">
-                  <span>Inyección Pool:</span>
-                  <strong className="text-usdt">$15.0 USDT (60%)</strong>
-                </div>
-                <div className="bosque-plants-news__stat-row">
-                  <span>Vesting (45d):</span>
-                  <strong className="text-plants">+166.67 PLANTS / día</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* PACK LEGENDARIO */}
-            <div className="bosque-plants-news__pack-card bosque-plants-news__pack-card--legendary">
-              <div className="bosque-plants-news__pack-header">
-                <span className="bosque-plants-news__pack-badge bosque-plants-news__pack-badge--legendary">PACK LEGENDARIO</span>
-                <span className="bosque-plants-news__pack-gems text-gems">+1,000 Gemas 💎</span>
-              </div>
-              <div className="bosque-plants-news__pack-body">
-                <div className="bosque-plants-news__stat-row">
-                  <span>Recompensas:</span>
-                  <strong>1 Sobre Legendario + 4,000 Oro</strong>
-                </div>
-                <div className="bosque-plants-news__stat-row">
-                  <span>Inyección Pool:</span>
-                  <strong className="text-usdt">$30.0 USDT (60%)</strong>
-                </div>
-                <div className="bosque-plants-news__stat-row">
-                  <span>Vesting (45d):</span>
-                  <strong className="text-plants">+333.33 PLANTS / día</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bosque-plants-news__guarantees">
-            <div className="bosque-plants-news__guarantee-item">
-              <span className="bosque-plants-news__guarantee-icon">💧</span>
-              <div>
-                <strong>Respaldo de Liquidez Real</strong>
-                <p>El 60% de cada compra se inyecta directamente al Pool USDT de respaldo para garantizar valor de intercambio.</p>
-              </div>
-            </div>
-            <div className="bosque-plants-news__guarantee-item">
-              <span className="bosque-plants-news__guarantee-icon">📊</span>
-              <div>
-                <strong>Economía y Vesting Diario</strong>
-                <p>Tokens liberados gradualmente durante 45 días sin inflación descontrolada para proteger a los jugadores.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ),
-    })
-  }
-
-  const handleOpenSecretCodeNews = () => {
-    soundManager.playSound('click', 0.5)
-    setNewsModal({
-      title: 'Código Secreto: ¡Ronda #6 en Vivo!',
-      actionLabel: '🔐 JUGAR CÓDIGO SECRETO',
-      onAction: () => {
-        soundManager.playSound('click', 0.5)
-        setLotteryInitialTab('code')
-        setShowLotteryModal(true)
-      },
-      message: (
-        <div className="bosque-code-news">
-          <div className="bosque-code-news__hero">
-            <div className="bosque-code-news__avatar-wrap">
-              <span className="bosque-code-news__avatar-icon">🔐</span>
-            </div>
-            <div className="bosque-code-news__hero-info">
-              <span className="bosque-code-news__hero-tag">✨ MINIJUEGO TÁCTICO · RONDA 6 EN VIVO</span>
-              <h4 className="bosque-code-news__hero-title">El Desafío Mental de la Arena</h4>
-              <p className="bosque-code-news__hero-sub">
-                ¡Descifra la combinación secreta de <strong>5 plantas únicas</strong>! Pon a prueba tu deducción lógica y llévate el gran bote de gemas.
-              </p>
-            </div>
-          </div>
-
-          <div className="bosque-code-news__prizes-grid">
-            <div className="bosque-code-news__prize-card bosque-code-news__prize-card--jackpot">
-              <span className="bosque-code-news__prize-badge">GRAN BOTE TOP #1 👑</span>
-              <div className="bosque-code-news__prize-val text-gems">50 Gemas 💎</div>
-              <p className="bosque-code-news__prize-hint">Para el primer guerrero que acierte el 100% de la combinación exacta.</p>
-            </div>
-
-            <div className="bosque-code-news__prize-card bosque-code-news__prize-card--ranking">
-              <span className="bosque-code-news__prize-badge bosque-code-news__prize-badge--ranking">PREMIOS TOP 2 AL 10 💰</span>
-              <div className="bosque-code-news__prize-val text-gold">Hasta 100 Oro 🪙</div>
-              <p className="bosque-code-news__prize-hint">Reparto escalonado según tu mejor porcentaje de aciertos en la tabla.</p>
-            </div>
-          </div>
-
-          <div className="bosque-code-news__rules-grid">
-            <div className="bosque-code-news__rule-item">
-              <span className="bosque-code-news__rule-icon">🎟️</span>
-              <div>
-                <strong>3 Intentos Gratuitos</strong>
-                <p>Todos los jugadores reciben 3 intentos sin costo para iniciar la ronda.</p>
-              </div>
-            </div>
-            <div className="bosque-code-news__rule-item">
-              <span className="bosque-code-news__rule-icon">🟢</span>
-              <div>
-                <strong>Semáforo Táctico (Wordle)</strong>
-                <p>Verde = planta y posición correcta · Amarillo = planta en otra casilla · Rojo = descarte.</p>
-              </div>
-            </div>
-            <div className="bosque-code-news__rule-item">
-              <span className="bosque-code-news__rule-icon">🕵️</span>
-              <div>
-                <strong>Pistas Deductivas (10 💎)</strong>
-                <p>Descarta plantas o confirma la presencia de especies clave para resolver el enigma.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ),
-    })
-  }
 
   useEffect(() => {
     const syncProfile = () => setPlayerProfile(UserManager.getProfile())
@@ -1426,84 +1237,72 @@ export default function MainMenu({
         className="hit"
         data-action="noticias"
         aria-label="noticias"
-        title="Noticias y Actualizaciones"
-        onClick={() =>
-          handleOpenNews(
-            '¡Preventa Oficial del Token PLANTS!',
-            '¡El Token PLANTS ya está disponible! Adquiere Packs Fundadores con hasta +1,000 Gemas de bono, sobres de cartas, oro y vesting diario respaldado en liquidez USDT.',
-            '🌱 VER PREVENTA',
-            () => {
-              onOpenPlantsToken?.()
-            }
-          )
-        }
+        title="Noticias, Actualizaciones y Buzón de Sugerencias"
+        onClick={() => handleOpenNewsAndSuggestions('news')}
       >
         noticias
       </button>
 
-      {/* Tarjeta Interactiva Viva: Lanzamiento Token PLANTS */}
+      {/* Tarjeta Interactiva Viva: Blog y Notas de Parche */}
       <div
-        className="bosque-news-item--plants"
+        className="bosque-news-item--devlog"
         data-action="noticia-arena"
         role="button"
         tabIndex={0}
-        aria-label="Token PLANTS: Preventa activa con Packs Fundadores y respaldo USDT"
-        title="Preventa Token PLANTS (Clic para ver detalles y adquirir packs)"
-        onClick={handleOpenPlantsTokenNews}
+        aria-label="Blog Oficial y Notas de Parche: Consulta las novedades y actualizaciones del juego"
+        title="Notas de Actualización (Clic para ver el Blog y Parches)"
+        onClick={() => handleOpenNewsAndSuggestions('news')}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            handleOpenPlantsTokenNews()
+            handleOpenNewsAndSuggestions('news')
           }
         }}
       >
-        <div className="bosque-news-plants__art-wrap">
-          <img
-            src="/game-assets/token/logo.webp"
-            alt="Token PLANTS"
-            className="bosque-news-plants__img"
-          />
+        <div className="bosque-news-devlog__art-wrap">
+          <span className="bosque-news-devlog__icon">📜</span>
         </div>
-        <div className="bosque-news-plants__content">
-          <div className="bosque-news-plants__top-row">
-            <span className="bosque-news-plants__badge">🌱 PREVENTA ACTIVA</span>
-            <span className="bosque-news-plants__type-tag">TOKEN PLANTS</span>
+        <div className="bosque-news-devlog__content">
+          <div className="bosque-news-devlog__top-row">
+            <span className="bosque-news-devlog__badge">🚀 ACTUALIZACIÓN</span>
+            <span className="bosque-news-devlog__type-tag">DEVLOG & PARCHES</span>
           </div>
-          <span className="bosque-news-plants__title">Packs Fundadores PLANTS</span>
-          <span className="bosque-news-plants__desc">
-            Vesting Diario · Bono Gemas 💎 y Respaldo USDT 💧
+          <span className="bosque-news-devlog__title">Notas de Actualización</span>
+          <span className="bosque-news-devlog__desc">
+            Clanes, balance, torneos y mejoras
           </span>
         </div>
-        <span className="bosque-news-plants__arrow">➔</span>
+        <span className="bosque-news-devlog__arrow">➔</span>
       </div>
-      {/* Tarjeta Interactiva Viva: Código Secreto Ronda 6 */}
+
+      {/* Tarjeta Interactiva Viva: Buzón de Sugerencias con Nick de Jugadores */}
       <div
-        className="bosque-news-item--code"
+        className="bosque-news-item--suggestions"
         data-action="noticia-jardin"
         role="button"
         tabIndex={0}
-        aria-label="Código Secreto Ronda 6: Bote de 50 Gemas y 3 intentos gratuitos"
-        title="Código Secreto Ronda #6 (Clic para ver detalles y jugar)"
-        onClick={handleOpenSecretCodeNews}
+        aria-label="Buzón de Sugerencias: Comparte tus ideas con tu Nick de jugador"
+        title="Buzón de Sugerencias (Clic para enviar tu propuesta o votar ideas)"
+        onClick={() => handleOpenNewsAndSuggestions('suggestions')}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            handleOpenSecretCodeNews()
+            handleOpenNewsAndSuggestions('suggestions')
           }
         }}
       >
-        <div className="bosque-news-code__art-wrap">
-          <span className="bosque-news-code__lock-icon">🔐</span>
+        <div className="bosque-news-sugg__art-wrap">
+          <span className="bosque-news-sugg__icon">💡</span>
         </div>
-        <div className="bosque-news-code__content">
-          <div className="bosque-news-code__top-row">
-            <span className="bosque-news-code__badge">✨ RONDA #6 EN VIVO</span>
-            <span className="bosque-news-code__type-tag">MINIJUEGO</span>
+        <div className="bosque-news-sugg__content">
+          <div className="bosque-news-sugg__top-row">
+            <span className="bosque-news-sugg__badge">💡 BUZÓN DE IDEAS</span>
+            <span className="bosque-news-sugg__type-tag">COMUNIDAD</span>
           </div>
-          <span className="bosque-news-code__title">Código Secreto: Ronda 6</span>
-          <span className="bosque-news-code__desc">
-            Bote 50 💎 · 3 Intentos Gratis · ¡Adivina!
+          <span className="bosque-news-sugg__title">Buzón de Sugerencias</span>
+          <span className="bosque-news-sugg__desc">
+            ¡Deja tu propuesta con tu Nick!
           </span>
         </div>
-        <span className="bosque-news-code__arrow">➔</span>
+        <span className="bosque-news-sugg__arrow">➔</span>
       </div>
       <div
         className="bosque-plants-token-banner"
@@ -1642,46 +1441,14 @@ export default function MainMenu({
         </div>
       )}
 
-      {/* ── 4. MODAL DE NOTICIAS / ANUNCIOS ── */}
-      {newsModal && (
-        <div className="bosque-news-modal-backdrop" onClick={() => setNewsModal(null)}>
-          <div className="bosque-news-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="bosque-news-modal-header">
-              <h3 className="bosque-news-modal-title">📰 {newsModal.title}</h3>
-              <button
-                type="button"
-                className="bosque-news-modal-close"
-                onClick={() => setNewsModal(null)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="bosque-news-modal-body">{newsModal.message}</div>
-            <div className="bosque-news-modal-actions">
-              <button
-                type="button"
-                className="bosque-news-modal-btn bosque-news-modal-btn--secondary"
-                onClick={() => setNewsModal(null)}
-              >
-                CERRAR
-              </button>
-              {newsModal.actionLabel && newsModal.onAction && (
-                <button
-                  type="button"
-                  className="bosque-news-modal-btn bosque-news-modal-btn--action"
-                  onClick={() => {
-                    const act = newsModal.onAction
-                    setNewsModal(null)
-                    act?.()
-                  }}
-                >
-                  {newsModal.actionLabel}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── 4. MODAL DE NOTICIAS, BLOG & BUZÓN DE SUGERENCIAS ── */}
+      <NewsAndSuggestionsModal
+        isOpen={isNewsAndSuggestionsOpen}
+        onClose={() => setIsNewsAndSuggestionsOpen(false)}
+        initialTab={newsModalInitialTab}
+        currentUser={userProfile}
+        isAdmin={isAdmin}
+      />
 
       {/* ── 5. CONFIRMACIÓN ACELERAR SOBRE CON ORO ── */}
       {slotToAccelerate &&
