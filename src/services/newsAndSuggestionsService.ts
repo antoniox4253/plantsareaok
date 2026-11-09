@@ -316,12 +316,12 @@ const DEFAULT_SUGGESTIONS: PlayerSuggestion[] = [
   {
     id: 'default-sugg-1',
     player_nick: 'SunflowerQueen',
-    title: 'Emotes animados para reaccionar durante la partida',
+    title: 'Emotes animados y reacciones tácticas durante el combate PvP',
     category: 'mejoras',
     content:
-      'Me gustaría poder enviar caritas o reacciones rápidas de plantas (como un girasol sonriendo o una nuez llorando) mientras jugamos contra otros.',
+      'Poder enviar caritas o reacciones rápidas de plantas (como un girasol sonriendo, una nuez llorando o un chile furioso) mientras jugamos contra rivales.',
     status: 'implementada',
-    likes_count: 28,
+    likes_count: 42,
     has_liked: false,
     admin_response: '¡Implementado! Ya puedes usar la rueda de emotes tácticos durante las partidas PvP.',
     created_at: new Date(Date.now() - 518400000).toISOString(),
@@ -329,29 +329,120 @@ const DEFAULT_SUGGESTIONS: PlayerSuggestion[] = [
   {
     id: 'default-sugg-2',
     player_nick: 'PlantaMaster99',
-    title: 'Agregar modo 2v2 cooperativo entre amigos',
+    title: 'Modo 2v2 Cooperativo en tiempo real entre amigos',
     category: 'mecanicas',
     content:
-      'Sería increíble poder jugar con un amigo en el mismo jardín compartiendo soles o dividiendo las líneas para defendernos juntos de oleadas zombi o contra otros dos jugadores.',
+      'Sería increíble poder jugar con un compañero en el mismo jardín compartiendo soles o dividiendo las líneas para defendernos juntos de oleadas o contra otros dos rivales.',
     status: 'en_desarrollo',
-    likes_count: 14,
+    likes_count: 36,
     has_liked: false,
     admin_response:
-      '¡Gran idea! Nuestro equipo ya está prototipando las dinámicas de salas compartidas para futuras temporadas.',
+      '¡Gran idea! Nuestro equipo ya está prototipando las dinámicas de salas compartidas y dobles carriles para próximas temporadas.',
     created_at: new Date(Date.now() - 259200000).toISOString(),
   },
   {
     id: 'default-sugg-3',
     player_nick: 'BlesSD',
-    title: 'Recompensas semanales por actividad de clan',
+    title: 'Cofre semanal y recompensas acumulativas por actividad del Clan',
     category: 'mecanicas',
     content:
-      'Propongo que los clanes tengan un cofre semanal que se llene según la cantidad de copas y donaciones de todos los miembros del clan.',
+      'Propongo que los clanes tengan un cofre semanal que suba de nivel según la cantidad de copas, donaciones y batallas ganadas por todos los miembros del clan.',
     status: 'en_revision',
-    likes_count: 9,
+    likes_count: 29,
+    has_liked: false,
+    admin_response: 'Evaluando con el equipo de diseño para sincronizarlo con el Fondo de Recompensas de Torneos de Clan.',
+    created_at: new Date(Date.now() - 172800000).toISOString(),
+  },
+  {
+    id: 'default-sugg-4',
+    player_nick: 'GladiadorGélido',
+    title: 'Nueva Planta: Hielaguisantes Primordial con disparo ralentizante en cono',
+    category: 'plantas',
+    content:
+      'Una variante ancestral de guisante que ralentiza en área y congela brevemente al cuarto impacto consecutivo sobre el mismo zombi.',
+    status: 'recibida',
+    likes_count: 24,
     has_liked: false,
     admin_response: null,
-    created_at: new Date(Date.now() - 172800000).toISOString(),
+    created_at: new Date(Date.now() - 140000000).toISOString(),
+  },
+  {
+    id: 'default-sugg-5',
+    player_nick: 'Daineris',
+    title: 'Modo Espectador en directo para torneos de Clan y partidas de líderes',
+    category: 'social',
+    content:
+      'Poder presenciar las finales de los torneos internos del clan en tiempo real como público, con chat de clan en vivo para animar a los combatientes.',
+    status: 'en_revision',
+    likes_count: 21,
+    has_liked: false,
+    admin_response: null,
+    created_at: new Date(Date.now() - 110000000).toISOString(),
+  },
+  {
+    id: 'default-sugg-6',
+    player_nick: 'Sekiro',
+    title: 'Skins cosméticas y auras luminosas para el Árbol del Clan según su nivel',
+    category: 'mejoras',
+    content:
+      'Que el Árbol de la Sabiduría del Clan cambie visualmente según su nivel (follaje dorado, raíces ancestrales, luciérnagas míticas) para reflejar su poder.',
+    status: 'recibida',
+    likes_count: 18,
+    has_liked: false,
+    admin_response: null,
+    created_at: new Date(Date.now() - 90000000).toISOString(),
+  },
+  {
+    id: 'default-sugg-7',
+    player_nick: 'JonSnow',
+    title: 'Historial detallado con reproducción de partidas y huellas del tablero',
+    category: 'mejoras',
+    content:
+      'Guardar las últimas 10 partidas con estadísticas detalladas de daño, soles recolectados y reproducción visual paso a paso para aprender de derrotas.',
+    status: 'implementada',
+    likes_count: 16,
+    has_liked: false,
+    admin_response: '¡Implementado! Ya puedes consultar tu historial completo desde Menú > Mis Partidas.',
+    created_at: new Date(Date.now() - 75000000).toISOString(),
+  },
+  {
+    id: 'default-sugg-8',
+    player_nick: 'Luffy',
+    title: 'Ítem equipable exclusivo para Repetidora: Cañón Doble Dorado',
+    category: 'plantas',
+    content:
+      'Un ítem legendario que aumente la cadencia de la Repetidora y le otorgue un 15% de probabilidad de triple disparo crítico con efecto visual de pólvora dorada.',
+    status: 'en_desarrollo',
+    likes_count: 14,
+    has_liked: false,
+    admin_response: '¡En desarrollo! Siguiendo el éxito del Cinturón de Campeón de Bonk Choy, nuevos ítems equipables exclusivos llegarán esta temporada.',
+    created_at: new Date(Date.now() - 60000000).toISOString(),
+  },
+  {
+    id: 'default-sugg-9',
+    player_nick: 'Zoro',
+    title: 'Torneos Relámpago de fin de semana con reglas especiales y mazos sorpresa',
+    category: 'mecanicas',
+    content:
+      'Mini-torneos de 30 minutos los sábados y domingos con modificadores locos (ej. costo de sol reducido al 50%, plantas gigantes, recarga ultra rápida).',
+    status: 'recibida',
+    likes_count: 11,
+    has_liked: false,
+    admin_response: null,
+    created_at: new Date(Date.now() - 40000000).toISOString(),
+  },
+  {
+    id: 'default-sugg-10',
+    player_nick: 'Nami',
+    title: 'Filtro rápido por rareza (Común, Rara, Épica, Legendaria) en el Jardín',
+    category: 'mejoras',
+    content:
+      'Pestañas o botones de filtro en el inventario del Jardín para ver rápidamente solo plantas Legendarias o Épicas sin tener que buscarlas en toda la lista.',
+    status: 'implementada',
+    likes_count: 9,
+    has_liked: false,
+    admin_response: '¡Implementado! El catálogo del Jardín y Álbum ahora agrupan por rareza y ranuras activas.',
+    created_at: new Date(Date.now() - 25000000).toISOString(),
   },
 ]
 
@@ -503,6 +594,16 @@ export const newsAndSuggestionsService = {
           ...s,
           has_liked: Boolean(s.has_liked) || localLiked.includes(s.id),
         }))
+        // Complementar con ideas de catálogo para que el Top esté siempre nutrido y visible
+        const existingTitles = new Set(combined.map((c: any) => (c.title || '').toLowerCase().trim()))
+        for (const def of DEFAULT_SUGGESTIONS) {
+          if (!existingTitles.has(def.title.toLowerCase().trim())) {
+            combined.push({
+              ...def,
+              has_liked: localLiked.includes(def.id),
+            })
+          }
+        }
         return combined as unknown as PlayerSuggestion[]
       }
 

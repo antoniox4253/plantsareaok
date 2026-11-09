@@ -72,6 +72,7 @@ interface MainMenuProps {
   onOpenBattlePass?: () => void
   onOpenClan?: () => void
   onOpenMarketplace?: () => void
+  onOpenBlog?: (tab?: 'news' | 'suggestions') => void
   onOpenMisiones?: () => void
   onOpenLoteria?: () => void
   onOpenPlantsToken?: (tab?: 'summary' | 'presale' | 'vesting' | 'swap' | 'tokenomics' | 'guide') => void
@@ -126,6 +127,7 @@ export default function MainMenu({
   onOpenMisPartidas,
   onOpenBattlePass,
   onOpenClan,
+  onOpenBlog,
   onOpenMisiones,
   onOpenLoteria,
   onOpenPlantsToken,
@@ -166,6 +168,10 @@ export default function MainMenu({
 
   const handleOpenNewsAndSuggestions = (tab: 'news' | 'suggestions' = 'news') => {
     soundManager.playSound('click', 0.5)
+    if (onOpenBlog) {
+      onOpenBlog(tab)
+      return
+    }
     setNewsModalInitialTab(tab)
     setIsNewsAndSuggestionsOpen(true)
   }

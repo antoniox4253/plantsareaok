@@ -33,6 +33,7 @@ import { MatchmakingService } from './services/matchmakingService'
 import { useAuth } from './hooks/useAuth'
 import AuthModal from './components/Auth/AuthModal'
 import AdminPanel from './components/Admin/AdminPanel'
+import NewsAndSuggestionsModal from './components/NewsAndSuggestions/NewsAndSuggestionsModal'
 import BannedScreen from './components/Common/BannedScreen'
 import PwaInstallPrompt from './components/Common/PwaInstallPrompt'
 import { supabaseService, isSupabaseConfigured } from './services/supabaseService'
@@ -72,6 +73,7 @@ function App() {
     }
     return 'landing'
   })
+  const [blogInitialTab, setBlogInitialTab] = useState<'news' | 'suggestions'>('news')
   const [shopInitialTab, setShopInitialTab] = useState<'packs' | 'pass' | 'gold' | 'energy' | 'market'>(() => {
     if (typeof window !== 'undefined') {
       return getShopTabFromPath(window.location.pathname)
@@ -1580,6 +1582,10 @@ function App() {
             }}
             onOpenClan={() => setScreen('clan')}
             onOpenMarketplace={() => setScreen('market')}
+            onOpenBlog={(tab) => {
+              setBlogInitialTab(tab || 'news')
+              setScreen('blog')
+            }}
             onOpenMisiones={() => setScreen('misiones')}
             onOpenLoteria={() => setScreen('loteria')}
             onOpenPlantsToken={handleOpenPlantsToken}
@@ -2019,6 +2025,28 @@ function App() {
               onOpenAdmin={() => setIsAdminPanelOpen(true)}
               onRewardsChanged={refreshFromServer}
               userElo={userElo}
+            />
+          </div>
+        )}
+
+        
+        {screen === 'blog' && (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+            }}
+          >
+            <NewsAndSuggestionsModal
+              isOpen={true}
+              onClose={() => setScreen('menu')}
+              initialTab={blogInitialTab}
+              currentUser={profile}
+              isAdmin={isAdmin}
             />
           </div>
         )}

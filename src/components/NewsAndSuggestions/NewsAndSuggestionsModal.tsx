@@ -13,7 +13,7 @@ import {
 } from '../../services/newsAndSuggestionsService'
 import './NewsAndSuggestionsModal.css'
 
-interface NewsAndSuggestionsModalProps {
+export interface NewsAndSuggestionsModalProps {
   isOpen: boolean
   onClose: () => void
   initialTab?: 'news' | 'suggestions'
@@ -35,16 +35,20 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
 }) => {
   const [activeTab, setActiveTab] = useState<'news' | 'suggestions'>(initialTab)
 
+  // Mobile navigation sub-views
+  const [mobileNewsTab, setMobileNewsTab] = useState<'list' | 'reader'>('list')
+  const [mobileSuggTab, setMobileSuggTab] = useState<'feed' | 'form'>('feed')
+
   // News states
   const [newsPosts, setNewsPosts] = useState<NewsPost[]>([])
   const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>('todas')
   const [isLoadingNews, setIsLoadingNews] = useState<boolean>(true)
   const [selectedNewsId, setSelectedNewsId] = useState<string | null>(null)
 
-  // Suggestion states
+  // Suggestion states (default to 'top' so users immediately see the Community Leaderboard)
   const [suggestions, setSuggestions] = useState<PlayerSuggestion[]>([])
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState<boolean>(true)
-  const [suggestionFilter, setSuggestionFilter] = useState<'all' | 'top' | 'implemented' | 'mine'>('all')
+  const [suggestionFilter, setSuggestionFilter] = useState<'top' | 'all' | 'implemented' | 'mine'>('top')
   const [selectedSuggestionCat, setSelectedSuggestionCat] = useState<string>('todas')
 
   // Suggestion Form states
@@ -148,6 +152,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
   const handleSelectPost = (postId: string) => {
     soundManager.playSound('click', 0.4)
     setSelectedNewsId(postId)
+    setMobileNewsTab('reader')
   }
 
   // Handle Select AQP Event Post
@@ -165,12 +170,12 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
     } else {
       setSelectedNewsCategory('evento')
     }
+    setMobileNewsTab('reader')
   }
 
   // Handle Suggestion Like Toggle
   const handleToggleLike = async (suggestionId: string) => {
     soundManager.playSound('click', 0.4)
-    // Optimistic update
     setSuggestions((prev) =>
       prev.map((s) => {
         if (s.id === suggestionId) {
@@ -243,6 +248,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
           type: 'success',
           message: '¡Propuesta enviada con éxito! Ya aparece en la lista de ideas comunitarias.',
         })
+        setMobileSuggTab('feed')
         setTimeout(() => setFormFeedback(null), 5000)
       } else {
         setFormFeedback({ type: 'error', message: res.error || 'Error al enviar sugerencia.' })
@@ -333,7 +339,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
     }
   }
 
-  // Filtered Suggestions list
+  // Filtered & Ranked Suggestions list
   const filteredSuggestions = useMemo(() => {
     let list = [...suggestions]
 
@@ -349,6 +355,9 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
           (myId && s.user_id === myId) ||
           (myNick && s.player_nick?.toLowerCase() === myNick)
       )
+    } else {
+      // 'all' -> sorted chronologically by newest
+      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
 
     if (selectedSuggestionCat !== 'todas') {
@@ -367,7 +376,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
       aria-modal="true"
       aria-label="Blog Oficial y Buzón de Sugerencias"
     >
-      {/* ── BARRA SUPERIOR SLIM & ELEGANTE ── */}
+      {/* ── BARRA SUPERIOR RESPONSIVA Y SLIM ── */}
       <header className="news-page-header">
         <div className="news-page-header__left">
           <button
@@ -388,7 +397,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
           </div>
         </div>
 
-        {/* Pestañas Segmentadas Compactas */}
+        {/* Pestañas Segmentadas */}
         <nav className="news-page-tabs" aria-label="Secciones">
           <button
             type="button"
@@ -402,7 +411,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
             className={`news-page-tab ${activeTab === 'suggestions' ? 'news-page-tab--active' : ''}`}
             onClick={() => handleTabChange('suggestions')}
           >
-            💡 Buzón de Sugerencias
+            💡 Buzón Comunitario
             <span className="news-tab-badge">{suggestions.length || '•'}</span>
           </button>
         </nav>
@@ -424,15 +433,33 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
         </div>
       </header>
 
-      {/* ── CUERPO PRINCIPAL HORIZONTAL (MASTER-DETAIL PANORÁMICO) ── */}
+      {/* ── CUERPO PRINCIPAL (MASTER-DETAIL PANORÁMICO O VERTICAL EN MÓVIL) ── */}
       <main className="news-page-body">
         {/* ══════════════════════════════════════════════════════════════════════
-           TAB 1: BLOG DE NOTICIAS & DEVLOG (DISTRIBUCIÓN HORIZONTAL)
+           TAB 1: BLOG DE NOTICIAS & DEVLOG
            ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === 'news' && (
           <div className="news-panoramic-layout">
+            {/* Sub-toggle móvil para alternar entre lista y lectura */}
+            <div className="news-mobile-subnav">
+              <button
+                type="button"
+                className={`news-mobile-subbtn ${mobileNewsTab === 'list' ? 'news-mobile-subbtn--active' : ''}`}
+                onClick={() => setMobileNewsTab('list')}
+              >
+                📋 Lista de Notas ({newsPosts.length})
+              </button>
+              <button
+                type="button"
+                className={`news-mobile-subbtn ${mobileNewsTab === 'reader' ? 'news-mobile-subbtn--active' : ''}`}
+                onClick={() => setMobileNewsTab('reader')}
+              >
+                📖 Leer Artículo
+              </button>
+            </div>
+
             {/* ── COLUMNA IZQUIERDA: CATEGORÍAS & LISTA DE NOTICIAS ── */}
-            <aside className="news-side-nav">
+            <aside className={`news-side-nav ${mobileNewsTab === 'reader' ? 'news-side-nav--mobile-hidden' : ''}`}>
               {/* Tarjeta Compacta AQP Game Fest 2026 */}
               <div className="news-side-spotlight" onClick={handleSelectAqpPost}>
                 <div className="news-side-spotlight__top">
@@ -542,7 +569,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
               {/* Encabezado de la lista */}
               <div className="news-side-nav__header">
                 <span>NOTAS PUBLICADAS ({newsPosts.length})</span>
-                <span className="news-side-nav__hint">Clic para leer</span>
+                <span className="news-side-nav__hint">Toca para leer</span>
               </div>
 
               {/* Lista Scrollable de Artículos */}
@@ -550,7 +577,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                 {isLoadingNews ? (
                   <div className="news-loading-wrap news-loading-wrap--compact">
                     <div className="news-spinner" />
-                    <span>Cargando...</span>
+                    <span>Cargando notas...</span>
                   </div>
                 ) : newsPosts.length === 0 ? (
                   <div className="news-empty-state news-empty-state--compact">
@@ -595,7 +622,18 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
             </aside>
 
             {/* ── COLUMNA DERECHA: ESCENARIO PRINCIPAL (LECTOR COMPLETO O 7 DÍAS) ── */}
-            <section className="news-main-stage" aria-label="Contenido Principal">
+            <section className={`news-main-stage ${mobileNewsTab === 'list' ? 'news-main-stage--mobile-hidden' : ''}`} aria-label="Contenido Principal">
+              {/* Barra móvil para volver a la lista */}
+              <div className="news-reader-mobile-back">
+                <button
+                  type="button"
+                  className="news-reader-mobile-back-btn"
+                  onClick={() => setMobileNewsTab('list')}
+                >
+                  ⬅ Volver a la lista de notas
+                </button>
+              </div>
+
               {/* Opción A: Historial Cronológico de 7 Días */}
               {selectedNewsCategory === 'semanal' ? (
                 <div className="news-weekly-pane">
@@ -706,6 +744,13 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                           </h3>
                         )
                       }
+                      if (trimmed.startsWith('## ')) {
+                        return (
+                          <h2 key={idx} className="news-md-h2">
+                            {trimmed.replace('## ', '')}
+                          </h2>
+                        )
+                      }
                       if (trimmed.startsWith('- ')) {
                         return (
                           <li key={idx} className="news-md-li">
@@ -749,7 +794,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                               className="news-nav-btn news-nav-btn--prev"
                               onClick={() => handleSelectPost(prevPost.id)}
                             >
-                              ⬅ Anterior: {prevPost.title.slice(0, 26)}...
+                              ⬅ Anterior: {prevPost.title.slice(0, 24)}...
                             </button>
                           ) : (
                             <div />
@@ -761,7 +806,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                               className="news-nav-btn news-nav-btn--next"
                               onClick={() => handleSelectPost(nextPost.id)}
                             >
-                              Siguiente: {nextPost.title.slice(0, 26)}... ➔
+                              Siguiente: {nextPost.title.slice(0, 24)}... ➔
                             </button>
                           ) : (
                             <div />
@@ -781,12 +826,30 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
         )}
 
         {/* ══════════════════════════════════════════════════════════════════════
-           TAB 2: BUZÓN DE SUGERENCIAS DE JUGADORES (DISTRIBUCIÓN HORIZONTAL)
+           TAB 2: BUZÓN DE SUGERENCIAS DE JUGADORES (CON TOP LEADERBOARD COMPLETO)
            ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === 'suggestions' && (
-          <div className="news-panoramic-layout">
+          <div className="news-panoramic-layout suggestions-layout">
+            {/* Sub-toggle móvil para alternar entre ver Top propuestas y proponer idea */}
+            <div className="news-mobile-subnav">
+              <button
+                type="button"
+                className={`news-mobile-subbtn ${mobileSuggTab === 'feed' ? 'news-mobile-subbtn--active' : ''}`}
+                onClick={() => setMobileSuggTab('feed')}
+              >
+                🏆 Top Propuestas ({filteredSuggestions.length})
+              </button>
+              <button
+                type="button"
+                className={`news-mobile-subbtn ${mobileSuggTab === 'form' ? 'news-mobile-subbtn--active' : ''}`}
+                onClick={() => setMobileSuggTab('form')}
+              >
+                ✍️ Proponer Nueva Idea
+              </button>
+            </div>
+
             {/* ── COLUMNA IZQUIERDA: FORMULARIO DE PROPUESTA & LEYENDA ── */}
-            <aside className="news-side-nav suggestions-side-nav">
+            <aside className={`news-side-nav suggestions-side-nav ${mobileSuggTab === 'feed' ? 'suggestions-side-nav--mobile-hidden' : ''}`}>
               <div className="suggestions-side-form-card">
                 <div className="suggestions-side-form-card__header">
                   <h4>📬 Proponer Nueva Idea</h4>
@@ -860,7 +923,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
 
               {/* Leyenda de Estados */}
               <div className="suggestions-side-legend">
-                <h5>🌱 Estados del Buzón</h5>
+                <h5>🌱 Estados de las Ideas</h5>
                 <div className="suggestions-legend-rows">
                   <div className="legend-row">
                     <span className="suggestion-status-badge suggestion-badge--received">
@@ -890,14 +953,14 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
               </div>
             </aside>
 
-            {/* ── COLUMNA DERECHA: FEED DE PROPUESTAS DE LA COMUNIDAD ── */}
-            <section className="news-main-stage suggestions-main-stage" aria-label="Sugerencias">
+            {/* ── COLUMNA DERECHA: FEED DE PROPUESTAS CON PODIUM TOP ── */}
+            <section className={`news-main-stage suggestions-main-stage ${mobileSuggTab === 'form' ? 'suggestions-main-stage--mobile-hidden' : ''}`} aria-label="Sugerencias">
               {/* Barra de Filtros Compacta */}
               <div className="suggestions-sub-filter-bar">
                 <div className="suggestions-filter-tabs">
                   {[
-                    { id: 'all', label: 'Todas' },
-                    { id: 'top', label: '🔥 Más Votadas' },
+                    { id: 'top', label: '🔥 Más Votadas (Top)' },
+                    { id: 'all', label: '✨ Todas' },
                     { id: 'implemented', label: '⭐ Implementadas' },
                     { id: 'mine', label: '👤 Mis Ideas' },
                   ].map((item) => (
@@ -917,26 +980,45 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                   ))}
                 </div>
 
-                <select
-                  value={selectedSuggestionCat}
-                  onChange={(e) => setSelectedSuggestionCat(e.target.value)}
-                  className="news-select news-select--dense news-select--compact"
-                >
-                  <option value="todas">Todas las categorías</option>
-                  {SUGGESTION_CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon} {c.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="suggestions-filter-right-actions">
+                  <select
+                    value={selectedSuggestionCat}
+                    onChange={(e) => setSelectedSuggestionCat(e.target.value)}
+                    className="news-select news-select--dense news-select--compact"
+                  >
+                    <option value="todas">Todas las categorías</option>
+                    {SUGGESTION_CATEGORIES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.icon} {c.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    className="suggestions-new-btn-quick"
+                    onClick={() => setMobileSuggTab('form')}
+                  >
+                    ✍️ Proponer
+                  </button>
+                </div>
               </div>
 
-              {/* Cuadrícula de Sugerencias */}
+              {/* Banner Informativo del Ranking Top */}
+              <div className="suggestions-top-banner">
+                <span className="suggestions-top-banner__icon">🏆</span>
+                <div className="suggestions-top-banner__text">
+                  <strong>RANKING DE PROPUESTAS DE LA COMUNIDAD ({filteredSuggestions.length} IDEAS)</strong>
+                  <span>Las sugerencias más votadas por los jugadores son revisadas prioritariamente por el equipo de desarrollo.</span>
+                </div>
+              </div>
+
+              {/* Cuadrícula de Sugerencias con Podium Top 1, 2, 3 */}
               <div className="suggestions-compact-grid">
                 {isLoadingSuggestions ? (
                   <div className="news-loading-wrap">
                     <div className="news-spinner" />
-                    <span>Cargando ideas de la comunidad...</span>
+                    <span>Cargando ranking de ideas de la comunidad...</span>
                   </div>
                 ) : filteredSuggestions.length === 0 ? (
                   <div className="news-empty-state">
@@ -944,7 +1026,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                     <p>No hay sugerencias con este filtro. ¡Sé el primero en proponer una!</p>
                   </div>
                 ) : (
-                  filteredSuggestions.map((sugg) => {
+                  filteredSuggestions.map((sugg, index) => {
                     const statusConf =
                       SUGGESTION_STATUS_CONFIG[sugg.status] || SUGGESTION_STATUS_CONFIG.recibida
                     const catConf = SUGGESTION_CATEGORIES.find((c) => c.id === sugg.category)
@@ -953,18 +1035,36 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                       month: 'short',
                     })
 
+                    const rankNumber = index + 1
+                    const isTop1 = rankNumber === 1 && suggestionFilter === 'top'
+                    const isTop2 = rankNumber === 2 && suggestionFilter === 'top'
+                    const isTop3 = rankNumber === 3 && suggestionFilter === 'top'
+
                     return (
                       <div
                         key={sugg.id}
                         className={`suggestion-compact-card ${
-                          sugg.status === 'implementada'
-                            ? 'suggestion-compact-card--implemented'
-                            : ''
-                        }`}
+                          sugg.status === 'implementada' ? 'suggestion-compact-card--implemented' : ''
+                        } ${isTop1 ? 'suggestion-compact-card--top1' : ''} ${
+                          isTop2 ? 'suggestion-compact-card--top2' : ''
+                        } ${isTop3 ? 'suggestion-compact-card--top3' : ''}`}
                       >
-                        {/* Cabecera */}
+                        {/* Cabecera de la tarjeta con Badge de Rank */}
                         <div className="suggestion-compact-card__header">
                           <div className="suggestion-compact-card__author-info">
+                            {/* Medalla o número de Rank */}
+                            <div className="suggestion-rank-indicator">
+                              {isTop1 ? (
+                                <span className="suggestion-medal suggestion-medal--gold" title="Puesto #1 en Votos">🥇 #1</span>
+                              ) : isTop2 ? (
+                                <span className="suggestion-medal suggestion-medal--silver" title="Puesto #2 en Votos">🥈 #2</span>
+                              ) : isTop3 ? (
+                                <span className="suggestion-medal suggestion-medal--bronze" title="Puesto #3 en Votos">🥉 #3</span>
+                              ) : (
+                                <span className="suggestion-rank-num">#{rankNumber}</span>
+                              )}
+                            </div>
+
                             <div className="suggestion-avatar">
                               {sugg.player_nick.charAt(0).toUpperCase()}
                             </div>
@@ -989,7 +1089,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                                 sugg.has_liked ? 'suggestion-like-btn--active' : ''
                               }`}
                               onClick={() => handleToggleLike(sugg.id)}
-                              title={sugg.has_liked ? 'Quitar voto' : 'Votar'}
+                              title={sugg.has_liked ? 'Quitar voto' : 'Votar esta idea'}
                             >
                               <span className="suggestion-like-icon">👍</span>
                               <span className="suggestion-like-count">{sugg.likes_count}</span>
@@ -1001,12 +1101,12 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                         <h4 className="suggestion-compact-card__title">{sugg.title}</h4>
                         <p className="suggestion-compact-card__text">{sugg.content}</p>
 
-                        {/* Respuesta Oficial */}
+                        {/* Respuesta Oficial del Desarrollador */}
                         {sugg.admin_response && (
                           <div className="suggestion-admin-reply">
                             <div className="suggestion-admin-reply__header">
                               <span className="suggestion-admin-reply__shield">🛡️</span>
-                              <strong>Equipo Desarrollador:</strong>
+                              <strong>Respuesta Oficial de Plants Arena:</strong>
                             </div>
                             <p className="suggestion-admin-reply__body">{sugg.admin_response}</p>
                           </div>
@@ -1061,7 +1161,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                             <textarea
                               value={responseText}
                               onChange={(e) => setResponseText(e.target.value)}
-                              placeholder="Respuesta oficial..."
+                              placeholder="Respuesta oficial del equipo..."
                               rows={2}
                               className="news-textarea news-textarea--dense"
                             />
