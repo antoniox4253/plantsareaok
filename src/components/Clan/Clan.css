@@ -3429,6 +3429,274 @@
   margin-left: 2px;
 }
 
+/* ── CLAN REWARDS PAYOUT BOX (EN MODAL DE AJUSTES) ── */
+.clan-rewards-payout-box {
+  background: linear-gradient(135deg, rgba(16, 24, 39, 0.95) 0%, rgba(13, 20, 33, 0.95) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.4);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(245, 158, 11, 0.08);
+}
+
+.clan-rewards-payout-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.clan-rewards-payout-badge {
+  font-size: 9px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+.clan-rewards-payout-titles h4 {
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.clan-rewards-payout-titles p {
+  margin: 0;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.clan-rewards-payout-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.clan-rewards-metric-card {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+
+.clan-rewards-metric-card small {
+  font-size: 9.5px;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.clan-rewards-metric-card strong {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.clan-rewards-metric-card--surplus {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.clan-surplus-positive {
+  color: #4ade80 !important;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
+}
+
+.clan-surplus-zero {
+  color: #94a3b8 !important;
+}
+
+.clan-rewards-metric-shield {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.clan-rewards-payout-action-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.clan-rewards-no-surplus-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  width: 100%;
+}
+
+.clan-rewards-distribute-btn {
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  border: 1.5px solid #4ade80;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 8px 18px;
+  border-radius: 9px;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  box-shadow: 0 3px 12px rgba(22, 163, 74, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.16s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clan-rewards-distribute-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+  border-color: #86efac;
+  box-shadow: 0 0 16px rgba(74, 222, 128, 0.6);
+  transform: translateY(-1px);
+}
+
+.clan-rewards-distribute-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* ── CLAN VAULT SURPLUS DASHBOARD CARD (EN TAB RECOMPENSAS) ── */
+.clan-vault-surplus-dashboard-card {
+  margin-top: 14px;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(10, 15, 25, 0.95) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(245, 158, 11, 0.08);
+}
+
+.clan-vault-surplus-card-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.clan-vault-surplus-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.clan-vault-surplus-badge {
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: 0.5px;
+}
+
+.clan-vault-surplus-tag {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.clan-vault-surplus-tag--available {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid #4ade80;
+  color: #4ade80;
+}
+
+.clan-vault-surplus-tag--reserve {
+  background: rgba(148, 163, 184, 0.2);
+  border: 1px solid #94a3b8;
+  color: #cbd5e1;
+}
+
+.clan-vault-surplus-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.clan-vault-surplus-desc {
+  margin: 0 0 10px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.clan-vault-surplus-stats-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.clan-vault-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.clan-vault-stat-pill small {
+  color: #94a3b8;
+}
+
+.clan-vault-stat-pill strong {
+  color: #ffffff;
+}
+
+.clan-vault-stat-pill--surplus strong {
+  color: #4ade80;
+}
+
+.clan-vault-surplus-card-right {
+  flex-shrink: 0;
+}
+
+.clan-vault-open-payout-btn {
+  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+  border: 1.5px solid #fbbf24;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 900;
+  padding: 9px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  box-shadow: 0 3px 12px rgba(217, 119, 6, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.clan-vault-open-payout-btn:hover {
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  border-color: #fde68a;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.5);
+  transform: translateY(-1px);
+}
+
+.clan-vault-member-notice {
+  font-size: 10.5px;
+  color: #94a3b8;
+  max-width: 200px;
+  text-align: right;
+  line-height: 1.35;
+}
+
 /* ==========================================================================
    KICK MEMBER VALIDATION MODAL
    ========================================================================== */

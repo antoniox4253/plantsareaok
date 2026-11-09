@@ -2252,6 +2252,31 @@ export const SupabaseService = {
     }
   },
 
+  async distributeClanSurplusEarnings(clanId: string): Promise<{
+    success: boolean
+    surplus_distributed?: number
+    new_vault_gems?: number
+    members_paid_count?: number
+    payouts?: any[]
+    error?: string
+    message?: string
+  }> {
+    if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
+    try {
+      const { data, error } = await (supabase.rpc as any)('distribute_clan_surplus_earnings', {
+        p_clan_id: clanId,
+      })
+      if (error) {
+        logError('distributeClanSurplusEarnings', error)
+        return { success: false, error: error.message }
+      }
+      return data as any
+    } catch (e: any) {
+      logError('distributeClanSurplusEarnings', e)
+      return { success: false, error: e?.message }
+    }
+  },
+
   async requestClanPlantDonation(plantId: string): Promise<{ success: boolean; donation_id?: string; error?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {

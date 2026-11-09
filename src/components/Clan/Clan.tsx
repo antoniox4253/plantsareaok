@@ -1771,7 +1771,7 @@ export default function Clan({
   }, [])
 
   // Open Settings Modal & Load Saved Settings (Exclusivo Líder)
-  const handleOpenSettings = () => {
+  const handleOpenSettings = (initialTab: 'general' | 'competitive' | 'rewards' | 'roles' = 'general') => {
     if (!isLeader) {
       soundManager.playSound('surrender', 0.5)
       showModalAlert('ACCESO RESTRINGIDO', 'Solo el Líder del clan puede acceder a la configuración y ajuste de recompensas.', '🔒', 'warning')
@@ -1804,7 +1804,7 @@ export default function Clan({
       setMemberRewardShares(shares)
     }
 
-    setSettingsTab('general')
+    setSettingsTab(initialTab)
     setShowSettingsModal(true)
   }
 
@@ -1891,6 +1891,118 @@ export default function Clan({
       'Las reglas de admisión, privacidad, permisos competitivos y cuotas de recompensas se han guardado con éxito.',
       '⚙️',
       'success'
+    )
+  }
+
+  // Estado y Handler para Repartir Excedente de Ganancias (Solo Líder)
+  const [isDistributingSurplus, setIsDistributingSurplus] = useState(false)
+
+  const handleDistributeSurplusEarnings = async () => {
+    if (!userClan) return
+    if (!isLeader) {
+      showModalAlert('ACCESO RESTRINGIDO', 'Solo el Líder del clan puede repartir las ganancias excedentes.', '🔒', 'warning')
+      return
+    }
+
+    const WAR_RESERVE = 2800.0
+    const currentVault = Number(userClan.vaultGems ?? userClan.vaultUsd ?? 0)
+    const surplusEarnings = Math.max(0, currentVault - WAR_RESERVE)
+
+    if (surplusEarnings <= 0) {
+      showModalAlert(
+        'SIN GANANCIAS EXCEDENTES',
+        `El Tesoro actual (${currentVault.toFixed(0)} 💎) se encuentra dentro de la Reserva Operativa de Guerra (2,800 💎).\n\nEsta reserva permanece siempre protegida en el clan para defender la base y participar en futuras guerras. Solo las ganancias netas generadas por encima de los 2,800 💎 pueden ser repartidas.`,
+        '🛡️',
+        'warning'
+      )
+      return
+    }
+
+    // Validar suma del 100%
+    const currentShares = { ...memberRewardShares }
+    const totalPct = Math.round(
+      userClan.members.reduce((sum, m) => sum + (Number(currentShares[m.id]) || 0), 0)
+    )
+
+    if (totalPct !== 100) {
+      soundManager.playSound('surrender', 0.6)
+      showModalAlert(
+        'REPARTO INVÁLIDO (DEBE SUMAR 100%)',
+        `Para poder repartir el excedente, la suma de los porcentajes asignados a los miembros debe ser exactamente 100%.\n\n` +
+          `Actualmente suma: ${totalPct}% (${totalPct < 100 ? `Falta asignar ${100 - totalPct}%` : `Excede por ${totalPct - 100}%`}).\n\n` +
+          'Ajusta las cuotas o pulsa "⚖️ Repartir Equitativo" antes de repartir.',
+        '⚠️',
+        'warning'
+      )
+      return
+    }
+
+    // Guardar los porcentajes configurados en el servidor antes de ejecutar el reparto
+    const sharesPayload = userClan.members.map((m) => ({
+      user_id: m.id,
+      percentage: Number(currentShares[m.id]) || 0,
+    }))
+    await supabaseService.updateClanRewardShares(userClan.id, sharesPayload)
+
+    // Formatear mensaje explícito de confirmación con la advertencia de torneos
+    const formattedSurplus = Math.floor(surplusEarnings).toLocaleString()
+    const confirmMessage =
+      `Repartirás todo el excedente de ${formattedSurplus} Gemas 💎 entre los miembros según los porcentajes asignados.\n\n` +
+      `⚠️ ATENCIÓN:\n` +
+      `Al repartir todo el excedente, el Tesoro del clan volverá a la Reserva Operativa (2,800 💎) y no habrá gemas excedentes para torneos hasta que se vuelvan a acumular con ranking y asaltos.\n\n` +
+      `¿Deseas confirmar el reparto masivo ahora?`
+
+    showModalConfirm(
+      'CONFIRMAR REPARTO DE EXCEDENTE',
+      confirmMessage,
+      '💎',
+      async () => {
+        setIsDistributingSurplus(true)
+        soundManager.playSound('click', 0.5)
+
+        try {
+          const res = await supabaseService.distributeClanSurplusEarnings(userClan.id)
+          if (res.success) {
+            soundManager.playSound('victory', 1)
+            // Si el jugador actual recibió parte del reparto, actualizar saldo local
+            if (res.payouts && Array.isArray(res.payouts)) {
+              const myPayout = res.payouts.find(
+                (p: any) => p.user_id === userClan.leaderId || p.username === playerName
+              )
+              if (myPayout && myPayout.gems_received > 0) {
+                onAddTokens(myPayout.gems_received)
+              }
+            }
+            await refreshClanData()
+            if (onRefreshUserData) {
+              await onRefreshUserData()
+            }
+            setShowSettingsModal(false)
+            showModalAlert(
+              '¡EXCEDENTE REPARTIDO CON ÉXITO!',
+              res.message ||
+                `¡Se transfirieron ${formattedSurplus} Gemas 💎 a las cuentas de los miembros! El Tesoro permanece con 2,800 💎 de Reserva Operativa.`,
+              '🎉',
+              'success'
+            )
+          } else {
+            soundManager.playSound('surrender', 0.6)
+            showModalAlert(
+              'NO SE PUDO REPARTIR',
+              res.message || res.error || 'Ocurrió un error al procesar el reparto.',
+              '❌',
+              'error'
+            )
+          }
+        } catch (err: any) {
+          soundManager.playSound('surrender', 0.6)
+          showModalAlert('ERROR', err?.message || 'Error de conexión al repartir excedente.', '❌', 'error')
+        } finally {
+          setIsDistributingSurplus(false)
+        }
+      },
+      `REPARTIR (${formattedSurplus} 💎)`,
+      'CANCELAR'
     )
   }
 
@@ -5197,6 +5309,64 @@ export default function Clan({
                     )
                   })()}
                 </div>
+
+                {/* Panel de Tesoro Comunal & Reparto de Excedente de Temporada */}
+                {(() => {
+                  const vaultGems = Number(userClan.vaultGems ?? userClan.vaultUsd ?? 0)
+                  const surplus = Math.max(0, vaultGems - 2800)
+                  return (
+                    <div className="clan-vault-surplus-dashboard-card">
+                      <div className="clan-vault-surplus-card-left">
+                        <div className="clan-vault-surplus-badge-row">
+                          <span className="clan-vault-surplus-badge">💎 TESORO DEL CLAN &amp; EXCEDENTES</span>
+                          {surplus > 0 ? (
+                            <span className="clan-vault-surplus-tag clan-vault-surplus-tag--available">
+                              🔥 ¡{Math.floor(surplus).toLocaleString()} 💎 DISPONIBLES!
+                            </span>
+                          ) : (
+                            <span className="clan-vault-surplus-tag clan-vault-surplus-tag--reserve">
+                              🛡️ RESERVA PROTEGIDA
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="clan-vault-surplus-title">Ganancias Excedentes de Temporada</h4>
+                        <p className="clan-vault-surplus-desc">
+                          El Tesoro retiene <strong>2,800 💎 de Reserva Operativa</strong> permanente. Todo saldo por encima corresponde a ganancias líquidas de ranking y asaltos que el Líder puede repartir porcentualmente entre los miembros.
+                        </p>
+                        <div className="clan-vault-surplus-stats-pills">
+                          <div className="clan-vault-stat-pill">
+                            <small>Tesoro Total:</small>
+                            <strong>{vaultGems.toFixed(0)} 💎</strong>
+                          </div>
+                          <div className="clan-vault-stat-pill">
+                            <small>Reserva Base:</small>
+                            <span>🛡️ 2,800 💎</span>
+                          </div>
+                          <div className="clan-vault-stat-pill clan-vault-stat-pill--surplus">
+                            <small>Excedente a Repartir:</small>
+                            <strong>{surplus > 0 ? `+${Math.floor(surplus).toLocaleString()} 💎` : '0 💎'}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="clan-vault-surplus-card-right">
+                        {isLeader ? (
+                          <button
+                            type="button"
+                            className="clan-vault-open-payout-btn"
+                            onClick={() => handleOpenSettings('rewards')}
+                          >
+                            ⚙️ CONFIGURAR Y REPARTIR (%)
+                          </button>
+                        ) : (
+                          <div className="clan-vault-member-notice">
+                            👑 <em>El Líder configura los porcentajes y distribuye el excedente a todos los miembros.</em>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
               </>
             )
           })()}
@@ -6345,6 +6515,70 @@ export default function Clan({
                       )
                     })}
                   </div>
+
+                  {/* Bloque Exclusivo: Liquidar y Repartir Excedente de Ganancias */}
+                  {(() => {
+                    const vaultGems = Number(userClan?.vaultGems ?? userClan?.vaultUsd ?? 0)
+                    const WAR_RESERVE = 2800.0
+                    const surplus = Math.max(0, vaultGems - WAR_RESERVE)
+                    const totalPct = Math.round(
+                      (userClan?.members || []).reduce(
+                        (sum, m) => sum + (Number(memberRewardShares[m.id]) || 0),
+                        0
+                      )
+                    )
+                    const isSumValid = totalPct === 100
+
+                    return (
+                      <div className="clan-rewards-payout-box">
+                        <div className="clan-rewards-payout-header">
+                          <div className="clan-rewards-payout-titles">
+                            <span className="clan-rewards-payout-badge">💎 LIQUIDACIÓN DE GANANCIAS</span>
+                            <h4>REPARTIR EXCEDENTE DEL TESORO</h4>
+                            <p>
+                              Transfiere inmediatamente la cuota en Gemas 💎 a la cuenta de cada miembro según su porcentaje.
+                              La Reserva de Guerra (2,800 💎) permanece protegida en el Tesoro del clan.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="clan-rewards-payout-metrics">
+                          <div className="clan-rewards-metric-card">
+                            <small>Tesoro Actual</small>
+                            <strong>{vaultGems.toFixed(0)} 💎</strong>
+                          </div>
+                          <div className="clan-rewards-metric-card">
+                            <small>Reserva Protegida</small>
+                            <span className="clan-rewards-metric-shield">🛡️ 2,800 💎</span>
+                          </div>
+                          <div className="clan-rewards-metric-card clan-rewards-metric-card--surplus">
+                            <small>Excedente Repartible</small>
+                            <strong className={surplus > 0 ? 'clan-surplus-positive' : 'clan-surplus-zero'}>
+                              {surplus > 0 ? `+${Math.floor(surplus).toLocaleString()} 💎` : '0 💎'}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <div className="clan-rewards-payout-action-row">
+                          {surplus <= 0 ? (
+                            <div className="clan-rewards-no-surplus-hint">
+                              🛡️ El Tesoro no supera la Reserva de Guerra (2,800 💎). Acumula victorias en asaltos o clasifica en el ranking para generar excedente.
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="clan-rewards-distribute-btn"
+                              disabled={isDistributingSurplus || !isSumValid}
+                              onClick={handleDistributeSurplusEarnings}
+                              title={!isSumValid ? 'Debes balancear los porcentajes al 100% primero' : 'Repartir todo el excedente entre los miembros'}
+                            >
+                              {isDistributingSurplus ? '⏳ REPARTIENDO...' : `🚀 REPARTIR TODO EL EXCEDENTE (${Math.floor(surplus).toLocaleString()} 💎)`}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
 
