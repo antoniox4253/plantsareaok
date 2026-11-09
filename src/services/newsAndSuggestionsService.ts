@@ -374,6 +374,36 @@ const saveLocalSuggestions = (list: PlayerSuggestion[]) => {
   } catch {}
 }
 
+const LIKED_SUGGESTIONS_KEY = 'plant_arena_liked_suggestions'
+
+function getLocalLikedSuggestions(): string[] {
+  try {
+    const raw = localStorage.getItem(LIKED_SUGGESTIONS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function toggleLocalLikedSuggestion(id: string): { hasLiked: boolean } {
+  try {
+    const list = getLocalLikedSuggestions()
+    const idx = list.indexOf(id)
+    let hasLiked = false
+    if (idx >= 0) {
+      list.splice(idx, 1)
+      hasLiked = false
+    } else {
+      list.push(id)
+      hasLiked = true
+    }
+    localStorage.setItem(LIKED_SUGGESTIONS_KEY, JSON.stringify(list))
+    return { hasLiked }
+  } catch {
+    return { hasLiked: true }
+  }
+}
+
 export const newsAndSuggestionsService = {
   /**
    * Obtiene la lista de noticias y devlogs oficiales.
@@ -468,10 +498,19 @@ export const newsAndSuggestionsService = {
         // Combinar sugerencias locales provisionales si las hay
         const local = getLocalSuggestions()
         const uncommitted = local.filter((l) => !data.some((d: any) => d.id === l.id))
-        return [...uncommitted, ...data] as unknown as PlayerSuggestion[]
+        const localLiked = getLocalLikedSuggestions()
+        const combined = [...uncommitted, ...data].map((s: any) => ({
+          ...s,
+          has_liked: Boolean(s.has_liked) || localLiked.includes(s.id),
+        }))
+        return combined as unknown as PlayerSuggestion[]
       }
 
-      return DEFAULT_SUGGESTIONS
+      const defaultWithLikes = DEFAULT_SUGGESTIONS.map((s) => ({
+        ...s,
+        has_liked: getLocalLikedSuggestions().includes(s.id),
+      }))
+      return defaultWithLikes
     } catch (err) {
       console.warn('Error fetching suggestions:', err)
       return DEFAULT_SUGGESTIONS
@@ -542,7 +581,8 @@ export const newsAndSuggestionsService = {
     suggestionId: string
   ): Promise<{ success: boolean; likes_count?: number; has_liked?: boolean; error?: string }> {
     if (!isSupabaseConfigured() || !supabase) {
-      return { success: true, likes_count: 1, has_liked: true }
+      const local = toggleLocalLikedSuggestion(suggestionId)
+      return { success: true, likes_count: local.hasLiked ? 1 : 0, has_liked: local.hasLiked }
     }
 
     try {
@@ -551,12 +591,28 @@ export const newsAndSuggestionsService = {
       })
 
       if (error) {
-        return { success: false, error: error.message }
+        // Fallback local ante error o usuario sin sesión
+        const local = toggleLocalLikedSuggestion(suggestionId)
+        return { success: true, has_liked: local.hasLiked }
       }
 
-      return data as { success: boolean; likes_count: number; has_liked: boolean }
+      const res = data as any
+      if (res && res.success === false) {
+        // Usuario visitante o no autenticado: registrar voto en almacenamiento local del navegador
+        const local = toggleLocalLikedSuggestion(suggestionId)
+        return { success: true, has_liked: local.hasLiked }
+      }
+
+      if (res && res.success) {
+        toggleLocalLikedSuggestion(suggestionId)
+        return res as { success: boolean; likes_count: number; has_liked: boolean }
+      }
+
+      const local = toggleLocalLikedSuggestion(suggestionId)
+      return { success: true, has_liked: local.hasLiked }
     } catch (err: any) {
-      return { success: false, error: err?.message || 'Error al votar.' }
+      const local = toggleLocalLikedSuggestion(suggestionId)
+      return { success: true, has_liked: local.hasLiked }
     }
   },
 

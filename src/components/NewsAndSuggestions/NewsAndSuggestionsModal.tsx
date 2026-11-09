@@ -34,6 +34,9 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
 }) => {
   const [activeTab, setActiveTab] = useState<'news' | 'suggestions'>(initialTab)
 
+  // Blog View State: 'feed' (Grid / Hero view) or 'article' (Full Reading Mode)
+  const [blogView, setBlogView] = useState<'feed' | 'article'>('feed')
+
   // News states
   const [newsPosts, setNewsPosts] = useState<NewsPost[]>([])
   const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>('todas')
@@ -45,8 +48,10 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState<boolean>(true)
   const [suggestionFilter, setSuggestionFilter] = useState<'all' | 'top' | 'implemented' | 'mine'>('all')
   const [selectedSuggestionCat, setSelectedSuggestionCat] = useState<string>('todas')
+  const [showSuggestionForm, setShowSuggestionForm] = useState<boolean>(false)
+  const [showStatusLegend, setShowStatusLegend] = useState<boolean>(false)
 
-  // Form states
+  // Suggestion Form states
   const [suggTitle, setSuggTitle] = useState('')
   const [suggCategory, setSuggCategory] = useState<SuggestionCategory>('plantas')
   const [suggContent, setSuggContent] = useState('')
@@ -72,21 +77,27 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab)
+      setBlogView('feed')
     }
   }, [isOpen, initialTab])
 
-  // Escape key closes modal
+  // Escape key handler
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        soundManager.playSound('click', 0.4)
-        onClose()
+        if (blogView === 'article') {
+          soundManager.playSound('click', 0.4)
+          setBlogView('feed')
+        } else {
+          soundManager.playSound('click', 0.4)
+          onClose()
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  }, [isOpen, blogView, onClose])
 
   // Load News
   const loadNews = useCallback(async () => {
@@ -95,15 +106,15 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
       const cat = selectedNewsCategory === 'semanal' ? 'todas' : selectedNewsCategory
       const posts = await newsAndSuggestionsService.getNewsPosts(cat)
       setNewsPosts(posts)
-      if (posts.length > 0) {
-        setSelectedNewsId((prev) => (prev && posts.some((p) => p.id === prev) ? prev : posts[0].id))
+      if (posts.length > 0 && !selectedNewsId) {
+        setSelectedNewsId(posts[0].id)
       }
     } catch (err) {
       console.warn('Error loading news posts:', err)
     } finally {
       setIsLoadingNews(false)
     }
-  }, [selectedNewsCategory])
+  }, [selectedNewsCategory, selectedNewsId])
 
   useEffect(() => {
     if (isOpen && activeTab === 'news') {
@@ -111,7 +122,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
     }
   }, [isOpen, activeTab, selectedNewsCategory, loadNews])
 
-  // Active selected article for horizontal reader
+  // Active selected article for reader
   const activePost = useMemo(() => {
     if (!newsPosts.length) return null
     if (selectedNewsId) {
@@ -120,6 +131,22 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
     }
     return newsPosts[0]
   }, [newsPosts, selectedNewsId])
+
+  // Hero article for the blog feed
+  const heroPost = useMemo(() => {
+    if (!newsPosts.length) return null
+    const pinned = newsPosts.find((p) => p.is_pinned)
+    return pinned || newsPosts[0]
+  }, [newsPosts])
+
+  // Other articles in the grid (excluding hero when viewing 'todas')
+  const gridPosts = useMemo(() => {
+    if (selectedNewsCategory !== 'todas') {
+      return newsPosts
+    }
+    if (!heroPost) return newsPosts
+    return newsPosts.filter((p) => p.id !== heroPost.id)
+  }, [newsPosts, heroPost, selectedNewsCategory])
 
   // Load Suggestions
   const loadSuggestions = useCallback(async () => {
@@ -146,12 +173,23 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
   const handleTabChange = (tab: 'news' | 'suggestions') => {
     soundManager.playSound('click', 0.5)
     setActiveTab(tab)
+    if (tab === 'news') {
+      setBlogView('feed')
+    }
   }
 
-  // Handle Select Post
-  const handleSelectPost = (postId: string) => {
+  // Open Article in Reader View
+  const handleOpenArticle = (postId: string) => {
     soundManager.playSound('click', 0.4)
     setSelectedNewsId(postId)
+    setBlogView('article')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Back to Blog Feed
+  const handleBackToFeed = () => {
+    soundManager.playSound('click', 0.4)
+    setBlogView('feed')
   }
 
   // Handle Suggestion Like Toggle
@@ -174,13 +212,18 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
 
     try {
       const res = await newsAndSuggestionsService.toggleSuggestionLike(suggestionId)
-      if (res.success && res.likes_count !== undefined) {
+      if (res.success) {
         setSuggestions((prev) =>
-          prev.map((s) =>
-            s.id === suggestionId
-              ? { ...s, likes_count: res.likes_count!, has_liked: res.has_liked }
-              : s
-          )
+          prev.map((s) => {
+            if (s.id === suggestionId) {
+              return {
+                ...s,
+                likes_count: res.likes_count !== undefined ? res.likes_count : s.likes_count,
+                has_liked: res.has_liked !== undefined ? res.has_liked : s.has_liked,
+              }
+            }
+            return s
+          })
         )
       }
     } catch (err) {
@@ -221,9 +264,10 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
         setSuggestions((prev) => [res.suggestion!, ...prev])
         setSuggTitle('')
         setSuggContent('')
+        setShowSuggestionForm(false)
         setFormFeedback({
           type: 'success',
-          message: '¡Sugerencia enviada con éxito! Gracias por ayudarnos a mejorar Plants Arena.',
+          message: '¡Sugerencia enviada con éxito! Ya aparece en el buzón para que la comunidad vote.',
         })
         setTimeout(() => setFormFeedback(null), 5000)
       } else {
@@ -307,6 +351,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
         setAdminPostContent('')
         setAdminPostIsPinned(false)
         setSelectedNewsId(res.post.id)
+        setBlogView('article')
       }
     } catch (err) {
       console.warn('Error publishing news:', err)
@@ -345,7 +390,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
       aria-modal="true"
       aria-label="Blog Oficial y Buzón de Sugerencias"
     >
-      {/* ── BARRA SUPERIOR PRINCIPAL (FULL SCREEN HEADER) ── */}
+      {/* ── BARRA SUPERIOR PRINCIPAL (RESPONSIVE HEADER) ── */}
       <header className="news-page-header">
         <div className="news-page-header__left">
           <button
@@ -353,29 +398,37 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
             className="news-page-back-btn"
             onClick={() => {
               soundManager.playSound('click', 0.5)
-              onClose()
+              if (activeTab === 'news' && blogView === 'article') {
+                handleBackToFeed()
+              } else {
+                onClose()
+              }
             }}
-            title="Volver al Menú Principal"
+            title={
+              activeTab === 'news' && blogView === 'article'
+                ? 'Volver al listado de noticias'
+                : 'Volver al Menú Principal'
+            }
           >
-            ⬅ VOLVER AL MENÚ
+            {activeTab === 'news' && blogView === 'article'
+              ? '← VOLVER A NOTICIAS'
+              : '⬅ MENÚ PRINCIPAL'}
           </button>
 
           <div className="news-page-title-wrap">
-            <h1 className="news-page-title">🌿 COMUNIDAD &amp; DEVLOG</h1>
-            <span className="news-page-subtitle">
-              Blog Oficial de Actualizaciones, Notas de Parche y Buzón de Ideas
-            </span>
+            <h1 className="news-page-title">🌿 PLANTS ARENA BLOG</h1>
+            <span className="news-page-subtitle">Devlog, Notas de Parche y Buzón de Ideas</span>
           </div>
         </div>
 
-        {/* Pestañas de Navegación */}
-        <nav className="news-page-tabs" aria-label="Secciones">
+        {/* Pestañas de Navegación Segmentadas */}
+        <nav className="news-page-tabs" aria-label="Secciones del Blog">
           <button
             type="button"
             className={`news-page-tab ${activeTab === 'news' ? 'news-page-tab--active' : ''}`}
             onClick={() => handleTabChange('news')}
           >
-            📰 Blog &amp; Actualizaciones
+            📰 Blog &amp; Noticias
           </button>
           <button
             type="button"
@@ -387,7 +440,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
           </button>
         </nav>
 
-        {/* Botón de Cierre Rápido */}
+        {/* Botón de Cierre */}
         <div className="news-page-header__right">
           <button
             type="button"
@@ -404,283 +457,351 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
         </div>
       </header>
 
-      {/* ── BARRA DE SUBFILTROS HORIZONTAL ── */}
-      {activeTab === 'news' && (
-        <div className="news-page-subnav">
-          <div className="news-categories-chips">
-            {[
-              { id: 'todas', label: 'Todas las Notas' },
-              { id: 'semanal', label: '⏱️ Últimos 7 Días (Bloques)' },
-              { id: 'evento', label: '🎉 AQP Game Fest 2026' },
-              { id: 'actualizacion', label: '🚀 Actualizaciones' },
-              { id: 'balance', label: '⚖️ Balance' },
-              { id: 'devlog', label: '🛠️ Devlog Técnico' },
-            ].map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`news-chip ${selectedNewsCategory === cat.id ? 'news-chip--active' : ''}`}
-                onClick={() => {
-                  soundManager.playSound('click', 0.4)
-                  setSelectedNewsCategory(cat.id)
-                }}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-
-          {isAdmin && (
-            <button
-              type="button"
-              className="news-admin-post-btn"
-              onClick={() => {
-                soundManager.playSound('click', 0.4)
-                setShowAdminPostForm(!showAdminPostForm)
-              }}
-            >
-              {showAdminPostForm ? '✕ Cancelar Publicación' : '✍️ Publicar Noticia'}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* ── FORMULARIO ADMIN DE PUBLICACIÓN ── */}
-      {isAdmin && showAdminPostForm && activeTab === 'news' && (
-        <div className="news-admin-form-wrap">
-          <form className="news-admin-form" onSubmit={handlePublishNewsPost}>
-            <h4 className="news-admin-form__title">🛡️ Publicar Actualización en el Blog</h4>
-            <div className="news-admin-form__row">
-              <input
-                type="text"
-                placeholder="Título de la Noticia / Parche"
-                value={adminPostTitle}
-                onChange={(e) => setAdminPostTitle(e.target.value)}
-                required
-                className="news-input"
-              />
-              <input
-                type="text"
-                placeholder="Versión (ej. v1.5.1)"
-                value={adminPostVersion}
-                onChange={(e) => setAdminPostVersion(e.target.value)}
-                className="news-input news-input--short"
-              />
-              <select
-                value={adminPostCategory}
-                onChange={(e) => setAdminPostCategory(e.target.value)}
-                className="news-select"
-              >
-                <option value="actualizacion">🚀 Actualización</option>
-                <option value="balance">⚖️ Balance</option>
-                <option value="devlog">🛠️ Devlog</option>
-                <option value="evento">🎉 Evento</option>
-              </select>
-            </div>
-            <input
-              type="text"
-              placeholder="Resumen corto visible en la tarjeta..."
-              value={adminPostSummary}
-              onChange={(e) => setAdminPostSummary(e.target.value)}
-              className="news-input"
-            />
-            <textarea
-              placeholder="Contenido detallado (admite títulos con ###, viñetas con - y párrafos)..."
-              value={adminPostContent}
-              onChange={(e) => setAdminPostContent(e.target.value)}
-              required
-              rows={4}
-              className="news-textarea"
-            />
-            <div className="news-admin-form__actions">
-              <label className="news-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={adminPostIsPinned}
-                  onChange={(e) => setAdminPostIsPinned(e.target.checked)}
-                />
-                Fijar arriba de la lista (Destacada)
-              </label>
-              <button
-                type="submit"
-                className="news-btn-primary"
-                disabled={isPublishingPost}
-              >
-                {isPublishingPost ? 'Guardando...' : '🚀 PUBLICAR NOTICIA'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* ── CUERPO PRINCIPAL CON SCROLL FLUIDO ── */}
+      {/* ── CUERPO PRINCIPAL CON SCROLL NATURAL Y ANCHO CENTRADO ── */}
       <main className="news-page-body">
-        {/* ═════════ TAB 1: BLOG DE NOTICIAS & ACTUALIZACIONES (MODO HORIZONTAL) ═════════ */}
-        {activeTab === 'news' && (
-          <div className="news-horizontal-split">
-            {/* ── COLUMNA IZQUIERDA: FEED & LISTA DE NOTAS (TOP AL FINAL) ── */}
-            <aside className="news-feed-column">
-              {/* Tarjeta Destacada de Marketing: AQP Game Fest 2026 */}
-              <div
-                className="news-marketing-card"
-                onClick={() => {
-                  soundManager.playSound('click', 0.4)
-                  const aqpPost = newsPosts.find(
-                    (p) =>
-                      p.tag?.toLowerCase().includes('arequipa') ||
-                      p.category === 'evento' ||
-                      p.title?.toLowerCase().includes('aqp')
-                  )
-                  if (aqpPost) {
-                    setSelectedNewsId(aqpPost.id)
-                    setSelectedNewsCategory('evento')
-                  } else {
-                    setSelectedNewsCategory('evento')
-                  }
-                }}
-              >
-                <div className="news-marketing-card__top">
-                  <span className="news-marketing-card__badge">🏛️ EVENTO · AREQUIPA</span>
-                  <span className="news-marketing-card__live">🔥 PARTICIPACIÓN OFICIAL</span>
-                </div>
-                <h4 className="news-marketing-card__title">
-                  ¡Plants Arena en AQP Game Fest 2026!
-                </h4>
-                <p className="news-marketing-card__desc">
-                  Exhibición oficial en el Complejo Cultural Ateneo. Encuéntranos en la vitrina de juegos en <strong>aqpgamefest.com/juegos.html</strong>.
-                </p>
-                <div className="news-marketing-card__action">
-                  <a
-                    href="https://aqpgamefest.com/juegos.html"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="news-marketing-card__btn"
-                    onClick={(e) => e.stopPropagation()}
+        <div className="news-page-inner">
+          {/* ══════════════════════════════════════════════════════════════════════
+             TAB 1: BLOG DE NOTICIAS & ACTUALIZACIONES
+             ══════════════════════════════════════════════════════════════════════ */}
+          {activeTab === 'news' && (
+            <>
+              {/* ── VISTA 1: FEED DE ARTÍCULOS (PORTADA + GRID) ── */}
+              {blogView === 'feed' && (
+                <div className="news-blog-feed-view">
+                  {/* Banner Destacado: Presencia en AQP Game Fest 2026 */}
+                  <div
+                    className="news-marketing-banner"
+                    onClick={() => {
+                      soundManager.playSound('click', 0.4)
+                      const aqpPost = newsPosts.find(
+                        (p) =>
+                          p.tag?.toLowerCase().includes('arequipa') ||
+                          p.category === 'evento' ||
+                          p.title?.toLowerCase().includes('aqp')
+                      )
+                      if (aqpPost) {
+                        handleOpenArticle(aqpPost.id)
+                      } else {
+                        setSelectedNewsCategory('evento')
+                      }
+                    }}
                   >
-                    🌐 Ver en aqpgamefest.com ➔
-                  </a>
-                </div>
-              </div>
-
-              {/* Encabezado del feed */}
-              <div className="news-feed-column__header">
-                <span className="news-feed-column__title">
-                  📜 Publicaciones ({newsPosts.length})
-                </span>
-                <span className="news-feed-column__hint">
-                  Haz clic para leer el artículo completo
-                </span>
-              </div>
-
-              {/* Lista de Artículos */}
-              <div className="news-feed-list">
-                {isLoadingNews ? (
-                  <div className="news-loading-wrap">
-                    <div className="news-spinner" />
-                    <span>Cargando noticias y notas de parche...</span>
-                  </div>
-                ) : newsPosts.length === 0 ? (
-                  <div className="news-empty-state">
-                    <span className="news-empty-icon">📜</span>
-                    <p>No hay notas en esta categoría por ahora.</p>
-                  </div>
-                ) : (
-                  newsPosts.map((post) => {
-                    const isSelected = activePost?.id === post.id && selectedNewsCategory !== 'semanal'
-                    const dateStr = new Date(post.published_at).toLocaleDateString('es-ES', {
-                      day: 'numeric',
-                      month: 'short',
-                    })
-
-                    return (
-                      <div
-                        key={post.id}
-                        className={`news-feed-card ${isSelected ? 'news-feed-card--selected' : ''} ${
-                          post.is_pinned ? 'news-feed-card--pinned' : ''
-                        }`}
-                        onClick={() => handleSelectPost(post.id)}
-                      >
-                        <div className="news-feed-card__top">
-                          {post.is_pinned && (
-                            <span className="news-badge news-badge--pinned">📌 DESTACADA</span>
-                          )}
-                          {post.version && (
-                            <span className="news-badge news-badge--version">{post.version}</span>
-                          )}
-                          <span className={`news-badge news-badge--cat-${post.category}`}>
-                            {post.tag || post.category}
+                    <div className="news-marketing-banner__left">
+                      <span className="news-marketing-banner__icon">🏛️</span>
+                      <div className="news-marketing-banner__info">
+                        <div className="news-marketing-banner__badges">
+                          <span className="news-marketing-banner__tag">
+                            FERIA DE VIDEOJUEGOS · AREQUIPA
                           </span>
-                          <span className="news-feed-card__date">{dateStr}</span>
-                        </div>
-
-                        <h3 className="news-feed-card__title">{post.title}</h3>
-                        <p className="news-feed-card__snippet">{post.summary}</p>
-
-                        <div className="news-feed-card__footer">
-                          <span className="news-feed-card__status">
-                            {isSelected ? '📖 Leyendo ahora' : '➔ Leer nota'}
+                          <span className="news-marketing-banner__live">
+                            🔥 PARTICIPACIÓN OFICIAL
                           </span>
                         </div>
+                        <h3 className="news-marketing-banner__title">
+                          ¡Plants Arena Presente en el AQP Game Fest 2026!
+                        </h3>
+                        <p className="news-marketing-banner__desc">
+                          Exhibición oficial en el Complejo Cultural Ateneo. Encuéntranos en la vitrina de juegos en{' '}
+                          <strong>aqpgamefest.com/juegos.html</strong>.
+                        </p>
                       </div>
-                    )
-                  })
-                )}
-              </div>
-            </aside>
-
-            {/* ── COLUMNA DERECHA: LECTOR COMPLETO Y TIMELINE HORIZONTAL ── */}
-            <section className="news-reader-column" aria-label="Contenido de la Noticia">
-              {/* Si se selecciona la vista semanal de 7 días */}
-              {selectedNewsCategory === 'semanal' ? (
-                <div className="news-weekly-view">
-                  <div className="news-weekly-view__header">
-                    <span className="news-weekly-icon">📅</span>
-                    <div>
-                      <h2 className="news-weekly-view__title">
-                        Mejoras de los Últimos 7 Días (Bloque a Bloque)
-                      </h2>
-                      <p className="news-weekly-view__desc">
-                        Revisa en formato horizontal día a día cada avance técnico, balance competitivo y novedades incorporadas en Plants Arena.
-                      </p>
                     </div>
+                    <a
+                      href="https://aqpgamefest.com/juegos.html"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="news-marketing-banner__link-btn"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      🌐 Ver en aqpgamefest.com ➔
+                    </a>
                   </div>
 
-                  <div className="news-weekly-grid">
-                    {WEEKLY_UPDATES_BLOCKS.map((block) => (
-                      <div key={block.dayNumber} className="news-weekly-card">
-                        <div className="news-weekly-card__header">
-                          <span className="news-weekly-card__day-badge">
-                            Día {block.dayNumber} · {block.dateLabel}
-                          </span>
-                          <span
-                            className="news-weekly-card__tag"
-                            style={{ borderColor: block.tagColor, color: block.tagColor }}
-                          >
-                            {block.tag}
-                          </span>
-                        </div>
+                  {/* Barra de Filtros de Categorías */}
+                  <div className="news-categories-bar">
+                    <div className="news-categories-scroll">
+                      {[
+                        { id: 'todas', label: 'Todas las Notas' },
+                        { id: 'semanal', label: '⏱️ Últimos 7 Días (Bloques)' },
+                        { id: 'evento', label: '🎉 AQP Game Fest 2026' },
+                        { id: 'actualizacion', label: '🚀 Actualizaciones' },
+                        { id: 'balance', label: '⚖️ Balance' },
+                        { id: 'devlog', label: '🛠️ Devlog Técnico' },
+                      ].map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          className={`news-chip ${selectedNewsCategory === cat.id ? 'news-chip--active' : ''}`}
+                          onClick={() => {
+                            soundManager.playSound('click', 0.4)
+                            setSelectedNewsCategory(cat.id)
+                          }}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
 
-                        <div className="news-weekly-card__title-row">
-                          <span className="news-weekly-card__icon">{block.icon}</span>
-                          <h4 className="news-weekly-card__title">{block.title}</h4>
-                        </div>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        className="news-admin-post-btn"
+                        onClick={() => {
+                          soundManager.playSound('click', 0.4)
+                          setShowAdminPostForm(!showAdminPostForm)
+                        }}
+                      >
+                        {showAdminPostForm ? '✕ Cancelar' : '✍️ Publicar Noticia'}
+                      </button>
+                    )}
+                  </div>
 
-                        <p className="news-weekly-card__summary">{block.summary}</p>
-
-                        <ul className="news-weekly-card__highlights">
-                          {block.highlights.map((h, i) => (
-                            <li key={i}>{h}</li>
-                          ))}
-                        </ul>
+                  {/* Formulario Admin (Desplegable) */}
+                  {isAdmin && showAdminPostForm && (
+                    <form className="news-admin-form" onSubmit={handlePublishNewsPost}>
+                      <h4 className="news-admin-form__title">🛡️ Publicar Actualización en el Blog</h4>
+                      <div className="news-admin-form__row">
+                        <input
+                          type="text"
+                          placeholder="Título de la Noticia / Parche"
+                          value={adminPostTitle}
+                          onChange={(e) => setAdminPostTitle(e.target.value)}
+                          required
+                          className="news-input"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Versión (ej. v1.5.1)"
+                          value={adminPostVersion}
+                          onChange={(e) => setAdminPostVersion(e.target.value)}
+                          className="news-input news-input--short"
+                        />
+                        <select
+                          value={adminPostCategory}
+                          onChange={(e) => setAdminPostCategory(e.target.value)}
+                          className="news-select"
+                        >
+                          <option value="actualizacion">🚀 Actualización</option>
+                          <option value="balance">⚖️ Balance</option>
+                          <option value="devlog">🛠️ Devlog</option>
+                          <option value="evento">🎉 Evento</option>
+                        </select>
                       </div>
-                    ))}
-                  </div>
+                      <input
+                        type="text"
+                        placeholder="Resumen corto visible en la tarjeta..."
+                        value={adminPostSummary}
+                        onChange={(e) => setAdminPostSummary(e.target.value)}
+                        className="news-input"
+                      />
+                      <textarea
+                        placeholder="Contenido detallado (admite títulos con ###, viñetas con - y párrafos)..."
+                        value={adminPostContent}
+                        onChange={(e) => setAdminPostContent(e.target.value)}
+                        required
+                        rows={4}
+                        className="news-textarea"
+                      />
+                      <div className="news-admin-form__actions">
+                        <label className="news-checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={adminPostIsPinned}
+                            onChange={(e) => setAdminPostIsPinned(e.target.checked)}
+                          />
+                          Fijar arriba de la lista (Destacada)
+                        </label>
+                        <button
+                          type="submit"
+                          className="news-btn-primary"
+                          disabled={isPublishingPost}
+                        >
+                          {isPublishingPost ? 'Guardando...' : '🚀 PUBLICAR NOTICIA'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* ── SECCIÓN A: HISTORIAL DE 7 DÍAS ── */}
+                  {selectedNewsCategory === 'semanal' && (
+                    <div className="news-weekly-view">
+                      <div className="news-weekly-view__header">
+                        <span className="news-weekly-icon">📅</span>
+                        <div>
+                          <h2 className="news-weekly-view__title">
+                            Mejoras de los Últimos 7 Días (Bloque a Bloque)
+                          </h2>
+                          <p className="news-weekly-view__desc">
+                            Revisa día a día cada avance técnico, balance competitivo y novedades incorporadas en Plants Arena.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="news-weekly-grid">
+                        {WEEKLY_UPDATES_BLOCKS.map((block) => (
+                          <div key={block.dayNumber} className="news-weekly-card">
+                            <div className="news-weekly-card__header">
+                              <span className="news-weekly-card__day-badge">
+                                Día {block.dayNumber} · {block.dateLabel}
+                              </span>
+                              <span
+                                className="news-weekly-card__tag"
+                                style={{ borderColor: block.tagColor, color: block.tagColor }}
+                              >
+                                {block.tag}
+                              </span>
+                            </div>
+
+                            <div className="news-weekly-card__title-row">
+                              <span className="news-weekly-card__icon">{block.icon}</span>
+                              <h4 className="news-weekly-card__title">{block.title}</h4>
+                            </div>
+
+                            <p className="news-weekly-card__summary">{block.summary}</p>
+
+                            <ul className="news-weekly-card__highlights">
+                              {block.highlights.map((h, i) => (
+                                <li key={i}>{h}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── SECCIÓN B: ARTÍCULOS REGULARES DEL BLOG ── */}
+                  {selectedNewsCategory !== 'semanal' && (
+                    <>
+                      {isLoadingNews ? (
+                        <div className="news-loading-wrap">
+                          <div className="news-spinner" />
+                          <span>Cargando publicaciones del blog...</span>
+                        </div>
+                      ) : newsPosts.length === 0 ? (
+                        <div className="news-empty-state">
+                          <span className="news-empty-icon">📜</span>
+                          <p>No hay artículos en esta categoría por ahora.</p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* 1. Tarjeta de Portada / Hero Post (Solo si vemos 'todas' y hay post destacado) */}
+                          {selectedNewsCategory === 'todas' && heroPost && (
+                            <article
+                              className="news-hero-card"
+                              onClick={() => handleOpenArticle(heroPost.id)}
+                            >
+                              <div className="news-hero-card__badge-row">
+                                <span className="news-badge news-badge--pinned">
+                                  📌 NOTICIA DESTACADA
+                                </span>
+                                {heroPost.version && (
+                                  <span className="news-badge news-badge--version">
+                                    {heroPost.version}
+                                  </span>
+                                )}
+                                <span className={`news-badge news-badge--cat-${heroPost.category}`}>
+                                  {heroPost.tag || heroPost.category}
+                                </span>
+                                <span className="news-hero-card__date">
+                                  {new Date(heroPost.published_at).toLocaleDateString('es-ES', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric',
+                                  })}
+                                </span>
+                              </div>
+
+                              <h2 className="news-hero-card__title">{heroPost.title}</h2>
+                              <p className="news-hero-card__summary">{heroPost.summary}</p>
+
+                              <div className="news-hero-card__footer">
+                                <span className="news-hero-card__author">
+                                  ✍️ {heroPost.author || 'Equipo Plants Arena'}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="news-btn-primary news-hero-card__btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleOpenArticle(heroPost.id)
+                                  }}
+                                >
+                                  📖 LEER NOTICIA COMPLETA ➔
+                                </button>
+                              </div>
+                            </article>
+                          )}
+
+                          {/* 2. Cuadrícula de Artículos del Blog (Cards Grid) */}
+                          <div className="news-blog-grid">
+                            {gridPosts.map((post) => {
+                              const dateStr = new Date(post.published_at).toLocaleDateString('es-ES', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })
+
+                              return (
+                                <article
+                                  key={post.id}
+                                  className={`news-blog-card ${post.is_pinned ? 'news-blog-card--pinned' : ''}`}
+                                  onClick={() => handleOpenArticle(post.id)}
+                                >
+                                  <div className="news-blog-card__badges">
+                                    {post.version && (
+                                      <span className="news-badge news-badge--version">
+                                        {post.version}
+                                      </span>
+                                    )}
+                                    <span className={`news-badge news-badge--cat-${post.category}`}>
+                                      {post.tag || post.category}
+                                    </span>
+                                    <span className="news-blog-card__date">{dateStr}</span>
+                                  </div>
+
+                                  <h3 className="news-blog-card__title">{post.title}</h3>
+                                  <p className="news-blog-card__snippet">{post.summary}</p>
+
+                                  <div className="news-blog-card__footer">
+                                    <span className="news-blog-card__author">
+                                      {post.author || 'Plants Arena'}
+                                    </span>
+                                    <span className="news-blog-card__read-link">
+                                      Leer nota ➔
+                                    </span>
+                                  </div>
+                                </article>
+                              )
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
-              ) : activePost ? (
-                <article className="news-full-article">
+              )}
+
+              {/* ── VISTA 2: LECTOR COMPLETO DEL ARTÍCULO (READING VIEW) ── */}
+              {blogView === 'article' && activePost && (
+                <article className="news-reader-article-view">
+                  {/* Barra de Retorno Superior */}
+                  <div className="news-reader-nav-top">
+                    <button
+                      type="button"
+                      className="news-reader-back-link"
+                      onClick={handleBackToFeed}
+                    >
+                      ← Volver a todas las noticias
+                    </button>
+                    <span className="news-reader-tag-label">
+                      Categoría: <strong>{activePost.tag || activePost.category}</strong>
+                    </span>
+                  </div>
+
                   {/* Cabecera del Artículo */}
-                  <header className="news-full-article__header">
-                    <div className="news-full-article__badges">
+                  <header className="news-reader-header">
+                    <div className="news-reader-header__badges">
                       {activePost.is_pinned && (
                         <span className="news-badge news-badge--pinned">📌 DESTACADA</span>
                       )}
@@ -690,7 +811,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                       <span className={`news-badge news-badge--cat-${activePost.category}`}>
                         {activePost.tag || activePost.category}
                       </span>
-                      <span className="news-full-article__date">
+                      <span className="news-reader-header__date">
                         📅 Publicado el{' '}
                         {new Date(activePost.published_at).toLocaleDateString('es-ES', {
                           day: 'numeric',
@@ -698,19 +819,19 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                           year: 'numeric',
                         })}
                       </span>
-                      <span className="news-full-article__author">
+                      <span className="news-reader-header__author">
                         ✍️ {activePost.author || 'Equipo Plants Arena'}
                       </span>
                     </div>
 
-                    <h2 className="news-full-article__title">{activePost.title}</h2>
+                    <h1 className="news-reader-title">{activePost.title}</h1>
 
-                    <div className="news-full-article__lead">
+                    <div className="news-reader-lead">
                       <p>{activePost.summary}</p>
                     </div>
                   </header>
 
-                  {/* Banner Especial si es evento de Arequipa */}
+                  {/* Banner Especial para Eventos */}
                   {activePost.category === 'evento' && (
                     <div className="news-article-event-banner">
                       <div className="news-article-event-banner__content">
@@ -725,21 +846,21 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                         rel="noopener noreferrer"
                         className="news-btn-primary news-btn-primary--link"
                       >
-                        🌐 aqpgamefest.com/juegos.html ➔
+                        🌐 Ver en aqpgamefest.com ➔
                       </a>
                     </div>
                   )}
 
-                  {/* Cuerpo Completo Formateado */}
-                  <div className="news-full-article__body">
+                  {/* Cuerpo Formateado del Artículo */}
+                  <div className="news-reader-body">
                     <div className="news-markdown-content">
                       {activePost.content.split('\n').map((line, idx) => {
                         const trimmed = line.trim()
                         if (trimmed.startsWith('### ')) {
                           return (
-                            <h4 key={idx} className="news-md-h4">
+                            <h3 key={idx} className="news-md-h3">
                               {trimmed.replace('### ', '')}
-                            </h4>
+                            </h3>
                           )
                         }
                         if (trimmed.startsWith('- ')) {
@@ -768,9 +889,9 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                     </div>
                   </div>
 
-                  {/* Pie de Artículo con Navegación entre Notas */}
-                  <footer className="news-full-article__footer">
-                    <div className="news-full-article__nav">
+                  {/* Pie del Lector con Navegación entre Artículos */}
+                  <footer className="news-reader-footer">
+                    <div className="news-reader-prev-next">
                       {(() => {
                         const currentIndex = newsPosts.findIndex((p) => p.id === activePost.id)
                         const prevPost = currentIndex > 0 ? newsPosts[currentIndex - 1] : null
@@ -785,9 +906,9 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                               <button
                                 type="button"
                                 className="news-nav-btn news-nav-btn--prev"
-                                onClick={() => handleSelectPost(prevPost.id)}
+                                onClick={() => handleOpenArticle(prevPost.id)}
                               >
-                                ⬅ Anterior: {prevPost.title.slice(0, 32)}...
+                                ⬅ Anterior: {prevPost.title.slice(0, 30)}...
                               </button>
                             ) : (
                               <div />
@@ -797,9 +918,9 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                               <button
                                 type="button"
                                 className="news-nav-btn news-nav-btn--next"
-                                onClick={() => handleSelectPost(nextPost.id)}
+                                onClick={() => handleOpenArticle(nextPost.id)}
                               >
-                                Siguiente: {nextPost.title.slice(0, 32)}... ➔
+                                Siguiente: {nextPost.title.slice(0, 30)}... ➔
                               </button>
                             ) : (
                               <div />
@@ -808,149 +929,151 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                         )
                       })()}
                     </div>
+
+                    <div className="news-reader-back-bottom">
+                      <button
+                        type="button"
+                        className="news-btn-primary"
+                        onClick={handleBackToFeed}
+                      >
+                        ⬅ VOLVER AL LISTADO DE NOTICIAS
+                      </button>
+                    </div>
                   </footer>
                 </article>
-              ) : (
-                <div className="news-empty-state">
-                  <span className="news-empty-icon">📜</span>
-                  <p>Selecciona una nota de la lista izquierda para leerla aquí.</p>
-                </div>
               )}
-            </section>
-          </div>
-        )}
+            </>
+          )}
 
-        {/* ═════════ TAB 2: BUZÓN DE SUGERENCIAS DE JUGADORES (MODO HORIZONTAL) ═════════ */}
-        {activeTab === 'suggestions' && (
-          <div className="suggestions-horizontal-split">
-            {/* ── COLUMNA IZQUIERDA: FORMULARIO DE PROPUESTA & REGLAS ── */}
-            <aside className="suggestions-form-column">
-              <div className="suggestion-submit-panel">
-                <div className="suggestion-submit-header">
-                  <div>
-                    <h3 className="suggestion-submit-title">📬 Envía tu Propuesta</h3>
-                    <p className="suggestion-submit-subtitle">
-                      ¡Tu opinión construye Plants Arena! Deja tu idea y la comunidad y los desarrolladores la revisarán.
-                    </p>
-                  </div>
-                  <div className="suggestion-player-tag">
-                    <span className="suggestion-player-icon">👤</span>
-                    <span className="suggestion-player-nick">
-                      {currentUser?.username ? (
-                        <strong>{currentUser.username}</strong>
-                      ) : (
-                        'Jardinero Visitante'
-                      )}
-                    </span>
-                  </div>
+          {/* ══════════════════════════════════════════════════════════════════════
+             TAB 2: BUZÓN DE SUGERENCIAS DE JUGADORES
+             ══════════════════════════════════════════════════════════════════════ */}
+          {activeTab === 'suggestions' && (
+            <div className="suggestions-hub-view">
+              {/* Encabezado Comunitario */}
+              <div className="suggestions-hero">
+                <div className="suggestions-hero__info">
+                  <h2 className="suggestions-hero__title">💡 Buzón de Sugerencias de la Comunidad</h2>
+                  <p className="suggestions-hero__desc">
+                    ¡Tu opinión construye Plants Arena! Propón nuevas plantas, mecánicas o mejoras, vota las ideas de otros jardineros y revisa las respuestas oficiales del equipo desarrollador.
+                  </p>
                 </div>
 
-                <form onSubmit={handleSubmitSuggestion} className="suggestion-form">
-                  {!currentUser?.username && (
+                <div className="suggestions-hero__actions">
+                  <button
+                    type="button"
+                    className="suggestions-new-btn"
+                    onClick={() => {
+                      soundManager.playSound('click', 0.4)
+                      setShowSuggestionForm(!showSuggestionForm)
+                    }}
+                  >
+                    {showSuggestionForm ? '✕ Cerrar Formulario' : '✍️ + Proponer Nueva Idea'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Formulario Desplegable para Enviar Sugerencia */}
+              {showSuggestionForm && (
+                <div className="suggestions-form-panel">
+                  <div className="suggestions-form-panel__header">
+                    <h3 className="suggestions-form-panel__title">
+                      📬 Redactar tu Propuesta o Sugerencia
+                    </h3>
+                    <div className="suggestion-player-tag">
+                      <span className="suggestion-player-icon">👤</span>
+                      <span className="suggestion-player-nick">
+                        {currentUser?.username ? (
+                          <strong>{currentUser.username}</strong>
+                        ) : (
+                          'Jardinero Visitante'
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSubmitSuggestion} className="suggestion-form">
+                    {!currentUser?.username && (
+                      <div className="suggestion-form-row">
+                        <input
+                          type="text"
+                          placeholder="Tu Nick o Nombre de Jugador..."
+                          value={suggCustomNick}
+                          onChange={(e) => setSuggCustomNick(e.target.value)}
+                          maxLength={24}
+                          className="news-input"
+                        />
+                      </div>
+                    )}
+
                     <div className="suggestion-form-row">
                       <input
                         type="text"
-                        placeholder="Tu Nick o Nombre de Jugador..."
-                        value={suggCustomNick}
-                        onChange={(e) => setSuggCustomNick(e.target.value)}
-                        maxLength={24}
+                        placeholder="Título de tu idea (ej. Planta: Hielaguisantes Primordial)..."
+                        value={suggTitle}
+                        onChange={(e) => setSuggTitle(e.target.value)}
+                        maxLength={100}
+                        required
                         className="news-input"
                       />
+                      <select
+                        value={suggCategory}
+                        onChange={(e) => setSuggCategory(e.target.value as SuggestionCategory)}
+                        className="news-select"
+                      >
+                        {SUGGESTION_CATEGORIES.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.icon} {cat.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  )}
 
-                  <div className="suggestion-form-row">
-                    <input
-                      type="text"
-                      placeholder="Título de tu idea (ej. Modo supervivencia cooperativo)..."
-                      value={suggTitle}
-                      onChange={(e) => setSuggTitle(e.target.value)}
-                      maxLength={100}
+                    <textarea
+                      placeholder="Detalla tu propuesta aquí... ¿Cómo funcionaría? ¿Qué plantas o mecánicas involucra? Sé lo más específico posible."
+                      value={suggContent}
+                      onChange={(e) => setSuggContent(e.target.value)}
+                      maxLength={1500}
                       required
-                      className="news-input"
+                      rows={4}
+                      className="news-textarea"
                     />
-                    <select
-                      value={suggCategory}
-                      onChange={(e) => setSuggCategory(e.target.value as SuggestionCategory)}
-                      className="news-select"
-                    >
-                      {SUGGESTION_CATEGORIES.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.icon} {cat.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <textarea
-                    placeholder="Detalla tu sugerencia aquí... ¿Cómo funcionaría? ¿Qué plantas o mecánicas involucra? Sé lo más específico posible."
-                    value={suggContent}
-                    onChange={(e) => setSuggContent(e.target.value)}
-                    maxLength={1500}
-                    required
-                    rows={4}
-                    className="news-textarea"
-                  />
+                    <div className="suggestion-form-footer">
+                      <span className="suggestion-char-count">
+                        {suggContent.length} / 1500 caracteres
+                      </span>
 
-                  <div className="suggestion-form-footer">
-                    <span className="suggestion-char-count">
-                      {suggContent.length} / 1500 caracteres
-                    </span>
-
-                    <button
-                      type="submit"
-                      className="news-btn-primary news-btn-primary--send"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? 'Enviando...' : '🚀 PUBLICAR SUGERENCIA'}
-                    </button>
-                  </div>
-
-                  {formFeedback && (
-                    <div className={`suggestion-alert suggestion-alert--${formFeedback.type}`}>
-                      {formFeedback.type === 'success' ? '✅' : '⚠️'} {formFeedback.message}
+                      <div className="suggestions-form-panel__actions">
+                        <button
+                          type="button"
+                          className="news-chip"
+                          onClick={() => setShowSuggestionForm(false)}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          className="news-btn-primary news-btn-primary--send"
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? 'Enviando...' : '🚀 PUBLICAR SUGERENCIA'}
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </form>
-              </div>
 
-              {/* Guía de Estados del Buzón */}
-              <div className="suggestion-info-box">
-                <h4 className="suggestion-info-box__title">🌱 Estados de las Ideas</h4>
-                <div className="suggestion-legend-grid">
-                  <div className="suggestion-legend-item">
-                    <span className="suggestion-status-badge suggestion-badge--received">
-                      📥 Recibida
-                    </span>
-                    <p>Propuesta abierta a votación de la comunidad.</p>
-                  </div>
-                  <div className="suggestion-legend-item">
-                    <span className="suggestion-status-badge suggestion-badge--review">
-                      👀 En Revisión
-                    </span>
-                    <p>Bajo estudio por el equipo de diseño y balance.</p>
-                  </div>
-                  <div className="suggestion-legend-item">
-                    <span className="suggestion-status-badge suggestion-badge--dev">
-                      🔨 En Desarrollo
-                    </span>
-                    <p>Aprobada y programándose en el código del juego.</p>
-                  </div>
-                  <div className="suggestion-legend-item">
-                    <span className="suggestion-status-badge suggestion-badge--done">
-                      ⭐ ¡Implementada!
-                    </span>
-                    <p>¡Disponible oficialmente para todos los jugadores!</p>
-                  </div>
+                    {formFeedback && (
+                      <div className={`suggestion-alert suggestion-alert--${formFeedback.type}`}>
+                        {formFeedback.type === 'success' ? '✅' : '⚠️'} {formFeedback.message}
+                      </div>
+                    )}
+                  </form>
                 </div>
-              </div>
-            </aside>
+              )}
 
-            {/* ── COLUMNA DERECHA: LISTADO DE SUGERENCIAS DE LA COMUNIDAD ── */}
-            <section className="suggestions-feed-column" aria-label="Sugerencias de la Comunidad">
-              {/* Barra de Filtros */}
-              <div className="suggestion-filter-row">
-                <div className="suggestion-filter-tabs">
+              {/* Barra de Filtros y Controles del Buzón */}
+              <div className="suggestions-filter-bar">
+                <div className="suggestions-filter-tabs">
                   {[
                     { id: 'all', label: 'Todas las Ideas' },
                     { id: 'top', label: '🔥 Más Votadas' },
@@ -973,21 +1096,64 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                   ))}
                 </div>
 
-                <select
-                  value={selectedSuggestionCat}
-                  onChange={(e) => setSelectedSuggestionCat(e.target.value)}
-                  className="news-select news-select--compact"
-                >
-                  <option value="todas">Todas las categorías</option>
-                  {SUGGESTION_CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon} {c.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="suggestions-filter-bar__right">
+                  <select
+                    value={selectedSuggestionCat}
+                    onChange={(e) => setSelectedSuggestionCat(e.target.value)}
+                    className="news-select news-select--compact"
+                  >
+                    <option value="todas">Todas las categorías</option>
+                    {SUGGESTION_CATEGORIES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.icon} {c.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    className="suggestions-legend-toggle"
+                    onClick={() => setShowStatusLegend(!showStatusLegend)}
+                    title="Explicación de estados"
+                  >
+                    ℹ️ {showStatusLegend ? 'Ocultar Estados' : 'Ver Estados'}
+                  </button>
+                </div>
               </div>
 
-              {/* Feed en Cuadrícula Dinámica */}
+              {/* Leyenda de Estados Plegable */}
+              {showStatusLegend && (
+                <div className="suggestions-legend-drawer">
+                  <div className="suggestions-legend-grid">
+                    <div className="suggestions-legend-item">
+                      <span className="suggestion-status-badge suggestion-badge--received">
+                        📥 Recibida
+                      </span>
+                      <p>Propuesta abierta a votación de la comunidad.</p>
+                    </div>
+                    <div className="suggestions-legend-item">
+                      <span className="suggestion-status-badge suggestion-badge--review">
+                        👀 En Revisión
+                      </span>
+                      <p>Bajo estudio por el equipo de diseño y balance.</p>
+                    </div>
+                    <div className="suggestions-legend-item">
+                      <span className="suggestion-status-badge suggestion-badge--dev">
+                        🔨 En Desarrollo
+                      </span>
+                      <p>Aprobada y programándose en el código del juego.</p>
+                    </div>
+                    <div className="suggestions-legend-item">
+                      <span className="suggestion-status-badge suggestion-badge--done">
+                        ⭐ ¡Implementada!
+                      </span>
+                      <p>¡Disponible oficialmente para todos los jugadores!</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Feed Completo de Sugerencias de la Comunidad */}
               <div className="suggestions-cards-grid">
                 {isLoadingSuggestions ? (
                   <div className="news-loading-wrap">
@@ -1016,7 +1182,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                           sugg.status === 'implementada' ? 'suggestion-card--implemented' : ''
                         }`}
                       >
-                        {/* Cabecera de la sugerencia */}
+                        {/* Cabecera de la Sugerencia */}
                         <div className="suggestion-card-header">
                           <div className="suggestion-user-info">
                             <div className="suggestion-avatar">
@@ -1043,7 +1209,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                                 sugg.has_liked ? 'suggestion-like-btn--active' : ''
                               }`}
                               onClick={() => handleToggleLike(sugg.id)}
-                              title="Votar por esta sugerencia"
+                              title={sugg.has_liked ? 'Quitar voto' : 'Votar por esta sugerencia'}
                             >
                               <span className="suggestion-like-icon">👍</span>
                               <span className="suggestion-like-count">{sugg.likes_count}</span>
@@ -1051,7 +1217,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                           </div>
                         </div>
 
-                        {/* Contenido */}
+                        {/* Título y Contenido */}
                         <h4 className="suggestion-card-title">{sugg.title}</h4>
                         <p className="suggestion-card-text">{sugg.content}</p>
 
@@ -1142,9 +1308,9 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                   })
                 )}
               </div>
-            </section>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   )

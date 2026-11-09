@@ -3975,3 +3975,15 @@
   }
 }
 
+
+
+.survivor-rewards-banner__timer--frozen {
+  background: rgba(14, 165, 233, 0.25) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important;
+}
+
+.survivor-timer-value--frozen {
+  color: #a5f3fc !important;
+  text-shadow: 0 0 8px rgba(165, 243, 252, 0.85) !important;
+}

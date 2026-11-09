@@ -57,3 +57,77 @@ describe('Liquidación de Guerra de Clanes, Reparto de Gemas a Tesoros y Reinici
     expect(sql).toContain('COALESCE(is_npc, FALSE) = FALSE')
   })
 })
+
+describe('Liquidación de Temporada 2 de Clanes y Reinicio Total de Rankings (Migración 416)', () => {
+  const migration416Path = join(
+    process.cwd(),
+    'supabase',
+    'migrations',
+    '416-settle-clan-season-2-and-reset-all-rankings.sql'
+  )
+
+  it('1. El archivo de migración 416 existe y es accesible', () => {
+    expect(existsSync(migration416Path)).toBe(true)
+  })
+
+  it('2. Ejecuta settle_clan_season_rewards y deposita 11,000 gemas a los tesoros Top 5', () => {
+    const sql = readFileSync(migration416Path, 'utf8')
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.settle_clan_season_rewards()')
+    expect(sql).toContain('v_gems_pool := 5000')
+    expect(sql).toContain('v_gems_pool := 3000')
+    expect(sql).toContain('v_gems_pool := 1500')
+    expect(sql).toContain('v_gems_pool := 1000')
+    expect(sql).toContain('v_gems_pool := 500')
+    expect(sql).toContain('vault_gems = vault_gems + v_gems_pool')
+    expect(sql).toContain('public.settle_clan_season_rewards()')
+  })
+
+  it('3. Registra auditoría con acción SEASON_REWARD y moneda gems', () => {
+    const sql = readFileSync(migration416Path, 'utf8')
+    expect(sql).toContain("'SEASON_REWARD'")
+    expect(sql).toContain("'gems'")
+    expect(sql).toContain('INSERT INTO public.clan_audit_logs')
+    expect(sql).toContain('INSERT INTO public.clan_season_settlements')
+  })
+
+  it('4. Reinicia rankings de clanes (daño, daño diario, coronas y coronas de miembros)', () => {
+    const sql = readFileSync(migration416Path, 'utf8')
+    expect(sql).toContain('damage_dealt = 0')
+    expect(sql).toContain('daily_damage_dealt = 0')
+    expect(sql).toContain('weekly_crowns = 0')
+    expect(sql).toContain('UPDATE public.clan_members')
+  })
+
+  it('5. Archiva survivor_ads_runs en survivor_ads_runs_history', () => {
+    const sql = readFileSync(migration416Path, 'utf8')
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS public.survivor_ads_runs_history')
+    expect(sql).toContain('INSERT INTO public.survivor_ads_runs_history')
+  })
+})
+
+describe('Restauración de Survivor ADS y Regla de Congelamiento en 3 Días (Migración 417)', () => {
+  const migration417Path = join(
+    process.cwd(),
+    'supabase',
+    'migrations',
+    '417-restore-survivor-runs-and-freeze-rules.sql'
+  )
+
+  it('1. El archivo de migración 417 existe y es accesible', () => {
+    expect(existsSync(migration417Path)).toBe(true)
+  })
+
+  it('2. Restaura los registros en survivor_ads_runs desde el histórico', () => {
+    const sql = readFileSync(migration417Path, 'utf8')
+    expect(sql).toContain('INSERT INTO public.survivor_ads_runs')
+    expect(sql).toContain('FROM public.survivor_ads_runs_history')
+    expect(sql).toContain('ON CONFLICT (user_id) DO UPDATE')
+  })
+
+  it('3. Aplica regla de congelamiento tras 3 días en record_survivor_ads_run', () => {
+    const sql = readFileSync(migration417Path, 'utf8')
+    expect(sql).toContain("v_freeze_time TIMESTAMPTZ := '2026-11-12 05:30:00+00'::TIMESTAMPTZ")
+    expect(sql).toContain('IF NOW() >= v_freeze_time THEN')
+    expect(sql).toContain("'frozen', true")
+  })
+})

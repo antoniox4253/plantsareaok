@@ -502,15 +502,22 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
     return () => clearInterval(timer)
   }, [])
 
-  // Reloj regresivo de 5 días para la entrega de premios de Survivor ADS (anclado a 00:00 UTC)
+  // Reloj regresivo de 3 días para congelamiento y cierre definitivo de Survivor ADS
+  // Congelamiento programado: 12 de Noviembre de 2026 a las 05:30 UTC
+  const SURVIVOR_FREEZE_DATE_MS = useMemo(() => new Date('2026-11-12T05:30:00Z').getTime(), [])
   const [survivorRewardCountdown, setSurvivorRewardCountdown] = useState<string>('')
+  const [isSurvivorFrozen, setIsSurvivorFrozen] = useState<boolean>(false)
+
   useEffect(() => {
     const updateSurvivorTimer = () => {
       const now = Date.now()
-      const CYCLE_MS = 5 * 24 * 60 * 60 * 1000 // 5 días exactos en ms
-      const ANCHOR_MS = new Date('2026-10-22T00:00:00Z').getTime()
-      const elapsed = (now - ANCHOR_MS) % CYCLE_MS
-      const remainingMs = CYCLE_MS - (elapsed >= 0 ? elapsed : elapsed + CYCLE_MS)
+      const remainingMs = SURVIVOR_FREEZE_DATE_MS - now
+      if (remainingMs <= 0) {
+        setSurvivorRewardCountdown('❄️ CONGELADO')
+        setIsSurvivorFrozen(true)
+        return
+      }
+      setIsSurvivorFrozen(false)
       const days = Math.floor(remainingMs / (24 * 3600 * 1000))
       const hours = Math.floor((remainingMs % (24 * 3600 * 1000)) / 3600000)
       const minutes = Math.floor((remainingMs % 3600000) / 60000)
@@ -522,7 +529,7 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
     updateSurvivorTimer()
     const interval = setInterval(updateSurvivorTimer, 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [SURVIVOR_FREEZE_DATE_MS])
 
   // Cargar ranking de clanes
   const loadClansRanking = useCallback(() => {
@@ -2305,10 +2312,12 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                         </div>
                       </div>
                     </div>
-                    <div className="survivor-rewards-banner__timer">
-                      <span className="survivor-timer-label">⏳ Entrega:</span>
-                      <strong className="survivor-timer-value">{survivorRewardCountdown || '5d 00h 00m 00s'}</strong>
-                      <small className="survivor-timer-sub">· 00:00 UTC</small>
+                    <div className={`survivor-rewards-banner__timer ${isSurvivorFrozen ? 'survivor-rewards-banner__timer--frozen' : ''}`}>
+                      <span className="survivor-timer-label">{isSurvivorFrozen ? '❄️ Estado:' : '⏳ Cierre:'}</span>
+                      <strong className={`survivor-timer-value ${isSurvivorFrozen ? 'survivor-timer-value--frozen' : ''}`}>
+                        {survivorRewardCountdown || '3d 00h 00m 00s'}
+                      </strong>
+                      <small className="survivor-timer-sub">{isSurvivorFrozen ? '· Ranking Congelado' : '· 3 días (Freeze)'}</small>
                     </div>
                   </div>
 

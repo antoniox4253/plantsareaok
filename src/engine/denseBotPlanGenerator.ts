@@ -33,7 +33,8 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
   let seq = 1
   const slotCooldowns: Record<number, number> = {}
 
-  const sunSlot = deck.findIndex(c => c.plantId === 'sunflower' || c.plantId === 'twinsunflower')
+  const regularSunSlot = deck.findIndex(c => c.plantId === 'sunflower')
+  const sunSlot = regularSunSlot >= 0 ? regularSunSlot : deck.findIndex(c => c.plantId === 'twinsunflower')
   const attackers = deck.map((c, i) => ({ i, card: c })).filter(x => ['repeater', 'threepeater', 'kernelpult', 'peashooter', 'melonpult', 'snowpea', 'gatlingpea'].includes(x.card.plantId))
   const tanks = deck.map((c, i) => ({ i, card: c })).filter(x => ['tallnut', 'wallnut', 'explodeonut'].includes(x.card.plantId))
   const melees = deck.map((c, i) => ({ i, card: c })).filter(x => ['bonkchoy', 'chomper', 'garlic', 'ghostpepper'].includes(x.card.plantId))
@@ -85,7 +86,7 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
       for (const sf of sunflowerTrackers) {
         if (sf.tick < nextSunArrival) nextSunArrival = sf.tick
       }
-      candidateTick = nextSunArrival
+      candidateTick = Math.max(candidateTick + 1, nextSunArrival + 2)
       advanceToTick(candidateTick)
     }
 
@@ -100,7 +101,7 @@ export function generateDenseBotPlan(deck: CartaDeMazo[]): DenseBotAction[] {
       // Rastreamos hasta 4 productores de sol para una economía abundante y segura
       if (sunflowerTrackers.length < 4) {
         sunflowerTrackers.push({
-          tick: candidateTick + 6 + 455,
+          tick: candidateTick + 6 + 455 + 15,
           yield: sunYield,
         })
       }
