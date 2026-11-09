@@ -254,4 +254,26 @@ describe('Distribución de Recompensas de Temporada Ranked (Top 50)', () => {
       expect(sql).toContain('NOT (v_fila.user_elo <= 1600 AND q.user_elo > 3000)')
     })
   })
+  describe('9. Auditoría Estática de Migración 414 (Reinicio Exacto a Valores Iniciales Temporada 3)', () => {
+    const migPath = path.resolve(__dirname, '../../supabase/migrations/414-apply-exact-arena-initial-reset-and-sync-elo-rewards.sql')
+    const sql = fs.readFileSync(migPath, 'utf8')
+
+    it('A. Reinicia Arena 4 y 5 exactamente al valor inicial de Arena 3 (3,001 copas)', () => {
+      expect(sql).toContain('elo_rating = 3001')
+      expect(sql).toContain('WHERE elo_rating >= 2001 AND elo_rating <= 2999')
+    })
+
+    it('B. Reinicia Arena 3 exactamente al valor inicial de Arena 2 (1,601 copas)', () => {
+      expect(sql).toContain('elo_rating = 1601')
+      expect(sql).toContain('WHERE elo_rating >= 1601 AND elo_rating <= 2000')
+    })
+
+    it('C. Sincroniza la tabla elo_rewards con el nuevo espectro oficial', () => {
+      expect(sql).toContain('(1600,   15, 5)')
+      expect(sql).toContain('(3000,   18, 8)')
+      expect(sql).toContain('(5000,   20, 12)')
+      expect(sql).toContain('(8000,   25, 20)')
+      expect(sql).toContain('(999999, 30, 30)')
+    })
+  })
 })
