@@ -523,12 +523,39 @@ export const SupabaseService = {
   async getActiveSeason(): Promise<SeasonRow | null> {
     if (!isSupabaseConfigured()) return null
     try {
-      const { data } = await supabase
+      let { data } = await supabase
         .from('seasons')
         .select('*')
-        .order('created_at', { ascending: false })
+        .eq('is_current', true)
+        .order('season_number', { ascending: false })
         .limit(1)
         .maybeSingle()
+
+      if (!data) {
+        const fallback = await supabase
+          .from('seasons')
+          .select('*')
+          .order('season_number', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        data = fallback.data
+      }
+
+      // Si la temporada encontrada está vencida, invocar auto_settle_expired_season para rollover inmediato
+      if (data && data.ends_at && new Date(data.ends_at).getTime() <= Date.now()) {
+        try {
+          await (supabase.rpc as any)('auto_settle_expired_season', {})
+          const refetch = await supabase
+            .from('seasons')
+            .select('*')
+            .eq('is_current', true)
+            .order('season_number', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          if (refetch.data) data = refetch.data
+        } catch (_) {}
+      }
+
       return data as SeasonRow | null
     } catch {
       return null

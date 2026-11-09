@@ -135,4 +135,28 @@ describe('Distribución de Recompensas de Temporada Ranked (Top 50)', () => {
       expect(sql).toContain('top3_elo_reward = 1500')
     })
   })
+
+  describe('4. Auditoría Estática de Migración 409 (Auto-Settle y Rollover Continuo)', () => {
+    const migPath = path.resolve(__dirname, '../../supabase/migrations/409-auto-settle-season-rewards-and-rollover.sql')
+    const sql = fs.readFileSync(migPath, 'utf8')
+
+    it('A. Define auto_settle_expired_season y settle_season_rewards con rollover automático', () => {
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public.settle_season_rewards')
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public.auto_settle_expired_season')
+      expect(sql).toContain('SECURITY DEFINER')
+    })
+
+    it('B. Crea automáticamente la siguiente temporada con 25 días de duración', () => {
+      expect(sql).toContain("v_next_num := COALESCE(v_season.season_number, 2) + 1")
+      expect(sql).toContain("INTERVAL '25 days'")
+      expect(sql).toContain("INSERT INTO public.seasons")
+      expect(sql).toContain("is_current")
+    })
+
+    it('C. Configura el job cron para auto-liquidación periódica en pg_cron', () => {
+      expect(sql).toContain("cron.schedule")
+      expect(sql).toContain("auto_settle_season_job")
+      expect(sql).toContain("SELECT public.auto_settle_expired_season()")
+    })
+  })
 })
