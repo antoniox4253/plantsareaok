@@ -1,3 +1,4 @@
+import StoryBattlefield from './components/StoryMode/StoryBattlefield'
 import { useState, useEffect, useCallback } from 'react'
 import GameFrame from './components/GameFrame/GameFrame'
 import RotateOverlay from './components/RotateOverlay/RotateOverlay'
@@ -568,6 +569,7 @@ function App() {
   }, [loading, user])
 
   const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'tournament' | 'strategic_test' | 'clan_fortress' | 'arena_ads'>('ranked')
+  const [storyModeLevel, setStoryModeLevel] = useState<number | null>(null)
   const [arenaAdsRun, setArenaAdsRun] = useState<ArenaAdsRun | null>(() => ArenaAdsManager.getStoredRun())
   const [friendlyBet, setFriendlyBet] = useState<number>(0)
   const [tournamentOpponent, setTournamentOpponent] = useState<{ name: string; tournamentId: string } | null>(null)
@@ -928,7 +930,7 @@ function App() {
         if (id.startsWith('inst_base_')) {
           const plantId = id.replace('inst_base_', '')
           return inventario.instances.find(
-            (inst) => inst.plantId === plantId && !inst.isGolden
+            (inst) => inst.plantId === plantId && !Boolean((inst as any).isGolden)
           )?.instanceId
         }
 
@@ -948,7 +950,7 @@ function App() {
         if (!cleanIds.includes(inst.instanceId)) {
           const alreadyHasVariant = cleanIds.some((existingId) => {
             const found = unlistedInstances.find((u) => u.instanceId === existingId)
-            return found && found.plantId === inst.plantId && Boolean(found.isGolden) === Boolean(inst.isGolden)
+            return found && found.plantId === inst.plantId && Boolean((found as any).isGolden) === Boolean((inst as any).isGolden)
           })
           if (!alreadyHasVariant) {
             cleanIds.push(inst.instanceId)
@@ -1104,6 +1106,11 @@ function App() {
     setModoBuscando('tournament')
     setScreen('searching')
     void buscar('tournament', { roomCode: tournamentId, tournamentId })
+  }
+
+    const handleStartStoryLevel = (level: number) => {
+    setStoryModeLevel(level)
+    setScreen('story_battle')
   }
 
   const handleStartArenaAdsMatch = (run: ArenaAdsRun) => {
@@ -1568,6 +1575,8 @@ function App() {
             maxPlayerEnergy={maxPlayerEnergy}
             onPlay={handlePlayNormal}
             onPlayFriendly={handlePlayFriendly}
+            activeDeck={activeDeck}
+            onStartStoryMode={handleStartStoryLevel}
             onStartArenaAdsBattle={handleStartArenaAdsMatch}
             onClaimArenaAdsLoot={handleClaimArenaAdsLoot}
             onOpenMisPartidas={() => setScreen('partidas')}
@@ -1658,6 +1667,27 @@ function App() {
             onCancelar={() => { void salirDeLaCola() }}
           />
         )}
+        
+        {screen === 'story_battle' && storyModeLevel !== null && (
+          <StoryBattlefield
+            level={storyModeLevel}
+            activeDeck={activeDeck}
+            plantInstances={plantInstances}
+            onVictory={(_wonLevel, rewards) => {
+              if (rewards.gold > 0) addGold(rewards.gold)
+              if (rewards.gems > 0) addUserTokens(rewards.gems)
+              void refreshFromServer?.()
+            }}
+            onNextLevel={(nextLvl) => {
+              setStoryModeLevel(nextLvl)
+            }}
+            onExit={() => {
+              setStoryModeLevel(null)
+              setScreen('menu')
+            }}
+          />
+        )}
+
         {screen === 'battle' && (
           <Battlefield
             currentUserId={user?.id ?? null}

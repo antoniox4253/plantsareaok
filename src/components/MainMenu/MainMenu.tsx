@@ -1,3 +1,4 @@
+import StoryModeModal from '../StoryMode/StoryModeModal'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { soundManager } from '../../utils/audioManager'
 import {
@@ -61,6 +62,8 @@ interface MainMenuProps {
   onPlay: () => void
   /** Duelo amistoso: código de sala privada y apuesta opcional. */
   onPlayFriendly?: (roomCode: string, betGems: number) => void
+  activeDeck?: PlantId[]
+  onStartStoryMode?: (level: number) => void
   onStartArenaAdsBattle?: (run: ArenaAdsRun) => void
   onClaimArenaAdsLoot?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => Promise<any> | void
   onStartTournamentMatch?: (opponentName: string, tournamentId: string, tournamentDeck?: PlantId[]) => void
@@ -117,6 +120,8 @@ export default function MainMenu({
   freePackSlots = [],
   onPlay,
   onPlayFriendly,
+  activeDeck,
+  onStartStoryMode,
   onStartArenaAdsBattle,
   onClaimArenaAdsLoot,
   onStartTournamentMatch,
@@ -155,6 +160,7 @@ export default function MainMenu({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [profileInitialTab, setProfileInitialTab] = useState<ProfileTab>('profile')
   const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false)
+  const [isStoryModeModalOpen, setIsStoryModeModalOpen] = useState<boolean>(false)
   const [isArenaAdsModalOpen, setIsArenaAdsModalOpen] = useState<boolean>(false)
   const [isTournamentModalOpen, setIsTournamentModalOpen] = useState(false)
   const [isGlobalChatOpen, setIsGlobalChatOpen] = useState(false)
@@ -1615,10 +1621,25 @@ export default function MainMenu({
         maxPlayerEnergy={maxPlayerEnergy}
         onSelectRanked={onPlay}
         onSelectArenaAds={() => setIsArenaAdsModalOpen(true)}
+        onSelectStoryMode={() => setIsStoryModeModalOpen(true)}
         onSelectTournament={() => setIsTournamentModalOpen(true)}
         onSelectFriendly={onPlayFriendly}
         onSelectStrategicPlaytest={onOpenStrategicPlaytest}
         onOpenShop={onOpenShop}
+      />
+
+      
+      {/* Modo Historia Modal */}
+      <StoryModeModal
+        isOpen={isStoryModeModalOpen}
+        onClose={() => setIsStoryModeModalOpen(false)}
+        onStartLevel={(lvl) => {
+          setIsStoryModeModalOpen(false)
+          onStartStoryMode?.(lvl)
+        }}
+        activeDeck={activeDeck}
+        plantInstances={plantInstances}
+        onOpenCollection={onOpenCollection}
       />
 
       {/* Arena Ads */}

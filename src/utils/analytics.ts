@@ -32,6 +32,7 @@ export type GameScreen =
   | 'menu'
   | 'searching'
   | 'battle'
+  | 'story_battle'
   | 'partidas'
   | 'repeticion'
   | 'collection'
@@ -52,6 +53,7 @@ export const SCREEN_ROUTES: Record<GameScreen, { path: string; title: string }> 
   menu: { path: '/play/menu', title: 'Plant Arena - Menú Principal' },
   searching: { path: '/play/matchmaking', title: 'Plant Arena - Buscando Rival' },
   battle: { path: '/play/in-game', title: 'Plant Arena - En Batalla' },
+  story_battle: { path: '/play/story', title: 'Plant Arena - Modo Historia' },
   shop: { path: '/play/shop', title: 'Plant Arena - Tienda' },
   collection: { path: '/play/collection', title: 'Plant Arena - Colección de Plantas' },
   jardin: { path: '/play/garden', title: 'Plant Arena - Jardín Zen' },

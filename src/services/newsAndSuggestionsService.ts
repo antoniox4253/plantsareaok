@@ -370,7 +370,7 @@ const DEFAULT_SUGGESTIONS: PlayerSuggestion[] = [
     id: 'default-sugg-5',
     player_nick: 'Daineris',
     title: 'Modo Espectador en directo para torneos de Clan y partidas de líderes',
-    category: 'social',
+    category: 'mecanicas',
     content:
       'Poder presenciar las finales de los torneos internos del clan en tiempo real como público, con chat de clan en vivo para animar a los combatientes.',
     status: 'en_revision',

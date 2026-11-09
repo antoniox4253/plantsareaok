@@ -1384,7 +1384,7 @@ export function useInventory() {
         const autoEquipadas: typeof disponibles = []
         const variantKeysSeen = new Set<string>()
         for (const inst of disponibles) {
-          const variantKey = `${inst.plantId}_${Boolean(inst.isGolden)}`
+          const variantKey = `${inst.plantId}_${Boolean((inst as any).isGolden)}`
           if (!variantKeysSeen.has(variantKey)) {
             variantKeysSeen.add(variantKey)
             autoEquipadas.push(inst)

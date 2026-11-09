@@ -25,6 +25,7 @@ interface ModeSelectorModalProps {
   maxPlayerEnergy?: number
   onSelectRanked: () => void
   onSelectArenaAds?: () => void
+  onSelectStoryMode?: () => void
   onSelectTournament?: () => void
   onSelectStrategicPlaytest?: () => void
   onOpenShop?: (tab?: 'packs' | 'pass' | 'gold' | 'energy' | 'market') => void
@@ -53,6 +54,7 @@ export default function ModeSelectorModal({
   maxPlayerEnergy = 20,
   onSelectRanked,
   onSelectArenaAds,
+  onSelectStoryMode,
   onSelectTournament,
   onSelectFriendly,
   onOpenShop,
@@ -105,7 +107,7 @@ export default function ModeSelectorModal({
             </div>
 
             {/* 4 GAME MODES GRID */}
-            <div className="mode-selector-grid-4">
+            <div className="mode-selector-grid-5">
               {/* 1. MODO RANKED */}
               {(() => {
                 const isEnergyDepleted = userElo > 1602 && playerEnergy <= 0
@@ -279,6 +281,59 @@ export default function ModeSelectorModal({
                   }}
                 >
                   🧟 JUGAR (50 💎)
+                </button>
+              </div>
+              {/* 5. MODO HISTORIA: LA INVASIÓN MAPACHE (AL COSTADO DE ARENA SURVIVOR) */}
+              <div
+                className="mode-card mode-card--story"
+                onClick={() => {
+                  soundManager.playSound('click', 0.5)
+                  onClose()
+                  if (onSelectStoryMode) {
+                    onSelectStoryMode()
+                  }
+                }}
+              >
+                <div
+                  className="mode-card__badge"
+                  style={{
+                    background: 'rgba(168, 85, 247, 0.25)',
+                    color: '#c084fc',
+                    borderColor: 'rgba(168, 85, 247, 0.6)',
+                  }}
+                >
+                  📖 MODO HISTORIA
+                </div>
+                <div className="mode-card__icon">🦝</div>
+                <h3 className="mode-card__name">Modo Historia</h3>
+                <p className="mode-card__desc">
+                  ¡El Rey Garra y sus 4 mapaches asaltan tu jardín! Supera 20 niveles y 3 oleadas épicas con tus plantas.
+                </p>
+                <div className="mode-card__perks">
+                  <span>👑 Jefe Final: Rey Garra</span>
+                  <span>⚔️ 20 Niveles de Dificultad</span>
+                  <span>🦝 4 Mapaches y Habilidades</span>
+                  <span>🛡️ 3 Oleadas por Nivel</span>
+                </div>
+                <button
+                  type="button"
+                  className="mode-card__action-btn mode-card__action-btn--story"
+                  style={{
+                    background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)',
+                    borderColor: '#c084fc',
+                    color: '#ffffff',
+                    fontWeight: 900,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    soundManager.playSound('click', 0.5)
+                    onClose()
+                    if (onSelectStoryMode) {
+                      onSelectStoryMode()
+                    }
+                  }}
+                >
+                  📖 JUGAR HISTORIA
                 </button>
               </div>
             </div>

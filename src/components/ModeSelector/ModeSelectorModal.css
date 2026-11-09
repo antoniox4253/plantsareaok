@@ -18,7 +18,7 @@
 
 .mode-selector-card {
   width: 100%;
-  max-width: 920px;
+  max-width: 1080px;
   height: 504px;
   max-height: calc(100% - 20px);
   margin: auto;
@@ -92,9 +92,10 @@
 }
 
 /* 4 MODES GRID */
+.mode-selector-grid-5,
 .mode-selector-grid-4 {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   flex: 1;
   min-height: 0;
@@ -680,3 +681,15 @@
   font-size: 12px;
 }
 
+
+/* MODO HISTORIA CARD */
+.mode-card--story {
+  border-color: rgba(168, 85, 247, 0.45);
+  background: radial-gradient(circle at 50% 0%, rgba(126, 34, 206, 0.25) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.mode-card--story:hover {
+  border-color: #c084fc;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
+  transform: translateY(-4px);
+}
