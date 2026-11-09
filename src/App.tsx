@@ -926,7 +926,7 @@ function App() {
         if (id.startsWith('inst_base_')) {
           const plantId = id.replace('inst_base_', '')
           return inventario.instances.find(
-            (inst) => inst.plantId === plantId
+            (inst) => inst.plantId === plantId && !inst.isGolden
           )?.instanceId
         }
 
@@ -944,8 +944,14 @@ function App() {
     if (cleanIds.length < 3) {
       for (const inst of unlistedInstances) {
         if (!cleanIds.includes(inst.instanceId)) {
-          cleanIds.push(inst.instanceId)
-          if (cleanIds.length >= 4) break
+          const alreadyHasVariant = cleanIds.some((existingId) => {
+            const found = unlistedInstances.find((u) => u.instanceId === existingId)
+            return found && found.plantId === inst.plantId && Boolean(found.isGolden) === Boolean(inst.isGolden)
+          })
+          if (!alreadyHasVariant) {
+            cleanIds.push(inst.instanceId)
+            if (cleanIds.length >= 4) break
+          }
         }
       }
     }
@@ -1708,6 +1714,7 @@ function App() {
         {screen === 'jardin' && (
           <Jardin
             activeDeck={activeDeck}
+            activeDeckInstances={activeDeckInstances}
             unlockedPlants={unlockedPlants}
             inventoryPacks={inventoryPacks}
             playerRewardPacks={playerRewardPacks}

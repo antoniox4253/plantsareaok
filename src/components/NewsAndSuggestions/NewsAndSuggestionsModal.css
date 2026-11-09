@@ -1,25 +1,27 @@
 /* ==========================================================================
    BLOG OFICIAL, DEVLOG & BUZÓN DE SUGERENCIAS DE PLANTS ARENA
-   Diseño Editorial Gamer RPG · Totalmente Responsivo Móvil & PC
+   Diseño Editorial Gamer RPG · Portal Directo a Document.Body (100% Pantalla)
    ========================================================================== */
 
-/* ── CONTENEDOR GENERAL (FULL SCREEN APP PAGE) ── */
+/* ── CONTENEDOR GENERAL (PORTAL A DOCUMENT.BODY - 100% REAL DE LA PANTALLA) ── */
 .news-page-container {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  z-index: 100;
-  background: radial-gradient(circle at 50% 8%, #0d2a1f 0%, #061711 45%, #020906 100%);
+  z-index: 999999; /* Supera GameFrame, Stage y cualquier UI del juego */
+  background: #020906;
+  background: radial-gradient(circle at 50% 6%, #0d2e21 0%, #061912 45%, #020906 100%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: #e2e8f0;
   animation: newsPageFadeIn 0.22s ease-out;
-  user-select: text;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @keyframes newsPageFadeIn {
@@ -33,14 +35,15 @@
   }
 }
 
-/* ── CABECERA SUPERIOR (HEADER) ── */
+/* ── CABECERA SUPERIOR (HEADER FIJO) ── */
 .news-page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 24px;
-  background: rgba(4, 18, 12, 0.96);
-  backdrop-filter: blur(14px);
+  padding: 12px 28px;
+  background: rgba(3, 14, 9, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 2px solid rgba(74, 222, 128, 0.35);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
   z-index: 30;
@@ -54,7 +57,7 @@
   gap: 16px;
 }
 
-/* Botón Volver */
+/* Botón Volver RPG */
 .news-page-back-btn {
   background: linear-gradient(180deg, #1b4d37 0%, #0d2e20 100%);
   border: 1.5px solid #4ade80;
@@ -93,7 +96,7 @@
 
 .news-page-title {
   margin: 0;
-  font-size: 15.5px;
+  font-size: 16px;
   font-weight: 900;
   color: #4ade80;
   letter-spacing: 0.5px;
@@ -111,7 +114,11 @@
 /* Pestañas Segmentadas */
 .news-page-tabs {
   display: flex;
-  gap: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  gap: 4px;
 }
 
 .news-page-tab {
@@ -119,9 +126,9 @@
   font-size: 13px;
   font-weight: 800;
   color: #94a3b8;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -134,14 +141,12 @@
 .news-page-tab:hover {
   background: rgba(34, 197, 94, 0.15);
   color: #a7f3d0;
-  border-color: rgba(34, 197, 94, 0.4);
 }
 
 .news-page-tab--active {
   background: linear-gradient(135deg, #15803d 0%, #166534 100%);
   color: #ffffff;
-  border-color: #4ade80;
-  box-shadow: 0 0 16px rgba(74, 222, 128, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.35);
 }
 
 .news-tab-badge {
@@ -162,7 +167,7 @@
   border: 1.5px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   color: #e2e8f0;
-  font-size: 15px;
+  font-size: 16px;
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -171,23 +176,23 @@
 }
 
 .news-page-close-btn:hover {
-  background: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.4);
   border-color: #ef4444;
   color: #ffffff;
   transform: scale(1.08);
 }
 
-/* ── CUERPO PRINCIPAL CON SCROLL NATURAL Y ANCHO CENTRADO ── */
+/* ── CUERPO PRINCIPAL CON SCROLL NATIVO Y FLUIDO ── */
 .news-page-body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 20px 24px 40px;
+  padding: 24px 28px 60px;
   box-sizing: border-box;
 }
 
-/* Scrollbar verde RPG */
+/* Scrollbar verde esmeralda translúcido */
 .news-page-body::-webkit-scrollbar {
   width: 8px;
 }
@@ -203,12 +208,12 @@
 }
 
 .news-page-inner {
-  max-width: 1200px;
+  max-width: 1140px;
   margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -217,7 +222,7 @@
 .news-blog-feed-view {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
 }
 
 /* Banner de Marketing AQP Game Fest 2026 */
@@ -308,7 +313,7 @@
 }
 
 .news-marketing-banner__link-btn {
-  padding: 8px 14px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
   border: 1px solid #c084fc;
   border-radius: 10px;
@@ -344,14 +349,11 @@
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 2px;
+  scrollbar-width: none;
 }
 
 .news-categories-scroll::-webkit-scrollbar {
-  height: 4px;
-}
-.news-categories-scroll::-webkit-scrollbar-thumb {
-  background: rgba(74, 222, 128, 0.3);
-  border-radius: 4px;
+  display: none;
 }
 
 .news-chip {
@@ -514,21 +516,22 @@
 .news-hero-card {
   background: linear-gradient(145deg, rgba(16, 48, 34, 0.95) 0%, rgba(8, 26, 18, 0.98) 100%);
   border: 2px solid #4ade80;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   cursor: pointer;
   transition: all 0.22s ease;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(74, 222, 128, 0.1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(74, 222, 128, 0.1);
   position: relative;
   overflow: hidden;
 }
 
 .news-hero-card:hover {
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 20px rgba(74, 222, 128, 0.35);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(74, 222, 128, 0.35);
   transform: translateY(-2px);
+  border-color: #86efac;
 }
 
 .news-hero-card__badge-row {
@@ -591,7 +594,7 @@
 
 .news-hero-card__title {
   margin: 0;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
   color: #ffffff;
   line-height: 1.3;
@@ -599,9 +602,9 @@
 
 .news-hero-card__summary {
   margin: 0;
-  font-size: 13px;
+  font-size: 13.5px;
   color: #cbd5e1;
-  line-height: 1.55;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -618,7 +621,7 @@
 }
 
 .news-hero-card__author {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #86efac;
   font-weight: 700;
 }
@@ -632,27 +635,27 @@
 /* ── 2. CUADRÍCULA DE ARTÍCULOS (GRID) ── */
 .news-blog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 20px;
 }
 
 .news-blog-card {
-  background: linear-gradient(145deg, rgba(14, 38, 28, 0.85) 0%, rgba(7, 22, 15, 0.95) 100%);
+  background: linear-gradient(145deg, rgba(14, 38, 28, 0.88) 0%, rgba(7, 22, 15, 0.96) 100%);
   border: 1.5px solid rgba(74, 222, 128, 0.25);
-  border-radius: 14px;
-  padding: 16px 18px;
+  border-radius: 16px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
 .news-blog-card:hover {
-  border-color: rgba(74, 222, 128, 0.6);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(74, 222, 128, 0.2);
-  transform: translateY(-2px);
+  border-color: rgba(74, 222, 128, 0.65);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 14px rgba(74, 222, 128, 0.2);
+  transform: translateY(-3px);
 }
 
 .news-blog-card--pinned {
@@ -674,7 +677,7 @@
 
 .news-blog-card__title {
   margin: 0;
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 800;
   color: #f1f5f9;
   line-height: 1.35;
@@ -1329,8 +1332,8 @@
 /* Cuadrícula de Sugerencias */
 .suggestions-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 18px;
 }
 
 .suggestion-card {
@@ -1490,14 +1493,14 @@
 
 .suggestion-card-title {
   margin: 4px 0 2px;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 800;
   color: #f8fafc;
 }
 
 .suggestion-card-text {
   margin: 0;
-  font-size: 12px;
+  font-size: 12.5px;
   color: #cbd5e1;
   line-height: 1.5;
 }
@@ -1648,19 +1651,19 @@
    ══════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .news-page-header {
-    padding: 8px 12px;
+    padding: 10px 14px;
     gap: 8px;
     flex-wrap: wrap;
   }
 
   .news-page-header__left {
-    gap: 10px;
+    gap: 8px;
     flex: 1;
     min-width: 0;
   }
 
   .news-page-back-btn {
-    padding: 6px 12px;
+    padding: 6px 10px;
     font-size: 11px;
   }
 
@@ -1675,50 +1678,52 @@
   .news-page-tabs {
     order: 3;
     width: 100%;
-    gap: 6px;
-    justify-content: stretch;
+    margin-top: 4px;
+    display: flex;
   }
 
   .news-page-tab {
     flex: 1;
     justify-content: center;
-    padding: 7px 10px;
-    font-size: 11.5px;
+    padding: 8px 10px;
+    font-size: 12px;
   }
 
   .news-page-close-btn {
     width: 32px;
     height: 32px;
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .news-page-body {
-    padding: 12px 12px 30px;
+    padding: 14px 14px 50px;
   }
 
   .news-marketing-banner {
     flex-direction: column;
     align-items: flex-start;
-    padding: 12px 14px;
+    padding: 14px 16px;
   }
 
   .news-marketing-banner__link-btn {
     width: 100%;
     text-align: center;
     box-sizing: border-box;
+    padding: 10px 14px;
   }
 
   .news-hero-card {
-    padding: 16px 18px;
+    padding: 18px 20px;
   }
 
   .news-hero-card__title {
-    font-size: 18px;
+    font-size: 19px;
   }
 
   .news-hero-card__btn {
     width: 100%;
     text-align: center;
+    padding: 10px 14px;
   }
 
   .news-blog-grid {
@@ -1727,11 +1732,12 @@
   }
 
   .news-reader-article-view {
-    padding: 16px 18px;
+    padding: 18px 20px;
+    border-radius: 14px;
   }
 
   .news-reader-title {
-    font-size: 20px;
+    font-size: 21px;
   }
 
   .news-weekly-grid {
@@ -1741,12 +1747,13 @@
   .suggestions-hero {
     flex-direction: column;
     align-items: stretch;
-    padding: 16px;
+    padding: 16px 18px;
   }
 
   .suggestions-new-btn {
     width: 100%;
     text-align: center;
+    padding: 12px 18px;
   }
 
   .suggestions-cards-grid {

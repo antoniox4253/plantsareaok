@@ -53,6 +53,7 @@ function groupRolls(rolls: PlantStatKey[]) {
 
 interface JardinProps {
   activeDeck: PlantId[]
+  activeDeckInstances?: string[]
   unlockedPlants: PlantId[]
   inventoryPacks: InventoryPack[]
   playerRewardPacks?: PlayerRewardPack[]
@@ -146,6 +147,7 @@ export const PLANT_ELIGIBLE_STATS_LABELS: Record<string, string[]> = {
 
 export default function Jardin({
   activeDeck,
+  activeDeckInstances,
   unlockedPlants,
   inventoryPacks,
   playerRewardPacks = [],
@@ -771,6 +773,10 @@ export default function Jardin({
 
   // We track the array of instance IDs currently selected in the deck (up to 6)
   const [deckInstanceIds, setDeckInstanceIds] = useState<string[]>(() => {
+    if (activeDeckInstances && activeDeckInstances.length > 0) {
+      const valid = activeDeckInstances.filter((id) => displayedCards.some((c) => c.instanceId === id && c.isUnlocked && !c.isListed))
+      if (valid.length > 0) return valid
+    }
     try {
       const saved = localStorage.getItem('plant_arena_active_deck_instances')
       if (saved) {
@@ -859,10 +865,10 @@ export default function Jardin({
       onUpdateDeck(plantIds, next)
       setSelectedSlotIndex(null)
     } else {
-      // Verificar si ya hay otra instancia de la misma especie en el mazo
+      // Verificar si ya hay otra instancia de la misma variante (especie + golden) en el mazo
       const existingSameSpeciesIndex = deckInstanceIds.findIndex((id) => {
         const c = displayedCards.find((cardItem) => cardItem.instanceId === id)
-        return c?.plantId === card.plantId
+        return c?.plantId === card.plantId && Boolean(c?.isGolden) === Boolean(card.isGolden)
       })
 
       if (selectedSlotIndex !== null) {

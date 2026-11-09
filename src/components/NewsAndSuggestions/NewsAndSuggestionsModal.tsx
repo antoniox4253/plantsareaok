@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { soundManager } from '../../utils/audioManager'
 import {
   newsAndSuggestionsService,
@@ -383,7 +384,7 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
 
   if (!isOpen) return null
 
-  return (
+  const modalContent = (
     <div
       className="news-page-container"
       role="dialog"
@@ -1314,6 +1315,12 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
       </main>
     </div>
   )
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body)
+  }
+
+  return modalContent
 }
 
 export default NewsAndSuggestionsModal

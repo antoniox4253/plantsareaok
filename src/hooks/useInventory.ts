@@ -1382,10 +1382,11 @@ export function useInventory() {
       const disponibles = inv.instances.filter((i) => !i.isListed)
       if (disponibles.length >= 3) {
         const autoEquipadas: typeof disponibles = []
-        const plantIdsSeen = new Set<string>()
+        const variantKeysSeen = new Set<string>()
         for (const inst of disponibles) {
-          if (!plantIdsSeen.has(inst.plantId)) {
-            plantIdsSeen.add(inst.plantId)
+          const variantKey = `${inst.plantId}_${Boolean(inst.isGolden)}`
+          if (!variantKeysSeen.has(variantKey)) {
+            variantKeysSeen.add(variantKey)
             autoEquipadas.push(inst)
             if (autoEquipadas.length === 4) break
           }
