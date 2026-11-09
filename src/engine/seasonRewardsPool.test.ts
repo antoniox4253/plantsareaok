@@ -159,4 +159,99 @@ describe('Distribución de Recompensas de Temporada Ranked (Top 50)', () => {
       expect(sql).toContain("SELECT public.auto_settle_expired_season()")
     })
   })
+
+  describe('5. Auditoría Estática de Migración 410 (Reinicio de VIPs, Soft Reset de Copas y Corrección AQP)', () => {
+    const migPath = path.resolve(__dirname, '../../supabase/migrations/410-reset-vips-and-season-cups.sql')
+    const sql = fs.readFileSync(migPath, 'utf8')
+
+    it('A. Corrige el dominio de AQP Game Fest a aqpgamefest.com', () => {
+      expect(sql).toContain('aqpgamefest.com')
+      expect(sql).toContain('replace(replace(content')
+    })
+
+    it('B. Define reset_all_season_vips para limpiar pases VIP y XP', () => {
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public.reset_all_season_vips()')
+      expect(sql).toContain('has_vip_pass = FALSE')
+      expect(sql).toContain('claimed_vip_levels = \'{}\'::INTEGER[]')
+      expect(sql).toContain('battle_pass_xp = 0')
+    })
+
+    it('C. Define soft_reset_season_cups para desplazar Arena 4/5 a Arena 3 y Arena 3 a Arena 2 proporcionalmente', () => {
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public.soft_reset_season_cups()')
+      expect(sql).toContain('WHEN elo_rating > 3000')
+      expect(sql).toContain('WHEN elo_rating >= 2001 AND elo_rating <= 3000')
+      expect(sql).toContain('2001')
+      expect(sql).toContain('1601')
+    })
+  })
+
+  describe('6. Auditoría Estática de Migración 411 (Ajuste Oficial Temporada 2 Top 50 con Plantas Doradas)', () => {
+    const migPath = path.resolve(__dirname, '../../supabase/migrations/411-settle-season-2-golden-plants-and-top-50-adjustments.sql')
+    const sql = fs.readFileSync(migPath, 'utf8')
+
+    it('A. Asigna Plantas Doradas de Élite al Top 1 al 5 y Comunes al Top 6 al 10', () => {
+      expect(sql).toContain('v_elite_pool')
+      expect(sql).toContain('v_common_pool')
+      expect(sql).toContain('is_golden')
+      expect(sql).toContain('plant_instances')
+    })
+
+    it('B. Acredita las diferencias canónicas de gemas y oro a los 50 ganadores de la Temporada 2', () => {
+      expect(sql).toContain('season_reward')
+      expect(sql).toContain('gems_balance')
+      expect(sql).toContain('gold_balance')
+    })
+
+    it('C. Actualiza settle_season_rewards para automatizar la tabla completa del Top 50 en temporadas futuras', () => {
+      expect(sql).toContain('CREATE OR REPLACE FUNCTION public.settle_season_rewards')
+      expect(sql).toContain('LIMIT 50')
+      expect(sql).toContain('top1_elo_reward = 5000')
+      expect(sql).toContain('top2_elo_reward = 3500')
+      expect(sql).toContain('top3_elo_reward = 2500')
+    })
+  })
+
+  describe('7. Auditoría Estática de Migración 412 (Re-roll Canónico de Plantas Doradas con Assets)', () => {
+    const migPath = path.resolve(__dirname, '../../supabase/migrations/412-reroll-season-2-golden-plants-with-official-assets.sql')
+    const sql = fs.readFileSync(migPath, 'utf8')
+
+    it('A. Reemplaza plantas sin asset por las 10 doradas oficiales y protege al Top 1 sin hielo', () => {
+      expect(sql).toContain("plant_id = 'melonpult'")
+      expect(sql).toContain("plant_id = 'iceberglettuce'")
+      expect(sql).toContain("plant_id = 'bonkchoy'")
+      expect(sql).toContain("plant_id = 'repeater'")
+      expect(sql).toContain("plant_id = 'peashooter'")
+      expect(sql).toContain("plant_id = 'sunflower'")
+    })
+
+    it('B. Blindar pools canónicos en settle_season_rewards con sólo las 10 plantas con WebP', () => {
+      expect(sql).toContain("c_elite_pool          TEXT[] := ARRAY['melonpult', 'bonkchoy', 'twinsunflower', 'repeater', 'garlic', 'jalapeno', 'iceberglettuce']")
+      expect(sql).toContain("c_common_pool         TEXT[] := ARRAY['peashooter', 'sunflower', 'wallnut']")
+    })
+  })
+
+  describe('8. Auditoría Estática de Migración 413 (Nuevo Espectro de Arenas Temporada 3+)', () => {
+    const migPath = path.resolve(__dirname, '../../supabase/migrations/413-calibrate-arena-spectrum-season3.sql')
+    const sql = fs.readFileSync(migPath, 'utf8')
+
+    it('A. Calibra los nuevos umbrales de arenas en _award_victory_chest_for (8001, 5001, 3001, 1601)', () => {
+      expect(sql).toContain('WHEN v_elo >= 8001 THEN 5')
+      expect(sql).toContain('WHEN v_elo >= 5001 THEN 4')
+      expect(sql).toContain('WHEN v_elo >= 3001 THEN 3')
+      expect(sql).toContain('WHEN v_elo >= 1601 THEN 2')
+    })
+
+    it('B. Calibra los deltas de copas en _ranked_elo_delta según el nuevo espectro', () => {
+      expect(sql).toContain('ELSIF v_p <= 3000 THEN')
+      expect(sql).toContain('ELSIF v_p <= 5000 THEN')
+      expect(sql).toContain('ELSIF v_p <= 8000 THEN')
+      expect(sql).toContain('v_win_delta  := 30')
+    })
+
+    it('C. Aplica el blindaje de matchmaking de arenas altas y bajas en _emparejar_lote', () => {
+      expect(sql).toContain('v_fila.user_elo > 8000 AND q.user_elo > 8000')
+      expect(sql).toContain('v_fila.user_elo BETWEEN 5001 AND 8000')
+      expect(sql).toContain('NOT (v_fila.user_elo <= 1600 AND q.user_elo > 3000)')
+    })
+  })
 })

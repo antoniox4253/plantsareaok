@@ -105,6 +105,6 @@ describe('newsAndSuggestionsService', () => {
     const posts = await newsAndSuggestionsService.getNewsPosts()
     const aqp = posts.find((p) => p.title.includes('AQP Game Fest'))
     expect(aqp).toBeDefined()
-    expect(aqp?.content).toContain('aqpgamesfest.com/juegos.html')
+    expect(aqp?.content).toContain('aqpgamefest.com/juegos.html')
   })
 })

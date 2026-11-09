@@ -480,18 +480,18 @@ export const NewsAndSuggestionsModal: React.FC<NewsAndSuggestionsModalProps> = (
                     ¡Plants Arena Presente en el AQP Game Fest 2026!
                   </h4>
                   <p className="news-marketing-banner__desc">
-                    Exhibición oficial en el Complejo Cultural Ateneo. Encuéntranos en la vitrina de juegos en <strong>aqpgamesfest.com/juegos.html</strong>.
+                    Exhibición oficial en el Complejo Cultural Ateneo. Encuéntranos en la vitrina de juegos en <strong>aqpgamefest.com/juegos.html</strong>.
                   </p>
                 </div>
               </div>
               <a
-                href="https://aqpgamesfest.com/juegos.html"
+                href="https://aqpgamefest.com/juegos.html"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="news-marketing-banner__link-btn"
                 onClick={(e) => e.stopPropagation()}
               >
-                🌐 Ver en aqpgamesfest.com ➔
+                🌐 Ver en aqpgamefest.com ➔
               </a>
             </div>
 

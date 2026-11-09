@@ -75,7 +75,7 @@ export const WEEKLY_UPDATES_BLOCKS: WeeklyUpdateDayBlock[] = [
     highlights: [
       'Nuevo Blog Oficial y notas técnicas de desarrollo sin publicidad invasiva.',
       'Buzón Comunitario de Sugerencias con Nick de Jugador verificado y votos.',
-      'Presencia en AQP Game Fest 2026 destacada en aqpgamesfest.com/juegos.html (Atoniox).',
+      'Presencia en AQP Game Fest 2026 destacada en aqpgamefest.com/juegos.html (Atoniox).',
     ],
   },
   {
@@ -170,13 +170,13 @@ const DEFAULT_NEWS_POSTS: NewsPost[] = [
     id: 'default-news-aqp',
     title: '¡Plants Arena Presente en el AQP Game Fest 2026! (Arequipa, Perú)',
     summary:
-      'Plants Arena forma parte del festival de videojuegos y tecnología más importante de Arequipa. Conoce nuestra participación oficial en aqpgamesfest.com/juegos.html.',
+      'Plants Arena forma parte del festival de videojuegos y tecnología más importante de Arequipa. Conoce nuestra participación oficial en aqpgamefest.com/juegos.html.',
     content: `### 🎮 Participación Oficial en AQP Game Fest 2026
 ¡Estamos muy orgullosos de anunciar que **Plants Arena** está presente de manera oficial en el **AQP Game Fest 2026**, la gran fiesta del desarrollo de videojuegos, tecnología y creatividad digital celebrada en Arequipa, Perú!
 
 ### 🌐 Destacados en la Muestra de Juegos
 Puedes encontrar a Plants Arena en la vitrina oficial de títulos del evento ingresando a:
-👉 **[aqpgamesfest.com/juegos.html](https://aqpgamesfest.com/juegos.html)**
+👉 **[aqpgamefest.com/juegos.html](https://aqpgamefest.com/juegos.html)**
 
 En la sección oficial de videojuegos se destaca:
 - **Título**: Plant Arena (Desarrollado por Atoniox).
@@ -208,7 +208,7 @@ Para conmemorar este gran hito de marketing y crecimiento de la comunidad, estam
 #### 🟢 Día 1 · 8 de Noviembre (Hoy)
 - **Nuevo Blog de Novedades & Notas de Parche**: Sección oficial para seguir el progreso del juego sin publicidad.
 - **Buzón de Sugerencias Comunitario**: Envía propuestas con tu Nick verificado y vota las mejores ideas.
-- **Presentación en AQP Game Fest 2026**: Destacados en la vitrina de juegos en [aqpgamesfest.com/juegos.html](https://aqpgamesfest.com/juegos.html).
+- **Presentación en AQP Game Fest 2026**: Destacados en la vitrina de juegos en [aqpgamefest.com/juegos.html](https://aqpgamefest.com/juegos.html).
 
 #### 🟢 Día 2 · 7 de Noviembre
 - **Sistema de Clanes Oficial**: Creación de clanes, roles de líderes y miembros, y fundación de la Fortaleza de Clan.

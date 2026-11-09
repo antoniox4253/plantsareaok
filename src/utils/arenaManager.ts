@@ -30,7 +30,7 @@ export const ARENAS: ArenaInfo[] = [
     id: 2,
     name: 'Arena 2: Desierto Nocturno',
     minElo: 1601,
-    maxElo: 2000,
+    maxElo: 3000,
     bgImage: arena2Bg,
     tagline: 'Dunas desérticas con cactus bioluminiscentes y luna llena.',
     badgeColor: '#60a5fa',
@@ -39,8 +39,8 @@ export const ARENAS: ArenaInfo[] = [
   {
     id: 3,
     name: 'Arena 3: Rascacielos Cyberpunk',
-    minElo: 2001,
-    maxElo: 3000,
+    minElo: 3001,
+    maxElo: 5000,
     bgImage: arena3Bg,
     tagline: 'Azotea futurista sobre la metrópolis con luces neón.',
     badgeColor: '#c084fc',
@@ -49,8 +49,8 @@ export const ARENAS: ArenaInfo[] = [
   {
     id: 4,
     name: 'Arena 4: Coliseo Galáctico',
-    minElo: 3001,
-    maxElo: 4000,
+    minElo: 5001,
+    maxElo: 8000,
     bgImage: arena4Bg,
     tagline: 'Plataforma espacial flotante entre nebulosas y meteoritos.',
     badgeColor: '#fde047',
@@ -59,7 +59,7 @@ export const ARENAS: ArenaInfo[] = [
   {
     id: 5,
     name: 'Arena 5: Olimpo de Leyendas',
-    minElo: 4001,
+    minElo: 8001,
     maxElo: Infinity,
     bgImage: arena5Bg,
     tagline: 'Palacio sagrado de oro supremo para los reyes de Plant Arena.',
@@ -88,11 +88,11 @@ export function getTrophyGateForElo(_elo?: number): number {
 export function getEloDeltasForElo(elo: number): { winElo: number; loseElo: number; surrenderElo: number } {
   if (elo <= 1600) {
     return { winElo: 15, loseElo: 5, surrenderElo: 5 }
-  } else if (elo <= 2000) {
-    return { winElo: 18, loseElo: 8, surrenderElo: 8 }
   } else if (elo <= 3000) {
+    return { winElo: 18, loseElo: 8, surrenderElo: 8 }
+  } else if (elo <= 5000) {
     return { winElo: 20, loseElo: 12, surrenderElo: 12 }
-  } else if (elo <= 4000) {
+  } else if (elo <= 8000) {
     return { winElo: 25, loseElo: 20, surrenderElo: 20 }
   } else {
     return { winElo: 30, loseElo: 30, surrenderElo: 30 }

@@ -1000,107 +1000,107 @@ export default function LandingPage({
                 </p>
                 <div className="landing-arena-pills">
                   <span className="landing-payout" style={{ background: '#4ade80', color: '#052e16' }}>🏆 +15 Elo</span>
-                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−8 Elo</span>
+                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−12 Elo</span>
                 </div>
               </div>
             </div>
 
             {/* Arena 2 */}
-            <div className={`landing-arena-card ${isLoggedIn && userElo > 1600 && userElo <= 2000 ? 'landing-arena-card--user-current' : ''}`} style={{ borderColor: '#60a5fa' }}>
+            <div className={`landing-arena-card ${isLoggedIn && userElo > 1600 && userElo <= 3000 ? 'landing-arena-card--user-current' : ''}`} style={{ borderColor: '#60a5fa' }}>
               <div className="landing-arena-img-wrap">
                 <img src={arena2Bg} alt="Arena 2" />
                 <div className="landing-arena-scrim"></div>
                 <span className="landing-arena-tag" style={{ background: '#60a5fa', color: '#082f49' }}>
-                  {isLoggedIn && userElo > 1600 && userElo <= 2000 ? '📍 TU ARENA ACTUAL' : 'ARENA 2'}
+                  {isLoggedIn && userElo > 1600 && userElo <= 3000 ? '📍 TU ARENA ACTUAL' : 'ARENA 2'}
                 </span>
                 <span className="landing-arena-num" style={{ color: '#60a5fa' }}>2</span>
               </div>
               <div className="landing-arena-body">
                 <h3 className="landing-arena-name">{lang === 'es' ? 'Desierto Nocturno' : 'Night Desert'}</h3>
                 <span className="landing-arena-elo" style={{ color: '#60a5fa' }}>
-                  <img src={rankingIco} alt="" /> 1601 – 2000 ELO
+                  <img src={rankingIco} alt="" /> 1601 – 3000 ELO
                 </span>
                 <p className="landing-arena-desc">
                   {lang === 'es' ? 'Dunas arenosas con cactus bioluminiscentes bajo la luna llena.' : 'Sandy dunes with glowing bioluminescent cacti under the full moon.'}
                 </p>
                 <div className="landing-arena-pills">
-                  <span className="landing-payout" style={{ background: '#60a5fa', color: '#082f49' }}>🏆 +12 Elo</span>
-                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−8 Elo</span>
+                  <span className="landing-payout" style={{ background: '#60a5fa', color: '#082f49' }}>🏆 +18 Elo</span>
+                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−12 Elo</span>
                 </div>
               </div>
             </div>
 
             {/* Arena 3 */}
-            <div className={`landing-arena-card ${isLoggedIn && userElo > 2000 && userElo <= 3000 ? 'landing-arena-card--user-current' : ''}`} style={{ borderColor: '#c084fc' }}>
+            <div className={`landing-arena-card ${isLoggedIn && userElo > 3000 && userElo <= 5000 ? 'landing-arena-card--user-current' : ''}`} style={{ borderColor: '#c084fc' }}>
               <div className="landing-arena-img-wrap">
                 <img src={arena3Bg} alt="Arena 3" />
                 <div className="landing-arena-scrim"></div>
                 <span className="landing-arena-tag" style={{ background: '#c084fc', color: '#3b0764' }}>
-                  {isLoggedIn && userElo > 2000 && userElo <= 3000 ? '📍 TU ARENA ACTUAL' : 'ARENA 3'}
+                  {isLoggedIn && userElo > 3000 && userElo <= 5000 ? '📍 TU ARENA ACTUAL' : 'ARENA 3'}
                 </span>
                 <span className="landing-arena-num" style={{ color: '#c084fc' }}>3</span>
               </div>
               <div className="landing-arena-body">
                 <h3 className="landing-arena-name">{lang === 'es' ? 'Rascacielos Cyberpunk' : 'Cyberpunk Skyline'}</h3>
                 <span className="landing-arena-elo" style={{ color: '#c084fc' }}>
-                  <img src={rankingIco} alt="" /> 2001 – 3000 ELO
+                  <img src={rankingIco} alt="" /> 3001 – 5000 ELO
                 </span>
                 <p className="landing-arena-desc">
                   {lang === 'es' ? 'Azotea futurista iluminada por neones sobre una gran metrópolis.' : 'Futuristic neon-lit rooftop towering high above the metropolis.'}
                 </p>
                 <div className="landing-arena-pills">
-                  <span className="landing-payout" style={{ background: '#c084fc', color: '#3b0764' }}>🏆 +10 Elo</span>
-                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−8 Elo</span>
+                  <span className="landing-payout" style={{ background: '#c084fc', color: '#3b0764' }}>🏆 +20 Elo</span>
+                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−12 Elo</span>
                 </div>
               </div>
             </div>
 
             {/* Arena 4 */}
-            <div className={`landing-arena-card ${isLoggedIn && userElo > 3000 && userElo <= 4000 ? 'landing-arena-card--user-current' : ''}`} style={{ borderColor: '#fde047' }}>
+            <div className={`landing-arena-card ${isLoggedIn && userElo > 5000 && userElo <= 8000 ? 'landing-arena-card--user-current' : ''}`} style={{ borderColor: '#fde047' }}>
               <div className="landing-arena-img-wrap">
                 <img src={arena4Bg} alt="Arena 4" />
                 <div className="landing-arena-scrim"></div>
                 <span className="landing-arena-tag" style={{ background: '#fde047', color: '#451a03' }}>
-                  {isLoggedIn && userElo > 3000 && userElo <= 4000 ? '📍 TU ARENA ACTUAL' : 'ARENA 4'}
+                  {isLoggedIn && userElo > 5000 && userElo <= 8000 ? '📍 TU ARENA ACTUAL' : 'ARENA 4'}
                 </span>
                 <span className="landing-arena-num" style={{ color: '#fde047' }}>4</span>
               </div>
               <div className="landing-arena-body">
                 <h3 className="landing-arena-name">{lang === 'es' ? 'Coliseo Galáctico' : 'Galactic Colosseum'}</h3>
                 <span className="landing-arena-elo" style={{ color: '#fde047' }}>
-                  <img src={rankingIco} alt="" /> 3001 – 4000 ELO
+                  <img src={rankingIco} alt="" /> 5001 – 8000 ELO
                 </span>
                 <p className="landing-arena-desc">
                   {lang === 'es' ? 'Plataforma orbital suspendida entre nebulosas y meteoritos.' : 'Orbital platform suspended between nebulas and meteor showers.'}
                 </p>
                 <div className="landing-arena-pills">
-                  <span className="landing-payout" style={{ background: '#fde047', color: '#451a03' }}>🏆 +8 Elo</span>
-                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−7 Elo</span>
+                  <span className="landing-payout" style={{ background: '#fde047', color: '#451a03' }}>🏆 +25 Elo</span>
+                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−20 Elo</span>
                 </div>
               </div>
             </div>
 
             {/* Arena 5 */}
-            <div className={`landing-arena-card ${isLoggedIn && userElo > 4000 ? 'landing-arena-card--user-current' : ''}`} style={{ borderColor: '#f43f5e' }}>
+            <div className={`landing-arena-card ${isLoggedIn && userElo > 8000 ? 'landing-arena-card--user-current' : ''}`} style={{ borderColor: '#f43f5e' }}>
               <div className="landing-arena-img-wrap">
                 <img src={arena5Bg} alt="Arena 5" />
                 <div className="landing-arena-scrim"></div>
                 <span className="landing-arena-tag" style={{ background: '#f43f5e', color: '#ffffff' }}>
-                  {isLoggedIn && userElo > 4000 ? '📍 TU ARENA ACTUAL' : 'ARENA 5'}
+                  {isLoggedIn && userElo > 8000 ? '📍 TU ARENA ACTUAL' : 'ARENA 5'}
                 </span>
                 <span className="landing-arena-num" style={{ color: '#f43f5e' }}>5</span>
               </div>
               <div className="landing-arena-body">
                 <h3 className="landing-arena-name">{lang === 'es' ? 'Olimpo de Leyendas' : 'Olympus of Legends'}</h3>
                 <span className="landing-arena-elo" style={{ color: '#f43f5e' }}>
-                  <img src={rankingIco} alt="" /> 4001+ ELO
+                  <img src={rankingIco} alt="" /> 8001+ ELO
                 </span>
                 <p className="landing-arena-desc">
                   {lang === 'es' ? 'Templo dorado supremo reservado solo para los campeones mundiales.' : 'Supreme golden temple reserved only for world champions.'}
                 </p>
                 <div className="landing-arena-pills">
-                  <span className="landing-payout" style={{ background: '#f43f5e', color: '#ffffff' }}>🏆 +6 Elo</span>
-                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−6 Elo</span>
+                  <span className="landing-payout" style={{ background: '#f43f5e', color: '#ffffff' }}>🏆 +30 Elo</span>
+                  <span className="landing-payout" style={{ background: 'rgba(239,68,68,0.85)', color: '#fff' }}>−30 Elo</span>
                 </div>
               </div>
             </div>
