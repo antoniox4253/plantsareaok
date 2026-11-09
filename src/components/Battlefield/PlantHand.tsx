@@ -374,7 +374,7 @@ export default function PlantHand({
   ])
 
   return (
-    <div className="plant-hand-container">
+    <div className={`plant-hand-container ${isStoryMode ? "plant-hand-container--story" : ""}`}>
       {/* Sun Counter Widget */}
       <div className="sun-counter">
         <img className="sun-counter__icon" src={sunIcon} alt="Sol" />
