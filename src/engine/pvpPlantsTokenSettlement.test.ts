@@ -132,4 +132,18 @@ describe('PvP PLANTS Token Settlement Flow Tests', () => {
       expect(claimCalled).toBe(false)
     }
   })
+
+  it('7. SQL Audit: Migración 422 fija el tope diario oficial de 20 victorias y lo registra en _migration_audit', () => {
+    const fs = require('fs')
+    const path = require('path')
+    const m422Path = path.resolve(__dirname, '../../supabase/migrations/422-restore-pvp-plants-daily-cap-20.sql')
+    const m422Sql = fs.readFileSync(m422Path, 'utf-8')
+    const cleanSql = m422Sql.replace(/--.*$/gm, '')
+
+    expect(cleanSql).toContain('v_daily_claims >= 20')
+    expect(cleanSql).toContain('Tope diario de 20 victorias alcanzado')
+    expect(cleanSql).toContain('CASE WHEN v_is_vip THEN NULL ELSE 20 END')
+    expect(cleanSql).not.toMatch(/v_daily_claims\s*>=\s*15/i)
+    expect(m422Sql).toContain('422-restore-pvp-plants-daily-cap-20')
+  })
 })
