@@ -41,7 +41,7 @@ export default function PixelGoldEmotes({
   onBuyGoldPackage,
   userGold = 0,
   userTokens = 0,
-  playerEnergy = 20,
+  playerEnergy = 15,
   maxPlayerEnergy = 15,
   userElo = 1000,
   onRefreshBalance,

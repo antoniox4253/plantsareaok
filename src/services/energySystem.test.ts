@@ -7,7 +7,7 @@ import {
 } from '../utils/gameConstants'
 import { inventoryService } from './inventoryService'
 
-describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602, Packs Opción C)', () => {
+describe('Sistema de Gestión de Energías (15/15 Diario Free, VIP 20/20, Umbral 1602, Packs Opción C)', () => {
   let memoryStore: Record<string, string> = {}
 
   const mockStorage = {
@@ -37,11 +37,11 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       expect(ENERGY_FREE_ELO_THRESHOLD).toBe(1602)
     })
 
-    it('La capacidad diaria base para usuarios gratuitos es 20 de energía', () => {
+    it('La capacidad diaria base para usuarios gratuitos es 15 de energía', () => {
       expect(BASE_DAILY_ENERGY).toBe(15)
     })
 
-    it('La capacidad diaria para usuarios con Pase VIP es 25 de energía (+5 partidas extra)', () => {
+    it('La capacidad diaria para usuarios con Pase VIP es 20 de energía (+5 partidas extra)', () => {
       expect(VIP_DAILY_ENERGY).toBe(20)
       expect(VIP_DAILY_ENERGY - BASE_DAILY_ENERGY).toBe(5)
     })
@@ -263,7 +263,7 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
 
   describe('6. Otorgamiento de +5 Energías al Activar Pase VIP (Caso Rjnieves Bugfix)', () => {
     function simulateBuyVipPass(currentEnergy: number) {
-      // Al comprar el Pase VIP, maxEnergy pasa de 20 a 25 (+5 diarias)
+      // Al comprar el Pase VIP, maxEnergy pasa de 15 a 20 (+5 diarias)
       const newMaxEnergy = VIP_DAILY_ENERGY
       // Se añaden de inmediato las +5 energías para que el usuario pueda jugar esas partidas adicionales
       const newEnergy = currentEnergy + (VIP_DAILY_ENERGY - BASE_DAILY_ENERGY)
@@ -276,28 +276,28 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       }
     }
 
-    it('Caso Rjnieves: Tenía 20/20 consumidas (0 restantes); al comprar pase debe tener 5/25 para jugar (20 consumidas de 25)', () => {
-      // Rjnieves consumió sus 20 partidas del día:
-      const currentEnergy = 0 // 0 de 20 restantes (20 consumidas)
+    it('Caso Rjnieves: Tenía 15/15 consumidas (0 restantes); al comprar pase debe tener 5/20 para jugar (15 consumidas de 20)', () => {
+      // Rjnieves consumió sus 15 partidas del día:
+      const currentEnergy = 0 // 0 de 15 restantes (15 consumidas)
 
       const result = simulateBuyVipPass(currentEnergy)
 
       expect(result.hasVip).toBe(true)
       expect(result.maxEnergy).toBe(20)
       expect(result.energy).toBe(5) // Le quedan 5 energías para jugar de inmediato
-      expect(result.consumed).toBe(15) // 20 de 25 consumidas, ¡NO 25 de 25!
+      expect(result.consumed).toBe(15) // 15 de 20 consumidas, ¡NO 20 de 20!
     })
 
-    it('Usuario con 10/20 restantes (10 consumidas): al comprar pase pasa a tener 15/25 (10 consumidas)', () => {
+    it('Usuario con 10/15 restantes (5 consumidas): al comprar pase pasa a tener 15/20 (5 consumidas)', () => {
       const result = simulateBuyVipPass(10)
 
       expect(result.hasVip).toBe(true)
       expect(result.maxEnergy).toBe(20)
-      expect(result.energy).toBe(15) // 15 de 25
-      expect(result.consumed).toBe(5) // Mantiene las 10 partidas jugadas
+      expect(result.energy).toBe(15) // 15 de 20
+      expect(result.consumed).toBe(5) // Mantiene las 5 partidas jugadas
     })
 
-    it('Usuario con 20/20 restantes (0 consumidas): al comprar pase pasa a tener 25/25', () => {
+    it('Usuario con 15/15 restantes (0 consumidas): al comprar pase pasa a tener 20/20', () => {
       const result = simulateBuyVipPass(15)
 
       expect(result.hasVip).toBe(true)
@@ -636,7 +636,7 @@ describe('Sistema de Gestión de Energías (20/20 Diario, VIP 25/25, Umbral 1602
       expect(res.error).toContain('al máximo')
     })
 
-    it('useEnergyItem local: respeta tope de 25 para usuarios con Pase VIP', async () => {
+    it('useEnergyItem local: respeta tope de 20 para usuarios con Pase VIP', async () => {
       mockStorage.setItem('plant_arena_farming_inventory', JSON.stringify({ energy_potion_5: 1 }))
       mockStorage.setItem('plant_arena_player_energy', '17')
       mockStorage.setItem('plant_arena_has_vip', 'true')

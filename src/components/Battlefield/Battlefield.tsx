@@ -4449,10 +4449,10 @@ export default function Battlefield({
                             </div>
                             <div className="victory-plants-pill">
                               <span className="victory-plants-pill__lbl">Tope:</span>
-                              {plantsRewardResult.isVip || plantsRewardResult.dailyClaimsMax === null ? (
-                                <strong style={{ color: '#fbbf24' }}>👑 VIP Ilimitado</strong>
+                              {plantsRewardResult.isVip ? (
+                                <strong style={{ color: '#fbbf24' }}>👑 VIP ({plantsRewardResult.dailyClaimsUsed}/{plantsRewardResult.dailyClaimsMax ?? 20} hoy)</strong>
                               ) : (
-                                <span>{plantsRewardResult.dailyClaimsUsed}/{plantsRewardResult.dailyClaimsMax ?? 20} hoy</span>
+                                <span>{plantsRewardResult.dailyClaimsUsed}/{plantsRewardResult.dailyClaimsMax ?? 15} hoy</span>
                               )}
                             </div>
                             {plantsRewardResult.bonusActive ? (
@@ -4484,7 +4484,9 @@ export default function Battlefield({
                             <span>Token PLANTS:</span>
                             <small>
                               {plantsRewardResult?.reason === 'DAILY_CLAIM_CAP_REACHED'
-                                ? 'Tope diario de 20 victorias alcanzado. ¡Pasa a VIP para victorias ilimitadas!'
+                                ? (plantsRewardResult.isVip
+                                    ? 'Tope diario de 20 victorias alcanzado para Pase VIP. Vuelve mañana a las 00:00 UTC.'
+                                    : 'Tope diario de 15 victorias alcanzado. ¡Pasa a VIP para obtener hasta 20 victorias diarias!')
                                 : plantsRewardResult?.reason === 'MATCH_TOO_SHORT_OR_COLLUSION'
                                 ? 'Anti-colusión activa (mínimo 45s de combate) o requisitos no cumplidos.'
                                 : isPresaleActive || plantsRewardResult?.reason === 'PRESALE_ACTIVE_MINING_PAUSED'

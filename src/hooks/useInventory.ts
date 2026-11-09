@@ -1555,7 +1555,7 @@ export function useInventory() {
     }
     setHasVipPass(true)
 
-    // Al comprar el Pase VIP, la capacidad sube de 20 a 25 (+5 diarias).
+    // Al comprar el Pase VIP, la capacidad sube de 15 a 20 (+5 diarias).
     // Otorgar de inmediato esas +5 energías al saldo actual para que el usuario pueda jugar.
     if (typeof (res as any).energyCurrent === 'number') {
       setPlayerEnergy((res as any).energyCurrent)

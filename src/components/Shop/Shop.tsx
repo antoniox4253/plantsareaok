@@ -203,7 +203,7 @@ export default function Shop({
   hasVipPass = false,
   claimedVipLevels = [],
   hasPurchasedStarterPack = false,
-  playerEnergy = 20,
+  playerEnergy = 15,
   maxPlayerEnergy = 15,
   goldenPityCounter = 0,
   inventoryPacks,

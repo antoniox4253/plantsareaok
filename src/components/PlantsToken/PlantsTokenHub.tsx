@@ -67,7 +67,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
   userElo = 1000,
   userXp = 0,
   hasVipPass = false,
-  playerEnergy = 20,
+  playerEnergy = 15,
   maxPlayerEnergy = 15,
   userProfile,
   onRefreshProfile,

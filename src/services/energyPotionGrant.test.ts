@@ -24,7 +24,7 @@ describe('Energy Potion Grant and Safe Consumption (Migration 172)', () => {
     expect(sql).toContain("p_item_id TEXT DEFAULT 'energy_potion_5'")
   })
 
-  it('4. Simulación del uso respetando el límite máximo (20 estándar y 25 con VIP)', () => {
+  it('4. Simulación del uso respetando el límite máximo (15 estándar y 20 con VIP)', () => {
     const simulateUsePotion = (currentEnergy: number, hasVip: boolean, potionQty: number) => {
       const maxEnergy = hasVip ? 20 : 15
       if (potionQty <= 0) {
@@ -45,19 +45,19 @@ describe('Energy Potion Grant and Safe Consumption (Migration 172)', () => {
     expect(resA.addEnergy).toBe(5)
     expect(resA.remainingPotion).toBe(0)
 
-    // Caso B: Jugador estándar con 18 energías -> sube a 20 (+2, respetando tope de 20)
+    // Caso B: Jugador estándar con 13 energías -> sube a 15 (+2, respetando tope de 15)
     const resB = simulateUsePotion(13, false, 1)
     expect(resB.newEnergy).toBe(15)
     expect(resB.addEnergy).toBe(2)
     expect(resB.remainingPotion).toBe(0)
 
-    // Caso C: Jugador VIP con 22 energías -> sube a 25 (+3, respetando tope VIP de 25)
+    // Caso C: Jugador VIP con 17 energías -> sube a 20 (+3, respetando tope VIP de 20)
     const resC = simulateUsePotion(17, true, 1)
     expect(resC.newEnergy).toBe(20)
     expect(resC.addEnergy).toBe(3)
     expect(resC.remainingPotion).toBe(0)
 
-    // Caso D: Jugador al tope (20/20) no puede gastarla por error
+    // Caso D: Jugador al tope (15/15) no puede gastarla por error
     expect(() => simulateUsePotion(15, false, 1)).toThrow('ALREADY_MAX')
 
     // Caso E: Jugador que ya la gastó (0 pociones) no puede usarla de nuevo

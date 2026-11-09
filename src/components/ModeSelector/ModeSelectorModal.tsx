@@ -50,7 +50,7 @@ export default function ModeSelectorModal({
   onClose,
   userElo,
   userTokens,
-  playerEnergy = 20,
+  playerEnergy = 15,
   maxPlayerEnergy = 15,
   onSelectRanked,
   onSelectArenaAds,

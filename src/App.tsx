@@ -840,7 +840,7 @@ function App() {
     return new Promise((resolve) => {
       setActiveAppAlert({
         title: '👑 COMPRAR PASE VIP',
-        message: `¿Deseas comprar el Pase VIP de Temporada por ${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎 gemas?\n\nBeneficios incluidos:\n👑 Desbloqueo y reclamo de todas las recompensas doradas del Pase (20 niveles).\n⚡ +5 Energías máximas diarias (25 energías en total).\n📦 Acceso completo para comerciar cartas en el Mercado P2P.`,
+        message: `¿Deseas comprar el Pase VIP de Temporada por ${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎 gemas?\n\nBeneficios incluidos:\n👑 Desbloqueo y reclamo de todas las recompensas doradas del Pase (20 niveles).\n⚡ +5 Energías máximas diarias (20 energías en total: 15 base + 5 VIP).\n📦 Acceso completo para comerciar cartas en el Mercado P2P.`,
         icon: '👑',
         actionLabel: `COMPRAR (${VIP_PASS_PRECIO_GEMAS.toLocaleString()} 💎)`,
         onAction: async () => {

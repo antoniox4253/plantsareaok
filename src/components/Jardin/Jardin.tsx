@@ -176,7 +176,7 @@ export default function Jardin({
   isAdmin: _isAdmin,
   onOpenAdmin: _onOpenAdmin,
   onRewardsChanged,
-  playerEnergy = 20,
+  playerEnergy = 15,
   maxPlayerEnergy = 15,
   onUseEnergyPotion,
   equippedTreeSkin = null,

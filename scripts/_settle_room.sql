@@ -253,7 +253,7 @@ BEGIN
       IF p_winner_id IS NOT NULL THEN
         SELECT COALESCE(has_vip_pass, FALSE) INTO v_winner_vip FROM public.profiles WHERE id = p_winner_id;
         UPDATE public.profiles
-           SET energy_current = LEAST(CASE WHEN v_winner_vip THEN 25 ELSE 20 END, COALESCE(energy_current, 0) + 1),
+           SET energy_current = LEAST(CASE WHEN v_winner_vip THEN 20 ELSE 15 END, COALESCE(energy_current, 0) + 1),
                updated_at = NOW()
          WHERE id = p_winner_id;
 

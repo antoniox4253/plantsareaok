@@ -111,7 +111,7 @@ export default function MainMenu({
   userTokens = 0,
   userGold = 0,
   hasVipPass = false,
-  playerEnergy = 20,
+  playerEnergy = 15,
   maxPlayerEnergy = 15,
   unlockedPlants,
   plantInstances,

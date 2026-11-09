@@ -140,7 +140,7 @@ BEGIN
 
     IF v_room.mode = 'ranked' THEN
       UPDATE public.profiles p
-         SET energy_current = LEAST(CASE WHEN COALESCE(p.has_vip_pass, FALSE) THEN 25 ELSE 20 END, COALESCE(p.energy_current, 0) + 1),
+         SET energy_current = LEAST(CASE WHEN COALESCE(p.has_vip_pass, FALSE) THEN 20 ELSE 15 END, COALESCE(p.energy_current, 0) + 1),
              updated_at = NOW()
        WHERE p.id IN (v_room.player1_id, v_room.player2_id);
 
