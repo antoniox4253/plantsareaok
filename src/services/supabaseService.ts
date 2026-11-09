@@ -1125,7 +1125,7 @@ export const SupabaseService = {
   } | null> {
     if (!isSupabaseConfigured()) return null
     try {
-      const { data, error } = await (supabase.rpc as any)('game_room_info', {
+      const { data, error } = await this.callAuthRpc<any>('game_room_info', {
         p_room_id: roomId,
       })
       if (error) {
@@ -1166,7 +1166,7 @@ export const SupabaseService = {
     try {
       // Se mide alrededor de la llamada para estimar el viaje de ida y vuelta.
       const antes = Date.now()
-      const { data, error } = await (supabase.rpc as any)('start_match_clock', {
+      const { data, error } = await this.callAuthRpc<any>('start_match_clock', {
         p_room_id: roomId,
       })
       const despues = Date.now()
@@ -4516,6 +4516,8 @@ export const SupabaseService = {
       level: number
       statRolls: string[]
       isBase: boolean
+      isGolden?: boolean
+      equippedItem?: string | null
       isInDeck: boolean
       deckSlot: number | null
       isListed: boolean

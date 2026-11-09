@@ -3224,7 +3224,7 @@ export default function Clan({
           <button
             type="button"
             className="clan-settings-gear-btn"
-            onClick={handleOpenSettings}
+            onClick={() => handleOpenSettings()}
             title="Ajustes y Configuración del Clan (Solo Líder)"
           >
             ⚙️

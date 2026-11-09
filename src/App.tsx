@@ -680,7 +680,7 @@ function App() {
             treeSkin: basica.p2_tree_skin ?? null,
           },
           p1Deck: basica.p1_deck,
-          p2Deck: basica.is_async_match ? basica.async_deck_snapshot : basica.p2_deck,
+          p2Deck: basica.is_async_match ? (basica.async_deck_snapshot || basica.p2_deck) : basica.p2_deck,
           p1TreeLevel: basica.p1_tree_level ?? 0,
           p2TreeLevel: basica.p2_tree_level ?? 0,
           p1TreeSkin: basica.p1_tree_skin ?? null,
@@ -691,10 +691,16 @@ function App() {
       if (cancelado) return
       if (!sala) {
         setScreen('menu')
+        setActiveAppAlert({
+          title: 'ERROR DE SALA',
+          message: 'No se pudo cargar la información de la sala de juego. Por favor intenta buscar partida nuevamente.',
+          icon: '⚠️',
+        })
         return
       }
 
-      const versionValidada = parseEngineVersion(sala.engineVersion)
+      const rawVersion = sala.engineVersion || (sala as any).engine_version || 'auth-v2'
+      const versionValidada = parseEngineVersion(rawVersion) || 'auth-v2'
       if (!versionValidada) {
         setScreen('menu')
         setActiveAppAlert({
