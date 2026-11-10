@@ -1004,16 +1004,7 @@ export function useInventory() {
       console.warn('[useInventory] Error reclamando bono VIP de oro en Supabase:', e)
     }
 
-    // Fallback local seguro si tiene hasVipPass activo pero falla la red
-    const fallbackOptions = [5, 10, 15]
-    const fallbackBonus = fallbackOptions[Math.floor(Math.random() * fallbackOptions.length)]
-    setUserGold((prev) => {
-      const next = (prev ?? 0) + fallbackBonus
-      localStorage.setItem('plant_arena_gold', String(next))
-      return next
-    })
-    window.dispatchEvent(new CustomEvent('refresh_user_balance'))
-    return fallbackBonus
+    return 0
   }
 
   const startUnlockingSlot = (slotId: number): { success: boolean; error?: string } => {

@@ -162,4 +162,22 @@ describe('PvP PLANTS Token Settlement Flow Tests', () => {
     expect(bfSrc).not.toMatch(/VIP Ilimitado/i)
     expect(bfSrc).toContain('plantsRewardResult.isVip === true')
   })
+
+  it('9. SQL & Zero-Fallback Audit: Migración 430 corrige reembolso prematuro en enter_matchmaking, valida energía >= 1 atómica y elimina fallbacks locales de balance/VIP', () => {
+    const fs = require('fs')
+    const path = require('path')
+    const m430Path = path.resolve(__dirname, '../../supabase/migrations/430-fix-enter-matchmaking-energy-refund-bug-and-vip-expiry.sql')
+    const m430Sql = fs.readFileSync(m430Path, 'utf-8')
+    const cleanSql = m430Sql.replace(/--.*$/gm, '')
+
+    expect(cleanSql).not.toContain("Reembolso de 1 energía: sala expirada o abandonada")
+    expect(cleanSql).toContain('COALESCE(energy_current, 0) >= 1')
+    expect(cleanSql).toContain('vip_pass_expires_at')
+
+    const supaSrc = fs.readFileSync(path.resolve(__dirname, '../services/supabaseService.ts'), 'utf-8')
+    expect(supaSrc).not.toContain('Fallback de resiliencia directa si la RPC falla temporalmente')
+
+    const invSrc = fs.readFileSync(path.resolve(__dirname, '../hooks/useInventory.ts'), 'utf-8')
+    expect(invSrc).not.toContain('Fallback local seguro si tiene hasVipPass activo pero falla la red')
+  })
 })

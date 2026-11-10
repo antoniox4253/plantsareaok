@@ -240,41 +240,6 @@ export const SupabaseService = {
           return null
         }
         logError('myBalance', error)
-        // Fallback de resiliencia directa si la RPC falla temporalmente
-        try {
-          const { data: userData } = await supabase.auth.getUser()
-          if (userData?.user) {
-            const { data: prof } = await (supabase.from as any)('profiles')
-              .select('gems_balance, locked_gems_balance, gold_balance, colosseum_tickets, elo_rating, has_vip_pass, vip_pass_expires_at, claimed_vip_levels, battle_pass_xp, colosseum_current_streak, colosseum_max_streak, energy_current, energy_last_reset_utc, claimed_arena_ads_levels, plants_balance, plants_vesting_locked, last_plants_cashout_at, usdt_balance, golden_pity_counter')
-              .eq('id', userData.user.id)
-              .single()
-            if (prof) {
-              const totalGems = Number(prof.gems_balance ?? 0)
-              const lockedGems = Math.min(totalGems, Number(prof.locked_gems_balance ?? 0))
-              return {
-                gems_balance: totalGems,
-                locked_gems_balance: lockedGems,
-                withdrawable_gems: Math.max(0, totalGems - lockedGems),
-                gold_balance: Number(prof.gold_balance ?? 0),
-                colosseum_tickets: Number(prof.colosseum_tickets ?? 0),
-                elo_rating: Number(prof.elo_rating ?? 1000),
-                has_vip_pass: Boolean(prof.has_vip_pass) && (!prof.vip_pass_expires_at || new Date(prof.vip_pass_expires_at).getTime() > Date.now()),
-                claimed_vip_levels: Array.isArray(prof.claimed_vip_levels) ? prof.claimed_vip_levels : [],
-                battle_pass_xp: Number(prof.battle_pass_xp ?? 0),
-                claimed_arena_ads_levels: Array.isArray(prof.claimed_arena_ads_levels) ? prof.claimed_arena_ads_levels : [],
-                colosseum_current_streak: Number(prof.colosseum_current_streak ?? 0),
-                colosseum_max_streak: Number(prof.colosseum_max_streak ?? 0),
-                energy_current: prof.energy_current ?? ((Boolean(prof.has_vip_pass) && (!prof.vip_pass_expires_at || new Date(prof.vip_pass_expires_at).getTime() > Date.now())) ? 20 : 15),
-                energy_last_reset_utc: prof.energy_last_reset_utc,
-                plants_balance: Number(prof.plants_balance ?? 0),
-                plants_vesting_locked: Number(prof.plants_vesting_locked ?? 0),
-                last_plants_cashout_at: prof.last_plants_cashout_at ?? null,
-                usdt_balance: Number(prof.usdt_balance ?? 0),
-                golden_pity_counter: Number(prof.golden_pity_counter ?? 0),
-              }
-            }
-          }
-        } catch {}
         return null
       }
       if (data) {
