@@ -65,6 +65,7 @@ export default function ModeSelectorModal({
   const [codigo, setCodigo] = useState('')
   const [apuesta, setApuesta] = useState(0)
   const [copiado, setCopiado] = useState(false)
+  const isStoryModeVisible: boolean = false
 
   if (!isOpen) return null
 
@@ -107,7 +108,7 @@ export default function ModeSelectorModal({
             </div>
 
             {/* 4 GAME MODES GRID */}
-            <div className="mode-selector-grid-5">
+            <div className={isStoryModeVisible ? 'mode-selector-grid-5' : 'mode-selector-grid-4'}>
               {/* 1. MODO RANKED */}
               {(() => {
                 const isEnergyDepleted = userElo > 1602 && playerEnergy <= 0
@@ -283,7 +284,8 @@ export default function ModeSelectorModal({
                   🧟 JUGAR (50 💎)
                 </button>
               </div>
-              {/* 5. MODO HISTORIA: LA INVASIÓN MAPACHE (AL COSTADO DE ARENA SURVIVOR) */}
+              {/* 5. MODO HISTORIA: LA INVASIÓN MAPACHE (OCULTO HASTA LANZAMIENTO) */}
+              {isStoryModeVisible && (
               <div
                 className="mode-card mode-card--story"
                 onClick={() => {
@@ -336,6 +338,7 @@ export default function ModeSelectorModal({
                   📖 JUGAR HISTORIA
                 </button>
               </div>
+              )}
             </div>
           </>
         ) : (
