@@ -250,9 +250,11 @@ export default function StoryModeModal({
                   <span className="story-reward-pill story-reward-pill--gems">
                     💎 +{currentLevelConfig.rewards.gems} Gemas
                   </span>
-                  <span className="story-reward-pill story-reward-pill--tokens">
-                    🌱 +{currentLevelConfig.rewards.tokens} PLANTS
-                  </span>
+                  {currentLevelConfig.rewards.tokens > 0 && (
+                    <span className="story-reward-pill story-reward-pill--tokens">
+                      🌱 +{currentLevelConfig.rewards.tokens} PLANTS
+                    </span>
+                  )}
                 </div>
               </div>
 

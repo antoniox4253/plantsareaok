@@ -158,8 +158,8 @@ export function crearPlantaDelRival(
     lane,
     col: camina ? undefined : colEspejada,
     x,
-    hp: config.maxHp,
-    maxHp: config.maxHp,
+    hp: state.isStoryMode && config.category === 'ranged' ? Math.round(config.maxHp * 1.25) : config.maxHp,
+    maxHp: state.isStoryMode && config.category === 'ranged' ? Math.round(config.maxHp * 1.25) : config.maxHp,
     damage: config.damage ?? 0,
     attackSpeedMs: config.attackSpeedMs,
     moveSpeed: config.moveSpeed,
@@ -1631,7 +1631,7 @@ function moverProyectiles(state: GameState, dt: number, sonar: SonarFn): void {
       }
     }
 
-    if (!impacto && proy.x > 10 && proy.x < 90) siguientes.push(proy)
+    if (!impacto && proy.x > 10 && proy.x < (state.isStoryMode ? 98 : 90)) siguientes.push(proy)
   }
 
   state.projectiles = siguientes

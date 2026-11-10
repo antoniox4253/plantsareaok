@@ -80,7 +80,7 @@ export interface PlantEntity {
   maxHp: number
   lastActionTime: number
   isWalking: boolean
-  state: 'idle' | 'walking' | 'attacking' | 'chewing'
+  state: 'idle' | 'walking' | 'attacking' | 'chewing' | 'jumping'
   isSmashing?: boolean
   smashStartTime?: number
   isArmed?: boolean
@@ -103,6 +103,9 @@ export interface PlantEntity {
   hasJumped?: boolean
   isJumping?: boolean
   jumpStartTick?: number
+  jumpStartX?: number
+  jumpTargetX?: number
+  jumpDurationTicks?: number
   lastShootTick?: number
   nextLaneChangeTick?: number
   lastRoarTick?: number

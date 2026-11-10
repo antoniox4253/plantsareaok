@@ -36,6 +36,13 @@ export const MapacheUnit: React.FC<MapacheUnitProps> = ({
   const [isRigReady, setIsRigReady] = useState<boolean>(() => Boolean(cachedTemplates && cachedTemplates[mapacheKey]?.urls))
   const isBoss = enemy.isBoss || mapacheKey === 'reygarra'
 
+  // Mantener referencia al enemigo más reciente para animar sin reconstruir el DOM en cada tic
+  const enemyRef = useRef<PlantEntity>(enemy)
+  enemyRef.current = enemy
+
+  // Tiempo de inicio del salto acrobático para progreso cinemático suave
+  const jumpStartTimeRef = useRef<number | null>(null)
+
   // Altura adaptada al carril de combate
   const targetH = isBoss ? Math.round(laneHeightPx * 1.35) : Math.round(laneHeightPx * 0.95)
 
@@ -62,7 +69,7 @@ export const MapacheUnit: React.FC<MapacheUnitProps> = ({
     }
   }, [mapacheKey])
 
-  // Montar y animar el rig con las fórmulas cinemáticas exactas de template3.html
+  // Montar y animar el rig con las fórmulas cinemáticas exactas sin desmontar en cada cambio de estado
   useEffect(() => {
     if (!isRigReady || !containerRef.current || !cachedTemplates) return
 
@@ -82,8 +89,10 @@ export const MapacheUnit: React.FC<MapacheUnitProps> = ({
       if (!rigRef.current) return
 
       const tSec = (now - startTime) / 1000
-      const isAttacking = enemy.state === 'attacking'
-      const isWalking = enemy.isWalking
+      const currentEnemy = enemyRef.current
+      const isAttacking = currentEnemy.state === 'attacking'
+      const isWalking = currentEnemy.isWalking
+      const isJumping = Boolean(currentEnemy.isJumping)
 
       if (ch.pose) {
         let pose: any
@@ -96,13 +105,17 @@ export const MapacheUnit: React.FC<MapacheUnitProps> = ({
           pose = ch.pose(state, walkPhase, tSec, act)
         } else if (mapacheKey === 'garritas') {
           const walkPhase = tSec * 5.2
-          const isJumping = Boolean(enemy.hasJumped)
           if (isJumping && ch.jumpPose) {
             const jumpDuration = ch.jumpDur || 1.15
-            const jumpProgress = Math.min(1, (tSec % (jumpDuration + 1.0)) / jumpDuration)
+            if (jumpStartTimeRef.current === null) {
+              jumpStartTimeRef.current = now
+            }
+            const elapsedSec = (now - jumpStartTimeRef.current) / 1000
+            const jumpProgress = Math.min(1, Math.max(0, elapsedSec / jumpDuration))
             rigRef.current.jumpScale = 0.5
             pose = ch.jumpPose(jumpProgress, tSec)
           } else {
+            jumpStartTimeRef.current = null
             rigRef.current.jumpScale = 1
             const clawCycle = 0.65
             const act = isAttacking ? (tSec % clawCycle) / clawCycle : null
@@ -110,7 +123,7 @@ export const MapacheUnit: React.FC<MapacheUnitProps> = ({
             pose = ch.pose(state, walkPhase, tSec, act)
           }
         } else if (mapacheKey === 'punos') {
-          const isFury = Boolean(enemy.isFury)
+          const isFury = Boolean(currentEnemy.isFury)
           const walkPhase = tSec * 4.2
           const punchDur = isFury ? 0.35 : 0.6
           const act = isAttacking ? (tSec % punchDur) / punchDur : null
@@ -125,7 +138,7 @@ export const MapacheUnit: React.FC<MapacheUnitProps> = ({
           pose = ch.pose(state, walkPhase, tSec, act)
         } else if (mapacheKey === 'reygarra') {
           const walkPhase = tSec * 3.8
-          const isRoaring = Boolean(enemy.isCommandoAura)
+          const isRoaring = Boolean(currentEnemy.isCommandoAura)
           const state = isWalking ? 'walk' : 'hold'
           if (isRoaring) {
             const act = (tSec % 1.3) / 1.3
@@ -155,7 +168,7 @@ export const MapacheUnit: React.FC<MapacheUnitProps> = ({
       }
       rigRef.current = null
     }
-  }, [isRigReady, mapacheKey, targetH, enemy.state, enemy.isWalking, enemy.isFury, enemy.isCommandoAura, enemy.hasJumped])
+  }, [isRigReady, mapacheKey, targetH])
 
   return (
     <div

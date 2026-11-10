@@ -2025,7 +2025,7 @@ export default function Battlefield({
           const rewards = storyRewards || {
             gold: 150 + (storyLevel || 1) * 50,
             gems: 10 + Math.floor((storyLevel || 1) * 2.5),
-            tokens: 15 + (storyLevel || 1) * 5,
+            tokens: 0,
           }
           if (onStoryVictory) {
             onStoryVictory(storyLevel || 1, rewards)
@@ -2711,10 +2711,10 @@ export default function Battlefield({
             <span>•</span>
             <span style={{ color: '#facc15', fontWeight: 800 }}>
               {storyWaveIndex === 0
-                ? 'Oleada 1/3 (Incursión)'
+                ? (storyEnemiesRemaining <= 1 ? 'Oleada 1 despejada (¡Siguiente en camino!)' : 'Oleada 1/3 (Incursión)')
                 : storyWaveIndex === 1
-                  ? 'Oleada 2/3 (Emboscada)'
-                  : '👑 Oleada 3/3 (¡Rey Garra!)'}
+                  ? (storyEnemiesRemaining <= 1 ? '¡Ya falta poco! (¡Rey Garra aproximándose!)' : 'Oleada 2/3 (¡Ya falta poco!)')
+                  : (storyEnemiesRemaining === 1 ? '👑 ¡Rey Garra crítico! (¡Ya falta poco!)' : '👑 Oleada 3/3 (¡Rey Garra Final!)')}
             </span>
             <span>•</span>
             <span style={{ color: '#38bdf8' }}>
@@ -4234,9 +4234,11 @@ export default function Battlefield({
                             <span style={{ color: '#38bdf8', fontWeight: 800, fontSize: '0.85rem' }}>
                               💎 +{storyRewards?.gems ?? (10 + Math.floor((storyLevel || 1) * 2.5))} Gemas
                             </span>
-                            <span style={{ color: '#34d399', fontWeight: 800, fontSize: '0.85rem' }}>
-                              🌱 +{storyRewards?.tokens ?? (15 + (storyLevel || 1) * 5)} Token PLANTS
-                            </span>
+                            {storyRewards && storyRewards.tokens > 0 ? (
+                              <span style={{ color: '#34d399', fontWeight: 800, fontSize: '0.85rem' }}>
+                                🌱 +{storyRewards.tokens} Token PLANTS
+                              </span>
+                            ) : null}
                           </div>
                           <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
                             {storyLevel < 20

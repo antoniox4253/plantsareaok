@@ -474,6 +474,10 @@
 }
 
 /* Player 1 Plant Units */
+.enemy-unit {
+  transition: top 0.35s ease-in-out;
+}
+
 .plant-unit {
   cursor: pointer;
 }

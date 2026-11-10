@@ -6,6 +6,7 @@ import {
   getMapacheBaseDamage,
   getMapacheBaseSpeed,
   mapacheToPlantId,
+  spawnStoryEnemyEntity,
 } from './storyWaveEngine'
 import { createBattleState, stepTick } from './simulate'
 
@@ -364,4 +365,66 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
     // En PvP sí dispara para dañar la base rival
     expect(state.projectiles.filter(p => p.lane === 0).length).toBeGreaterThan(0)
   })
-});
+  it('garantiza que el modo historia no asigne tokens plants (tokens = 0)', () => {
+    for (let lvl = 1; lvl <= 20; lvl++) {
+      const cfg = generateStoryLevel(lvl, 1000 + lvl)
+      expect(cfg.rewards.tokens).toBe(0)
+    }
+  })
+
+  it('los mapaches spawnean en x=94 (antes del cuadrante 14) para entrar fluidamente', () => {
+    const state = createBattleState(1234, false, false, undefined, 'auth-v2', 1000, 1000, null, null, 3, false, 9999, undefined, undefined, undefined, false, 1, true, 1)
+    const entity = spawnStoryEnemyEntity(state, { tick: 0, lane: 0, mapacheKey: 'garritas' }, 1)
+    expect(entity.x).toBe(94)
+  })
+
+  it('los mapaches a distancia y plantas de rango tienen HP reforzada', () => {
+    expect(getMapacheBaseHp('pumpum')).toBe(240)
+    expect(getMapacheBaseHp('navajas')).toBe(260)
+  })
+
+  it('Garritas salta sobre Wall-nut con una curva de salto fluida y sin teletransportes bruscos', () => {
+    const sonar = () => {}
+    const state = createBattleState(1234, false, false, undefined, 'auth-v2', 1000, 1000, null, null, 3, false, 9999, undefined, undefined, undefined, false, 1, true, 1)
+
+    // Colocar Wall-nut en x = 40
+    state.plants.push({
+      id: 'test_wallnut',
+      plantId: 'wallnut',
+      lane: 1,
+      x: 40,
+      hp: 1200,
+      maxHp: 1200,
+      lastActionTime: 0,
+      isWalking: false,
+      state: 'idle',
+    })
+
+    // Garritas acercándose a la nuez en x = 47 (distancia 7)
+    const garritas = spawnStoryEnemyEntity(state, { tick: 0, lane: 1, mapacheKey: 'garritas' }, 1)
+    garritas.x = 47
+    state.enemyPlants.push(garritas)
+
+    // En el primer tick inicia el salto
+    stepTick(state, sonar)
+    expect(garritas.isJumping).toBe(true)
+    expect(garritas.jumpStartX).toBe(47)
+    expect(garritas.jumpTargetX).toBe(40 - 6.5)
+
+    // A mitad del salto no debe teletransportarse de golpe
+    for (let i = 0; i < 15; i++) {
+      stepTick(state, sonar)
+    }
+    expect(garritas.isJumping).toBe(true)
+    expect(garritas.x).toBeLessThan(47)
+    expect(garritas.x).toBeGreaterThan(40 - 6.5)
+
+    // Al finalizar la duración del salto aterriza y retoma la caminata
+    for (let i = 0; i < 30; i++) {
+      stepTick(state, sonar)
+    }
+    expect(garritas.isJumping).toBe(false)
+    expect(garritas.hasJumped).toBe(true)
+    expect(garritas.x).toBeLessThanOrEqual(40 - 6.5)
+  })
+})

@@ -1,5 +1,4 @@
 import type { PlantEntity, PlantId } from '../types/game.ts'
-import { BASE_RIGHT_START_X } from '../utils/gameConstants.ts'
 import { entityId, createRng, nextFloat } from './rng.ts'
 import type { GameState, SonarFn } from './simulate.ts'
 import { msToTicks } from './time.ts'
@@ -73,13 +72,13 @@ export function getAllowedMapachesForLevel(level: number): MapacheKey[] {
 export function getMapacheBaseHp(key: MapacheKey): number {
   switch (key) {
     case 'pumpum':
-      return 180 // Artillero frágil a distancia (~9 guisantes)
+      return 240 // Artillero frágil a distancia (~9 guisantes)
     case 'garritas':
       return 200 // Rasguñador veloz común (~10 guisantes)
     case 'punos':
       return 380 // Peleador fornido (~19 guisantes, estilo cono)
     case 'navajas':
-      return 220 // Lanzador ágil (~11 guisantes)
+      return 260 // Lanzador ágil (~11 guisantes)
     case 'reygarra':
       return 950 // Jefe de oleada 3 (resistente y derrotable)
   }
@@ -275,7 +274,7 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     rewards: {
       gold: 150 + level * 50,
       gems: 10 + Math.floor(level * 2.5),
-      tokens: 15 + level * 5,
+      tokens: 0,
     },
   }
 }
@@ -301,7 +300,7 @@ export function spawnStoryEnemyEntity(
     level,
     statRolls: [],
     lane: spawn.lane,
-    x: BASE_RIGHT_START_X - 1,
+    x: 94,
     hp: scaledHp,
     maxHp: scaledHp,
     damage: scaledDmg,
@@ -362,12 +361,17 @@ export function processStoryWaves(
 
   // 2. Transición de Oleadas:
   if (currentWaveIdx === 0) {
+    if (spawnsLeftInCurrentWave === 0 && livingEnemies <= 2 && !(state as any).storyWave1ClearedBannerShown) {
+      ;(state as any).storyWave1ClearedBannerShown = true
+      state.waveBanner = '⚠️ ¡OLEADA 1 DESPEJADA! PREPÁRATE, SE ACERCA LA SIGUIENTE...'
+      state.pending.push({ atTick: state.tick + 90, kind: 'clear_wave_banner' })
+    }
     const wave2 = state.storyConfig.waves[1]
     const shouldStartWave2 = (spawnsLeftInCurrentWave === 0 && livingEnemies === 0) || state.tick >= wave2.startTick
     if (shouldStartWave2 && state.tick >= 850) {
       state.storyWaveIndex = 1
       state.wave = 2
-      state.waveBanner = '🦝 ¡OLEADA 2 (EMBOSCADA)!'
+      state.waveBanner = '🦝 ¡OLEADA 2 (EMBOSCADA)! ¡RESISTE, YA FALTA POCO!'
       state.pending.push({ atTick: state.tick + 90, kind: 'clear_wave_banner' })
       sonar('pea_hit', 0.8)
       const offset = Math.max(0, state.tick - wave2.startTick)
@@ -377,12 +381,17 @@ export function processStoryWaves(
       }))
     }
   } else if (currentWaveIdx === 1) {
+    if (spawnsLeftInCurrentWave === 0 && livingEnemies <= 2 && !(state as any).storyWave2ClearedBannerShown) {
+      ;(state as any).storyWave2ClearedBannerShown = true
+      state.waveBanner = '⚠️ ¡ÚLTIMO ESFUERZO! ¡YA FALTA POCO! ¡EL REY GARRA SE APROXIMA!'
+      state.pending.push({ atTick: state.tick + 90, kind: 'clear_wave_banner' })
+    }
     const wave3 = state.storyConfig.waves[2]
     const shouldStartWave3 = (spawnsLeftInCurrentWave === 0 && livingEnemies === 0) || state.tick >= wave3.startTick
     if (shouldStartWave3 && state.tick >= 1700) {
       state.storyWaveIndex = 2
       state.wave = 3
-      state.waveBanner = '👑 ¡OLEADA 3: JEFE FINAL REY GARRA!'
+      state.waveBanner = '👑 ¡OLEADA 3: JEFE FINAL REY GARRA! ¡YA FALTA POCO PARA SALVAR EL JARDÍN!'
       state.pending.push({ atTick: state.tick + 120, kind: 'clear_wave_banner' })
       sonar('level_select', 1.0)
       const offset = Math.max(0, state.tick - wave3.startTick)
@@ -402,6 +411,13 @@ export function processStoryWaves(
 
   for (const enemy of state.enemyPlants) {
     if (enemy.hp <= 0 || !enemy.mapacheKey) continue
+
+    // ALERTA DE JEFE HERIDO
+    if (enemy.mapacheKey === 'reygarra' && enemy.isBoss && enemy.hp <= enemy.maxHp * 0.35 && !(state as any).storyBossCriticalBannerShown) {
+      ;(state as any).storyBossCriticalBannerShown = true
+      state.waveBanner = '🔥 ¡EL REY GARRA ESTÁ DEBILITADO! ¡YA FALTA MUY POCO!'
+      state.pending.push({ atTick: state.tick + 90, kind: 'clear_wave_banner' })
+    }
 
     // AURA / BUFF DEL REY GARRA (Ánimo de combate)
     if (enemy.isCommandoAura && enemy.commandoAuraEndTick && state.tick >= enemy.commandoAuraEndTick) {
@@ -581,30 +597,54 @@ export function processStoryWaves(
 
     // 🐾 GARRITAS (Melee Rápido: ataca plantas en contacto; al llegar al árbol le causa daño y desaparece)
     else if (enemy.mapacheKey === 'garritas') {
-      if (targetPlant) {
-        // Salto acrobático de defensas tipo Nuez
-        if (!enemy.hasJumped && (targetPlant.plantId === 'wallnut' || targetPlant.plantId === 'tallnut') && distToTarget <= 7.5) {
-          enemy.x = Math.max(16, targetPlant.x - 6.5)
-          enemy.hasJumped = true
-          sonar('plantation', 0.8)
-        }
+      // Salto acrobático parabólico fluido sobre defensas tipo Nuez
+      if (enemy.isJumping) {
+        const startT = enemy.jumpStartTick || state.tick
+        const dur = enemy.jumpDurationTicks || msToTicks(1150)
+        const elapsed = state.tick - startT
+        const progress = Math.min(1, Math.max(0, elapsed / dur))
+        // Interpolación ease-in-out suave para avance horizontal
+        const easeX = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2
+        const startX = enemy.jumpStartX ?? enemy.x
+        const endX = enemy.jumpTargetX ?? 16
+        enemy.x = startX + (endX - startX) * easeX
+        enemy.isWalking = false
+        enemy.state = 'jumping'
 
-        const meleeDist = 6.0
-        if (distToTarget > meleeDist) {
-          enemy.x -= effSpeed * dt * 2.2
-          enemy.isWalking = true
+        if (progress >= 1) {
+          enemy.isJumping = false
+          enemy.hasJumped = true
+          enemy.x = endX
           enemy.state = 'walking'
+          enemy.isWalking = true
+        }
+      } else if (targetPlant) {
+        // Iniciar salto acrobático sobre defensas tipo Nuez si aún no ha saltado
+        if (!enemy.hasJumped && (targetPlant.plantId === 'wallnut' || targetPlant.plantId === 'tallnut') && distToTarget <= 7.5) {
+          enemy.isJumping = true
+          enemy.jumpStartTick = state.tick
+          enemy.jumpDurationTicks = msToTicks(1150)
+          enemy.jumpStartX = enemy.x
+          enemy.jumpTargetX = Math.max(16, targetPlant.x - 6.5)
+          sonar('plantation', 0.8)
         } else {
-          enemy.isWalking = false
-          enemy.state = 'attacking'
-          const cadencia = isBuffed ? 450 : 650
-          if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(cadencia)) {
-            enemy.lastAttackTick = state.tick
-            targetPlant.hp -= enemy.damage || 25
-            sonar('pea_hit', 0.5)
-            if (targetPlant.hp <= 0) {
-              targetPlant.hp = 0
-              sonar('zombie_fall', 0.5)
+          const meleeDist = 6.0
+          if (distToTarget > meleeDist) {
+            enemy.x -= effSpeed * dt * 2.2
+            enemy.isWalking = true
+            enemy.state = 'walking'
+          } else {
+            enemy.isWalking = false
+            enemy.state = 'attacking'
+            const cadencia = isBuffed ? 450 : 650
+            if (state.tick - (enemy.lastAttackTick || 0) >= msToTicks(cadencia)) {
+              enemy.lastAttackTick = state.tick
+              targetPlant.hp -= enemy.damage || 25
+              sonar('pea_hit', 0.5)
+              if (targetPlant.hp <= 0) {
+                targetPlant.hp = 0
+                sonar('zombie_fall', 0.5)
+              }
             }
           }
         }
