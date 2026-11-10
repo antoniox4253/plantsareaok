@@ -145,4 +145,21 @@ describe('PvP PLANTS Token Settlement Flow Tests', () => {
     expect(cleanSql).toContain("'dailyClaimsMax', NULL")
     expect(m426Sql).toContain('426-remove-plants-daily-victory-cap-keep-energy-cap')
   })
+
+  it('8. SQL & UI Audit: Migración 429 elimina dailyClaimsMax NULL, valida vip_pass_expires_at y Battlefield no muestra VIP Ilimitado', () => {
+    const fs = require('fs')
+    const path = require('path')
+    const m429Path = path.resolve(__dirname, '../../supabase/migrations/429-fix-vip-verification-and-remove-null-claims-max.sql')
+    const m429Sql = fs.readFileSync(m429Path, 'utf-8')
+    const cleanSql = m429Sql.replace(/--.*$/gm, '')
+
+    expect(cleanSql).not.toContain("'dailyClaimsMax', NULL")
+    expect(cleanSql).toContain('vip_pass_expires_at')
+    expect(cleanSql).toContain('vip_pass_expires_at > NOW()')
+
+    const bfPath = path.resolve(__dirname, '../components/Battlefield/Battlefield.tsx')
+    const bfSrc = fs.readFileSync(bfPath, 'utf-8')
+    expect(bfSrc).not.toMatch(/VIP Ilimitado/i)
+    expect(bfSrc).toContain('plantsRewardResult.isVip === true')
+  })
 })

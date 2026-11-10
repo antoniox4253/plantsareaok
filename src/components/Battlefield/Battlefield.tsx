@@ -4468,7 +4468,7 @@ export default function Battlefield({
                             </div>
                             <div className="victory-plants-pill">
                               <span className="victory-plants-pill__lbl">Hoy:</span>
-                              {plantsRewardResult.isVip ? (
+                              {plantsRewardResult.isVip === true ? (
                                 <strong style={{ color: '#fbbf24' }}>👑 VIP ({plantsRewardResult.dailyClaimsUsed} ganadas hoy)</strong>
                               ) : (
                                 <span>{plantsRewardResult.dailyClaimsUsed} ganadas hoy</span>
