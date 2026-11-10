@@ -5,11 +5,16 @@ CREATE OR REPLACE FUNCTION public.report_match_result(p_room_id uuid, p_winner_i
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_uid        UUID := auth.uid();
-  v_room       RECORD;
-  v_is_p1      BOOLEAN;
-  v_p1_plants  INTEGER := 0;
-  v_p2_plants  INTEGER := 0;
+  v_uid             UUID := auth.uid();
+  v_room            RECORD;
+  v_is_p1           BOOLEAN;
+  v_p1_plants       INTEGER := 0;
+  v_p2_plants       INTEGER := 0;
+  v_p1_actions      INTEGER := 0;
+  v_p2_actions      INTEGER := 0;
+  v_p1_last_action  TIMESTAMPTZ;
+  v_p2_last_action  TIMESTAMPTZ;
+  v_decided_winner  UUID;
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'No autenticado'; END IF;
   SELECT * INTO v_room FROM public.game_rooms WHERE id = p_room_id FOR UPDATE;
@@ -104,73 +109,63 @@ BEGIN
     RETURN public._settle_room(p_room_id, v_room.player1_id);
   END IF;
 
+  -- Auditar match_actions para desempate y evaluación de desconexión
+  SELECT
+    COUNT(*) FILTER (WHERE user_id = v_room.player1_id AND kind = 'plant'),
+    COUNT(*) FILTER (WHERE user_id = v_room.player2_id AND kind = 'plant'),
+    COUNT(*) FILTER (WHERE user_id = v_room.player1_id),
+    COUNT(*) FILTER (WHERE user_id = v_room.player2_id),
+    MAX(created_at) FILTER (WHERE user_id = v_room.player1_id),
+    MAX(created_at) FILTER (WHERE user_id = v_room.player2_id)
+  INTO
+    v_p1_plants, v_p2_plants,
+    v_p1_actions, v_p2_actions,
+    v_p1_last_action, v_p2_last_action
+  FROM public.match_actions
+  WHERE room_id = p_room_id;
+
   -- CASO A: AMBOS JUGADORES HAN REPORTADO
   IF v_room.p1_reported_at IS NOT NULL AND v_room.p2_reported_at IS NOT NULL THEN
+    -- Consenso mutuo legítimo
     IF v_room.p1_reported_winner IS NOT NULL AND v_room.p1_reported_winner = v_room.p2_reported_winner THEN
       RETURN public._settle_room(p_room_id, v_room.p1_reported_winner);
     END IF;
 
-    IF v_room.p1_reported_winner IS NULL AND v_room.p2_reported_winner IS NULL THEN
-      UPDATE public.game_rooms
-         SET status = 'draw',
-             settled_at = NOW(),
-             server_winner_id = NULL,
-             verification_status = 'verified',
-             verification_note = 'Empate tácito por consenso mutuo verificado'
-       WHERE id = p_room_id;
-
-      RETURN jsonb_build_object(
-        'success', TRUE,
-        'status', 'empate',
-        'mode', v_room.mode,
-        'eloGained', 0,
-        'eloLost', 0,
-        'eloDelta', 0,
-        'payout', 0
-      );
+    -- Si ambos reportaron pero discrepan (o uno se desincronizó):
+    -- NUNCA MARCAR EMPATE (draw). Desempatar por dominancia y presencia activa en servidor.
+    IF v_p1_plants > v_p2_plants THEN
+      v_decided_winner := v_room.player1_id;
+    ELSIF v_p2_plants > v_p1_plants THEN
+      v_decided_winner := v_room.player2_id;
+    ELSIF v_p1_last_action IS NOT NULL AND v_p2_last_action IS NOT NULL AND v_p1_last_action > v_p2_last_action + INTERVAL '3 seconds' THEN
+      v_decided_winner := v_room.player1_id;
+    ELSIF v_p2_last_action IS NOT NULL AND v_p1_last_action IS NOT NULL AND v_p2_last_action > v_p1_last_action + INTERVAL '3 seconds' THEN
+      v_decided_winner := v_room.player2_id;
+    ELSIF v_p1_actions > v_p2_actions THEN
+      v_decided_winner := v_room.player1_id;
+    ELSIF v_p2_actions > v_p1_actions THEN
+      v_decided_winner := v_room.player2_id;
+    ELSE
+      -- Si todo es idéntico, gana quien reportó primero la victoria
+      v_decided_winner := CASE WHEN v_room.p1_reported_at <= v_room.p2_reported_at THEN v_room.player1_id ELSE v_room.player2_id END;
     END IF;
 
-    -- Discrepancia real entre reportes
-    UPDATE public.game_rooms 
-       SET status = 'draw',
-           settled_at = NOW(),
-           verification_status = 'disputed',
-           verification_note = 'Reportes de clientes discrepantes'
+    UPDATE public.game_rooms
+       SET verification_note = 'Victoria autoritativa por dominancia y actividad tras reporte discrepante'
      WHERE id = p_room_id;
 
-    IF v_room.mode = 'ranked' THEN
-      UPDATE public.profiles p
-         SET energy_current = LEAST(CASE WHEN COALESCE(p.has_vip_pass, FALSE) THEN 20 ELSE 15 END, COALESCE(p.energy_current, 0) + 1),
-             updated_at = NOW()
-       WHERE p.id IN (v_room.player1_id, v_room.player2_id);
-
-      BEGIN
-        INSERT INTO public.transactions (user_id, type, amount_gems, description, status)
-        SELECT p.id, 'energy_refund', 0, 'Reembolso de 1 energía por partida en arbitraje (disputa técnica)', 'completed'
-          FROM public.profiles p
-         WHERE p.id IN (v_room.player1_id, v_room.player2_id);
-      EXCEPTION WHEN OTHERS THEN
-        NULL;
-      END;
-    END IF;
-
-    RETURN jsonb_build_object('success', FALSE, 'status', 'resultado_en_disputa', 'refunded', TRUE);
+    RETURN public._settle_room(p_room_id, v_decided_winner);
   END IF;
 
-  -- CASO B: SÓLO UNO HA REPORTADO (RESOLUCIÓN POR ABANDONO O DESCONEXIÓN)
+  -- CASO B: SÓLO UNO HA REPORTADO (DESCONEXIÓN DEL RIVAL)
   IF v_room.p1_reported_at IS NOT NULL AND v_room.p2_reported_at IS NULL THEN
     IF v_room.p1_reported_winner = v_room.player1_id THEN
-      SELECT COUNT(*) INTO v_p2_plants
-        FROM public.match_actions
-       WHERE room_id = p_room_id AND user_id = v_room.player2_id AND kind = 'plant';
-
-      IF (v_p2_plants = 0 AND v_room.p1_reported_at <= NOW() - INTERVAL '8 seconds')
-         OR (v_p2_plants > 0 AND v_room.p1_reported_at <= NOW() - INTERVAL '30 seconds') THEN
+      -- Si el rival nunca puso plantas o no ha reportado tras 10 segundos, victoria inmediata
+      IF v_p2_plants = 0
+         OR v_room.p1_reported_at <= NOW() - INTERVAL '10 seconds'
+         OR (v_p2_last_action IS NOT NULL AND v_p1_last_action > v_p2_last_action + INTERVAL '10 seconds') THEN
         UPDATE public.game_rooms
-           SET verification_note = CASE 
-                 WHEN v_p2_plants = 0 THEN 'Victoria por abandono/desconexión del rival (rival sin plantas)'
-                 ELSE 'Victoria por abandono o desconexión del rival (>30s sin reporte)'
-               END
+           SET verification_note = 'Victoria autoritativa por desconexión/abandono del rival'
          WHERE id = p_room_id;
         RETURN public._settle_room(p_room_id, v_room.player1_id);
       END IF;
@@ -179,17 +174,11 @@ BEGIN
 
   IF v_room.p2_reported_at IS NOT NULL AND v_room.p1_reported_at IS NULL THEN
     IF v_room.p2_reported_winner = v_room.player2_id THEN
-      SELECT COUNT(*) INTO v_p1_plants
-        FROM public.match_actions
-       WHERE room_id = p_room_id AND user_id = v_room.player1_id AND kind = 'plant';
-
-      IF (v_p1_plants = 0 AND v_room.p2_reported_at <= NOW() - INTERVAL '8 seconds')
-         OR (v_p1_plants > 0 AND v_room.p2_reported_at <= NOW() - INTERVAL '30 seconds') THEN
+      IF v_p1_plants = 0
+         OR v_room.p2_reported_at <= NOW() - INTERVAL '10 seconds'
+         OR (v_p1_last_action IS NOT NULL AND v_p2_last_action > v_p1_last_action + INTERVAL '10 seconds') THEN
         UPDATE public.game_rooms
-           SET verification_note = CASE 
-                 WHEN v_p1_plants = 0 THEN 'Victoria por abandono/desconexión del rival (rival sin plantas)'
-                 ELSE 'Victoria por abandono o desconexión del rival (>30s sin reporte)'
-               END
+           SET verification_note = 'Victoria autoritativa por desconexión/abandono del rival'
          WHERE id = p_room_id;
         RETURN public._settle_room(p_room_id, v_room.player2_id);
       END IF;

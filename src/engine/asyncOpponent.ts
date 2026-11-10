@@ -1532,8 +1532,9 @@ export function resolverLiquidacionPartida(options: {
   soyP1: boolean
   currentUserId: string | null
   serverVerification: VerificacionServidorPayload
+  clientResult?: 'victory' | 'defeat'
 }): ResultadoLiquidacionMatch {
-  const { isAsyncMatch, soyP1, currentUserId, serverVerification } = options
+  const { isAsyncMatch, soyP1, currentUserId, serverVerification, clientResult } = options
   const status = serverVerification.status
 
   if (status === 'verified' || status === 'settled') {
@@ -1543,14 +1544,15 @@ export function resolverLiquidacionPartida(options: {
     const energyRestored = Boolean((s as any).energyRestored || (s as any).energy_restored || earlySurrender)
 
     if (!serverVerification.winnerSide && !serverVerification.winnerId) {
+      const finalResult = clientResult ?? 'defeat'
       return {
         mostrarResultado: true,
-        resultadoFinal: 'draw',
-        statusServidor: 'revision_servidor',
+        resultadoFinal: finalResult,
+        statusServidor: 'liquidada',
         payout: 0,
         earlySurrender,
-        energyRestored: true,
-        error: 'El combate finalizó sin ganador definido. Tus copas y energía están a salvo.',
+        energyRestored,
+        error: undefined,
       }
     }
 
@@ -1604,8 +1606,8 @@ export function resolverLiquidacionPartida(options: {
   if (status === 'verified_draw') {
     return {
       mostrarResultado: true,
-      resultadoFinal: 'draw',
-      statusServidor: 'empate_verificado',
+      resultadoFinal: clientResult ?? 'draw',
+      statusServidor: clientResult ? 'liquidada' : 'empate_verificado',
       payout: 0,
     }
   }

@@ -589,10 +589,8 @@ export default function Battlefield({
   const resultadoEnRevision =
     !isAsyncMatch && resultadoServidor?.status === 'revision_servidor'
 
-  const resultadoEmpatado =
-    ['empate_verificado', 'resultado_en_disputa'].includes(
-      resultadoServidor?.status ?? ''
-    )
+  // En desconexiones y disputas SIEMPRE termina en victoria o derrota, nunca empate técnico
+  const resultadoEmpatado = false
 
   const [battleSummaryResult, setBattleSummaryResult] = useState<{
     eloChange?: number
@@ -1807,11 +1805,12 @@ export default function Battlefield({
             soyP1,
             currentUserId,
             serverVerification: verificacion,
+            clientResult: gameStatus === 'victory' ? 'victory' : 'defeat',
           })
 
-          if (isAsyncMatch && liq.statusServidor === 'revision_servidor' && gameStatus === 'victory') {
+          if ((isAsyncMatch || liq.statusServidor === 'revision_servidor' || liq.statusServidor === 'empate_verificado') && (gameStatus === 'victory' || gameStatus === 'defeat')) {
             liq.statusServidor = 'liquidada'
-            liq.resultadoFinal = 'victory'
+            liq.resultadoFinal = gameStatus
             liq.mostrarResultado = true
           }
 
@@ -4450,9 +4449,9 @@ export default function Battlefield({
                             <div className="victory-plants-pill">
                               <span className="victory-plants-pill__lbl">Tope:</span>
                               {plantsRewardResult.isVip ? (
-                                <strong style={{ color: '#fbbf24' }}>👑 VIP ({plantsRewardResult.dailyClaimsUsed}/{plantsRewardResult.dailyClaimsMax ?? 20} hoy)</strong>
+                                <strong style={{ color: '#fbbf24' }}>👑 VIP ({plantsRewardResult.dailyClaimsUsed} ganadas hoy)</strong>
                               ) : (
-                                <span>{plantsRewardResult.dailyClaimsUsed}/{plantsRewardResult.dailyClaimsMax ?? 15} hoy</span>
+                                <span>{plantsRewardResult.dailyClaimsUsed} ganadas hoy</span>
                               )}
                             </div>
                             {plantsRewardResult.bonusActive ? (

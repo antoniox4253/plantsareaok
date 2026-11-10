@@ -224,7 +224,7 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
     expect(garritas?.hp ?? 0).toBe(0)
   })
 
-  it('en Modo Historia las plantas a distancia NO disparan si no hay enemigos en su carril', () => {
+    it('en Modo Historia las plantas a distancia NO disparan si no hay enemigos en su carril', () => {
     const sonar = () => {}
     const state = createBattleState(1234, false, false, undefined, 'auth-v2', 1000, 1000, null, null, 3, false, 250, undefined, undefined, undefined, false, 1, true, 1)
 
@@ -237,6 +237,8 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       hp: 300,
       maxHp: 300,
       lastActionTime: 0,
+      isWalking: false,
+      state: 'idle',
     })
 
     // Simular 50 tics (~1.6s, mayor a la cadencia de 1.2s)
@@ -258,6 +260,8 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       maxHp: 200,
       moveSpeed: 0,
       lastActionTime: 0,
+      isWalking: true,
+      state: 'walking',
     })
 
     for (let t = 0; t < 50; t++) {
@@ -278,6 +282,8 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       maxHp: 200,
       moveSpeed: 0,
       lastActionTime: 0,
+      isWalking: true,
+      state: 'walking',
     })
 
     for (let t = 0; t < 50; t++) {
@@ -301,6 +307,8 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       hp: 300,
       maxHp: 300,
       lastActionTime: 0,
+      isWalking: false,
+      state: 'idle',
     })
 
     // Sin enemigos: no dispara
@@ -320,6 +328,8 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       maxHp: 200,
       moveSpeed: 0,
       lastActionTime: 0,
+      isWalking: true,
+      state: 'walking',
     })
 
     for (let t = 0; t < 50; t++) {
@@ -343,6 +353,8 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
       hp: 300,
       maxHp: 300,
       lastActionTime: 0,
+      isWalking: false,
+      state: 'idle',
     })
 
     for (let t = 0; t < 50; t++) {
