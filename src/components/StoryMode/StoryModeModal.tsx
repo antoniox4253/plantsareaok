@@ -228,13 +228,13 @@ export default function StoryModeModal({
                       key={w.waveNumber}
                       className={`story-wave-item ${w.hasBoss ? 'story-wave-item--boss' : ''}`}
                     >
-                      <span className="story-wave-item__num">
-                        {w.hasBoss ? '👑' : `O${w.waveNumber}`}
-                      </span>
-                      <div className="story-wave-item__texts">
-                        <strong>{w.title}</strong>
-                        <small>{w.subtitle}</small>
+                      <div className="story-wave-item__head">
+                        <span className="story-wave-item__num">
+                          {w.hasBoss ? '👑' : `O${w.waveNumber}`}
+                        </span>
+                        <strong>{w.title.replace(/^Oleada \d:\s*/i, '')}</strong>
                       </div>
+                      <small className="story-wave-item__sub">{w.subtitle}</small>
                     </div>
                   ))}
                 </div>

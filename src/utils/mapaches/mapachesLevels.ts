@@ -212,9 +212,9 @@ export function getStoryLevelConfig(level: number): StoryLevelConfig {
     initialSun: clampedLevel >= 10 ? 200 : 250,
     waves,
     rewards: {
-      gold: 50 + clampedLevel * 25,
-      gems: clampedLevel % 5 === 0 ? 30 : 10,
-      tokens: clampedLevel % 5 === 0 ? 5 : 2,
+      gold: 150 + clampedLevel * 50,
+      gems: 10 + Math.floor(clampedLevel * 2.5),
+      tokens: 0,
     },
   }
 }
