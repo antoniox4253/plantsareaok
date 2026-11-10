@@ -1787,21 +1787,7 @@ export default function Clan({
 
     // Inicializar mapa de porcentajes de miembros
     if (userClan?.members) {
-      const shares: Record<string, number> = {}
-      const hasAnyConfigured = userClan.members.some((m) => typeof m.rewardPercentage === 'number' && m.rewardPercentage > 0)
-      if (hasAnyConfigured) {
-        userClan.members.forEach((m) => {
-          shares[m.id] = Number(m.rewardPercentage ?? 0)
-        })
-      } else {
-        const count = Math.max(1, userClan.members.length)
-        const baseShare = Math.floor(100 / count)
-        const remainder = 100 - baseShare * count
-        userClan.members.forEach((m, idx) => {
-          shares[m.id] = idx === 0 ? baseShare + remainder : baseShare
-        })
-      }
-      setMemberRewardShares(shares)
+      setMemberRewardShares(ClanManager.initializeRewardSharesMap(userClan.members))
     }
 
     setSettingsTab(initialTab)
@@ -1817,19 +1803,12 @@ export default function Clan({
     }
 
     // Validar suma total del 100% o auto-balancear equitativamente si no está en la pestaña rewards
-    const currentShares = { ...memberRewardShares }
-    const totalPct = Math.round(
-      userClan.members.reduce((sum, m) => sum + (Number(currentShares[m.id]) || 0), 0)
-    )
+    let currentShares = { ...memberRewardShares }
+    const totalPct = ClanManager.calculateRewardSharesTotal(userClan.members, currentShares)
 
     if (totalPct !== 100) {
       if (settingsTab !== 'rewards' || userClan.members.length === 1) {
-        const count = Math.max(1, userClan.members.length)
-        const baseShare = Math.floor(100 / count)
-        const remainder = 100 - baseShare * count
-        userClan.members.forEach((m, idx) => {
-          currentShares[m.id] = idx === 0 ? baseShare + remainder : baseShare
-        })
+        currentShares = ClanManager.buildEquitableRewardShares(userClan.members)
         setMemberRewardShares(currentShares)
       } else {
         soundManager.playSound('surrender', 0.6)
@@ -1897,32 +1876,29 @@ export default function Clan({
   // Estado y Handler para Repartir Excedente de Ganancias (Solo Líder)
   const [isDistributingSurplus, setIsDistributingSurplus] = useState(false)
 
-  const handleDistributeSurplusEarnings = async () => {
-    if (!userClan) return
+  const handleDistributeSurplusEarnings = () => {
+    if (!userClan || isDistributingSurplus) return
     if (!isLeader) {
       showModalAlert('ACCESO RESTRINGIDO', 'Solo el Líder del clan puede repartir las ganancias excedentes.', '🔒', 'warning')
       return
     }
 
-    const WAR_RESERVE = 2800.0
     const currentVault = Number(userClan.vaultGems ?? userClan.vaultUsd ?? 0)
-    const surplusEarnings = Math.max(0, currentVault - WAR_RESERVE)
+    const surplusEarnings = ClanManager.computeSurplusGems(currentVault)
 
-    if (surplusEarnings <= 0) {
+    if (Math.floor(surplusEarnings) <= 0) {
       showModalAlert(
         'SIN GANANCIAS EXCEDENTES',
-        `El Tesoro actual (${currentVault.toFixed(0)} 💎) se encuentra dentro de la Reserva Operativa de Guerra (2,800 💎).\n\nEsta reserva permanece siempre protegida en el clan para defender la base y participar en futuras guerras. Solo las ganancias netas generadas por encima de los 2,800 💎 pueden ser repartidas.`,
+        `El Tesoro actual (${currentVault.toFixed(0)} 💎) se encuentra dentro de la Reserva Operativa de Guerra (2,800 💎).\n\nEsta reserva permanece siempre protegida en el clan para defender la base y participar en futuras guerras. Solo las ganancias netas enteras generadas por encima de los 2,800 💎 pueden ser repartidas.`,
         '🛡️',
         'warning'
       )
       return
     }
 
-    // Validar suma del 100%
+    // Validar suma del 100% antes de pedir confirmación (nunca mutar servidor sin confirmación)
     const currentShares = { ...memberRewardShares }
-    const totalPct = Math.round(
-      userClan.members.reduce((sum, m) => sum + (Number(currentShares[m.id]) || 0), 0)
-    )
+    const totalPct = ClanManager.calculateRewardSharesTotal(userClan.members, currentShares)
 
     if (totalPct !== 100) {
       soundManager.playSound('surrender', 0.6)
@@ -1937,14 +1913,10 @@ export default function Clan({
       return
     }
 
-    // Guardar los porcentajes configurados en el servidor antes de ejecutar el reparto
     const sharesPayload = userClan.members.map((m) => ({
       user_id: m.id,
       percentage: Number(currentShares[m.id]) || 0,
     }))
-    await supabaseService.updateClanRewardShares(userClan.id, sharesPayload)
-
-    // Formatear mensaje explícito de confirmación con la advertencia de torneos
     const formattedSurplus = Math.floor(surplusEarnings).toLocaleString()
     const confirmMessage =
       `Repartirás todo el excedente de ${formattedSurplus} Gemas 💎 entre los miembros según los porcentajes asignados.\n\n` +
@@ -1961,13 +1933,32 @@ export default function Clan({
         soundManager.playSound('click', 0.5)
 
         try {
+          if (ClanManager.isValidUuid(userClan.id)) {
+            const sharesRes = await supabaseService.updateClanRewardShares(userClan.id, sharesPayload)
+            if (!sharesRes?.success) {
+              soundManager.playSound('surrender', 0.6)
+              showModalAlert(
+                'NO SE PUDIERON GUARDAR LAS CUOTAS',
+                sharesRes?.message || sharesRes?.error || 'Error al guardar los porcentajes en el servidor antes del reparto.',
+                '❌',
+                'error'
+              )
+              return
+            }
+          }
+
           const res = await supabaseService.distributeClanSurplusEarnings(userClan.id)
-          if (res.success) {
+          if (res?.success) {
             soundManager.playSound('victory', 1)
+            ClanManager.updateClanRewardShares(userClan.id, currentShares)
             // Si el jugador actual recibió parte del reparto, actualizar saldo local
             if (res.payouts && Array.isArray(res.payouts)) {
+              const normalizedPlayer = playerName?.trim().toLowerCase()
               const myPayout = res.payouts.find(
-                (p: any) => p.user_id === userClan.leaderId || p.username === playerName
+                (p: any) =>
+                  (myMember?.id && p.user_id === myMember.id) ||
+                  (userClan.leaderId && p.user_id === userClan.leaderId) ||
+                  (normalizedPlayer && String(p.username || '').trim().toLowerCase() === normalizedPlayer)
               )
               if (myPayout && myPayout.gems_received > 0) {
                 onAddTokens(myPayout.gems_received)
@@ -1989,7 +1980,7 @@ export default function Clan({
             soundManager.playSound('surrender', 0.6)
             showModalAlert(
               'NO SE PUDO REPARTIR',
-              res.message || res.error || 'Ocurrió un error al procesar el reparto.',
+              res?.message || res?.error || 'Ocurrió un error al procesar el reparto.',
               '❌',
               'error'
             )
@@ -5313,7 +5304,7 @@ export default function Clan({
                 {/* Panel de Tesoro Comunal & Reparto de Excedente de Temporada */}
                 {(() => {
                   const vaultGems = Number(userClan.vaultGems ?? userClan.vaultUsd ?? 0)
-                  const surplus = Math.max(0, vaultGems - 2800)
+                  const surplus = Math.floor(ClanManager.computeSurplusGems(vaultGems))
                   return (
                     <div className="clan-vault-surplus-dashboard-card">
                       <div className="clan-vault-surplus-card-left">
@@ -5321,7 +5312,7 @@ export default function Clan({
                           <span className="clan-vault-surplus-badge">💎 TESORO DEL CLAN &amp; EXCEDENTES</span>
                           {surplus > 0 ? (
                             <span className="clan-vault-surplus-tag clan-vault-surplus-tag--available">
-                              🔥 ¡{Math.floor(surplus).toLocaleString()} 💎 DISPONIBLES!
+                              🔥 ¡{surplus.toLocaleString()} 💎 DISPONIBLES!
                             </span>
                           ) : (
                             <span className="clan-vault-surplus-tag clan-vault-surplus-tag--reserve">
@@ -6383,12 +6374,7 @@ export default function Clan({
 
                   {/* Summary & Quick Distribution Row */}
                   {(() => {
-                    const totalPct = Math.round(
-                      (userClan?.members || []).reduce(
-                        (sum, m) => sum + (Number(memberRewardShares[m.id]) || 0),
-                        0
-                      )
-                    )
+                    const totalPct = ClanManager.calculateRewardSharesTotal(userClan?.members || [], memberRewardShares)
                     const isExactly100 = totalPct === 100
                     const isUnder = totalPct < 100
                     const isOver = totalPct > 100
@@ -6396,14 +6382,7 @@ export default function Clan({
                     const handleEquitableSplit = () => {
                       if (!userClan?.members?.length) return
                       soundManager.playSound('click', 0.4)
-                      const count = userClan.members.length
-                      const baseShare = Math.floor(100 / count)
-                      const remainder = 100 - baseShare * count
-                      const newShares: Record<string, number> = {}
-                      userClan.members.forEach((m, idx) => {
-                        newShares[m.id] = idx === 0 ? baseShare + remainder : baseShare
-                      })
-                      setMemberRewardShares(newShares)
+                      setMemberRewardShares(ClanManager.buildEquitableRewardShares(userClan.members))
                     }
 
                     return (
@@ -6436,6 +6415,71 @@ export default function Clan({
                         >
                           ⚖️ Repartir Equitativo
                         </button>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Bloque Exclusivo: Liquidar y Repartir Excedente de Ganancias (siempre visible arriba de la lista) */}
+                  {(() => {
+                    const vaultGems = Number(userClan?.vaultGems ?? userClan?.vaultUsd ?? 0)
+                    const surplus = Math.floor(ClanManager.computeSurplusGems(vaultGems))
+                    const totalPct = ClanManager.calculateRewardSharesTotal(userClan?.members || [], memberRewardShares)
+                    const isSumValid = totalPct === 100
+
+                    return (
+                      <div className="clan-rewards-payout-box">
+                        <div className="clan-rewards-payout-header">
+                          <div className="clan-rewards-payout-titles">
+                            <span className="clan-rewards-payout-badge">💎 LIQUIDACIÓN DE GANANCIAS</span>
+                            <h4>REPARTIR EXCEDENTE DEL TESORO</h4>
+                            <p>
+                              Transfiere inmediatamente la cuota en Gemas 💎 a la cuenta de cada miembro según su porcentaje.
+                              La Reserva de Guerra (2,800 💎) permanece protegida en el Tesoro del clan.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="clan-rewards-payout-metrics">
+                          <div className="clan-rewards-metric-card">
+                            <small>Tesoro Actual</small>
+                            <strong>{vaultGems.toFixed(0)} 💎</strong>
+                          </div>
+                          <div className="clan-rewards-metric-card">
+                            <small>Reserva Protegida</small>
+                            <span className="clan-rewards-metric-shield">🛡️ 2,800 💎</span>
+                          </div>
+                          <div className="clan-rewards-metric-card clan-rewards-metric-card--surplus">
+                            <small>Excedente Repartible</small>
+                            <strong className={surplus > 0 ? 'clan-surplus-positive' : 'clan-surplus-zero'}>
+                              {surplus > 0 ? `+${surplus.toLocaleString()} 💎` : '0 💎'}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <div className="clan-rewards-payout-action-row">
+                          {surplus <= 0 ? (
+                            <div className="clan-rewards-no-surplus-hint">
+                              🛡️ El Tesoro no supera la Reserva de Guerra (2,800 💎). Acumula victorias en asaltos o clasifica en el ranking para generar excedente.
+                            </div>
+                          ) : (
+                            <>
+                              {!isSumValid && (
+                                <span className="clan-rewards-invalid-hint">
+                                  ⚠️ La suma actual es {totalPct}%. Ajusta al 100% o pulsa "⚖️ Repartir Equitativo".
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                className={`clan-rewards-distribute-btn${!isSumValid ? ' clan-rewards-distribute-btn--invalid' : ''}`}
+                                disabled={isDistributingSurplus}
+                                onClick={handleDistributeSurplusEarnings}
+                                title={!isSumValid ? 'Debes balancear los porcentajes al 100% primero' : 'Repartir todo el excedente entre los miembros'}
+                              >
+                                {isDistributingSurplus ? '⏳ REPARTIENDO...' : `🚀 REPARTIR TODO EL EXCEDENTE (${surplus.toLocaleString()} 💎)`}
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     )
                   })()}
@@ -6515,70 +6559,6 @@ export default function Clan({
                       )
                     })}
                   </div>
-
-                  {/* Bloque Exclusivo: Liquidar y Repartir Excedente de Ganancias */}
-                  {(() => {
-                    const vaultGems = Number(userClan?.vaultGems ?? userClan?.vaultUsd ?? 0)
-                    const WAR_RESERVE = 2800.0
-                    const surplus = Math.max(0, vaultGems - WAR_RESERVE)
-                    const totalPct = Math.round(
-                      (userClan?.members || []).reduce(
-                        (sum, m) => sum + (Number(memberRewardShares[m.id]) || 0),
-                        0
-                      )
-                    )
-                    const isSumValid = totalPct === 100
-
-                    return (
-                      <div className="clan-rewards-payout-box">
-                        <div className="clan-rewards-payout-header">
-                          <div className="clan-rewards-payout-titles">
-                            <span className="clan-rewards-payout-badge">💎 LIQUIDACIÓN DE GANANCIAS</span>
-                            <h4>REPARTIR EXCEDENTE DEL TESORO</h4>
-                            <p>
-                              Transfiere inmediatamente la cuota en Gemas 💎 a la cuenta de cada miembro según su porcentaje.
-                              La Reserva de Guerra (2,800 💎) permanece protegida en el Tesoro del clan.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="clan-rewards-payout-metrics">
-                          <div className="clan-rewards-metric-card">
-                            <small>Tesoro Actual</small>
-                            <strong>{vaultGems.toFixed(0)} 💎</strong>
-                          </div>
-                          <div className="clan-rewards-metric-card">
-                            <small>Reserva Protegida</small>
-                            <span className="clan-rewards-metric-shield">🛡️ 2,800 💎</span>
-                          </div>
-                          <div className="clan-rewards-metric-card clan-rewards-metric-card--surplus">
-                            <small>Excedente Repartible</small>
-                            <strong className={surplus > 0 ? 'clan-surplus-positive' : 'clan-surplus-zero'}>
-                              {surplus > 0 ? `+${Math.floor(surplus).toLocaleString()} 💎` : '0 💎'}
-                            </strong>
-                          </div>
-                        </div>
-
-                        <div className="clan-rewards-payout-action-row">
-                          {surplus <= 0 ? (
-                            <div className="clan-rewards-no-surplus-hint">
-                              🛡️ El Tesoro no supera la Reserva de Guerra (2,800 💎). Acumula victorias en asaltos o clasifica en el ranking para generar excedente.
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              className="clan-rewards-distribute-btn"
-                              disabled={isDistributingSurplus || !isSumValid}
-                              onClick={handleDistributeSurplusEarnings}
-                              title={!isSumValid ? 'Debes balancear los porcentajes al 100% primero' : 'Repartir todo el excedente entre los miembros'}
-                            >
-                              {isDistributingSurplus ? '⏳ REPARTIENDO...' : `🚀 REPARTIR TODO EL EXCEDENTE (${Math.floor(surplus).toLocaleString()} 💎)`}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })()}
                 </div>
               )}
 

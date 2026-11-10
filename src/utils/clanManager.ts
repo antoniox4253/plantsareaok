@@ -1543,6 +1543,53 @@ export class ClanManager {
   static isFlashPackExpired(_expiresAt?: string | number | null): boolean {
     return false
   }
+
+  /** Reserva Operativa de Guerra permanente protegida en el Tesoro del Clan. */
+  static readonly WAR_RESERVE_GEMS = 2800.0
+
+  /** Calcula el excedente repartible por encima de la Reserva Operativa (2,800 💎). */
+  static computeSurplusGems(vaultGems: number | undefined | null): number {
+    return Math.max(0, Number(vaultGems ?? 0) - ClanManager.WAR_RESERVE_GEMS)
+  }
+
+  /** Suma total redondeada de porcentajes asignados a los miembros actuales. */
+  static calculateRewardSharesTotal(
+    members: ReadonlyArray<{ id: string }>,
+    shares: Record<string, number>
+  ): number {
+    return Math.round(members.reduce((sum, m) => sum + (Number(shares[m.id]) || 0), 0))
+  }
+
+  /** Genera un mapa equitativo de porcentajes que suma exactamente 100%. */
+  static buildEquitableRewardShares(members: ReadonlyArray<{ id: string }>): Record<string, number> {
+    const shares: Record<string, number> = {}
+    if (!members.length) return shares
+    const count = members.length
+    const baseShare = Math.floor(100 / count)
+    const remainder = 100 - baseShare * count
+    members.forEach((m, idx) => {
+      shares[m.id] = idx === 0 ? baseShare + remainder : baseShare
+    })
+    return shares
+  }
+
+  /** Inicializa el mapa de porcentajes desde miembros del servidor o equitativo si ninguno tiene cuota. */
+  static initializeRewardSharesMap(
+    members: ReadonlyArray<{ id: string; rewardPercentage?: number }>
+  ): Record<string, number> {
+    if (!members.length) return {}
+    const hasAnyConfigured = members.some(
+      (m) => typeof m.rewardPercentage === 'number' && m.rewardPercentage > 0
+    )
+    if (!hasAnyConfigured) {
+      return ClanManager.buildEquitableRewardShares(members)
+    }
+    const shares: Record<string, number> = {}
+    members.forEach((m) => {
+      shares[m.id] = Number(m.rewardPercentage ?? 0)
+    })
+    return shares
+  }
 }
 
 export interface ClanRankingEntry {

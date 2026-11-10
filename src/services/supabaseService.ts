@@ -135,13 +135,15 @@ export const SupabaseService = {
 
     let { data, error } = await (supabase.rpc as any)(rpcName, params)
 
-    if (
-      error &&
-      (error.message?.includes('No autenticado') ||
-        error.message?.includes('NOT_AUTHENTICATED') ||
-        error.message?.includes('permission denied') ||
-        error.code === '42501')
-    ) {
+    const needsAuthRetry =
+      (error &&
+        (error.message?.includes('No autenticado') ||
+          error.message?.includes('NOT_AUTHENTICATED') ||
+          error.message?.includes('permission denied') ||
+          error.code === '42501')) ||
+      (!error && data && typeof data === 'object' && (data as any).error === 'NOT_AUTHENTICATED')
+
+    if (needsAuthRetry) {
       try {
         const refreshedOk = await safeRefreshSession()
         if (refreshedOk) {
@@ -2241,13 +2243,16 @@ export const SupabaseService = {
   ): Promise<{ success: boolean; total_percentage?: number; members_updated?: number; error?: string; message?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
-      const { data, error } = await (supabase.rpc as any)('update_clan_reward_shares', {
+      const { data, error } = await this.callAuthRpc<any>('update_clan_reward_shares', {
         p_clan_id: clanId,
         p_shares: shares,
       })
       if (error) {
         logError('updateClanRewardShares', error)
         return { success: false, error: error.message }
+      }
+      if (!data) {
+        return { success: false, error: 'EMPTY_RESPONSE', message: 'El servidor no devolvió respuesta al guardar cuotas.' }
       }
       return data as { success: boolean; total_percentage?: number; members_updated?: number; error?: string; message?: string }
     } catch (e: any) {
@@ -2267,12 +2272,15 @@ export const SupabaseService = {
   }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
-      const { data, error } = await (supabase.rpc as any)('distribute_clan_surplus_earnings', {
+      const { data, error } = await this.callAuthRpc<any>('distribute_clan_surplus_earnings', {
         p_clan_id: clanId,
       })
       if (error) {
         logError('distributeClanSurplusEarnings', error)
         return { success: false, error: error.message }
+      }
+      if (!data) {
+        return { success: false, error: 'EMPTY_RESPONSE', message: 'El servidor no devolvió respuesta al repartir excedente.' }
       }
       return data as any
     } catch (e: any) {
@@ -2906,7 +2914,7 @@ export const SupabaseService = {
   ): Promise<{ success: boolean; error?: string; message?: string; settings?: any }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no configurado' }
     try {
-      const { data, error } = await (supabase.rpc as any)('update_clan_settings', {
+      const { data, error } = await this.callAuthRpc<any>('update_clan_settings', {
         p_clan_id: clanId,
         p_settings: settings,
       })
@@ -2914,7 +2922,7 @@ export const SupabaseService = {
         logError('updateClanSettings', error)
         return { success: false, error: error.message }
       }
-      return data as { success: boolean; error?: string; message?: string; settings?: any }
+      return (data || { success: false, error: 'EMPTY_RESPONSE' }) as { success: boolean; error?: string; message?: string; settings?: any }
     } catch (e: any) {
       logError('updateClanSettings', e)
       return { success: false, error: e?.message }
@@ -3295,12 +3303,12 @@ export const SupabaseService = {
   async settleClanSeasonRewards(): Promise<{ success: boolean; summary?: any; error?: string }> {
     if (!isSupabaseConfigured()) return { success: false, error: 'Supabase no conectado' }
     try {
-      const { data, error } = await (supabase.rpc as any)('settle_clan_season_rewards')
+      const { data, error } = await this.callAuthRpc<any>('settle_clan_season_rewards')
       if (error) {
         logError('settleClanSeasonRewards', error)
         return { success: false, error: error.message }
       }
-      return data as { success: boolean; summary?: any }
+      return (data || { success: false, error: 'EMPTY_RESPONSE' }) as { success: boolean; summary?: any }
     } catch (e: any) {
       logError('settleClanSeasonRewards', e)
       return { success: false, error: e?.message }
