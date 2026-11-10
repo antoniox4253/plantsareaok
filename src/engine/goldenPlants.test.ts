@@ -205,4 +205,40 @@ describe('Sistema de Plantas Doradas (Gold Foil & Play-to-Earn)', () => {
     expect(sql).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_plant_instances_single_variant_in_deck')
     expect(sql).toContain('COALESCE(is_golden, false)')
   })
+
+  it('12. Las plantas doradas tienen 0% incremento en stats base de combate (idénticas a las base)', () => {
+    for (const plantId of GOLDEN_PLANT_IDS) {
+      const base = PLANT_CONFIGS[plantId]
+      const golden = getScaledPlantConfig(plantId, [], null, true)
+
+      expect(golden.maxHp).toBe(base.maxHp)
+      expect(golden.damage).toBe(base.damage)
+      expect(golden.cost).toBe(base.cost)
+      expect(golden.attackSpeedMs).toBe(base.attackSpeedMs)
+      expect(golden.cooldownMs).toBe(base.cooldownMs)
+    }
+  })
+
+  it('13. SQL Audit: Migración 431 cruza match_actions para otorgar bono solo por doradas jugadas en campo', () => {
+    const fs = require('fs')
+    const path = require('path')
+    const m431Path = path.resolve(__dirname, '../../supabase/migrations/431-golden-cards-played-only-and-blog-news-index.sql')
+    const sql = fs.readFileSync(m431Path, 'utf-8')
+    expect(sql).toContain('public.match_actions')
+    expect(sql).toContain("kind = 'plant'")
+    expect(sql).toContain('INTO v_golden_count')
+    expect(sql).toContain('v_golden_bonus_pct := v_golden_count * 10.0')
+    expect(sql).toContain('20261110-0001-4000-8000-000000000431')
+    expect(sql).toContain('20261110-0002-4000-8000-000000000431')
+  })
+
+  it('14. SeasonRewardModal no contiene la referencia desactualizada de +15% stats', () => {
+    const fs = require('fs')
+    const path = require('path')
+    const modalPath = path.resolve(__dirname, '../components/Ranking/SeasonRewardModal.tsx')
+    const modalCode = fs.readFileSync(modalPath, 'utf-8')
+    expect(modalCode).not.toContain('+15% en Salud (HP) y Ataque')
+    expect(modalCode).toContain('+10% extra de Token $PLANTS')
+    expect(modalCode).toContain('mismas estadísticas base')
+  })
 })

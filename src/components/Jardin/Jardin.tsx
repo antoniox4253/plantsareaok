@@ -1607,7 +1607,7 @@ export default function Jardin({
                     </div>
                     <div className="jardin-card__header-right">
                       {card.isGolden && (
-                        <span className="jardin-card-badge--golden" title="Carta Dorada exclusiva: +10% Recompensa Token PLANTS por victoria">
+                        <span className="jardin-card-badge--golden" title="Carta Dorada: mismas stats base en combate y +10% Token PLANTS al jugarla en campo y ganar (Arena 3+, máx. 6 = +60%)">
                           ✨ DORADA (+10%)
                         </span>
                       )}

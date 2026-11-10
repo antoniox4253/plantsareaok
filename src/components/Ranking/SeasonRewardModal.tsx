@@ -511,7 +511,7 @@ export default function SeasonRewardModal({
                         {(activeTier as RankedRewardTier).goldenPlant}
                       </strong>
                       <span className="season-reward-item-desc">
-                        Aspecto dorado resplandeciente exclusivo con bonificación permanente de <strong>+15% en Salud (HP) y Ataque</strong> en combate.
+                        Aspecto dorado resplandeciente con las <strong>mismas estadísticas base</strong> en combate. Otorga <strong>+10% extra de Token $PLANTS</strong> por cada dorada jugada en campo al ganar en Arena 3+ (máx. 6 = +60%).
                       </span>
                     </div>
                   </div>

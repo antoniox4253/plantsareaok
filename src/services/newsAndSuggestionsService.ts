@@ -66,23 +66,51 @@ export interface WeeklyUpdateDayBlock {
 export const WEEKLY_UPDATES_BLOCKS: WeeklyUpdateDayBlock[] = [
   {
     dayNumber: 1,
-    dateLabel: '8 Nov (Hoy)',
-    title: 'Blog de Novedades & AQP Game Fest 2026',
+    dateLabel: '10 Nov (Hoy)',
+    title: 'Modo Historia Próximamente, Energía 15/20 y Cartas Doradas',
     tag: 'HOY · DESTACADO',
     tagColor: '#10b981',
-    icon: '📰',
-    summary: 'Lanzamiento del centro de devlog, buzón de sugerencias y vitrina en feria de Arequipa.',
+    icon: '🔜',
+    summary: 'Avance del Modo Historia (Invasión Mapache), reducción del número de batallas de energía y regla de doradas jugadas.',
     highlights: [
-      'Nuevo Blog Oficial y notas técnicas de desarrollo sin publicidad invasiva.',
-      'Buzón Comunitario de Sugerencias con Nick de Jugador verificado y votos.',
-      'Presencia en AQP Game Fest 2026 destacada en aqpgamefest.com/juegos.html (Atoniox).',
+      'Anuncio oficial del Modo Historia (Invasión Mapache) con mapa de capítulos y mecánicas PVE.',
+      'Ajuste en energía de batallas: 15 batallas diarias estándar (sin pase) y 20 con Pase VIP.',
+      'Cartas Doradas: Mismas estadísticas de combate (+0% stats), otorgan +10% de Token $PLANTS al jugarlas en el campo y ganar en Arena 3+ (máx. 6 = +60%).',
     ],
   },
   {
     dayNumber: 2,
+    dateLabel: '9 Nov',
+    title: 'Reparto Transparente de Ganancias y Excedentes en Clanes',
+    tag: 'CLANES 2.0',
+    tagColor: '#f59e0b',
+    icon: '💎',
+    summary: 'Los líderes pueden repartir el excedente de gemas a sus miembros mediante distribución equitativa o personalizada.',
+    highlights: [
+      'Bóveda de Clan con separación de reservas operativas y excedente distribuible.',
+      'Asignación porcentual configurable por jugador o reparto equitativo con un solo clic.',
+      'Ventana de confirmación explícita antes de ejecutar el reparto para evitar errores.',
+    ],
+  },
+  {
+    dayNumber: 3,
+    dateLabel: '8 Nov',
+    title: 'Blog Oficial de Novedades & AQP Game Fest 2026',
+    tag: 'COMUNIDAD',
+    tagColor: '#10b981',
+    icon: '📰',
+    summary: 'Lanzamiento del centro de devlog, buzón de sugerencias y vitrina en feria de Arequipa.',
+    highlights: [
+      'Nuevo Blog Oficial sin publicidad invasiva ni ventanas molestas.',
+      'Buzón Comunitario de Sugerencias con Nick de Jugador verificado y sistema de votos.',
+      'Presencia en AQP Game Fest 2026 destacada en aqpgamefest.com/juegos.html (Atoniox).',
+    ],
+  },
+  {
+    dayNumber: 4,
     dateLabel: '7 Nov',
     title: 'Sistema de Clanes y Chat en Vivo',
-    tag: 'COMUNIDAD',
+    tag: 'CLANES',
     tagColor: '#3b82f6',
     icon: '🏰',
     summary: 'Fundación de clanes, roles de liderazgo y mensajería en tiempo real.',
@@ -93,7 +121,7 @@ export const WEEKLY_UPDATES_BLOCKS: WeeklyUpdateDayBlock[] = [
     ],
   },
   {
-    dayNumber: 3,
+    dayNumber: 5,
     dateLabel: '6 Nov',
     title: 'Donación de Cartas y Torneos',
     tag: 'COMPETITIVO',
@@ -107,7 +135,7 @@ export const WEEKLY_UPDATES_BLOCKS: WeeklyUpdateDayBlock[] = [
     ],
   },
   {
-    dayNumber: 4,
+    dayNumber: 6,
     dateLabel: '5 Nov',
     title: 'Cinturón de Campeón (Bonk Choy)',
     tag: 'EQUIPAMIENTO',
@@ -121,51 +149,92 @@ export const WEEKLY_UPDATES_BLOCKS: WeeklyUpdateDayBlock[] = [
     ],
   },
   {
-    dayNumber: 5,
+    dayNumber: 7,
     dateLabel: '4 Nov',
-    title: 'Notas de Balance Táctico',
-    tag: 'BALANCE',
-    tagColor: '#eab308',
-    icon: '⚖️',
-    summary: 'Ajuste de tiempos de recarga, producción de soles y daño por segundo.',
-    highlights: [
-      'Girasol: producción de soles un 5% más rápida para aperturas ágiles.',
-      'Repetidora: aumento de cadencia de tiro frente a zombis blindados.',
-      'Jalapeño: precisión en detonación y carril libre garantizado.',
-    ],
-  },
-  {
-    dayNumber: 6,
-    dateLabel: '3 Nov',
-    title: 'Motor 60 FPS y Anti-Desync',
+    title: 'Motor 60 FPS, Anti-Desync y Arbitraje Elo',
     tag: 'MOTOR DETERMINISTA',
     tagColor: '#06b6d4',
     icon: '⚡',
-    summary: 'Simulación fluida y reconstrucción determinista de jugadas.',
+    summary: 'Simulación fluida, reconstrucción determinista de jugadas y arbitraje en 1,400 Copas.',
     highlights: [
       'Línea temporal a 60 FPS con sincronización tic a tic entre rivales.',
       'Reconstrucción automática asíncrona ante microcortes de red.',
-      'Reducción drástica del lag en partidas ranked clasificatorias.',
-    ],
-  },
-  {
-    dayNumber: 7,
-    dateLabel: '2 Nov',
-    title: 'Arbitraje Elo y Optimización',
-    tag: 'SEGURIDAD & ELO',
-    tagColor: '#10b981',
-    icon: '🛡️',
-    summary: 'Validación en 1,400 Copas, sistema de amigos y carga web ligera.',
-    highlights: [
-      'Arbitraje automático anti-autowin en el sistema de referidos.',
-      'Recompensas permanentes de 100 de Oro y 5% de comisión en gemas.',
-      'Carga ultrarrápida en navegadores móviles sin necesidad de instalación.',
+      'Arbitraje automático anti-autowin y recompensas permanentes en referidos.',
     ],
   },
 ]
 
 // Fallback predeterminado por si no hay conexión o se está en modo aislado
 const DEFAULT_NEWS_POSTS: NewsPost[] = [
+  {
+    id: 'post-modo-historia-proximamente',
+    title: '🔜 Modo Historia — Invasión Mapache (¡Próximamente!)',
+    summary:
+      '¡Los mapaches invasores se acercan! Conoce en primicia los detalles del nuevo modo historia: 3 carriles tácticos, olas PVE desafiantes, el Rey Garrita y recompensas únicas.',
+    content: `### 🌲 La Invasión Mapache amenaza el Bosque Sagrado
+¡Grandes noticias para la comunidad de **Plants Arena**! Nuestro equipo de desarrollo se encuentra trabajando intensamente en el nuevo **Modo Historia (PVE)**, que enfrentará a tus tropas vegetales contra la astuta y letal armada de mapaches liderada por el **Rey Garrita**.
+
+### 🎮 Características Clave del Modo Historia
+- **Formato Táctico de 3 Carriles**: Al igual que el PVP competitivo, defenderás 3 carriles simultáneos frente a invasiones continuas.
+- **Tácticas Enemigas Diferenciadas**:
+  - *Mapaches Melee*: Tropas veloces de vanguardia que buscan desgastar tus defensas frontales.
+  - *Mapaches a Distancia*: Lanzadores de proyectiles como bums y navajas que atacan desde atrás.
+  - *Rey Garrita (Boss)*: El monarca mapache cuenta con movilidad estratégica vertical, saltando activamente entre los tres carriles para flanquear tu jardín.
+- **Sistema Económico Basado en Soles**: Administra la energía solar con prudencia para resistir cada oleada.
+- **Progresión por Capítulos**: Supera etapas, desbloquea niveles de dificultad y gana valiosas recompensas para tu cuenta.
+
+### ⏳ Estado de Desarrollo
+Actualmente el modo historia se encuentra en fase de pruebas internas y balance de oleadas. ¡Mantente atento a los próximos anuncios oficiales y fechas de lanzamiento en este blog!`,
+    tag: '⚔️ Próximamente',
+    category: 'evento',
+    version: 'Preview Modo Historia',
+    author: 'Equipo Plants Arena',
+    is_pinned: true,
+    published_at: new Date().toISOString(),
+  },
+  {
+    id: 'post-indice-novedades-v165',
+    title: '📋 Índice Oficial de Novedades (Clanes 2.0, Energía 15/20 VIP, Doradas en Campo y Blog)',
+    summary:
+      'Guía completa con todos los cambios y mejoras recientes del juego: nuevo sistema de energía, reglas competitivas de cartas doradas, gestión de clanes y más.',
+    content: `### 📚 Índice Consolidado de Actualizaciones Recientes (v1.6.5)
+
+Hemos implementado una serie de mejoras fundamentales en la experiencia de juego, balance y economía de Plants Arena:
+
+---
+
+### 1. ⚡ Rebalanceo del Sistema de Energía Diaria
+- **Jugadores Estándar (Sin Pase)**: Reducción optimizada a **15 batallas de energía**, facilitando completar tu sesión diaria sin agotamiento.
+- **Jugadores con Pase VIP**: Capacidad ampliada a **20 batallas de energía** con todas sus recompensas mejoradas.
+- **Objetivo**: Mayor intensidad táctica y menos batallas redundantes para subir de rango y recolectar tus sobres.
+
+---
+
+### 2. ✨ Cartas Doradas: Regla de Combate y Bonificación de Token
+- **Estadísticas de Combate (+0%)**: Las cartas doradas conservan **exactamente los mismos atributos base** de salud y ataque que las cartas estándar, garantizando un juego 100% justo sin Pay-to-Win.
+- **Condición de Juego en Campo**: El bono de **+10% de Token $PLANTS** (hasta un máximo de **+60%** con 6 doradas distintas) **SOLO se aplica si la carta fue efectivamente plantada y jugada en el campo durante la partida**.
+- **Requisito de Ligas**: Se activa en victorias competitivas a partir de Arena 3+ (2,001+ copas).
+
+---
+
+### 3. 🏰 Clanes 2.0: Reparto Transparente de Ganancias
+- **Bóveda del Clan**: Distinción clara entre reserva operativa y excedente de gemas.
+- **Distribución de Excedentes**: Los líderes pueden configurar porcentaje personalizado por jugador o reparto equitativo automático.
+- **Confirmación con Alerta de Seguridad**: Diálogo de verificación antes de liberar el excedente de gemas a los miembros.
+
+---
+
+### 4. 📰 Centro de Noticias y Devlog Oficial
+- **Tarjeta Única "Ver Noticias"**: Acceso directo y espacioso en el menú principal a todas las novedades sin elementos saturados.
+- **Buzón Comunitario de Sugerencias**: Propón mejoras con tu Nick verificado y vota las iniciativas de la comunidad.
+- **AQP Game Fest 2026**: Presencia oficial destacada en [aqpgamefest.com/juegos.html](https://aqpgamefest.com/juegos.html).`,
+    tag: '📚 Índice de Novedades',
+    category: 'actualizacion',
+    version: 'v1.6.5',
+    author: 'Equipo Plants Arena',
+    is_pinned: true,
+    published_at: new Date(Date.now() - 1800000).toISOString(),
+  },
   {
     id: 'default-news-aqp',
     title: '¡Plants Arena Presente en el AQP Game Fest 2026! (Arequipa, Perú)',
@@ -203,42 +272,41 @@ Para conmemorar este gran hito de marketing y crecimiento de la comunidad, estam
     title: 'Registro Semanal: Todas las Mejoras de los Últimos 7 Días (Día a Día)',
     summary:
       'Repasamos bloque a bloque cada una de las actualizaciones, balance, optimizaciones y nuevos sistemas implementados a lo largo de esta semana.',
-    content: `### 📅 Bitácora de Desarrollo: Últimos 7 Días
+    content: `### 📅 Bitácora de Desarrollo: Últimos 7 Días (Semana 46)
 
-#### 🟢 Día 1 · 8 de Noviembre (Hoy)
+#### 🟢 Día 1 · 10 de Noviembre (Hoy)
+- **Modo Historia — Invasión Mapache (¡Próximamente!)**: 3 carriles tácticos, PVE por oleadas, jefes con movilidad (Rey Garrita) y recompensas temáticas.
+- **Rebalanceo de Energía de Batallas**: Reducción a 15 batallas diarias estándar (sin pase) y 20 con Pase VIP para acelerar la progresión y obtención de sobres.
+- **Cartas Doradas en Combate**: Mismas estadísticas de combate (+0% stats), otorgan +10% de Token $PLANTS al jugarlas en campo y ganar en Arena 3+ (máx. 6 = +60%).
+- **Tarjeta Única en Menú**: "Ver Noticias" integrado, espacioso y sin saturación.
+
+#### 🟢 Día 2 · 9 de Noviembre
+- **Reparto de Excedentes en Clanes 2.0**: Sistema de reparto seguro de gemas desde la Bóveda del Clan con diálogo de confirmación explícito.
+- **Distribución Equitativa y Porcentual**: Los líderes pueden repartir a partes iguales o calibrar porcentajes individuales por miembro.
+
+#### 🟢 Día 3 · 8 de Noviembre
 - **Nuevo Blog de Novedades & Notas de Parche**: Sección oficial para seguir el progreso del juego sin publicidad.
 - **Buzón de Sugerencias Comunitario**: Envía propuestas con tu Nick verificado y vota las mejores ideas.
 - **Presentación en AQP Game Fest 2026**: Destacados en la vitrina de juegos en [aqpgamefest.com/juegos.html](https://aqpgamefest.com/juegos.html).
 
-#### 🟢 Día 2 · 7 de Noviembre
+#### 🟢 Día 4 · 7 de Noviembre
 - **Sistema de Clanes Oficial**: Creación de clanes, roles de líderes y miembros, y fundación de la Fortaleza de Clan.
 - **Chat de Clan en Tiempo Real**: Canales de mensajería instantánea para coordinar partidas entre compañeros.
 
-#### 🟢 Día 3 · 6 de Noviembre
+#### 🟢 Día 5 · 6 de Noviembre
 - **Donación de Cartas Comunitarias**: Petición diaria de copias de plantas con recompensas en Oro y Experiencia.
 - **Lobby de Torneos Programados**: Salas con brackets automáticos y botes de gemas acumulados.
 
-#### 🟢 Día 4 · 5 de Noviembre
+#### 🟢 Día 6 · 5 de Noviembre
 - **Equipamiento Épico para Bonk Choy**: Cinturón de Campeón (+60 de daño por golpe, +350 puntos de vida extra).
 - **Efectos Visuales Dorados**: Puñetazos dorados en combate y previsualización de skins en el paquete de semillas.
 
-#### 🟢 Día 5 · 4 de Noviembre
-- **Notas de Balance Táctico**:
-  - *Girasol*: Producción de soles un 5% más rápida para aperturas estratégicas activas.
-  - *Lanzaguisantes Repetidora*: Mayor cadencia de disparo contra zombis con armadura pesada.
-  - *Jalapeño*: Optimización del tiempo de detonación en carril.
-  - *Nuez Muralla*: Regeneración reforzada tras fusiones.
-
-#### 🟢 Día 6 · 3 de Noviembre
-- **Motor de Simulación a 60 FPS Determinista**: Sincronización perfecta tic por tic.
-- **Reconstrucción Asíncrona Automática**: Cero pérdida de jugadas ante microcortes o latencia de red.
-
-#### 🟢 Día 7 · 2 de Noviembre
-- **Sistema de Arbitraje Anti-Autowin**: Detección criptográfica contra victorias amañadas en ligas clasificatorias.
-- **Economía de Referidos Renovada**: Criterio de validación en 1,400 Copas Elo con 100 de oro y 5% de comisiones automáticas.`,
+#### 🟢 Día 7 · 4 de Noviembre
+- **Motor de Simulación a 60 FPS Determinista**: Sincronización tic a tic y reconstrucción asíncrona ante microcortes.
+- **Arbitraje Anti-Autowin en 1,400 Copas**: Validación de partidas y recompensas permanentes en referidos.`,
     tag: '⏱️ Últimos 7 Días',
     category: 'actualizacion',
-    version: 'Semana 45',
+    version: 'Semana 46',
     author: 'Equipo Plants Arena',
     is_pinned: true,
     published_at: new Date(Date.now() - 3600000).toISOString(),

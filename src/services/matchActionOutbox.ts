@@ -352,6 +352,18 @@ export const MatchActionOutbox = {
     ).length
   },
 
+  /**
+   * Espera brevemente hasta que las acciones en vuelo de la sala terminen de
+   * enviarse al servidor (útil antes de reclamar recompensas al finalizar).
+   */
+  async waitForRoom(roomId: string, timeoutMs = 2500): Promise<void> {
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+      if (this.pendingCount(roomId) === 0) return
+      await new Promise((resolve) => setTimeout(resolve, 75))
+    }
+  },
+
   diagnostics(roomId?: string): JournalEntry[] {
     return Object.values(journal)
       .filter((entry) => !roomId || entry.roomId === roomId)

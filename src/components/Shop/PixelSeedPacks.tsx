@@ -465,7 +465,7 @@ export default function PixelSeedPacks({
                       ✨ Cartas Doradas (Gold Foil)
                     </span>
                     <span className="pixel-seedpacks-odds-item-price" style={{ color: '#fef08a' }}>
-                      +10% Token PLANTS c/u en Arena 3+
+                      +10% Token PLANTS al jugarlas (Arena 3+)
                     </span>
                   </div>
                   <div className="pixel-seedpacks-odds-rates">
@@ -475,7 +475,7 @@ export default function PixelSeedPacks({
                     <span className="rate-badge rate-badge--golden-pity">🛡️ Pity: Garantizada cada 100 cartas</span>
                   </div>
                   <span className="pixel-seedpacks-odds-exclusive" style={{ color: '#fde68a' }}>
-                    🌟 Las cartas doradas son cartas físicas jugables con sprite exclusivo y otorgan hasta +60% de bonus en $PLANTS por victoria. El contador de pity se reinicia al obtener cualquier carta dorada.
+                    🌟 Tienen las mismas stats base de combate. Al plantarlas en campo y ganar en Arena 3+ otorgan +10% extra en $PLANTS c/u (máx. 6 doradas = +60%). El pity se reinicia al obtener cualquier dorada.
                   </span>
                 </div>
               </div>

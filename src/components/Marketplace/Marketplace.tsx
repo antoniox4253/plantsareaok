@@ -1217,7 +1217,7 @@ export default function Marketplace({
           ) : (
             <div className="market-item-tags-row">
               {isMineGolden && (
-                <span className="market-item-golden-badge" title="Carta Dorada (+10% Token PLANTS por partida)">
+                <span className="market-item-golden-badge" title="Carta Dorada: mismas stats base y +10% Token PLANTS al jugarla y ganar en Arena 3+">
                   ✨ DORADA
                 </span>
               )}
@@ -1475,7 +1475,7 @@ export default function Marketplace({
         <div className="market-item-card__header">
           <div className="market-item-tags-row">
             {isGolden && (
-              <span className="market-item-golden-badge" title="Carta Dorada (+10% Token PLANTS por partida)">
+              <span className="market-item-golden-badge" title="Carta Dorada: mismas stats base y +10% Token PLANTS al jugarla y ganar en Arena 3+">
                 ✨ DORADA
               </span>
             )}

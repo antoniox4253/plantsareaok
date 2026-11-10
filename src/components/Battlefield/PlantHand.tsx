@@ -484,7 +484,7 @@ export default function PlantHand({
                 {cardData.isGolden && (
                   <div
                     className="plant-hand__golden-badge"
-                    title="✨ Carta Dorada: +10% Recompensa de Tokens PLANTS en Combate"
+                    title="✨ Carta Dorada: mismas stats base y +10% Token PLANTS al jugarla en campo y ganar (Arena 3+)"
                   >
                     ✨
                   </div>
@@ -550,7 +550,7 @@ export default function PlantHand({
                       <div className="plant-hand__tooltip-buffs">
                         {cardData.isGolden && (
                           <span style={{ color: '#fbbf24', fontWeight: 800 }}>
-                            ✨ Carta Dorada (+10% Token PLANTS en Victoria)
+                            ✨ Carta Dorada (+10% Token PLANTS al jugarla en victoria)
                           </span>
                         )}
                         {equippedDef && (

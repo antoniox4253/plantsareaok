@@ -1810,6 +1810,7 @@ export default function Battlefield({
               const targetRoomId = capturedRoomId || roomIdRef.current || roomId
               if (effectiveElo >= 2001 && targetRoomId && matchMode !== 'clan_fortress') {
                 try {
+                  await MatchActionOutbox.waitForRoom(targetRoomId, 2500)
                   const effectiveTick = Math.max(tickRef.current || 0, tick || 0)
                   const currentStats = statsRef.current || stats
                   const matchDurationSec = Math.max(46, Math.round(effectiveTick * 0.033))
@@ -1932,6 +1933,7 @@ export default function Battlefield({
             const targetRoomIdLive = capturedRoomId || roomIdRef.current || roomId
             if (effectiveEloLive >= 2001 && targetRoomIdLive && matchMode !== 'clan_fortress') {
               try {
+                await MatchActionOutbox.waitForRoom(targetRoomIdLive, 2500)
                 const effectiveTick = Math.max(tickRef.current || 0, tick || 0)
                 const currentStats = statsRef.current || stats
                 const matchDurationSec = Math.max(46, Math.round(effectiveTick * 0.033))
@@ -3599,7 +3601,7 @@ export default function Battlefield({
                       {plant.isGolden && (
                         <div
                           className="plant-unit__level-badge plant-unit__level-badge--gold"
-                          title="✨ Carta Dorada (+10% PLANTS)"
+                          title="✨ Carta Dorada jugada (+10% PLANTS en victoria)"
                           style={{
                             left: plantLevel > 0 ? 'auto' : '50%',
                             right: plantLevel > 0 ? '-4px' : 'auto',
@@ -4529,7 +4531,7 @@ export default function Battlefield({
                             )}
                             {(plantsRewardResult.goldenCardsCount ?? 0) > 0 && (
                               <div className="victory-plants-pill victory-plants-pill--golden" style={{ background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(245, 158, 11, 0.25))', border: '1px solid #eab308' }}>
-                                <span className="victory-plants-pill__lbl">✨ Doradas:</span>
+                                <span className="victory-plants-pill__lbl">✨ Doradas jugadas:</span>
                                 <strong style={{ color: '#fef08a' }}>{plantsRewardResult.goldenCardsCount} (+{plantsRewardResult.goldenBonusPct ?? (plantsRewardResult.goldenCardsCount! * 10)}%)</strong>
                               </div>
                             )}
@@ -4648,7 +4650,7 @@ export default function Battlefield({
                         </div>
 
                         <div className="victory-plants-scoring-formula">
-                          🧮 <strong>Fórmula:</strong> Base ({sb.baseReward ? Number(sb.baseReward).toFixed(2) : '2.0'} PLANTS) × {sb.isBot ? '0.50 (Bot)' : '1.00 (Humano)'} {plantsRewardResult.bonusActive ? '× 1.25 (Bono PvP)' : ''} {(plantsRewardResult.goldenCardsCount ?? 0) > 0 ? `× ${(1 + (plantsRewardResult.goldenBonusPct ?? (plantsRewardResult.goldenCardsCount! * 10)) / 100).toFixed(2)} (✨ ${plantsRewardResult.goldenCardsCount} Doradas)` : ''} = <strong>+{plantsRewardResult.plantsAwarded.toFixed(2)} PLANTS</strong>
+                          🧮 <strong>Fórmula:</strong> Base ({sb.baseReward ? Number(sb.baseReward).toFixed(2) : '2.0'} PLANTS) × {sb.isBot ? '0.50 (Bot)' : '1.00 (Humano)'} {plantsRewardResult.bonusActive ? '× 1.25 (Bono PvP)' : ''} {(plantsRewardResult.goldenCardsCount ?? 0) > 0 ? `× ${(1 + (plantsRewardResult.goldenBonusPct ?? (plantsRewardResult.goldenCardsCount! * 10)) / 100).toFixed(2)} (✨ ${plantsRewardResult.goldenCardsCount} Dorada${plantsRewardResult.goldenCardsCount === 1 ? '' : 's'} jugada${plantsRewardResult.goldenCardsCount === 1 ? '' : 's'})` : ''} = <strong>+{plantsRewardResult.plantsAwarded.toFixed(2)} PLANTS</strong>
                         </div>
 
                         {Boolean(stats.goldEarned && stats.goldEarned > 0) && (

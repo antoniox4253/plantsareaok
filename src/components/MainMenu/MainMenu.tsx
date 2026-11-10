@@ -1257,14 +1257,14 @@ export default function MainMenu({
         noticias
       </button>
 
-      {/* Tarjeta Interactiva Viva: Blog y Notas de Parche */}
+      {/* Tarjeta Única de Noticias, Blog, Modo Historia Próximamente y Buzón de Ideas */}
       <div
         className="bosque-news-item--devlog"
         data-action="noticia-arena"
         role="button"
         tabIndex={0}
-        aria-label="Blog Oficial y Notas de Parche: Consulta las novedades y actualizaciones del juego"
-        title="Notas de Actualización (Clic para ver el Blog y Parches)"
+        aria-label="Ver Noticias: Consulta el blog oficial, próximos cambios y buzón de sugerencias"
+        title="Ver Noticias (Blog Oficial, Modo Historia Próximamente y Buzón de Ideas)"
         onClick={() => handleOpenNewsAndSuggestions('news')}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -1273,50 +1273,19 @@ export default function MainMenu({
         }}
       >
         <div className="bosque-news-devlog__art-wrap">
-          <span className="bosque-news-devlog__icon">📜</span>
+          <span className="bosque-news-devlog__icon">📰</span>
         </div>
         <div className="bosque-news-devlog__content">
           <div className="bosque-news-devlog__top-row">
-            <span className="bosque-news-devlog__badge">🎉 AREQUIPA 2026</span>
-            <span className="bosque-news-devlog__type-tag">DEVLOG & FEST</span>
+            <span className="bosque-news-devlog__badge">🔜 MODO HISTORIA</span>
+            <span className="bosque-news-devlog__type-tag">BLOG &amp; IDEAS</span>
           </div>
-          <span className="bosque-news-devlog__title">Novedades & AQP Fest</span>
+          <span className="bosque-news-devlog__title">Ver Noticias</span>
           <span className="bosque-news-devlog__desc">
-            Últimos 7 días · Feria de Arequipa
+            Últimos cambios, Clanes, Doradas, Próximo Modo Historia y Buzón
           </span>
         </div>
         <span className="bosque-news-devlog__arrow">➔</span>
-      </div>
-
-      {/* Tarjeta Interactiva Viva: Buzón de Sugerencias con Nick de Jugadores */}
-      <div
-        className="bosque-news-item--suggestions"
-        data-action="noticia-jardin"
-        role="button"
-        tabIndex={0}
-        aria-label="Buzón de Sugerencias: Comparte tus ideas con tu Nick de jugador"
-        title="Buzón de Sugerencias (Clic para enviar tu propuesta o votar ideas)"
-        onClick={() => handleOpenNewsAndSuggestions('suggestions')}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            handleOpenNewsAndSuggestions('suggestions')
-          }
-        }}
-      >
-        <div className="bosque-news-sugg__art-wrap">
-          <span className="bosque-news-sugg__icon">💡</span>
-        </div>
-        <div className="bosque-news-sugg__content">
-          <div className="bosque-news-sugg__top-row">
-            <span className="bosque-news-sugg__badge">💡 BUZÓN DE IDEAS</span>
-            <span className="bosque-news-sugg__type-tag">COMUNIDAD</span>
-          </div>
-          <span className="bosque-news-sugg__title">Buzón de Sugerencias</span>
-          <span className="bosque-news-sugg__desc">
-            ¡Deja tu propuesta con tu Nick!
-          </span>
-        </div>
-        <span className="bosque-news-sugg__arrow">➔</span>
       </div>
       <div
         className="bosque-plants-token-banner"
