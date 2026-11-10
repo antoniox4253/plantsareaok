@@ -1593,6 +1593,7 @@ function App() {
             onPlay={handlePlayNormal}
             onPlayFriendly={handlePlayFriendly}
             activeDeck={activeDeck}
+            activeDeckInstances={activeDeckInstances}
             onStartStoryMode={handleStartStoryLevel}
             onStartArenaAdsBattle={handleStartArenaAdsMatch}
             onClaimArenaAdsLoot={handleClaimArenaAdsLoot}
@@ -1697,6 +1698,7 @@ function App() {
             onServerEloUpdated={handleServerEloUpdated}
             practicePlantId={practicePlantId}
             activeDeck={activeDeck}
+            activeDeckInstances={activeDeckInstances}
             userElo={userElo}
             customBgImage={customArenaBg}
             matchMode={battleMatchMode}

@@ -188,6 +188,7 @@ interface BattlefieldProps {
   onSurrender?: () => any
   practicePlantId?: string | null
   activeDeck?: PlantId[]
+  activeDeckInstances?: string[]
   userElo?: number
   customBgImage?: string
   matchMode?: 'ranked' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads' | 'story'
@@ -274,6 +275,7 @@ export default function Battlefield({
   onServerEloUpdated,
   practicePlantId,
   activeDeck,
+  activeDeckInstances,
   userElo = 1000,
   customBgImage,
   matchMode = 'ranked',
@@ -815,7 +817,8 @@ export default function Battlefield({
     try {
       const sIds = localStorage.getItem('plant_arena_active_deck_instances')
       const sInst = localStorage.getItem('plant_arena_plant_instances')
-      const pIds: string[] = sIds ? JSON.parse(sIds) : []
+      const localIds: string[] = sIds ? JSON.parse(sIds) : []
+      const pIds: string[] = activeDeckInstances && activeDeckInstances.length > 0 ? activeDeckInstances : localIds
       const pInst: any[] = sInst ? JSON.parse(sInst) : []
 
       return deckCards.map((plantId, idx) => {
@@ -823,11 +826,15 @@ export default function Battlefield({
         let statRolls: string[] = []
         let equippedItem: string | null = null
         let isGolden = false
+        let instanceId: string | null = null
+        let matchedBySlot = false
 
         // 1. Coincidencia por ID de instancia exacto en el slot
         if (pIds[idx]) {
           const f = pInst.find((i) => i.instanceId === pIds[idx] && isPlantMatchingTarget(i.plantId, plantId))
           if (f) {
+            matchedBySlot = true
+            instanceId = f.instanceId
             level = f.level ?? (f.statRolls?.length || 0)
             statRolls = f.statRolls || []
             equippedItem = f.equippedItem || null
@@ -835,8 +842,8 @@ export default function Battlefield({
           }
         }
 
-        // 2. Coincidencia de respaldo por plantId
-        if (statRolls.length === 0 && !equippedItem && !isGolden) {
+        // 2. Coincidencia de respaldo por plantId (solo si no hubo instancia exacta en ese slot)
+        if (!matchedBySlot && statRolls.length === 0 && !equippedItem && !isGolden) {
           const copies = pInst.filter((i) => isPlantMatchingTarget(i.plantId, plantId))
           if (copies.length > 0) {
             copies.sort((a, b) => {
@@ -848,6 +855,7 @@ export default function Battlefield({
               if (rA !== rB) return rB - rA
               return (b.level || 0) - (a.level || 0)
             })
+            instanceId = copies[0].instanceId || null
             level = copies[0].level ?? (copies[0].statRolls?.length || 0)
             statRolls = copies[0].statRolls || []
             equippedItem = copies[0].equippedItem || null
@@ -858,6 +866,7 @@ export default function Battlefield({
         return {
           plantId,
           slot: idx,
+          instanceId,
           level,
           statRolls,
           equippedItem,
@@ -874,7 +883,7 @@ export default function Battlefield({
         isGolden: false,
       }))
     }
-  }, [mazosDeLaSala?.mio, matchMode, tournamentDeck, activeDeck, allCatalogCards, currentArenaAdsRun])
+  }, [mazosDeLaSala?.mio, matchMode, tournamentDeck, activeDeck, activeDeckInstances, allCatalogCards, currentArenaAdsRun])
 
   const effectiveDeck = useMemo(() => {
     if (matchMode === 'tournament' && tournamentDeck && tournamentDeck.length > 0) {
@@ -3193,17 +3202,20 @@ export default function Battlefield({
                           try {
                             const sIds = localStorage.getItem('plant_arena_active_deck_instances')
                             const sInst = localStorage.getItem('plant_arena_plant_instances')
-                            const pIds: string[] = sIds ? JSON.parse(sIds) : []
+                            const localIds: string[] = sIds ? JSON.parse(sIds) : []
+                            const pIds: string[] = activeDeckInstances && activeDeckInstances.length > 0 ? activeDeckInstances : localIds
                             const pInst: any[] = sInst ? JSON.parse(sInst) : []
+                            let matchedBySlot = false
                             if (selectedSlotIndex !== null && pIds[selectedSlotIndex]) {
                               const f = pInst.find((i) => i.instanceId === pIds[selectedSlotIndex] && isPlantMatchingTarget(i.plantId, selectedCard))
                               if (f) {
+                                matchedBySlot = true
                                 r = f.statRolls || []
                                 eq = f.equippedItem || null
                                 isG = Boolean(f.isGolden)
                               }
                             }
-                            if (r.length === 0 && !eq && !isG) {
+                            if (!matchedBySlot && r.length === 0 && !eq && !isG) {
                               const copies = pInst.filter((i) => isPlantMatchingTarget(i.plantId, selectedCard))
                               if (copies.length > 0) {
                                 copies.sort((a, b) => {
@@ -3514,7 +3526,10 @@ export default function Battlefield({
                     : (plant.statRolls && plant.statRolls.length > 0 ? plant.statRolls.length : 0)
 
                   if (plantLevel === 0 && mazoMioParsed && mazoMioParsed.length > 0) {
-                    const deckCard = mazoMioParsed.find((c) => c.plantId === plant.plantId)
+                    const deckCard =
+                      mazoMioParsed.find(
+                        (c) => c.plantId === plant.plantId && Boolean(c.isGolden) === Boolean(plant.isGolden)
+                      ) || mazoMioParsed.find((c) => c.plantId === plant.plantId)
                     if (deckCard) {
                       plantLevel = Math.max(
                         typeof deckCard.level === 'number' ? deckCard.level : 0,
@@ -3523,7 +3538,7 @@ export default function Battlefield({
                     }
                   }
 
-                  if (plantLevel === 0) {
+                  if (plantLevel === 0 && (!mazoMioParsed || mazoMioParsed.length === 0)) {
                     plantLevel = getBattlefieldPlantLevel(plant.plantId)
                   }
                   return (
@@ -3631,7 +3646,10 @@ export default function Battlefield({
           : (pp.statRolls && pp.statRolls.length > 0 ? pp.statRolls.length : 0)
 
         if (sproutLevel === 0 && mazoMioParsed && mazoMioParsed.length > 0) {
-          const deckCard = mazoMioParsed.find((c) => c.plantId === pp.plantId)
+          const deckCard =
+            mazoMioParsed.find(
+              (c) => c.plantId === pp.plantId && Boolean(c.isGolden) === Boolean(pp.isGolden)
+            ) || mazoMioParsed.find((c) => c.plantId === pp.plantId)
           if (deckCard) {
             sproutLevel = Math.max(
               typeof deckCard.level === 'number' ? deckCard.level : 0,
@@ -3640,7 +3658,7 @@ export default function Battlefield({
           }
         }
 
-        if (sproutLevel === 0) {
+        if (sproutLevel === 0 && (!mazoMioParsed || mazoMioParsed.length === 0)) {
           sproutLevel = getBattlefieldPlantLevel(pp.plantId)
         }
 

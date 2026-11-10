@@ -4,7 +4,7 @@ import {
   getScaledPlantConfig,
   PLANT_CONFIGS,
 } from '../utils/gameConstants'
-import { leerMazo } from './mazoDeLaSala'
+import { leerMazo, mejorasDeLaCartaEnSlot } from './mazoDeLaSala'
 import { crearPlantaPropia } from './simulate'
 import { parseServerPlantCopies } from '../hooks/useInventory'
 import type { PlantId } from '../types/game'
@@ -143,5 +143,66 @@ describe('Sistema de Plantas Doradas (Gold Foil & Play-to-Earn)', () => {
     const parsed = parseServerPlantCopies(rawExcess)
     expect(parsed.sunflower).toBe(5)
     expect(parsed['sunflower_golden']).toBe(5)
+  })
+  it('10. Permite equipar planta Base leveada + planta Dorada de la misma especie en slots distintos sin mezclar stats', () => {
+    const mazo = leerMazo([
+      {
+        plantId: 'sunflower',
+        slot: 0,
+        level: 1,
+        statRolls: ['production'],
+        isGolden: false,
+      },
+      {
+        plantId: 'wallnut',
+        slot: 1,
+        instanceId: 'uuid-wallnut-base-lvl3',
+        level: 3,
+        statRolls: ['hp', 'hp', 'cooldown'],
+        isGolden: false,
+      },
+      {
+        plantId: 'wallnut',
+        slot: 2,
+        instanceId: 'uuid-wallnut-dorada-lvl0',
+        level: 0,
+        statRolls: [],
+        isGolden: true,
+      },
+    ])
+
+    expect(mazo).not.toBeNull()
+    const baseWallnut = mejorasDeLaCartaEnSlot(mazo, 'wallnut', 1)
+    const goldenWallnut = mejorasDeLaCartaEnSlot(mazo, 'wallnut', 2)
+
+    expect(Boolean(baseWallnut.isGolden)).toBe(false)
+    expect(baseWallnut.level).toBe(3)
+    expect(baseWallnut.statRolls).toEqual(['hp', 'hp', 'cooldown'])
+
+    expect(goldenWallnut.isGolden).toBe(true)
+    expect(goldenWallnut.level).toBe(0)
+    expect(goldenWallnut.statRolls).toEqual([])
+
+    const mockState: any = { tick: 10, entityCounter: 1 }
+    const entityBase = crearPlantaPropia(mockState, 'wallnut', 0, 2, baseWallnut.statRolls, baseWallnut.level, null, baseWallnut.isGolden)
+    const entityGolden = crearPlantaPropia(mockState, 'wallnut', 1, 2, goldenWallnut.statRolls, goldenWallnut.level, null, goldenWallnut.isGolden)
+
+    expect(Boolean(entityBase.isGolden)).toBe(false)
+    expect(entityBase.level).toBe(3)
+    expect(entityBase.spriteOverride).toBeUndefined()
+
+    expect(entityGolden.isGolden).toBe(true)
+    expect(entityGolden.level).toBe(0)
+    expect(entityGolden.spriteOverride).toBe(GOLDEN_PLANT_ASSETS.wallnut?.sprite)
+  })
+
+  it('11. SQL Audit: Migración 427 reemplaza el índice único por especie para permitir Base + Dorada en plant_instances', () => {
+    const fs = require('fs')
+    const path = require('path')
+    const m427Path = path.resolve(__dirname, '../../supabase/migrations/427-fix-dual-base-and-golden-deck-index.sql')
+    const sql = fs.readFileSync(m427Path, 'utf-8')
+    expect(sql).toContain('DROP INDEX IF EXISTS public.idx_plant_instances_single_species_in_deck')
+    expect(sql).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_plant_instances_single_variant_in_deck')
+    expect(sql).toContain('COALESCE(is_golden, false)')
   })
 })

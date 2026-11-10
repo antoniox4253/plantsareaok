@@ -63,6 +63,7 @@ interface MainMenuProps {
   /** Duelo amistoso: código de sala privada y apuesta opcional. */
   onPlayFriendly?: (roomCode: string, betGems: number) => void
   activeDeck?: PlantId[]
+  activeDeckInstances?: string[]
   onStartStoryMode?: (level: number) => void
   onStartArenaAdsBattle?: (run: ArenaAdsRun) => void
   onClaimArenaAdsLoot?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => Promise<any> | void
@@ -121,6 +122,7 @@ export default function MainMenu({
   onPlay,
   onPlayFriendly,
   activeDeck,
+  activeDeckInstances,
   onStartStoryMode,
   onStartArenaAdsBattle,
   onClaimArenaAdsLoot,
@@ -1638,6 +1640,7 @@ export default function MainMenu({
           onStartStoryMode?.(lvl)
         }}
         activeDeck={activeDeck}
+        activeDeckInstances={activeDeckInstances}
         plantInstances={plantInstances}
         onOpenCollection={onOpenCollection}
       />

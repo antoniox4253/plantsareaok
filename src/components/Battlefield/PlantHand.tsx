@@ -66,11 +66,13 @@ function getSlotCardLevelData(
       const parsedLvls: Record<string, number> = savedLvls ? JSON.parse(savedLvls) : {}
       const parsedRolls: Record<string, PlantStatKey[]> = savedRolls ? JSON.parse(savedRolls) : {}
 
+      let matchedBySlot = false
       if (slotIndex >= 0 && parsedDeckInstIds[slotIndex]) {
         const targetInstId = parsedDeckInstIds[slotIndex]
         // CRITICAL FIX: MUST verify matching plantId so we don't adopt stats or item from another plant in that slot!
         const found = parsedInstances.find((i) => i.instanceId === targetInstId && isPlantMatchingTarget(i.plantId, plantId))
         if (found) {
+          matchedBySlot = true
           level = found.level || 0
           rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
           equippedItem = found.equippedItem || null
@@ -78,38 +80,39 @@ function getSlotCardLevelData(
         }
       }
 
-      if (!equippedItem && rolls.length === 0) {
-        const copies = parsedInstances.filter((i) => isPlantMatchingTarget(i.plantId, plantId))
-        if (copies.length > 0) {
-          copies.sort((a, b) => {
-            if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
-              return a.equippedItem ? -1 : 1
-            }
-            const rA = a.statRolls?.length || 0
-            const rB = b.statRolls?.length || 0
-            if (rA !== rB) return rB - rA
-            return (b.level || 0) - (a.level || 0)
-          })
-          const best = copies[0]
-          if (level === 0) level = best.level || 0
-          if (rolls.length === 0) rolls = best.statRolls || []
-          if (!equippedItem) equippedItem = best.equippedItem || null
-          if (!isGolden) isGolden = Boolean(best.isGolden)
+      if (!matchedBySlot) {
+        if (!equippedItem && rolls.length === 0) {
+          const copies = parsedInstances.filter((i) => isPlantMatchingTarget(i.plantId, plantId))
+          if (copies.length > 0) {
+            copies.sort((a, b) => {
+              if (Boolean(a.equippedItem) !== Boolean(b.equippedItem)) {
+                return a.equippedItem ? -1 : 1
+              }
+              const rA = a.statRolls?.length || 0
+              const rB = b.statRolls?.length || 0
+              if (rA !== rB) return rB - rA
+              return (b.level || 0) - (a.level || 0)
+            })
+            const best = copies[0]
+            if (level === 0) level = best.level || 0
+            if (rolls.length === 0) rolls = best.statRolls || []
+            if (!equippedItem) equippedItem = best.equippedItem || null
+            if (!isGolden) isGolden = Boolean(best.isGolden)
+          }
+        } else if (!equippedItem) {
+          const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, plantId) && Boolean(i.isGolden) === isGolden && i.equippedItem)
+          if (found) {
+            equippedItem = found.equippedItem || null
+          }
         }
-      } else if (!equippedItem) {
-        const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, plantId) && i.equippedItem)
-        if (found) {
-          equippedItem = found.equippedItem || null
-          if (!isGolden) isGolden = Boolean(found.isGolden)
+
+        if (level === 0) {
+          level = parsedLvls[plantId] || 0
         }
-      }
 
-      if (level === 0) {
-        level = parsedLvls[plantId] || 0
-      }
-
-      if (rolls.length === 0 && parsedRolls[plantId] && parsedRolls[plantId].length > 0) {
-        rolls = parsedRolls[plantId]
+        if (rolls.length === 0 && parsedRolls[plantId] && parsedRolls[plantId].length > 0) {
+          rolls = parsedRolls[plantId]
+        }
       }
 
       // Fallback synthesis if level > 0 so bonuses always render in practice / sandbox
@@ -123,15 +126,22 @@ function getSlotCardLevelData(
       }
     } catch {}
   } else {
-    // If card was resolved from authoritative room deck, check if an equippedItem was stored locally as fallback
-    if (!equippedItem || !isGolden) {
+    // If card was resolved from authoritative room deck, NEVER overwrite isGolden with another copy!
+    // Only check equippedItem fallback matching the exact variant (plantId + isGolden) or instanceId.
+    if (!equippedItem) {
       try {
         const savedInstances = localStorage.getItem('plant_arena_plant_instances')
         const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
-        const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, plantId) && (i.equippedItem || i.isGolden))
+        const slotInstId = deckCards && slotIndex >= 0 ? deckCards[slotIndex]?.instanceId : null
+        const found =
+          (slotInstId
+            ? parsedInstances.find((i) => i.instanceId === slotInstId && i.equippedItem)
+            : null) ||
+          parsedInstances.find(
+            (i) => isPlantMatchingTarget(i.plantId, plantId) && Boolean(i.isGolden) === isGolden && i.equippedItem
+          )
         if (found) {
-          if (!equippedItem) equippedItem = found.equippedItem || null
-          if (!isGolden) isGolden = Boolean(found.isGolden)
+          equippedItem = found.equippedItem || null
         }
       } catch {}
     }

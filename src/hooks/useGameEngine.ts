@@ -1217,14 +1217,20 @@ export function useGameEngine() {
         cardEquippedItem = mejoras.equippedItem || null
         cardIsGolden = Boolean(mejoras.isGolden)
 
-        if (!cardEquippedItem || !cardIsGolden) {
+        if (!cardEquippedItem) {
           try {
             const savedInstances = localStorage.getItem('plant_arena_plant_instances')
             const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
-            const found = parsedInstances.find((i) => isPlantMatchingTarget(i.plantId, card) && (i.equippedItem || i.isGolden))
+            const exactDeckCard = slotIdx !== null ? mazoMioRef.current?.[slotIdx] : null
+            const found =
+              (exactDeckCard?.instanceId
+                ? parsedInstances.find((i) => i.instanceId === exactDeckCard.instanceId && i.equippedItem)
+                : null) ||
+              parsedInstances.find(
+                (i) => isPlantMatchingTarget(i.plantId, card) && Boolean(i.isGolden) === cardIsGolden && i.equippedItem
+              )
             if (found) {
-              if (!cardEquippedItem) cardEquippedItem = found.equippedItem || null
-              if (!cardIsGolden) cardIsGolden = Boolean(found.isGolden)
+              cardEquippedItem = found.equippedItem || null
             }
           } catch {}
         }
@@ -1264,17 +1270,19 @@ export function useGameEngine() {
             const parsedDeckInstIds: string[] = savedDeckInstIds ? JSON.parse(savedDeckInstIds) : []
             const parsedInstances: any[] = savedInstances ? JSON.parse(savedInstances) : []
 
+          let matchedBySlot = false
           if (slotIdx !== null && parsedDeckInstIds[slotIdx]) {
             const targetInstId = parsedDeckInstIds[slotIdx]
             const found = parsedInstances.find((i) => i.instanceId === targetInstId && isPlantMatchingTarget(i.plantId, card))
             if (found) {
+              matchedBySlot = true
               rolls = found.statRolls && found.statRolls.length > 0 ? found.statRolls : []
               cardLevel = found.level || 0
               cardEquippedItem = found.equippedItem || null
               cardIsGolden = Boolean(found.isGolden)
             }
           }
-          if (rolls.length === 0 && !cardEquippedItem) {
+          if (!matchedBySlot && rolls.length === 0 && !cardEquippedItem) {
             const copies = parsedInstances.filter((i) => isPlantMatchingTarget(i.plantId, card))
             if (copies.length > 0) {
               copies.sort((a, b) => {

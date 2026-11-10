@@ -800,6 +800,25 @@ export default function Jardin({
     return result
   })
 
+  // Mantener sincronizado si activeDeckInstances cambia tras refrescar del servidor
+  useEffect(() => {
+    if (activeDeckInstances && activeDeckInstances.length > 0) {
+      const valid = activeDeckInstances.filter((id) =>
+        displayedCards.some((c) => c.instanceId === id && c.isUnlocked && !c.isListed)
+      )
+      if (
+        valid.length > 0 &&
+        (valid.length !== deckInstanceIds.length || valid.some((id, idx) => deckInstanceIds[idx] !== id))
+      ) {
+        setDeckInstanceIds(valid)
+        const plantIds = valid
+          .map((id) => displayedCards.find((c) => c.instanceId === id)?.plantId)
+          .filter(Boolean) as PlantId[]
+        setDeck(plantIds)
+      }
+    }
+  }, [activeDeckInstances, displayedCards])
+
   // Synchronize with activeDeck changes and persist
   useEffect(() => {
     try {
@@ -1454,12 +1473,15 @@ export default function Jardin({
                       </div>
                       <img src={slotImgSrc} alt={config.name} className="jardin-slot__img" />
                       {(() => {
-                        const instancesOfThis = plantInstances.filter((i) => i.plantId === card.plantId)
+                        const instancesOfThis = plantInstances.filter(
+                          (i) => i.plantId === card.plantId && Boolean(i.isGolden) === Boolean(card.isGolden)
+                        )
                         const idxInOwned = instancesOfThis.findIndex((i) => i.instanceId === card.instanceId)
                         const slotNumPrefix = instancesOfThis.length > 1 && idxInOwned !== -1 ? ` #${idxInOwned + 1}` : ''
+                        const variantPrefix = card.isGolden ? '✨ ' : ''
                         return (
                           <span className="jardin-slot__name">
-                            {config.name}{slotNumPrefix} {card.level > 0 ? `(L${card.level})` : ''} {(() => {
+                            {variantPrefix}{config.name}{slotNumPrefix} {card.level > 0 ? `(L${card.level})` : ''} {(() => {
                               const itemDef = getEquippableItemDef(card.equippedItem)
                               return itemDef ? itemDef.emoji : ''
                             })()}

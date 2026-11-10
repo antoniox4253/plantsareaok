@@ -41,6 +41,7 @@ export interface CartaDeMazo {
   slot?: number | null
   level?: number | null
   statRolls?: string[] | null
+  instanceId?: string | null
   equippedItem?: string | null
   isGolden?: boolean | null
 }
@@ -87,6 +88,9 @@ export function leerMazo(bruto: unknown): CartaDeMazo[] | null {
       statRolls: Array.isArray(carta.statRolls)
         ? carta.statRolls.filter((r): r is string => typeof r === 'string')
         : null,
+    }
+    if (typeof carta.instanceId === 'string') {
+      cartaObj.instanceId = carta.instanceId
     }
     if (typeof carta.equippedItem === 'string') {
       cartaObj.equippedItem = carta.equippedItem

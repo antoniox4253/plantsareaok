@@ -16,6 +16,7 @@ interface StoryModeModalProps {
   onClose: () => void
   onStartLevel: (level: number) => void
   activeDeck?: PlantId[]
+  activeDeckInstances?: string[]
   plantInstances?: PlantCardInstance[]
   onOpenCollection?: () => void
 }
@@ -58,6 +59,7 @@ export default function StoryModeModal({
   onClose,
   onStartLevel,
   activeDeck = ['sunflower', 'peashooter', 'wallnut', 'repeater', 'bonkchoy', 'chomper'],
+  activeDeckInstances = [],
   plantInstances = [],
   onOpenCollection,
 }: StoryModeModalProps) {
@@ -277,8 +279,12 @@ export default function StoryModeModal({
                   )}
                 </div>
                 <div className="story-deck-cards">
-                  {activeDeck.slice(0, 6).map((plantId) => {
-                    const inst = plantInstances.find((i) => i.plantId === plantId)
+                  {activeDeck.slice(0, 6).map((plantId, slotIdx) => {
+                    const slotInstId = activeDeckInstances?.[slotIdx]
+                    const inst =
+                      (slotInstId
+                        ? plantInstances.find((i) => i.instanceId === slotInstId && i.plantId === plantId)
+                        : null) || plantInstances.find((i) => i.plantId === plantId)
                     const scaled = getScaledPlantConfig(
                       plantId,
                       inst?.statRolls || [],
@@ -288,7 +294,7 @@ export default function StoryModeModal({
                     const cfg = PLANT_CONFIGS[plantId] || scaled
                     return (
                       <div
-                        key={plantId}
+                        key={`${plantId}-${slotIdx}`}
                         className="story-deck-card-mini"
                         title={`${scaled.name} (Coste: ☀️ ${scaled.cost})`}
                       >
