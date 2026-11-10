@@ -1544,15 +1544,25 @@ export function resolverLiquidacionPartida(options: {
     const energyRestored = Boolean((s as any).energyRestored || (s as any).energy_restored || earlySurrender)
 
     if (!serverVerification.winnerSide && !serverVerification.winnerId) {
-      const finalResult = clientResult ?? 'defeat'
+      if (clientResult) {
+        return {
+          mostrarResultado: true,
+          resultadoFinal: clientResult,
+          statusServidor: 'liquidada',
+          payout: 0,
+          earlySurrender,
+          energyRestored: false,
+          error: undefined,
+        }
+      }
       return {
         mostrarResultado: true,
-        resultadoFinal: finalResult,
-        statusServidor: 'liquidada',
+        resultadoFinal: 'draw',
+        statusServidor: 'revision_servidor',
         payout: 0,
         earlySurrender,
-        energyRestored,
-        error: undefined,
+        energyRestored: true,
+        error: 'El combate finalizó sin ganador definido. Tus copas y energía están a salvo.',
       }
     }
 
