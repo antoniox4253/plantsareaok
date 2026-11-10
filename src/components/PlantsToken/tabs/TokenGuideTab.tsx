@@ -63,9 +63,9 @@ const FAQ_ITEMS: FaqItem[] = [
     id: 'daily-win-cap-and-vip',
     category: 'RECOMPENSAS & PASE VIP',
     icon: '👑',
-    question: '¿Cuántas victorias diarias otorgan token PLANTS y qué ventaja tiene el VIP?',
+    question: '¿Hay límite de victorias diarias para ganar token PLANTS y qué ventaja tiene el VIP?',
     answer:
-      'Los jugadores Free cuentan con 15 energías diarias y un tope diario de 15 victorias recompensadas en Arena 3+. Los jugadores con Pase VIP obtienen 20 energías diarias (15 base + 5 VIP) y un tope ampliado de hasta 20 victorias diarias recompensadas. Si se agota la energía diaria, se pueden adquirir recargas en la Tienda hasta alcanzar el tope de victorias de cada categoría.',
+      '¡No hay límite de victorias para ganar tokens PLANTS! Puedes ganar tokens en cada victoria en Arena 3+ mientras tengas energía. Los jugadores Free inician con 15 energías diarias y los jugadores con Pase VIP obtienen 20 energías diarias (15 base + 5 VIP). Si deseas jugar y seguir ganando más tokens, puedes adquirir recargas de energía con gemas en la Tienda sin límite de victorias.',
   },
 ]
 

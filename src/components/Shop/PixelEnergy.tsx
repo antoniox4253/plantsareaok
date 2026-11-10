@@ -79,7 +79,7 @@ export const ENERGY_PACK_DEFS: EnergyPackDef[] = [
     energyAmount: 'MAX',
     priceGems: 500,
     badge: 'MEJOR VALOR',
-    description: 'Restaura tu barra de energía al 100% de tu capacidad máxima (20⚡ o 25⚡ con VIP).',
+    description: 'Restaura tu barra de energía al 100% de tu capacidad máxima (15⚡ o 20⚡ con VIP).',
     cardHotspotId: 'pack_max',
     buyHotspotId: 'buy_max',
     accentColor: '#c084fc',
@@ -393,7 +393,7 @@ export default function PixelEnergy({
           style={calcStyle({ x: 1300, y: 249, w: 281, h: 133 })}
           title={
             isUnlimitedEnergy
-              ? '⚡ Modo Novato (≤ 1,600 Copas): Tienes energía infinita para jugar partidas en Ranked. El límite de 20⚡ (o 25⚡ VIP) rige a partir de 1,601+ Copas.'
+              ? '⚡ Modo Novato (≤ 1,600 Copas): Tienes energía infinita para jugar partidas en Ranked. El límite de 15⚡ (o 20⚡ VIP) rige a partir de 1,601+ Copas.'
               : `Energía actual: ${localEnergy}/${maxPlayerEnergy}⚡`
           }
         >

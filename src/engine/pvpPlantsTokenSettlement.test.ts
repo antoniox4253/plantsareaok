@@ -133,18 +133,16 @@ describe('PvP PLANTS Token Settlement Flow Tests', () => {
     }
   })
 
-  it('7. SQL Audit: Migración 423 fija el tope diario oficial de 15 victorias para Free y 20 para VIP y lo registra en _migration_audit', () => {
+  it('7. SQL Audit: Migración 426 elimina el tope diario de victorias PLANTS manteniendo 15⚡ Free / 20⚡ VIP de energía', () => {
     const fs = require('fs')
     const path = require('path')
-    const m423Path = path.resolve(__dirname, '../../supabase/migrations/423-align-pvp-plants-daily-cap-15-free-20-vip.sql')
-    const m423Sql = fs.readFileSync(m423Path, 'utf-8')
-    const cleanSql = m423Sql.replace(/--.*$/gm, '')
+    const m426Path = path.resolve(__dirname, '../../supabase/migrations/426-remove-plants-daily-victory-cap-keep-energy-cap.sql')
+    const m426Sql = fs.readFileSync(m426Path, 'utf-8')
+    const cleanSql = m426Sql.replace(/--.*$/gm, '')
 
-    expect(cleanSql).toContain('IF NOT v_is_vip AND v_daily_claims >= 15 THEN')
-    expect(cleanSql).toContain('IF v_is_vip AND v_daily_claims >= 20 THEN')
-    expect(cleanSql).toContain('Tope diario de 15 victorias alcanzado')
-    expect(cleanSql).toContain('Tope diario de 20 victorias alcanzado para Pase VIP')
-    expect(cleanSql).toContain('CASE WHEN v_is_vip THEN 20 ELSE 15 END')
-    expect(m423Sql).toContain('423-align-pvp-plants-daily-cap-15-free-20-vip')
+    expect(cleanSql).not.toContain('DAILY_CLAIM_CAP_REACHED')
+    expect(cleanSql).toContain('spot_price, usdt_pool, virtual_plants, event_type')
+    expect(cleanSql).toContain("'dailyClaimsMax', NULL")
+    expect(m426Sql).toContain('426-remove-plants-daily-victory-cap-keep-energy-cap')
   })
 })

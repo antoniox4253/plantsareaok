@@ -969,7 +969,7 @@ export default function Shop({
             className="shop-energy-badge"
             title={
               (userElo ?? 1000) <= 1600
-                ? '⚡ Energía Ilimitada: En Arena Novato (≤ 1,600 Copas) no se consume energía. El límite diario de 20⚡ (o 25⚡ VIP) rige a partir de 1,601+ Copas.'
+                ? '⚡ Energía Ilimitada: En Arena Novato (≤ 1,600 Copas) no se consume energía. El límite diario de 15⚡ (o 20⚡ VIP) rige a partir de 1,601+ Copas.'
                 : `⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy}`
             }
             style={{ cursor: 'default' }}

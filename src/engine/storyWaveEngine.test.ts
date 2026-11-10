@@ -9,6 +9,7 @@ import {
   spawnStoryEnemyEntity,
 } from './storyWaveEngine'
 import { createBattleState, stepTick } from './simulate'
+import { msToTicks } from './time'
 
 describe('StoryWaveEngine - Reglas y Niveles', () => {
   it('Niveles 1 al 5 solo permiten mapache 1 (PumPum) y 2 (Garritas)', () => {
@@ -68,6 +69,15 @@ describe('StoryWaveEngine - Reglas y Niveles', () => {
       )
       expect(hasBossInWave3).toBe(true)
     }
+  })
+
+
+  it('oleada 1 inicia a 28s en nivel 1 y reduce 1s cada 3 niveles', () => {
+    expect(generateStoryLevel(1, 1001).waves[0].startTick).toBe(msToTicks(28000))
+    expect(generateStoryLevel(3, 1003).waves[0].startTick).toBe(msToTicks(28000))
+    expect(generateStoryLevel(4, 1004).waves[0].startTick).toBe(msToTicks(27000))
+    expect(generateStoryLevel(7, 1007).waves[0].startTick).toBe(msToTicks(26000))
+    expect(generateStoryLevel(10, 1010).waves[0].startTick).toBe(msToTicks(25000))
   })
 
   it('generateStoryLevel es 100% determinista ante la misma semilla', () => {
@@ -154,7 +164,7 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
     )
 
     // Avanzar 800 tics (~26.6 segundos) para que empiece la oleada 1 (inicio a 25s / 750 tics)
-    for (let t = 0; t < 800; t++) {
+    for (let t = 0; t < 900; t++) {
       stepTick(state, sonar)
     }
 

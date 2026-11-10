@@ -72,7 +72,7 @@ export default function PixelHeaderBadges({
   const isUnlimitedEnergy = (userElo ?? 1000) <= 1600
   const energyDisplay = isUnlimitedEnergy ? '∞' : `${playerEnergy}/${maxPlayerEnergy}`
   const energyTitle = isUnlimitedEnergy
-    ? '⚡ Energía Ilimitada: En Arena Novato (≤ 1,600 Copas) no se consume energía en Ranked. El límite de 20⚡ (o 25⚡ VIP) rige a partir de 1,601+ Copas.'
+    ? '⚡ Energía Ilimitada: En Arena Novato (≤ 1,600 Copas) no se consume energía en Ranked. El límite de 15⚡ (o 20⚡ VIP) rige a partir de 1,601+ Copas.'
     : `⚡ Energía diaria: ${playerEnergy}/${maxPlayerEnergy}`
 
   return (

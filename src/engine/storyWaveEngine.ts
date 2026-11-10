@@ -102,15 +102,15 @@ export function getMapacheBaseDamage(key: MapacheKey): number {
 export function getMapacheBaseSpeed(key: MapacheKey): number {
   switch (key) {
     case 'pumpum':
-      return 1.8
+      return 2.0 // %/seg (~2.5s por casilla)
     case 'garritas':
-      return 3.2
+      return 3.4 // %/seg (~1.5s por casilla, ágil pero balanceado estilo PvZ)
     case 'punos':
-      return 2.2
+      return 2.3 // %/seg (~2.2s por casilla, tanque firme)
     case 'navajas':
-      return 2.8
+      return 2.9 // %/seg (~1.7s por casilla)
     case 'reygarra':
-      return 1.4
+      return 1.8 // %/seg (~2.8s por casilla, paso imponente de jefe)
   }
 }
 
@@ -134,10 +134,12 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     return allowedMapaches[idx] || allowedMapaches[0]
   }
 
-  // ── OLEADA 1: INCURSIÓN INICIAL (25s de gracia para sembrar economía PvZ) ──
+  // ── OLEADA 1: INCURSIÓN INICIAL (28s en Nivel 1, -1s cada 3 niveles) ──
+  const w1StartSec = Math.max(20, 28 - Math.floor((level - 1) / 3))
+  const w1StartTick = msToTicks(w1StartSec * 1000)
   const w1Count = Math.min(8, 3 + Math.floor(level / 3))
   const wave1Spawns: StoryEnemySpawn[] = []
-  let w1Tick = 750 // 25s de gracia inicial como en Survivor ADS para plantar economía
+  let w1Tick = w1StartTick
 
   for (let i = 0; i < w1Count; i++) {
     const mapacheKey = pickEnemy()
@@ -150,7 +152,7 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       hpMultiplier: hpMult,
       damageMultiplier: dmgMult,
     })
-    const delay = Math.max(75, 140 - level * 3 + Math.floor(nextRng() * 40))
+    const delay = Math.max(85, 165 - level * 4 + Math.floor(nextRng() * 45))
     w1Tick += delay
   }
 
@@ -158,14 +160,15 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     waveNumber: 1,
     name: 'Oleada 1 (Incursión)',
     subtitle: 'Repele la primera oleada mapache',
-    startTick: 750,
+    startTick: w1StartTick,
     spawns: wave1Spawns,
   }
 
-  // ── OLEADA 2: EMBOSCADA Y PRESIÓN ──────────────────────────────────────────
+  // ── OLEADA 2: EMBOSCADA Y PRESIÓN (estilo 1ra bandera PvZ) ────────────────
   const w2Count = Math.min(14, 5 + Math.floor(level / 2))
   const wave2Spawns: StoryEnemySpawn[] = []
-  let w2Tick = Math.max(w1Tick + 90, 1600)
+  const w2StartTick = Math.max(w1Tick + msToTicks(6000), w1StartTick + msToTicks(28000))
+  let w2Tick = w2StartTick
 
   for (let i = 0; i < w2Count; i++) {
     const mapacheKey = pickEnemy()
@@ -193,7 +196,7 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       })
     }
 
-    const delay = Math.max(60, 110 - level * 2 + Math.floor(nextRng() * 30))
+    const delay = Math.max(65, 120 - level * 2 + Math.floor(nextRng() * 35))
     w2Tick += delay
   }
 
@@ -201,14 +204,15 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     waveNumber: 2,
     name: 'Oleada 2 (Emboscada)',
     subtitle: 'Asalto de refuerzos en los 3 carriles',
-    startTick: Math.max(w1Tick + 90, 1600),
+    startTick: w2StartTick,
     spawns: wave2Spawns,
   }
 
   // ── OLEADA 3: OLEADA FINAL CON EL JEFE REY GARRA ───────────────────────────
   const w3Count = Math.min(16, 6 + Math.floor(level / 2))
   const wave3Spawns: StoryEnemySpawn[] = []
-  let w3Tick = Math.max(w2Tick + 120, 2400)
+  const w3StartTick = Math.max(w2Tick + msToTicks(7000), w2StartTick + msToTicks(32000))
+  let w3Tick = w3StartTick
 
   // Escolta previa al jefe
   for (let i = 0; i < w3Count; i++) {
@@ -222,7 +226,7 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       hpMultiplier: hpMult * 1.1,
       damageMultiplier: dmgMult * 1.05,
     })
-    const delay = Math.max(45, 80 - level * 2 + Math.floor(nextRng() * 25))
+    const delay = Math.max(50, 90 - level * 2 + Math.floor(nextRng() * 25))
     w3Tick += delay
   }
 
@@ -241,19 +245,21 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
   })
 
   // Escolta pesada que acompaña al Rey Garra (carriles flanqueantes 0 y 2)
+  const leftEscortKey: MapacheKey = allowedMapaches.includes('punos') ? 'punos' : 'garritas'
+  const rightEscortKey: MapacheKey = allowedMapaches.includes('pumpum') ? 'pumpum' : 'garritas'
   wave3Spawns.push({
     tick: w3Tick + 45,
     lane: 0,
-    mapacheKey: allowedMapaches.includes('punos') ? 'punos' : 'garritas',
-    moveSpeed: 2.2,
+    mapacheKey: leftEscortKey,
+    moveSpeed: getMapacheBaseSpeed(leftEscortKey),
     hpMultiplier: hpMult,
     damageMultiplier: dmgMult,
   })
   wave3Spawns.push({
     tick: w3Tick + 45,
     lane: 2,
-    mapacheKey: allowedMapaches.includes('pumpum') ? 'pumpum' : 'garritas',
-    moveSpeed: 2.0,
+    mapacheKey: rightEscortKey,
+    moveSpeed: getMapacheBaseSpeed(rightEscortKey),
     hpMultiplier: hpMult,
     damageMultiplier: dmgMult,
   })
@@ -262,7 +268,7 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     waveNumber: 3,
     name: 'Oleada 3 (Jefe Final)',
     subtitle: '👑 ¡REY GARRA HA LLEGADO!',
-    startTick: Math.max(w2Tick + 150, 2600),
+    startTick: w3StartTick,
     spawns: wave3Spawns,
   }
 
@@ -368,7 +374,8 @@ export function processStoryWaves(
     }
     const wave2 = state.storyConfig.waves[1]
     const shouldStartWave2 = (spawnsLeftInCurrentWave === 0 && livingEnemies === 0) || state.tick >= wave2.startTick
-    if (shouldStartWave2 && state.tick >= 850) {
+    const wave1 = state.storyConfig.waves[0]
+    if (shouldStartWave2 && state.tick >= (wave1.startTick + msToTicks(12000))) {
       state.storyWaveIndex = 1
       state.wave = 2
       state.waveBanner = '🦝 ¡OLEADA 2 (EMBOSCADA)! ¡RESISTE, YA FALTA POCO!'
@@ -388,7 +395,8 @@ export function processStoryWaves(
     }
     const wave3 = state.storyConfig.waves[2]
     const shouldStartWave3 = (spawnsLeftInCurrentWave === 0 && livingEnemies === 0) || state.tick >= wave3.startTick
-    if (shouldStartWave3 && state.tick >= 1700) {
+    const wave2 = state.storyConfig.waves[1]
+    if (shouldStartWave3 && state.tick >= (wave2.startTick + msToTicks(14000))) {
       state.storyWaveIndex = 2
       state.wave = 3
       state.waveBanner = '👑 ¡OLEADA 3: JEFE FINAL REY GARRA! ¡YA FALTA POCO PARA SALVAR EL JARDÍN!'
@@ -436,7 +444,7 @@ export function processStoryWaves(
     if (enemy.mapacheKey === 'reygarra' && enemy.isBoss) {
       if (enemy.x > 76) {
         // Entra caminando a su puesto de retaguardia
-        enemy.x -= 1.8 * dt * 2.2
+        enemy.x -= (enemy.moveSpeed || 1.8) * dt
         enemy.isWalking = true
         enemy.state = 'walking'
       } else {
@@ -481,7 +489,7 @@ export function processStoryWaves(
               tick: state.tick,
               lane: summonLane,
               mapacheKey: 'garritas',
-              moveSpeed: 3.0,
+              moveSpeed: getMapacheBaseSpeed('garritas'),
               hpMultiplier: 1.0,
               damageMultiplier: 1.0,
             },
@@ -527,7 +535,7 @@ export function processStoryWaves(
       const stopDist = 26
       const rangeDist = 38
       if (distToTarget > stopDist) {
-        enemy.x -= effSpeed * dt * 2.2
+        enemy.x -= effSpeed * dt
         enemy.isWalking = true
         enemy.state = 'walking'
       } else {
@@ -564,7 +572,7 @@ export function processStoryWaves(
       const stopDist = 28
       const rangeDist = 42
       if (distToTarget > stopDist) {
-        enemy.x -= effSpeed * dt * 2.2
+        enemy.x -= effSpeed * dt
         enemy.isWalking = true
         enemy.state = 'walking'
       } else {
@@ -630,7 +638,7 @@ export function processStoryWaves(
         } else {
           const meleeDist = 6.0
           if (distToTarget > meleeDist) {
-            enemy.x -= effSpeed * dt * 2.2
+            enemy.x -= effSpeed * dt
             enemy.isWalking = true
             enemy.state = 'walking'
           } else {
@@ -651,7 +659,7 @@ export function processStoryWaves(
       } else {
         // Sin plantas enfrente: avanza hacia el árbol madre
         if (enemy.x > 16) {
-          enemy.x -= effSpeed * dt * 2.2
+          enemy.x -= effSpeed * dt
           enemy.isWalking = true
           enemy.state = 'walking'
         } else {
@@ -673,7 +681,7 @@ export function processStoryWaves(
       if (targetPlant) {
         const meleeDist = 6.0
         if (distToTarget > meleeDist) {
-          enemy.x -= effSpeed * dt * 2.2
+          enemy.x -= effSpeed * dt
           enemy.isWalking = true
           enemy.state = 'walking'
         } else {
@@ -700,7 +708,7 @@ export function processStoryWaves(
       } else {
         // Sin plantas enfrente: avanza hacia el árbol madre
         if (enemy.x > 16) {
-          enemy.x -= effSpeed * dt * 2.2
+          enemy.x -= effSpeed * dt
           enemy.isWalking = true
           enemy.state = 'walking'
         } else {

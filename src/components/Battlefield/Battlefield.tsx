@@ -4449,7 +4449,7 @@ export default function Battlefield({
                               <strong style={{ color: '#34d399' }}>{plantsRewardResult.score?.toFixed(0) ?? 0} / 100 pts</strong>
                             </div>
                             <div className="victory-plants-pill">
-                              <span className="victory-plants-pill__lbl">Tope:</span>
+                              <span className="victory-plants-pill__lbl">Hoy:</span>
                               {plantsRewardResult.isVip ? (
                                 <strong style={{ color: '#fbbf24' }}>👑 VIP ({plantsRewardResult.dailyClaimsUsed} ganadas hoy)</strong>
                               ) : (
@@ -4486,8 +4486,8 @@ export default function Battlefield({
                             <small>
                               {plantsRewardResult?.reason === 'DAILY_CLAIM_CAP_REACHED'
                                 ? (plantsRewardResult.isVip
-                                    ? 'Tope diario de 20 victorias alcanzado para Pase VIP. Vuelve mañana a las 00:00 UTC.'
-                                    : 'Tope diario de 15 victorias alcanzado. ¡Pasa a VIP para obtener hasta 20 victorias diarias!')
+                                    ? 'Límite diario alcanzado. Recuerda que puedes seguir ganando más tokens recargando energía.'
+                                    : '¡No hay límite diario de victorias! Recarga energía en la Tienda para seguir ganando Token PLANTS.')
                                 : plantsRewardResult?.reason === 'MATCH_TOO_SHORT_OR_COLLUSION'
                                 ? 'Anti-colusión activa (mínimo 45s de combate) o requisitos no cumplidos.'
                                 : isPresaleActive || plantsRewardResult?.reason === 'PRESALE_ACTIVE_MINING_PAUSED'
