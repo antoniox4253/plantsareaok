@@ -379,8 +379,8 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
   })
 
   it('los mapaches a distancia y plantas de rango tienen HP reforzada', () => {
-    expect(getMapacheBaseHp('pumpum')).toBe(240)
-    expect(getMapacheBaseHp('navajas')).toBe(260)
+    expect(getMapacheBaseHp('pumpum')).toBe(260)
+    expect(getMapacheBaseHp('navajas')).toBe(280)
   })
 
   it('Garritas salta sobre Wall-nut con una curva de salto fluida y sin teletransportes bruscos', () => {

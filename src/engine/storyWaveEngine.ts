@@ -72,13 +72,13 @@ export function getAllowedMapachesForLevel(level: number): MapacheKey[] {
 export function getMapacheBaseHp(key: MapacheKey): number {
   switch (key) {
     case 'pumpum':
-      return 240 // Artillero frágil a distancia (~9 guisantes)
+      return 260 // Artillero frágil a distancia (~9 guisantes)
     case 'garritas':
       return 200 // Rasguñador veloz común (~10 guisantes)
     case 'punos':
       return 380 // Peleador fornido (~19 guisantes, estilo cono)
     case 'navajas':
-      return 260 // Lanzador ágil (~11 guisantes)
+      return 280 // Lanzador ágil (~11 guisantes)
     case 'reygarra':
       return 950 // Jefe de oleada 3 (resistente y derrotable)
   }
