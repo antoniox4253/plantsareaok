@@ -39,7 +39,7 @@ let lastRefreshTime = 0
 export async function safeRefreshSession(): Promise<boolean> {
   const now = Date.now()
   // Throttle defensivo: no refrescar más de una vez cada 8 segundos
-  if (now - lastRefreshTime < 8000) {
+  if (lastRefreshTime > 0 && now - lastRefreshTime < 8000) {
     return true
   }
   if (refreshPromise) {
@@ -51,12 +51,12 @@ export async function safeRefreshSession(): Promise<boolean> {
       if (!s?.session?.refresh_token) {
         return false
       }
-      lastRefreshTime = Date.now()
       const { data, error } = await supabase.auth.refreshSession()
       if (error || !data?.session) {
         console.warn('[SupabaseClient] safeRefreshSession falló:', error?.message)
         return false
       }
+      lastRefreshTime = Date.now()
       return true
     } catch (e) {
       console.warn('[SupabaseClient] safeRefreshSession excepción:', e)

@@ -6,6 +6,9 @@
   background-position: center;
   overflow: hidden;
   user-select: none;
+  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  touch-action: manipulation;
 }
 
 /* Top Controls Bar */
@@ -3169,6 +3172,25 @@ div[style*="fixed"][style*="bottom:1"] {
     transform: translateX(-50%) translateY(-3px) scale(1.03);
   }
 }
+
+.battle-nav-guard-toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 260;
+  background: rgba(15, 23, 42, 0.95);
+  color: #fde047;
+  border: 2px solid #f59e0b;
+  border-radius: 9999px;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+}
+
 
 
 

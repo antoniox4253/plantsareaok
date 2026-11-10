@@ -1,5 +1,9 @@
 import { saveStoryProgress } from './utils/mapaches/mapachesLevels'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  shouldBlockPopStateInScreen,
+  reanchorBattleHistoryGuard,
+} from './utils/battleNavigationGuard'
 import GameFrame from './components/GameFrame/GameFrame'
 import RotateOverlay from './components/RotateOverlay/RotateOverlay'
 import MainMenu from './components/MainMenu/MainMenu'
@@ -74,6 +78,10 @@ function App() {
     }
     return 'landing'
   })
+  const screenRef = useRef<GameScreen>(screen)
+  screenRef.current = screen
+  const deckSaveLockRef = useRef<Promise<boolean> | null>(null)
+  const guardarMazoRef = useRef<((instanceIdsOverride?: string[]) => Promise<boolean>) | null>(null)
   const [blogInitialTab, setBlogInitialTab] = useState<'news' | 'suggestions'>('news')
   const [shopInitialTab, setShopInitialTab] = useState<'packs' | 'pass' | 'gold' | 'energy' | 'market'>(() => {
     if (typeof window !== 'undefined') {
@@ -186,7 +194,15 @@ function App() {
 
   useEffect(() => {
     const handlePopState = () => {
+      if (shouldBlockPopStateInScreen(screenRef.current)) {
+        reanchorBattleHistoryGuard({ title: SCREEN_ROUTES.battle.title })
+        return
+      }
+
       const nextScreen = getScreenFromPath(window.location.pathname, window.location.hash)
+      if (screenRef.current === 'jardin' && nextScreen !== 'jardin') {
+        void guardarMazoRef.current?.()
+      }
       if (nextScreen === 'shop') {
         setShopInitialTab(getShopTabFromPath(window.location.pathname))
       }
@@ -217,7 +233,11 @@ function App() {
         const isGameOverPath = currentPath.includes('/game-over') && screen === 'battle'
         const isShopSubpath = currentPath.startsWith('/play/shop') && screen === 'shop'
         if (currentPath !== route.path.toLowerCase() && !isGameOverPath && !isShopSubpath) {
-          window.history.pushState({ screen }, route.title, route.path)
+          window.history.pushState(
+            screen === 'battle' ? { screen: 'battle', battleGuard: true } : { screen },
+            route.title,
+            route.path
+          )
         }
       }
     } catch (e) {
@@ -253,6 +273,7 @@ function App() {
     activeDeck,
     activeDeckInstances,
     updateActiveDeck,
+    registerDeckSavePromise,
     hasVipPass,
     hasPurchasedStarterPack,
     claimedVipLevels,
@@ -800,6 +821,7 @@ function App() {
   }, [battleMatchMode, limpiarEstadoPartida, refreshFromServer])
 
   const handleStartClanFortressRaid = useCallback((opponent: ClanFortressMatchOpponent) => {
+    void guardarMazoRef.current?.()
     setClanFortressConfig({ targetClan: opponent })
     setBattleMatchMode('clan_fortress')
     setSalaId(null)
@@ -899,7 +921,10 @@ function App() {
    * cruzan dos jugadores que hayan puesto la MISMA cantidad, que es lo que hace de
    * acuerdo sin necesidad de negociar.
    */
-  const handlePlayFriendly = (roomCode: string, betGems: number) => {
+  const handlePlayFriendly = async (roomCode: string, betGems: number) => {
+    const mazoGuardado = await guardarMazoAntesDeBuscar()
+    if (!mazoGuardado) return
+
     setBattleMatchMode('friendly')
     setFriendlyBet(betGems)
     setTournamentOpponent(null)
@@ -916,90 +941,118 @@ function App() {
     void buscar('friendly', { roomCode, betGems })
   }
 
-  const guardarMazoAntesDeBuscar = async (
+  const guardarMazoAntesDeBuscar = (
     instanceIdsOverride?: string[]
   ): Promise<boolean> => {
-    let ids = instanceIdsOverride ?? activeDeckInstances
+    const previousSave = deckSaveLockRef.current
+    let savePromise: Promise<boolean>
+    savePromise = (async (): Promise<boolean> => {
+      if (previousSave) {
+        try {
+          await previousSave
+        } catch {}
+      }
 
-    const inventario = await inventoryService.myInventory()
-    if (!inventario) {
-      return false
-    }
+      let fallbackIds: string[] = []
+      if (!instanceIdsOverride && activeDeckInstances.length === 0) {
+        try {
+          const saved = localStorage.getItem('plant_arena_active_deck_instances')
+          const parsed = saved ? JSON.parse(saved) : []
+          if (Array.isArray(parsed)) fallbackIds = parsed
+        } catch {}
+      }
 
-    // Convertir IDs legados como "inst_base_..." a UUIDs
-    ids = ids
-      .map((id) => {
-        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
-          return id
-        }
+      let ids = instanceIdsOverride ?? (activeDeckInstances.length > 0 ? activeDeckInstances : fallbackIds)
 
-        if (id.startsWith('inst_base_')) {
-          const plantId = id.replace('inst_base_', '')
-          return inventario.instances.find(
-            (inst) => inst.plantId === plantId && !Boolean((inst as any).isGolden)
-          )?.instanceId
-        }
+      const inventario = await inventoryService.myInventory()
+      if (!inventario) {
+        return false
+      }
 
-        return undefined
-      })
-      .filter((id): id is string => Boolean(id))
+      // Convertir IDs legados como "inst_base_..." a UUIDs
+      ids = ids
+        .map((id) => {
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+            return id
+          }
 
-    // Validar contra el inventario real: solo instancias que pertenezcan al usuario y NO estén en venta
-    const unlistedInstances = inventario.instances.filter((inst) => !inst.isListed)
-    const validInstanceSet = new Set(unlistedInstances.map((inst) => inst.instanceId))
+          if (id.startsWith('inst_base_')) {
+            const plantId = id.replace('inst_base_', '')
+            return inventario.instances.find(
+              (inst) => inst.plantId === plantId && !Boolean((inst as any).isGolden)
+            )?.instanceId
+          }
 
-    let cleanIds = ids.filter((id) => validInstanceSet.has(id))
+          return undefined
+        })
+        .filter((id): id is string => Boolean(id))
 
-    // Si por ventas en el mercado o desincronización quedaron menos de 3 cartas, auto-rellenar
-    if (cleanIds.length < 3) {
-      for (const inst of unlistedInstances) {
-        if (!cleanIds.includes(inst.instanceId)) {
-          const alreadyHasVariant = cleanIds.some((existingId) => {
-            const found = unlistedInstances.find((u) => u.instanceId === existingId)
-            return found && found.plantId === inst.plantId && Boolean((found as any).isGolden) === Boolean((inst as any).isGolden)
-          })
-          if (!alreadyHasVariant) {
-            cleanIds.push(inst.instanceId)
-            if (cleanIds.length >= 4) break
+      // Validar contra el inventario real: solo instancias que pertenezcan al usuario y NO estén en venta
+      const unlistedInstances = inventario.instances.filter((inst) => !inst.isListed)
+      const validInstanceSet = new Set(unlistedInstances.map((inst) => inst.instanceId))
+
+      let cleanIds = ids.filter((id) => validInstanceSet.has(id))
+
+      // Si por ventas en el mercado o desincronización quedaron menos de 3 cartas, auto-rellenar
+      if (cleanIds.length < 3) {
+        for (const inst of unlistedInstances) {
+          if (!cleanIds.includes(inst.instanceId)) {
+            const alreadyHasVariant = cleanIds.some((existingId) => {
+              const found = unlistedInstances.find((u) => u.instanceId === existingId)
+              return found && found.plantId === inst.plantId && Boolean((found as any).isGolden) === Boolean((inst as any).isGolden)
+            })
+            if (!alreadyHasVariant) {
+              cleanIds.push(inst.instanceId)
+              if (cleanIds.length >= 4) break
+            }
           }
         }
       }
-    }
 
-    if (cleanIds.length > 6) {
-      cleanIds = cleanIds.slice(0, 6)
-    }
+      if (cleanIds.length > 6) {
+        cleanIds = cleanIds.slice(0, 6)
+      }
 
-    if (cleanIds.length < 3) {
-      setActiveAppAlert({
-        title: 'MAZO INVÁLIDO',
-        message: 'Debes tener al menos 3 plantas disponibles (no en venta) para jugar.',
-        icon: '⚠️',
-      })
-      return false
-    }
+      if (cleanIds.length < 3) {
+        setActiveAppAlert({
+          title: 'MAZO INVÁLIDO',
+          message: 'Debes tener al menos 3 plantas disponibles (no en venta) para jugar.',
+          icon: '⚠️',
+        })
+        return false
+      }
 
-    const resultado = await profileService.saveActiveDeck(cleanIds)
+      const resultado = await profileService.saveActiveDeck(cleanIds)
 
-    if (!resultado.success) {
-      setActiveAppAlert({
-        title: 'NO SE PUDO GUARDAR EL MAZO',
-        message:
-          resultado.error ??
-          'No se pudo sincronizar tu mazo con el servidor.',
-        icon: '⚠️',
-      })
-      return false
-    }
+      if (!resultado.success) {
+        setActiveAppAlert({
+          title: 'NO SE PUDO GUARDAR EL MAZO',
+          message:
+            resultado.error ??
+            'No se pudo sincronizar tu mazo con el servidor.',
+          icon: '⚠️',
+        })
+        return false
+      }
 
-    // Sincronizar estado local en caso de que se hayan purgado cartas en venta
-    const plantIdsForDeck = cleanIds
-      .map((id) => unlistedInstances.find((inst) => inst.instanceId === id)?.plantId as PlantId)
-      .filter(Boolean)
-    updateActiveDeck(plantIdsForDeck, cleanIds)
+      // Sincronizar estado local en caso de que se hayan purgado cartas en venta
+      const plantIdsForDeck = cleanIds
+        .map((id) => unlistedInstances.find((inst) => inst.instanceId === id)?.plantId as PlantId)
+        .filter(Boolean)
+      updateActiveDeck(plantIdsForDeck, cleanIds)
 
-    return true
+      return true
+    })().finally(() => {
+      if (deckSaveLockRef.current === savePromise) {
+        deckSaveLockRef.current = null
+      }
+    })
+
+    deckSaveLockRef.current = savePromise
+    registerDeckSavePromise(savePromise)
+    return savePromise
   }
+  guardarMazoRef.current = guardarMazoAntesDeBuscar
 
   const handleBackFromJardin = (instanceIds?: string[]) => {
     if (instanceIds && instanceIds.length >= 3 && instanceIds.length <= 6) {
@@ -1089,6 +1142,7 @@ function App() {
    * Si no aparece rival en 4 minutos, el servidor devuelve lo cobrado solo.
    */
   const handleStartTournamentMatch = async (opponentName: string, tournamentId: string, tourneyDeck?: PlantId[]) => {
+    await guardarMazoAntesDeBuscar()
     setBattleMatchMode('tournament')
     setPartidaAsincrona(false)
     setTournamentOpponent({ name: opponentName || 'Rival del Torneo', tournamentId })
@@ -1115,6 +1169,7 @@ function App() {
   }
 
   const handleStartStoryLevel = (level: number) => {
+    void guardarMazoAntesDeBuscar()
     setStoryModeLevel(level)
     setBattleMatchMode('story')
     setPartidaAsincrona(false)
@@ -1131,6 +1186,7 @@ function App() {
   }
 
   const handleStartArenaAdsMatch = (run: ArenaAdsRun) => {
+    void guardarMazoAntesDeBuscar()
     setBattleMatchMode('arena_ads')
     setArenaAdsRun(run)
     setPartidaAsincrona(false)

@@ -119,34 +119,79 @@ function sleepAbortable(ms: number, signal?: AbortSignal): Promise<boolean> {
   })
 }
 
+export function isAuthExpiredRpcError(code?: string, errorMessage?: string): boolean {
+  const normalizedCode = (code || '').toUpperCase()
+  const msg = (errorMessage || '').toLowerCase()
+  return (
+    normalizedCode === 'PGRST301' ||
+    normalizedCode === '42501' ||
+    normalizedCode === '401' ||
+    msg.includes('no autenticado') ||
+    msg.includes('not_authenticated') ||
+    msg.includes('permission denied') ||
+    msg.includes('jwt expired') ||
+    msg.includes('jwt') ||
+    msg.includes('invalid claim') ||
+    msg.includes('unauthorized')
+  )
+}
+
 /**
- * Sólo estos códigos son razonablemente transitorios.
- * Cualquier RAISE EXCEPTION de nuestras reglas (`P0001`) es definitivo.
+ * Sólo errores definitivos de reglas de negocio (`P0001` no-auth) deben
+ * revertir la acción del jugador. Cualquier fallo transitorio de red,
+ * PostgREST, timeout, rate limit o renovación de sesión debe reintentarse en
+ * el outbox en lugar de provocar un rollback destructivo sobre el tablero.
  */
-function isRetryableCode(code?: string, errorMessage?: string): boolean {
+export function isRetryableRpcError(code?: string, errorMessage?: string): boolean {
   if (!code) return true
 
-  if (errorMessage && (errorMessage.includes('No autenticado') || errorMessage.includes('permission denied') || errorMessage.includes('NOT_AUTHENTICATED'))) {
+  const normalizedCode = code.toUpperCase()
+  const msg = (errorMessage || '').toLowerCase()
+
+  if (isAuthExpiredRpcError(normalizedCode, msg)) {
+    return true
+  }
+
+  // Excepciones explícitas de reglas de dominio (RAISE EXCEPTION en PostgreSQL)
+  if (normalizedCode === 'P0001' || normalizedCode === 'CLIENT_CONFIG') {
     return false
   }
 
   if (
-    code === '40001' || // serialization_failure
-    code === '40P01' || // deadlock_detected
-    code === '53300' || // too_many_connections
-    code === '57P01' ||
-    code === '57P02' ||
-    code === '57P03' ||
-    code.startsWith('08') || // connection_exception family
-    code === 'PGRST000' ||
-    code === 'PGRST001' ||
-    code === 'PGRST002' ||
-    code === 'PGRST003'
+    normalizedCode === '40001' || // serialization_failure
+    normalizedCode === '40P01' || // deadlock_detected
+    normalizedCode === '53300' || // too_many_connections
+    normalizedCode === '57014' || // query_canceled / statement_timeout
+    normalizedCode === '57P01' ||
+    normalizedCode === '57P02' ||
+    normalizedCode === '57P03' ||
+    normalizedCode.startsWith('08') || // connection_exception family
+    normalizedCode.startsWith('PGRST') || // PostgREST gateway / schema cache / upstream transient errors
+    normalizedCode === '408' ||
+    normalizedCode === '429' ||
+    normalizedCode === '500' ||
+    normalizedCode === '502' ||
+    normalizedCode === '503' ||
+    normalizedCode === '504' ||
+    normalizedCode === 'FETCH_ERROR'
   ) {
     return true
   }
 
-  return false
+  return (
+    msg.includes('timeout') ||
+    msg.includes('timed out') ||
+    msg.includes('network') ||
+    msg.includes('fetch') ||
+    msg.includes('rate limit') ||
+    msg.includes('too many requests') ||
+    msg.includes('temporarily') ||
+    msg.includes('connection')
+  )
+}
+
+function isRetryableCode(code?: string, errorMessage?: string): boolean {
+  return isRetryableRpcError(code, errorMessage)
 }
 
 async function sendOnce(
@@ -180,15 +225,9 @@ async function sendOnce(
       p_target_id: action.targetId ?? null,
     })
 
-    // Resiliencia de sesión: si el token de autenticación expiró o se desincronizó,
-    // refrescar inmediatamente la sesión y reintentar la acción sin descartarla
-    if (
-      error &&
-      (error.message?.includes('No autenticado') ||
-        error.message?.includes('permission denied') ||
-        error.message?.includes('NOT_AUTHENTICATED') ||
-        error.code === '42501')
-    ) {
+    // Resiliencia de sesión: si el token de autenticación expiró o se desincronizó
+    // (incluyendo PGRST301 / JWT expired / HTTP 401), refrescar y reintentar
+    if (error && isAuthExpiredRpcError(error.code, error.message)) {
       try {
         const refreshedOk = await safeRefreshSession()
         if (refreshedOk) {

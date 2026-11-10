@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import type { PlantCardInstance, PlantId } from '../../types/game'
 import {
   PLANT_CONFIGS,
@@ -184,6 +184,7 @@ export default function Jardin({
   onUnequipMotherTreeSkin,
 }: JardinProps) {
   const [deck, setDeck] = useState<PlantId[]>(activeDeck)
+  const hasEditedDeckRef = useRef<boolean>(false)
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null)
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.isMuted())
   const [showTreeModal, setShowTreeModal] = useState(false)
@@ -800,8 +801,10 @@ export default function Jardin({
     return result
   })
 
-  // Mantener sincronizado si activeDeckInstances cambia tras refrescar del servidor
+  // Mantener sincronizado si activeDeckInstances cambia tras refrescar del servidor,
+  // sin pisar selecciones recientes hechas manualmente en el Jardín.
   useEffect(() => {
+    if (hasEditedDeckRef.current) return
     if (activeDeckInstances && activeDeckInstances.length > 0) {
       const valid = activeDeckInstances.filter((id) =>
         displayedCards.some((c) => c.instanceId === id && c.isUnlocked && !c.isListed)
@@ -817,7 +820,7 @@ export default function Jardin({
         setDeck(plantIds)
       }
     }
-  }, [activeDeckInstances, displayedCards])
+  }, [activeDeckInstances, displayedCards, deckInstanceIds])
 
   // Synchronize with activeDeck changes and persist
   useEffect(() => {
@@ -828,9 +831,11 @@ export default function Jardin({
 
   // Si alguna carta en el mazo fue puesta en venta en el mercado, se retira de la selección activa
   useEffect(() => {
+    const hasLoadedInstances = plantInstances.length > 0
     const unlistedDeck = deckInstanceIds.filter((id) => {
       const card = displayedCards.find((c) => c.instanceId === id)
-      return card && !card.isListed
+      if (card) return !card.isListed
+      return !hasLoadedInstances
     })
     if (unlistedDeck.length !== deckInstanceIds.length) {
       setDeckInstanceIds(unlistedDeck)
@@ -840,9 +845,10 @@ export default function Jardin({
       setDeck(plantIds)
       onUpdateDeck(plantIds, unlistedDeck)
     }
-  }, [displayedCards, deckInstanceIds, onUpdateDeck])
+  }, [displayedCards, deckInstanceIds, onUpdateDeck, plantInstances.length])
 
   const handleRemoveSlotInstance = (slotIdx: number) => {
+    hasEditedDeckRef.current = true
     soundManager.playSound('plantation', 0.4)
     const next = deckInstanceIds.filter((_, idx) => idx !== slotIdx)
     setDeckInstanceIds(next)
@@ -870,6 +876,7 @@ export default function Jardin({
       return
     }
 
+    hasEditedDeckRef.current = true
     soundManager.playSound('plantation', 0.5)
 
     const inDeck = deckInstanceIds.includes(card.instanceId)
@@ -892,11 +899,17 @@ export default function Jardin({
 
       if (selectedSlotIndex !== null) {
         let next = [...deckInstanceIds]
-        // Si la misma especie ya estaba en otro slot distinto, removerla para que no haya duplicados
         if (existingSameSpeciesIndex !== -1 && existingSameSpeciesIndex !== selectedSlotIndex) {
-          next = next.filter((_, idx) => idx !== existingSameSpeciesIndex)
-        }
-        if (selectedSlotIndex < next.length) {
+          if (selectedSlotIndex < next.length) {
+            next[existingSameSpeciesIndex] = next[selectedSlotIndex]
+            next[selectedSlotIndex] = card.instanceId
+          } else {
+            next = next.filter((_, idx) => idx !== existingSameSpeciesIndex)
+            if (next.length < 6) {
+              next.push(card.instanceId)
+            }
+          }
+        } else if (selectedSlotIndex < next.length) {
           next[selectedSlotIndex] = card.instanceId
         } else if (next.length < 6) {
           next.push(card.instanceId)

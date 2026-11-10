@@ -11,6 +11,7 @@ import {
   MatchActionOutbox,
   type MatchActionIntent,
 } from '../../services/matchActionOutbox'
+import { BATTLE_BACK_BLOCKED_EVENT } from '../../utils/battleNavigationGuard'
 import {
   PLANT_CONFIGS,
   LANES_CONFIG,
@@ -715,6 +716,7 @@ export default function Battlefield({
   const [isRerollingTarget, setIsRerollingTarget] = useState<boolean>(false)
   const [rerollError, setRerollError] = useState<string | null>(null)
   const [raidPrepNotice, setRaidPrepNotice] = useState<string | null>(null)
+  const [navBlockedNotice, setNavBlockedNotice] = useState<string | null>(null)
   const hasClanFortressStartedRef = useRef<boolean>(false)
 
   const [currentArenaAdsRun, setCurrentArenaAdsRun] = useState<ArenaAdsRun | null>(
@@ -821,6 +823,7 @@ export default function Battlefield({
       const pIds: string[] = activeDeckInstances && activeDeckInstances.length > 0 ? activeDeckInstances : localIds
       const pInst: any[] = sInst ? JSON.parse(sInst) : []
 
+      const usedDeckInstanceIds = new Set<string>()
       return deckCards.map((plantId, idx) => {
         let level = 0
         let statRolls: string[] = []
@@ -834,6 +837,7 @@ export default function Battlefield({
           const f = pInst.find((i) => i.instanceId === pIds[idx] && isPlantMatchingTarget(i.plantId, plantId))
           if (f) {
             matchedBySlot = true
+            usedDeckInstanceIds.add(f.instanceId)
             instanceId = f.instanceId
             level = f.level ?? (f.statRolls?.length || 0)
             statRolls = f.statRolls || []
@@ -842,7 +846,26 @@ export default function Battlefield({
           }
         }
 
-        // 2. Coincidencia de respaldo por plantId (solo si no hubo instancia exacta en ese slot)
+        // 1b. Respaldo usando otra instancia seleccionada dentro del mazo activo (pIds) sin consumir
+        if (!matchedBySlot && pIds.length > 0) {
+          const deckInst = pInst.find(
+            (i) =>
+              pIds.includes(i.instanceId) &&
+              !usedDeckInstanceIds.has(i.instanceId) &&
+              isPlantMatchingTarget(i.plantId, plantId)
+          )
+          if (deckInst) {
+            matchedBySlot = true
+            usedDeckInstanceIds.add(deckInst.instanceId)
+            instanceId = deckInst.instanceId
+            level = deckInst.level ?? (deckInst.statRolls?.length || 0)
+            statRolls = deckInst.statRolls || []
+            equippedItem = deckInst.equippedItem || null
+            isGolden = Boolean(deckInst.isGolden)
+          }
+        }
+
+        // 2. Coincidencia de respaldo por plantId (solo si no hubo instancia exacta en el mazo)
         if (!matchedBySlot && statRolls.length === 0 && !equippedItem && !isGolden) {
           const copies = pInst.filter((i) => isPlantMatchingTarget(i.plantId, plantId))
           if (copies.length > 0) {
@@ -1556,8 +1579,7 @@ export default function Battlefield({
   // El navegador NO deja poner un texto propio (se ignora desde hace años por
   // abuso), así que enseña su mensaje genérico. Lo que importa es que pregunte.
   useEffect(() => {
-    if (!roomId) return
-    if (gameStatus !== 'playing') return
+    if (gameStatus !== 'playing' || isPracticeMode) return
 
     const alCerrar = (e: BeforeUnloadEvent) => {
       e.preventDefault()
@@ -1567,7 +1589,21 @@ export default function Battlefield({
     }
     window.addEventListener('beforeunload', alCerrar)
     return () => window.removeEventListener('beforeunload', alCerrar)
-  }, [roomId, gameStatus])
+  }, [gameStatus, isPracticeMode])
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const handleBackBlocked = () => {
+      setNavBlockedNotice('⚠️ Retroceso bloqueado durante el combate. Usa 🏳️ Rendirse para salir.')
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => setNavBlockedNotice(null), 3500)
+    }
+    window.addEventListener(BATTLE_BACK_BLOCKED_EVENT, handleBackBlocked)
+    return () => {
+      window.removeEventListener(BATTLE_BACK_BLOCKED_EVENT, handleBackBlocked)
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
 
   const hasHandledEndRef = useRef<boolean>(false)
   const hasCreditedMarigoldGoldRef = useRef<boolean>(false)
@@ -2646,6 +2682,12 @@ export default function Battlefield({
         }
       }}
     >
+      {navBlockedNotice && (
+        <div className="battle-nav-guard-toast" role="status" aria-live="polite">
+          {navBlockedNotice}
+        </div>
+      )}
+
       {/* Practice / Sandbox Mode Bar */}
       {isPracticeMode && (
         <div className="practice-bar">

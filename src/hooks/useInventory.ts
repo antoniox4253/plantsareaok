@@ -465,10 +465,30 @@ export function useInventory() {
     return { payoutGems: won ? payoutGems : 0, newStreak, newMaxStreak, isNewRecord }
   }
 
+  const localDeckSyncEpochRef = useRef<number>(0)
+  const pendingDeckSaveRef = useRef<Promise<unknown> | null>(null)
+
+  const registerDeckSavePromise = (promise: Promise<unknown>) => {
+    localDeckSyncEpochRef.current += 1
+    pendingDeckSaveRef.current = promise
+    void promise.finally(() => {
+      if (pendingDeckSaveRef.current === promise) {
+        pendingDeckSaveRef.current = null
+      }
+    })
+  }
+
   const updateActiveDeck = (plantIds: PlantId[], instanceIds?: string[]) => {
+    localDeckSyncEpochRef.current += 1
     setActiveDeck(plantIds)
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_DECK, JSON.stringify(plantIds))
+    } catch {}
     if (instanceIds && instanceIds.length > 0) {
       setActiveDeckInstances(instanceIds)
+      try {
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_DECK_INSTANCES, JSON.stringify(instanceIds))
+      } catch {}
     }
   }
 
@@ -1326,6 +1346,13 @@ export function useInventory() {
 
   /** Recarga el inventario completo desde el servidor. */
   const refreshInventory = async (): Promise<void> => {
+    if (pendingDeckSaveRef.current) {
+      try {
+        await pendingDeckSaveRef.current
+      } catch {}
+    }
+
+    const deckEpochBeforeFetch = localDeckSyncEpochRef.current
     const inv = await inventoryService.myInventory()
     if (!inv) return
 
@@ -1368,6 +1395,12 @@ export function useInventory() {
         }
       })
     )
+
+    // Si el usuario editó su mazo localmente mientras esta consulta estaba en vuelo
+    // o hay un guardado pendiente, NO pisar su selección actual con el snapshot previo.
+    if (deckEpochBeforeFetch !== localDeckSyncEpochRef.current || pendingDeckSaveRef.current) {
+      return
+    }
 
     // El mazo activo sale de is_in_deck / deck_slot, no de una lista aparte que
     // podía desincronizarse del inventario real.
@@ -1983,6 +2016,7 @@ export function useInventory() {
     activeDeck,
     activeDeckInstances,
     updateActiveDeck,
+    registerDeckSavePromise,
     hasVipPass,
     claimedVipLevels,
     battlePassXp,
