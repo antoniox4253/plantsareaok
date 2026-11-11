@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { ClanManager, type ClanRankingEntry } from '../../utils/clanManager'
 import { arenaAdsService, type ArenaAdsLeaderboardEntry } from '../../services/arenaAdsService'
 import { FARMING_ITEM_DEFINITIONS } from '../../utils/pvpRewardManager'
+import { SURVIVOR_ADS_FREEZE_MS } from '../../utils/survivorAdsManager'
 import SeasonRewardModal from './SeasonRewardModal'
 import './Ranking.css'
 
@@ -502,9 +503,9 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
     return () => clearInterval(timer)
   }, [])
 
-  // Reloj regresivo de 3 días para congelamiento y cierre definitivo de Survivor ADS
-  // Congelamiento programado: 12 de Noviembre de 2026 a las 05:30 UTC
-  const SURVIVOR_FREEZE_DATE_MS = useMemo(() => new Date('2026-11-12T05:30:00Z').getTime(), [])
+  // Reloj regresivo para congelamiento y cierre definitivo de Survivor ADS
+  // Congelamiento programado: 12 de Noviembre de 2026 a las 00:00:00 UTC
+  const SURVIVOR_FREEZE_DATE_MS = useMemo(() => SURVIVOR_ADS_FREEZE_MS, [])
   const [survivorRewardCountdown, setSurvivorRewardCountdown] = useState<string>('')
   const [isSurvivorFrozen, setIsSurvivorFrozen] = useState<boolean>(false)
 
@@ -523,7 +524,9 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
       const minutes = Math.floor((remainingMs % 3600000) / 60000)
       const seconds = Math.floor((remainingMs % 60000) / 1000)
       setSurvivorRewardCountdown(
-        `${days}d ${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
+        days > 0
+          ? `${days}d ${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
+          : `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
       )
     }
     updateSurvivorTimer()
@@ -2315,9 +2318,9 @@ export default function Ranking({ userElo, userProfile, hasVipPass = false, onBa
                     <div className={`survivor-rewards-banner__timer ${isSurvivorFrozen ? 'survivor-rewards-banner__timer--frozen' : ''}`}>
                       <span className="survivor-timer-label">{isSurvivorFrozen ? '❄️ Estado:' : '⏳ Cierre:'}</span>
                       <strong className={`survivor-timer-value ${isSurvivorFrozen ? 'survivor-timer-value--frozen' : ''}`}>
-                        {survivorRewardCountdown || '3d 00h 00m 00s'}
+                        {survivorRewardCountdown || '00h 00m 00s'}
                       </strong>
-                      <small className="survivor-timer-sub">{isSurvivorFrozen ? '· Ranking Congelado' : '· 3 días (Freeze)'}</small>
+                      <small className="survivor-timer-sub">{isSurvivorFrozen ? '· Ranking Finalizado' : '· Finaliza 12-Nov 00:00 UTC'}</small>
                     </div>
                   </div>
 

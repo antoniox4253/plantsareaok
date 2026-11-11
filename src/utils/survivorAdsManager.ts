@@ -7,6 +7,14 @@ export const SURVIVOR_ADS_STORAGE_KEY = 'plant_survivor_ads_run'
 // Compatibilidad con el almacenamiento previo
 export const ARENA_ADS_STORAGE_KEY = 'plant_arena_ads_run'
 
+/** Fecha límite oficial de cierre y congelamiento definitivo de Survivor ADS: 12 de Noviembre de 2026 00:00:00 UTC */
+export const SURVIVOR_ADS_FREEZE_ISO = '2026-11-12T00:00:00Z'
+export const SURVIVOR_ADS_FREEZE_MS = new Date(SURVIVOR_ADS_FREEZE_ISO).getTime()
+
+export function isSurvivorAdsFrozen(nowMs: number = Date.now()): boolean {
+  return nowMs >= SURVIVOR_ADS_FREEZE_MS
+}
+
 /** Pool estricto de cartas raras para recompensas cada 25 niveles (excluye Jalapeño y Nuez Explosiva) */
 export const SURVIVOR_RARE_CARDS_POOL: PlantId[] = [
   'twinsunflower',

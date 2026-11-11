@@ -9,7 +9,11 @@ import {
 } from '../../utils/arenaAdsManager'
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { survivorAdsService } from '../../services/survivorAdsService'
-import { SURVIVOR_ADS_ENTRY_FEE_GEMS } from '../../utils/survivorAdsManager'
+import {
+  SURVIVOR_ADS_ENTRY_FEE_GEMS,
+  isSurvivorAdsFrozen,
+  SURVIVOR_ADS_FREEZE_MS,
+} from '../../utils/survivorAdsManager'
 import { soundManager } from '../../utils/audioManager'
 import { isFullscreen, toggleFullscreen } from '../../utils/fullscreen'
 import { PLANT_CONFIGS } from '../../utils/gameConstants'
@@ -79,6 +83,32 @@ export default function ArenaAdsModal({
   const [newSponsorUrl, setNewSponsorUrl] = useState<string>('')
   const [isCreatingMission, setIsCreatingMission] = useState<boolean>(false)
   const [sponsorNotice, setSponsorNotice] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
+
+  // ── TEMPORIZADOR Y CONGELAMIENTO SURVIVOR ADS (12 DE NOVIEMBRE 00:00 UTC) ──
+  const [isSurvivorFrozen, setIsSurvivorFrozen] = useState<boolean>(() => isSurvivorAdsFrozen())
+  const [survivorTimeRemaining, setSurvivorTimeRemaining] = useState<string>('')
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = Date.now()
+      const remainingMs = SURVIVOR_ADS_FREEZE_MS - now
+      if (remainingMs <= 0) {
+        setIsSurvivorFrozen(true)
+        setSurvivorTimeRemaining('❄️ EVENTO FINALIZADO')
+        return
+      }
+      setIsSurvivorFrozen(false)
+      const hours = Math.floor(remainingMs / 3600000)
+      const minutes = Math.floor((remainingMs % 3600000) / 60000)
+      const seconds = Math.floor((remainingMs % 60000) / 1000)
+      setSurvivorTimeRemaining(
+        `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`
+      )
+    }
+    updateCountdown()
+    const timer = setInterval(updateCountdown, 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   const handlePrevMission = () => {
     if (missions.length <= 1) return
@@ -354,6 +384,14 @@ export default function ArenaAdsModal({
 
   // Iniciar nueva expedición a Survivor ADS (50 Gemas 💎)
   const handleStartNewRun = async (_paymentType: 'gold' | 'gems' = 'gems') => {
+    if (isSurvivorFrozen || isSurvivorAdsFrozen()) {
+      soundManager.playSound('click', 0.5)
+      alert(
+        'El modo Survivor ADS ha finalizado formalmente (12 de Noviembre 00:00 UTC). Las inscripciones y el ranking están cerrados y ya no se contabilizan más partidas.'
+      )
+      return
+    }
+
     if (userGems < SURVIVOR_ADS_ENTRY_FEE_GEMS) {
       soundManager.playSound('click', 0.5)
       alert(`Gemas insuficientes. Necesitas al menos ${SURVIVOR_ADS_ENTRY_FEE_GEMS} Gemas 💎 para entrar a Survivor ADS.`)
@@ -530,7 +568,12 @@ export default function ArenaAdsModal({
             <span className="arena-ads-icon">🧟</span>
             <div>
               <h2 className="arena-ads-title">SURVIVOR ADS</h2>
-              <p className="arena-ads-subtitle">Supervivencia por Oleadas Melee (50 💎)</p>
+              <p className="arena-ads-subtitle">
+                Supervivencia por Oleadas Melee (50 💎) ·{' '}
+                {isSurvivorFrozen
+                  ? '❄️ Cerrado (12-Nov 00:00 UTC)'
+                  : `⏳ Cierre: ${survivorTimeRemaining || '12-Nov 00:00 UTC'}`}
+              </p>
             </div>
           </div>
 
@@ -1139,17 +1182,23 @@ export default function ArenaAdsModal({
                     type="button"
                     className="arena-ads-btn arena-ads-btn--primary"
                     onClick={() => handleStartNewRun('gems')}
-                    disabled={isProcessing || userGems < SURVIVOR_ADS_ENTRY_FEE_GEMS}
+                    disabled={isProcessing || isSurvivorFrozen || isSurvivorAdsFrozen() || userGems < SURVIVOR_ADS_ENTRY_FEE_GEMS}
                     style={{
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      borderColor: '#34d399',
+                      background: (isSurvivorFrozen || isSurvivorAdsFrozen())
+                        ? '#475569'
+                        : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderColor: (isSurvivorFrozen || isSurvivorAdsFrozen()) ? '#64748b' : '#34d399',
                       color: '#ffffff',
                       fontWeight: 900,
-                      boxShadow: '0 0 20px rgba(16, 185, 129, 0.45)',
+                      boxShadow: (isSurvivorFrozen || isSurvivorAdsFrozen()) ? 'none' : '0 0 20px rgba(16, 185, 129, 0.45)',
                       width: '100%',
                     }}
                   >
-                    {isProcessing ? '⏳ PROCESANDO...' : '🧟 ENTRAR A SURVIVOR ADS (50 💎)'}
+                    {(isSurvivorFrozen || isSurvivorAdsFrozen())
+                      ? '❄️ EVENTO FINALIZADO (12-NOV 00:00 UTC)'
+                      : isProcessing
+                        ? '⏳ PROCESANDO...'
+                        : '🧟 ENTRAR A SURVIVOR ADS (50 💎)'}
                   </button>
                 )}
               </div>

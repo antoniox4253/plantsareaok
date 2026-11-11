@@ -131,3 +131,32 @@ describe('Restauración de Survivor ADS y Regla de Congelamiento en 3 Días (Mig
     expect(sql).toContain("'frozen', true")
   })
 })
+
+describe('Cierre y Congelamiento Estricto de Survivor ADS el 12 de Noviembre 00:00 UTC (Migración 432)', () => {
+  const migration432Path = join(
+    process.cwd(),
+    'supabase',
+    'migrations',
+    '432-freeze-survivor-ads-november-12-00-utc.sql'
+  )
+
+  it('1. El archivo de migración 432 existe y es accesible', () => {
+    expect(existsSync(migration432Path)).toBe(true)
+  })
+
+  it('2. Actualiza record_survivor_ads_run para congelar exactamente a las 00:00:00 UTC y no contabilizar más partidas', () => {
+    const sql = readFileSync(migration432Path, 'utf8')
+    expect(sql).toContain("v_freeze_time TIMESTAMPTZ := '2026-11-12 00:00:00+00'::TIMESTAMPTZ")
+    expect(sql).toContain('IF NOW() >= v_freeze_time THEN')
+    expect(sql).toContain("'frozen', true")
+    expect(sql).toContain("'newBest', false")
+  })
+
+  it('3. Bloquea nuevas entradas en enter_survivor_ads tras 12 de Noviembre 00:00:00 UTC', () => {
+    const sql = readFileSync(migration432Path, 'utf8')
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.enter_survivor_ads()')
+    expect(sql).toContain("v_freeze_time TIMESTAMPTZ := '2026-11-12 00:00:00+00'::TIMESTAMPTZ")
+    expect(sql).toContain('IF NOW() >= v_freeze_time THEN')
+    expect(sql).toContain("'is_frozen', true")
+  })
+})
