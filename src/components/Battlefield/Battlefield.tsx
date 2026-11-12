@@ -58,6 +58,7 @@ import { ArenaAdsManager, getBotStatsForLevel } from '../../utils/arenaAdsManage
 import { arenaAdsService } from '../../services/arenaAdsService'
 import { plantsTokenService } from '../../services/plantsTokenService'
 import { setCombatAdsBlocked, resetPopunderQuota, activateMonetagVignette } from '../../utils/arenaAdsNetwork'
+import { clearActiveStoryExpedition } from '../../utils/mapaches/mapachesLevels'
 import './Battlefield.css'
 
 /** Un segundo antes de que el sol se recoja solo: momento de avisar. */
@@ -194,7 +195,7 @@ interface BattlefieldProps {
   customBgImage?: string
   matchMode?: 'ranked' | 'tournament' | 'strategic_test' | 'friendly' | 'clan_fortress' | 'arena_ads' | 'story'
   storyLevel?: number
-  onStoryVictory?: (level: number, rewards: { gold: number; gems: number; tokens: number }) => void
+  onStoryVictory?: (level: number, rewards: { gold?: number; gems?: number; tokens: number; stars?: number; goldenCardsCount?: number; goldenBonusPct?: number; baseTokens?: number }) => void
   onNextStoryLevel?: (nextLevel: number) => void
   arenaAdsRun?: ArenaAdsRun | null
   onArenaAdsAdvance?: (run: ArenaAdsRun) => void
@@ -359,7 +360,7 @@ export default function Battlefield({
     storyTotalWaves: _storyTotalWaves,
     storyLevel: _currentStoryLevel,
     storyEnemiesRemaining,
-    storyRewards,
+    storyRewards: _storyRewards,
   } = useGameEngine()
 
   const { user } = useAuth()
@@ -460,6 +461,16 @@ export default function Battlefield({
       isBot: boolean
     }
   } | null>(null)
+
+  // ── ESTADO DE RECOMPENSAS MODO HISTORIA (TOKEN PLANTS) ──
+  const [storyClaimedResult, setStoryClaimedResult] = useState<{
+    tokens: number
+    stars: number
+    goldenCardsCount: number
+    goldenBonusPct: number
+    baseTokens: number
+  } | null>(null)
+  const goldenPlantsPlayedSetRef = useRef<Set<string>>(new Set())
 
   const [isPresaleActive, setIsPresaleActive] = useState<boolean>(false)
 
@@ -2069,13 +2080,31 @@ export default function Battlefield({
 
       if (matchMode === 'story') {
         if (gameStatus === 'victory') {
-          const rewards = storyRewards || {
-            gold: 150 + (storyLevel || 1) * 50,
-            gems: 10 + Math.floor((storyLevel || 1) * 2.5),
-            tokens: 0,
+          const ratio = Math.max(0, p1BaseHp) / 1000
+          const starsEarned = ratio >= 0.75 ? 3 : ratio >= 0.35 ? 2 : 1
+
+          const doradasSet = new Set<string>(goldenPlantsPlayedSetRef.current)
+          for (const p of plants) {
+            if (p.isGolden) doradasSet.add(p.plantId)
           }
+          const goldenCount = Math.min(6, doradasSet.size)
+          const goldenBonusPct = goldenCount * 10
+          const baseTokens = starsEarned === 3 ? 5 : starsEarned === 2 ? 3 : 1
+          const finalTokens = Number((baseTokens * (1 + goldenBonusPct / 100)).toFixed(2))
+
+          const computed = {
+            tokens: finalTokens,
+            stars: starsEarned,
+            goldenCardsCount: goldenCount,
+            goldenBonusPct,
+            baseTokens,
+            gold: 0,
+            gems: 0,
+          }
+          setStoryClaimedResult(computed)
+
           if (onStoryVictory) {
-            onStoryVictory(storyLevel || 1, rewards)
+            onStoryVictory(storyLevel || 1, computed)
           }
         }
       }
@@ -2358,6 +2387,14 @@ export default function Battlefield({
     setShowSurrenderModal(false)
     hasHandledEndRef.current = true
     surrenderGame()
+
+    if (matchMode === 'story') {
+      clearActiveStoryExpedition()
+      if (onBackToMenu) {
+        onBackToMenu()
+      }
+      return
+    }
 
     if (matchMode === 'arena_ads') {
       ArenaAdsManager.clearRun()
@@ -4282,30 +4319,40 @@ export default function Battlefield({
                           <div className="battle-mode-payout-header" style={{ color: '#c084fc' }}>
                             <span>
                               {storyLevel === 20
-                                ? '👑 ¡HAS VENCIDO AL REY GARRA Y SALVADO EL JARDÍN! (NIVEL 20 COMPLETADO)'
+                                ? '👑 ¡HAS VENCIDO AL REY GARRA Y SALVADO EL JARDÍN! (EXPEDICIÓN COMPLETADA)'
                                 : `🎉 ¡NIVEL ${storyLevel || 1} SUPERADO CON ÉXITO!`}
                             </span>
                           </div>
-                          <div className="battle-mode-payout-gems" style={{ color: '#facc15' }}>
-                            🎁 RECOMPENSAS OBTENIDAS:
+
+                          {/* Estrellas ganadas */}
+                          <div style={{ textAlign: 'center', margin: '6px 0 2px 0', fontSize: '1.4rem', letterSpacing: '4px' }}>
+                            {'⭐'.repeat(storyClaimedResult?.stars || 3)}
+                          </div>
+                          <div style={{ textAlign: 'center', fontSize: '0.78rem', color: '#cbd5e1', marginBottom: '8px' }}>
+                            {(storyClaimedResult?.stars ?? 3) === 3
+                              ? '🏆 ¡Defensa Impecable! (Árbol ≥75% HP · 5 PLANTS)'
+                              : (storyClaimedResult?.stars ?? 2) === 2
+                              ? '🛡️ ¡Buena Defensa! (Árbol 35%-74% HP · 3 PLANTS)'
+                              : '⚔️ ¡Victoria por los Pelos! (Árbol <35% HP · 1 PLANTS)'}
+                          </div>
+
+                          <div className="battle-mode-payout-gems" style={{ color: '#34d399', fontWeight: 900 }}>
+                            🌱 TOKEN PLANTS GANADOS:
                           </div>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '6px' }}>
-                            <span style={{ color: '#fbbf24', fontWeight: 800, fontSize: '0.85rem' }}>
-                              🪙 +{storyRewards?.gold ?? (150 + (storyLevel || 1) * 50)} Oro
+                            <span style={{ color: '#6ee7b7', fontWeight: 900, fontSize: '1.05rem', background: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', borderRadius: '8px', padding: '4px 12px' }}>
+                              🌱 +{storyClaimedResult?.tokens ?? 5} PLANTS
                             </span>
-                            <span style={{ color: '#38bdf8', fontWeight: 800, fontSize: '0.85rem' }}>
-                              💎 +{storyRewards?.gems ?? (10 + Math.floor((storyLevel || 1) * 2.5))} Gemas
-                            </span>
-                            {storyRewards && storyRewards.tokens > 0 ? (
-                              <span style={{ color: '#34d399', fontWeight: 800, fontSize: '0.85rem' }}>
-                                🌱 +{storyRewards.tokens} Token PLANTS
+                            {(storyClaimedResult?.goldenCardsCount ?? 0) > 0 && (
+                              <span style={{ color: '#fef08a', fontWeight: 800, fontSize: '0.82rem', background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(245, 158, 11, 0.25))', border: '1px solid #eab308', borderRadius: '8px', padding: '4px 10px', display: 'flex', alignItems: 'center' }}>
+                                ✨ +{storyClaimedResult?.goldenBonusPct}% Bono Doradas ({storyClaimedResult?.goldenCardsCount} jugada{(storyClaimedResult?.goldenCardsCount ?? 0) === 1 ? '' : 's'})
                               </span>
-                            ) : null}
+                            )}
                           </div>
                           <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
                             {storyLevel < 20
-                              ? '🛡️ ¡Las 3 oleadas y el asalto mapache fueron repelidos! Pulsa avanzar para el siguiente desafío.'
-                              : '🏆 ¡Eres el campeón absoluto del jardín contra la Invasión Mapache!'}
+                              ? '🛡️ ¡Token PLANTS acreditados a tu cuenta! Pulsa avanzar para continuar la expedición en el siguiente nivel.'
+                              : '🏆 ¡Eres el campeón absoluto! Has completado los 20 niveles de la expedición.'}
                           </p>
                         </>
                       ) : (
@@ -4314,10 +4361,10 @@ export default function Battlefield({
                             <span>💀 ¡LOS MAPACHES ARRASARON TU JARDÍN!</span>
                           </div>
                           <div className="battle-mode-payout-streak" style={{ color: '#f87171' }}>
-                            El Árbol Madre cayó en el Nivel {storyLevel || 1}.
+                            La expedición finalizó en el Nivel {storyLevel || 1}.
                           </div>
                           <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '8px 0 0 0', textAlign: 'center' }}>
-                            Revisa tu selección de plantas, refuerza tus líneas con nueces y lanzaguisantes, ¡y vuelve a intentarlo!
+                            El progreso no se guarda entre expediciones. Los Token PLANTS ganados en los niveles anteriores se mantuvieron asegurados en tu cuenta.
                           </p>
                         </>
                       )}
@@ -4873,14 +4920,18 @@ export default function Battlefield({
         )}
       </div>
 
-      {/* Surrender Confirmation In-Game Modal */}
+      {/* Surrender / Abandon Confirmation In-Game Modal */}
       {showSurrenderModal && (
         <div className="battle-surrender-modal-overlay">
           <div className="battle-surrender-modal">
-            <div className="battle-surrender-modal__icon">🏳️</div>
-            <h3 className="battle-surrender-modal__title">¿RENDIRTE DE LA BATALLA?</h3>
+            <div className="battle-surrender-modal__icon">{matchMode === 'story' ? '🦝' : '🏳️'}</div>
+            <h3 className="battle-surrender-modal__title">
+              {matchMode === 'story' ? '¿ABANDONAR EXPEDICIÓN?' : '¿RENDIRTE DE LA BATALLA?'}
+            </h3>
             <p className="battle-surrender-modal__desc">
-              Si te rindes ahora, se declarará derrota inmediata y perderás copas de ELO en el ranking.
+              {matchMode === 'story'
+                ? `Estás en el Nivel ${storyLevel || 1} de 20. Si abandonas ahora, tu intento actual finalizará y el progreso no se guarda para después (cada intento inicia en Nivel 1). Los Token PLANTS ganados en los niveles ya completados permanecerán asegurados en tu cuenta.`
+                : 'Si te rindes ahora, se declarará derrota inmediata y perderás copas de ELO en el ranking.'}
             </p>
             <div className="battle-surrender-modal__actions">
               <button
@@ -4898,7 +4949,7 @@ export default function Battlefield({
                 className="battle-surrender-modal__btn battle-surrender-modal__btn--confirm"
                 onClick={handleConfirmSurrender}
               >
-                🏳️ SÍ, RENDIRME
+                {matchMode === 'story' ? '🚪 ABANDONAR EXPEDICIÓN' : '🏳️ SÍ, RENDIRME'}
               </button>
             </div>
           </div>

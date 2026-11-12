@@ -375,10 +375,12 @@ describe('StoryWaveEngine - Simulación en el Motor', () => {
     // En PvP sí dispara para dañar la base rival
     expect(state.projectiles.filter(p => p.lane === 0).length).toBeGreaterThan(0)
   })
-  it('garantiza que el modo historia no asigne tokens plants (tokens = 0)', () => {
+  it('asigna 5 tokens base por nivel (3 estrellas = 5, 2 estrellas = 3, 1 estrella = 1), y 0 de oro y gemas', () => {
     for (let lvl = 1; lvl <= 20; lvl++) {
       const cfg = generateStoryLevel(lvl, 1000 + lvl)
-      expect(cfg.rewards.tokens).toBe(0)
+      expect(cfg.rewards.tokens).toBe(5)
+      expect(cfg.rewards.gold).toBe(0)
+      expect(cfg.rewards.gems).toBe(0)
     }
   })
 

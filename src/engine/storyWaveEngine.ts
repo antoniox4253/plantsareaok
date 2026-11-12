@@ -126,18 +126,43 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
   const nextRng = () => nextFloat(rng)
 
   const allowedMapaches = getAllowedMapachesForLevel(level)
-  const hpMult = 1.0 + (level - 1) * 0.12
-  const dmgMult = 1.0 + (level - 1) * 0.08
+
+  // ── DIFICULTAD ESCALONADA POR NIVELES:
+  // - Niveles 1-5: Se mantienen exactamente como estaban (curva suave de introducción).
+  // - Niveles 6-10: Sube la dificultad (mayor escalado de HP/daño, spawns más rápidos y agresivos).
+  // - Niveles 11-20: Sube aún más la dificultad a partir de la 2ª oleada (incursiones masivas coordinadas).
+  const isMediumDifficulty = level >= 6 && level <= 10
+  const isHighDifficulty = level >= 11
+
+  let hpMult: number
+  let dmgMult: number
+
+  if (level <= 5) {
+    hpMult = 1.0 + (level - 1) * 0.12
+    dmgMult = 1.0 + (level - 1) * 0.08
+  } else if (isMediumDifficulty) {
+    hpMult = 1.0 + 4 * 0.12 + (level - 5) * 0.18
+    dmgMult = 1.0 + 4 * 0.08 + (level - 5) * 0.12
+  } else {
+    // Niveles 11 a 20: Curva base alta
+    hpMult = 1.0 + 4 * 0.12 + 5 * 0.18 + (level - 10) * 0.22
+    dmgMult = 1.0 + 4 * 0.08 + 5 * 0.12 + (level - 10) * 0.15
+  }
 
   const pickEnemy = (): MapacheKey => {
     const idx = Math.floor(nextRng() * allowedMapaches.length)
     return allowedMapaches[idx] || allowedMapaches[0]
   }
 
-  // ── OLEADA 1: INCURSIÓN INICIAL (28s en Nivel 1, -1s cada 3 niveles) ──
-  const w1StartSec = Math.max(20, 28 - Math.floor((level - 1) / 3))
+  // ── OLEADA 1: INCURSIÓN INICIAL (Margen para plantar defensas) ───────────
+  const w1StartSec = Math.max(18, 28 - Math.floor((level - 1) / 3))
   const w1StartTick = msToTicks(w1StartSec * 1000)
-  const w1Count = Math.min(8, 3 + Math.floor(level / 3))
+  const w1Count = level <= 5
+    ? Math.min(8, 3 + Math.floor(level / 3))
+    : isMediumDifficulty
+    ? Math.min(10, 4 + Math.floor(level / 3))
+    : Math.min(8, 4 + Math.floor((level - 10) / 4)) // En 11-20 oleada 1 moderada para permitir plante inicial
+
   const wave1Spawns: StoryEnemySpawn[] = []
   let w1Tick = w1StartTick
 
@@ -164,11 +189,20 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     spawns: wave1Spawns,
   }
 
-  // ── OLEADA 2: EMBOSCADA Y PRESIÓN (estilo 1ra bandera PvZ) ────────────────
-  const w2Count = Math.min(14, 5 + Math.floor(level / 2))
+  // ── OLEADA 2: EMBOSCADA Y PRESIÓN (EN 11-20 DIFICULTAD MÁXIMA DESDE AQUÍ) ──
+  const w2Count = level <= 5
+    ? Math.min(14, 5 + Math.floor(level / 2))
+    : isMediumDifficulty
+    ? Math.min(18, 7 + Math.floor(level / 2))
+    : Math.min(24, 12 + Math.floor((level - 10) * 1.2)) // En 11-20 oleada 2 muy densa
+
   const wave2Spawns: StoryEnemySpawn[] = []
-  const w2StartTick = Math.max(w1Tick + msToTicks(6000), w1StartTick + msToTicks(28000))
+  const w2StartTick = Math.max(w1Tick + msToTicks(5000), w1StartTick + msToTicks(isHighDifficulty ? 22000 : 28000))
   let w2Tick = w2StartTick
+
+  // En niveles 11-20 a partir de la 2da oleada, el multiplicador de HP y daño sube +15%
+  const w2HpMult = isHighDifficulty ? hpMult * 1.15 : hpMult
+  const w2DmgMult = isHighDifficulty ? dmgMult * 1.15 : dmgMult
 
   for (let i = 0; i < w2Count; i++) {
     const mapacheKey = pickEnemy()
@@ -178,12 +212,15 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       lane,
       mapacheKey,
       moveSpeed: getMapacheBaseSpeed(mapacheKey),
-      hpMultiplier: hpMult,
-      damageMultiplier: dmgMult,
+      hpMultiplier: w2HpMult,
+      damageMultiplier: w2DmgMult,
     })
 
-    // Ataque coordinado en niveles >= 8 cada 3 mapaches
-    if (level >= 8 && i > 0 && i % 3 === 0) {
+    // Ataque coordinado (doble incursión):
+    // Niveles 6-10: cada 3 enemigos
+    // Niveles 11-20: cada 2 enemigos a partir de la 2da oleada
+    const coordinateInterval = isHighDifficulty ? 2 : 3
+    if ((isMediumDifficulty || isHighDifficulty) && i > 0 && i % coordinateInterval === 0) {
       const secondLane = (lane + 1 + Math.floor(nextRng() * (lanesCount - 1))) % lanesCount
       const secondMapache = pickEnemy()
       wave2Spawns.push({
@@ -191,28 +228,37 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
         lane: secondLane,
         mapacheKey: secondMapache,
         moveSpeed: getMapacheBaseSpeed(secondMapache),
-        hpMultiplier: hpMult,
-        damageMultiplier: dmgMult,
+        hpMultiplier: w2HpMult,
+        damageMultiplier: w2DmgMult,
       })
     }
 
-    const delay = Math.max(65, 120 - level * 2 + Math.floor(nextRng() * 35))
+    const baseDelay = isHighDifficulty ? 50 : isMediumDifficulty ? 65 : 85
+    const delay = Math.max(baseDelay, (isHighDifficulty ? 85 : 120) - level * 2 + Math.floor(nextRng() * 25))
     w2Tick += delay
   }
 
   const wave2: StoryWave = {
     waveNumber: 2,
     name: 'Oleada 2 (Emboscada)',
-    subtitle: 'Asalto de refuerzos en los 3 carriles',
+    subtitle: isHighDifficulty ? '¡Horda mapache masiva en los 3 carriles!' : 'Asalto de refuerzos en los 3 carriles',
     startTick: w2StartTick,
     spawns: wave2Spawns,
   }
 
   // ── OLEADA 3: OLEADA FINAL CON EL JEFE REY GARRA ───────────────────────────
-  const w3Count = Math.min(16, 6 + Math.floor(level / 2))
+  const w3Count = level <= 5
+    ? Math.min(16, 6 + Math.floor(level / 2))
+    : isMediumDifficulty
+    ? Math.min(20, 8 + Math.floor(level / 2))
+    : Math.min(26, 14 + Math.floor((level - 10) * 1.2))
+
   const wave3Spawns: StoryEnemySpawn[] = []
-  const w3StartTick = Math.max(w2Tick + msToTicks(7000), w2StartTick + msToTicks(32000))
+  const w3StartTick = Math.max(w2Tick + msToTicks(6000), w2StartTick + msToTicks(isHighDifficulty ? 26000 : 32000))
   let w3Tick = w3StartTick
+
+  const w3HpMult = isHighDifficulty ? hpMult * 1.25 : hpMult * 1.10
+  const w3DmgMult = isHighDifficulty ? dmgMult * 1.20 : dmgMult * 1.05
 
   // Escolta previa al jefe
   for (let i = 0; i < w3Count; i++) {
@@ -223,16 +269,36 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
       lane,
       mapacheKey,
       moveSpeed: getMapacheBaseSpeed(mapacheKey),
-      hpMultiplier: hpMult * 1.1,
-      damageMultiplier: dmgMult * 1.05,
+      hpMultiplier: w3HpMult,
+      damageMultiplier: w3DmgMult,
     })
-    const delay = Math.max(50, 90 - level * 2 + Math.floor(nextRng() * 25))
+
+    // En niveles 11-20: doble spawn frecuente en oleada 3
+    if (isHighDifficulty && i > 0 && i % 2 === 0) {
+      const secondLane = (lane + 1 + Math.floor(nextRng() * (lanesCount - 1))) % lanesCount
+      const secondKey = pickEnemy()
+      wave3Spawns.push({
+        tick: w3Tick + 15,
+        lane: secondLane,
+        mapacheKey: secondKey,
+        moveSpeed: getMapacheBaseSpeed(secondKey),
+        hpMultiplier: w3HpMult,
+        damageMultiplier: w3DmgMult,
+      })
+    }
+
+    const delay = Math.max(40, (isHighDifficulty ? 65 : 90) - level * 2 + Math.floor(nextRng() * 20))
     w3Tick += delay
   }
 
   // EL JEFE FINAL REY GARRA APARECE EN LA OLEADA 3 EN EL CARRIL CENTRAL (LANE 1)
-  const bossHpMultiplier = hpMult * (1.2 + level * 0.08)
-  const bossDamageMultiplier = dmgMult * 1.2
+  const bossHpMultiplier = isHighDifficulty
+    ? hpMult * (1.6 + level * 0.12)
+    : isMediumDifficulty
+    ? hpMult * (1.4 + level * 0.10)
+    : hpMult * (1.2 + level * 0.08)
+
+  const bossDamageMultiplier = isHighDifficulty ? dmgMult * 1.45 : dmgMult * 1.20
   const bossLane = 1 // Carril central en un tablero de 3 líneas (0, 1, 2)
   wave3Spawns.push({
     tick: w3Tick + 30,
@@ -246,23 +312,35 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
 
   // Escolta pesada que acompaña al Rey Garra (carriles flanqueantes 0 y 2)
   const leftEscortKey: MapacheKey = allowedMapaches.includes('punos') ? 'punos' : 'garritas'
-  const rightEscortKey: MapacheKey = allowedMapaches.includes('pumpum') ? 'pumpum' : 'garritas'
+  const rightEscortKey: MapacheKey = allowedMapaches.includes('navajas') ? 'navajas' : (allowedMapaches.includes('pumpum') ? 'pumpum' : 'garritas')
   wave3Spawns.push({
     tick: w3Tick + 45,
     lane: 0,
     mapacheKey: leftEscortKey,
     moveSpeed: getMapacheBaseSpeed(leftEscortKey),
-    hpMultiplier: hpMult,
-    damageMultiplier: dmgMult,
+    hpMultiplier: w3HpMult,
+    damageMultiplier: w3DmgMult,
   })
   wave3Spawns.push({
     tick: w3Tick + 45,
     lane: 2,
     mapacheKey: rightEscortKey,
     moveSpeed: getMapacheBaseSpeed(rightEscortKey),
-    hpMultiplier: hpMult,
-    damageMultiplier: dmgMult,
+    hpMultiplier: w3HpMult,
+    damageMultiplier: w3DmgMult,
   })
+
+  // En niveles 11-20: refuerzo frontal con Puños
+  if (isHighDifficulty) {
+    wave3Spawns.push({
+      tick: w3Tick + 70,
+      lane: 1,
+      mapacheKey: 'punos',
+      moveSpeed: getMapacheBaseSpeed('punos'),
+      hpMultiplier: w3HpMult,
+      damageMultiplier: w3DmgMult,
+    })
+  }
 
   const wave3: StoryWave = {
     waveNumber: 3,
@@ -278,9 +356,9 @@ export function generateStoryLevel(level: number, seed: number = 1000 + level): 
     waves: [wave1, wave2, wave3],
     allowedMapaches,
     rewards: {
-      gold: 150 + level * 50,
-      gems: 10 + Math.floor(level * 2.5),
-      tokens: 0,
+      gold: 0,
+      gems: 0,
+      tokens: 5, // 5 PLANTS base (3⭐ = 5, 2⭐ = 3, 1⭐ = 1)
     },
   }
 }

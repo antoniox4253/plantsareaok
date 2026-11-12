@@ -64,7 +64,7 @@ interface MainMenuProps {
   onPlayFriendly?: (roomCode: string, betGems: number) => void
   activeDeck?: PlantId[]
   activeDeckInstances?: string[]
-  onStartStoryMode?: (level: number) => void
+  onStartStoryMode?: (level: number, runId?: string) => void
   onStartArenaAdsBattle?: (run: ArenaAdsRun) => void
   onClaimArenaAdsLoot?: (loot: ArenaAdsLoot, multiplier?: number, newlyClaimedLevels?: number[]) => Promise<any> | void
   onStartTournamentMatch?: (opponentName: string, tournamentId: string, tournamentDeck?: PlantId[]) => void
@@ -1607,9 +1607,13 @@ export default function MainMenu({
       <StoryModeModal
         isOpen={isStoryModeModalOpen}
         onClose={() => setIsStoryModeModalOpen(false)}
-        onStartLevel={(lvl) => {
+        userGems={userTokens}
+        onDeductGems={(amt) => {
+          if (onDeductTokens) onDeductTokens(amt)
+        }}
+        onStartLevel={(lvl, runId) => {
           setIsStoryModeModalOpen(false)
-          onStartStoryMode?.(lvl)
+          onStartStoryMode?.(lvl, runId)
         }}
         activeDeck={activeDeck}
         activeDeckInstances={activeDeckInstances}

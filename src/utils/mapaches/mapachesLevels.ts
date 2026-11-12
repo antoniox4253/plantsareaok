@@ -44,6 +44,58 @@ export interface StoryProgress {
   levelStars: Record<number, number>
 }
 
+export interface StoryExpeditionRun {
+  runId: string
+  currentLevel: number
+  claimedLevels: number[]
+  totalTokensEarned: number
+  status: 'active' | 'completed' | 'abandoned'
+  startedAt: number
+}
+
+export const STORY_MODE_ENTRY_FEE_GEMS = 50
+export const STORY_EXPEDITION_STORAGE_KEY = 'plants_arena_story_expedition'
+
+export function getActiveStoryExpedition(): StoryExpeditionRun | null {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(STORY_EXPEDITION_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed && parsed.status === 'active') {
+      return parsed
+    }
+  } catch {}
+  return null
+}
+
+export function saveActiveStoryExpedition(run: StoryExpeditionRun): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(STORY_EXPEDITION_STORAGE_KEY, JSON.stringify(run))
+  } catch {}
+}
+
+export function clearActiveStoryExpedition(): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.removeItem(STORY_EXPEDITION_STORAGE_KEY)
+  } catch {}
+}
+
+export function startStoryExpedition(runId: string): StoryExpeditionRun {
+  const run: StoryExpeditionRun = {
+    runId,
+    currentLevel: 1,
+    claimedLevels: [],
+    totalTokensEarned: 0,
+    status: 'active',
+    startedAt: Date.now(),
+  }
+  saveActiveStoryExpedition(run)
+  return run
+}
+
 const STORAGE_KEY = 'plants_arena_story_mode_progress'
 
 export function getStoryProgress(): StoryProgress {
@@ -111,15 +163,40 @@ export function getStoryLevelConfig(level: number): StoryLevelConfig {
   }
 
   // 2. Escalado de vida y daño
-  const hpMultiplier = 1 + (clampedLevel - 1) * 0.08
-  const damageMultiplier = 1 + (clampedLevel - 1) * 0.05
-  const bossMaxHp = Math.round(50 + (clampedLevel - 1) * 15 + (clampedLevel >= 15 ? 40 : 0))
+  // - Niveles 1-5: Se mantienen como están.
+  // - Niveles 6-10: Sube la dificultad.
+  // - Niveles 11-20: Sube aún más la dificultad a partir de la 2ª oleada.
+  const isMediumDifficulty = clampedLevel >= 6 && clampedLevel <= 10
+  const isHighDifficulty = clampedLevel >= 11
+
+  let hpMultiplier: number
+  let damageMultiplier: number
+  let bossMaxHp: number
+
+  if (clampedLevel <= 5) {
+    hpMultiplier = 1 + (clampedLevel - 1) * 0.08
+    damageMultiplier = 1 + (clampedLevel - 1) * 0.05
+    bossMaxHp = Math.round(50 + (clampedLevel - 1) * 15)
+  } else if (isMediumDifficulty) {
+    hpMultiplier = 1 + 4 * 0.08 + (clampedLevel - 5) * 0.16
+    damageMultiplier = 1 + 4 * 0.05 + (clampedLevel - 5) * 0.10
+    bossMaxHp = Math.round(110 + (clampedLevel - 5) * 25)
+  } else {
+    // Niveles 11 a 20: Alta resistencia y daño base
+    hpMultiplier = 1 + 4 * 0.08 + 5 * 0.16 + (clampedLevel - 10) * 0.22
+    damageMultiplier = 1 + 4 * 0.05 + 5 * 0.10 + (clampedLevel - 10) * 0.14
+    bossMaxHp = Math.round(235 + (clampedLevel - 10) * 35)
+  }
 
   // 3. Generación de las 3 oleadas
-  // Oleada 1 (Exploración / Plante inicial)
-  const w1Count = 2 + Math.floor(clampedLevel * 0.35)
+  // Oleada 1 (Exploración / Plante inicial para girasoles y defensas)
+  const w1Count = clampedLevel <= 5
+    ? 2 + Math.floor(clampedLevel * 0.35)
+    : isMediumDifficulty
+    ? 3 + Math.floor(clampedLevel * 0.35)
+    : 3 + Math.floor((clampedLevel - 10) * 0.25)
   const w1Spawns: MapacheSpawnPlan[] = []
-  let w1Time = 3000 // Da 3 segundos para que caiga sol y se plante
+  let w1Time = 3000
 
   for (let i = 0; i < w1Count; i++) {
     const key = allowedMapaches[i % allowedMapaches.length]
@@ -128,33 +205,44 @@ export function getStoryLevelConfig(level: number): StoryLevelConfig {
     w1Time += Math.max(2200, 4500 - clampedLevel * 120)
   }
 
-  // Oleada 2 (Refuerzos / Incursión múltiple)
-  const w2Count = 4 + Math.floor(clampedLevel * 0.6)
+  // Oleada 2 (Refuerzos / Incursión múltiple - En 11-20 dificultad masiva)
+  const w2Count = clampedLevel <= 5
+    ? 4 + Math.floor(clampedLevel * 0.6)
+    : isMediumDifficulty
+    ? 6 + Math.floor(clampedLevel * 0.7)
+    : 10 + Math.floor((clampedLevel - 10) * 1.1)
   const w2Spawns: MapacheSpawnPlan[] = []
-  let w2Time = 2500
+  let w2Time = isHighDifficulty ? 2000 : 2500
 
   for (let i = 0; i < w2Count; i++) {
     const key = allowedMapaches[(i + 1) % allowedMapaches.length]
     const lane = (i * 3 + (clampedLevel % 2)) % lanesCount
     w2Spawns.push({ delayMs: w2Time, key, lane })
-    w2Time += Math.max(1600, 3600 - clampedLevel * 100)
+    w2Time += Math.max(isHighDifficulty ? 1000 : 1600, (isHighDifficulty ? 2500 : 3600) - clampedLevel * 100)
 
-    // A partir de nivel 11: Incursión doble cada 3 enemigos
-    if (clampedLevel >= 11 && i > 0 && i % 3 === 0) {
+    // Incursión coordinada:
+    // Niveles 6-10: cada 3 enemigos
+    // Niveles 11-20: cada 2 enemigos a partir de la 2da oleada
+    const coordinateInterval = isHighDifficulty ? 2 : 3
+    if ((isMediumDifficulty || isHighDifficulty) && i > 0 && i % coordinateInterval === 0) {
       const extraKey = allowedMapaches[i % allowedMapaches.length]
       const extraLane = (lane + 2) % lanesCount
-      w2Spawns.push({ delayMs: w2Time - 400, key: extraKey, lane: extraLane })
+      w2Spawns.push({ delayMs: Math.max(500, w2Time - 400), key: extraKey, lane: extraLane })
     }
   }
 
   // Oleada 3 (¡El Jefe Final Rey Garra y su Escolta!)
-  const w3Count = 4 + Math.floor(clampedLevel * 0.8)
+  const w3Count = clampedLevel <= 5
+    ? 4 + Math.floor(clampedLevel * 0.8)
+    : isMediumDifficulty
+    ? 6 + Math.floor(clampedLevel * 0.9)
+    : 10 + clampedLevel
   const w3Spawns: MapacheSpawnPlan[] = []
-  let w3Time = 2000
+  let w3Time = isHighDifficulty ? 1500 : 2000
 
   // REY GARRA ENTRA EN LA TERCERA OLEADA EN TODOS LOS NIVELES
   w3Spawns.push({
-    delayMs: 1500,
+    delayMs: 1200,
     key: 'reygarra',
     lane: 1, // Carril central para patrullar (3 carriles: 0, 1, 2)
   })
@@ -163,13 +251,13 @@ export function getStoryLevelConfig(level: number): StoryLevelConfig {
     const key = allowedMapaches[i % allowedMapaches.length]
     const lane = (i + 1 + (i % 2)) % lanesCount
     w3Spawns.push({ delayMs: w3Time, key, lane })
-    w3Time += Math.max(1300, 3000 - clampedLevel * 80)
+    w3Time += Math.max(isHighDifficulty ? 800 : 1300, (isHighDifficulty ? 2200 : 3000) - clampedLevel * 80)
 
-    // En niveles altos (15+), incursión adicional
-    if (clampedLevel >= 15 && i % 2 === 0) {
+    // En niveles 11-20: doble spawn frecuente en oleada 3
+    if (isHighDifficulty && i > 0 && i % 2 === 0) {
       const extraKey = allowedMapaches[(i + 2) % allowedMapaches.length]
-      const extraLane = (lane + 3) % lanesCount
-      w3Spawns.push({ delayMs: w3Time - 200, key: extraKey, lane: extraLane })
+      const extraLane = (lane + 1) % lanesCount
+      w3Spawns.push({ delayMs: Math.max(400, w3Time - 200), key: extraKey, lane: extraLane })
     }
   }
 
@@ -183,7 +271,7 @@ export function getStoryLevelConfig(level: number): StoryLevelConfig {
     {
       waveNumber: 2,
       title: 'Oleada 2: Refuerzos Mapache',
-      subtitle: 'La banda intensifica el ataque por varias líneas',
+      subtitle: isHighDifficulty ? '¡Horda mapache masiva en los 3 carriles!' : 'La banda intensifica el ataque por varias líneas',
       spawns: w2Spawns,
     },
     {
@@ -202,8 +290,8 @@ export function getStoryLevelConfig(level: number): StoryLevelConfig {
       clampedLevel <= 5
         ? 'Afronta las primeras escaramuzas de PumPum y Garritas en diferentes líneas. En la 3ª oleada, el temible Rey Garra liderará el asalto.'
         : clampedLevel <= 10
-        ? 'Garritas, Puños encolerizado y Navajas atacan coordinados. Mantén tu jardín protegido antes de que llegue el Rey Garra.'
-        : '¡La invasión total de los 4 mapaches con el Rey Garra! Máxima dificultad táctica: prepara defensas robustas y contraataques rápidos.',
+        ? 'Garritas, Puños encolerizado y Navajas atacan con mayor agresividad. Mantén tu jardín protegido antes de que llegue el Rey Garra.'
+        : '¡Invasión total a máxima dificultad! Desde la 2ª oleada la horda ataca sin descanso con dobles incursiones y Rey Garra reforzado.',
     lanesCount,
     allowedMapaches,
     bossMaxHp,
@@ -212,9 +300,9 @@ export function getStoryLevelConfig(level: number): StoryLevelConfig {
     initialSun: clampedLevel >= 10 ? 200 : 250,
     waves,
     rewards: {
-      gold: 150 + clampedLevel * 50,
-      gems: 10 + Math.floor(clampedLevel * 2.5),
-      tokens: 0,
+      gold: 0,
+      gems: 0,
+      tokens: 5, // 5 PLANTS para 3⭐, 3 PLANTS para 2⭐, 1 PLANTS para 1⭐
     },
   }
 }

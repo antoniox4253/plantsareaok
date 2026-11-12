@@ -1,4 +1,3 @@
-import { saveStoryProgress } from './utils/mapaches/mapachesLevels'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   shouldBlockPopStateInScreen,
@@ -60,6 +59,13 @@ import type { ArenaAdsRun, ArenaAdsLoot } from './utils/arenaAdsManager'
 import { ArenaAdsManager, getBotStatsForLevel } from './utils/arenaAdsManager'
 import { arenaAdsService } from './services/arenaAdsService'
 import { survivorAdsService } from './services/survivorAdsService'
+import { storyModeService } from './services/storyModeService'
+import {
+  getActiveStoryExpedition,
+  saveActiveStoryExpedition,
+  clearActiveStoryExpedition,
+  type StoryExpeditionRun,
+} from './utils/mapaches/mapachesLevels'
 import { resetPopunderQuota } from './utils/arenaAdsNetwork'
 import {
   trackPageView,
@@ -591,6 +597,7 @@ function App() {
 
   const [battleMatchMode, setBattleMatchMode] = useState<'ranked' | 'friendly' | 'tournament' | 'strategic_test' | 'clan_fortress' | 'arena_ads' | 'story'>('ranked')
   const [storyModeLevel, setStoryModeLevel] = useState<number | null>(null)
+  const [activeStoryRunId, setActiveStoryRunId] = useState<string | null>(() => getActiveStoryExpedition()?.runId || null)
   const [arenaAdsRun, setArenaAdsRun] = useState<ArenaAdsRun | null>(() => ArenaAdsManager.getStoredRun())
   const [friendlyBet, setFriendlyBet] = useState<number>(0)
   const [tournamentOpponent, setTournamentOpponent] = useState<{ name: string; tournamentId: string } | null>(null)
@@ -1168,8 +1175,11 @@ function App() {
     void buscar('tournament', { roomCode: tournamentId, tournamentId })
   }
 
-  const handleStartStoryLevel = (level: number) => {
+  const handleStartStoryLevel = (level: number, runId?: string) => {
     void guardarMazoAntesDeBuscar()
+    if (runId) {
+      setActiveStoryRunId(runId)
+    }
     setStoryModeLevel(level)
     setBattleMatchMode('story')
     setPartidaAsincrona(false)
@@ -1759,10 +1769,44 @@ function App() {
             customBgImage={customArenaBg}
             matchMode={battleMatchMode}
             storyLevel={storyModeLevel || 1}
-            onStoryVictory={(lvl, rewards) => {
-              if (rewards.gold > 0) addGold(rewards.gold)
-              if (rewards.gems > 0) addUserTokens(rewards.gems)
-              saveStoryProgress(lvl)
+            onStoryVictory={async (lvl, rewards) => {
+              const currentRun = getActiveStoryExpedition()
+              const runId = currentRun?.runId || activeStoryRunId || `story_local_${Date.now()}`
+
+              if (currentRun && currentRun.claimedLevels.includes(lvl)) {
+                console.warn('[StoryMode] Nivel ya cobrado en esta expedición:', lvl)
+                return
+              }
+
+              try {
+                const claimRes = await storyModeService.claimLevelReward({
+                  runId,
+                  level: lvl,
+                  stars: rewards.stars || 3,
+                  goldenCardsCount: rewards.goldenCardsCount || 0,
+                })
+                if (claimRes.success) {
+                  window.dispatchEvent(new CustomEvent('refresh_user_balance'))
+                }
+              } catch (e) {
+                console.warn('[StoryMode] Error al liquidar nivel en backend:', e)
+              }
+
+              if (currentRun) {
+                const nextLevel = Math.min(20, lvl + 1)
+                const updatedRun: StoryExpeditionRun = {
+                  ...currentRun,
+                  currentLevel: nextLevel,
+                  claimedLevels: Array.from(new Set([...currentRun.claimedLevels, lvl])),
+                  totalTokensEarned: currentRun.totalTokensEarned + (rewards.tokens || 0),
+                  status: lvl >= 20 ? 'completed' : 'active',
+                }
+                if (lvl >= 20) {
+                  clearActiveStoryExpedition()
+                } else {
+                  saveActiveStoryExpedition(updatedRun)
+                }
+              }
               void refreshFromServer?.()
             }}
             onNextStoryLevel={(nextLvl) => {
