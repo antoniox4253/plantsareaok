@@ -160,3 +160,34 @@ describe('Cierre y Congelamiento Estricto de Survivor ADS el 12 de Noviembre 00:
     expect(sql).toContain("'is_frozen', true")
   })
 })
+
+describe('Liquidación de Premios Survivor ADS y Bloqueo Definitivo (Migración 433)', () => {
+  const migration433Path = join(
+    process.cwd(),
+    'supabase',
+    'migrations',
+    '433-settle-survivor-ads-rewards-and-block-access.sql'
+  )
+
+  it('1. El archivo de migración 433 existe y es accesible', () => {
+    expect(existsSync(migration433Path)).toBe(true)
+  })
+
+  it('2. Entrega 2 plantas doradas aleatorias a los ganadores excluyendo estrictamente las legendarias', () => {
+    const sql = readFileSync(migration433Path, 'utf8')
+    expect(sql).toContain('iceberglettuce')
+    expect(sql).toContain('threepeater')
+    expect(sql).toContain('public.survivor_ads_runs')
+    expect(sql).toContain('LIMIT 3')
+    expect(sql).toContain('public.plant_instances')
+    expect(sql).toContain('public.player_notifications')
+  })
+
+  it('3. Bloquea permanentemente enter_survivor_ads y record_survivor_ads_run', () => {
+    const sql = readFileSync(migration433Path, 'utf8')
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.enter_survivor_ads()')
+    expect(sql).toContain('El modo Survivor ADS ha finalizado definitivamente')
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.record_survivor_ads_run(')
+    expect(sql).toContain("'frozen', true")
+  })
+})

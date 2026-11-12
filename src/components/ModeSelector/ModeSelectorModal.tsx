@@ -231,57 +231,54 @@ export default function ModeSelectorModal({
                 </button>
               </div>
 
-              {/* 4. SURVIVOR ADS - MODO DE SUPERVIVENCIA POR OLEADAS (REEMPLAZA ARENA ADS) */}
+              {/* 4. SURVIVOR ADS - MODO FINALIZADO Y CERRADO */}
               <div
-                className="mode-card mode-card--arena-ads"
+                className="mode-card mode-card--arena-ads mode-card--blocked"
+                style={{ opacity: 0.72, cursor: 'not-allowed', filter: 'grayscale(0.4)' }}
                 onClick={() => {
                   soundManager.playSound('click', 0.5)
-                  onClose()
-                  if (onSelectArenaAds) {
-                    onSelectArenaAds()
-                  }
+                  alert('El evento de Survivor ADS ha finalizado formalmente. Las inscripciones y el modo de juego están permanentemente cerrados.')
                 }}
               >
                 <div
                   className="mode-card__badge"
                   style={{
-                    background: 'rgba(34, 197, 94, 0.2)',
-                    color: '#4ade80',
-                    borderColor: 'rgba(34, 197, 94, 0.6)',
+                    background: 'rgba(239, 68, 68, 0.25)',
+                    color: '#f87171',
+                    borderColor: 'rgba(239, 68, 68, 0.7)',
+                    fontWeight: 900,
                   }}
                 >
-                  🧟 SUPERVIVENCIA ADS
+                  🔒 MODO FINALIZADO
                 </div>
-                <div className="mode-card__icon">🧟</div>
-                <h3 className="mode-card__name">Survivor ADS</h3>
+                <div className="mode-card__icon" style={{ opacity: 0.6 }}>🧟</div>
+                <h3 className="mode-card__name" style={{ color: '#94a3b8' }}>Survivor ADS</h3>
                 <p className="mode-card__desc">
-                  ¡Oleadas de plantas melé enemigas al estilo PvZ! Defiende tu base contra 3 oleadas por nivel. 1 solo intento: si caes, te llevas todo lo ganado.
+                  El evento oficial de Survivor ADS ha concluido y los premios a los ganadores del ranking ya fueron repartidos. ¡Gracias por participar!
                 </p>
-                <div className="mode-card__perks">
-                  <span>💎 Entrada: 50 Gemas (1 Intento)</span>
-                  <span>🪙 2 Token PLANTS por cada nivel superado</span>
-                  <span>📦 1 Sobre Básico cada 10 niveles</span>
-                  <span>🌟 1 Carta Rara aleatoria cada 25 niveles</span>
+                <div className="mode-card__perks" style={{ opacity: 0.65 }}>
+                  <span>🏆 Evento Finalizado</span>
+                  <span>🎁 Premios Top 1-3 Entregados</span>
+                  <span>🔒 Inscripciones y Expediciones Cerradas</span>
                 </div>
                 <button
                   type="button"
                   className="mode-card__action-btn mode-card__action-btn--arena-ads"
+                  disabled
                   style={{
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    borderColor: '#34d399',
-                    color: '#ffffff',
+                    background: '#334155',
+                    borderColor: '#475569',
+                    color: '#94a3b8',
+                    cursor: 'not-allowed',
                     fontWeight: 900,
                   }}
                   onClick={(e) => {
                     e.stopPropagation()
                     soundManager.playSound('click', 0.5)
-                    onClose()
-                    if (onSelectArenaAds) {
-                      onSelectArenaAds()
-                    }
+                    alert('El evento de Survivor ADS ha finalizado formalmente. Las inscripciones y el modo de juego están permanentemente cerrados.')
                   }}
                 >
-                  🧟 JUGAR (50 💎)
+                  🔒 MODO CERRADO
                 </button>
               </div>
               {/* 5. MODO HISTORIA: LA INVASIÓN MAPACHE (OCULTO HASTA LANZAMIENTO) */}

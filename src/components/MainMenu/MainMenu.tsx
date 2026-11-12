@@ -1591,7 +1591,10 @@ export default function MainMenu({
         playerEnergy={playerEnergy}
         maxPlayerEnergy={maxPlayerEnergy}
         onSelectRanked={onPlay}
-        onSelectArenaAds={() => setIsArenaAdsModalOpen(true)}
+        onSelectArenaAds={() => {
+          soundManager.playSound('click', 0.5)
+          alert('El evento de Survivor ADS ha finalizado formalmente. Las inscripciones y el modo de juego se encuentran cerrados.')
+        }}
         onSelectStoryMode={() => setIsStoryModeModalOpen(true)}
         onSelectTournament={() => setIsTournamentModalOpen(true)}
         onSelectFriendly={onPlayFriendly}
