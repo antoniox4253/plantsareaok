@@ -26,6 +26,20 @@ node scripts/db.mjs -f supabase/migrations/149-fix-referral-gold-claim.sql
 
 ---
 
+## 💎 Asignaciones Manuales de Gemas (Regla Mandatoria de Saldo No Retirable)
+
+**REGLA ESTRICTA PARA TODOS LOS CHATS:**
+Siempre que se asignen, otorguen o compensen gemas manualmente a cualquier usuario por soporte, bugs, eventos, promociones, ranking o ajustes de administrador:
+- **Las gemas asignadas manualmente van SIEMPRE al saldo NO RETIRABLE.**
+- Para acreditar correctamente gemas no retirables en `public.profiles`:
+  1. Incrementar el balance total: `gems_balance = gems_balance + X`.
+  2. Incrementar simultáneamente el balance bloqueado/no retirable: `locked_gems_balance = locked_gems_balance + X`.
+  > De esta manera, el saldo retirable neto (`gems_balance - locked_gems_balance`) permanece intacto y el jugador solo puede usar las gemas dentro del juego (jugar partidas, comprar en tienda, plantar, etc.) sin poder retirarlas a USDT/crypto.
+- Registrar formalmente la transacción en `public.transactions` con `type = 'admin_adjustment'`, `status = 'completed'` y la descripción del motivo.
+- Notificar al jugador mediante `public.player_notifications`.
+
+---
+
 ## 👥 Sistema de Referidos
 
 - **Criterio de Amigo Válido**: Un jugador referido cuenta como válido en cuanto alcanza **1,400 copas** (`elo_rating >= 1400`) y supera la evaluación de arbitraje anti-autowin / anti-win-trading (`_arbitrar_referido`).

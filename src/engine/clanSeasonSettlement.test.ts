@@ -191,3 +191,28 @@ describe('Liquidación de Premios Survivor ADS y Bloqueo Definitivo (Migración 
     expect(sql).toContain("'frozen', true")
   })
 })
+
+describe('Liquidación de Premios Survivor ADS para Puestos 4 y 5 (Migración 435)', () => {
+  const migration435Path = join(
+    process.cwd(),
+    'supabase',
+    'migrations',
+    '435-award-survivor-ads-rank-4-and-5-golden-plants.sql'
+  )
+
+  it('1. El archivo de migración 435 existe y es accesible', () => {
+    expect(existsSync(migration435Path)).toBe(true)
+  })
+
+  it('2. Entrega 1 planta dorada aleatoria a los puestos 4 y 5 excluyendo estrictamente las legendarias', () => {
+    const sql = readFileSync(migration435Path, 'utf8')
+    expect(sql).toContain('iceberglettuce')
+    expect(sql).toContain('threepeater')
+    expect(sql).toContain('public.survivor_ads_runs')
+    expect(sql).toContain('OFFSET 3')
+    expect(sql).toContain('LIMIT 2')
+    expect(sql).toContain('public.plant_instances')
+    expect(sql).toContain('public.player_notifications')
+    expect(sql).toContain('435-award-survivor-ads-rank-4-and-5-golden-plants')
+  })
+})
