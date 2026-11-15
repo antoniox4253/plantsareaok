@@ -5,6 +5,7 @@ import { AmmCurveModal } from '../modals/AmmCurveModal'
 import { StakingModal } from '../modals/StakingModal'
 import {
   plantsTokenService,
+  formatUsdtBalance,
   type StakingSummary,
   type CashoutRequestItem,
 } from '../../../services/plantsTokenService'
@@ -35,7 +36,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
   const [swapMode, setSwapMode] = useState<'usdt' | 'gems' | 'withdraw'>('usdt')
   const [amountStr, setAmountStr] = useState<string>(liquidPlants > 0 ? String(Math.floor(liquidPlants)) : '1000')
   const [withdrawUsdtStr, setWithdrawUsdtStr] = useState<string>(
-    userUsdtBalance >= 1 ? userUsdtBalance.toFixed(2) : '10.00'
+    userUsdtBalance >= 1 ? formatUsdtBalance(userUsdtBalance) : '10.00'
   )
   const [withdrawWallet, setWithdrawWallet] = useState<string>('')
   const [slippage, setSlippage] = useState<number>(1)
@@ -111,7 +112,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
 
   const handleMaxWithdrawClick = () => {
     soundManager.playSound('click', 0.4)
-    setWithdrawUsdtStr(userUsdtBalance > 0 ? userUsdtBalance.toFixed(2) : '0.00')
+    setWithdrawUsdtStr(userUsdtBalance > 0 ? formatUsdtBalance(userUsdtBalance) : '0.00')
   }
 
   const handleCopy = (text: string, id: string) => {
@@ -193,9 +194,9 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
         showNotification('El monto mínimo de retiro es de 1.00 USDT.', 'error')
         return
       }
-      if (parsedWithdrawUsdt > userUsdtBalance) {
+      if (parsedWithdrawUsdt > userUsdtBalance + 0.00001) {
         showNotification(
-          `Saldo USDT insuficiente. Tu saldo actual es de $${userUsdtBalance.toFixed(2)} USDT.`,
+          `Saldo USDT insuficiente. Tu saldo actual es de $${formatUsdtBalance(userUsdtBalance)} USDT.`,
           'error'
         )
         return
@@ -304,7 +305,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
           <div className="summary-kpi-content">
             <span className="summary-kpi-label">MI SALDO USDT</span>
             <div className="summary-kpi-val-row">
-              <strong className="summary-kpi-value text-mint">${userUsdtBalance.toFixed(2)} USDT</strong>
+              <strong className="summary-kpi-value text-mint">${formatUsdtBalance(userUsdtBalance)} USDT</strong>
               <span className="summary-kpi-tag summary-kpi-tag--green">DISPONIBLE</span>
             </div>
             <span className="summary-kpi-sub">Convertido listo para retiro BEP-20</span>
@@ -401,7 +402,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
               <div className="swap-usdt-balance-card">
                 <div className="swap-usdt-balance-left">
                   <span className="swap-usdt-balance-lbl">Saldo USDT Disponible para Retiro</span>
-                  <strong className="swap-usdt-balance-val">${userUsdtBalance.toFixed(2)} USDT</strong>
+                  <strong className="swap-usdt-balance-val">${formatUsdtBalance(userUsdtBalance)} USDT</strong>
                 </div>
                 <span className="swap-usdt-balance-badge">100% RESPALDADO</span>
               </div>
@@ -434,7 +435,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 <div className="swap-input-top">
                   <span className="swap-input-label">Monto a Retirar (Mínimo $1.00 USDT)</span>
                   <span className="swap-input-balance">
-                    Disponible: ${userUsdtBalance.toFixed(2)} USDT{' '}
+                    Disponible: ${formatUsdtBalance(userUsdtBalance)} USDT{' '}
                     <button type="button" className="swap-max-btn" onClick={handleMaxWithdrawClick}>
                       MÁX
                     </button>

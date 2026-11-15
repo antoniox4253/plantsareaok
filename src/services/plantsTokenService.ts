@@ -10,6 +10,20 @@ function notifyFinancialSync() {
   }
 }
 
+/**
+ * Formatea saldo USDT evitando discrepancias por redondeo hacia arriba.
+ * Si tiene decimales más allá del centavo (polvo del AMM), muestra hasta 4 decimales sin exceder el saldo real.
+ */
+export function formatUsdtBalance(val: number): string {
+  if (!val || val <= 0) return '0.00'
+  const floored2 = Math.floor(val * 100) / 100
+  const floored4 = Math.floor(val * 10000) / 10000
+  if (floored4 !== floored2) {
+    return floored4.toFixed(4)
+  }
+  return floored2.toFixed(2)
+}
+
 export interface PlantsMarketState {
   spotPrice: number
   usdtPool: number

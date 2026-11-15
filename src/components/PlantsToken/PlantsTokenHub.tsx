@@ -3,6 +3,7 @@ import { soundManager } from '../../utils/audioManager'
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient'
 import {
   plantsTokenService,
+  formatUsdtBalance,
   type PlantsMarketState,
   type PlantsPriceHistoryPoint,
   type PresalePackDefinition,
@@ -557,7 +558,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
             >
               <span style={{ fontSize: '13px', marginRight: '4px' }}>💵</span>
               <span className="token-topbar-stat-val" style={{ color: '#6ee7b7', fontWeight: 800 }}>
-                ${userUsdtBalance.toFixed(2)} USDT
+                ${formatUsdtBalance(userUsdtBalance)} USDT
               </span>
             </div>
 
