@@ -9,7 +9,7 @@ import { RANKED_MATCHMAKING_TIMEOUT_SECONDS } from '../utils/gameConstants'
  * importa: no manda el mazo (lo lee el servidor de plant_instances), no elige la
  * semilla (la genera el servidor) y no decide con quién juega.
  *
- * En Ranked: busca rival humano real durante 0-30 segundos. Si pasan >= 30 s
+ * En Ranked: busca rival humano real durante 0-45 segundos. Si pasan >= 45 s
  * sin rival humano, el servidor comprueba de nuevo la prioridad humana y, si
  * no hay humano, selecciona un Rival Semilla determinista con nueva sala.
  */

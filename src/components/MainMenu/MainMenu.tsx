@@ -799,7 +799,9 @@ export default function MainMenu({
             : isReturningUser
             ? 'Por regresar cuentas con un 30% en tu primera compra'
             : bannerSlide === 0
-            ? `Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`
+            ? (seasonStatus.isHolidayBreak
+                ? '🎄 ¡Feliz Navidad y Próspero Año Nuevo! 🎆 Temporada 4 inicia el 10 de enero de 2027'
+                : `Temporada ${seasonStatus.seasonNumber}: quedan ${seasonStatus.daysLeft} días, ${seasonStatus.hoursLeft} horas`)
             : bannerSlide === 1
             ? 'Canal Oficial de Telegram: Únete para noticias y torneos'
             : bannerSlide === 3
@@ -814,7 +816,9 @@ export default function MainMenu({
             : isReturningUser
             ? 'Por regresar cuentas con un 30% en tu primera compra (Clic para comprar Gemas y desbloquear tu Pack Starter)'
             : bannerSlide === 0
-            ? `Temporada ${seasonStatus.seasonNumber} - Clic para ver ranking y recompensas`
+            ? (seasonStatus.isHolidayBreak
+                ? '🎄 ¡Feliz Navidad y Próspero Año Nuevo! Clic para ver ranking final y premios'
+                : `Temporada ${seasonStatus.seasonNumber} - Clic para ver ranking y recompensas`)
             : bannerSlide === 1
             ? 'Comunidad Oficial de Telegram - Clic para unirte'
             : bannerSlide === 3
@@ -923,18 +927,18 @@ export default function MainMenu({
               <div className="bosque-banner-slide bosque-banner-slide--season">
                 <div className="bosque-season-banner__left">
                   <div className="bosque-season-banner__icon-wrap">
-                    <span className="bosque-season-banner__icon">🏆</span>
+                    <span className="bosque-season-banner__icon">{seasonStatus.isHolidayBreak ? '🎄' : '🏆'}</span>
                   </div>
                   <div className="bosque-season-banner__titles">
-                    <span className="bosque-season-banner__badge">TEMPORADA {seasonStatus.seasonNumber}</span>
-                    <span className="bosque-season-banner__main-title">{seasonStatus.seasonNumber >= 2 ? `TEMPORADA ${seasonStatus.seasonNumber}` : 'FIN DE TEMPORADA'}</span>
+                    <span className="bosque-season-banner__badge">{seasonStatus.isHolidayBreak ? 'RECESO FESTIVO' : `TEMPORADA ${seasonStatus.seasonNumber}`}</span>
+                    <span className="bosque-season-banner__main-title">{seasonStatus.isHolidayBreak ? '🎄 FELIZ NAVIDAD Y AÑO NUEVO 🎆' : (seasonStatus.seasonNumber >= 2 ? `TEMPORADA ${seasonStatus.seasonNumber}` : 'FIN DE TEMPORADA')}</span>
                   </div>
                 </div>
 
                 <div className="bosque-season-banner__countdown-wrap">
                   <div className="bosque-season-banner__countdown-label">
                     <span className="bosque-season-banner__pulse-dot" />
-                    <span>TIEMPO RESTANTE</span>
+                    <span>{seasonStatus.isHolidayBreak ? 'TEMPORADA 4 INICIA EN:' : 'TIEMPO RESTANTE'}</span>
                   </div>
                   <div className="bosque-season-banner__timer-boxes">
                     <div className="bosque-season-timer-unit">

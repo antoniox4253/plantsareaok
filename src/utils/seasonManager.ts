@@ -8,6 +8,8 @@ export interface SeasonStatus {
   isStarted: boolean
   isEnded: boolean
   formattedCountdown: string
+  isHolidayBreak?: boolean
+  holidayMessage?: string
 }
 
 const SEASON_KEY = 'plant_arena_season_start'
@@ -23,6 +25,14 @@ export const BETA_SEASON_END_UTC = BETA_SEASON_START_UTC + BETA_SEASON_DAYS * 86
 export const SEASON_2_START_UTC = new Date('2026-10-15T00:00:00.000Z').getTime()
 export const SEASON_2_DAYS = 25
 export const SEASON_2_END_UTC = SEASON_2_START_UTC + SEASON_2_DAYS * 86400 * 1000 // 2026-11-09T00:00:00.000Z
+
+// ── TEMPORADA 3 OFICIAL (HASTA EL 20 DE DICIEMBRE 2026 23:59:59 UTC) ──
+export const SEASON_3_START_UTC = new Date('2026-11-09T02:08:03.403Z').getTime()
+export const SEASON_3_END_UTC = new Date('2026-12-20T23:59:59.000Z').getTime()
+
+// ── RECESO FESTIVO & TEMPORADA 4 (INICIA EL 10 DE ENERO 2027 00:00 UTC) ──
+export const SEASON_4_START_UTC = new Date('2027-01-10T00:00:00.000Z').getTime()
+export const SEASON_4_END_UTC = new Date('2027-02-04T00:00:00.000Z').getTime()
 
 function getStorageItem(key: string): string | null {
   if (typeof localStorage !== 'undefined') {
@@ -64,15 +74,64 @@ export class SeasonManager {
     const savedNum = getStorageItem(SEASON_NUM_KEY)
 
     const isCustomSimulated = customNow !== undefined && !savedNum
-    const startMs = savedStart ? parseInt(savedStart, 10) : (isCustomSimulated ? BETA_SEASON_START_UTC : SEASON_2_START_UTC)
-    const endMs = savedEnd ? parseInt(savedEnd, 10) : (isCustomSimulated ? BETA_SEASON_END_UTC : SEASON_2_END_UTC)
-    const seasonNumber = savedNum ? parseInt(savedNum, 10) : (isCustomSimulated ? 1 : 2)
+    let defaultSeasonNumber = 3
+    let defaultStartMs = SEASON_3_START_UTC
+    let defaultEndMs = SEASON_3_END_UTC
+
+    if (isCustomSimulated) {
+      if (customNow <= BETA_SEASON_END_UTC + 86400 * 1000) {
+        defaultSeasonNumber = 1
+        defaultStartMs = BETA_SEASON_START_UTC
+        defaultEndMs = BETA_SEASON_END_UTC
+      } else if (customNow < SEASON_3_START_UTC) {
+        defaultSeasonNumber = 2
+        defaultStartMs = SEASON_2_START_UTC
+        defaultEndMs = SEASON_2_END_UTC
+      }
+    }
+
+    const startMs = savedStart ? parseInt(savedStart, 10) : defaultStartMs
+    const endMs = savedEnd ? parseInt(savedEnd, 10) : defaultEndMs
+    const seasonNumber = savedNum ? parseInt(savedNum, 10) : defaultSeasonNumber
+
+    // Período festivo: tras el 20 de diciembre 2026 y antes del 10 de enero 2027
+    const isHolidayBreak = (seasonNumber === 3 && now >= endMs && now < SEASON_4_START_UTC) ||
+                           (seasonNumber === 4 && now < SEASON_4_START_UTC) ||
+                           (now >= SEASON_3_END_UTC && now < SEASON_4_START_UTC)
+
+    if (isHolidayBreak) {
+      const remainingMs = Math.max(0, SEASON_4_START_UTC - now)
+      const totalSeconds = Math.floor(remainingMs / 1000)
+      const days = Math.floor(totalSeconds / 86400)
+      const hours = Math.floor((totalSeconds % 86400) / 3600)
+      const minutes = Math.floor((totalSeconds % 3600) / 60)
+      const seconds = totalSeconds % 60
+
+      let formattedCountdown = `${days}d ${hours}h ${minutes}m`
+      if (days === 0 && hours === 0) {
+        formattedCountdown = `${minutes}m ${seconds}s`
+      } else if (days === 0) {
+        formattedCountdown = `${hours}h ${minutes}m ${seconds}s`
+      }
+
+      return {
+        seasonNumber: 4,
+        totalDays: Math.ceil((SEASON_4_START_UTC - SEASON_3_END_UTC) / (86400 * 1000)),
+        daysLeft: days,
+        hoursLeft: hours,
+        minutesLeft: minutes,
+        secondsLeft: seconds,
+        isStarted: false,
+        isEnded: true,
+        formattedCountdown,
+        isHolidayBreak: true,
+        holidayMessage: '🎄 ¡Feliz Navidad y Próspero Año Nuevo! 🎆 La Temporada 4 comenzará el 10 de enero de 2027.',
+      }
+    }
 
     const isStarted = now >= startMs
     const isEnded = now >= endMs
 
-    // Si aún no arranca (antes de las 00:00 UTC del 31 de Agosto), el cronómetro
-    // muestra la duración total de 45 días lista para comenzar.
     let remainingMs: number
     if (!isStarted) {
       remainingMs = Math.max(0, endMs - startMs)
@@ -105,6 +164,7 @@ export class SeasonManager {
       isStarted,
       isEnded,
       formattedCountdown,
+      isHolidayBreak: false,
     }
   }
 }
