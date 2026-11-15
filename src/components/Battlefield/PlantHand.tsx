@@ -440,8 +440,9 @@ export default function PlantHand({
             // Ambos lados en tics: el que queda y el total del enfriamiento.
             const cdTotalTicks = msToTicks(scaledConfig.cooldownMs)
             const cdRatio = isOnCooldown && cdTotalTicks > 0 ? cdRemaining / cdTotalTicks : 0
-            const canAfford = sunBank >= config.cost
+            const canAfford = sunBank >= (scaledConfig.cost ?? config.cost)
             const isDisabled = !canAfford || isOnCooldown
+            const isReady = !isDisabled && !isSelected
 
             const activePacket = scaledConfig.packetActive || scaledConfig.icon || config.packetActive
             const disabledPacket = scaledConfig.packetDisabled || scaledConfig.icon || config.packetDisabled
@@ -455,7 +456,9 @@ export default function PlantHand({
                   isSelected ? 'plant-hand__card--selected' : ''
                 } ${isDisabled ? 'plant-hand__card--disabled' : ''} ${
                   deniedSlot === realSlotIndex ? 'plant-hand__card--denied' : ''
-                } ${cardData.isGolden ? 'plant-hand__card--golden' : ''}`}
+                } ${cardData.isGolden ? 'plant-hand__card--golden' : ''} ${
+                  cardData.isGolden && isReady ? 'plant-hand__card--golden-ready' : ''
+                } ${!cardData.isGolden && isReady ? 'plant-hand__card--ready' : ''}`}
                 onPointerDown={(e) => {
                   if (e.button !== 0) return
                   pointerHandledRef.current = true
@@ -483,7 +486,7 @@ export default function PlantHand({
                 {/* Golden Card Badge (Splinterlands Play-to-Earn) */}
                 {cardData.isGolden && (
                   <div
-                    className="plant-hand__golden-badge"
+                    className={`plant-hand__golden-badge ${isReady ? 'plant-hand__golden-badge--ready' : ''}`}
                     title="✨ Carta Dorada: mismas stats base y +10% Token PLANTS al jugarla en campo y ganar (Arena 3+)"
                   >
                     ✨
@@ -514,7 +517,13 @@ export default function PlantHand({
                 </div>
 
                 {/* Card Seed Packet */}
-                <div className={`plant-hand__packet-wrap ${cardData.equippedItem ? 'plant-hand__packet-wrap--equipped' : ''} ${cardData.isGolden ? 'plant-hand__packet-wrap--golden' : ''}`}>
+                <div
+                  className={`plant-hand__packet-wrap ${
+                    cardData.equippedItem ? 'plant-hand__packet-wrap--equipped' : ''
+                  } ${cardData.isGolden ? 'plant-hand__packet-wrap--golden' : ''} ${
+                    cardData.isGolden && isReady ? 'plant-hand__packet-wrap--golden-ready' : ''
+                  }`}
+                >
                   <img
                     className={`plant-hand__packet-img ${cardData.equippedItem ? 'plant-hand__packet-img--equipped' : ''}`}
                     src={packetSrc}
@@ -522,14 +531,24 @@ export default function PlantHand({
                     draggable={false}
                     onDragStart={(e) => e.preventDefault()}
                   />
+                  {/* Subtle luminous diagonal sheen sweeping across ready golden cards */}
+                  {cardData.isGolden && isReady && <div className="plant-hand__golden-ready-sheen" />}
                 </div>
 
                 {/* Cooldown Progress Overlay */}
                 {isOnCooldown && (
                   <div
-                    className="plant-hand__cooldown-overlay"
+                    className={`plant-hand__cooldown-overlay ${
+                      cardData.isGolden ? 'plant-hand__cooldown-overlay--golden' : ''
+                    }`}
                     style={{ height: `${cdRatio * 100}%` }}
-                  />
+                  >
+                    <div
+                      className={`plant-hand__cooldown-sweep-line ${
+                        cardData.isGolden ? 'plant-hand__cooldown-sweep-line--golden' : ''
+                      }`}
+                    />
+                  </div>
                 )}
 
                 {/* Hover Buffs Tooltip */}
@@ -544,7 +563,12 @@ export default function PlantHand({
                           <span className="plant-hand__tooltip-lvl">⭐ LVL {cardData.level}</span>
                         )}
                         {cardData.isGolden && (
-                          <span className="plant-hand__tooltip-lvl" style={{ color: '#fbbf24' }}>✨ DORADA</span>
+                          <span
+                            className="plant-hand__tooltip-lvl"
+                            style={{ color: isReady ? '#4ade80' : isOnCooldown ? '#94a3b8' : '#fbbf24' }}
+                          >
+                            ✨ DORADA {isReady ? '(LISTA)' : isOnCooldown ? '(RECARGANDO)' : ''}
+                          </span>
                         )}
                       </div>
                       <div className="plant-hand__tooltip-buffs">

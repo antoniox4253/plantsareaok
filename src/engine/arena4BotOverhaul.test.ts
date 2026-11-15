@@ -99,4 +99,58 @@ describe('Certificación de Semillas Mejoradas de Arena 4 (Opción 1)', () => {
     expect(res.p1Ilegal).toBeFalsy()
     expect(res.telemetria.intentionsExecuted).toBeGreaterThanOrEqual(8)
   })
+
+  it('5. Arena 5 Olimpo de Leyendas: mazo titánico con melonpult, bonkchoy champion y wallnut 24k simula limpiamente', () => {
+    const seed = 99999
+    const p1Deck = [
+      { slot: 0, plantId: 'sunflower', level: 5, statRolls: ['hp', 'cooldown'], equippedItem: 'sunflower_glasses' },
+      { slot: 1, plantId: 'peashooter', level: 5, statRolls: ['damage', 'attackSpeed'], equippedItem: 'commando_bandana' },
+      { slot: 2, plantId: 'wallnut', level: 5, statRolls: ['hp', 'hp'], equippedItem: 'gold_24k' },
+    ]
+
+    const arena5Deck = [
+      { slot: 0, plantId: 'twinsunflower', level: 5, statRolls: ['production', 'production', 'cooldown', 'cooldown', 'hp'] },
+      { slot: 1, plantId: 'bonkchoy', level: 5, statRolls: ['damage', 'damage', 'attackSpeed', 'attackSpeed', 'hp'], equippedItem: 'champion_belt' },
+      { slot: 2, plantId: 'tallnut', level: 5, statRolls: ['hp', 'hp', 'hp', 'cooldown', 'cooldown'], equippedItem: 'gold_24k' },
+      { slot: 3, plantId: 'repeater', level: 5, statRolls: ['damage', 'damage', 'attackSpeed', 'attackSpeed', 'cooldown'], equippedItem: 'commando_bandana' },
+      { slot: 4, plantId: 'melonpult', level: 5, statRolls: ['damage', 'damage', 'damage', 'attackSpeed', 'cooldown'] },
+      { slot: 5, plantId: 'jalapeno', level: 5, statRolls: ['damage', 'damage', 'damage', 'cooldown', 'cooldown'] },
+    ]
+
+    const p1Actions = [
+      { seq: 1, issuedTick: 60, tick: 66, kind: 'plant', plantId: 'sunflower', lane: 1, col: 0, slot: 0 },
+      { seq: 2, issuedTick: 120, tick: 120, kind: 'collect', targetId: 'sky-sun-1', lane: 1, col: 0 },
+      { seq: 3, issuedTick: 200, tick: 206, kind: 'plant', plantId: 'peashooter', lane: 1, col: 1, slot: 1 },
+    ]
+
+    const arena5Actions = [
+      { seq: 1, issuedTick: 60, tick: 66, kind: 'plant', plantId: 'twinsunflower', lane: 1, col: 0, slot: 0 },
+      { seq: 2, issuedTick: 240, tick: 246, kind: 'plant', plantId: 'tallnut', lane: 1, col: 3, slot: 2 },
+      { seq: 3, issuedTick: 480, tick: 486, kind: 'plant', plantId: 'repeater', lane: 1, col: 1, slot: 3 },
+      { seq: 4, issuedTick: 750, tick: 756, kind: 'plant', plantId: 'bonkchoy', lane: 0, col: 0, slot: 1 },
+      { seq: 5, issuedTick: 1050, tick: 1056, kind: 'plant', plantId: 'tallnut', lane: 0, col: 3, slot: 2 },
+      { seq: 6, issuedTick: 1350, tick: 1356, kind: 'plant', plantId: 'melonpult', lane: 1, col: 0, slot: 4 },
+      { seq: 7, issuedTick: 1650, tick: 1656, kind: 'plant', plantId: 'bonkchoy', lane: 2, col: 0, slot: 1 },
+      { seq: 8, issuedTick: 1950, tick: 1956, kind: 'plant', plantId: 'tallnut', lane: 2, col: 3, slot: 2 },
+      { seq: 9, issuedTick: 2250, tick: 2256, kind: 'plant', plantId: 'repeater', lane: 0, col: 1, slot: 3 },
+      { seq: 10, issuedTick: 2550, tick: 2556, kind: 'plant', plantId: 'melonpult', lane: 0, col: 0, slot: 4 },
+      { seq: 11, issuedTick: 2850, tick: 2856, kind: 'plant', plantId: 'jalapeno', lane: 1, col: 5, slot: 5 },
+      { seq: 12, issuedTick: 3150, tick: 3156, kind: 'plant', plantId: 'bonkchoy', lane: 1, col: 0, slot: 1 },
+      { seq: 13, issuedTick: 3450, tick: 3456, kind: 'plant', plantId: 'repeater', lane: 2, col: 1, slot: 3 },
+      { seq: 14, issuedTick: 3750, tick: 3756, kind: 'plant', plantId: 'bonkchoy', lane: 0, col: 0, slot: 1 },
+    ]
+
+    const res = simulateAsyncMatch(
+      seed,
+      p1Deck,
+      arena5Deck,
+      p1Actions,
+      arena5Actions,
+      4000
+    )
+
+    expect(res.ok).toBe(true)
+    expect(res.p1Ilegal).toBeFalsy()
+    expect(res.telemetria.intentionsExecuted).toBeGreaterThanOrEqual(4)
+  })
 })

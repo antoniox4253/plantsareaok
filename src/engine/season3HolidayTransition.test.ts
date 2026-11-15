@@ -3,7 +3,6 @@ import fs from 'fs'
 import path from 'path'
 import {
   SeasonManager,
-  SEASON_3_START_UTC,
   SEASON_3_END_UTC,
   SEASON_4_START_UTC,
   SEASON_4_END_UTC,

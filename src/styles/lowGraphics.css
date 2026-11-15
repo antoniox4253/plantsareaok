@@ -111,6 +111,19 @@ body.low-graphics-mode .plant-hand__slot--ready {
   box-shadow: 0 0 0 2px #4ade80 !important;
 }
 
+body.low-graphics-mode .plant-hand__golden-ready-sheen {
+  display: none !important;
+}
+
+body.low-graphics-mode .plant-hand__packet-wrap--golden-ready {
+  animation: none !important;
+  box-shadow: 0 0 8px #facc15 !important;
+}
+
+body.low-graphics-mode .plant-hand__card--golden-ready {
+  animation: none !important;
+}
+
 /* 9. MODALES Y SUPERPOSICIONES EN COMBATE */
 body.low-graphics-mode .battlefield-overlay,
 body.low-graphics-mode .battle-surrender-modal-overlay,
