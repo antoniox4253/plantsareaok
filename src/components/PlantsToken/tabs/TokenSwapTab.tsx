@@ -447,12 +447,12 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                   </div>
                   <input
                     type="number"
-                    step="0.01"
+                    step="0.001"
                     min="1"
                     className="swap-field"
                     value={withdrawUsdtStr}
                     onChange={(e) => setWithdrawUsdtStr(e.target.value)}
-                    placeholder="10.00"
+                    placeholder="1.000"
                   />
                 </div>
               </div>
@@ -547,7 +547,7 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                   </div>
                   <div className="swap-receive-val">
                     {swapMode === 'usdt'
-                      ? `${estimatedUsdt.toFixed(4)} USDT`
+                      ? `${formatUsdtBalance(estimatedUsdt)} USDT`
                       : `${creditedGems.toFixed(2)} Gemas`}
                   </div>
                 </div>
@@ -774,9 +774,9 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
                 </div>
                 <div className="hero-box-value">
                   {swapMode === 'withdraw'
-                    ? `$${parsedWithdrawUsdt.toFixed(2)} USDT`
+                    ? `$${formatUsdtBalance(parsedWithdrawUsdt)} USDT`
                     : swapMode === 'usdt'
-                    ? `$${estimatedUsdt.toFixed(4)} USDT`
+                    ? `$${formatUsdtBalance(estimatedUsdt)} USDT`
                     : `${Math.floor(estimatedGems).toLocaleString()} GEMAS`}
                 </div>
                 <div className="hero-box-footer">
@@ -954,8 +954,8 @@ export const TokenSwapTab: React.FC<TokenHubSharedProps> = ({
 
                   {/* Columna Monto */}
                   <div className="withdrawal-req-col-amount">
-                    <strong className="withdrawal-req-amount-val">${req.netUsdt.toFixed(2)} USDT</strong>
-                    <span className="withdrawal-req-fee-sub">Comisión: ${req.feeUsdt.toFixed(2)}</span>
+                    <strong className="withdrawal-req-amount-val">${formatUsdtBalance(req.netUsdt)} USDT</strong>
+                    <span className="withdrawal-req-fee-sub">Comisión: ${formatUsdtBalance(req.feeUsdt)}</span>
                   </div>
 
                   {/* Columna Destino / Tx / Razón */}

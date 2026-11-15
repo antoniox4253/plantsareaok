@@ -338,7 +338,7 @@ export const PlantsTokenHub: React.FC<PlantsTokenHubProps> = ({
       const res = await plantsTokenService.swapPlantsForUsdt(amount)
       if (res.success) {
         soundManager.playSound('claim', 0.7)
-        const credited = res.data?.usdtCredited ? Number(res.data.usdtCredited).toFixed(4) : (amount * 0.95 * spotPrice).toFixed(4)
+        const credited = formatUsdtBalance(Number(res.data?.usdtCredited ?? (amount * 0.95 * spotPrice)))
         showNotification(
           `¡Canje exitoso! Convertiste ${amount.toLocaleString()} PLANTS y acreditaste +$${credited} USDT a tu saldo disponible para retiro.`,
           'success'

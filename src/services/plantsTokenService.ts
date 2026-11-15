@@ -11,17 +11,29 @@ function notifyFinancialSync() {
 }
 
 /**
- * Formatea saldo USDT evitando discrepancias por redondeo hacia arriba.
- * Si tiene decimales más allá del centavo (polvo del AMM), muestra hasta 4 decimales sin exceder el saldo real.
+ * Formatea saldo USDT con hasta 3 cifras decimales SIN redondear hacia arriba (truncado estricto).
+ * Ejemplo: 8.9983 -> "8.998"
+ * Ejemplo: 9.00 -> "9.00"
+ * Ejemplo: 4.5018 -> "4.501"
  */
-export function formatUsdtBalance(val: number): string {
+export function formatUsdtBalance(val: number, maxDecimals: number = 3): string {
   if (!val || val <= 0) return '0.00'
-  const floored2 = Math.floor(val * 100) / 100
-  const floored4 = Math.floor(val * 10000) / 10000
-  if (floored4 !== floored2) {
-    return floored4.toFixed(4)
+  const factor = Math.pow(10, maxDecimals)
+  const truncated = Math.floor(val * factor) / factor
+  const str = truncated.toFixed(maxDecimals)
+  if (str.endsWith('0') && maxDecimals === 3) {
+    return truncated.toFixed(2)
   }
-  return floored2.toFixed(2)
+  return str
+}
+
+/**
+ * Trunca estrictamente un valor numérico a N cifras decimales sin redondear hacia arriba.
+ */
+export function truncateUsdt(val: number, maxDecimals: number = 3): number {
+  if (!val || val <= 0) return 0
+  const factor = Math.pow(10, maxDecimals)
+  return Math.floor(val * factor) / factor
 }
 
 export interface PlantsMarketState {

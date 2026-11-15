@@ -77,8 +77,9 @@ BEGIN
   END IF;
 
   -- 6. Comisión del 5% retenida en el pool (quema de tokens e inyección de respaldo)
-  v_fee_usdt := v_gross_usdt * 0.05;
-  v_net_usdt := v_gross_usdt * 0.95;
+  -- Regla estricta: truncado a 3 cifras decimales sin redondeo hacia arriba
+  v_fee_usdt := ROUND(v_gross_usdt * 0.05, 4);
+  v_net_usdt := TRUNC(v_gross_usdt * 0.95, 3);
 
   IF v_net_usdt > v_amm.usdt_pool THEN
     RAISE EXCEPTION 'El pool de liquidez no dispone de suficientes fondos USDT';
@@ -148,16 +149,16 @@ BEGIN
     'completed'
   );
 
-  -- 12. Respuesta completa para el cliente
+  -- 12. Respuesta completa para el cliente (3 decimales para saldo y neto)
   RETURN jsonb_build_object(
     'success', true,
     'plantsSold', p_amount,
     'grossUsdt', ROUND(v_gross_usdt, 4),
-    'netUsdt', ROUND(v_net_usdt, 4),
-    'usdtCredited', ROUND(v_net_usdt, 4),
-    'usdtReceived', ROUND(v_net_usdt, 4),
+    'netUsdt', v_net_usdt,
+    'usdtCredited', v_net_usdt,
+    'usdtReceived', v_net_usdt,
     'feeUsdt', ROUND(v_fee_usdt, 4),
-    'newUsdtBalance', ROUND(COALESCE(v_prof.usdt_balance, 0) + v_net_usdt, 4),
+    'newUsdtBalance', ROUND(COALESCE(v_prof.usdt_balance, 0) + v_net_usdt, 3),
     'newSpotPrice', ROUND(v_new_spot, 8)
   );
 END;
